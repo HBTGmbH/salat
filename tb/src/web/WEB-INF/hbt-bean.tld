@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE taglib
+        PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.2//EN"
+        "http://java.sun.com/dtd/web-jsptaglibrary_1_2.dtd">
+<!--
+ * TagLib desciptor for HBT beanCompare tag
+ * Project number:     1022 / 020
+ * File name:          <b>$RCSfile: hbt-bean.tld,v $</b>
+ * Version:            $Revision: 1.1 $
+ *
+ * Created on:         23. Oktober 2003, 15:50
+ * Created by:         xu, copyright 2003 Hamburger Berater Team GmbH
+ * Changed on:         $Date: 2006/07/12 11:36:34 $ UTC
+ * Changed by:         $Author: th $
+ *
+ * Usage:
+ *                     
+ *                     in jsp page could be used like:
+ *                     <hbt:beanEqual name1="sample" scope="page" name2="sample" scope="request">
+ *                     </hbt:beanEqual>
+-->
+
+<taglib>
+    <tlib-version>1.0</tlib-version>
+    <jsp-version>1.2</jsp-version>
+    <short-name>beanEqual</short-name>
+    <uri>/beanEqual</uri>
+    <display-name>HBTBeanEqual</display-name>
+    <description>A blank tag library template. 
+    </description>    
+    <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+    <tldx>
+        <tagHandlerGenerationRoot>classes</tagHandlerGenerationRoot>
+    </tldx>
+    -->
+    <tag>
+        <name>beanNotEqual</name>
+        <tag-class>hbt.geofox.client.web.base.taglib.BeanNotEqualTag</tag-class>
+        <body-content>JSP</body-content>
+        <description>First proto-type</description>
+        <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+        <tldx>
+            <packagename>hbt.geofox.client.web.base.taglib</packagename>
+            <extendsSupportClass>TRUE</extendsSupportClass>
+            <supportClass>TagSupport</supportClass>
+            <implementsTryCatchFinally>FALSE</implementsTryCatchFinally>
+            <findparent>FALSE</findparent>
+        </tldx>
+        -->
+        <attribute>
+            <name>name1</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>name2</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>scope1</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>scope2</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+    </tag>
+    <tag>
+        <name>beanEqual</name>
+        <tag-class>hbt.geofox.client.web.base.taglib.BeanEqualTag</tag-class>
+        <body-content>JSP</body-content>
+        <description>First proto-type</description>
+        <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+        <tldx>
+            <packagename>hbt.geofox.client.web.base.taglib</packagename>
+            <extendsSupportClass>TRUE</extendsSupportClass>
+            <supportClass>TagSupport</supportClass>
+            <implementsTryCatchFinally>FALSE</implementsTryCatchFinally>
+            <findparent>FALSE</findparent>
+        </tldx>
+        -->
+        <attribute>
+            <name>name1</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>name2</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>scope1</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+        <attribute>
+            <name>scope2</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>String</type>
+            <!-- Forte4J_TLDX:  This comment contains code generation information. Do not delete.
+            <tldx>
+                <IsReferenceID>FALSE</IsReferenceID>
+                <ReferencesTag>FALSE</ReferencesTag>
+                <ReferenceScope>Session</ReferenceScope>
+                <ReferencesTagReferentFirst>TRUE</ReferencesTagReferentFirst>
+            </tldx>
+            -->
+        </attribute>
+    </tag>
+</taglib>

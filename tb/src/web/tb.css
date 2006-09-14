@@ -1,0 +1,66 @@
+body {
+	background-color: #CCFF99;
+	font-family: verdana, arial, sans-serif;
+	font-size: 10pt;
+	color: black;
+}
+.borderStyle {
+	border-spacing: 0px;
+	border-collapse: collapse;
+}
+.noBborderStyle {
+	border: 0px;
+}
+td, th {
+	font-family: verdana, arial, sans-serif;
+	font-size: 10pt;
+	border: 1px black solid;
+	border-collapse: collapse;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+th {
+	border-bottom-width: 2px;
+	background-color: #cccccc;
+	color: black;
+}
+.bigHeader {
+	font-size: 11pt;
+	font-weight: bold;
+	background-color: #660000;
+	color: white;
+	padding: 4px;
+	border: 1px solid black;
+}
+.noLeftBorder, .noLeftRightBorder, .onlyRightBorder, .onlyBottomBorder, .onlyTopBorder {
+	border-left-width: 0px;
+}
+.noRightBorder, .noLeftRightBorder, .onlyLeftBorder, .onlyBottomBorder, .onlyTopBorder  {
+	border-right-width: 0px;
+}
+.noTopBorder, .noTopBottomBorder, .onlyRightBorder, .onlyBottomBorder, .onlyLeftBorder  {
+	border-top-width: 0px;
+}
+.noBottomBorder, .noTopBottomBorder, .onlyRightBorder, .onlyLeftBorder, .onlyTopBorder  {
+	border-bottom-width: 0px;
+}
+.Stil4 {font-size: 12px}
+.Stil6 {
+	color: #660000;
+	font-size: 24px;
+	font-weight: bold;
+}
+.Stil7 {
+	font-size: 18px;
+	font-weight: bold;
+}
+.Stil8 {
+	font-size: 16px;
+	font-weight: bold;
+}
+input, select {
+	border: 1px solid black;
+}
+img {
+	border: 0px;
+}
