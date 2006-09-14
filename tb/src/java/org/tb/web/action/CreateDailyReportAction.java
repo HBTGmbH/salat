@@ -102,6 +102,7 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 		request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
 		
 		TimereportHelper th = new TimereportHelper();
+	
 		
 		// set the begin time as the end time of the latest existing timereport of current employee
 		// for current day. If no other reports exist so far, set standard begin time (0800).
