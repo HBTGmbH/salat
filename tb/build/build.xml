@@ -29,9 +29,6 @@
    
     
    <target name="dist">
-  	<copy todir="src/web/WEB-INF/classes">
-    		<fileset dir="classes"/>
-    	</copy>
     	<mkdir dir="temp" />
     	<war destfile="temp/tb.war" webxml="src/web/WEB-INF/web.xml">
       		<fileset dir="src/web"/>
