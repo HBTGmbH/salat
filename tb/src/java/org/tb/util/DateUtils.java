@@ -10,7 +10,8 @@ import java.util.List;
  * @author oda
  * 
  * The important thing to know for most of the methods extracting date info is:
- * 	- java.utilDate.toString() looks like: 'Wed Aug 16 00:00:00 CEST 2006'
+ * 	- java.utilDate.toString() looks like: 'Wed Aug 16 00:00:00 CET 2006' or
+ * 										   'Wed Aug 16 00:00:00 CEST 2006' (daylight saving time!)
  * 	- java.sql.Date.toString()looks like:  '2006-08-16'
  *
  */
@@ -159,7 +160,8 @@ public class DateUtils {
 	
 	public static String getSqlDateString(java.util.Date utilDate) {
 		// gets sql date in format yyyy-mm-dd from java.util.Date
-		String sqlDateString = utilDate.toString().substring(25,29) + "-" +
+		int length = utilDate.toString().length();
+		String sqlDateString = utilDate.toString().substring(length-4,length) + "-" +
 								getMonthMMStringFromShortstring(utilDate.toString().substring(4,7)) + "-" +
 								utilDate.toString().substring(8,10);
 				
@@ -174,7 +176,8 @@ public class DateUtils {
 	
 	public static java.sql.Date getSqlDate(java.util.Date utilDate) {
 		// gets sql date in format yyyy-mm-dd from java.util.Date
-		String sqlDateString = utilDate.toString().substring(25,29) + "-" +
+		int length = utilDate.toString().length();
+		String sqlDateString = utilDate.toString().substring(length-4,length) + "-" +
 								getMonthMMStringFromShortstring(utilDate.toString().substring(4,7)) + "-" +
 								utilDate.toString().substring(8,10);
 		java.sql.Date theDate = java.sql.Date.valueOf(sqlDateString);		

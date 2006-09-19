@@ -168,7 +168,8 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 				// get month string (e.g., 'Jan') from java.util.Date
 				String monthString = dt.toString().substring(4, 7);
 				// get year string (e.g., '2006') from java.util.Date
-				String yearString = dt.toString().substring(25, 29);
+				int length = dt.toString().length();
+				String yearString = dt.toString().substring(length-4, length);
 
 				request.getSession().setAttribute("currentDay", dayString);
 				request.getSession().setAttribute("currentMonth", monthString);
