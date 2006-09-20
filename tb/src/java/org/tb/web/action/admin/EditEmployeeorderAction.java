@@ -9,10 +9,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
+import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
@@ -30,6 +32,7 @@ public class EditEmployeeorderAction extends LoginRequiredAction {
 	
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeeDAO employeeDAO;
+	private CustomerorderDAO customerorderDAO;
 	private SuborderDAO suborderDAO;
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
@@ -40,6 +43,10 @@ public class EditEmployeeorderAction extends LoginRequiredAction {
 		this.employeeDAO = employeeDAO;
 	}
 
+	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
+		this.customerorderDAO = customerorderDAO;
+	}
+	
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
 	}
@@ -78,10 +85,15 @@ public class EditEmployeeorderAction extends LoginRequiredAction {
 		List<Employee> employees = employeeDAO.getEmployees();
 		request.getSession().setAttribute("employees", employees);
 		
-		List<Suborder> suborders = suborderDAO.getSuborders();
-		request.getSession().setAttribute("suborders", suborders);
+		List<Customerorder> orders = customerorderDAO.getCustomerorders();
+		request.getSession().setAttribute("orders", orders);
+		
+		//List<Suborder> suborders = suborderDAO.getSuborders();
+		//request.getSession().setAttribute("suborders", suborders);		
+		request.getSession().setAttribute("suborders", eo.getSuborder().getCustomerorder().getSuborders());
 		
 		eoForm.setEmployeecontractId(ec.getId());
+		eoForm.setOrderId(eo.getSuborder().getCustomerorder().getId());
 		eoForm.setSuborderId(eo.getSuborder().getId());
 		eoForm.setDebithours(eo.getDebithours());
 		eoForm.setSign(eo.getSign());

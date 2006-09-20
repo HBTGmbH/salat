@@ -66,6 +66,7 @@ public class EditSuborderAction extends LoginRequiredAction {
 		soForm.setDescription(so.getDescription());
 		soForm.setInvoice(Character.toString(so.getInvoice()));
 		
+		request.getSession().setAttribute("currentOrderId", new Long(so.getCustomerorder().getId()));
 		request.getSession().setAttribute("invoice", Character.toString(so.getInvoice()));
 		request.getSession().setAttribute("currency", so.getCurrency());
 		request.getSession().setAttribute("hourlyRate", so.getHourly_rate());

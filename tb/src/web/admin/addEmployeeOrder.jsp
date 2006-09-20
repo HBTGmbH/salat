@@ -25,7 +25,7 @@
 	function setStoreAction(form, actionVal) {	
  		form.action = "/tb/do/StoreEmployeeorder?task=" + actionVal;
 		form.submit();
-	}	
+	}
 			
 </script>
 	
@@ -53,20 +53,38 @@
             </td>
         </tr>
 			
+		<tr>
+            <td align="left" class="noBborderStyle">
+               	<b><bean:message key="main.employeeorder.customerorder.text" /></b>
+            </td>
+            
+            <td align="left" class="noBborderStyle"> 
+               	<html:select property="orderId" 
+               		onchange="setStoreAction(this.form, 'refreshSuborders')">
+					<html:options
+						collection="orders"
+						labelProperty="sign"
+						property="id" />
+				</html:select>    
+				<span style="color:red"><html:errors property="orderId"/></span>        
+            </td>
+        </tr>
+			
 		<td align="left" class="noBborderStyle">
-               		 <b><bean:message key="main.employeeorder.suborder.text" /></b>
-           		 </td>
-            	<td align="left" class="noBborderStyle">        
-             	   <html:select property="suborderId" styleClass="mandatory">
-						<html:options
+               <b><bean:message key="main.employeeorder.suborder.text" /></b>
+        </td>
+        <td align="left" class="noBborderStyle">        
+            <html:select property="suborderId" styleClass="mandatory">
+					<html:options
 							collection="suborders"
 							labelProperty="sign"
 							property="id" />
-					</html:select>     
-					<html:hidden property="suborderId" />   
-					<span style="color:red"><html:errors property="suborderId"/></span>       
-           	   </td>
+			</html:select>     
+			<html:hidden property="suborderId" />   
+			<span style="color:red"><html:errors property="suborderId"/></span>       
+        </td>
 			
+		<!-- 
 		<tr>
             <td align="left" class="noBborderStyle">
                 <b><bean:message key="main.employeeorder.sign.text" /></b>
@@ -76,6 +94,7 @@
            		 	<span style="color:red"><html:errors property="sign"/></span>
           	</td>
         </tr>  
+        -->
         
         <tr>
             <td align="left" class="noBborderStyle">
@@ -160,7 +179,7 @@
            		 	<span style="color:red"><html:errors property="status"/></span>
           	</td>
         </tr>  
-        
+         
         <tr>
             <td align="left" class="noBborderStyle">
                 <b><bean:message key="main.employeeorder.statusreport.text" /></b>

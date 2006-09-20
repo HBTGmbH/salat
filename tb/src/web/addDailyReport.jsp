@@ -11,6 +11,8 @@
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
 
 <%
+Long soId = (Long) request.getSession().getAttribute("currentSuborderId");
+String soIdString = soId.toString();
 %>
 
 <head>
@@ -33,6 +35,16 @@
 	
 	function setUpdateSubordersAction(form) {	
  		form.action = "/tb/do/StoreDailyReport?task=refreshSuborders";
+		form.submit();
+	}			
+	
+	function adjustSuborderSignChangedAction(form) {	
+ 		form.action = "/tb/do/StoreDailyReport?task=adjustSuborderSignChanged";
+		form.submit();
+	}		
+	
+	function adjustSuborderDescriptionChangedAction(form) {	
+ 		form.action = "/tb/do/StoreDailyReport?task=adjustSuborderDescriptionChanged";
 		form.submit();
 	}			
 	
@@ -141,20 +153,25 @@
 							labelProperty="sign"
 							property="id" />
 					</html:select>    
-					<span style="color:red"><html:errors property="orderId"/></span>        
-            	</td>
-        	</tr>
-        	<tr>
-            	<td align="left" class="noBborderStyle">
-               		 <b><bean:message key="main.timereport.suborder.text" /></b>
-           		 </td>
-            	<td align="left" class="noBborderStyle">        
-             	   <html:select property="suborderId" styleClass="mandatory">
+					<b> / </b>       	
+             	   <html:select property="suborderSignId" styleClass="mandatory"
+             	   		value="<%=soIdString%>" 
+                		onchange="adjustSuborderSignChangedAction(this.form)">
 						<html:options
 							collection="suborders"
 							labelProperty="sign"
 							property="id" />
 					</html:select>    
+					
+					<html:select property="suborderDescriptionId" styleClass="mandatory"
+						value="<%=soIdString%>" 
+                		onchange="adjustSuborderDescriptionChangedAction(this.form)">
+						<html:options
+							collection="suborders"
+							labelProperty="description"
+							property="id" />
+					</html:select>    
+					<span style="color:red"><html:errors property="orderId"/></span>      
 					<span style="color:red"><html:errors property="suborderId"/></span>            
            	   </td>
        	 	</tr>

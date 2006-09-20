@@ -125,6 +125,8 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 			}			
 		}
 		request.getSession().setAttribute("suborders", theSuborders);
+		request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());
+		
 		return mapping.findForward("success");	
 	}
 	

@@ -99,9 +99,12 @@ public class EditDailyReportAction extends LoginRequiredAction {
 		if (tr.getSortofreport().equals("W")) {
 			if ((tr.getSuborder() != null) && (tr.getSuborder().getCustomerorder() != null)) { 
 				reportForm.setSuborder(tr.getSuborder().getSign());
-				reportForm.setSuborderId(tr.getSuborder().getId());
+				reportForm.setSuborderSignId(tr.getSuborder().getId());
+				reportForm.setSuborderDescriptionId(tr.getSuborder().getId());
 				reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
 				reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());	
+				request.getSession().setAttribute("currentSuborderId", tr.getSuborder().getId());
+				request.getSession().setAttribute("suborders", tr.getSuborder().getCustomerorder().getSuborders());
 			}
 			reportForm.setCosts(tr.getCosts());		
 			reportForm.setStatus(tr.getStatus());

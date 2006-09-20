@@ -25,9 +25,11 @@ public class AddEmployeeOrderForm extends ActionForm {
 	private String status;
 	private Boolean statusreport;
 	private String employeename;
+	private String order;
 	private String suborder;
 	
 	private long employeecontractId;
+	private long orderId;
 	private long suborderId;
 	
 	private String action;
@@ -56,6 +58,14 @@ public class AddEmployeeOrderForm extends ActionForm {
 
 	public void setEmployeename(String employeename) {
 		this.employeename = employeename;
+	}
+	
+	public String getOrder() {
+		return order;
+	}
+
+	public void setOrder(String order) {
+		this.order = order;
 	}
 
 	public String getSuborder() {
@@ -112,6 +122,14 @@ public class AddEmployeeOrderForm extends ActionForm {
 
 	public void setStatusreport(Boolean statusreport) {
 		this.statusreport = statusreport;
+	}
+	
+	public long getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(long orderId) {
+		this.orderId = orderId;
 	}
 
 	public long getSuborderId() {

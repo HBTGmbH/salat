@@ -14,11 +14,14 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
+import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.helper.EmployeeHelper;
+import org.tb.helper.SuborderHelper;
+import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
@@ -39,6 +42,7 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 	private EmployeeDAO employeeDAO;
 	private EmployeecontractDAO employeecontractDAO;
 	private EmployeeorderDAO employeeorderDAO;
+	private CustomerorderDAO customerorderDAO;
 	private SuborderDAO suborderDAO;
 	
 	
@@ -53,6 +57,10 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
 	}
+	
+	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
+		this.customerorderDAO = customerorderDAO;
+	}
 
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
@@ -62,6 +70,21 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
 	
+			if ((request.getParameter("task") != null) && 
+					(request.getParameter("task").equals("refreshSuborders"))) {
+				// refresh suborders to be displayed in the select menu:
+				// get suborders related to selected customer order...
+				long coId = eoForm.getOrderId();
+				Customerorder co = customerorderDAO.getCustomerorderById(coId);
+				if (co == null) {
+					return mapping.findForward("error");
+				}
+				else {
+					request.getSession().setAttribute("suborders", co.getSuborders());
+					return mapping.getInputForward();
+				}
+			}
+			
 			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("save")) ||
 					(request.getParameter("eoId") != null)) {
@@ -164,30 +187,35 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 		} 
 		
 		// for a new employeeorder, check if the sign already exists
-		if (request.getSession().getAttribute("eoId") == null) {
-			List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
-			for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
-				Employeeorder eo = (Employeeorder) iter.next();
-				if (eo.getSign().equalsIgnoreCase(eoForm.getSign())) {
-					errors.add("sign", new ActionMessage("form.employeeorder.error.sign.alreadyexists"));		
-					break;
-				}
-			}
-		}
+		// sign is actually not used any more!
+//		if (request.getSession().getAttribute("eoId") == null) {
+//			List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
+//			for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
+//				Employeeorder eo = (Employeeorder) iter.next();
+//				if (eo.getSign().equalsIgnoreCase(eoForm.getSign())) {
+//					errors.add("sign", new ActionMessage("form.employeeorder.error.sign.alreadyexists"));		
+//					break;
+//				}
+//			}
+//		}
 		
-		// for a new employeeorder, check if the suborder together with employee already exists
-		if (request.getSession().getAttribute("eoId") == null) {
+		// check if the order/suborder together with employee already exists
+
+		//if (request.getSession().getAttribute("eoId") == null) {
 			List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
 			Suborder soInForm = suborderDAO.getSuborderById(eoForm.getSuborderId());
 			for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
 				Employeeorder eo = (Employeeorder) iter.next();
+				System.err.println("SUBORDER SIGNS: " + eoForm.getSuborderId() + "/ '" +
+						eo.getSuborder().getSign() + "', '" + soInForm.getSign() + "'");
 				if ((eo.getSuborder().getSign().equalsIgnoreCase(soInForm.getSign())) &&
+					(eo.getSuborder().getCustomerorder().getSign().equalsIgnoreCase(soInForm.getCustomerorder().getSign())) &&
 					(eo.getEmployeecontract().getEmployee().getName().equalsIgnoreCase(eoForm.getEmployeename()))) {
 					errors.add("suborderId", new ActionMessage("form.employeeorder.error.employeesuborder.alreadyexist"));		
 					break;
 				}
 			}
-		}
+		//}
 		
 		// check if valid suborder exists - otherwise, no save possible
 		if (eoForm.getSuborderId() <= 0) {
@@ -195,19 +223,22 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 		}
 		
 		// check length of text fields and if they are filled
-		if (eoForm.getSign().length() > GlobalConstants.EMPLOYEEORDER_SIGN_MAX_LENGTH) {
-			errors.add("sign", new ActionMessage("form.employeeorder.error.sign.toolong"));
-		}
-		if (eoForm.getSign().length() <= 0) {
-			errors.add("sign", new ActionMessage("form.employeeorder.error.sign.required"));
-		}
+		
+		// actually, sign is not used
+//		if (eoForm.getSign().length() > GlobalConstants.EMPLOYEEORDER_SIGN_MAX_LENGTH) {
+//			errors.add("sign", new ActionMessage("form.employeeorder.error.sign.toolong"));
+//		}
+//		if (eoForm.getSign().length() <= 0) {
+//			errors.add("sign", new ActionMessage("form.employeeorder.error.sign.required"));
+//		}
 		
 		if (eoForm.getStatus().length() > GlobalConstants.EMPLOYEEORDER_STATUS_MAX_LENGTH) {
 			errors.add("status", new ActionMessage("form.employeeorder.error.status.toolong"));
 		}
-		if (eoForm.getStatus().length() <= 0) {
-			errors.add("status", new ActionMessage("form.employeeorder.error.status.required"));
-		}
+		// actually, status is not required
+//		if (eoForm.getStatus().length() <= 0) {
+//			errors.add("status", new ActionMessage("form.employeeorder.error.status.required"));
+//		}
 		
 		// check debit hours format		
 		if (!GenericValidator.isDouble(eoForm.getDebithours().toString()) ||

@@ -35,7 +35,8 @@ public class AddDailyReportForm extends ActionForm {
 	private int selectedMinuteDuration;
 	
 	private long orderId;
-	private long suborderId;
+	private long suborderSignId;
+	private long suborderDescriptionId;
 	private long employeecontractId;
 	
 	private String action;
@@ -65,12 +66,20 @@ public class AddDailyReportForm extends ActionForm {
 		this.suborder = suborder;
 	}
 
-	public long getSuborderId() {
-		return suborderId;
+	public long getSuborderDescriptionId() {
+		return suborderDescriptionId;
 	}
 
-	public void setSuborderId(long suborderId) {
-		this.suborderId = suborderId;
+	public void setSuborderDescriptionId(long suborderDescriptionId) {
+		this.suborderDescriptionId = suborderDescriptionId;
+	}
+
+	public long getSuborderSignId() {
+		return suborderSignId;
+	}
+
+	public void setSuborderSignId(long suborderSignId) {
+		this.suborderSignId = suborderSignId;
 	}
 
 	public String getAction() {

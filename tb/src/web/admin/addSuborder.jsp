@@ -11,6 +11,8 @@
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
 
 <%
+	Long coId = (Long) request.getSession().getAttribute("currentOrderId");
+	String coIdString = coId.toString();
 	String invoiceString = (String) request.getSession().getAttribute("invoice");
 	Double hr = (Double) request.getSession().getAttribute("hourlyRate");
 	String hrString = hr.toString();
@@ -51,6 +53,7 @@
             </td>
             <td align="left" class="noBborderStyle"> 
                 	<html:select property="customerorderId"
+                		value="<%=coIdString%>"
                 		onchange="setStoreAction(this.form,'refreshHourlyRate')">
 						<html:options
 							collection="customerorders"

@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.web.form.AddDailyReportForm;
@@ -78,5 +79,19 @@ public class SuborderHelper {
 					sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId));
 		
 		return true;
+	}
+	
+	public void adjustSuborderSignChanged(HttpServletRequest request, AddDailyReportForm reportForm,
+			SuborderDAO sd) {
+
+		Suborder so = sd.getSuborderById(reportForm.getSuborderSignId());
+		request.getSession().setAttribute("currentSuborderId", so.getId()); 
+	}
+	
+	public void adjustSuborderDescriptionChanged(HttpServletRequest request, AddDailyReportForm reportForm,
+			SuborderDAO sd) {
+
+		Suborder so = sd.getSuborderById(reportForm.getSuborderDescriptionId());
+		request.getSession().setAttribute("currentSuborderId", so.getId()); 
 	}
 }

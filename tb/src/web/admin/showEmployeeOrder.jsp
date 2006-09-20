@@ -40,8 +40,11 @@
 		style="background-image:url(/tb/images/backtile.jpg)" class="center">
    	<tr>
 		<td align="left"> <b><bean:message key="main.employeeorder.employee.text"/></b> </td>
+		<td align="left"> <b><bean:message key="main.employeeorder.customerorder.text"/></b> </td>	
 		<td align="left"> <b><bean:message key="main.employeeorder.suborder.text"/></b> </td>		
+		<!--  
 		<td align="left"> <b><bean:message key="main.employeeorder.sign.text"/></b> </td>	
+		-->
 		<td align="left"> <b><bean:message key="main.employeeorder.validfrom.text"/></b> </td>	
 		<td align="left"> <b><bean:message key="main.employeeorder.validuntil.text"/></b> </td>	
 		<td align="center"> <b><bean:message key="main.employeeorder.standingorder.text"/></b> </td>	
@@ -55,8 +58,11 @@
   	<logic:iterate id="employeeorder" name="employeeorders">
    	 <tr>
       	<td><bean:write name="employeeorder" property="employeecontract.employee.name"/></td>
+      	<td><bean:write name="employeeorder" property="suborder.customerorder.sign"/></td>
       	<td><bean:write name="employeeorder" property="suborder.sign"/></td>
+      	<!-- 
       	<td><bean:write name="employeeorder" property="sign"/></td>
+      	 -->
       	<td><bean:write name="employeeorder" property="fromDate"/></td>
       	<td><bean:write name="employeeorder" property="untilDate"/></td>
       	<td align="center"><html:checkbox name="employeeorder" property="standingorder" disabled="true"/> </td>

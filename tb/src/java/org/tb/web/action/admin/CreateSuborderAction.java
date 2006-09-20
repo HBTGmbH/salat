@@ -60,6 +60,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		suborderForm.reset(mapping, request);
 		
 		if (customerorders.size() > 0) {
+			request.getSession().setAttribute("currentOrderId", new Long(customerorders.get(0).getId()));
 			request.getSession().setAttribute("hourlyRate", customerorders.get(0).getHourly_rate());
 			request.getSession().setAttribute("currency", customerorders.get(0).getCurrency());
 			suborderForm.setHourlyRate(customerorders.get(0).getHourly_rate());

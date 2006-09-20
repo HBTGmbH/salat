@@ -196,6 +196,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		Customerorder co = customerorderDAO.getCustomerorderById(soForm.getCustomerorderId());
 		
 		if (co != null) {
+			request.getSession().setAttribute("currentOrderId", new Long(co.getId()));
 			request.getSession().setAttribute("hourlyRate", co.getHourly_rate());
 			request.getSession().setAttribute("currency", co.getCurrency());
 			soForm.setHourlyRate(co.getHourly_rate());

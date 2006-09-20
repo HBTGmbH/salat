@@ -126,6 +126,22 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 			}
 			
 			if ((request.getParameter("task") != null) && 
+					(request.getParameter("task").equals("adjustSuborderSignChanged"))) {
+				// refresh suborder sign/description select menus
+				SuborderHelper sh = new SuborderHelper();
+				sh.adjustSuborderSignChanged(request, reportForm, suborderDAO);
+				return mapping.findForward("success");
+			}
+			
+			if ((request.getParameter("task") != null) && 
+					(request.getParameter("task").equals("adjustSuborderDescriptionChanged"))) {
+				// refresh suborder sign/description select menus
+				SuborderHelper sh = new SuborderHelper();
+				sh.adjustSuborderDescriptionChanged(request, reportForm, suborderDAO);
+				return mapping.findForward("success");
+			}
+			
+			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equalsIgnoreCase("updateSortOfReport"))) {
 				// updates the sort of report
 				request.getSession().setAttribute("report", reportForm.getSortOfReport());
@@ -221,7 +237,7 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				
 				if (reportForm.getSortOfReport().equals("W")) {
 					tr.setCosts(reportForm.getCosts());
-					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderId()));
+					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
 					tr.setStatus(reportForm.getStatus());
 				} else {
 					// 'special' reports: set suborder in timereport to null.				
@@ -412,8 +428,8 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 			if (reportForm.getOrderId() <= 0) {
 				errors.add("orderId", new ActionMessage("form.timereport.error.orderid.empty"));
 			}
-			if (reportForm.getSuborderId() <= 0) {
-				errors.add("suborderId", new ActionMessage("form.timereport.error.suborderid.empty"));
+			if (reportForm.getSuborderSignId() <= 0) {
+				errors.add("suborderIdDescription", new ActionMessage("form.timereport.error.suborderid.empty"));
 			}
 		}
 		
