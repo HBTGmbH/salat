@@ -56,11 +56,20 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		request.getSession().setAttribute("suborders", suborders);
 		request.getSession().setAttribute("invoice", "J");
 		
+		// use last customer order als default if present
+		if (request.getSession().getAttribute("lastCoId") != null) {
+			long id = (Long) request.getSession().getAttribute("lastCoId");
+			request.getSession().setAttribute("currentOrderId", id);
+			suborderForm.setCustomerorderId(id);
+		}
+		
 		// reset/init form entries
 		suborderForm.reset(mapping, request);
 		
 		if (customerorders.size() > 0) {
-			request.getSession().setAttribute("currentOrderId", new Long(customerorders.get(0).getId()));
+			if (request.getSession().getAttribute("lastCoId") == null) {
+				request.getSession().setAttribute("currentOrderId", new Long(customerorders.get(0).getId()));
+			}
 			request.getSession().setAttribute("hourlyRate", customerorders.get(0).getHourly_rate());
 			request.getSession().setAttribute("currency", customerorders.get(0).getCurrency());
 			suborderForm.setHourlyRate(customerorders.get(0).getHourly_rate());

@@ -44,11 +44,8 @@ while(names.hasMoreElements()) {
 				<b><bean:message key="main.general.loginscreen.text" /> </b>
 			</td>
 		</tr>
-		<tr>
-		<tr>
-		
-		</tr>
-		</tr>
+		<tr></tr>
+		<tr></tr>
 		<tr>
 			<td class="noBborderStyle"><bean:message key="main.general.employeesign.text" />:</td>
 			<td class="noBborderStyle"><html:text
@@ -88,6 +85,23 @@ while(names.hasMoreElements()) {
 				<bean:message key="main.general.loginscreen.de.2"/>
 			</td>
 		</tr>
+		<tr height="30px"></tr>
+		<tr>
+			<td valign="bottom" align="left" class="noBborderStyle">
+				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">Version 1.3.2
+			</td>
+		</tr>
+		<tr height="10px"/>
+		<tr>
+			<td class="noBborderStyle" valign="top">Letzte Änderungen:</td>
+			<td class="noBborderStyle">
+				<ul>
+					<li>Beim Anlegen eines Mitarbeiterauftrags wird nun die Beschreibung zu den Auftr.-Nr. angezeigt</li>
+					<li>Fehler behoben: doppeltes Speichern</li>
+					<li>Sortierung Suborders geändert</li>
+					<li>beim Eintragen neuer Suborders zuletzt gewählten Customerorder als default</li>
+				</ul>
+			</td>
 	</table>
 </html:form>
 </body>

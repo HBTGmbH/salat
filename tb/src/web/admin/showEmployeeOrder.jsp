@@ -32,7 +32,8 @@
 </head>
 <body>
 
-<p><h2><bean:message key="main.general.mainmenu.employeeorders.text"/></h2></p><br><br>
+<p><h2><bean:message key="main.general.mainmenu.employeeorders.text"/></h2></p><br>
+<br>
 
 <span style="color:red"><html:errors /><br></span>
 

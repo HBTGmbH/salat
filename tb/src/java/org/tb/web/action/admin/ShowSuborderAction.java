@@ -19,18 +19,17 @@ public class ShowSuborderAction extends LoginRequiredAction {
 
 	
 	private SuborderDAO suborderDAO;
-
+	
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
 	}
-
 
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
-
-		request.getSession().setAttribute("suborders", suborderDAO.getSuborders());			
+		
+		request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());			
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {

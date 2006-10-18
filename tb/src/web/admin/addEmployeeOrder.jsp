@@ -9,7 +9,19 @@
 	prefix="html-el"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
-
+<%@ page
+	language="java"
+	contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<%@ taglib
+	uri="http://java.sun.com/jsp/jstl/core"
+	prefix="c"%>
+<%@ taglib
+	uri="http://java.sun.com/jsp/jstl/fmt"
+	prefix="fmt"%>
+<%@ taglib
+	uri="http://java.sun.com/jsp/jstl/functions"
+	prefix="fn"%>
 <head>
 <meta
 	http-equiv="Content-Type"
@@ -45,7 +57,7 @@
             	<html:select property="employeename" 
                 	value="<%=(String) request.getSession().getAttribute("currentEmployee")%>" >
 					<html:options
-						collection="employees"
+						collection="employeeswithcontract"
 						labelProperty="name"
 						property="name" />
 				</html:select>         
@@ -62,10 +74,11 @@
                	<html:select property="orderId" 
                		onchange="setStoreAction(this.form, 'refreshSuborders')">
 					<html:options
-						collection="orders"
+						collection="orderswithsuborders"
 						labelProperty="sign"
 						property="id" />
-				</html:select>    
+				</html:select>
+				<c:out value="${selectedcustomerorder.description}"></c:out>
 				<span style="color:red"><html:errors property="orderId"/></span>        
             </td>
         </tr>
@@ -74,12 +87,16 @@
                <b><bean:message key="main.employeeorder.suborder.text" /></b>
         </td>
         <td align="left" class="noBborderStyle">        
-            <html:select property="suborderId" styleClass="mandatory">
+            <html:select property="suborderId" styleClass="mandatory"
+                    onchange="setStoreAction(this.form, 'refreshSuborderDescription')">
 					<html:options
 							collection="suborders"
 							labelProperty="sign"
 							property="id" />
-			</html:select>     
+			</html:select>
+			<c:if test="${selectedsuborder!=null}"> 
+				<c:out value="${selectedsuborder.description}"></c:out>    
+		    </c:if>
 			<html:hidden property="suborderId" />   
 			<span style="color:red"><html:errors property="suborderId"/></span>       
         </td>
@@ -198,7 +215,7 @@
     <table class="center">
         <tr>
         	<td class="noBborderStyle">        
-        		<html:submit onclick="setStoreAction(this.form, 'save')" >
+        		<html:submit onclick="setStoreAction(this.form, 'save');return false" >
         			<bean:message key="main.general.button.save.text"/>
         		</html:submit>
         	</td>

@@ -74,15 +74,35 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 					(request.getParameter("task").equals("refreshSuborders"))) {
 				// refresh suborders to be displayed in the select menu:
 				// get suborders related to selected customer order...
+				// remove selection - displayed info would be false, if an error occurs
+				request.getSession().removeAttribute("selectedcustomerorder");
+				request.getSession().removeAttribute("selectedsuborder");
 				long coId = eoForm.getOrderId();
 				Customerorder co = customerorderDAO.getCustomerorderById(coId);
 				if (co == null) {
 					return mapping.findForward("error");
 				}
 				else {
+					Suborder so = co.getSuborders().get(0);
+					if (so != null) {
+						request.getSession().setAttribute("selectedsuborder", so);
+					}
 					request.getSession().setAttribute("suborders", co.getSuborders());
+					request.getSession().setAttribute("selectedcustomerorder", co);
 					return mapping.getInputForward();
 				}
+			}
+			
+			if ((request.getParameter("task") != null) && 
+					(request.getParameter("task").equals("refreshSuborderDescription"))) {
+				// remove selection - displayed info would be false, if an error occurs
+				request.getSession().removeAttribute("selectedsuborder");
+				long soId = eoForm.getSuborderId();
+				Suborder so = suborderDAO.getSuborderById(soId);
+				if (so != null) {
+					request.getSession().setAttribute("selectedsuborder", so);
+				}
+				return mapping.getInputForward();
 			}
 			
 			if ((request.getParameter("task") != null) && 
@@ -204,15 +224,18 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 		//if (request.getSession().getAttribute("eoId") == null) {
 			List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
 			Suborder soInForm = suborderDAO.getSuborderById(eoForm.getSuborderId());
-			for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
-				Employeeorder eo = (Employeeorder) iter.next();
-				System.err.println("SUBORDER SIGNS: " + eoForm.getSuborderId() + "/ '" +
-						eo.getSuborder().getSign() + "', '" + soInForm.getSign() + "'");
-				if ((eo.getSuborder().getSign().equalsIgnoreCase(soInForm.getSign())) &&
-					(eo.getSuborder().getCustomerorder().getSign().equalsIgnoreCase(soInForm.getCustomerorder().getSign())) &&
-					(eo.getEmployeecontract().getEmployee().getName().equalsIgnoreCase(eoForm.getEmployeename()))) {
-					errors.add("suborderId", new ActionMessage("form.employeeorder.error.employeesuborder.alreadyexist"));		
-					break;
+			
+			if(soInForm != null) {
+				for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
+					Employeeorder eo = (Employeeorder) iter.next();
+					System.err.println("SUBORDER SIGNS: " + eoForm.getSuborderId() + "/ '" +
+							eo.getSuborder().getSign() + "', '" + soInForm.getSign() + "'");
+					if ((eo.getSuborder().getSign().equalsIgnoreCase(soInForm.getSign())) &&
+						(eo.getSuborder().getCustomerorder().getSign().equalsIgnoreCase(soInForm.getCustomerorder().getSign())) &&
+						(eo.getEmployeecontract().getEmployee().getName().equalsIgnoreCase(eoForm.getEmployeename()))) {
+						errors.add("suborderId", new ActionMessage("form.employeeorder.error.employeesuborder.alreadyexist"));		
+						break;
+					}
 				}
 			}
 		//}

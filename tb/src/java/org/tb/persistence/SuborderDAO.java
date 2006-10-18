@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
@@ -20,6 +21,11 @@ public class SuborderDAO extends HibernateDaoSupport {
 
 	private EmployeeorderDAO employeeorderDAO;
 	private TimereportDAO timereportDAO;
+	private CustomerorderDAO customerorderDAO;
+		
+	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
+		this.customerorderDAO = customerorderDAO;
+	}
 		
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -86,6 +92,19 @@ public class SuborderDAO extends HibernateDaoSupport {
 		return allSuborders;
 	}
 	
+	
+	/**
+	 * Gets a list of Suborders by customer order id.
+	 * 
+	 * @param long customerorderId
+	 * 
+	 * @return List<Suborder>
+	 */
+	public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
+		return getSession().createQuery("from Suborder s where s.customerorder.id = ? order by sign").setLong(0, customerorderId).list();
+	}
+	
+	
 	/**
 	 * Get a list of all Suborders ordered by their sign.
 	 * 
@@ -97,6 +116,25 @@ public class SuborderDAO extends HibernateDaoSupport {
 
 	
 	/**
+	 * Get a list of all Suborders ordered by the sign of {@link Customerorder} they are associated to.
+	 * 
+	 * @return
+	 */
+	public List<Suborder> getSubordersOrderedByCustomerorder() {
+		List<Customerorder> customerorders = customerorderDAO.getCustomerorders();
+		List<Suborder> suborders = new ArrayList<Suborder>();
+		Customerorder customerorder;
+		Iterator it = customerorders.iterator();
+		while (it.hasNext()) {
+			customerorder = (Customerorder) it.next();
+			long customerorderId = customerorder.getId();
+			suborders.addAll(getSubordersByCustomerorderId(customerorderId));
+		}
+		return suborders;
+	}
+	
+	
+	/**
 	 * Saves the given suborder.
 	 * 
 	 * @param Suborder so
@@ -105,6 +143,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 		Session session = getSession();
 		session.saveOrUpdate(so);
 		session.flush();
+		session.clear();
 	}
 
 	/**
@@ -118,6 +157,10 @@ public class SuborderDAO extends HibernateDaoSupport {
 		List<Suborder> allSuborders = getSuborders();
 		Suborder soToDelete = getSuborderById(soId);
 		boolean soDeleted = false;
+		
+		if (soToDelete == null) {
+			return soDeleted;
+		}
 		
 		for (Iterator iter = allSuborders.iterator(); iter.hasNext();) {
 			Suborder so = (Suborder) iter.next();

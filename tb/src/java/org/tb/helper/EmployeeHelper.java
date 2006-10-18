@@ -32,7 +32,7 @@ public class EmployeeHelper {
 	 */
 	public List<Employee> getEmployeeOptions(Employee loginEmployee, EmployeeDAO ed) {
 		List<Employee> employees = ed.getEmployees();
-		List<Employee> optionList = new ArrayList();
+		List<Employee> optionList = new ArrayList<Employee>();
 		
 		for (Iterator iter = employees.iterator(); iter.hasNext();) {
 			Employee emp = (Employee) iter.next();
@@ -49,6 +49,41 @@ public class EmployeeHelper {
 		
 		return optionList;
 	}
+	
+	
+	/**
+	 * fills up employee list dependent on status of employee currently logged in:
+	 * 	- 'ma' will only see himself in all employee selection lists
+	 *  - 'bl', 'pl' will see all employees in employee selection lists
+	 *  - only employees with employeecontracts will be shown
+	 * 
+	 * @param loginEmployee
+	 * @param ed - EmployeeDAO being used
+	 * @param ecd - EmployeecontractDAO being used
+	 * @return List<Employee> - selection list
+	 */
+	public List<Employee> getEmployeeWithContractsOptions(Employee loginEmployee, EmployeeDAO ed, EmployeecontractDAO ecd) {
+		List<Employee> employees = ed.getEmployees();
+		List<Employee> optionList = new ArrayList<Employee>();
+		
+		for (Iterator iter = employees.iterator(); iter.hasNext();) {
+			Employee emp = (Employee) iter.next();
+			
+			if((emp.getId() == loginEmployee.getId()) && (ecd.getEmployeeContractByEmployeeId(emp.getId()) != null)) {
+				optionList.add(emp);
+			} else {
+				if (((loginEmployee.getStatus().equalsIgnoreCase("bl")) ||
+					(loginEmployee.getStatus().equalsIgnoreCase("pl"))) && 
+					(ecd.getEmployeeContractByEmployeeId(emp.getId()) != null)) {
+					optionList.add(emp);
+				}
+			}
+		}
+		
+		return optionList;
+	}
+	
+	
 	
 	/**
 	 * splits full employee name into first and last name
@@ -88,7 +123,10 @@ public class EmployeeHelper {
 			// just logged in				
 			ec = ecd.getEmployeeContractByEmployeeId(loginEmployee.getId());
 			List<Employee> employeeOptionList = getEmployeeOptions(loginEmployee, ed);
-
+			List<Employee> employeeWithContractList = getEmployeeWithContractsOptions(loginEmployee, ed, ecd);
+			
+			request.getSession().setAttribute("employeeswithcontract", 
+					employeeWithContractList);
 			request.getSession().setAttribute("employees",
 					employeeOptionList);
 			request.getSession().setAttribute("currentEmployee",

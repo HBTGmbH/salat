@@ -25,6 +25,7 @@
 	<bean name="/EditCustomer" class="org.tb.web.action.admin.EditCustomerAction" />
 	<bean name="/ShowCustomer" class="org.tb.web.action.admin.ShowCustomerAction" />
 	<bean name="/StoreCustomer" class="org.tb.web.action.admin.StoreCustomerAction" />
+	
 	<bean name="/CreateCustomerorder" class="org.tb.web.action.admin.CreateCustomerorderAction" />
 	<bean name="/DeleteCustomerorder" class="org.tb.web.action.admin.DeleteCustomerorderAction" />
 	<bean name="/EditCustomerorder" class="org.tb.web.action.admin.EditCustomerorderAction" />
@@ -109,6 +110,8 @@
 				<prop key="hibernate.current_session_context_class">org.hibernate.context.ThreadLocalSessionContext</prop>
 				<prop key="hibernate.cache.use_second_level_cache">true</prop>
 				<prop key="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</prop>
+				<prop key="hibernate.jdbc.batch_size">0</prop>
+				<prop key="hibernate.jdbc.batch_versioned_data">false</prop>
 			</props>
 		</property>
 	</bean>
@@ -127,12 +130,13 @@
 	<!-- HSQL Datenbank Instanz -->
 	<bean name="hsqlDatabase" class="org.tb.util.HsqlDbWrapper" init-method="start" destroy-method="stop">
 		<property name="path">
-			
+			<!-- 
 			<value>file:d:/temp/hsqldb/taetigkeitsberichte</value>
-			
-			 <!-- 
+			-->
+			 
 			<value>file:/root/tb/hsqldb/taetigkeitsberichte</value>
-			--> 
+			 
+			 
 		</property>
 		<property name="name">
 			<value>taetigkeitsberichte</value>

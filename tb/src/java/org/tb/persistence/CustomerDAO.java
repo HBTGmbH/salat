@@ -63,6 +63,7 @@ public class CustomerDAO extends HibernateDaoSupport {
 		Session session = getSession();
 		session.saveOrUpdate(cu);
 		session.flush();
+		session.clear();
 	}
 
 	/**

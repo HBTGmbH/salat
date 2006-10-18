@@ -107,6 +107,7 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 		Session session = getSession();
 		session.saveOrUpdate(co);
 		session.flush();
+		session.clear();
 	}
 	
 	/**

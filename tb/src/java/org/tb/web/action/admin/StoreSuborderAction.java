@@ -88,8 +88,13 @@ public class StoreSuborderAction extends LoginRequiredAction {
 								
 				suborderDAO.save(so);
 				
-				request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
+				request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
 				request.getSession().removeAttribute("soId");
+				
+				// store used customer order id for the next creation of a suborder
+				request.getSession().setAttribute("lastCoId",so.getCustomerorder().getId());
+				
+				
 				return mapping.findForward("success");
 			} 
 			if ((request.getParameter("task") != null) && 
@@ -138,11 +143,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			List<Suborder> allSuborders = suborderDAO.getSuborders();
 			for (Iterator iter = allSuborders.iterator(); iter.hasNext();) {
 				Suborder so = (Suborder) iter.next();
-				if (so.getSign().equalsIgnoreCase(soForm.getSign())) {
+				if ((so.getCustomerorder().getId() == soForm.getCustomerorderId())  && (so.getSign().equalsIgnoreCase(soForm.getSign()))) {
 					errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));		
 					break;
 				}
-			}
+			} 
 		}
 		
 		// check length of text fields

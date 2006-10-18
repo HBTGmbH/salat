@@ -1,6 +1,7 @@
 package org.tb.web.action.admin;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.web.action.LoginRequiredAction;
@@ -32,7 +34,7 @@ public class CreateEmployeeorderAction extends LoginRequiredAction {
 	private EmployeeDAO employeeDAO;
 	private CustomerorderDAO customerorderDAO;
 	private SuborderDAO suborderDAO;
-	
+	private EmployeecontractDAO employeecontractDAO;
 
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -50,6 +52,11 @@ public class CreateEmployeeorderAction extends LoginRequiredAction {
 		this.suborderDAO = suborderDAO;
 	}
 
+	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+		this.employeecontractDAO = employeecontractDAO;
+	}
+	
+	
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
@@ -63,12 +70,48 @@ public class CreateEmployeeorderAction extends LoginRequiredAction {
 					"No employee contracts found - please call system administrator.");
 			return mapping.findForward("error");
 		}
+		Employee emp;
+		Iterator it = employees.iterator();
+		List<Employee> employeeswithcontract = new ArrayList<Employee>();
+		while (it.hasNext()) {
+			emp = (Employee) it.next();
+			if (employeecontractDAO.getEmployeeContractByEmployeeId(emp.getId()) != null) {
+				employeeswithcontract.add(emp);
+			}
+		}
+		if ((employeeswithcontract == null) || (employeeswithcontract.size() <= 0)) {
+			request.setAttribute("errorMessage", 
+					"No employees with valid contracts found - please call system administrator.");
+			return mapping.findForward("error");
+		}
+		
 	
 		// set relevant attributes
 		request.getSession().setAttribute("employees", employees);
+		request.getSession().setAttribute("employeeswithcontract", employeeswithcontract);
 		
 		List<Customerorder> orders = customerorderDAO.getCustomerorders();
-		request.getSession().setAttribute("orders", orders);	
+		Customerorder customerorder;
+		List<Customerorder> orderswithsuborders= new ArrayList<Customerorder>();
+		Iterator orderiterator = orders.iterator();
+		while (orderiterator.hasNext()) {
+			customerorder = (Customerorder) orderiterator.next();
+			if (!(customerorder.getSuborders() == null || customerorder.getSuborders().isEmpty())) {
+				orderswithsuborders.add(customerorder);
+			}
+		}
+		if ((orderswithsuborders == null) || (orderswithsuborders.size() <= 0)) {
+			request.setAttribute("errorMessage", 
+					"No customerorders with valid suborders found - please call system administrator.");
+			return mapping.findForward("error");
+		}
+		request.getSession().setAttribute("orders", orders);
+		request.getSession().setAttribute("orderswithsuborders", orderswithsuborders);
+		
+		Customerorder firstCustomerorder = orderswithsuborders.get(0);
+		if (firstCustomerorder != null) {
+			request.getSession().setAttribute("selectedcustomerorder", firstCustomerorder);
+		}
 		
 		//List<Suborder> suborders = suborderDAO.getSuborders();
 		//request.getSession().setAttribute("suborders", suborders);
@@ -85,7 +128,11 @@ public class CreateEmployeeorderAction extends LoginRequiredAction {
 		if ((orders != null) && (orders.size() > 0)) {
 			employeeOrderForm.setOrder(orders.get(0).getSign());
 			employeeOrderForm.setOrderId(orders.get(0).getId());
-			request.getSession().setAttribute("suborders", orders.get(0).getSuborders());
+			List<Suborder> suborders = orders.get(0).getSuborders();
+			request.getSession().setAttribute("suborders", suborders);
+			if (suborders != null && !suborders.isEmpty()) {
+				request.getSession().setAttribute("selectedsuborder", suborders.get(0));
+			}
 			if ((orders.get(0).getSuborders() != null) && (orders.get(0).getSuborders().size() > 0)) {
 				employeeOrderForm.setSuborder(orders.get(0).getSuborders().get(0).getSign());
 				employeeOrderForm.setSuborderId(orders.get(0).getSuborders().get(0).getId());
