@@ -1,5 +1,7 @@
 package org.tb.web.action.admin;
 
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -121,7 +123,8 @@ public class CreateEmployeeorderAction extends LoginRequiredAction {
 
 		// reset/init form entries
 		employeeOrderForm.reset(mapping, request);
-		
+		employeeOrderForm.useDatesFromCustomerOrder(firstCustomerorder);
+				
 		//	init form with first order and corresponding suborders
 		List<Suborder> theSuborders = new ArrayList<Suborder>();
 		request.getSession().setAttribute("suborders", theSuborders);

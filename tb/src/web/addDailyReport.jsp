@@ -300,7 +300,7 @@ String soIdString = soId.toString();
     <table class="center">
         <tr>
         	<td class="noBborderStyle">        
-        		<html:submit onclick="setStoreAction(this.form, 'save')" >
+        		<html:submit onclick="setStoreAction(this.form, 'save');return false" >
         			<bean:message key="main.general.button.save.text"/>
         		</html:submit>
         	</td>

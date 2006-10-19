@@ -1,11 +1,15 @@
 package org.tb.persistence;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.comparators.EmployeeOrderComparator;
 
 /**
  * DAO class for 'Employeeorder'
@@ -15,6 +19,13 @@ import org.tb.bdom.Employeeorder;
  */
 public class EmployeeorderDAO extends HibernateDaoSupport {
 
+	private EmployeeOrderComparator employeeOrderComparator = new EmployeeOrderComparator();
+	private EmployeecontractDAO employeecontractDAO;
+	
+	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+		this.employeecontractDAO = employeecontractDAO;
+	}
+	
 	
 	/**
 	 * Gets the employeeorder for the given id.
@@ -28,7 +39,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	}
 	
 	/**
-	 * Gets the customerorder for the given sign.
+	 * Gets the employeeorder for the given sign.
 	 * 
 	 * @param String sign
 	 * 
@@ -39,6 +50,31 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return co;
 	}
 	
+	
+	/**
+	 * Gets the list of employeeorders for the given employee contract id.
+	 * 
+	 * @param employeeContractId
+	 * @return
+	 */
+	public List<Employeeorder> getEmployeeOrdersByEmployeeContractId(long employeeContractId) {
+		return getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = "+employeeContractId).list();
+	}
+	
+	/**
+	 * Gets the list of employeeorders for the given employee id.
+	 * 
+	 * @param employeeId
+	 * @return
+	 */
+	public List<Employeeorder> getEmployeeOrdersByEmployeeId(long employeeId) {
+		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
+		long employeeContractId = employeecontract.getId();
+		return getEmployeeOrdersByEmployeeContractId(employeeContractId);
+	}
+	
+	
+	
 	/**
 	 * Get a list of all Employeeorders ordered by their sign.
 	 * 
@@ -48,6 +84,17 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return getSession().createQuery("from Employeeorder order by sign").list();
 	}
 
+	/**
+	 * Get a list of all Employeeorders ordered by employee, customer order, suborder.
+	 * 
+	 * @return List<Employeeorder> 
+	 */
+	public List<Employeeorder> getSortedEmployeeorders() {
+		List<Employeeorder> employeeorders = getSession().createQuery("from Employeeorder").list();
+		Collections.sort(employeeorders, employeeOrderComparator);
+		return employeeorders;
+	}
+	
 	
 	/**
 	 * Saves the given Employeeorder.

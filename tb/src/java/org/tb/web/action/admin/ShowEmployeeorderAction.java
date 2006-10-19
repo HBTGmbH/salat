@@ -17,20 +17,19 @@ import org.tb.web.action.LoginRequiredAction;
  */
 public class ShowEmployeeorderAction extends LoginRequiredAction {
 
-	
 	private EmployeeorderDAO employeeorderDAO;
-
+	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
 	}
 
-
+		
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
-
-		request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeorders());			
+			
+		request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());			
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {

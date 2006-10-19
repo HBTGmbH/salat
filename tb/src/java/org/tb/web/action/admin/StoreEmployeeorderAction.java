@@ -1,6 +1,7 @@
 package org.tb.web.action.admin;
 
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
 
@@ -89,6 +90,7 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 					}
 					request.getSession().setAttribute("suborders", co.getSuborders());
 					request.getSession().setAttribute("selectedcustomerorder", co);
+					eoForm.useDatesFromCustomerOrder(co);
 					return mapping.getInputForward();
 				}
 			}
@@ -148,7 +150,7 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 				List<Employee> employeeOptionList = employeeDAO.getEmployees();
 				request.getSession().setAttribute("employees", employeeOptionList);
 				
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeorders());
+				request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
 				request.getSession().removeAttribute("eoId");
 				return mapping.findForward("success");
 			} 
@@ -156,7 +158,8 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 				(request.getParameter("task").equals("back"))) {	
 				// go back
 				request.getSession().removeAttribute("eoId");
-				eoForm.reset(mapping, request);
+				doResetActions(mapping, request, eoForm);
+				// eoForm.reset(mapping, request);
 				return mapping.findForward("cancel");
 			} 
 			if ((request.getParameter("task") != null) && 
@@ -179,8 +182,12 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 	 */
 	private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddEmployeeOrderForm eoForm) {
 		eoForm.reset(mapping, request);
+		long coId = eoForm.getOrderId();
+		Customerorder co = customerorderDAO.getCustomerorderById(coId);
+		eoForm.useDatesFromCustomerOrder(co);
 	}
 	
+		
 	/**
 	 * validates the form data (syntax and logic)
 	 * 

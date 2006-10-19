@@ -1,10 +1,14 @@
 package org.tb.web.form;
 
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.util.DateUtils;
 
@@ -169,6 +173,25 @@ public class AddEmployeeOrderForm extends ActionForm {
 		debithours = 0.0;
 	}
 
+	
+	/**
+	 * 
+	 * @param customerorder
+	 */
+	public void useDatesFromCustomerOrder(Customerorder customerorder) {
+		if (customerorder == null) {
+			return;
+		}
+		Date coFromDate = customerorder.getFromDate();
+		Date coUntilDate = customerorder.getUntilDate();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		String coFromDateString = simpleDateFormat.format(coFromDate);
+		String coUntilDateString = simpleDateFormat.format(coUntilDate);
+		setValidFrom(coFromDateString);
+		setValidUntil(coUntilDateString);
+	}
+	
+	
 	@Override
 	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
 		ActionErrors errors = new ActionErrors();
