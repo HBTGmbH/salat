@@ -38,6 +38,9 @@
  		form.action = "/tb/do/StoreEmployeeorder?task=" + actionVal;
 		form.submit();
 	}
+	
+	function afterCalenderClick() {
+	}
 			
 </script>
 	

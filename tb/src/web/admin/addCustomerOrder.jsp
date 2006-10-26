@@ -25,8 +25,11 @@
 	function setStoreAction(form, actionVal) {	
  		form.action = "/tb/do/StoreCustomerorder?task=" + actionVal;
 		form.submit();
-	}	
-			
+	}
+		
+	function afterCalenderClick() {
+	}
+					
 </script>
 	
 </head>

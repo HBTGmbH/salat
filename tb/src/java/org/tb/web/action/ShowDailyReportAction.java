@@ -13,6 +13,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Monthlyreport;
+import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.EmployeeHelper;
@@ -82,6 +83,9 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
 
+		
+		
+		
 		// check if special tasks initiated from the daily display need to be carried out...
 		ShowDailyReportForm reportForm = (ShowDailyReportForm) form;
 		if ((request.getParameter("task") != null)
@@ -90,6 +94,9 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 			if (refreshTimereports(mapping, request, reportForm) != true) {
 				return mapping.findForward("error");
 			} else {
+				
+				List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+				request.getSession().setAttribute("labortime", calculateLaborTime(timereports));
 				return mapping.findForward("success");
 			}
 		}
@@ -102,6 +109,8 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 						customerorderDAO, employeeDAO, employeecontractDAO, suborderDAO) != true) {
 				return mapping.findForward("error");
 			} else {
+				List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+				request.getSession().setAttribute("labortime", calculateLaborTime(timereports));
 				return mapping.findForward("success");
 			}
 		}
@@ -114,10 +123,13 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 					suborderDAO, employeecontractDAO) != true) {
 				return mapping.findForward("error");
 			} else {
+				List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+				request.getSession().setAttribute("labortime", calculateLaborTime(timereports));
 				return mapping.findForward("success");
 			}
 		}
 		
+				
 		if (request.getParameter("task") != null) {
 			// just go back to main menu
 			if (request.getParameter("task").equalsIgnoreCase("back")) {
@@ -156,9 +168,15 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 				DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
 				java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);	
 				
-				request.getSession().setAttribute("timereports", timereportDAO
-						.getTimereportsByDateAndEmployeeContractId(ec
-								.getId(), sqlDate));
+				List<Timereport> timereports = timereportDAO
+				.getTimereportsByDateAndEmployeeContractId(ec
+						.getId(), sqlDate);
+				
+				String laborTimeString = calculateLaborTime(timereports);
+				request.getSession().setAttribute("labortime", laborTimeString);
+				
+				
+				request.getSession().setAttribute("timereports", timereports);
 			} else {
 				// call from main menu: set current month, year, timereports,
 				// orders, suborders...
@@ -184,12 +202,22 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 				if ((currentEmployeeName != null)
 						&& (currentEmployeeName
 								.equalsIgnoreCase("ALL EMPLOYEES"))) {
+					List<Timereport> timereports = timereportDAO.getTimereportsByDate(sqlDate);
+					
+					String laborTimeString = calculateLaborTime(timereports);
+					request.getSession().setAttribute("labortime", laborTimeString);
+					
 					request.getSession().setAttribute
-						("timereports", timereportDAO.getTimereportsByDate(sqlDate));
+						("timereports", timereports);
 				} else {
-					request.getSession().setAttribute("timereports", timereportDAO
-							.getTimereportsByDateAndEmployeeContractId(
-									ec.getId(), sqlDate));
+					List<Timereport> timereports = timereportDAO
+					.getTimereportsByDateAndEmployeeContractId(
+							ec.getId(), sqlDate);
+					
+					String laborTimeString = calculateLaborTime(timereports);
+					request.getSession().setAttribute("labortime", laborTimeString);
+					
+					request.getSession().setAttribute("timereports", timereports);
 				}
 
 				// orders
@@ -206,6 +234,10 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 				request.getSession().setAttribute("currentOrder", "ALL ORDERS");
 				
 				if (orders.size() > 0) {
+//					List<List> suborderlists = new ArrayList<List>();
+//					for (Customerorder customerorder : orders) {
+//						suborderlists.add(customerorder.getSuborders());
+//					}
 					request.getSession().setAttribute("suborders",
 									suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
 				}
@@ -358,5 +390,50 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 
 		return true;
 
+	}
+	
+	
+	/**
+	 * Calculates the overall labortime for a list of {@link Timereport}s.
+	 * 
+	 * @param timereports
+	 * @return Returns the calculated time as String (hh:mm)
+	 */
+	private String calculateLaborTime(List<Timereport> timereports) {
+		int laborTimeHour = 0;
+		int laborTimeMinute = 0;
+		int durationHour;
+		int durationMinute;
+		for (Timereport timereport : timereports) {
+			int beginHour = timereport.getBeginhour();
+			int beginMinute = timereport.getBeginminute();
+			int endHour = timereport.getEndhour();
+			int endMinute = timereport.getEndminute();
+			
+			if (endMinute >= beginMinute) {
+				durationHour = endHour - beginHour;
+				durationMinute = endMinute - beginMinute;
+			} else {
+				durationHour = endHour - beginHour -1;
+				durationMinute = 60 + endMinute - beginMinute;
+			}
+			laborTimeHour += durationHour;
+			laborTimeMinute += durationMinute;
+		}
+		laborTimeHour += (laborTimeMinute/60);
+		laborTimeMinute = laborTimeMinute%60;
+		
+		String laborTimeString;
+		if (laborTimeHour < 10) {
+			laborTimeString = "0"+laborTimeHour+":";
+		} else {
+			laborTimeString = laborTimeHour+":";
+		}
+		if (laborTimeMinute < 10) {
+			return laborTimeString+"0"+laborTimeMinute;
+		} else {
+			return laborTimeString+laborTimeMinute;
+		}
+		
 	}
 }

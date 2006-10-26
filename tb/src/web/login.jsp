@@ -88,23 +88,10 @@ while(names.hasMoreElements()) {
 		<tr height="30px"></tr>
 		<tr>
 			<td valign="bottom" align="left" class="noBborderStyle">
-				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">Version 1.6.2
+				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">Version 1.8.2
 			</td>
 		</tr>
 		<tr height="10px"/>
-		<tr>
-			<td class="noBborderStyle" valign="top">Letzte Änderungen:</td>
-			<td class="noBborderStyle">
-				<ul>
-					<li>Fehler behoben: doppelte Einträge in der Tagesübersicht der Buchungen</li>
-					<li>Ansicht der Mitarbeiteraufträge wird sortiert dargestellt (Vorname, Kundenauftrag, Unterauftrag)</li>
-					<li>Beim Anlegen eines Mitarbeiterauftrags werden die Daten des Kundenauftrags als default verwendet</li>
-					<li>Beim Anlegen eines Mitarbeiterauftrags wird nun die Beschreibung zu den Auftr.-Nr. angezeigt</li>
-					<li>Fehler behoben: doppeltes Speichern</li>
-					<li>Sortierung Suborders geändert</li>
-					<li>beim Eintragen neuer Suborders zuletzt gewählten Customerorder als default</li>
-				</ul>
-			</td>
 	</table>
 </html:form>
 </body>

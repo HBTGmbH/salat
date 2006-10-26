@@ -152,4 +152,14 @@ public class Suborder implements Serializable {
 		return getSign().hashCode();
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Suborder_"+id+": ("+sign+" "+description+")";
+	}
+	
+	
+
 }

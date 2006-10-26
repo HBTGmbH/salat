@@ -16,6 +16,7 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.AddDailyReportForm;
+import org.tb.web.form.ShowDailyReportForm;
 import org.tb.web.form.UpdateDailyReportForm;
 
 /**
@@ -426,12 +427,12 @@ public class TimereportHelper {
 	 * 
 	 * @return int[] - hour/minute
 	 */
-	public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td) {
+	public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, Date date) {
 		int[] beginTime = new int[2];
 		int trLatest = -1;
 		beginTime[0] = GlobalConstants.BEGINHOUR;
 		beginTime[1] = GlobalConstants.BEGINMINUTE;
-		java.sql.Date currentDate = DateUtils.getSqlDate(new java.util.Date());
+		java.sql.Date currentDate = DateUtils.getSqlDate(date);
 		List<Timereport> dailyReports = td.getTimereportsByDateAndEmployeeContractId(ecId, currentDate);
 		
 		for (Iterator iter = dailyReports.iterator(); iter.hasNext();) {
@@ -473,7 +474,7 @@ public class TimereportHelper {
 		reportForm.setSelectedHourDuration(hourDuration);
 		reportForm.setSelectedMinuteDuration(minuteDuration);
 	}
-	
+		
 	/**
 	 * refreshes period after change of hours
 	 * 

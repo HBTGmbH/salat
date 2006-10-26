@@ -38,6 +38,16 @@ String soIdString = soId.toString();
 		form.submit();
 	}			
 	
+	function adjustBeginTimeAction(form) {
+		form.action = "/tb/do/StoreDailyReport?task=adjustBeginTime";
+		form.submit();
+	}
+		
+	function afterCalenderClick() {
+		document.forms[0].action = "/tb/do/StoreDailyReport?task=adjustBeginTime";
+		document.forms[0].submit();	
+	}
+	
 	function adjustSuborderSignChangedAction(form) {	
  		form.action = "/tb/do/StoreDailyReport?task=adjustSuborderSignChanged";
 		form.submit();
@@ -73,7 +83,7 @@ String soIdString = soId.toString();
 </head>
 <body>
 
-<html:form action="/StoreDailyReport">
+<html:form action="/StoreDailyReport" >
 	<p><h2><bean:message key="main.general.entertimereportproperties.text" />:</h2><br>
 	
 	<table width="800" border="0" cellspacing="0" cellpadding="2" 
@@ -119,7 +129,7 @@ String soIdString = soId.toString();
                     }
                 </script>
                 
-		        <html:text property="referenceday"  readonly="false" size="10" maxlength="10" />	
+		        <html:text property="referenceday" onblur="adjustBeginTimeAction(this.form)" readonly="false" size="10" maxlength="10" />	
 		        <a href="javascript:calenderPopup()" name="anchor1" ID="anchor1" style="text-decoration:none;">
                    	<img src="/tb/images/popupcalendar.gif" width="22" height="22" alt="<bean:message key="main.date.popup.alt.text" />" style="border:0;vertical-align:top">
                 </a>

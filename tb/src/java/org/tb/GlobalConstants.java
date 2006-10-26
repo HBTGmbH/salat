@@ -66,4 +66,31 @@ public class GlobalConstants {
 	public static final String EMPLOYEE_STATUS_BL = "bl";
 	public static final String EMPLOYEE_STATUS_PL = "pl";
 	public static final String EMPLOYEE_STATUS_MA = "ma";
+	
+	public static final String MONTH_SHORTFORM_JANUARY = "Jan";
+	public static final String MONTH_SHORTFORM_FEBRURAY = "Feb";
+	public static final String MONTH_SHORTFORM_MARCH = "Mar";
+	public static final String MONTH_SHORTFORM_APRIL = "Apr";
+	public static final String MONTH_SHORTFORM_MAY = "May";
+	public static final String MONTH_SHORTFORM_JUNE = "Jun";
+	public static final String MONTH_SHORTFORM_JULY = "Jul";
+	public static final String MONTH_SHORTFORM_AUGUST = "Aug";
+	public static final String MONTH_SHORTFORM_SEPTEMBER = "Sep";
+	public static final String MONTH_SHORTFORM_OCTOBER = "Oct";
+	public static final String MONTH_SHORTFORM_NOVEMBER = "Nov";
+	public static final String MONTH_SHORTFORM_DECEMBER = "Dec";
+	
+	public static final int MONTH_INTVALUE_JANUARY = 1;
+	public static final int MONTH_INTVALUE_FEBRURAY = 2;
+	public static final int MONTH_INTVALUE_MARCH = 3;
+	public static final int MONTH_INTVALUE_APRIL = 4;
+	public static final int MONTH_INTVALUE_MAY = 5;
+	public static final int MONTH_INTVALUE_JUNE = 6;
+	public static final int MONTH_INTVALUE_JULY = 7;
+	public static final int MONTH_INTVALUE_AUGUST = 8;
+	public static final int MONTH_INTVALUE_SEPTEMBER = 9;
+	public static final int MONTH_INTVALUE_OCTOBER = 10;
+	public static final int MONTH_INTVALUE_NOVEMBER = 11;
+	public static final int MONTH_INTVALUE_DECEMBER = 12;
+	
 }

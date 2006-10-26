@@ -6,6 +6,12 @@
 <%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
+<%@ taglib
+	uri="http://java.sun.com/jsp/jstl/core"
+	prefix="c"%>
+<%@ taglib
+	uri="http://java.sun.com/jsp/jstl/fmt"
+	prefix="fmt"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -206,6 +212,12 @@
 <table border="0" cellspacing="0" cellpadding="2"
 		style="background-image:url(/tb/images/backtile.jpg)" class="center">
    	<tr>
+		<td colspan="6" class="noBborderStyle">&nbsp;</td>
+		<td align="right"><b>gesamt:</b></td>
+		<td align="center"><b><c:out value="${labortime}"></c:out></b></td>
+		<td align="center"><b>comming soon</b></td>
+	</tr>
+   	<tr>
    		<logic:equal name="currentEmployee" value="ALL EMPLOYEES" scope="session">
    			<td align="left"> <b><bean:message key="main.timereport.monthly.employee.text"/></b> </td>
    		</logic:equal>	
@@ -218,12 +230,15 @@
 		<td align="center"> <b><bean:message key="main.timereport.monthly.end.text"/></b> </td>
 		<td align="center"> <b><bean:message key="main.timereport.monthly.hours.text"/></b> </td>
 		<td align="left"> <b><bean:message key="main.timereport.monthly.costs.text"/></b> </td>
+		<!--  
 		<td align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </td>	
+		-->
 		<logic:notEqual name="currentEmployee" value="ALL EMPLOYEES" scope="session">
 			<td align="left"> <b><bean:message key="main.timereport.monthly.save.text"/></b> </td>
+			<td align="left"> <b><bean:message key="main.timereport.monthly.edit.text"/></b> </td>
 			<td align="left"> <b><bean:message key="main.timereport.monthly.delete.text"/></b> </td>	
 		</logic:notEqual>
-	</tr>
+	</tr>	
   <logic:iterate id="timereport" name="timereports">
   		<html:form action="/UpdateDailyReport?trId=${timereport.id}">
     	<tr>    
@@ -253,6 +268,13 @@
       				<bean:message key="main.timereport.monthly.sortofreport.sick.text"/>
       			</logic:equal>
       		</td>
+      		<td title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">     			
+      			<c:out value="${timereport.suborder.customerorder.sign}"></c:out><br>
+      		</td>
+      		<td title="<c:out value="${timereport.suborder.description}"></c:out>">
+      			<c:out value="${timereport.suborder.sign}"></c:out><br>
+       		</td>
+      		<!--  
       		<logic:notEqual name="currentEmployee" value="ALL EMPLOYEES" scope="session">
       			<logic:equal name="timereport" property="sortofreport" value="W">   		
       				<td align="left"> 
@@ -285,9 +307,17 @@
 						 <html:select property="trSuborderId" styleClass="mandatory"
 					 		value="${timereport.suborder.id}">
 							<html:options
-								collection="suborders"
-								labelProperty="sign"
-								property="id" />
+									collection="suborders"
+									labelProperty="sign"
+									property="id" />
+							<!--  
+							<c:forEach var="suborder"
+								items="${timereport.suborder.customerorder.suborders}"
+								varStatus="status">
+					 				<html:option value="id"><c:out value="${suborder.sign}"/></html:option>
+					 		</c:forEach>
+					 		-->
+					 		<!--  
 						</html:select>        
 					 </logic:equal>   
 					 <logic:notEqual name="employeeAuthorized" value="true" scope="session">  
@@ -297,19 +327,29 @@
 						<logic:notEqual name="timereport" property="status" value="closed">   
 							<html:select property="trSuborderId" styleClass="mandatory"
 					 			value="${timereport.suborder.id}">
-								<html:options
+					 		<!--
+					 		<c:forEach var="suborder"
+								items="${timereport.suborder.customerorder.suborders}"
+								varStatus="status">
+					 				<html:option value="sign"><c:out value="${suborder.sign}"/></html:option>
+					 		</c:forEach>
+					 		-->  
+					 		<!--  
+					 		<html:options
 									collection="suborders"
 									labelProperty="sign"
-									property="id" />
+									property="id" />	
 							</html:select>  
 						</logic:notEqual>  
 					</logic:notEqual>                  	
           		  </td>
+          		  
     		  </logic:equal>
     		  <logic:notEqual name="timereport" property="sortofreport" value="W">
       			  <td></td>
      		 	  <td></td>
       		  </logic:notEqual>
+      		  -->
       		  <logic:equal name="employeeAuthorized" value="true" scope="session">
 	     		 <td>
 	     		 	<html:textarea property="comment" cols="12" rows="1" value="${timereport.taskdescription}"/>
@@ -446,9 +486,10 @@
 					 </logic:notEqual>
 				</logic:notEqual>   
 	    	  </td>
+	    	  <!--  
     	  	  <td>
     	 	 	<logic:equal name="employeeAuthorized" value="true" scope="session">
-    	 	 		<!-- This is an ugly solution! Should be improved as soon as we have more options... -->
+    	 	 		<!-- This is an ugly solution! Should be improved as soon as we have more options... --> <!--
 	      			<logic:equal name="timereport" property="status" value="closed">
 	      				<html:select property="status" value="${timereport.status}">
 							<html:option value="closed"><bean:message key="main.timereport.select.status.closed.text"/></html:option>
@@ -463,7 +504,7 @@
 					</logic:notEqual>
 	      			<!--  
 	      			<html:text property="status" size="10" maxlength="<%="" + org.tb.GlobalConstants.STATUS_MAX_LENGTH %>" value="${timereport.status}"/>    
-	      			-->
+	      			--> <!-- 
 	      		</logic:equal>
 				<logic:notEqual name="employeeAuthorized" value="true" scope="session">  				
 					 <logic:equal name="timereport" property="status" value="closed">
@@ -477,6 +518,7 @@
     		 		 </logic:equal>					 
 				</logic:notEqual>   
     	 	 </td>
+    	 	 -->
       	 </logic:equal>
      	 <logic:notEqual name="timereport" property="sortofreport" value="W">
       		<td></td>
@@ -489,6 +531,8 @@
       		<td align="center">
       			<html:image onclick="confirmSave(this.form, ${timereport.id})" src="/tb/images/Save.gif" alt="Save Timereport"/>
       		 </td>
+      		 <td align="center"> <html:link href="/tb/do/EditDailyReport?trId=${timereport.id}">
+      			<img src="/tb/images/Edit.gif" alt="Edit Timereport" /></html:link> </td>
       		<td align="center"> 
       			<html:image onclick="confirmDelete(this.form, ${timereport.id})" 
       				src="/tb/images/Delete.gif" alt="Delete Timereport"/>
@@ -503,11 +547,14 @@
       		<logic:equal name="timereport" property="status" value="closed">
       			<td align="center"></td>
      			<td align="center"></td>
+     			<td align="center"></td>
       		</logic:equal>
       		<logic:notEqual name="timereport" property="status" value="closed">
       			<td align="center"> 
       				<html:image onclick="confirmSave(this.form, ${timereport.id})" src="/tb/images/Save.gif" alt="Save Timereport"/>
       			</td>
+      			<td align="center"> <html:link href="/tb/do/EditDailyReport?trId=${timereport.id}">
+      			<img src="/tb/images/Edit.gif" alt="Edit Timereport" /></html:link> </td>
      			 <td align="center"> 
      			 	<html:image onclick="confirmDelete(this.form, ${timereport.id})" 
       					src="/tb/images/Delete.gif" alt="Delete Timereport"/>
@@ -519,6 +566,9 @@
      			 </td>
       		</logic:notEqual>
      	 </logic:notEqual>
+     	 
+     	 
+     	 
      	</logic:notEqual>
      	
      	<logic:equal name="currentEmployee" value="ALL EMPLOYEES" scope="session">
@@ -557,6 +607,12 @@
     </tr>
     </html:form>
   </logic:iterate>
+  <tr>
+		<td colspan="6" class="noBborderStyle">&nbsp;</td>
+		<td align="right"><b>gesamt:</b></td>
+		<td align="center"><b><c:out value="${labortime}"></c:out></b></td>
+		<td align="center"><b>comming soon</b></td>
+	</tr>
   <tr>	 
   	<html:form action="/CreateDailyReport">	
 	 		<td class="noBborderStyle" colspan="6">    		    

@@ -1,6 +1,8 @@
 package org.tb.web.action;
 
 import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
 
@@ -100,6 +102,8 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 			
 		// check if special tasks initiated from the form or the daily display need to be carried out...
 		AddDailyReportForm reportForm = (AddDailyReportForm) form;
+		
+		boolean refreshOrders = false;
 
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("refreshOrders"))) {
@@ -109,7 +113,8 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 						customerorderDAO, employeeDAO, employeecontractDAO, suborderDAO) != true) {
 					return mapping.findForward("error");
 				} else {
-					return mapping.findForward("success");
+					//return mapping.findForward("success");
+					refreshOrders = true;
 				}
 			}
 			
@@ -123,6 +128,56 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				} else {
 					return mapping.findForward("success");
 				}
+			}
+			
+			if (((request.getParameter("task") != null) && 
+					(request.getParameter("task").equals("adjustBeginTime"))) || refreshOrders) {
+				// refresh begin time to be displayed
+				refreshOrders = false;
+				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
+				Employeecontract ec = null;	
+				
+				EmployeeHelper eh = new EmployeeHelper();
+				if (request.getSession().getAttribute("currentEmployee") != null) {
+					String currentEmployeeName = (String) request.getSession().getAttribute("currentEmployee");
+					if (currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
+						ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+						request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+					} else {
+						String[] firstAndLast = eh.splitEmployeename(currentEmployeeName);		
+						ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+						request.getSession().setAttribute("currentEmployee", currentEmployeeName);
+					}
+				} else {
+					ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+					request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+				}
+				
+				if (ec == null) {
+					request.setAttribute("errorMessage",
+									"No employee contract found for employee - please call system administrator.");
+					return mapping.findForward("error");
+				}
+				
+				TimereportHelper th = new TimereportHelper();
+				
+				String refDateString = reportForm.getReferenceday();
+								
+				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+				java.util.Date selectedDate;
+				try {
+					selectedDate = simpleDateFormat.parse(refDateString);
+				} catch (ParseException e) {
+					// error occured while parsing date - use current date instead
+					selectedDate = new java.util.Date();
+				} 
+								
+				int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate);
+				reportForm.setSelectedHourBegin(beginTime[0]);
+				reportForm.setSelectedMinuteBegin(beginTime[1]);
+				TimereportHelper.refreshHours(reportForm);			
+				
+				return mapping.findForward("success");			
 			}
 			
 			if ((request.getParameter("task") != null) && 
