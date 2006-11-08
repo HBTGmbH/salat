@@ -52,17 +52,20 @@
 	
 	<table border="0" cellspacing="0" cellpadding="2" 
 			style="background-image:url(/tb/images/backtile.jpg)" class="center">		
+		<tr><td align="left" class="noBborderStyle">
+			<c:out value="${employeeorderalreadyexists}"></c:out>
+		</td></tr>
 		<tr>
             <td align="left" class="noBborderStyle">
                	<b><bean:message key="main.employeeorder.employee.text" /></b>
             </td>
             <td align="left" class="noBborderStyle"> 
-            	<html:select property="employeename" 
-                	value="<%=(String) request.getSession().getAttribute("currentEmployee")%>" >
-					<html:options
+            	<html:select property="employeeId" 
+            		onchange="setStoreAction(this.form, 'refreshEmployees')">
+                	<html:options
 						collection="employeeswithcontract"
 						labelProperty="name"
-						property="name" />
+						property="id" />
 				</html:select>         
 				<html:hidden property="employeecontractId" />   
             </td>

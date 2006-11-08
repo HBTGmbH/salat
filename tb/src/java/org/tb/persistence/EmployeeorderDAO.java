@@ -38,6 +38,17 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.id = ?").setLong(0, id).uniqueResult();
 	}
 	
+	
+	/**
+	 * 
+	 * @param employeecontractId
+	 * @param suborderId
+	 * @return
+	 */
+	public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
+		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ?").setLong(0, employeecontractId).setLong(1, suborderId).uniqueResult();
+	}
+	
 	/**
 	 * Gets the employeeorder for the given sign.
 	 * 
@@ -81,7 +92,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	 * @return List<Employeeorder> 
 	 */
 	public List<Employeeorder> getEmployeeorders() {
-		return getSession().createQuery("from Employeeorder order by sign").list();
+		return getSession().createQuery("from Employeeorder order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").list();
 	}
 
 	/**

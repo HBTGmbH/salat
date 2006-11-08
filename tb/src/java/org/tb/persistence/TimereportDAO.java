@@ -42,7 +42,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 	 * @return List<Timereport>
 	 */
 	public List<Timereport> getTimereports() {
-		return getSession().createQuery("from Timereport order by employeecontract.employee.lastname asc, referenceday.refdate desc, beginhour desc, beginminute desc").list();
+		return getSession().createQuery("from Timereport order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").list();
 	}
 
 	/**
@@ -91,7 +91,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 			Suborder so = (Suborder) iter.next();		
 			// get all timereports for this suborder...
 			List<Timereport> specificTimereports = 
-				getSession().createQuery("from Timereport t where t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, beginhour desc, beginminute desc").setLong(0, so.getId()).setLong(1, coId).list();
+				getSession().createQuery("from Timereport t where t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").setLong(0, so.getId()).setLong(1, coId).list();
 			
 			for (Iterator iter2 = specificTimereports.iterator(); iter2.hasNext();) {
 				// if timereport belongs to reference month/year, add it to result list...
@@ -126,7 +126,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 			Suborder so = (Suborder) iter.next();		
 			// get all timereports for this suborder...
 			List<Timereport> specificTimereports = 
-				getSession().createQuery("from Timereport t where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, beginhour desc, beginminute desc").setDate(0, dt).setLong(1, so.getId()).setLong(2, coId).list();
+				getSession().createQuery("from Timereport t where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").setDate(0, dt).setLong(1, so.getId()).setLong(2, coId).list();
 			
 			for (Iterator iter2 = specificTimereports.iterator(); iter2.hasNext();) {
 				// if timereport belongs to reference month/year, add it to result list...
@@ -153,7 +153,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 		
 		List<Timereport> allTimereports = new ArrayList<Timereport>();
 		List<Timereport> specificTimereports = 
-				getSession().createQuery("from Timereport t where t.employeecontract.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, beginhour desc, beginminute desc").setLong(0, contractId).list();
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").setLong(0, contractId).list();
 			
 		for (Iterator iter2 = specificTimereports.iterator(); iter2.hasNext();) {
 			// if timereport belongs to reference month/year, add it to result list...
@@ -180,7 +180,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 	public List<Timereport> getTimereportsByDateAndEmployeeContractId(long contractId, java.sql.Date dt) {
 		
 		List<Timereport> allTimereports = 
-				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate = ? order by employeecontract.employee.lastname asc, beginhour desc, beginminute desc").setLong(0, contractId).setDate(1, dt).list();
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate = ? order by employeecontract.employee.lastname asc, sequencenumber asc").setLong(0, contractId).setDate(1, dt).list();
 
 		return allTimereports;
 	}
@@ -195,7 +195,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 	public List<Timereport> getTimereportsByDate(java.sql.Date dt) {
 		
 		List<Timereport> allTimereports = 
-				getSession().createQuery("from Timereport t where t.referenceday.refdate = ? order by employeecontract.employee.lastname asc, beginhour desc, beginminute desc").setDate(0, dt).list();
+				getSession().createQuery("from Timereport t where t.referenceday.refdate = ? order by employeecontract.employee.lastname asc, sequencenumber asc").setDate(0, dt).list();
 
 		return allTimereports;
 	}
@@ -220,7 +220,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 			Suborder so = (Suborder) iter.next();		
 			// get all timereports for this suborder AND employee contract...
 			List<Timereport> specificTimereports = 
-				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, beginhour desc, beginminute desc").setLong(0, contractId).setLong(1, so.getId()).setLong(2, coId).list();
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").setLong(0, contractId).setLong(1, so.getId()).setLong(2, coId).list();
 
 			for (Iterator iter2 = specificTimereports.iterator(); iter2.hasNext();) {
 				// if timereport belongs to reference month/year, add it to result list...
@@ -256,7 +256,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 			Suborder so = (Suborder) iter.next();		
 			// get all timereports for this suborder...
 			List<Timereport> specificTimereports = 
-				getSession().createQuery("from Timereport t where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, beginhour desc, beginminute desc").setDate(0, dt).setLong(1, so.getId()).setLong(2, coId).list();
+				getSession().createQuery("from Timereport t where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").setDate(0, dt).setLong(1, so.getId()).setLong(2, coId).list();
 
 			for (Iterator iter2 = specificTimereports.iterator(); iter2.hasNext();) {
 				// if timereport belongs to reference month/year, add it to result list...

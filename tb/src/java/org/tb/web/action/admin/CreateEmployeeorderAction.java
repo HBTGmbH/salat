@@ -14,6 +14,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
@@ -30,7 +31,7 @@ import org.tb.web.form.AddEmployeeOrderForm;
  * @author oda
  *
  */
-public class CreateEmployeeorderAction extends LoginRequiredAction {
+public class CreateEmployeeorderAction extends EmployeeOrderAction {
 	
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeeDAO employeeDAO;
@@ -144,7 +145,9 @@ public class CreateEmployeeorderAction extends LoginRequiredAction {
 		
 		
 		// forward to form jsp
+		checkDatabaseForEmployeeOrder(request, employeeOrderForm, employeecontractDAO, employeeorderDAO);
 		return mapping.findForward("success");
 	}
+	
 	
 }

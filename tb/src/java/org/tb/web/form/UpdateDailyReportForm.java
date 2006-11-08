@@ -25,10 +25,8 @@ public class UpdateDailyReportForm extends ActionForm {
 	private String suborder;
 	private String status;
 	private Double costs;
-	private int selectedHourBegin;
-	private int selectedMinuteBegin;
-	private int selectedHourEnd;
-	private int selectedMinuteEnd;
+	private int selectedDurationHour;
+	private int selectedDurationMinute;
 	
 	private long trOrderId;
 	private long orderId;
@@ -108,36 +106,20 @@ public class UpdateDailyReportForm extends ActionForm {
 		this.costs = costs;
 	}
 
-	public int getSelectedHourBegin() {
-		return selectedHourBegin;
+	public int getSelectedDurationHour() {
+		return selectedDurationHour;
 	}
 
-	public void setSelectedHourBegin(int selectedHourBegin) {
-		this.selectedHourBegin = selectedHourBegin;
+	public void setSelectedDurationHour(int selectedDurationHour) {
+		this.selectedDurationHour = selectedDurationHour;
 	}
 
-	public int getSelectedHourEnd() {
-		return selectedHourEnd;
+	public int getSelectedDurationMinute() {
+		return selectedDurationMinute;
 	}
 
-	public void setSelectedHourEnd(int selectedHourEnd) {
-		this.selectedHourEnd = selectedHourEnd;
-	}
-
-	public int getSelectedMinuteBegin() {
-		return selectedMinuteBegin;
-	}
-
-	public void setSelectedMinuteBegin(int selectedMinuteBegin) {
-		this.selectedMinuteBegin = selectedMinuteBegin;
-	}
-
-	public int getSelectedMinuteEnd() {
-		return selectedMinuteEnd;
-	}
-
-	public void setSelectedMinuteEnd(int selectedMinuteEnd) {
-		this.selectedMinuteEnd = selectedMinuteEnd;
+	public void setSelectedDurationMinute(int selectedDurationMinute) {
+		this.selectedDurationMinute = selectedDurationMinute;
 	}
 
 	public String getStatus() {

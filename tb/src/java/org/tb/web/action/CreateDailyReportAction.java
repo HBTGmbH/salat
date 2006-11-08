@@ -17,6 +17,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.Workingday;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
@@ -24,6 +25,7 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.AddDailyReportForm;
 
@@ -40,6 +42,7 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 	private CustomerorderDAO customerorderDAO;
 	private SuborderDAO suborderDAO;
 	private TimereportDAO timereportDAO;
+	private WorkingdayDAO workingdayDAO;
 	
 
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
@@ -60,6 +63,10 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 	
 	public void setTimereportDAO(TimereportDAO timereportDAO) {
 		this.timereportDAO = timereportDAO;
+	}
+	
+	public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
+		this.workingdayDAO = workingdayDAO;
 	}
 
 	@Override
@@ -149,16 +156,44 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 			selectedDate = new Date();
 		}
 		
+		// search for adequate workingday and set status in session
+		java.sql.Date currentDate = DateUtils.getSqlDate(selectedDate);
+		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(currentDate, ec.getId());
 		
-				
+		boolean workingDayIsAvailable = false;
+		if (workingday != null) {
+			workingDayIsAvailable = true;
+		} 
+		request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
 		
 		// set the begin time as the end time of the latest existing timereport of current employee
 		// for current day. If no other reports exist so far, set standard begin time (0800).
-		int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate);
+		int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
 		reportForm.setSelectedHourBegin(beginTime[0]);
 		reportForm.setSelectedMinuteBegin(beginTime[1]);
-		TimereportHelper.refreshHours(reportForm);
+//		TimereportHelper.refreshHours(reportForm);
 		
+		
+		if (workingday != null) {
+			// set end time in reportform
+			java.util.Date today = new Date();
+			SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
+			SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
+			int hour = new Integer(hourFormat.format(today));
+			int minute = new Integer(minuteFormat.format(today));
+			minute = (minute/5)*5;
+			if (beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) {
+				reportForm.setSelectedMinuteEnd(minute);
+				reportForm.setSelectedHourEnd(hour);
+			} else {
+				reportForm.setSelectedMinuteEnd(beginTime[1]);
+				reportForm.setSelectedHourEnd(beginTime[0]);
+			} 
+		} else {
+			reportForm.setSelectedHourDuration(0);
+			reportForm.setSelectedMinuteDuration(0);
+		}
+		TimereportHelper.refreshHours(reportForm);
 		
 		// init form with selected Date
 		reportForm.setReferenceday(simpleDateFormat.format(selectedDate));
@@ -166,16 +201,20 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 		
 		// init form with first order and corresponding suborders
 		List<Suborder> theSuborders = new ArrayList<Suborder>();
-		if ((orders != null) && (orders.size() > 0)) {
+		if ((orders != null) && (!orders.isEmpty())) {
 			reportForm.setOrder(orders.get(0).getSign());
 			reportForm.setOrderId(orders.get(0).getId());
 			theSuborders = 
 				suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId());
-			if ((theSuborders == null) || (theSuborders.size() <= 0)) {
+			if ((theSuborders == null) || (theSuborders.isEmpty())) {
 				request.setAttribute("errorMessage", 
 						"Orders/suborders inconsistent for employee - please call system administrator.");
 				return mapping.findForward("error");
 			}			
+		} else {
+			request.setAttribute("errorMessage", 
+			"no orders found for employee - please call system administrator.");
+			return mapping.findForward("error");
 		}
 		request.getSession().setAttribute("suborders", theSuborders);
 		request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());

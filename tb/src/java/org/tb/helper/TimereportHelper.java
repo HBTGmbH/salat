@@ -8,16 +8,13 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
-import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
-import org.tb.persistence.MonthlyreportDAO;
+import org.tb.bdom.Workingday;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.AddDailyReportForm;
-import org.tb.web.form.ShowDailyReportForm;
-import org.tb.web.form.UpdateDailyReportForm;
 
 /**
  * Helper class for timereport handling which does not directly deal with persistence
@@ -96,136 +93,136 @@ public class TimereportHelper {
 		return worktime;
 	}
 	
-	/**
-	 * calculates worktime from begin/end times in form
-	 * 
-	 * @param UpdateDailyReportForm form
-	 * 
-	 * @return double - decimal hours
-	 */
-	public static double calculateTime(UpdateDailyReportForm form) {
-		double worktime = 0.0;
-		
-		int hours = form.getSelectedHourEnd() - form.getSelectedHourBegin();
-		int minutes = form.getSelectedMinuteEnd() - form.getSelectedMinuteBegin();
-		
-		if (minutes < 0) {
-			hours -= 1;
-			minutes += 60;
-		}
-		worktime = hours*1. + minutes/60.;
-		
-		return worktime;
-	}
+//	/**
+//	 * calculates worktime from begin/end times in form
+//	 * 
+//	 * @param UpdateDailyReportForm form
+//	 * 
+//	 * @return double - decimal hours
+//	 */
+//	public static double calculateTime(UpdateDailyReportForm form) {
+//		double worktime = 0.0;
+//		
+//		int hours = form.getSelectedHourEnd() - form.getSelectedHourBegin();
+//		int minutes = form.getSelectedMinuteEnd() - form.getSelectedMinuteBegin();
+//		
+//		if (minutes < 0) {
+//			hours -= 1;
+//			minutes += 60;
+//		}
+//		worktime = hours*1. + minutes/60.;
+//		
+//		return worktime;
+//	}
 	
-	/**
-	 * calculates daily sum of hours for 'W' timereports
-	 * 
-	 * @param List<Timereport> allReports
-	 * 
-	 * @return double - decimal hours
-	 */
-	public static double calculateDailyHourSum(List<Timereport> allReports) {
-		double sum = 0.0;
-				
-		if ((allReports != null) && (allReports.size() > 0)) {
-			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
-				Timereport tr = (Timereport) iter.next();
-				// exclude all non-working timereports
-				if (tr.getSortofreport().equals("W"))
-					sum += tr.getHours();
-			}
-		}
-		
-		return sum;
-	}
+//	/**
+//	 * calculates daily sum of hours for 'W' timereports
+//	 * 
+//	 * @param List<Timereport> allReports
+//	 * 
+//	 * @return double - decimal hours
+//	 */
+//	public static double calculateDailyHourSum(List<Timereport> allReports) {
+//		double sum = 0.0;
+//				
+//		if ((allReports != null) && (allReports.size() > 0)) {
+//			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
+//				Timereport tr = (Timereport) iter.next();
+//				// exclude all non-working timereports
+//				if (tr.getSortofreport().equals("W"))
+//					sum += tr.getHours();
+//			}
+//		}
+//		
+//		return sum;
+//	}
 	
-	/**
-	 * calculates sum of hours for a list of timereports
-	 * 
-	 * @param List<Timereport> allReports
-	 * 
-	 * @return double - decimal hours
-	 */
-	public static double calculateTimereportWorkingHourSum(List<Timereport> allReports) {
-		double sum = 0.0;
-				
-		if ((allReports != null) && (allReports.size() > 0)) {
-			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
-				Timereport tr = (Timereport) iter.next();
-				sum += tr.getHours();
-			}
-		}
-		
-		return sum;
-	}
+//	/**
+//	 * calculates sum of hours for a list of timereports
+//	 * 
+//	 * @param List<Timereport> allReports
+//	 * 
+//	 * @return double - decimal hours
+//	 */
+//	public static double calculateTimereportWorkingHourSum(List<Timereport> allReports) {
+//		double sum = 0.0;
+//				
+//		if ((allReports != null) && (allReports.size() > 0)) {
+//			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
+//				Timereport tr = (Timereport) iter.next();
+//				sum += tr.getHours();
+//			}
+//		}
+//		
+//		return sum;
+//	}
 	
-	/**
-	 * also calculates sum of hours for a list of timereports,
-	 * but excludes tr with excludeId in calculation
-	 * 
-	 * @param List<Timereport> allReports
-	 * @param long excludeId
-	 * 
-	 * @return double - decimal hours
-	 */
-	public static double calculateTimereportWorkingHourSum(List<Timereport> allReports, long excludeId) {
-		double sum = 0.0;
-				
-		if ((allReports != null) && (allReports.size() > 0)) {
-			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
-				Timereport tr = (Timereport) iter.next();
-				if (tr.getId() != excludeId) sum += tr.getHours();
-			}
-		}
-		
-		return sum;
-	}
+//	/**
+//	 * also calculates sum of hours for a list of timereports,
+//	 * but excludes tr with excludeId in calculation
+//	 * 
+//	 * @param List<Timereport> allReports
+//	 * @param long excludeId
+//	 * 
+//	 * @return double - decimal hours
+//	 */
+//	public static double calculateTimereportWorkingHourSum(List<Timereport> allReports, long excludeId) {
+//		double sum = 0.0;
+//				
+//		if ((allReports != null) && (allReports.size() > 0)) {
+//			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
+//				Timereport tr = (Timereport) iter.next();
+//				if (tr.getId() != excludeId) sum += tr.getHours();
+//			}
+//		}
+//		
+//		return sum;
+//	}
 	
-	/**
-	 * updates hour balance: adds or subtracts one day used
-	 * 
-	 * @param Timereport tr
-	 * @param action: 1 or -1 (add or subtract when deleting or inserting a report)
-	 * @param td - TimereportDAO being used
-	 * @param md - MonthlyreportDAO being used
-	 * 
-	 * @return void
-	 */
-	public void updateMonthlyHourBalance (Timereport tr, int action, TimereportDAO td, MonthlyreportDAO md) {
-		String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
-		String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM
-		
-		long ecId = tr.getEmployeecontract().getId();
-		
-		Monthlyreport mr = 
-			md.getMonthlyreportByYearAndMonthAndEmployeecontract(ecId, Integer.parseInt(year),
-																				Integer.parseInt(month));
-		if (mr == null) {
-			// add new monthly report
-			mr = md.setNewReport(tr.getEmployeecontract(), 
-							Integer.parseInt(year), Integer.parseInt(month));
-		} 
-		
-		double balance = 0.0;
-		if (tr.getReferenceday().getWorkingday()) {
-			List<Timereport> monthlyTimereports = 
-				td.getTimereportsByMonthAndYearAndEmployeeContractId(ecId, 
-						TimereportHelper.getMonthStringFromTimereport(tr), year);
-		
-			int numberOfDaysWithReports = countWorkDaysInMonthWithTimereports(ecId, year, month, monthlyTimereports, td); 
-		
-			double monthlySum = calculateTimereportWorkingHourSum(monthlyTimereports);
-			double pmnull = numberOfDaysWithReports * tr.getEmployeecontract().getDailyWorkingTime();
-			balance = monthlySum - pmnull;
-		} else {
-			// if not a workingday, just add/remove the hours to/from actual balance...
-			balance = mr.getHourbalance() + (action*tr.getHours());		
-		}
-		// update entry in monthly report...
-		mr.setHourbalance(new Double(balance));
-		md.save(mr); 
-	}
+//	/**
+//	 * updates hour balance: adds or subtracts one day used
+//	 * 
+//	 * @param Timereport tr
+//	 * @param action: 1 or -1 (add or subtract when deleting or inserting a report)
+//	 * @param td - TimereportDAO being used
+//	 * @param md - MonthlyreportDAO being used
+//	 * 
+//	 * @return void
+//	 */
+//	public void updateMonthlyHourBalance (Timereport tr, int action, TimereportDAO td, MonthlyreportDAO md) {
+//		String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
+//		String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM
+//		
+//		long ecId = tr.getEmployeecontract().getId();
+//		
+//		Monthlyreport mr = 
+//			md.getMonthlyreportByYearAndMonthAndEmployeecontract(ecId, Integer.parseInt(year),
+//																				Integer.parseInt(month));
+//		if (mr == null) {
+//			// add new monthly report
+//			mr = md.setNewReport(tr.getEmployeecontract(), 
+//							Integer.parseInt(year), Integer.parseInt(month));
+//		} 
+//		
+//		double balance = 0.0;
+//		if (tr.getReferenceday().getWorkingday()) {
+//			List<Timereport> monthlyTimereports = 
+//				td.getTimereportsByMonthAndYearAndEmployeeContractId(ecId, 
+//						TimereportHelper.getMonthStringFromTimereport(tr), year);
+//		
+//			int numberOfDaysWithReports = countWorkDaysInMonthWithTimereports(ecId, year, month, monthlyTimereports, td); 
+//		
+//			double monthlySum = calculateTimereportWorkingHourSum(monthlyTimereports);
+//			double pmnull = numberOfDaysWithReports * tr.getEmployeecontract().getDailyWorkingTime();
+//			balance = monthlySum - pmnull;
+//		} else {
+//			// if not a workingday, just add/remove the hours to/from actual balance...
+//			balance = mr.getHourbalance() + (action*tr.getHours());		
+//		}
+//		// update entry in monthly report...
+//		mr.setHourbalance(new Double(balance));
+//		md.save(mr); 
+//	}
 	
 	/**
 	 * updates vacation: adds or subtracts one day used
@@ -320,62 +317,62 @@ public class TimereportHelper {
 		return numberOfDays;		
 	}
 	
-	/**
-	 * checks if form input report has time overlap with existing report
-	 * 
-	 * @param Timereport tr
-	 * @param AddDailyReportForm reportForm
-	 * 
-	 * @return boolean
-	 */
-	public static boolean checkTimeOverlap(Timereport tr, AddDailyReportForm reportForm) {
-		
-		int formBegin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
-		int formEnd = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
-		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
-		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
-		
-		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
-	}
+//	/**
+//	 * checks if form input report has time overlap with existing report
+//	 * 
+//	 * @param Timereport tr
+//	 * @param AddDailyReportForm reportForm
+//	 * 
+//	 * @return boolean
+//	 */
+//	public static boolean checkTimeOverlap(Timereport tr, AddDailyReportForm reportForm) {
+//		
+//		int formBegin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
+//		int formEnd = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
+//		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
+//		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
+//		
+//		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
+//	}
 	
-	/**
-	 * checks if form input report has time overlap with existing report
-	 * 
-	 * @param Timereport tr
-	 * @param UpdateDailyReportForm reportForm
-	 * 
-	 * @return boolean
-	 */
-	public static boolean checkTimeOverlap(Timereport tr, UpdateDailyReportForm reportForm) {
-		
-		int formBegin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
-		int formEnd = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
-		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
-		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
+//	/**
+//	 * checks if form input report has time overlap with existing report
+//	 * 
+//	 * @param Timereport tr
+//	 * @param UpdateDailyReportForm reportForm
+//	 * 
+//	 * @return boolean
+//	 */
+//	public static boolean checkTimeOverlap(Timereport tr, UpdateDailyReportForm reportForm) {
+//		
+//		int formBegin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
+//		int formEnd = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
+//		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
+//		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
+//	
+//		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
+//	}
 	
-		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
-	}
-	
-	/**
-	 * checks if form input report has time overlap with existing report
-	 * 
-	 * @param Timereport tr
-	 * @param int hrbegin
-	 * @param int minbegin
-	 * @param int hrend
-	 * @param int minend
-	 * 
-	 * @return boolean
-	 */
-	public static boolean checkTimeOverlap(Timereport tr, int hrbegin, int minbegin, int hrend, int minend) {
-		
-		int formBegin = hrbegin*100 + minbegin;
-		int formEnd = hrend*100 + minend;
-		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
-		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
-		
-		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
-	}
+//	/**
+//	 * checks if form input report has time overlap with existing report
+//	 * 
+//	 * @param Timereport tr
+//	 * @param int hrbegin
+//	 * @param int minbegin
+//	 * @param int hrend
+//	 * @param int minend
+//	 * 
+//	 * @return boolean
+//	 */
+//	public static boolean checkTimeOverlap(Timereport tr, int hrbegin, int minbegin, int hrend, int minend) {
+//		
+//		int formBegin = hrbegin*100 + minbegin;
+//		int formEnd = hrend*100 + minend;
+//		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
+//		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
+//		
+//		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
+//	}
 	
 	/**
 	 * checks the overlap
@@ -419,34 +416,34 @@ public class TimereportHelper {
 		return overlap;
 	}
 	
-	/**
-	 * determines begin hour to set in add report form dependent on reports already existing for this day
-	 * 
-	 * @param long ecId
-	 * @param td - TimereportDAO being used
-	 * 
-	 * @return int[] - hour/minute
-	 */
-	public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, Date date) {
-		int[] beginTime = new int[2];
-		int trLatest = -1;
-		beginTime[0] = GlobalConstants.BEGINHOUR;
-		beginTime[1] = GlobalConstants.BEGINMINUTE;
-		java.sql.Date currentDate = DateUtils.getSqlDate(date);
-		List<Timereport> dailyReports = td.getTimereportsByDateAndEmployeeContractId(ecId, currentDate);
-		
-		for (Iterator iter = dailyReports.iterator(); iter.hasNext();) {
-			Timereport tr = (Timereport) iter.next();
-			int trEnd = 100*tr.getEndhour().intValue() + tr.getEndminute().intValue();
-			if (trEnd > trLatest) trLatest = trEnd;
-		}
-		if (trLatest > 0) {
-			beginTime[0] = trLatest/100;
-			beginTime[1] = trLatest % 100;
-		}
-		
-		return beginTime;
-	}
+//	/**
+//	 * determines begin hour to set in add report form dependent on reports already existing for this day
+//	 * 
+//	 * @param long ecId
+//	 * @param td - TimereportDAO being used
+//	 * 
+//	 * @return int[] - hour/minute
+//	 */
+//	public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, Date date) {
+//		int[] beginTime = new int[2];
+//		int trLatest = -1;
+//		beginTime[0] = GlobalConstants.BEGINHOUR;
+//		beginTime[1] = GlobalConstants.BEGINMINUTE;
+//		java.sql.Date currentDate = DateUtils.getSqlDate(date);
+//		List<Timereport> dailyReports = td.getTimereportsByDateAndEmployeeContractId(ecId, currentDate);
+//		
+//		for (Iterator iter = dailyReports.iterator(); iter.hasNext();) {
+//			Timereport tr = (Timereport) iter.next();
+//			int trEnd = 100*tr.getEndhour().intValue() + tr.getEndminute().intValue();
+//			if (trEnd > trLatest) trLatest = trEnd;
+//		}
+//		if (trLatest > 0) {
+//			beginTime[0] = trLatest/100;
+//			beginTime[1] = trLatest % 100;
+//		}
+//		
+//		return beginTime;
+//	}
 	
 	/**
 	 * refreshes hours after change of begin/end times
@@ -510,4 +507,201 @@ public class TimereportHelper {
 		
 		return true;
 	}
+	
+	
+	/**
+	 * 
+	 * @param date (sql date)
+	 * @param employeeContractId 
+	 * @param timereportDAO
+	 * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1]. 
+	 */
+	public int[] getWorkingTimeForDateAndEmployeeContract(Date date, long employeeContractId, TimereportDAO timereportDAO) {
+		int[] workingTime = new int[2];
+		java.sql.Date currentDate = DateUtils.getSqlDate(date);
+		List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, currentDate);
+		int hours = 0;
+		int minutes = 0;
+		for(Timereport timereport : timereports) {
+			hours += timereport.getDurationhours();
+			minutes += timereport.getDurationminutes();
+		}
+		hours += minutes/60;
+		minutes = minutes%60;
+		workingTime[0] = hours;
+		workingTime[1] = minutes;
+		
+		return workingTime;
+	}
+	
+	
+	/**
+	 * 
+	 * @param ecId
+	 * @param td
+	 * @param date
+	 * @param workingday
+	 * @return Returns int[]  0=hours 1=minutes
+	 */
+	public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, Date date, Workingday workingday) {
+		int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId, td);
+		if (workingday != null) {
+			beginTime[0] += workingday.getStarttimehour();
+			beginTime[1] += workingday.getStarttimeminute();
+			beginTime[0] += workingday.getBreakhours();
+			beginTime[1] += workingday.getBreakminutes();
+			beginTime[0] += beginTime[1]/60;
+			beginTime[1] = beginTime[1]%60;
+		}
+		return beginTime;
+	}
+	
+	
+	/**
+	 * 
+	 * @param ecId
+	 * @param td
+	 * @param date
+	 * @param workingday
+	 * @param tr
+	 * @return
+	 */
+	public int[] determineTimesToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday, Timereport tr) {
+		List<Timereport> timereports = td.getTimereportsByDateAndEmployeeContractId(ecId, date);
+		int[] displayTimes = new int[4];
+		if (workingday != null) {
+			displayTimes[0] = workingday.getStarttimehour();
+			displayTimes[1] = workingday.getStarttimeminute();
+			displayTimes[0] += workingday.getBreakhours();
+			displayTimes[1] += workingday.getBreakminutes();
+			Iterator<Timereport> it = timereports.iterator();
+			Timereport timereport;
+			while (it.hasNext()) {
+				timereport = it.next();
+				if (timereport.getId() == tr.getId()) {
+					break;
+				}
+				displayTimes[0] += timereport.getDurationhours();
+				displayTimes[1] += timereport.getDurationminutes();
+			}
+			displayTimes[2] = displayTimes[0];
+			displayTimes[3] = displayTimes[1];
+			displayTimes[0] += displayTimes[1] / 60;
+			displayTimes[1] = displayTimes[1] % 60;
+			displayTimes[2] += displayTimes[3] / 60;
+			displayTimes[3] = displayTimes[3] % 60;
+		}		
+		return displayTimes;
+	}
+	
+	/**
+	 * Calculates the overall labortime for a list of {@link Timereport}s.
+	 * 
+	 * @param timereports
+	 * @return Returns the calculated time as String (hh:mm)
+	 */
+	public String calculateLaborTime(List<Timereport> timereports) {
+		int laborTimeHour = 0;
+		int laborTimeMinute = 0;
+		
+		for (Timereport timereport : timereports) {
+			
+			int hours = timereport.getDurationhours();
+			int minutes = timereport.getDurationminutes();
+			
+			laborTimeHour += hours;
+			laborTimeMinute += minutes;
+		}
+		laborTimeHour += (laborTimeMinute/60);
+		laborTimeMinute = laborTimeMinute%60;
+		
+		String laborTimeString;
+		if (laborTimeHour < 10) {
+			laborTimeString = "0"+laborTimeHour+":";
+		} else {
+			laborTimeString = laborTimeHour+":";
+		}
+		if (laborTimeMinute < 10) {
+			return laborTimeString+"0"+laborTimeMinute;
+		} else {
+			return laborTimeString+laborTimeMinute;
+		}
+	}
+	
+	/**
+	 * Checks, if the overall labortime for a list of {@link Timereport}s extends the maximal daily labor time.
+	 * 
+	 * @param timereports
+	 * @param maximalDailyLaborTime
+	 * @return Returns true, if the maximal labor time is extended, false otherwise
+	 */
+	public boolean checkLaborTimeMaximum(List<Timereport> timereports, double maximalDailyLaborTime) {
+		int laborTimeHour = 0;
+		int laborTimeMinute = 0;
+		
+		for (Timereport timereport : timereports) {
+			
+			int hours = timereport.getDurationhours();
+			int minutes = timereport.getDurationminutes();
+			
+			laborTimeHour += hours;
+			laborTimeMinute += minutes;
+		}
+		laborTimeHour += (laborTimeMinute/60);
+		laborTimeMinute = laborTimeMinute%60;
+		
+		double laborTime = (double)laborTimeHour+((double)laborTimeMinute/60.0);
+		return (laborTime > maximalDailyLaborTime);
+	}
+	
+	/**
+	 * 
+	 * @param timereports
+	 * @return Returns the sum of the costs of all given timereports.
+	 */
+	public double calculateDailyCosts(List<Timereport> timereports) {
+		Double dailycosts = 0.0;
+		for (Timereport timereport : timereports) {
+			dailycosts += timereport.getCosts();
+		}
+		return dailycosts;
+	}
+	
+	
+	/** 
+	 * 
+	 * @param workingday
+	 * @param request
+	 * @return Returns a string with the calculated quitting time (hh:mm). If something fails (may happen for missing workingday, etc.), "n/a" will be returned.
+	 */
+	public String calculateQuittingTime(Workingday workingday, HttpServletRequest request) {
+		String quittingTime;
+		try {
+			String labortimeString = (String) request.getSession().getAttribute("labortime");
+			String[] laborTimeArray = labortimeString.split(":");
+			String laborTimeHoursString = laborTimeArray[0];
+			String laborTimeMinutesString = laborTimeArray[1];
+			int laborTimeHoursInt = Integer.parseInt(laborTimeHoursString);
+			int laborTimeMinutesInt = Integer.parseInt(laborTimeMinutesString);
+			int quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + laborTimeHoursInt;
+			int quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + laborTimeMinutesInt;
+			quittingtimeHours += quittingtimeMinutes/60;
+			quittingtimeMinutes = quittingtimeMinutes%60;
+			// format return string
+			quittingTime = "";
+			if (quittingtimeHours<10) {
+				quittingTime = quittingTime+"0";
+			}
+			quittingTime = quittingTime+quittingtimeHours+":";
+			if (quittingtimeMinutes<10) {
+				quittingTime = quittingTime+"0";
+			}
+			quittingTime = quittingTime + quittingtimeMinutes;
+		} catch (Exception e) {
+			quittingTime = "n/a";
+		}
+		return quittingTime;
+	}
+	
+	
 }

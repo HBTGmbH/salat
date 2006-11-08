@@ -56,12 +56,12 @@ public class SuborderDAO extends HibernateDaoSupport {
 	public List<Suborder> getSubordersByEmployeeContractId(long contractId) {
 
 		List<Employeeorder> employeeOrders = 
-			getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign").setLong(0, contractId).list();
+			getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign asc, suborder.sign asc").setLong(0, contractId).list();
 		
 		List<Suborder> allSuborders = new ArrayList();
 		for (Iterator iter = employeeOrders.iterator(); iter.hasNext();) {
 			Employeeorder eo = (Employeeorder) iter.next();			
-			Suborder so = (Suborder) getSession().createQuery("from Suborder s where s.id = ?").setLong(0, eo.getSuborder().getId()).uniqueResult();
+			Suborder so = (Suborder) getSession().createQuery("from Suborder s where s.id = ? ").setLong(0, eo.getSuborder().getId()).uniqueResult();
 
 			allSuborders.add(so);
 		}
@@ -79,6 +79,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 	 */
 	public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(long contractId, long coId) {
 
+		
 		List<Suborder> employeeSpecificSuborders = getSubordersByEmployeeContractId(contractId);
 		
 		List<Suborder> allSuborders = new ArrayList();

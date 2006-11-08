@@ -1,6 +1,9 @@
 package org.tb.web.action.admin;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +19,7 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.util.DateUtils;
@@ -28,12 +32,13 @@ import org.tb.web.form.AddEmployeeOrderForm;
  * @author oda
  *
  */
-public class EditEmployeeorderAction extends LoginRequiredAction {
+public class EditEmployeeorderAction extends EmployeeOrderAction {
 	
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeeDAO employeeDAO;
 	private CustomerorderDAO customerorderDAO;
 	private SuborderDAO suborderDAO;
+	private EmployeecontractDAO employeecontractDAO;
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -51,6 +56,10 @@ public class EditEmployeeorderAction extends LoginRequiredAction {
 		this.suborderDAO = suborderDAO;
 	}
 
+	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+		this.employeecontractDAO = employeecontractDAO;
+	}
+	
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
@@ -61,6 +70,9 @@ public class EditEmployeeorderAction extends LoginRequiredAction {
 		
 		// fill the form with properties of employee order to be edited
 		setFormEntries(mapping, request, eoForm, eo);
+		
+		// check if the employeeorder already exists and fill the form with the existing data
+		checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
 		
 		// forward to employee order add/edit form
 		return mapping.findForward("success");	
@@ -79,14 +91,55 @@ public class EditEmployeeorderAction extends LoginRequiredAction {
 		
 		Employeecontract ec = eo.getEmployeecontract();
 		Employee theEmployee = ec.getEmployee();
-		eoForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());
-		request.getSession().setAttribute("currentEmployee", theEmployee.getName());
+		eoForm.setEmployeeId(theEmployee.getId());
+		request.getSession().setAttribute("currentEmployee", theEmployee.getName());	
 		
 		List<Employee> employees = employeeDAO.getEmployees();
 		request.getSession().setAttribute("employees", employees);
 		
+		Employee emp;
+		Iterator it = employees.iterator();
+		List<Employee> employeeswithcontract = new ArrayList<Employee>();
+		while (it.hasNext()) {
+			emp = (Employee) it.next();
+			if (employeecontractDAO.getEmployeeContractByEmployeeId(emp.getId()) != null) {
+				employeeswithcontract.add(emp);
+			}
+		}
+		if ((employeeswithcontract == null) || (employeeswithcontract.size() <= 0)) {
+			request.setAttribute("errorMessage", 
+					"No employees with valid contracts found - please call system administrator.");
+		}
+		
+	
+		// set relevant attributes
+		request.getSession().setAttribute("employees", employees);
+		request.getSession().setAttribute("employeeswithcontract", employeeswithcontract);
+		
+		
 		List<Customerorder> orders = customerorderDAO.getCustomerorders();
 		request.getSession().setAttribute("orders", orders);
+		
+		Customerorder customerorder;
+		List<Customerorder> orderswithsuborders= new ArrayList<Customerorder>();
+		Iterator orderiterator = orders.iterator();
+		while (orderiterator.hasNext()) {
+			customerorder = (Customerorder) orderiterator.next();
+			if (!(customerorder.getSuborders() == null || customerorder.getSuborders().isEmpty())) {
+				orderswithsuborders.add(customerorder);
+			}
+		}
+		if ((orderswithsuborders == null) || (orderswithsuborders.size() <= 0)) {
+			request.setAttribute("errorMessage", 
+					"No customerorders with valid suborders found - please call system administrator.");
+		}
+//		request.getSession().setAttribute("orders", orders);
+		request.getSession().setAttribute("orderswithsuborders", orderswithsuborders);
+		
+//		Customerorder firstCustomerorder = orderswithsuborders.get(0);
+//		if (firstCustomerorder != null) {
+//			request.getSession().setAttribute("selectedcustomerorder", firstCustomerorder);
+//		}
 		
 		//List<Suborder> suborders = suborderDAO.getSuborders();
 		//request.getSession().setAttribute("suborders", suborders);		
@@ -106,5 +159,7 @@ public class EditEmployeeorderAction extends LoginRequiredAction {
 		Date untilDate = new Date(eo.getUntilDate().getTime()); // convert to java.util.Date
 		eoForm.setValidUntil(DateUtils.getSqlDateString(untilDate));
 	}
+	
+	
 	
 }

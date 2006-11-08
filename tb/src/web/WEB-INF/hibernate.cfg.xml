@@ -14,6 +14,7 @@
 		<mapping class="org.tb.bdom.Publicholiday" />	
 		<mapping class="org.tb.bdom.Referenceday" />
 		<mapping class="org.tb.bdom.Monthlyreport" />	
-		<mapping class="org.tb.bdom.Vacation" />	
+		<mapping class="org.tb.bdom.Vacation" />
+		<mapping class="org.tb.bdom.Workingday" />	
 	</session-factory>
 </hibernate-configuration>

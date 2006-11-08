@@ -31,6 +31,7 @@ public class AddEmployeeOrderForm extends ActionForm {
 	private String employeename;
 	private String order;
 	private String suborder;
+	private long employeeId;
 	
 	private long employeecontractId;
 	private long orderId;
@@ -160,10 +161,27 @@ public class AddEmployeeOrderForm extends ActionForm {
 		this.validUntil = validUntil;
 	}
 
+	
+	
+	/**
+	 * @return the employeeId
+	 */
+	public long getEmployeeId() {
+		return employeeId;
+	}
+
+	/**
+	 * @param employeeId the employeeId to set
+	 */
+	public void setEmployeeId(long employeeId) {
+		this.employeeId = employeeId;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
+		employeeId = loginEmployee.getId();
 		sign = "";
 		status = "";
 		validFrom = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'

@@ -288,9 +288,21 @@ public class DateUtils {
 			if (i>=10) hourLabel = "" + i;
 			theList.add(new OptionItem(hourValue, hourLabel));
 		}
-		
-		
-				
+		return theList;
+	}
+	
+	/*
+	 * builds up a list of string with hour to display (1-5)
+	 */
+	public static List getCompleteHoursToDisplay() {
+		List theList = new ArrayList();
+		String hourValue = "";
+		String hourLabel = "";
+		for (int i=0; i<=5; i++) {
+			hourValue = "" + i;
+			hourLabel = "0" + i;
+			theList.add(new OptionItem(hourValue, hourLabel));
+		}
 		return theList;
 	}
 	

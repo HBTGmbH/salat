@@ -47,12 +47,9 @@ public class Timereport implements Serializable {
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Suborder suborder;
 	
-	/** Hours/Minutes */
-	private Double hours;
-	private Integer beginhour;
-	private Integer endhour;
-	private Integer beginminute;
-	private Integer endminute;
+	/** Duration */
+	private Integer durationhours;
+	private Integer durationminutes;
 	
 	/** Sort of Report */
 	private String sortofreport;
@@ -65,7 +62,11 @@ public class Timereport implements Serializable {
 	
 	/** Costs */
 	private Double costs;
-
+	
+	/** Sequencial number */
+	private int sequencenumber;
+	
+	
 	public long getId() {
 		return id;
 	}
@@ -82,46 +83,22 @@ public class Timereport implements Serializable {
 		this.employeecontract = employeecontract;
 	}
 
-	public Double getHours() {
-		return hours;
+	public Integer getDurationhours() {
+		return durationhours;
 	}
 
-	public void setHours(Double hours) {
-		this.hours = hours;
+	public void setDurationhours(Integer durationhours) {
+		this.durationhours = durationhours;
 	}
 	
-	public Integer getBeginhour() {
-		return beginhour;
+	public Integer getDurationminutes() {
+		return durationminutes;
 	}
 
-	public void setBeginhour(Integer beginhour) {
-		this.beginhour = beginhour;
+	public void setDurationminutes(Integer durationminutes) {
+		this.durationminutes = durationminutes;
 	}
 
-	public Integer getBeginminute() {
-		return beginminute;
-	}
-
-	public void setBeginminute(Integer beginminute) {
-		this.beginminute = beginminute;
-	}
-
-	public Integer getEndhour() {
-		return endhour;
-	}
-
-	public void setEndhour(Integer endhour) {
-		this.endhour = endhour;
-	}
-
-	public Integer getEndminute() {
-		return endminute;
-	}
-
-	public void setEndminute(Integer endminute) {
-		this.endminute = endminute;
-	}
-	
 	public String getSortofreport() {
 		return sortofreport;
 	}
@@ -169,5 +146,22 @@ public class Timereport implements Serializable {
 	public void setStatus(String status) {
 		this.status = status;
 	}
+
+	/**
+	 * @return the sequencenumber
+	 */
+	public int getSequencenumber() {
+		return sequencenumber;
+	}
+
+	/**
+	 * @param sequencenumber the sequencenumber to set
+	 */
+	public void setSequencenumber(int sequencenumber) {
+		this.sequencenumber = sequencenumber;
+	}
+
+		
+	
 	
 }

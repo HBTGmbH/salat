@@ -9,7 +9,8 @@
 	prefix="html-el"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%
 Long soId = (Long) request.getSession().getAttribute("currentSuborderId");
 String soIdString = soId.toString();
@@ -100,6 +101,7 @@ String soIdString = soId.toString();
 						collection="employees"
 						labelProperty="name"
 						property="name" />
+					
 				</html:select>         
 				<html:hidden property="employeecontractId" />   
             </td>
@@ -123,7 +125,7 @@ String soIdString = soId.toString();
                         cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
                         cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
                         cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-                        cal.setTodayText("<bean:message key="main.date.popup.today" />");
+                        cal.setTodayText(<bean:message key="main.date.popup.today" />);
                         // cal.select(document.forms[0].referenceday,'anchor1','E yyyy-MM-dd');
                         cal.select(document.forms[0].referenceday,'anchor1','yyyy-MM-dd');
                     }
@@ -185,7 +187,7 @@ String soIdString = soId.toString();
 					<span style="color:red"><html:errors property="suborderId"/></span>            
            	   </td>
        	 	</tr>
-       	 	
+       	 	<c:if test="${workingDayIsAvailable}">
       	    <tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.timereport.begin.text" />:</b></td>
@@ -241,7 +243,7 @@ String soIdString = soId.toString();
            			<span style="color:red"><html:errors property="selectedHourEnd"/></span>
 				</td>     
 			</tr>
-			
+			</c:if>
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.timereport.orduration.text" />:</b></td>

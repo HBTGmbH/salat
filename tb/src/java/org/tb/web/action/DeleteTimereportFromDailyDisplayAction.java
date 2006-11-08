@@ -1,5 +1,7 @@
 package org.tb.web.action;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -7,14 +9,17 @@ import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
+import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
+import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 
 /**
@@ -28,7 +33,9 @@ public class DeleteTimereportFromDailyDisplayAction extends LoginRequiredAction 
 	private TimereportDAO timereportDAO;
 	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
+	private WorkingdayDAO workingdayDAO;
 	
+		
 	public TimereportDAO getTimereportDAO() {
 		return timereportDAO;
 	}
@@ -45,6 +52,9 @@ public class DeleteTimereportFromDailyDisplayAction extends LoginRequiredAction 
 		this.vacationDAO = vacationDAO;
 	}
 	
+	public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
+		this.workingdayDAO = workingdayDAO;
+	}
 	
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -67,7 +77,7 @@ public class DeleteTimereportFromDailyDisplayAction extends LoginRequiredAction 
 		TimereportHelper th = new TimereportHelper();
 		if (tr.getSortofreport().equals("W")) {
 			// update monthly hour balance...
-			th.updateMonthlyHourBalance(tr, -1, timereportDAO, monthlyreportDAO);
+//			th.updateMonthlyHourBalance(tr, -1, timereportDAO, monthlyreportDAO);
 		}
 		if (tr.getSortofreport().equals("V")) {
 			// update vacation...
@@ -77,11 +87,24 @@ public class DeleteTimereportFromDailyDisplayAction extends LoginRequiredAction 
 		// set attributes to be analyzed by target jsp
 		String currentEmployeeName = (String) request.getSession().getAttribute("currentEmployee");
 		Employeecontract ec = tr.getEmployeecontract();
+		List<Timereport> timereports;
 		if (currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
-			request.getSession().setAttribute("timereports", timereportDAO.getTimereportsByDate(tr.getReferenceday().getRefdate()));
+			timereports = timereportDAO.getTimereportsByDate(tr.getReferenceday().getRefdate());
+			request.getSession().setAttribute("timereports", timereports);
 		} else {
-			request.getSession().setAttribute("timereports", timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), tr.getReferenceday().getRefdate()));
+			timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), tr.getReferenceday().getRefdate());
+			request.getSession().setAttribute("timereports", timereports);
 		}
+		
+		
+		request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
+		request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+		request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+		
+		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
+		request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+		
+		
 		
 		request.getSession().setAttribute("currentDay", trDay);
 		request.getSession().setAttribute("currentMonth", trMonth);

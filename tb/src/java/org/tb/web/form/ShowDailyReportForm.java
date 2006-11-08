@@ -28,6 +28,10 @@ public class ShowDailyReportForm extends ActionForm {
 	private int selectedMinuteBegin;
 	private int selectedHourEnd;
 	private int selectedMinuteEnd;
+	private int selectedWorkHourBegin;
+	private int selectedWorkMinuteBegin;
+	private int selectedBreakHour;
+	private int selectedBreakMinute;
 	
 	private long trOrderId;
 	private long orderId;
@@ -129,6 +133,64 @@ public class ShowDailyReportForm extends ActionForm {
 
 	public void setSelectedMinuteEnd(int selectedMinuteEnd) {
 		this.selectedMinuteEnd = selectedMinuteEnd;
+	}
+	
+	
+
+	/**
+	 * @return the selectedBreakHour
+	 */
+	public int getSelectedBreakHour() {
+		return selectedBreakHour;
+	}
+
+	/**
+	 * @param selectedBreakHour the selectedBreakHour to set
+	 */
+	public void setSelectedBreakHour(int selectedBreakHour) {
+		this.selectedBreakHour = selectedBreakHour;
+	}
+
+	/**
+	 * @return the selectedBreakMinute
+	 */
+	public int getSelectedBreakMinute() {
+		return selectedBreakMinute;
+	}
+
+	/**
+	 * @param selectedBreakMinute the selectedBreakMinute to set
+	 */
+	public void setSelectedBreakMinute(int selectedBreakMinute) {
+		this.selectedBreakMinute = selectedBreakMinute;
+	}
+
+	/**
+	 * @return the selectedWorkHourBegin
+	 */
+	public int getSelectedWorkHourBegin() {
+		return selectedWorkHourBegin;
+	}
+
+	/**
+	 * @param selectedWorkHourBegin the selectedWorkHourBegin to set
+	 */
+	public void setSelectedWorkHourBegin(int selectedWorkHourBegin) {
+		this.selectedWorkHourBegin = selectedWorkHourBegin;
+	}
+
+	/**
+	 * @return the selectedWorkMinuteBegin
+	 */
+	public int getSelectedWorkMinuteBegin() {
+		return selectedWorkMinuteBegin;
+	}
+
+	/**
+	 * @param selectedWorkMinuteBegin the selectedWorkMinuteBegin to set
+	 */
+	public void setSelectedWorkMinuteBegin(int selectedWorkMinuteBegin) {
+		this.selectedWorkMinuteBegin = selectedWorkMinuteBegin;
 	}
 
 	public String getStatus() {

@@ -23,6 +23,7 @@ import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Referenceday;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
+import org.tb.bdom.Workingday;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.SuborderHelper;
@@ -36,6 +37,7 @@ import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
+import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.AddDailyReportForm;
 
@@ -56,6 +58,7 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 	private PublicholidayDAO publicholidayDAO;
 	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
+	private WorkingdayDAO workingdayDAO;
 	
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
@@ -97,6 +100,10 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 		this.vacationDAO = vacationDAO;
 	}
 
+	public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
+		this.workingdayDAO = workingdayDAO;
+	}
+	
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			
@@ -172,10 +179,46 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 					selectedDate = new java.util.Date();
 				} 
 								
-				int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate);
+//				int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate);
+//				reportForm.setSelectedHourBegin(beginTime[0]);
+//				reportForm.setSelectedMinuteBegin(beginTime[1]);
+//				TimereportHelper.refreshHours(reportForm);			
+				
+//				 search for adequate workingday and set status in session
+				java.sql.Date currentDate = DateUtils.getSqlDate(selectedDate);
+				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(currentDate, ec.getId());
+				
+				boolean workingDayIsAvailable = false;
+				if (workingday != null) {
+					workingDayIsAvailable = true;
+				} 
+				request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
+				
+				// set the begin time as the end time of the latest existing timereport of current employee
+				// for current day. If no other reports exist so far, set standard begin time (0800).
+				int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
 				reportForm.setSelectedHourBegin(beginTime[0]);
 				reportForm.setSelectedMinuteBegin(beginTime[1]);
-				TimereportHelper.refreshHours(reportForm);			
+//				TimereportHelper.refreshHours(reportForm);
+				
+				
+				if (workingday != null) {
+					// set end time in reportform
+					java.util.Date today = new java.util.Date();
+					SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
+					SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
+					int hour = new Integer(hourFormat.format(today));
+					int minute = new Integer(minuteFormat.format(today));
+					minute = (minute/5)*5;
+					if (beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) {
+						reportForm.setSelectedMinuteEnd(minute);
+						reportForm.setSelectedHourEnd(hour);
+					} else {
+						reportForm.setSelectedMinuteEnd(beginTime[1]);
+						reportForm.setSelectedHourEnd(beginTime[0]);
+					} 
+				}	
+				TimereportHelper.refreshHours(reportForm);
 				
 				return mapping.findForward("success");			
 			}
@@ -260,19 +303,25 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				tr.setEmployeecontract(ec);
 	
 				if (!reportForm.getSortOfReport().equals("W")) {
-					tr.setBeginhour(new Integer(GlobalConstants.BEGINHOUR));
-					tr.setBeginminute(new Integer(GlobalConstants.BEGINMINUTE));
-					tr.setEndhour(new Integer(GlobalConstants.ENDHOUR));
-					tr.setEndminute(new Integer(GlobalConstants.ENDMINUTE));
+//					tr.setBeginhour(new Integer(GlobalConstants.BEGINHOUR));
+//					tr.setBeginminute(new Integer(GlobalConstants.BEGINMINUTE));
+//					tr.setEndhour(new Integer(GlobalConstants.ENDHOUR));
+//					tr.setEndminute(new Integer(GlobalConstants.ENDMINUTE));
 					
-					tr.setHours(ec.getDailyWorkingTime());
+//					tr.setHours(ec.getDailyWorkingTime());
+		
+					Double durationMinutes = (ec.getDailyWorkingTime() % 1)*60;
+					tr.setDurationhours(ec.getDailyWorkingTime().intValue());
+					tr.setDurationminutes(durationMinutes.intValue());
 				} else {
-					tr.setBeginhour(new Integer(reportForm.getSelectedHourBegin()));
-					tr.setBeginminute(new Integer(reportForm.getSelectedMinuteBegin()));
-					tr.setEndhour(new Integer(reportForm.getSelectedHourEnd()));
-					tr.setEndminute(new Integer(reportForm.getSelectedMinuteEnd()));
-					
-					tr.setHours(hours);	
+//					tr.setBeginhour(new Integer(reportForm.getSelectedHourBegin()));
+//					tr.setBeginminute(new Integer(reportForm.getSelectedMinuteBegin()));
+//					tr.setEndhour(new Integer(reportForm.getSelectedHourEnd()));
+//					tr.setEndminute(new Integer(reportForm.getSelectedMinuteEnd()));
+//					
+//					tr.setHours(hours);
+					tr.setDurationhours(new Integer(reportForm.getSelectedHourDuration()));
+					tr.setDurationminutes(new Integer(reportForm.getSelectedMinuteDuration()));
 				}
 				
 				tr.setSortofreport(reportForm.getSortOfReport());
@@ -300,7 +349,26 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 					tr.setStatus("");
 					tr.setCosts(0.0);
 				}
-				
+				List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(tr.getEmployeecontract().getId(), tr.getReferenceday().getRefdate());
+				boolean reportFoundInList = false;
+				if (timereports != null && !timereports.isEmpty()) {
+					Iterator<Timereport> it = timereports.iterator();
+					while (it.hasNext()) {
+						Timereport timereport = it.next();
+						if (timereport.getId() == tr.getId()) {
+							reportFoundInList = true;
+							break;
+						}
+					}
+				}
+				if (!reportFoundInList) {		
+					if (timereports.isEmpty()) {
+						tr.setSequencenumber(1);
+					} else {
+						int lastindex = timereports.size()-1;
+						tr.setSequencenumber(timereports.get(lastindex).getSequencenumber() + 1);
+					}
+				}
 				timereportDAO.save(tr);
 				
 				String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
@@ -308,7 +376,7 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				TimereportHelper th = new TimereportHelper();
 				if (reportForm.getSortOfReport().equals("W")) {
 					// update monthly hour balance...
-					th.updateMonthlyHourBalance(tr, 1, timereportDAO, monthlyreportDAO);				
+//					th.updateMonthlyHourBalance(tr, 1, timereportDAO, monthlyreportDAO);				
 					Monthlyreport mr = 
 						monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract
 						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
@@ -334,19 +402,35 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				request.getSession().setAttribute("currentMonth", DateUtils.getMonthShortString(theDate));
 				request.getSession().setAttribute("currentYear", DateUtils.getYearString(theDate));
 				
+				List<Timereport> reports;
+				int numberOfReports;
 				if (request.getSession().getAttribute("trId") != null) {
 					// edited report from monthly overview
-					// get updated list of timereports from DB					
-					request.getSession().setAttribute("timereports", timereportDAO
-							.getTimereportsByMonthAndYearAndEmployeeContractId(ec.getId(),
-									DateUtils.getMonthShortString(theDate), year));
+					// get updated list of timereports from DB		
+					reports = timereportDAO
+					.getTimereportsByMonthAndYearAndEmployeeContractId(ec.getId(),
+							DateUtils.getMonthShortString(theDate), year);
+					numberOfReports = reports.size();
+					request.getSession().setAttribute("timereports", reports);
 					request.getSession().removeAttribute("trId");
-					return mapping.findForward("showMonthly");
+					request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
+					request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+					request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+					Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
+					request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+					return mapping.findForward("showDaily");
 				} else {
 					// get updated list of timereports from DB
-					request.getSession().setAttribute("timereports", timereportDAO
-							.getTimereportsByDateAndEmployeeContractId(
-									ec.getId(), theDate));
+					reports = timereportDAO
+					.getTimereportsByDateAndEmployeeContractId(
+							ec.getId(), theDate);
+					numberOfReports = reports.size();
+					request.getSession().setAttribute("timereports", reports);
+					request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
+					request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+					request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+					Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
+					request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
 					return mapping.findForward("showDaily");
 				}
 				
@@ -465,15 +549,15 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 						errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.special.alreadyexisting"));		
 						break;
 					}
-					// time overlap
-					if (tr.getSortofreport().equals("W")) {
-						if (TimereportHelper.checkTimeOverlap(tr, reportForm) == true) {
-							timeOverlap = true;
-							if (!(begin > end))
-								errors.add("selectedHourBegin", new ActionMessage("form.timereport.error.timeoverlap"));		
-							break;
-						}
-					}
+//					// time overlap
+//					if (tr.getSortofreport().equals("W")) {
+//						if (TimereportHelper.checkTimeOverlap(tr, reportForm) == true) {
+//							timeOverlap = true;
+//							if (!(begin > end))
+//								errors.add("selectedHourBegin", new ActionMessage("form.timereport.error.timeoverlap"));		
+//							break;
+//						}
+//					}
 				}
 			}
 		}
@@ -522,16 +606,16 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 			
 		}
 		
-		// check hour sum (must be less than 10.0)
-		if ((!timeOverlap) && (reportForm.getSortOfReport().equals("W"))) {
-			List<Timereport> allReports = 
-				timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-			double dailyHourSum = TimereportHelper.calculateDailyHourSum(allReports);
-			if (trId == -1) dailyHourSum += hours; // new report!
-			if (dailyHourSum > GlobalConstants.MAX_HOURS_PER_DAY) {
-				errors.add("selectedHourEnd", new ActionMessage("form.timereport.error.hours.exceeded"));
-			}
-		}
+//		// check hour sum (must be less than 10.0)
+//		if ((!timeOverlap) && (reportForm.getSortOfReport().equals("W"))) {
+//			List<Timereport> allReports = 
+//				timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
+//			double dailyHourSum = TimereportHelper.calculateDailyHourSum(allReports);
+//			if (trId == -1) dailyHourSum += hours; // new report!
+//			if (dailyHourSum > GlobalConstants.MAX_HOURS_PER_DAY) {
+//				errors.add("selectedHourEnd", new ActionMessage("form.timereport.error.hours.exceeded"));
+//			}
+//		}
 			
 		// check costs format
 		if (reportForm.getSortOfReport().equals("W")) {

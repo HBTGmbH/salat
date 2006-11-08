@@ -37,7 +37,7 @@ import org.tb.web.form.AddEmployeeOrderForm;
  * @author oda
  *
  */
-public class StoreEmployeeorderAction extends LoginRequiredAction {
+public class StoreEmployeeorderAction extends EmployeeOrderAction {
 	
 	
 	private EmployeeDAO employeeDAO;
@@ -86,11 +86,14 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 				else {
 					Suborder so = co.getSuborders().get(0);
 					if (so != null) {
+						eoForm.setSuborderId(so.getId());
 						request.getSession().setAttribute("selectedsuborder", so);
 					}
 					request.getSession().setAttribute("suborders", co.getSuborders());
 					request.getSession().setAttribute("selectedcustomerorder", co);
 					eoForm.useDatesFromCustomerOrder(co);
+					eoForm.setOrderId(co.getId());
+					checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
 					return mapping.getInputForward();
 				}
 			}
@@ -103,7 +106,17 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 				Suborder so = suborderDAO.getSuborderById(soId);
 				if (so != null) {
 					request.getSession().setAttribute("selectedsuborder", so);
+					eoForm.setSuborderId(so.getId());
 				}
+				checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
+				return mapping.getInputForward();
+			}
+			
+			if ((request.getParameter("task") != null) &&
+					(request.getParameter("task").equals("refreshEmployees"))) {
+				// check if employeeorder for this employee, order, suborder already exists
+				//eoForm.getOrderId();
+				checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
 				return mapping.getInputForward();
 			}
 			
@@ -114,14 +127,31 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 				// 'main' task - prepare everything to store the employee order.
 				// I.e., copy properties from the form into the employee order before saving.						
 				long eoId = -1;
+				
 				Employeeorder eo = null;
+				
+				Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeId(eoForm.getEmployeeId());
+				long employeecontractId = employeecontract.getId();
+				long suborderId = eoForm.getSuborderId();
+				
+				Employeeorder employeeorderFromForm = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderId(employeecontractId, suborderId);
+				
+				
 				if (request.getSession().getAttribute("eoId") != null) {
 					// edited employeeorder
 					eoId = Long.parseLong(request.getSession().getAttribute("eoId").toString());
 					eo = employeeorderDAO.getEmployeeorderById(eoId);
-				} else {
-					// new report
-					eo = new Employeeorder();
+					if (employeeorderFromForm != null) {
+						employeeorderDAO.deleteEmployeeorderById(eo.getId());
+						eo = employeeorderFromForm;
+					}
+				} else { 
+					if (employeeorderFromForm != null) {
+						eo = employeeorderFromForm;
+					} else {
+						// new report
+						eo = new Employeeorder();
+					}
 				}
 				
 				ActionMessages errorMessages = validateFormData(request, eoForm);
@@ -129,9 +159,7 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 					return mapping.getInputForward();
 				}
 				
-				EmployeeHelper eh = new EmployeeHelper();
-				String[] firstAndLast = eh.splitEmployeename(eoForm.getEmployeename());
-				Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+				Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeId(eoForm.getEmployeeId());
 				eo.setEmployeecontract(ec);
 				eo.setSuborder(suborderDAO.getSuborderById(eoForm.getSuborderId()));
 				
@@ -229,22 +257,22 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 		// check if the order/suborder together with employee already exists
 
 		//if (request.getSession().getAttribute("eoId") == null) {
-			List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
-			Suborder soInForm = suborderDAO.getSuborderById(eoForm.getSuborderId());
-			
-			if(soInForm != null) {
-				for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
-					Employeeorder eo = (Employeeorder) iter.next();
-					System.err.println("SUBORDER SIGNS: " + eoForm.getSuborderId() + "/ '" +
-							eo.getSuborder().getSign() + "', '" + soInForm.getSign() + "'");
-					if ((eo.getSuborder().getSign().equalsIgnoreCase(soInForm.getSign())) &&
-						(eo.getSuborder().getCustomerorder().getSign().equalsIgnoreCase(soInForm.getCustomerorder().getSign())) &&
-						(eo.getEmployeecontract().getEmployee().getName().equalsIgnoreCase(eoForm.getEmployeename()))) {
-						errors.add("suborderId", new ActionMessage("form.employeeorder.error.employeesuborder.alreadyexist"));		
-						break;
-					}
-				}
-			}
+//			List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
+//			Suborder soInForm = suborderDAO.getSuborderById(eoForm.getSuborderId());
+//			
+//			if(soInForm != null) {
+//				for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
+//					Employeeorder eo = (Employeeorder) iter.next();
+//					System.err.println("SUBORDER SIGNS: " + eoForm.getSuborderId() + "/ '" +
+//							eo.getSuborder().getSign() + "', '" + soInForm.getSign() + "'");
+//					if ((eo.getSuborder().getSign().equalsIgnoreCase(soInForm.getSign())) &&
+//						(eo.getSuborder().getCustomerorder().getSign().equalsIgnoreCase(soInForm.getCustomerorder().getSign())) &&
+//						(eo.getEmployeecontract().getEmployee().getId() == (eoForm.getEmployeeId()))) {
+//						errors.add("suborderId", new ActionMessage("form.employeeorder.error.employeesuborder.alreadyexist"));		
+//						break;
+//					}
+//				}
+//			}
 		//}
 		
 		// check if valid suborder exists - otherwise, no save possible
@@ -281,4 +309,6 @@ public class StoreEmployeeorderAction extends LoginRequiredAction {
 		
 		return errors;
 	}
+	
+	
 }
