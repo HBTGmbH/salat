@@ -38,8 +38,7 @@
 <html:form action="/StoreEmployeecontract">
 	<p><h2><bean:message key="main.general.enteremployeecontractproperties.text" />:</h2><br>
 	
-	<table border="0" cellspacing="0" cellpadding="2" 
-			style="background-image:url(/tb/images/backtile.jpg)" class="center">		
+	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">		
 		<tr>
             <td align="left" class="noBborderStyle">
                	<b><bean:message key="main.employeecontract.employee.text" /></b>

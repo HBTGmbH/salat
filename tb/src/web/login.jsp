@@ -34,11 +34,15 @@ while(names.hasMoreElements()) {
 		<tr>
 			<td
 				colspan="1"
-				class="noBborderStyle"><img
+				class="noBborderStyle"
+				height="100px">
+				<!-- 
+				<img
 				src="/tb/images/hbtlogo_halb.jpg"
 				width="130"
 				height="60"
 				border="0">
+				 -->
 			</td>
 			<td class="noBborderStyle">
 				<b><bean:message key="main.general.loginscreen.text" /> </b>
@@ -88,10 +92,15 @@ while(names.hasMoreElements()) {
 		<tr height="30px"></tr>
 		<tr>
 			<td valign="bottom" align="left" class="noBborderStyle">
-				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">Version 1.8.2
+				<!--  
+				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">
+				-->
+				Version 1.9.3
 			</td>
 		</tr>
 		<tr height="10px"/>
+		<tr><td colspan="2" class="noBborderStyle"><font color="red"> Achtung: In dieser Version gibt es noch Bugs in der Tagesansicht der Buchungen.</font>
+		</td></tr> 
 	</table>
 </html:form>
 </body>

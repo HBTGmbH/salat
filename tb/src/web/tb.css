@@ -1,66 +1,95 @@
-body {
-	background-color: #CCFF99;
+body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
+	background-color: #f1f7ff;
+	background-image: url(/tb/images/poller_weiﬂ.jpg);
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-attachment: fixed;
 	font-family: verdana, arial, sans-serif;
 	font-size: 10pt;
 	color: black;
 }
+
 .borderStyle {
-	border-spacing: 0px;
+	border-spacing: 3px;
 	border-collapse: collapse;
 }
+
 .noBborderStyle {
 	border: 0px;
 }
-td, th {
+
+table {
+	border-collapse: separate;
+	border-spacing: 2px;
+	empty-cells: show;
+}
+
+table.backgroundcolor { 
+	/*background-color: #a3bddb;*/
+	color: black;
+}
+
+tr,td,th {
 	font-family: verdana, arial, sans-serif;
 	font-size: 10pt;
 	border: 1px black solid;
-	border-collapse: collapse;
+	padding-top:1px;
+	padding-bottom:1px;
 	padding-left: 4px;
 	padding-right: 4px;
 }
-th {
-	border-bottom-width: 2px;
-	background-color: #cccccc;
-	color: black;
+
+th { /*a3bddb*/
+	background-color: #94b0d0;
+	color: white;
 }
-.bigHeader {
+
+tr.primarycolor {
+	background-color: #ffffff;
+}
+
+tr.secondarycolor {
+	background-color: #c1d5eb;
+}
+
+#button {
+	background-color: #637282;
+	color: #ffffff;
+}
+
+input,select {
+	border: 1px solid black;
+}
+
+img {
+	border: 0px;
+}
+
+/*
+.noLeftBorder,.noLeftRightBorder,.onlyRightBorder,.onlyBottomBorder,.onlyTopBorder
+	{
+	border-left-width: 0px;
+}
+
+.noRightBorder,.noLeftRightBorder,.onlyLeftBorder,.onlyBottomBorder,.onlyTopBorder
+	{
+	border-right-width: 0px;
+}
+
+.noTopBorder,.noTopBottomBorder,.onlyRightBorder,.onlyBottomBorder,.onlyLeftBorder
+	{
+	border-top-width: 0px;
+}
+
+.noBottomBorder,.noTopBottomBorder,.onlyRightBorder,.onlyLeftBorder,.onlyTopBorder
+	{
+	border-bottom-width: 0px;
+}
+*/ /*.bigHeader {
 	font-size: 11pt;
 	font-weight: bold;
 	background-color: #660000;
 	color: white;
 	padding: 4px;
 	border: 1px solid black;
-}
-.noLeftBorder, .noLeftRightBorder, .onlyRightBorder, .onlyBottomBorder, .onlyTopBorder {
-	border-left-width: 0px;
-}
-.noRightBorder, .noLeftRightBorder, .onlyLeftBorder, .onlyBottomBorder, .onlyTopBorder  {
-	border-right-width: 0px;
-}
-.noTopBorder, .noTopBottomBorder, .onlyRightBorder, .onlyBottomBorder, .onlyLeftBorder  {
-	border-top-width: 0px;
-}
-.noBottomBorder, .noTopBottomBorder, .onlyRightBorder, .onlyLeftBorder, .onlyTopBorder  {
-	border-bottom-width: 0px;
-}
-.Stil4 {font-size: 12px}
-.Stil6 {
-	color: #660000;
-	font-size: 24px;
-	font-weight: bold;
-}
-.Stil7 {
-	font-size: 18px;
-	font-weight: bold;
-}
-.Stil8 {
-	font-size: 16px;
-	font-weight: bold;
-}
-input, select {
-	border: 1px solid black;
-}
-img {
-	border: 0px;
-}
+}*/

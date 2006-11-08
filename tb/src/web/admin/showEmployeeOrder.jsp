@@ -2,6 +2,7 @@
 
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
@@ -37,38 +38,49 @@
 
 <span style="color:red"><html:errors /><br></span>
 
-<table border="0" cellspacing="0" cellpadding="2"
-		style="background-image:url(/tb/images/backtile.jpg)" class="center">
+<table class="center backgroundcolor">
    	<tr>
-		<td align="left"> <b><bean:message key="main.employeeorder.employee.text"/></b> </td>
-		<td align="left"> <b><bean:message key="main.employeeorder.customerorder.text"/></b> </td>	
-		<td align="left"> <b><bean:message key="main.employeeorder.suborder.text"/></b> </td>		
+		<th align="left"> <b><bean:message key="main.employeeorder.employee.text"/></b> </td>		<th align="left"> <b><bean:message key="main.employeeorder.customerorder.text"/></b> </th>
+		<th align="left"> <b><bean:message key="main.employeeorder.suborder.text"/></b> </th>		
 		<!--  
 		<td align="left"> <b><bean:message key="main.employeeorder.sign.text"/></b> </td>	
 		-->
-		<td align="left"> <b><bean:message key="main.employeeorder.validfrom.text"/></b> </td>	
-		<td align="left"> <b><bean:message key="main.employeeorder.validuntil.text"/></b> </td>	
-		<td align="center"> <b><bean:message key="main.employeeorder.standingorder.text"/></b> </td>	
-		<td align="left"> <b><bean:message key="main.employeeorder.debithours.text"/></b> </td>	
-		<td align="left"> <b><bean:message key="main.employeeorder.status.text"/></b> </td>	
-		<td align="center"> <b><bean:message key="main.employeeorder.statusreport.text"/></b> </td>	
-		<td align="left"> <b><bean:message key="main.employeeorder.edit.text"/></b> </td>
-		<td align="left"> <b><bean:message key="main.employeeorder.delete.text"/></b> </td>	
+		<th align="left"> <b><bean:message key="main.employeeorder.validfrom.text"/></b> </th>
+		<th align="left"> <b><bean:message key="main.employeeorder.validuntil.text"/></b> </th>
+		<th align="center"> <b><bean:message key="main.employeeorder.standingorder.text"/></b> </th>
+		<th align="left"> <b><bean:message key="main.employeeorder.debithours.text"/></b> </th>	
+		<th align="left"> <b><bean:message key="main.employeeorder.status.text"/></b> </th>	
+		<th align="center"> <b><bean:message key="main.employeeorder.statusreport.text"/></b> </th>	
+		<th align="left"> <b><bean:message key="main.employeeorder.edit.text"/></b> </th>
+		<th align="left"> <b><bean:message key="main.employeeorder.delete.text"/></b> </th>	
 	</tr>
-
-  	<logic:iterate id="employeeorder" name="employeeorders">
-   	 <tr>
-      	<td><bean:write name="employeeorder" property="employeecontract.employee.name"/></td>
-      	<td><bean:write name="employeeorder" property="suborder.customerorder.sign"/></td>
-      	<td><bean:write name="employeeorder" property="suborder.sign"/></td>
+	<c:forEach var="employeeorder" items="${employeeorders}" varStatus="statusID">
+		<c:choose>
+			<c:when test="${statusID.count%2==0}">
+				<tr class="primarycolor">
+			</c:when>
+			<c:otherwise>
+				<tr class="secondarycolor">
+			</c:otherwise>
+		</c:choose>
+      	<td><c:out value="${employeeorder.employeecontract.employee.name}"/></td>
+      	<td><c:out value="${employeeorder.suborder.customerorder.sign}"/></td>
+      	<td><c:out value="${employeeorder.suborder.sign}"/></td>
       	<!-- 
       	<td><bean:write name="employeeorder" property="sign"/></td>
       	 -->
-      	<td><bean:write name="employeeorder" property="fromDate"/></td>
-      	<td><bean:write name="employeeorder" property="untilDate"/></td>
+      	<td><c:out value="${employeeorder.fromDate}"/></td>
+      	<td><c:out value="${employeeorder.untilDate}"/></td>
       	<td align="center"><html:checkbox name="employeeorder" property="standingorder" disabled="true"/> </td>
-      	<td><bean:write name="employeeorder" property="debithours"/></td>
-      	<td><bean:write name="employeeorder" property="status"/></td>
+      	<td><c:out value="${employeeorder.debithours}"/></td>
+      			<c:choose>
+			<c:when test="${employeeorder.status==''}">
+				<td>&nbsp;</td>
+			</c:when>
+			<c:otherwise>
+      	<td><c:out value="${employeeorder.status}"/></td>
+			</c:otherwise>
+		</c:choose>
       	<td align="center"><html:checkbox name="employeeorder" property="statusreport" disabled="true"/></td>
     
      	 <logic:equal name="employeeAuthorized" value="true" scope="session">
@@ -82,7 +94,7 @@
      		</html:form>
      	 </logic:equal>
    	 </tr>
- 	</logic:iterate>
+ 	</c:forEach>
  
   <tr>
 	 <html:form action="/CreateEmployeeorder">
