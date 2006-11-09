@@ -116,21 +116,21 @@
 <br>
 
 <html:form action="/ShowDailyReport">
-	<table border="0" cellspacing="0" cellpadding="2"
-		style="background-image:url(/tb/images/backtile.jpg)" >
+	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor" >
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
+			<td align="left" class="noBborderStyle">
+			<html:select
 				property="employeename"
 				value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
 				onchange="setUpdateTimereportsAction(this.form)">
-				<logic:equal name="employeeAuthorized" value="true" scope="session">
+				
 					<html:option value="ALL EMPLOYEES">
 						<bean:message key="main.general.allemployees.text" />
 					</html:option>
-				</logic:equal>
-				<html:options collection="employees" labelProperty="name"
+				
+				<html:options collection="employeeswithcontract" labelProperty="name"
 					property="name" />
 			</html:select> <logic:equal name="currentEmployee" value="ALL EMPLOYEES"
 				scope="session">
@@ -211,68 +211,55 @@
 					labelProperty="label" />
 			</html:select></td>
 		</tr>
-		<!-- 
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.monthlyreport.month.text" />:</b></td>
-			
-
-		</tr>
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.monthlyreport.year.text" />:</b></td>
-			
-
-		</tr>
-		 -->
-		<tr>
-			<td align="left" class="noBborderStyle"><b>Arbeitsbeginn:</b></td>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.timereport.selectedhourbegin.text" />:</b> <html:select
-				property="selectedWorkHourBegin">
-				<html:options collection="hours" property="value"
-					labelProperty="label" />
-			</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
-			<html:select property="selectedWorkMinuteBegin">
-				<html:options collection="minutes" property="value"
-					labelProperty="label" />
-			</html:select></td>
-			<td align="center" class="noBborderStyle"><html:image
-				onclick="saveBegin(this.form)" src="/tb/images/Save.gif"
-				alt="save start of work" /></td>
-		</tr>
-		<tr>
-			<td align="left" class="noBborderStyle"><b>Pausendauer:</b></td>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.timereport.selectedhourbegin.text" />:</b> <html:select
-				property="selectedBreakHour">
-				<html:options collection="breakhours" property="value"
-					labelProperty="label" />
-			</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
-			<html:select property="selectedBreakMinute">
-				<html:options collection="breakminutes" property="value"
-					labelProperty="label" />
-			</html:select></td>
-			<td align="center" class="noBborderStyle"><html:image
-				onclick="saveBreak(this.form)" src="/tb/images/Save.gif"
-				alt="save break" /></td>
-		</tr>
 		
-		<tr>
-			<td align="left" class="noBborderStyle"><b>errechnete
-			Feierabendszeit:</b></td>
-			<td align="left" class="noBborderStyle"><b><c:out value="${quittingtime}"></c:out></b></td>
-		</tr>
-		
+		<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
+			<tr>
+				<td align="left" class="noBborderStyle"><b>Arbeitsbeginn:</b></td>
+				<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.timereport.selectedhourbegin.text" />:</b> <html:select
+					property="selectedWorkHourBegin">
+					<html:options collection="hours" property="value"
+						labelProperty="label" />
+				</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
+				<html:select property="selectedWorkMinuteBegin">
+					<html:options collection="minutes" property="value"
+						labelProperty="label" />
+				</html:select></td>
+				<td align="center" class="noBborderStyle"><html:image
+					onclick="saveBegin(this.form)" src="/tb/images/Save.gif"
+					alt="save start of work" /></td>
+			</tr>
+			<tr>
+				<td align="left" class="noBborderStyle"><b>Pausendauer:</b></td>
+				<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.timereport.selectedhourbegin.text" />:</b> <html:select
+					property="selectedBreakHour">
+					<html:options collection="breakhours" property="value"
+						labelProperty="label" />
+				</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
+				<html:select property="selectedBreakMinute">
+					<html:options collection="breakminutes" property="value"
+						labelProperty="label" />
+				</html:select></td>
+				<td align="center" class="noBborderStyle"><html:image
+					onclick="saveBreak(this.form)" src="/tb/images/Save.gif"
+					alt="save break" /></td>
+			</tr>
+			
+			<tr>
+				<td align="left" class="noBborderStyle"><b>errechnete
+				Feierabendszeit:</b></td>
+				<td align="left" class="noBborderStyle"><b><c:out value="${quittingtime}"></c:out></b></td>
+			</tr>
+		</c:if>
 	</table>
 	
 </html:form>
 <br>
-<table border="0" cellspacing="0" cellpadding="2"
-	style="background-image:url(/tb/images/backtile.jpg)" >
+<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor" >
 	
 	<tr>
-		<td colspan="4" class="noBborderStyle">&nbsp;</td>
+		<td colspan="5" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right" ><b>gesamt:</b></td>
 		<c:choose><c:when test="${maxlabortime}">			
 			<td align="center" color="red"><b><font color="red"><c:out value="${labortime}"></c:out></font></b></td>
@@ -285,11 +272,8 @@
 	</tr>
 	
 	<tr>
-		<logic:equal name="currentEmployee" value="ALL EMPLOYEES"
-			scope="session">
-			<td align="left"><b><bean:message
-				key="main.timereport.monthly.employee.text" /></b></td>
-		</logic:equal>
+		<td align="left"><b><bean:message
+			key="main.timereport.monthly.employee.text" /></b></td>
 		<td align="left"><b><bean:message
 			key="main.timereport.monthly.refday.text" /></b></td>
 		<td align="left"><b><bean:message
@@ -307,24 +291,18 @@
 		<!--  
 		<td align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </td>	
 		-->
-		<logic:notEqual name="currentEmployee" value="ALL EMPLOYEES"
-			scope="session">
-			<td align="left"><b><bean:message
-				key="main.timereport.monthly.save.text" /></b></td>
-			<td align="left"><b><bean:message
-				key="main.timereport.monthly.edit.text" /></b></td>
-			<td align="left"><b><bean:message
-				key="main.timereport.monthly.delete.text" /></b></td>
-		</logic:notEqual>
+		<td align="left"><b><bean:message
+			key="main.timereport.monthly.save.text" /></b></td>
+		<td align="left"><b><bean:message
+			key="main.timereport.monthly.edit.text" /></b></td>
+		<td align="left"><b><bean:message
+			key="main.timereport.monthly.delete.text" /></b></td>
 	</tr>
 	<logic:iterate id="timereport" name="timereports">
 		<html:form action="/UpdateDailyReport?trId=${timereport.id}">
-			<tr>
-				<logic:equal name="currentEmployee" value="ALL EMPLOYEES"
-					scope="session">
-					<td><bean:write name="timereport"
+			<tr>		
+				<td><bean:write name="timereport"
 						property="employeecontract.employee.name" /></td>
-				</logic:equal>
 				<td
 					title='<bean:write name="timereport" property="referenceday.name"/>'>
 				<logic:equal name="timereport" property="referenceday.holiday"
@@ -354,293 +332,56 @@
 					title="<c:out value="${timereport.suborder.description}"></c:out>">
 				<c:out value="${timereport.suborder.sign}"></c:out><br>
 				</td>
-				<!--  
-      		<logic:notEqual name="currentEmployee" value="ALL EMPLOYEES" scope="session">
-      			<logic:equal name="timereport" property="sortofreport" value="W">   		
-      			<td align="left"> 
-      				<logic:equal name="employeeAuthorized" value="true" scope="session">
-					<html:select property="trOrderId" 
-                		value="${timereport.suborder.customerorder.id}">
-					<html:options
-						collection="orders"
-						labelProperty="sign"
-						property="id" />
-					</html:select>   
-					</logic:equal>
-					<logic:notEqual name="employeeAuthorized" value="true" scope="session">  
-						<logic:equal name="timereport" property="status" value="closed">
-						<bean:write name="timereport" property="suborder.customerorder.sign"/>
-						</logic:equal>
-						<logic:notEqual name="timereport" property="status" value="closed">
-						<html:select property="trOrderId" 
-                			value="${timereport.suborder.customerorder.id}">
-						<html:options
-							collection="orders"
-							labelProperty="sign"
-							property="id" />
-						</html:select>   
-						</logic:notEqual>						
-					</logic:notEqual>				         
-         		  	</td>
-          		  	<td align="left"> 
-          		  	<logic:equal name="employeeAuthorized" value="true" scope="session">
-						<html:select property="trSuborderId" styleClass="mandatory"
-					 		value="${timereport.suborder.id}">
-						<html:options
-							collection="suborders"
-							labelProperty="sign"
-							property="id" />
-							<!--  
-							<c:forEach var="suborder"
-								items="${timereport.suborder.customerorder.suborders}"
-								varStatus="status">
-					 				<html:option value="id"><c:out value="${suborder.sign}"/></html:option>
-					 		</c:forEach>
-					 		-->
-				<!--  
-						</html:select>        
-					 </logic:equal>   
-					 <logic:notEqual name="employeeAuthorized" value="true" scope="session">  
-					 	<logic:equal name="timereport" property="status" value="closed">
-						<bean:write name="timereport" property="suborder.sign"/>
-						</logic:equal>
-						<logic:notEqual name="timereport" property="status" value="closed">   
-						<html:select property="trSuborderId" styleClass="mandatory"
-					 		value="${timereport.suborder.id}">
-					 		<!--
-					 		<c:forEach var="suborder"
-								items="${timereport.suborder.customerorder.suborders}"
-								varStatus="status">
-					 				<html:option value="sign"><c:out value="${suborder.sign}"/></html:option>
-					 		</c:forEach>
-					 		-->
-				<!--  
-					 		<html:options
-									collection="suborders"
-									labelProperty="sign"
-									property="id" />	
-							</html:select>  
-						</logic:notEqual>  
-					</logic:notEqual>                  	
-          		  	</td>
-          		  
-    		  	</logic:equal>
-    		    <logic:notEqual name="timereport" property="sortofreport" value="W">
-      			  <td></td>
-     		 	  <td></td>
-      		  	</logic:notEqual>
-      		  -->
-				<logic:equal name="employeeAuthorized" value="true" scope="session">
-					<td><html:textarea property="comment" cols="12" rows="1"
+				
+				
+				<td><html:textarea property="comment" cols="12" rows="1"
 						value="${timereport.taskdescription}" /> <!--  
 	     		 	<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
 	     		 	--></td>
-				</logic:equal>
-				<logic:notEqual name="employeeAuthorized" value="true"
-					scope="session">
-					<logic:equal name="timereport" property="status" value="closed">
-						<td><bean:write name="timereport" property="taskdescription" /></td>
-					</logic:equal>
-					<logic:notEqual name="timereport" property="status" value="closed">
-						<td><html:textarea property="comment" cols="12" rows="1"
-							value="${timereport.taskdescription}" /> <!--  
-						<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
-						--></td>
-					</logic:notEqual>
-				</logic:notEqual>
+				
+	
 
-				<logic:equal name="timereport" property="sortofreport" value="W">
-
-
-
-					<td align=center nowrap>
-					<logic:equal name="employeeAuthorized"
-						value="true" scope="session">
-
-						<logic:equal name="timereport" property="sortofreport" value="W">
-							<html:select name="timereport" property="selectedDurationHour"
-								value="${timereport.durationhours}">
-								<html:options collection="hoursDuration" property="value"
-									labelProperty="label" />
-							</html:select>
-							<html:select property="selectedDurationMinute"
-								value="${timereport.durationminutes}">
-								<html:options collection="minutes" property="value"
-									labelProperty="label" />
-							</html:select>
-						</logic:equal>
-
-						<logic:notEqual name="timereport" property="sortofreport"
-							value="W">
-							<bean:write name="timereport" property="durationhours" format="#00" />
-							<bean:write name="timereport" property="durationminutes" format="#00" />
-						</logic:notEqual>
-
-					</logic:equal> 
-					<logic:notEqual name="employeeAuthorized" value="true"
-						scope="session">
-
-						<logic:equal name="timereport" property="status" value="closed">
-							<bean:write name="timereport" property="durationhours" format="#00" />
-							<bean:write name="timereport" property="durationminutes" format="#00" />
-						</logic:equal>
-						<logic:notEqual name="timereport" property="status" value="closed">
-							<logic:equal name="timereport" property="sortofreport" value="W">
-								<html:select name="timereport" property="selectedDurationHour"
-									value="${timereport.beginhour}">
-									<html:options collection="hoursDuration" property="value"
-										labelProperty="label" />
-								</html:select>
-								<html:select property="selectedDurationMinute"
-									value="${timereport.beginminute}">
-									<html:options collection="minutes" property="value"
-										labelProperty="label" />
-								</html:select>
-							</logic:equal>
-							<logic:notEqual name="timereport" property="sortofreport"
-								value="W">
-								<bean:write name="timereport" property="durationhours" format="#00" />
-								<bean:write name="timereport" property="durationminutes"
-									format="#00" />
-							</logic:notEqual>
-						</logic:notEqual>
-					</logic:notEqual></td>
+				
+				<td align=center nowrap>
+					
+					<html:select name="timereport" property="selectedDurationHour"
+							value="${timereport.durationhours}">
+						<html:options collection="hoursDuration" property="value"
+								labelProperty="label" />
+					</html:select>
+					<html:select property="selectedDurationMinute"
+							value="${timereport.durationminutes}">
+						<html:options collection="minutes" property="value"
+								labelProperty="label" />
+					</html:select>
+				</td>
 
 
-					<td><logic:equal name="employeeAuthorized" value="true"
-						scope="session">
-						<html:text property="costs" size="8" value="${timereport.costs}" />
-					</logic:equal> <logic:notEqual name="employeeAuthorized" value="true"
-						scope="session">
-						<logic:equal name="timereport" property="status" value="closed">
-							<bean:write name="timereport" property="costs" />
-						</logic:equal>
-						<logic:notEqual name="timereport" property="status" value="closed">
-							<html:text property="costs" size="8" value="${timereport.costs}" />
-						</logic:notEqual>
-					</logic:notEqual></td>
-					<!--  
-    	  	  <td>
-    	 	 	<logic:equal name="employeeAuthorized" value="true" scope="session">
-    	 	 		<!-- This is an ugly solution! Should be improved as soon as we have more options... -->
-					<!--
-	      			<logic:equal name="timereport" property="status" value="closed">
-	      				<html:select property="status" value="${timereport.status}">
-							<html:option value="closed"><bean:message key="main.timereport.select.status.closed.text"/></html:option>
-							<html:option value="open"><bean:message key="main.timereport.select.status.open.text"/></html:option>
-						</html:select> 
-					</logic:equal>
-					<logic:notEqual name="timereport" property="status" value="closed">
-	      				<html:select property="status" value="${timereport.status}">
-							<html:option value="open"><bean:message key="main.timereport.select.status.open.text"/></html:option>
-							<html:option value="closed"><bean:message key="main.timereport.select.status.closed.text"/></html:option>							
-						</html:select> 
-					</logic:notEqual>
-	      			<!--  
-	      			<html:text property="status" size="10" maxlength="<%="" + org.tb.GlobalConstants.STATUS_MAX_LENGTH %>" value="${timereport.status}"/>    
-	      			-->
-					<!-- 
-	      		</logic:equal>
-				<logic:notEqual name="employeeAuthorized" value="true" scope="session">  				
-					 <logic:equal name="timereport" property="status" value="closed">
-    		  			<bean:message key="main.timereport.select.status.closed.text"/>
-    				 </logic:equal>
-    				 <logic:equal name="timereport" property="status" value="open">
-    				  	<html:select property="status" value="${timereport.status}">
-							<html:option value="open"><bean:message key="main.timereport.select.status.open.text"/></html:option>
-							<html:option value="closed"><bean:message key="main.timereport.select.status.closed.text"/></html:option>							
-						</html:select> 
-    		 		 </logic:equal>					 
-				</logic:notEqual>   
-    	 	 </td>
-    	 	 -->
-				</logic:equal>
-				<logic:notEqual name="timereport" property="sortofreport" value="W">
-					<td></td>
-					<td></td>
-					<td></td>
-				</logic:notEqual>
-				<logic:equal name="employeeAuthorized" value="true" scope="session">
-					<td align="center"><html:image
+				<td>
+					<html:text property="costs" size="8" value="${timereport.costs}" />
+				</td>
+				
+				
+				
+				
+				
+				<td align="center"><html:image
 						onclick="confirmSave(this.form, ${timereport.id})"
 						src="/tb/images/Save.gif" alt="Save Timereport" /></td>
-					<td align="center"><html:link
+				<td align="center"><html:link
 						href="/tb/do/EditDailyReport?trId=${timereport.id}">
 						<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
 					</html:link></td>
-					<td align="center"><html:image
+				<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${timereport.id})"
-						src="/tb/images/Delete.gif" alt="Delete Timereport" /> <!--  
-      			<html:link href="/tb/do/DeleteTimereportFromDailyDisplay?trId=${timereport.id}">
-      				<img src="/tb/images/Delete.gif" alt="Delete Timereport" />
-      			</html:link> 
-      			--></td>
-				</logic:equal>
-				<logic:notEqual name="employeeAuthorized" value="true"
-					scope="session">
-					<logic:equal name="timereport" property="status" value="closed">
-						<td align="center"></td>
-						<td align="center"></td>
-						<td align="center"></td>
-					</logic:equal>
-					<logic:notEqual name="timereport" property="status" value="closed">
-						<td align="center"><html:image
-							onclick="confirmSave(this.form, ${timereport.id})"
-							src="/tb/images/Save.gif" alt="Save Timereport" /></td>
-						<td align="center"><html:link
-							href="/tb/do/EditDailyReport?trId=${timereport.id}">
-							<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
-						</html:link></td>
-						<td align="center"><html:image
-							onclick="confirmDelete(this.form, ${timereport.id})"
-							src="/tb/images/Delete.gif" alt="Delete Timereport" /> <!-- 
-     			 	<html:link href="/tb/do/DeleteTimereportFromDailyDisplay?trId=${timereport.id}">
-     			 		<img src="/tb/images/Delete.gif" alt="Delete Timereport" />
-     			 	</html:link> 
-     			 	--></td>
-					</logic:notEqual>
-				</logic:notEqual>
+						src="/tb/images/Delete.gif" alt="Delete Timereport" /> </td>
 
-
-
-				</logic:notEqual>
-
-				<logic:equal name="currentEmployee" value="ALL EMPLOYEES"
-					scope="session">
-					<logic:equal name="timereport" property="sortofreport" value="W">
-						<td align="center"><bean:write name="timereport"
-							property="suborder.customerorder.sign" /></td>
-						<td align="center"><bean:write name="timereport"
-							property="suborder.sign" /></td>
-					</logic:equal>
-					<logic:notEqual name="timereport" property="sortofreport" value="W">
-						<td></td>
-						<td></td>
-					</logic:notEqual>
-					<td><bean:write name="timereport" property="taskdescription" /></td>
-					<td align="center"><bean:write name="timereport"
-						property="durationhours" format="#00" /><bean:write name="timereport"
-						property="durationminutes" format="#00" /></td>
-					<logic:equal name="timereport" property="sortofreport" value="W">
-						<td><bean:write name="timereport" property="costs"
-							format="#0.00" /></td>
-						<td><logic:equal name="timereport" property="status"
-							value="closed">
-							<bean:message key="main.timereport.select.status.closed.text" />
-						</logic:equal> <logic:equal name="timereport" property="status" value="open">
-							<bean:message key="main.timereport.select.status.open.text" />
-						</logic:equal></td>
-					</logic:equal>
-					<logic:notEqual name="timereport" property="sortofreport" value="W">
-						<td></td>
-						<td></td>
-					</logic:notEqual>
-				</logic:equal>
 			</tr>
+			
 		</html:form>
 	</logic:iterate>
 	<tr>
-		<td colspan="4" class="noBborderStyle">&nbsp;</td>
+		<td colspan="5" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right" ><b>gesamt:</b></td>
 		<c:choose><c:when test="${maxlabortime}">			
 			<td align="center" color="red"><b><font color="red"><c:out value="${labortime}"></c:out></font></b></td>
@@ -661,6 +402,7 @@
 </table>
 <br>
 
+
 <span style="color:red"> <b> <html:errors
 	property="trSuborderId" /><br>
 <html:errors property="selectedHourEnd" /><br>
@@ -671,8 +413,7 @@
 
 <logic:notEqual name="currentEmployee" value="ALL EMPLOYEES"
 	scope="session">
-	<table border="0" cellspacing="0" cellpadding="2"
-		style="background-image:url(/tb/images/backtile.jpg)" class="center">
+	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 		<tr>
 			<td><b><bean:message
 				key="main.general.button.monthlyhourbalance.text" />: </b></td>

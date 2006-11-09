@@ -100,18 +100,18 @@ public class UpdateDailyReportAction extends LoginRequiredAction {
 				tr.setTaskdescription(reportForm.getComment());	
 				tr.setEmployeecontract(ec);
 	
-				if (tr.getSortofreport().equals("W")) {
+//				if (tr.getSortofreport().equals("W")) {
 					tr.setDurationhours(new Integer(reportForm.getSelectedDurationHour()));
 					tr.setDurationminutes(new Integer(reportForm.getSelectedDurationMinute()));					
 					tr.setCosts(reportForm.getCosts());
 					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getTrSuborderId()));
-					tr.setStatus(reportForm.getStatus());
-				} else {
-					// 'special' reports: set employee's suborder to null				
-					tr.setSuborder(null);
-					tr.setStatus("");
-					tr.setCosts(0.0);
-				}
+//					tr.setStatus(reportForm.getStatus());
+//				} else {
+//					// 'special' reports: set employee's suborder to null				
+//					tr.setSuborder(null);
+//					tr.setStatus("");
+//					tr.setCosts(0.0);
+//				}
 				
 				// save updated report
 				timereportDAO.save(tr);

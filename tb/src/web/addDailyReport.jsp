@@ -87,8 +87,7 @@ String soIdString = soId.toString();
 <html:form action="/StoreDailyReport" >
 	<p><h2><bean:message key="main.general.entertimereportproperties.text" />:</h2><br>
 	
-	<table width="800" border="0" cellspacing="0" cellpadding="2" 
-			style="background-image:url(/tb/images/backtile.jpg)" class="center">
+	<table width="800" border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 		<tr>
             <td align="left" class="noBborderStyle">
                 <b><bean:message key="main.timereport.employee.fullname.text" /></b>
@@ -309,7 +308,7 @@ String soIdString = soId.toString();
 	<html:link action="/ShowDailyReport"><bean:message key="main.general.showdaily.text" /> </html:link>
     <br><br>
 
-    <table class="center">
+    <table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
         <tr>
         	<td class="noBborderStyle">        
         		<html:submit onclick="setStoreAction(this.form, 'save');return false" >

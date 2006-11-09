@@ -2,7 +2,10 @@ package org.tb.web.action;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -198,6 +201,7 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 		}
 
 		if (request.getParameter("task") == null) {
+						
 			// no special task - prepare everything to show reports
 			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 			EmployeeHelper eh = new EmployeeHelper();
@@ -209,7 +213,24 @@ public class ShowDailyReportAction extends LoginRequiredAction {
 								"No employee contract found for employee - please call system administrator.");
 				return mapping.findForward("error");
 			}
-
+			
+			List<Employee> employees = employeeDAO.getEmployees();
+			List<Employee> employeesWithContract = new LinkedList<Employee>();
+			Iterator<Employee> it = employees.iterator();
+			Employee emp;
+			while (it.hasNext()) {
+				emp = (Employee) it.next();
+				if (employeecontractDAO.getEmployeeContractByEmployeeId(emp.getId()) != null) {
+					employeesWithContract.add(emp);
+				}
+			}
+			if ((employeesWithContract == null) || (employeesWithContract.size() <= 0)) {
+				request.setAttribute("errorMessage", 
+						"No employees with valid contracts found - please call system administrator.");
+				return mapping.findForward("error");
+			}
+			
+			request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
 			request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 			request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
 			request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());

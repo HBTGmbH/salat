@@ -95,11 +95,11 @@ while(names.hasMoreElements()) {
 				<!--  
 				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">
 				-->
-				Version 1.9.3
+				Version 1.10.3
 			</td>
 		</tr>
 		<tr height="10px"/>
-		<tr><td colspan="2" class="noBborderStyle"><font color="red"> Achtung: In dieser Version gibt es noch Bugs in der Tagesansicht der Buchungen.</font>
+		<tr><td colspan="2" class="noBborderStyle"><font color="red"> Achtung: In dieser Version sind die Sichtbarkeiten in der Tagesansicht der Buchungen noch nicht eingestellt.</font>
 		</td></tr> 
 	</table>
 </html:form>

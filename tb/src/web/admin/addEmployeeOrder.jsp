@@ -51,8 +51,15 @@
 	<p><h2><bean:message key="main.general.enteremployeeorderproperties.text" />:</h2><br>
 	
 	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">		
-		<tr><td align="left" class="noBborderStyle">
-			<c:out value="${employeeorderalreadyexists}"></c:out>
+		<tr><td align="left" colspan="2" class="noBborderStyle">
+			<c:choose>
+				<c:when test="${employeeorderalreadyexists}">
+					<i><bean:message key="form.employeeorder.error.employeesuborder.alreadyexist" /></i>
+				</c:when>
+				<c:otherwise>
+					<i><bean:message key="form.employeeorder.error.employeesuborder.isnew" /></i>
+				</c:otherwise>
+			</c:choose>
 		</td></tr>
 		<tr>
             <td align="left" class="noBborderStyle">
