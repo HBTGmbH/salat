@@ -277,6 +277,8 @@ String soIdString = soId.toString();
            		 	<span style="color:red"><html:errors property="costs"/></span>
           	  </td>
        	   </tr>  
+     	   <!-- 
+     	   Status wird zZ nicht angezeigt! 
      	   <tr>
            	  	<td align="left" class="noBborderStyle">
                 	<b><bean:message key="main.timereport.status.text" /></b>
@@ -287,10 +289,11 @@ String soIdString = soId.toString();
 					</html:select> 
 					<!-- 
                 	<html:text property="status" size="30" maxlength="<%="" + org.tb.GlobalConstants.STATUS_MAX_LENGTH %>"/>              
-            		 -->  
+            		 --><!--  
             	<span style="color:red"><html:errors property="status"/></span>
             	</td>
-      	  	</tr>  
+      	  	</tr> 
+      	  	--> 
         </logic:equal>
         <tr>
             <td align="left" class="noBborderStyle">
