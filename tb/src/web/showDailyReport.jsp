@@ -333,49 +333,89 @@
 				<c:out value="${timereport.suborder.sign}"></c:out><br>
 				</td>
 				
+				<!-- visibility dependent on user and status -->
 				
-				<td><html:textarea property="comment" cols="12" rows="1"
-						value="${timereport.taskdescription}" /> <!--  
-	     		 	<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
-	     		 	--></td>
-				
-	
+				<c:choose>
+					<c:when test="${((loginEmployee.name == currentEmployee) && (timereport.status == 'open')) || ((loginEmployee.status == bl) && (timereport.status == 'commited'))}">
+						
+						<!-- Kommentar -->
+						<td><html:textarea property="comment" cols="12" rows="1"
+							value="${timereport.taskdescription}" /> 
+								<!--  
+	     		 				<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
+	     		 				-->
+	     		 		</td>
+						
+						<!-- Dauer -->
+						<td align=center nowrap>
+							<html:select name="timereport" property="selectedDurationHour"
+								value="${timereport.durationhours}">
+								<html:options collection="hoursDuration" property="value"
+									labelProperty="label" />
+							</html:select>
+							<html:select property="selectedDurationMinute"
+								value="${timereport.durationminutes}">
+								<html:options collection="minutes" property="value"
+									labelProperty="label" />
+							</html:select>
+						</td>
 
+						<!-- Kosten -->
+						<td>
+							<html:text property="costs" size="8" value="${timereport.costs}" />
+						</td>
 				
-				<td align=center nowrap>
+						<!-- Speichern -->
+						<td align="center"><html:image
+							onclick="confirmSave(this.form, ${timereport.id})"
+							src="/tb/images/Save.gif" alt="Save Timereport" /></td>
+							
+						<!-- Aendern -->
+						<td align="center"><html:link
+							href="/tb/do/EditDailyReport?trId=${timereport.id}">
+							<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
+							</html:link></td>
+							
+						<!-- Loeschen -->
+						<td align="center"><html:image
+							onclick="confirmDelete(this.form, ${timereport.id})"
+							src="/tb/images/Delete.gif" alt="Delete Timereport" /> </td>
 					
-					<html:select name="timereport" property="selectedDurationHour"
-							value="${timereport.durationhours}">
-						<html:options collection="hoursDuration" property="value"
-								labelProperty="label" />
-					</html:select>
-					<html:select property="selectedDurationMinute"
-							value="${timereport.durationminutes}">
-						<html:options collection="minutes" property="value"
-								labelProperty="label" />
-					</html:select>
-				</td>
+					</c:when>
+					<c:otherwise>
+					
+						<!-- Kommentar -->
+						<td>
+							<c:out value="${timereport.taskdescription}"/>
+	     		 		</td>
+						
+						<!-- Dauer -->
+						<td align="center" nowrap>
+							<c:out value="${timereport.durationhours}"/>:<c:out value="${timereport.durationminutes}"/>
+						</td>
 
-
-				<td>
-					<html:text property="costs" size="8" value="${timereport.costs}" />
-				</td>
+						<!-- Kosten -->
+						<td align="center">
+							<c:out value="${timereport.costs}"/>
+						</td>
 				
-				
-				
-				
-				
-				<td align="center"><html:image
-						onclick="confirmSave(this.form, ${timereport.id})"
-						src="/tb/images/Save.gif" alt="Save Timereport" /></td>
-				<td align="center"><html:link
-						href="/tb/do/EditDailyReport?trId=${timereport.id}">
-						<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
-					</html:link></td>
-				<td align="center"><html:image
-						onclick="confirmDelete(this.form, ${timereport.id})"
-						src="/tb/images/Delete.gif" alt="Delete Timereport" /> </td>
-
+						<!-- Speichern -->
+						<td align="center">
+							<img src="/tb/images/verbot.gif" alt="Save Timereport" />
+						</td>
+							
+						<!-- Aendern -->
+						<td align="center">
+							<img src="/tb/images/verbot.gif" alt="Edit Timereport" />
+						</td>
+							
+						<!-- Loeschen -->
+						<td align="center">
+							<img src="/tb/images/verbot.gif" alt="Delete Timereport" />
+						</td>
+							
+					</c:otherwise>
+				</c:choose>
 			</tr>
 			
 		</html:form>
@@ -392,6 +432,8 @@
 		</c:choose>
 		<td align="center"><b><c:out value="${dailycosts}"></c:out></b></td>
 	</tr>
+	
+	<!-- Add ist immer freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
 		<html:form action="/CreateDailyReport">
 			<td class="noBborderStyle" colspan="6"><html:submit>
@@ -399,6 +441,7 @@
 			</html:submit></td>
 		</html:form>
 	</tr>
+	
 </table>
 <br>
 

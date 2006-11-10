@@ -290,6 +290,7 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				} else {
 					// new report
 					tr = new Timereport();
+					tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
 				}
 				
 				ActionMessages errorMessages = validateFormData(request, reportForm, trId, ec.getId(), hours);
@@ -342,11 +343,11 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				if (reportForm.getSortOfReport().equals("W")) {
 					tr.setCosts(reportForm.getCosts());
 					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
-					tr.setStatus(reportForm.getStatus());
+//					tr.setStatus(reportForm.getStatus());
 				} else {
 					// 'special' reports: set suborder in timereport to null.				
 					tr.setSuborder(null);				
-					tr.setStatus("");
+//					tr.setStatus("");
 					tr.setCosts(0.0);
 				}
 				List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(tr.getEmployeecontract().getId(), tr.getReferenceday().getRefdate());
@@ -370,6 +371,8 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 					}
 				}
 				timereportDAO.save(tr);
+				
+				
 				
 				String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
 				String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM	
@@ -405,34 +408,23 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				List<Timereport> reports;
 				int numberOfReports;
 				if (request.getSession().getAttribute("trId") != null) {
-					// edited report from monthly overview
-					// get updated list of timereports from DB		
-					reports = timereportDAO
-					.getTimereportsByMonthAndYearAndEmployeeContractId(ec.getId(),
-							DateUtils.getMonthShortString(theDate), year);
-					numberOfReports = reports.size();
-					request.getSession().setAttribute("timereports", reports);
+					
 					request.getSession().removeAttribute("trId");
-					request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
-					request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-					request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
-					Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
-					request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-					return mapping.findForward("showDaily");
-				} else {
-					// get updated list of timereports from DB
-					reports = timereportDAO
-					.getTimereportsByDateAndEmployeeContractId(
-							ec.getId(), theDate);
-					numberOfReports = reports.size();
-					request.getSession().setAttribute("timereports", reports);
-					request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
-					request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-					request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
-					Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
-					request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-					return mapping.findForward("showDaily");
-				}
+				}	
+				
+				// get updated list of timereports from DB
+				reports = timereportDAO
+				.getTimereportsByDateAndEmployeeContractId(
+						ec.getId(), theDate);
+				numberOfReports = reports.size();
+				request.getSession().setAttribute("timereports", reports);
+				request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
+				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
+				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+				return mapping.findForward("showDaily");
+				
 				
 			} 
 			if ((request.getParameter("task") != null) && 
@@ -535,7 +527,7 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 		}
 		
 		// check if report types for one day are unique and if there is no time overlap with other work reports
-		boolean timeOverlap = false;
+//		boolean timeOverlap = false;
 		List<Timereport> dailyReports = 
 				timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
 		if ((dailyReports != null) && (dailyReports.size() > 0)) {

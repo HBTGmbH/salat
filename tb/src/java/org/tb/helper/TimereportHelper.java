@@ -584,8 +584,8 @@ public class TimereportHelper {
 				displayTimes[0] += timereport.getDurationhours();
 				displayTimes[1] += timereport.getDurationminutes();
 			}
-			displayTimes[2] = displayTimes[0];
-			displayTimes[3] = displayTimes[1];
+			displayTimes[2] = displayTimes[0] + tr.getDurationhours();
+			displayTimes[3] = displayTimes[1] + tr.getDurationminutes();
 			displayTimes[0] += displayTimes[1] / 60;
 			displayTimes[1] = displayTimes[1] % 60;
 			displayTimes[2] += displayTimes[3] / 60;

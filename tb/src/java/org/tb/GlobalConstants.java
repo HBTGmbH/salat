@@ -93,4 +93,8 @@ public class GlobalConstants {
 	public static final int MONTH_INTVALUE_NOVEMBER = 11;
 	public static final int MONTH_INTVALUE_DECEMBER = 12;
 	
+	public static final String TIMEREPORT_STATUS_OPEN = "open";
+	public static final String TIMEREPORT_STATUS_COMMITED = "commited";
+	public static final String TIMEREPORT_STATUS_CLOSED = "closed";
+	
 }
