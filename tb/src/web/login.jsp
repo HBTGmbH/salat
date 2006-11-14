@@ -29,7 +29,7 @@ while(names.hasMoreElements()) {
 <html:errors />
 </span>
 </b>
-<html:form action="/LoginEmployee">
+<html:form action="/LoginEmployee" focus="loginname">
 	<table align="center" cellspacing="10">
 		<tr>
 			<td
