@@ -67,6 +67,10 @@
 <html:errors />
 
 <p><h2><bean:message key="main.general.mainmenu.monthly.text"/></h2></p><br><br>
+<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+</jsp:include>
+<br><br><br><br>
 
 <html:form action="/ShowMonthlyReport">
 	<table border="0" cellspacing="0" cellpadding="2"

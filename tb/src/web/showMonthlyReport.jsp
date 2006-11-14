@@ -25,7 +25,7 @@
 	<tr>
 		<table>
 			<tr>
-				<html:link page="/showMenu.jsp"><bean:message key="main.general.button.backmainmenu.text" /></html:link>
+				<html:link page="/showWelcome.jsp"><bean:message key="main.general.button.backmainmenu.text" /></html:link>
 			</tr>
 
 		</table>

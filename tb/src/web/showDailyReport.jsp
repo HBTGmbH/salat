@@ -113,7 +113,10 @@
 <h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
 </p>
 <br>
-<br>
+<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+</jsp:include>
+<br><br><br><br>
 
 <html:form action="/ShowDailyReport">
 	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor" >
@@ -474,34 +477,5 @@
 		</tr>
 	</table>
 </logic:notEqual>
-
-<br>
-<html:link action="/ShowMonthlyReport">
-	<bean:message key="main.general.showmonthly.text" />
-</html:link>
-<br>
-<br>
-<table>
-	<tr>
-		<html:form action="/ShowDailyReport?task=back">
-			<td class="noBborderStyle"><html:submit>
-				<bean:message key="main.general.button.backmainmenu.text" />
-			</html:submit></td>
-		</html:form>
-	</tr>
-
-</table>
-
-<br>
-<table class="center">
-	<tr>
-		<td class="noBborderStyle"><html:form action="/LogoutEmployee">
-			<html:submit>
-				<bean:message key="main.general.logout.text" />
-			</html:submit>
-		</html:form></td>
-	</tr>
-</table>
-
 </body>
 </html:html>

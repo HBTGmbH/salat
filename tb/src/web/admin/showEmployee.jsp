@@ -34,12 +34,15 @@
 
 </head>
 <body>
-<center>
 <p>
 <h2><bean:message key="main.general.mainmenu.employees.text" /></h2>
 </p>
 <br>
-<br>
+<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+</jsp:include>
+<br><br><br><br>
+
 
 <span style="color:red"><html:errors /><br>
 </span>
@@ -135,6 +138,5 @@
 		</html:form></td>
 	</tr>
 </table>
-</center>
 </body>
 </html:html>

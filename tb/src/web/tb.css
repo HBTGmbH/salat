@@ -10,12 +10,14 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 }
 
 .borderStyle {
-	border-spacing: 3px;
-	border-collapse: collapse;
+	border-spacing: 2px;
+	border-collapse: seperate;
 }
 
 .noBborderStyle {
 	border: 0px;
+	border-collapse: collapse;
+	border-spacing: 0px;
 }
 
 table {
@@ -24,8 +26,7 @@ table {
 	empty-cells: show;
 }
 
-table.backgroundcolor { 
-	/*background-color: #a3bddb;*/
+table.backgroundcolor { /*background-color: #a3bddb;*/
 	color: black;
 }
 
@@ -33,8 +34,8 @@ tr,td,th {
 	font-family: verdana, arial, sans-serif;
 	font-size: 10pt;
 	border: 1px black solid;
-	padding-top:1px;
-	padding-bottom:1px;
+	padding-top: 1px;
+	padding-bottom: 1px;
 	padding-left: 4px;
 	padding-right: 4px;
 }
@@ -57,39 +58,98 @@ tr.secondarycolor {
 	color: #ffffff;
 }
 
-input,select {
-	border: 1px solid black;
+img{
+	border: 0px;	
 }
 
-img {
-	border: 0px;
+/*-- Menu --*/
+a:link {
+	color: black;
 }
 
-/*
-.noLeftBorder,.noLeftRightBorder,.onlyRightBorder,.onlyBottomBorder,.onlyTopBorder
-	{
-	border-left-width: 0px;
+a:visited {
+	color: black;
 }
 
-.noRightBorder,.noLeftRightBorder,.onlyLeftBorder,.onlyBottomBorder,.onlyTopBorder
-	{
-	border-right-width: 0px;
+a:active {
+	color: red;
 }
 
-.noTopBorder,.noTopBottomBorder,.onlyRightBorder,.onlyBottomBorder,.onlyLeftBorder
-	{
-	border-top-width: 0px;
+a:hover {
+	text-decoration: underline;
 }
 
-.noBottomBorder,.noTopBottomBorder,.onlyRightBorder,.onlyLeftBorder,.onlyTopBorder
-	{
-	border-bottom-width: 0px;
+#nav a {
+	text-decoration: none;
 }
-*/ /*.bigHeader {
+
+#nav li li a {
+	display: block;
+	font-weight: normal;
+	color: black;
+	padding: 0.2em 8px;
+}
+
+#nav li li a:hover {
+	padding: 0.2em 5px;
+	border: 5px solid #4f6b8c;
+	border-width: 0 5px 0 5px;
+}
+
+ul {
+	font-family: verdana, arial, sans-serif;
 	font-size: 11pt;
-	font-weight: bold;
-	background-color: #660000;
-	color: white;
-	padding: 4px;
+	font-weight:bold;
+	border-collapse: collapse;
+	border-spacing: 0px;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+
+li {
+	float: left;
+	position: relative;
+	width: 11em;
 	border: 1px solid black;
-}*/
+	border-width: 1px 0;
+}
+
+
+ul#nav li{
+	background-color: #94b0d0;
+}
+
+ul#nav li:hover, ul#nav li.over{
+	background-color: 7390b1;
+}
+
+ul#nav li li{
+	width: 11em;
+	border:0px;
+}
+
+
+li#first {
+	border-left-width: 1px;
+}
+
+li#last {
+	border-right-width: 1px;
+}
+
+li ul {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+}
+
+li>ul {
+	top: auto;
+	left: auto;
+}
+
+li:hover ul,li.over ul {
+	display: block;
+}

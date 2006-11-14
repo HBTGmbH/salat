@@ -39,7 +39,7 @@
   	<b><bean:message key="main.general.mainmenu.admin.text" />:</b>
   	<br>
 	<menu>
-    	 <li><html:link action="/ShowEmployee"><bean:message key="main.general.mainmenu.employees.text"/></html:link></li><br>
+    	<li><html:link action="/ShowEmployee"><bean:message key="main.general.mainmenu.employees.text"/></html:link></li><br>
  	 	<li><html:link action="/ShowEmployeecontract"><bean:message key="main.general.mainmenu.employeecontracts.text"/></html:link></li><br>
  	 	<li><html:link action="/ShowEmployeeorder"><bean:message key="main.general.mainmenu.employeeorders.text"/></html:link></li><br>	 
   	 	<li><html:link action="/ShowCustomer"><bean:message key="main.general.mainmenu.customers.text"/></html:link></li><br>
@@ -58,6 +58,10 @@
    <input type="submit" name="Submit" value="Logout">
 </form>
  -->
+ 
+<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+</jsp:include>
 
 </body>
 </html>

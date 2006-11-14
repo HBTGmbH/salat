@@ -38,7 +38,10 @@
 <h2><bean:message key="main.general.mainmenu.suborders.text" /></h2>
 </p>
 <br>
-<br>
+<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+</jsp:include>
+<br><br><br><br>
 
 <span style="color:red"><html:errors /><br>
 </span>
@@ -106,30 +109,6 @@
 				<bean:message key="main.general.button.createsuborder.text" />
 			</html:submit></td>
 		</html:form>
-	</tr>
-</table>
-<br>
-<br>
-<table>
-	<tr>
-		<html:form action="/ShowSuborder?task=back">
-			<td class="noBborderStyle"><html:submit>
-				<bean:message key="main.general.button.backmainmenu.text" />
-			</html:submit></td>
-		</html:form>
-	</tr>
-
-</table>
-
-<br>
-<br>
-<table class="center">
-	<tr>
-		<td class="noBborderStyle"><html:form action="/LogoutEmployee">
-			<html:submit>
-				<bean:message key="main.general.logout.text" />
-			</html:submit>
-		</html:form></td>
 	</tr>
 </table>
 </body>
