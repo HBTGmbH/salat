@@ -38,7 +38,8 @@ window.onload=startList;
 <ul id="nav">
 	<li id="first">Buchungen
 	<ul>
-		<li class="first"><html:link styleClass="menu" action="/ShowDailyReport">
+		<li class="first"><html:link styleClass="menu"
+			action="/ShowDailyReport">
 			<bean:message key="main.general.mainmenu.daily.text" />
 		</html:link></li>
 		<li><html:link styleClass="menu" action="/ShowMonthlyReport">
@@ -49,7 +50,8 @@ window.onload=startList;
 	<c:if test="${loginEmployee.status != 'ma'}">
 		<li>Mitarbeiter
 		<ul>
-			<li class="first"><html:link styleClass="menu" action="/ShowEmployee">
+			<li class="first"><html:link styleClass="menu"
+				action="/ShowEmployee">
 				<bean:message key="main.general.mainmenu.employees.text" />
 			</html:link></li>
 			<li><html:link styleClass="menu" action="/ShowEmployeecontract">
@@ -62,7 +64,8 @@ window.onload=startList;
 		</li>
 		<li>Aufträge
 		<ul>
-			<li class="first"><html:link styleClass="menu" action="/ShowCustomer">
+			<li class="first"><html:link styleClass="menu"
+				action="/ShowCustomer">
 				<bean:message key="main.general.mainmenu.customers.text" />
 			</html:link></li>
 			<li><html:link styleClass="menu" action="/ShowCustomerorder">
@@ -74,7 +77,13 @@ window.onload=startList;
 		</ul>
 		</li>
 	</c:if>
-	<li id="last"><html:link action="/LogoutEmployee">
+	<li><html:link action="/LogoutEmployee">
 		<bean:message key="main.general.logout.text" /> (<%=loginEmployee.getLoginname()%>/<%=loginEmployee.getStatus()%>)</html:link></li>
+			<c:if test="${loginEmployee.status == 'ma'}">
+		<li>&nbsp;</li>
+		<li>&nbsp;</li>
+	</c:if>
+	<li>&nbsp;</li>
+	<li id="last">&nbsp;</li>
 </ul>
 </div>
