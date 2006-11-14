@@ -1,6 +1,7 @@
 package org.tb.persistence;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.comparators.CustomerOrderComparator;
 
 public class CustomerorderDAO extends HibernateDaoSupport {
 
@@ -67,12 +69,12 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 	public List<Customerorder> getCustomerordersByEmployeeContractId(long contractId) {
 
 		List<Employeeorder> employeeOrders = 
-			getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign").setLong(0, contractId).list();
+			getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by suborder.customerorder.sign").setLong(0, contractId).list();
 
 		List<Suborder> allSuborders = new ArrayList();
 		for (Iterator iter = employeeOrders.iterator(); iter.hasNext();) {
 			Employeeorder eo = (Employeeorder) iter.next();			
-			Suborder so = (Suborder) getSession().createQuery("from Suborder s where s.id = ?").setLong(0, eo.getSuborder().getId()).uniqueResult();
+			Suborder so = (Suborder) getSession().createQuery("from Suborder s where s.id = ? order by customerorder.sign").setLong(0, eo.getSuborder().getId()).uniqueResult();
 			allSuborders.add(so);
 		}
 
@@ -93,7 +95,7 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 			if (!inList) allCustomerorders.add(co);
 			//allCustomerorders.add(co);
 		}
-
+		Collections.sort(allCustomerorders, new CustomerOrderComparator());
 		return allCustomerorders;
 	}
 		

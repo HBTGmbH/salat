@@ -2,6 +2,7 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.util.Collections;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -14,6 +15,7 @@ import javax.persistence.OneToMany;
 
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.tb.bdom.comparators.SubOrderComparator;
 
 /**
  * Bean for table 'customerorder'.
@@ -159,6 +161,7 @@ public class Customerorder implements Serializable {
 	}
 
 	public List<Suborder> getSuborders() {
+		Collections.sort(suborders, new SubOrderComparator());
 		return suborders;
 	}
 

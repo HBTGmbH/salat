@@ -468,7 +468,7 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 
 		ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
 		EmployeeHelper eh = new EmployeeHelper();
-		List<Employee> employeeOptionList = eh.getEmployeeOptions(loginEmployee, employeeDAO);
+		List<Employee> employeeOptionList = eh.getEmployeeWithContractsOptions(loginEmployee, employeeDAO, employeecontractDAO);
 		request.getSession().setAttribute("employees", employeeOptionList);
 		request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
 		

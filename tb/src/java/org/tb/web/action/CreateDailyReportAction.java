@@ -98,7 +98,7 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 			return mapping.findForward("error");
 		}
 
-		List<Employee> employeeOptionList = eh.getEmployeeOptions(loginEmployee, employeeDAO);
+		List<Employee> employeeOptionList = eh.getEmployeeWithContractsOptions(loginEmployee, employeeDAO, employeecontractDAO);
 		request.getSession().setAttribute("employees", employeeOptionList);
 
 		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
