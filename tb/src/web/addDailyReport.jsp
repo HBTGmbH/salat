@@ -83,15 +83,12 @@ String soIdString = soId.toString();
 
 </head>
 <body>
-
+<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+</jsp:include>
+<br>
 <html:form action="/StoreDailyReport" >
 	<p><h2><bean:message key="main.general.entertimereportproperties.text" />:</h2></p><br>
-	
-	<jsp:include flush="true" page="/menu.jsp">
-	<jsp:param name="title" value="Menu" />
-	</jsp:include>
-	<br><br><br><br>
-	
 	<table width="800" border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 		<tr>
             <td align="left" class="noBborderStyle">
@@ -292,9 +289,9 @@ String soIdString = soId.toString();
                 	<html:select property="status">
 						<html:option value="open"><bean:message key="main.timereport.select.status.open.text"/></html:option>
 					</html:select> 
-					<!-- 
+					 
                 	<html:text property="status" size="30" maxlength="<%="" + org.tb.GlobalConstants.STATUS_MAX_LENGTH %>"/>              
-            		 --><!--  
+            		
             	<span style="color:red"><html:errors property="status"/></span>
             	</td>
       	  	</tr> 
