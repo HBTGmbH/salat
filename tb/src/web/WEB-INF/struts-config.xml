@@ -72,7 +72,7 @@
 	<action-mappings>
 
 		<action path="/LoginEmployee" input="/login.jsp" validate="true" name="loginEmployeeForm">
-			<forward name="success" path="/showMenu.jsp" redirect="true" />
+			<forward name="success" path="/showWelcome.jsp" redirect="true" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		<action path="/LogoutEmployee" name="logoutEmployeeForm">
@@ -93,7 +93,7 @@
 			<forward name="addDaily" path="/addDailyReport.jsp" />
 			<forward name="showMonthly" path="/showMonthlyReport.jsp" />
 			<forward name="showDaily" path="/showDailyReport.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/addDailyReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -102,7 +102,7 @@
 			<forward name="success" path="/showDailyReport.jsp"/>
 			<forward name="addDaily" path="/addDailyReport.jsp" />
 			<forward name="showMonthly" path="/showMonthlyReport.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/addDailyReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -126,14 +126,14 @@
 			<forward name="success" path="/showMonthlyReport.jsp"/>
 			<forward name="error" path="/admin/error.jsp" />
 			<forward name="newreport" path="/addDailyReport.jsp" />
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 		</action>
 		
 		<action path="/ShowDailyReport" input="/showDailyReport.jsp" validate="true" name="showDailyReportForm">
 			<forward name="success" path="/showDailyReport.jsp"/>
 			<forward name="error" path="/admin/error.jsp" />
 			<forward name="newreport" path="/addDailyReport.jsp" />
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 		</action>
 		
 		<!-- Admin -->
@@ -156,13 +156,13 @@
 		
 		<action path="/ShowCustomer" name="showCustomerForm">
 			<forward name="success" path="/admin/showCustomer.jsp"/>
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
 		<action path="/StoreCustomer" input="/admin/addCustomer.jsp" validate="true" name="addCustomerForm">
 			<forward name="success" path="/admin/showCustomer.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addCustomer.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -185,13 +185,13 @@
 		
 		<action path="/ShowCustomerorder" name="showCustomerOrderForm">
 			<forward name="success" path="/admin/showCustomerOrder.jsp"/>
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
 		<action path="/StoreCustomerorder" input="/admin/addCustomerOrder.jsp" validate="true" name="addCustomerOrderForm">
 			<forward name="success" path="/admin/showCustomerOrder.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addCustomerOrder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -220,7 +220,7 @@
 		
 		<action path="/StoreSuborder" input="/admin/addSuborder.jsp" validate="true" name="addSuborderForm">
 			<forward name="success" path="/admin/showSuborder.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addSuborder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -243,13 +243,13 @@
 		
 		<action path="/ShowEmployeeorder" name="showEmployeeOrderForm">
 			<forward name="success" path="/admin/showEmployeeOrder.jsp"/>
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
 		<action path="/StoreEmployeeorder" input="/admin/addEmployeeOrder.jsp" validate="true" name="addEmployeeOrderForm">
 			<forward name="success" path="/admin/showEmployeeOrder.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addEmployeeOrder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>	
@@ -272,13 +272,13 @@
 		
 		<action path="/ShowEmployeecontract" name="showEmployeeContractForm">
 			<forward name="success" path="/admin/showEmployeeContract.jsp"/>
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
 		<action path="/StoreEmployeecontract" input="/admin/addEmployeeContract.jsp" validate="true" name="addEmployeeContractForm">
 			<forward name="success" path="/admin/showEmployeeContract.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addEmployeeContract.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>	
@@ -301,13 +301,13 @@
 		
 		<action path="/ShowEmployee" name="showEmployeeForm">
 			<forward name="success" path="/admin/showEmployee.jsp"/>
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
 		<action path="/StoreEmployee" input="/admin/addEmployee.jsp" validate="true" name="addEmployeeForm">
 			<forward name="success" path="/admin/showEmployee.jsp" />
-			<forward name="cancel" path="/showMenu.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addEmployee.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>	
