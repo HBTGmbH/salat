@@ -210,7 +210,15 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 					int hour = new Integer(hourFormat.format(today));
 					int minute = new Integer(minuteFormat.format(today));
 					minute = (minute/5)*5;
-					if (beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) {
+					
+					String todayString = simpleDateFormat.format(today);
+					try {
+						today = simpleDateFormat.parse(todayString);
+					} catch (Exception e) {
+						throw new RuntimeException("this should never happen...!");
+					}	
+					
+					if ((beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) && selectedDate.equals(today)) {
 						reportForm.setSelectedMinuteEnd(minute);
 						reportForm.setSelectedHourEnd(hour);
 					} else {

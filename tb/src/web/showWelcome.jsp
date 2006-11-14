@@ -4,7 +4,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Insert title here</title>
+<title>HBT TB Welcome</title>
 </head>
 <body>
 <jsp:include flush="true" page="/menu.jsp">

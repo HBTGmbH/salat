@@ -132,6 +132,7 @@
 	<!-- HSQL Datenbank Instanz -->
 	<bean name="hsqlDatabase" class="org.tb.util.HsqlDbWrapper" init-method="start" destroy-method="stop">
 		<property name="path">
+			
 			   
 			<value>file:d:/temp/hsqldb/data/taetigkeitsberichte</value>
 			

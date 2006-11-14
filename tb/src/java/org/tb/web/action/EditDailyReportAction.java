@@ -90,6 +90,7 @@ public class EditDailyReportAction extends LoginRequiredAction {
 		request.getSession().setAttribute("orders", customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId()));
 		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
 		
+		
 		reportForm.reset(mapping, request);
 		reportForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());
 		Date utilDate = new Date(tr.getReferenceday().getRefdate().getTime()); // convert to java.util.Date
@@ -105,15 +106,20 @@ public class EditDailyReportAction extends LoginRequiredAction {
 		request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
 		TimereportHelper th = new TimereportHelper();
 		int[] displayTime = th.determineTimesToDisplay(ec.getId(), timereportDAO, reportDate, workingday, tr);
-			
-		reportForm.setSelectedHourBegin(displayTime[0]);
-		reportForm.setSelectedMinuteBegin(displayTime[1]);
-		reportForm.setSelectedHourEnd(displayTime[2]);
-		reportForm.setSelectedMinuteEnd(displayTime[3]);
-		reportForm.setComment(tr.getTaskdescription());
 		
-		TimereportHelper.refreshHours(reportForm);
-				
+		if (workingDayIsAvailable) {
+			reportForm.setSelectedHourBegin(displayTime[0]);
+			reportForm.setSelectedMinuteBegin(displayTime[1]);
+			reportForm.setSelectedHourEnd(displayTime[2]);
+			reportForm.setSelectedMinuteEnd(displayTime[3]);
+			reportForm.setComment(tr.getTaskdescription());
+			
+			TimereportHelper.refreshHours(reportForm);
+		} else {
+			reportForm.setSelectedHourDuration(tr.getDurationhours());
+			reportForm.setSelectedMinuteDuration(tr.getDurationminutes());
+		}
+		
 		reportForm.setSortOfReport(tr.getSortofreport());
 		request.getSession().setAttribute("report", tr.getSortofreport());
 		if (tr.getSortofreport().equals("W")) {

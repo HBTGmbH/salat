@@ -95,7 +95,7 @@ while(names.hasMoreElements()) {
 				<!--  
 				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">
 				-->
-				Version 1.11.3
+				Version 1.12.4
 			</td>
 		</tr>
 		<tr height="10px"/>

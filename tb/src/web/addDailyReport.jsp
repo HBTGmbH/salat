@@ -85,7 +85,12 @@ String soIdString = soId.toString();
 <body>
 
 <html:form action="/StoreDailyReport" >
-	<p><h2><bean:message key="main.general.entertimereportproperties.text" />:</h2><br>
+	<p><h2><bean:message key="main.general.entertimereportproperties.text" />:</h2></p><br>
+	
+	<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+	</jsp:include>
+	<br><br><br><br>
 	
 	<table width="800" border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 		<tr>
