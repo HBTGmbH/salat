@@ -34,16 +34,13 @@
 
 </head>
 <body>
-<p>
-<h2><bean:message key="main.general.mainmenu.employees.text" /></h2>
-</p>
-<br>
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
-<br><br><br><br>
-
-
+<br>
+<p>
+<h2><bean:message key="main.general.mainmenu.employees.text" /></h2>
+</p>
 <span style="color:red"><html:errors /><br>
 </span>
 

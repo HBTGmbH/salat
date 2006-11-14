@@ -108,16 +108,13 @@
 
 </head>
 <body>
-
-<p>
-<h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
-</p>
-<br>
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
-<br><br><br><br>
-
+<br>
+<p>
+<h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
+</p>
 <html:form action="/ShowDailyReport">
 	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor" >
 		<tr>

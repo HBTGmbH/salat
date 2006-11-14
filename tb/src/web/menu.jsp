@@ -29,11 +29,10 @@ window.onload=startList;
 
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
-
-<h2 style="color: black"><bean:message
-	key="main.general.mainmenu.welcome.text" /></h2>
-
-<br>
+<center>
+<h1><bean:message key="main.general.mainmenu.menu.text" />
+</h1>
+</center>
 <div class="menu">
 <ul id="nav">
 	<li id="first">Buchungen
@@ -79,11 +78,11 @@ window.onload=startList;
 	</c:if>
 	<li><html:link action="/LogoutEmployee">
 		<bean:message key="main.general.logout.text" /> (<%=loginEmployee.getLoginname()%>/<%=loginEmployee.getStatus()%>)</html:link></li>
-			<c:if test="${loginEmployee.status == 'ma'}">
+	<c:if test="${loginEmployee.status == 'ma'}">
 		<li>&nbsp;</li>
 		<li>&nbsp;</li>
 	</c:if>
-	<li>&nbsp;</li>
+
 	<li id="last">&nbsp;</li>
 </ul>
 </div>
