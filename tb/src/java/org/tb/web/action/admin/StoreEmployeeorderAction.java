@@ -142,8 +142,11 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					eoId = Long.parseLong(request.getSession().getAttribute("eoId").toString());
 					eo = employeeorderDAO.getEmployeeorderById(eoId);
 					if (employeeorderFromForm != null) {
-						employeeorderDAO.deleteEmployeeorderById(eo.getId());
+						if (eo.getId() != employeeorderFromForm.getId()) {
+							employeeorderDAO.deleteEmployeeorderById(eo.getId());
+						}
 						eo = employeeorderFromForm;
+						
 					}
 				} else { 
 					if (employeeorderFromForm != null) {
