@@ -39,7 +39,8 @@
 <p>
 <h2><bean:message key="main.general.mainmenu.customers.text" /></h2>
 </p>
-<span style="color:red"><html:errors /><br>
+<br>
+<span style="color:red"><html:errors footer="<br>"/>
 </span>
 
 <table class="backgroundcolor">
@@ -80,7 +81,7 @@
 	</c:forEach>
 	<tr>
 		<html:form action="/CreateCustomer">
-			<td class="noBborderStyle" colspan="2"><html:submit>
+			<td class="noBborderStyle" colspan="2"><html:submit styleId="button">
 				<bean:message key="main.general.button.createcustomer.text" />
 			</html:submit></td>
 		</html:form>

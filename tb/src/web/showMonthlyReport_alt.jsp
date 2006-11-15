@@ -72,6 +72,7 @@
 <p>
 <h2><bean:message key="main.general.mainmenu.monthly.text" /></h2>
 </p>
+<br>
 <html:form action="/ShowMonthlyReport">
 	<table border="0" cellspacing="0" cellpadding="2"
 		style="background-image:url(/tb/images/backtile.jpg)" class="center">
@@ -275,7 +276,7 @@
   <tr>  	
   		<html:form action="/CreateDailyReport">		     
         	<td class="noBborderStyle" colspan="6">   
-        		<html:submit>
+        		<html:submit styleId="button">
         			<bean:message key="main.general.button.createnewreport.text"/>
         		</html:submit>   
         	</td>  		

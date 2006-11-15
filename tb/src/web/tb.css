@@ -1,6 +1,6 @@
 body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	background-color: #f1f7ff;
-	background-image: url(/tb/images/poller_weiﬂ.jpg);
+	background-image: url(/tb/images/poller.jpg);
 	background-repeat: no-repeat;
 	background-position: center center;
 	background-attachment: fixed;
@@ -26,7 +26,8 @@ table {
 	empty-cells: show;
 }
 
-table.backgroundcolor { /*background-color: #a3bddb;*/
+table.backgroundcolor { 
+	/*background-color: #a3bddb;*/
 	color: black;
 }
 
@@ -46,7 +47,7 @@ th { /*a3bddb*/
 }
 
 tr.primarycolor {
-	background-color: #ffffff;
+	background-color: transparent;
 }
 
 tr.secondarycolor {
@@ -54,7 +55,7 @@ tr.secondarycolor {
 }
 
 #button {
-	background-color: #637282;
+	background-color: #7390b1;
 	color: #ffffff;
 }
 

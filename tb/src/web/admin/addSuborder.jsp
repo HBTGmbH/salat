@@ -34,19 +34,16 @@
 <body>
 
 <html:form action="/StoreSuborder">
-	<p>
-	<h2><bean:message key="main.general.entersuborderproperties.text" />:</h2>
-	<br>
+
 	<jsp:include flush="true" page="/menu.jsp">
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
+	<p>
+	<h2><bean:message key="main.general.entersuborderproperties.text" />:</h2>
+	</p>
 	<br>
-	<br>
-	<br>
-
-	<table border="0" cellspacing="0" cellpadding="2"
-		class="center backgroundcolor">
+	<table class="center backgroundcolor">
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.customerorder.text" /></b></td>
@@ -71,8 +68,8 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.description.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:textarea
-				property="description" cols="30" rows="4" /> <span style="color:red"><html:errors
-				property="description" /></span></td>
+				property="description" cols="30" rows="4" /> <span
+				style="color:red"><html:errors property="description" /></span></td>
 		</tr>
 
 		<tr>
@@ -111,26 +108,15 @@
 
 	</table>
 	<br>
-	<html:link action="/ShowSuborder">
-		<bean:message key="main.general.showsuborders.text" />
-	</html:link>
-	<br>
-	<br>
-	<br>
-
 	<table class="center">
 		<tr>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save');return false">
+				onclick="setStoreAction(this.form, 'save');return false" styleId="button">
 				<bean:message key="main.general.button.save.text" />
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'reset')">
+				onclick="setStoreAction(this.form, 'reset')" styleId="button">
 				<bean:message key="main.general.button.reset.text" />
-			</html:submit></td>
-			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'back')">
-				<bean:message key="main.general.button.backmainmenu.text" />
 			</html:submit></td>
 		</tr>
 	</table>

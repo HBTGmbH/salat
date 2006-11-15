@@ -134,7 +134,7 @@
 		<property name="path">
 			
 			   
-			<value>file:d:/temp/hsqldb/data/taetigkeitsberichte</value>
+			<value>file:d:/temp/hsqldb/taetigkeitsberichte</value>
 			
 			<!-- 
 			<value>file:/root/tb/hsqldb/taetigkeitsberichte</value>

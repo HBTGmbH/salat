@@ -41,11 +41,11 @@
 <p>
 <h2><bean:message key="main.general.mainmenu.customerorders.text" /></h2>
 </p>
-<span style="color:red"><html:errors /><br>
+<br>
+<span style="color:red"><html:errors footer="<br>"/>
 </span>
 
-<table border="0" cellspacing="0" cellpadding="2"
-	class="center backgroundcolor">
+<table class="center backgroundcolor">
 	<tr>
 		<th align="left"><b><bean:message
 			key="main.customerorder.customer.text" /></b></th>
@@ -108,7 +108,7 @@
 	</c:forEach>
 	<tr>
 		<html:form action="/CreateCustomerorder">
-			<td class="noBborderStyle" colspan="4"><html:submit>
+			<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
 				<bean:message key="main.general.button.createcustomerorder.text" />
 			</html:submit></td>
 		</html:form>

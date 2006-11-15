@@ -40,12 +40,11 @@
 <p>
 <h2><bean:message key="main.general.mainmenu.suborders.text" /></h2>
 </p>
-
-<span style="color:red"><html:errors /><br>
+<br>
+<span style="color:red"><html:errors footer="<br>"/>
 </span>
 
-<table border="0" cellspacing="0" cellpadding="2"
-	class="center backgroundcolor">
+<table class="center backgroundcolor">
 	<tr>
 		<th align="left"><b><bean:message
 			key="main.suborder.customerorder.text" /></b></th>
@@ -103,7 +102,7 @@
 	</c:forEach>
 	<tr>
 		<html:form action="/CreateSuborder">
-			<td class="noBborderStyle" colspan="4"><html:submit>
+			<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
 				<bean:message key="main.general.button.createsuborder.text" />
 			</html:submit></td>
 		</html:form>

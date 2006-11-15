@@ -41,7 +41,8 @@
 <p>
 <h2><bean:message key="main.general.mainmenu.employees.text" /></h2>
 </p>
-<span style="color:red"><html:errors /><br>
+<br>
+<span style="color:red"><html:errors footer="<br>"/>
 </span>
 
 <table class="center backgroundcolor">
@@ -111,29 +112,6 @@
 	</tr>
 
 </table>
-<br>
-<br>
-<table>
-	<tr>
-		<html:form action="/ShowEmployee?task=back">
-			<td class="noBborderStyle"><html:submit styleId="button">
-				<bean:message key="main.general.button.backmainmenu.text" />
-			</html:submit></td>
-		</html:form>
-	</tr>
-
-</table>
-
-<br>
-<br>
-<table class="center">
-	<tr>
-		<td class="noBborderStyle"><html:form action="/LogoutEmployee">
-			<html:submit styleId="button">
-				<bean:message key="main.general.logout.text" />
-			</html:submit>
-		</html:form></td>
-	</tr>
 </table>
 </body>
 </html:html>
