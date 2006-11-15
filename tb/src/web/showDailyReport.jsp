@@ -268,54 +268,54 @@
 			<c:when test="${maxlabortime}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b>
-				</td>
+				</th>
 			</c:when>
 			<c:otherwise>
 				<th align="center"><b><c:out value="${labortime}"></c:out></b>
-				</td>
+				</th>
 			</c:otherwise>
 		</c:choose>
 		<th align="center"><b><c:out value="${dailycosts}"></c:out></b>
-		</td>
+		</th>
 	</tr>
 
 	<tr>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.employee.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.refday.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.sortofreport.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.customerorder.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.suborder.text" /></b>
-		</td>
+		</th>
 		<th align="left" width="25%"><b><bean:message
 			key="main.timereport.monthly.taskdescription.text" /></b>
-		</td>
+		</th>
 		<th align="center"><b><bean:message
 			key="main.timereport.monthly.hours.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.costs.text" /></b>
-		</td>
+		</th>
 		<!--  
-		<td align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </td>	
+		<th align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </th>	
 		-->
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.save.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.edit.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.timereport.monthly.delete.text" /></b>
-		</td>
+		</th>
 	</tr>
 
 	<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
@@ -442,15 +442,15 @@
 			<c:when test="${maxlabortime}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b>
-				</td>
+				</th>
 			</c:when>
 			<c:otherwise>
 				<th align="center"><b><c:out value="${labortime}"></c:out></b>
-				</td>
+				</th>
 			</c:otherwise>
 		</c:choose>
 		<th align="center"><b><c:out value="${dailycosts}"></c:out></b>
-		</td>
+		</th>
 	</tr>
 
 	<!-- Add ist immer freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->

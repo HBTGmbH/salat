@@ -148,11 +148,13 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
 				//refresh workingday
+				Workingday workingday;
 				try {
-					refreshWorkingday(mapping, reportForm, request);
+					workingday = refreshWorkingday(mapping, reportForm, request);
 				} catch (Exception e) {
 					return mapping.findForward("error");
 				}
+				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
 				
 				return mapping.findForward("success");
 			}

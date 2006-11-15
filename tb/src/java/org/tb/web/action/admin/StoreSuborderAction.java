@@ -95,7 +95,13 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				request.getSession().setAttribute("lastCoId",so.getCustomerorder().getId());
 				
 				
-				return mapping.findForward("success");
+				boolean addMoreSuborders = Boolean.parseBoolean((String)request.getParameter("continue"));
+				if (!addMoreSuborders) {
+					return mapping.findForward("success");
+				} else {
+					// reuse form entries and show add-page
+					return mapping.findForward("reset");
+				}
 			} 
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("back"))) {	

@@ -17,8 +17,8 @@
 
 <script type="text/javascript" language="JavaScript">
 	
-	function setStoreAction(form, actionVal) {	
- 		form.action = "/tb/do/StoreEmployeeorder?task=" + actionVal;
+	function setStoreAction(form, actionVal, addMore) {	
+ 		form.action = "/tb/do/StoreEmployeeorder?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 	}
 	
@@ -76,7 +76,7 @@
 			</html:select> <c:out value="${selectedcustomerorder.description}"></c:out> <span
 				style="color:red"><html:errors property="orderId" /></span></td>
 		</tr>
-
+		<tr>
 		<td align="left" class="noBborderStyle"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></td>
 		<td align="left" class="noBborderStyle"><html:select
@@ -88,7 +88,7 @@
 			<c:out value="${selectedsuborder.description}"></c:out>
 		</c:if> <html:hidden property="suborderId" /> <span style="color:red"><html:errors
 			property="suborderId" /></span></td>
-
+		</tr>
 		<!-- 
 		<tr>
             <td align="left" class="noBborderStyle">
@@ -189,11 +189,15 @@
 	<table class="center">
 		<tr>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save');return false" styleId="button">
+				onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button">
 				<bean:message key="main.general.button.save.text" />
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'reset')" styleId="button">
+				onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button">
+				<bean:message key="main.general.button.saveandcontinue.text" />
+			</html:submit></td>
+			<td class="noBborderStyle"><html:submit
+				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button">
 				<bean:message key="main.general.button.reset.text" />
 			</html:submit></td>
 		</tr>

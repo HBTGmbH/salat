@@ -66,7 +66,15 @@ public class StoreCustomerAction extends LoginRequiredAction {
 				
 				request.getSession().setAttribute("customers", customerDAO.getCustomers());
 				request.getSession().removeAttribute("cuId");
-				return mapping.findForward("success");
+				
+				boolean addMoreCustomers = Boolean.parseBoolean((String)request.getParameter("continue"));
+				if (!addMoreCustomers) {
+					return mapping.findForward("success");
+				} else {
+					// reset form and show add-page
+					cuForm.reset(mapping, request);
+					return mapping.findForward("reset");
+				}
 			} 
 			if ((request.getParameter("task") != null) && 
 						(request.getParameter("task").equals("back"))) {

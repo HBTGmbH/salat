@@ -130,7 +130,14 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContracts());
 				request.getSession().removeAttribute("ecId");
-				return mapping.findForward("success");
+				
+				boolean addMoreContracts = Boolean.parseBoolean((String)request.getParameter("continue"));
+				if (!addMoreContracts) {
+					return mapping.findForward("success");
+				} else {
+					// reuse current input of the form and show add-page
+					return mapping.findForward("reset");
+				}
 			} 
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("back"))) {	

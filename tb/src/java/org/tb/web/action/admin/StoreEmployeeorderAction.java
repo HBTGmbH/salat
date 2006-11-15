@@ -183,7 +183,14 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				
 				request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
 				request.getSession().removeAttribute("eoId");
-				return mapping.findForward("success");
+				
+				boolean addMoreOrders = Boolean.parseBoolean((String)request.getParameter("continue"));
+				if (!addMoreOrders) {
+					return mapping.findForward("success");
+				} else {
+					// reuse current input of the form and show add-page
+					return mapping.findForward("reset");
+				}
 			} 
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("back"))) {	

@@ -71,7 +71,15 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				
 				request.getSession().setAttribute("employees", employeeDAO.getEmployees());
 				request.getSession().removeAttribute("emId");
-				return mapping.findForward("success");
+				
+				boolean addMoreEmployees = Boolean.parseBoolean((String)request.getParameter("continue"));
+				if (!addMoreEmployees) {
+					return mapping.findForward("success");
+				} else {
+					emForm.reset(mapping, request);
+					return mapping.findForward("reset");
+				}
+				
 			} 
 			if ((request.getParameter("task") != null) && 
 						(request.getParameter("task").equals("back"))) {

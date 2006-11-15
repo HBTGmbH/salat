@@ -87,7 +87,14 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				
 				request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
 				request.getSession().removeAttribute("coId");
-				return mapping.findForward("success");
+				
+				boolean addMoreOrders = Boolean.parseBoolean((String)request.getParameter("continue"));
+				if (!addMoreOrders) {
+					return mapping.findForward("success");
+				} else {
+					// reuse form entries and show add-page
+					return mapping.findForward("reset");
+				}
 			} 
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("back"))) {	

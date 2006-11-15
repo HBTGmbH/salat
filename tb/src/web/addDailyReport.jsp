@@ -272,7 +272,7 @@
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
 				onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button">
-        			save & continue
+        		<bean:message key="main.general.button.saveandcontinue.text" />
         		</html:submit></td>
 			<td class="noBborderStyle"><html:submit
 				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button">
