@@ -3,6 +3,8 @@ package org.tb.web.action;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -21,9 +23,11 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Referenceday;
+import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
+import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.SuborderHelper;
@@ -481,8 +485,14 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 		if ((orders != null) && (orders.size() > 0)) {
 			reportForm.setOrder(orders.get(0).getSign());
 			reportForm.setOrderId(orders.get(0).getId());
-			request.getSession().setAttribute("suborders", 
-				suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId()));
+			
+			// prepare second collection of suborders sorted by description
+			List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId());
+			List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+			subordersByDescription.addAll(theSuborders);
+			Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+			request.getSession().setAttribute("suborders", theSuborders);
+			request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 		}
 		request.getSession().removeAttribute("trId");
 	}

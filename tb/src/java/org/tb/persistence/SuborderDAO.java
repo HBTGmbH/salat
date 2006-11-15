@@ -1,6 +1,7 @@
 package org.tb.persistence;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
+import org.tb.bdom.comparators.SubOrderComparator;
 
 /**
  * DAO class for 'Suborder'
@@ -65,7 +67,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 
 			allSuborders.add(so);
 		}
-		
+		Collections.sort(allSuborders, new SubOrderComparator());
 		return allSuborders;
 	}
 	
@@ -82,14 +84,14 @@ public class SuborderDAO extends HibernateDaoSupport {
 		
 		List<Suborder> employeeSpecificSuborders = getSubordersByEmployeeContractId(contractId);
 		
-		List<Suborder> allSuborders = new ArrayList();
+		List<Suborder> allSuborders = new ArrayList<Suborder>();
 		for (Iterator iter = employeeSpecificSuborders.iterator(); iter.hasNext();) {
 			Suborder so = (Suborder) iter.next();			
 			if (so.getCustomerorder().getId() == coId) {
 				allSuborders.add(so);
 			}
 		}
-
+		Collections.sort(allSuborders, new SubOrderComparator());
 		return allSuborders;
 	}
 	

@@ -1,10 +1,15 @@
 package org.tb.helper;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.web.form.AddDailyReportForm;
@@ -44,8 +49,14 @@ public class SuborderHelper {
 		
 		// get suborders related to employee AND selected customer order...
 		long customerorderId = reportForm.getOrderId();
-		request.getSession().setAttribute("suborders", 
-					sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId));
+		List<Suborder> theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId);
+		
+//		 prepare second collection of suborders sorted by description
+		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+		subordersByDescription.addAll(theSuborders);
+		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+		request.getSession().setAttribute("suborders", theSuborders);
+		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 		return true;
 	}
 	

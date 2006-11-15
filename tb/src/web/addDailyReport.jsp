@@ -180,7 +180,7 @@ String soIdString = soId.toString();
 						value="<%=soIdString%>" 
                 		onchange="adjustSuborderDescriptionChangedAction(this.form)">
 						<html:options
-							collection="suborders"
+							collection="subordersByDescription"
 							labelProperty="description"
 							property="id" />
 					</html:select>    

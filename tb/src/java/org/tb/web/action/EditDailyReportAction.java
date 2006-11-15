@@ -1,6 +1,9 @@
 package org.tb.web.action;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -10,8 +13,10 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -86,10 +91,18 @@ public class EditDailyReportAction extends LoginRequiredAction {
 		Employeecontract ec = tr.getEmployeecontract();
 		Employee theEmployee = ec.getEmployee();
 		
+		List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractId(ec.getId());
+		
+//		 prepare second collection of suborders sorted by description
+		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+		subordersByDescription.addAll(theSuborders);
+		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+		
+		
 		request.getSession().setAttribute("trId", tr.getId());
 		request.getSession().setAttribute("orders", customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId()));
-		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
-		
+		request.getSession().setAttribute("suborders", theSuborders);
+		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 		
 		reportForm.reset(mapping, request);
 		reportForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());
@@ -129,8 +142,17 @@ public class EditDailyReportAction extends LoginRequiredAction {
 				reportForm.setSuborderDescriptionId(tr.getSuborder().getId());
 				reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
 				reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());	
+
+				theSuborders = tr.getSuborder().getCustomerorder().getSuborders();
+				
+//				 prepare second collection of suborders sorted by description
+				subordersByDescription.clear();
+				subordersByDescription.addAll(theSuborders);
+				Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+				
 				request.getSession().setAttribute("currentSuborderId", tr.getSuborder().getId());
 				request.getSession().setAttribute("suborders", tr.getSuborder().getCustomerorder().getSuborders());
+				request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 			}
 			reportForm.setCosts(tr.getCosts());		
 			reportForm.setStatus(tr.getStatus());

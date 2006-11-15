@@ -7,10 +7,10 @@ import org.tb.bdom.Suborder;
 public class SubOrderComparator implements Comparator<Suborder> {
 
 	/**
-	 * Compares {@link Suborder}s by {@link Suborder#getSign()} and {@link Suborder#getDescription()}.
+	 * Compares {@link Suborder}s by {@link Suborder#getSign()} (1st criteria) and {@link Suborder#getDescription()} (2nd criteria).
 	 * 
-	 * @param so1
-	 * @param so2
+	 * @param so1 first {@link Suborder}
+	 * @param so2 second {@link Suborder}
 	 * @return Returns -1, 0, 1 if the first {@link Suborder} is less, equal, greater than the second one.
 	 */
 	public int compare(Suborder so1, Suborder so2) {

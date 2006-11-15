@@ -3,6 +3,7 @@ package org.tb.web.action;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Workingday;
+import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
@@ -226,7 +228,13 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 			"no orders found for employee - please call system administrator.");
 			return mapping.findForward("error");
 		}
+		// prepare second collection of suborders sorted by description
+		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+		subordersByDescription.addAll(theSuborders);
+		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+		
 		request.getSession().setAttribute("suborders", theSuborders);
+		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 		request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());
 		
 		return mapping.findForward("success");	
