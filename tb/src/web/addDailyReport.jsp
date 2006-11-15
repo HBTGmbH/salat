@@ -74,9 +74,10 @@ String soIdString = soId.toString();
 		form.submit();
 	}	
 	
-	function setStoreAction(form, actionVal) {	
- 		form.action = "/tb/do/StoreDailyReport?task=" + actionVal;
+	function setStoreAction(form, actionVal, continue) {
+ 		form.action = "/tb/do/StoreDailyReport?task=" + actionVal + "&continue=" + continue;
 		form.submit();
+		
 	}	
 			
 </script>
@@ -316,17 +317,22 @@ String soIdString = soId.toString();
     <table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
         <tr>
         	<td class="noBborderStyle">        
-        		<html:submit onclick="setStoreAction(this.form, 'save');return false" >
+        		<html:submit onclick="setStoreAction(this.form, 'save', 'false');return false" >
         			<bean:message key="main.general.button.save.text"/>
         		</html:submit>
         	</td>
         	<td class="noBborderStyle">        
-        		<html:submit onclick="setStoreAction(this.form, 'reset')" >
+        		<html:submit onclick="setStoreAction(this.form, 'save', 'true');return false" >
+        			save & continue
+        		</html:submit>
+        	</td>
+        	<td class="noBborderStyle">        
+        		<html:submit onclick="setStoreAction(this.form, 'reset', 'false')" >
         			<bean:message key="main.general.button.reset.text"/>
         		</html:submit>
         	</td>
         	<td class="noBborderStyle">        
-        		<html:submit onclick="setStoreAction(this.form, 'back')">
+        		<html:submit onclick="setStoreAction(this.form, 'back', 'false')">
         			<bean:message key="main.general.button.backmainmenu.text"/>
         		</html:submit>
         	</td>
