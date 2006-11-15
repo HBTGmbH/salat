@@ -28,7 +28,7 @@ import org.tb.util.DateUtils;
  * @author oda
  *
  */
-public class DeleteTimereportFromDailyDisplayAction extends LoginRequiredAction {
+public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 	
 	private TimereportDAO timereportDAO;
 	private MonthlyreportDAO monthlyreportDAO;

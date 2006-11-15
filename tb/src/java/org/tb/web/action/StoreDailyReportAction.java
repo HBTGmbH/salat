@@ -51,7 +51,7 @@ import org.tb.web.form.AddDailyReportForm;
  * @author oda
  *
  */
-public class StoreDailyReportAction extends LoginRequiredAction {
+public class StoreDailyReportAction extends DailyReportAction {
 	
 	private EmployeeDAO employeeDAO;
 	private EmployeecontractDAO employeecontractDAO;
@@ -279,6 +279,9 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 					(request.getParameter("task").equals("save")) ||
 					(request.getParameter("trId") != null)) {
 			
+				boolean addMoreReprts = Boolean.parseBoolean(request.getParameter("continue"));
+				
+				
 				// 'main' task - prepare everything to store the report.
 				// I.e., copy properties from the form into the timereport before saving.
 				
@@ -435,7 +438,51 @@ public class StoreDailyReportAction extends LoginRequiredAction {
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
 				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-				return mapping.findForward("showDaily");
+				
+				if (!addMoreReprts) {
+					return mapping.findForward("showDaily");
+				} else {
+					
+					if (workingday != null) {
+						java.util.Date selectedDate = getSelectedDateFromRequest(request);
+						int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
+						reportForm.setSelectedHourBegin(beginTime[0]);
+						reportForm.setSelectedMinuteBegin(beginTime[1]);
+						
+						SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+						
+						
+						java.util.Date today = new java.util.Date();
+						SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
+						SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
+													int hour = new Integer(hourFormat.format(today));
+						int minute = new Integer(minuteFormat.format(today));
+						minute = (minute/5)*5;
+						
+						String todayString = simpleDateFormat.format(today);
+						try {
+							today = simpleDateFormat.parse(todayString);
+						} catch (Exception e) {
+							throw new RuntimeException("this should never happen...!");
+						}			
+										
+						if ((beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) && selectedDate.equals(today)) {
+							reportForm.setSelectedMinuteEnd(minute);
+							reportForm.setSelectedHourEnd(hour);
+						} else {
+							reportForm.setSelectedMinuteEnd(beginTime[1]);
+							reportForm.setSelectedHourEnd(beginTime[0]);
+						} 
+						TimereportHelper.refreshHours(reportForm);
+									
+					} else {
+						reportForm.setSelectedHourDuration(0);
+						reportForm.setSelectedMinuteDuration(0);
+					}
+					
+					return mapping.findForward("addDaily");
+					
+				}
 				
 				
 			} 

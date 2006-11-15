@@ -43,7 +43,7 @@ import org.tb.web.form.ShowDailyReportForm;
  * @author oda
  *
  */
-public class ShowDailyReportAction extends LoginRequiredAction {
+public class ShowDailyReportAction extends DailyReportAction {
 
 	private EmployeeDAO employeeDAO;
 

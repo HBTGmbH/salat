@@ -57,6 +57,9 @@ public class SuborderHelper {
 		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
 		request.getSession().setAttribute("suborders", theSuborders);
 		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+//		 get first Suborder to synchronize suborder lists
+		Suborder so = theSuborders.get(0);
+		request.getSession().setAttribute("currentSuborderId", so.getId());
 		return true;
 	}
 	

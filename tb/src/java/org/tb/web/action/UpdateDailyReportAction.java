@@ -34,7 +34,7 @@ import org.tb.web.form.UpdateDailyReportForm;
  * @author oda
  *
  */
-public class UpdateDailyReportAction extends LoginRequiredAction {
+public class UpdateDailyReportAction extends DailyReportAction {
 	
 	private SuborderDAO suborderDAO;
 //	private CustomerorderDAO customerorderDAO;
@@ -98,13 +98,13 @@ public class UpdateDailyReportAction extends LoginRequiredAction {
 				}
 				
 				tr.setTaskdescription(reportForm.getComment());	
-				tr.setEmployeecontract(ec);
+//				tr.setEmployeecontract(ec);
 	
 //				if (tr.getSortofreport().equals("W")) {
 					tr.setDurationhours(new Integer(reportForm.getSelectedDurationHour()));
 					tr.setDurationminutes(new Integer(reportForm.getSelectedDurationMinute()));					
 					tr.setCosts(reportForm.getCosts());
-					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getTrSuborderId()));
+//					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getTrSuborderId()));
 //					tr.setStatus(reportForm.getStatus());
 //				} else {
 //					// 'special' reports: set employee's suborder to null				

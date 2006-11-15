@@ -65,8 +65,8 @@
 		form.submit();
 	}	
 	
-	function setStoreAction(form, actionVal, continue) {
- 		form.action = "/tb/do/StoreDailyReport?task=" + actionVal + "&continue=" + continue;
+	function setStoreAction(form, actionVal, addMore) {
+ 		form.action = "/tb/do/StoreDailyReport?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 		
 	}	

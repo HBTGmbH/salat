@@ -37,7 +37,7 @@ import org.tb.web.form.AddDailyReportForm;
  * @author oda
  *
  */
-public class CreateDailyReportAction extends LoginRequiredAction {
+public class CreateDailyReportAction extends DailyReportAction {
 	
 	private EmployeeDAO employeeDAO;
 	private EmployeecontractDAO employeecontractDAO;
@@ -118,45 +118,7 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 	
 		
 		// get selcted date for new report
-		int day = new Integer((String) request.getSession().getAttribute("currentDay"));
-		String monthString = (String) request.getSession().getAttribute("currentMonth");
-		int year = new Integer((String) request.getSession().getAttribute("currentYear"));
-		int month = 0;
-		
-		if (GlobalConstants.MONTH_SHORTFORM_JANUARY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JANUARY;			
-		} else if (GlobalConstants.MONTH_SHORTFORM_FEBRURAY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_FEBRURAY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_MARCH.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_MARCH;
-		} else if (GlobalConstants.MONTH_SHORTFORM_APRIL.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_APRIL;
-		} else if (GlobalConstants.MONTH_SHORTFORM_MAY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_MAY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_JUNE.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JUNE;
-		} else if (GlobalConstants.MONTH_SHORTFORM_JULY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JULY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_AUGUST.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_AUGUST;
-		} else if (GlobalConstants.MONTH_SHORTFORM_SEPTEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_SEPTEMBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_OCTOBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_OCTOBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_NOVEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_NOVEMBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_DECEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
-		}
-		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		Date selectedDate;
-		try {
-			selectedDate = simpleDateFormat.parse(year+"-"+month+"-"+day);
-		} catch (ParseException e) {
-			//no date could be constructed - use current date instead
-			selectedDate = new Date();
-		}
+		Date selectedDate = getSelectedDateFromRequest(request);
 		
 		// search for adequate workingday and set status in session
 		java.sql.Date currentDate = DateUtils.getSqlDate(selectedDate);
@@ -175,6 +137,7 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 		reportForm.setSelectedMinuteBegin(beginTime[1]);
 //		TimereportHelper.refreshHours(reportForm);
 		
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		
 		if (workingday != null) {
 			// set end time in reportform
@@ -185,7 +148,7 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 			int hour = new Integer(hourFormat.format(today));
 			int minute = new Integer(minuteFormat.format(today));
 			minute = (minute/5)*5;
-		
+			
 			String todayString = simpleDateFormat.format(today);
 			try {
 				today = simpleDateFormat.parse(todayString);
@@ -200,12 +163,12 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 				reportForm.setSelectedMinuteEnd(beginTime[1]);
 				reportForm.setSelectedHourEnd(beginTime[0]);
 			} 
-			
+			TimereportHelper.refreshHours(reportForm);
 		} else {
 			reportForm.setSelectedHourDuration(0);
 			reportForm.setSelectedMinuteDuration(0);
 		}
-		TimereportHelper.refreshHours(reportForm);
+//		TimereportHelper.refreshHours(reportForm);
 		
 		// init form with selected Date
 		reportForm.setReferenceday(simpleDateFormat.format(selectedDate));
@@ -232,10 +195,12 @@ public class CreateDailyReportAction extends LoginRequiredAction {
 		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
 		subordersByDescription.addAll(theSuborders);
 		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
-		
 		request.getSession().setAttribute("suborders", theSuborders);
 		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 		request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());
+		// get first Suborder to synchronize suborder lists
+		Suborder so = theSuborders.get(0);
+		request.getSession().setAttribute("currentSuborderId", so.getId());
 		
 		return mapping.findForward("success");	
 	}
