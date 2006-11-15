@@ -45,13 +45,13 @@
 
 <table class="backgroundcolor">
 	<tr>
-		<th align="left"><b><bean:message
+		<th align="left" title="bla"><b><bean:message
 			key="main.customer.name.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="bla"><b><bean:message
 			key="main.customer.address.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="bla"><b><bean:message
 			key="main.customer.edit.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="bla"><b><bean:message
 			key="main.customer.delete.text" /></b></th>
 	</tr>
 	<c:forEach var="customer" items="${customers}" varStatus="statusID">

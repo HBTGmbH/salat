@@ -35,7 +35,7 @@ window.onload=startList;
 </center>
 <div class="menu">
 <ul id="nav">
-	<li id="first">Buchungen
+	<li id="first"><bean:message key="main.general.mainmenu.timereports.text" />
 	<ul>
 		<li class="first"><html:link styleClass="menu"
 			action="/ShowDailyReport">
@@ -47,7 +47,7 @@ window.onload=startList;
 	</ul>
 	</li>
 	<c:if test="${loginEmployee.status != 'ma'}">
-		<li>Mitarbeiter
+		<li><bean:message key="main.general.mainmenu.employees.text" />
 		<ul>
 			<li class="first"><html:link styleClass="menu"
 				action="/ShowEmployee">
@@ -61,7 +61,7 @@ window.onload=startList;
 			</html:link></li>
 		</ul>
 		</li>
-		<li>Aufträge
+		<li><bean:message key="main.general.mainmenu.orders.text" />
 		<ul>
 			<li class="first"><html:link styleClass="menu"
 				action="/ShowCustomer">

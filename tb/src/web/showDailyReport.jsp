@@ -213,7 +213,8 @@
 
 		<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
 			<tr>
-				<td align="left" class="noBborderStyle"><b>Arbeitsbeginn:</b></td>
+				<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.timereport.startofwork.text" />:</b></td>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.timereport.selectedhourbegin.text" />:</b> <html:select
 					property="selectedWorkHourBegin">
@@ -229,7 +230,8 @@
 					alt="save start of work" /></td>
 			</tr>
 			<tr>
-				<td align="left" class="noBborderStyle"><b>Pausendauer:</b></td>
+				<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.timereport.breakduration.text" />:</b></td>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.timereport.selectedhourbegin.text" />:</b> <html:select
 					property="selectedBreakHour">
@@ -246,8 +248,8 @@
 			</tr>
 
 			<tr>
-				<td align="left" class="noBborderStyle"><b>errechnete
-				Feierabendszeit:</b></td>
+				<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.timereport.quittingtime.text" />:</b></td>
 				<td align="left" class="noBborderStyle"><b><c:out
 					value="${quittingtime}"></c:out></b></td>
 			</tr>
@@ -260,7 +262,8 @@
 
 	<tr>
 		<td colspan="5" class="noBborderStyle">&nbsp;</td>
-		<td class="noBborderStyle" align="right"><b>gesamt:</b></td>
+		<td class="noBborderStyle" align="right"><b><bean:message
+			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
 			<c:when test="${maxlabortime}">
 				<th align="center" color="red"><b><font color="red"><c:out
@@ -433,7 +436,8 @@
 	</c:forEach>
 	<tr>
 		<td colspan="5" class="noBborderStyle">&nbsp;</td>
-		<td class="noBborderStyle" align="right"><b>gesamt:</b></td>
+		<td class="noBborderStyle" align="right"><b><bean:message
+			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
 			<c:when test="${maxlabortime}">
 				<th align="center" color="red"><b><font color="red"><c:out

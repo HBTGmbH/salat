@@ -65,7 +65,7 @@ while(names.hasMoreElements()) {
 		<tr>
 			<td class="noBborderStyle">&nbsp;</td>
 			<td class="noBborderStyle">
-			<html:submit> 
+			<html:submit styleId="button"> 
 				<bean:message key="main.general.loginsubmit.text"/>
 			</html:submit>	
 			</td>
