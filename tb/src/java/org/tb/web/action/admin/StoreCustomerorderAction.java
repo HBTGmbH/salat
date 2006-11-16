@@ -15,6 +15,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.util.DateUtils;
@@ -82,8 +83,9 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				co.setOrder_customer(coForm.getOrderCustomer());
 				co.setResponsible_customer(coForm.getResponsibleCustomer());
 				co.setResponsible_hbt(coForm.getResponsibleHbt());
-								
-				customerorderDAO.save(co);
+				
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				customerorderDAO.save(co, loginEmployee);
 				
 				request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
 				request.getSession().removeAttribute("coId");

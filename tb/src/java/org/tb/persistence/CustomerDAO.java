@@ -7,6 +7,7 @@ import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customer;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 
 /**
  * DAO class for 'Customer'
@@ -53,14 +54,37 @@ public class CustomerDAO extends HibernateDaoSupport {
 		Customer cu = (Customer) getSession().createQuery("from Customer c where c.name = ?").setString(0, name).uniqueResult();
 		return cu;
 	}
-		
+	
 	/**
-	 * Saves the given customer.
+	 * Calls {@link CustomerDAO#save(Customer, Employee)} with {@link Employee} = null.
+	 * @param cu
+	 */
+	public void save(Customer cu) {
+		save(cu, null);
+	}
+	
+	
+	/**
+	 * Saves the given customer and sets creation-/update-user and creation-/update-date.
 	 * 
 	 * @param Customer cu
 	 */
-	public void save(Customer cu) {
+	public void save(Customer cu, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
+		java.util.Date creationDate = cu.getCreated();
+		if (creationDate == null) {
+			cu.setCreated(new java.util.Date());
+			cu.setCreatedby(loginEmployee.getSign());
+		} else {
+			cu.setLastupdate(new java.util.Date());
+			cu.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = cu.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			cu.setUpdatecounter(updateCounter);
+		}
 		session.saveOrUpdate(cu);
 		session.flush();
 		session.clear();

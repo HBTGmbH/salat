@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customer;
+import org.tb.bdom.Employee;
 import org.tb.persistence.CustomerDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddCustomerForm;
@@ -62,7 +63,9 @@ public class StoreCustomerAction extends LoginRequiredAction {
 				cu.setName(cuForm.getName());
 				cu.setAddress(cuForm.getAddress());
 				
-				customerDAO.save(cu);
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				
+				customerDAO.save(cu, loginEmployee);
 				
 				request.getSession().setAttribute("customers", customerDAO.getCustomers());
 				request.getSession().removeAttribute("cuId");

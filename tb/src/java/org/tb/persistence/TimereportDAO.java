@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.helper.TimereportHelper;
@@ -271,13 +272,35 @@ public class TimereportDAO extends HibernateDaoSupport {
 	}
 
 	/**
-	 * Saves the given timereport.
+	 * Calls {@link TimereportDAO#save(Timereport, Employee)} with {@link Employee} = null.
+	 * @param tr
+	 */
+	public void save(Timereport tr) {
+		save(tr, null);
+	}
+	
+	/**
+	 * Saves the given timereport and sets creation-/update-user and creation-/update-date.
 	 * 
 	 * @param Timereport tr
 	 * 
 	 */
-	public void save(Timereport tr) {
+	public void save(Timereport tr, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
+		java.util.Date creationDate = tr.getCreated();
+		if (creationDate == null) {
+			tr.setCreated(new java.util.Date());
+			tr.setCreatedby(loginEmployee.getSign());
+		} else {
+			tr.setLastupdate(new java.util.Date());
+			tr.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = tr.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			tr.setUpdatecounter(updateCounter);
+		}
 		session.saveOrUpdate(tr);
 		session.flush();
 	}

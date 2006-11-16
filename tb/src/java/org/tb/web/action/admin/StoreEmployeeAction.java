@@ -67,7 +67,9 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				em.setSign(emForm.getSign());
 				em.setGender(emForm.getGender().charAt(0));
 				
-				employeeDAO.save(em);
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				
+				employeeDAO.save(em, loginEmployee);
 				
 				request.getSession().setAttribute("employees", employeeDAO.getEmployees());
 				request.getSession().removeAttribute("emId");

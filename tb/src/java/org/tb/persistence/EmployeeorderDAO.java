@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.comparators.EmployeeOrderComparator;
@@ -106,14 +107,35 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return employeeorders;
 	}
 	
+	/**
+	 * Calls {@link EmployeeorderDAO#save(Employeeorder, Employee)} with {@link Employee} = null.
+	 * @param eo
+	 */
+	public void save(Employeeorder eo) {
+		save(eo, null);
+	}
 	
 	/**
-	 * Saves the given Employeeorder.
+	 * Saves the given Employeeorder and sets creation-/update-user and creation-/update-date.
 	 * 
 	 * @param Employeeorder eo
 	 */
-	public void save(Employeeorder eo) {
+	public void save(Employeeorder eo, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
+		java.util.Date creationDate = eo.getCreated();
+		if (creationDate == null) {
+			eo.setCreated(new java.util.Date());
+			eo.setCreatedby(loginEmployee.getSign());
+		} else {
+			eo.setLastupdate(new java.util.Date());
+			eo.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = eo.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			eo.setUpdatecounter(updateCounter);
+		}
 		session.saveOrUpdate(eo);
 		session.flush();
 	}

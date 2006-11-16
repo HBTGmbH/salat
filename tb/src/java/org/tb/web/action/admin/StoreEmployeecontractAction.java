@@ -121,7 +121,9 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					}
 				}
 				
-				employeecontractDAO.save(ec);
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				
+				employeecontractDAO.save(ec, loginEmployee);
 				
 				request.getSession().setAttribute("currentEmployee", ecForm.getEmployeename());
 				

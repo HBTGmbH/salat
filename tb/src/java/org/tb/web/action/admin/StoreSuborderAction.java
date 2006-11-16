@@ -14,6 +14,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
@@ -85,8 +86,9 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				so.setDescription(soForm.getDescription());
 				so.setHourly_rate(soForm.getHourlyRate());
 				so.setInvoice(soForm.getInvoice().charAt(0));
-								
-				suborderDAO.save(so);
+					
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				suborderDAO.save(so, loginEmployee);
 				
 				request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
 				request.getSession().removeAttribute("soId");

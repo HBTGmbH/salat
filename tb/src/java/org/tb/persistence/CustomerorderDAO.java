@@ -8,6 +8,7 @@ import java.util.List;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.comparators.CustomerOrderComparator;
@@ -98,15 +99,37 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 		Collections.sort(allCustomerorders, new CustomerOrderComparator());
 		return allCustomerorders;
 	}
-		
+	
 	/**
-	 * Saves the given order.
+	 * Calls {@link CustomerorderDAO#save(Customerorder, Employee)} with {@link Employee} = null.
+	 * @param co
+	 */
+	public void save(Customerorder co) {
+		save(co, null);
+	}
+	
+	/**
+	 * Saves the given order and sets creation-/update-user and creation-/update-date.
 	 * 
 	 * @param Customerorder co
 	 * 
 	 */
-	public void save(Customerorder co) {
+	public void save(Customerorder co, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
+		java.util.Date creationDate = co.getCreated();
+		if (creationDate == null) {
+			co.setCreated(new java.util.Date());
+			co.setCreatedby(loginEmployee.getSign());
+		} else {
+			co.setLastupdate(new java.util.Date());
+			co.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = co.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			co.setUpdatecounter(updateCounter);
+		}
 		session.saveOrUpdate(co);
 		session.flush();
 		session.clear();

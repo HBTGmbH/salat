@@ -148,14 +148,35 @@ public class EmployeeDAO extends HibernateDaoSupport {
 				"from Employee p order by upper(p.lastname)").list();
 	}
 
+	/**
+	 * Calls {@link EmployeeDAO#save(Employee, Employee)} with null for the loginEmployee.
+	 * @param employee
+	 */
+	public void save(Employee employee) {
+		save(employee, null);
+	}
 	
 	/**
-	 * Saves the given employee.
+	 * Saves the given employee and sets creation-/update-user and creation-/update-date.
 	 * 
 	 * @param Employee employee
 	 */
-	public void save(Employee employee) {
+	public void save(Employee employee, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
+		java.util.Date creationDate = employee.getCreated();
+		if (creationDate == null) {
+			employee.setCreated(new java.util.Date());
+			employee.setCreatedby(loginEmployee.getSign());
+		} else {
+			employee.setLastupdate(new java.util.Date());
+			employee.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = employee.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			employee.setUpdatecounter(updateCounter);
+		}
 		session.saveOrUpdate(employee);
 		session.flush();
 	}

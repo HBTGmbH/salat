@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Timereport;
@@ -114,7 +115,8 @@ public class UpdateDailyReportAction extends DailyReportAction {
 //				}
 				
 				// save updated report
-				timereportDAO.save(tr);
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				timereportDAO.save(tr, loginEmployee);
 				
 //				TimereportHelper th = new TimereportHelper();
 				if (tr.getSortofreport().equals("W")) {

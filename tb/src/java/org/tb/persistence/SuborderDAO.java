@@ -8,6 +8,7 @@ import java.util.List;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
@@ -136,14 +137,35 @@ public class SuborderDAO extends HibernateDaoSupport {
 		return suborders;
 	}
 	
+	/**
+	 * Calls {@link SuborderDAO#save(Suborder, Employee)} with {@link Employee} = null.
+	 * @param so
+	 */
+	public void save(Suborder so) {
+		save(so, null);
+	}
 	
 	/**
-	 * Saves the given suborder.
+	 * Saves the given suborderand sets creation-/update-user and creation-/update-date.
 	 * 
 	 * @param Suborder so
 	 */
-	public void save(Suborder so) {
+	public void save(Suborder so, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
+		java.util.Date creationDate = so.getCreated();
+		if (creationDate == null) {
+			so.setCreated(new java.util.Date());
+			so.setCreatedby(loginEmployee.getSign());
+		} else {
+			so.setLastupdate(new java.util.Date());
+			so.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = so.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			so.setUpdatecounter(updateCounter);
+		}
 		session.saveOrUpdate(so);
 		session.flush();
 		session.clear();

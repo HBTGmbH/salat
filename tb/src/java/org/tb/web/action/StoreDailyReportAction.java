@@ -385,7 +385,8 @@ public class StoreDailyReportAction extends DailyReportAction {
 						tr.setSequencenumber(timereports.get(lastindex).getSequencenumber() + 1);
 					}
 				}
-				timereportDAO.save(tr);
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				timereportDAO.save(tr, loginEmployee);
 				
 				
 				

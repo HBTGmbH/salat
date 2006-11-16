@@ -176,7 +176,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				eo.setDebithours(eoForm.getDebithours());
 				eo.setStatusreport(eoForm.getStatusreport());
 
-				employeeorderDAO.save(eo);
+				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+				employeeorderDAO.save(eo, loginEmployee);
 				
 				List<Employee> employeeOptionList = employeeDAO.getEmployees();
 				request.getSession().setAttribute("employees", employeeOptionList);

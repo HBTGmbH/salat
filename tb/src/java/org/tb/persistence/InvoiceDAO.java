@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Invoice;
 
 /**
@@ -36,13 +37,35 @@ public class InvoiceDAO extends HibernateDaoSupport {
 	}	
 	
 	/**
-	 * Saves the given invoice.
-	 * 
-	 * @param Invoice i
+	 * Calls {@link InvoiceDAO#save(Invoice, Employee)} with {@link Employee} = null.
+	 * @param i
 	 */
 	public void save(Invoice i) {
+		save(i, null);
+	}
+	
+	/**
+	 * Saves the given invoice and sets creation-/update-user and creation-/update-date.
+	 * 
+	 * @param Invoice invoice
+	 */
+	public void save(Invoice invoice, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
-		session.saveOrUpdate(i);
+		java.util.Date creationDate = invoice.getCreated();
+		if (creationDate == null) {
+			invoice.setCreated(new java.util.Date());
+			invoice.setCreatedby(loginEmployee.getSign());
+		} else {
+			invoice.setLastupdate(new java.util.Date());
+			invoice.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = invoice.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			invoice.setUpdatecounter(updateCounter);
+		}
+		session.saveOrUpdate(invoice);
 		session.flush();
 	}
 	

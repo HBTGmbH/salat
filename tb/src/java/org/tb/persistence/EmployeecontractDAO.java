@@ -84,12 +84,34 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	}
 	
 	/**
-	 * Saves the given Employeecontract.
+	 * Calls {@link EmployeecontractDAO#save(Employeecontract, Employee)} with {@link Employee} = null.
+	 * @param ec
+	 */
+	public void save(Employeecontract ec) {
+		save(ec, null);
+	}
+	
+	/**
+	 * Saves the given Employeecontract and sets creation-/update-user and creation-/update-date.
 	 * 
 	 * @param Employeecontract ec
 	 */
-	public void save(Employeecontract ec) {
+	public void save(Employeecontract ec, Employee loginEmployee) {
+		if (loginEmployee == null) {
+			throw new RuntimeException("the login-user must be passed to the db");
+		}
 		Session session = getSession();
+		java.util.Date creationDate = ec.getCreated();
+		if (creationDate == null) {
+			ec.setCreated(new java.util.Date());
+			ec.setCreatedby(loginEmployee.getSign());
+		} else {
+			ec.setLastupdate(new java.util.Date());
+			ec.setLastupdatedby(loginEmployee.getSign());
+			Integer updateCounter = ec.getUpdatecounter();
+			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
+			ec.setUpdatecounter(updateCounter);
+		}
 		session.saveOrUpdate(ec);
 		session.flush();
 	}
