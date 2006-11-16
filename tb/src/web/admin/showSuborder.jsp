@@ -73,7 +73,7 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
-		<td><c:out value="${suborder.customerorder.sign}" /></td>
+		<td title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
 		<td><c:out value="${suborder.sign}" /></td>
 		<td><c:out value="${suborder.description}" /></td>
 		<td align="center"><logic:equal name="suborder"

@@ -474,7 +474,8 @@
 	footer="<br>" /><br>
 <html:errors property="comment" footer="<br>" /></b></span>
 
-
+<!-- Überstunden sind derzeit ausgeblendet -->
+<!-- 
 <logic:notEqual name="currentEmployee" value="ALL EMPLOYEES"
 	scope="session">
 	<table border="0" cellspacing="0" cellpadding="2"
@@ -496,5 +497,6 @@
 		</tr>
 	</table>
 </logic:notEqual>
+-->
 </body>
 </html:html>

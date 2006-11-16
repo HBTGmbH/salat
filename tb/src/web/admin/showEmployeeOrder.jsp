@@ -86,8 +86,8 @@
 		</c:choose>
 		<td><c:out
 			value="${employeeorder.employeecontract.employee.name}" /></td>
-		<td><c:out value="${employeeorder.suborder.customerorder.sign}" /></td>
-		<td><c:out value="${employeeorder.suborder.sign}" /></td>
+		<td title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out value="${employeeorder.suborder.customerorder.sign}" /></td>
+		<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out value="${employeeorder.suborder.sign}" /></td>
 		<!-- 
       	<td><bean:write name="employeeorder" property="sign"/></td>
       	 -->
