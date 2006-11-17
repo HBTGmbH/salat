@@ -5,16 +5,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
-import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Workingday;
-import org.tb.persistence.WorkingdayDAO;
-import org.tb.util.DateUtils;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
 

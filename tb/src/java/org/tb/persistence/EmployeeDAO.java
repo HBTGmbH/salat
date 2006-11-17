@@ -1,5 +1,7 @@
 package org.tb.persistence;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -137,6 +139,21 @@ public class EmployeeDAO extends HibernateDaoSupport {
 	public Employee getEmployeeById(long id) {
 		return (Employee) getSession().createQuery("from Employee em where em.id = ?").setLong(0, id).uniqueResult();
 	}
+	
+	/**
+	 * 
+	 * @param date
+	 * @return Returns all {@link Employee}s with a contract, that is valid for the given {@link Date}.
+	 */
+	public List<Employee> getEmployeesWithContractsValidForDate(java.util.Date date) {
+		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsValidForDate(date);
+		List<Employee> employees = new ArrayList<Employee>();
+		for (Employeecontract employeecontract : employeeContracts) {
+			employees.add(employeecontract.getEmployee());
+		}
+		return employees;
+	}
+	
 	
 	/**
 	 * Get a list of all Employees ordered by lastname.

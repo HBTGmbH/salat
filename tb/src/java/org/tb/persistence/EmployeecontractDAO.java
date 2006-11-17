@@ -126,6 +126,16 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	}
 
 	/**
+	 * 
+	 * @param date
+	 * @return Returns a list of all {@link Employeecontract}s that are valid for the given date.
+	 */
+	public List<Employeecontract> getEmployeeContractsValidForDate(java.util.Date date) {
+		return getSession().createQuery("from Employeecontract e where e.validFrom <= ? and e.validUntil >= ? order by employee.lastname").setDate(0, date).setDate(1, date).list();
+	}
+	
+	
+	/**
 	 * Deletes the given employee contract .
 	 * 
 	 * @param long ecId

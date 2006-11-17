@@ -17,6 +17,24 @@ import org.apache.struts.action.ActionMapping;
 public class ShowEmployeeOrderForm extends ActionForm {
 
 
+	private long employeeId;
+	
+	
+	
+	/**
+	 * @return the employeeName
+	 */
+	public long getEmployeeId() {
+		return employeeId;
+	}
+
+	/**
+	 * @param employeeName the employeeName to set
+	 */
+	public void setEmployeeId(long employeeId) {
+		this.employeeId = employeeId;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		// actually, nothing to reset

@@ -123,7 +123,7 @@
 			<td align="left" class="noBborderStyle"><html:select
 				property="employeename"
 				value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
-				onchange="setUpdateTimereportsAction(this.form)">
+				onchange="setUpdateTimereportsAction(this.form)" >
 
 				<html:option value="ALL EMPLOYEES">
 					<bean:message key="main.general.allemployees.text" />

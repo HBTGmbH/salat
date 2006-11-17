@@ -2,10 +2,12 @@
 
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -28,7 +30,13 @@
 			form.action = "/tb/do/DeleteEmployeeorder?eoId=" + id;
 			form.submit();
 		}
-	}					
+	}
+	
+	function setUpdateEmployeeOrders(form) {
+		form.action = "/tb/do/ShowEmployeeorder?task=updateEmployeeOrders";
+		form.submit();
+	
+	}				
  
 </script>
 
@@ -44,12 +52,32 @@
 <br>
 <span style="color:red"><html:errors footer="<br>"/>
 </span>
+ 	
+<html:form action="/ShowEmployeeorder">
+	<table class="center backgroundcolor">
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.monthlyreport.employee.fullname.text" />:</b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select
+					property="employeeId"		
+					onchange="setUpdateEmployeeOrders(this.form)" >
+				<html:option value="-1">
+					<bean:message key="main.general.allemployees.text" />
+				</html:option>
+				<html:options collection="employees"
+					labelProperty="name" property="id" />
+			</html:select> 		
+			</td>
+		</tr>	
+	</table>
+</html:form>
 
 <table class="center backgroundcolor">
 	<tr>
 		<th align="left"><b><bean:message
 			key="main.employeeorder.employee.text" /></b>
-		</td>
+		</th>
 		<th align="left"><b><bean:message
 			key="main.employeeorder.customerorder.text" /></b></th>
 		<th align="left"><b><bean:message
