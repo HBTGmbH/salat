@@ -46,21 +46,29 @@
 
 <table class="center backgroundcolor">
 	<tr>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.customerorder.text" />"><b><bean:message
 			key="main.suborder.customerorder.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.subordernumber.text" />"><b><bean:message
 			key="main.suborder.sign.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.description.text" />"><b><bean:message
 			key="main.suborder.description.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.invoice.text" />"><b><bean:message
 			key="main.suborder.invoice.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.currency.text" />"><b><bean:message
 			key="main.suborder.currency.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.hourlyrate.text" />"><b><bean:message
 			key="main.suborder.hourlyrate.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
 			key="main.suborder.edit.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.delete.text" />"><b><bean:message
 			key="main.suborder.delete.text" /></b></th>
 	</tr>
 

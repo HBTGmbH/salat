@@ -42,34 +42,57 @@
 <h2><bean:message key="main.general.mainmenu.customerorders.text" /></h2>
 </p>
 <br>
-<span style="color:red"><html:errors footer="<br>"/>
-</span>
+<span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
 	<tr>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.customer.text" />"><b><bean:message
 			key="main.customerorder.customer.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.ordernumber.text" />"><b><bean:message
 			key="main.customerorder.sign.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.description.text" />"><b><bean:message
 			key="main.customerorder.description.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.validfrom.text" />"><b><bean:message
 			key="main.customerorder.validfrom.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.validuntil.text" />"><b><bean:message
 			key="main.customerorder.validuntil.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.responsecustomer.text" />"><b><bean:message
 			key="main.customerorder.responsiblecustomer.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.responsehbt.text" />"><b><bean:message
 			key="main.customerorder.responsiblehbt.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.ordercustomer.text" />"><b><bean:message
 			key="main.customerorder.ordercustomer.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.currency.text" />"><b><bean:message
 			key="main.customerorder.currency.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.hourlyrate.text" />"><b><bean:message
 			key="main.customerorder.hourlyrate.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.edit.text" />"><b><bean:message
 			key="main.customerorder.edit.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.delete.text" />"><b><bean:message
 			key="main.customerorder.delete.text" /></b></th>
 	</tr>
 	<c:forEach var="customerorder" items="${customerorders}"
@@ -108,7 +131,8 @@
 	</c:forEach>
 	<tr>
 		<html:form action="/CreateCustomerorder">
-			<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+			<td class="noBborderStyle" colspan="4"><html:submit
+				styleId="button">
 				<bean:message key="main.general.button.createcustomerorder.text" />
 			</html:submit></td>
 		</html:form>

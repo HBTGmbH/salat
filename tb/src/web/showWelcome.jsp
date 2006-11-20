@@ -14,7 +14,6 @@
 </jsp:include>
 <center>
 <br>
-
 <br>
 <h2 style="color: black"><bean:message
 	key="main.general.mainmenu.welcome.text" /></h2>

@@ -280,40 +280,51 @@
 	</tr>
 
 	<tr>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message
 			key="main.timereport.monthly.employee.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
 			key="main.timereport.monthly.refday.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.sortofreport.text" />"><b><bean:message
 			key="main.timereport.monthly.sortofreport.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
 			key="main.timereport.monthly.customerorder.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.suborder.text" />"><b><bean:message
 			key="main.timereport.monthly.suborder.text" /></b>
 		</th>
-		<th align="left" width="25%"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.taskdescription.text" />" width="25%"><b><bean:message
 			key="main.timereport.monthly.taskdescription.text" /></b>
 		</th>
-		<th align="center"><b><bean:message
+		<th align="center" title="<bean:message
+			key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
 			key="main.timereport.monthly.hours.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.costs.text" />"><b><bean:message
 			key="main.timereport.monthly.costs.text" /></b>
 		</th>
 		<!--  
 		<th align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </th>	
 		-->
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.save.text" />"><b><bean:message
 			key="main.timereport.monthly.save.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.edit.text" />"><b><bean:message
 			key="main.timereport.monthly.edit.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.delete.text" />"><b><bean:message
 			key="main.timereport.monthly.delete.text" /></b>
 		</th>
 	</tr>

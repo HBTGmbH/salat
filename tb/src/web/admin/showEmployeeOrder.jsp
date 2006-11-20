@@ -75,31 +75,42 @@
 
 <table class="center backgroundcolor">
 	<tr>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.employeename.text" />"><b><bean:message
 			key="main.employeeorder.employee.text" /></b>
 		</th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.ordernumber.text" />"><b><bean:message
 			key="main.employeeorder.customerorder.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.subordernumber.text" />"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></th>
 		<!--  
 		<td align="left"> <b><bean:message key="main.employeeorder.sign.text"/></b> </td>	
 		-->
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.validfrom.text" />"><b><bean:message
 			key="main.employeeorder.validfrom.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.validuntil.text" />"><b><bean:message
 			key="main.employeeorder.validuntil.text" /></b></th>
-		<th align="center"><b><bean:message
+		<th align="center" title="<bean:message
+			key="main.headlinedescription.employeeorders.standingorder.text" />"><b><bean:message
 			key="main.employeeorder.standingorder.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
 			key="main.employeeorder.debithours.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.status.text" />"><b><bean:message
 			key="main.employeeorder.status.text" /></b></th>
-		<th align="center"><b><bean:message
+		<th align="center" title="<bean:message
+			key="main.headlinedescription.employeeorders.statusreport.text" />"><b><bean:message
 			key="main.employeeorder.statusreport.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
 			key="main.employeeorder.edit.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.delete.text" />"><b><bean:message
 			key="main.employeeorder.delete.text" /></b></th>
 	</tr>
 	<c:forEach var="employeeorder" items="${employeeorders}"

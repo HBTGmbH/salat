@@ -42,29 +42,44 @@
 <h2><bean:message key="main.general.mainmenu.employees.text" /></h2>
 </p>
 <br>
-<span style="color:red"><html:errors footer="<br>"/>
-</span>
+<span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
 	<tr>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.fristname.text" />"><b><bean:message
 			key="main.employee.firstname.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.lastname.text" />"><b><bean:message
 			key="main.employee.lastname.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.sign.text" />"><b><bean:message
 			key="main.employee.sign.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.loginname.text" />"><b><bean:message
 			key="main.employee.loginname.text" /></b></th>
 		<!--  
 		<td align="left"> <b><bean:message key="main.employee.password.text"/></b> </th>
 		-->
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.status.text" />"><b><bean:message
 			key="main.employee.status.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.gender.text" />"><b><bean:message
 			key="main.employee.gender.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.edit.text" />"><b><bean:message
 			key="main.employee.edit.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employees.delete.text" />"><b><bean:message
 			key="main.employee.delete.text" /></b></th>
 	</tr>
 

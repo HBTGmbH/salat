@@ -47,23 +47,23 @@
 
 <table class="center backgroundcolor">
 	<tr>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.employeename.text" />"><b><bean:message
 			key="main.employeecontract.employee.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.taskdescription.text" />"><b><bean:message
 			key="main.employeecontract.taskdescription.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.validfrom.text" />"><b><bean:message
 			key="main.employeecontract.validfrom.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.validuntil.text" />"><b><bean:message
 			key="main.employeecontract.validuntil.text" /></b></th>
-		<th align="center"><b><bean:message
+		<th align="center" title="<bean:message key="main.headlinedescription.employeecontracts.freelancer.text" />"><b><bean:message
 			key="main.employeecontract.freelancer.text" /></b></th>
-		<th align="center"><b><bean:message
+		<th align="center" title="<bean:message key="main.headlinedescription.employeecontracts.dailyworkingtime.text" />"><b><bean:message
 			key="main.employeecontract.dailyworkingtime.text" /></b></th>
-		<th align="center"><b><bean:message
+		<th align="center" title="<bean:message key="main.headlinedescription.employeecontracts.vacationdaysperyear.text" />"><b><bean:message
 			key="main.employeecontract.yearlyvacation.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text" />"><b><bean:message
 			key="main.employeecontract.edit.text" /></b></th>
-		<th align="left"><b><bean:message
+		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.delete.text" />"><b><bean:message
 			key="main.employeecontract.delete.text" /></b></th>
 	</tr>
 
