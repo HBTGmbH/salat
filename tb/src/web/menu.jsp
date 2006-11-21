@@ -33,7 +33,7 @@ window.onload=startList;
 <h1><bean:message key="main.general.mainmenu.menu.text" />
 </h1>
 </center>
-<div class="menu">
+<div class="menu hiddencontent">
 <ul id="nav">
 	<li id="first"><bean:message key="main.general.mainmenu.timereports.text" />
 	<ul>

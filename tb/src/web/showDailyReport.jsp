@@ -29,8 +29,8 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.mainmenu.daily.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
-
+<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all"/>
+<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
 <script type="text/javascript" language="JavaScript">
     	
  	function setUpdateTimereportsAction(form) {	
@@ -112,11 +112,11 @@
 </jsp:include>
 <br>
 <p>
-<h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
+<h2 class="hiddencontent"><bean:message key="main.general.mainmenu.daily.text" /></h2>
 </p>
 <br>
 <html:form action="/ShowDailyReport">
-	<table class="center backgroundcolor">
+	<table class="center backgroundcolor hiddencontent">
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
@@ -316,15 +316,15 @@
 		<th align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </th>	
 		-->
 		<th align="left" title="<bean:message
-			key="main.headlinedescription.dailyoverview.save.text" />"><b><bean:message
+			key="main.headlinedescription.dailyoverview.save.text" />" class="hiddencontent"><b><bean:message
 			key="main.timereport.monthly.save.text" /></b>
 		</th>
 		<th align="left" title="<bean:message
-			key="main.headlinedescription.dailyoverview.edit.text" />"><b><bean:message
+			key="main.headlinedescription.dailyoverview.edit.text" />" class="hiddencontent"><b><bean:message
 			key="main.timereport.monthly.edit.text" /></b>
 		</th>
 		<th align="left" title="<bean:message
-			key="main.headlinedescription.dailyoverview.delete.text" />"><b><bean:message
+			key="main.headlinedescription.dailyoverview.delete.text" />" class="hiddencontent"><b><bean:message
 			key="main.timereport.monthly.delete.text" /></b>
 		</th>
 	</tr>
@@ -398,18 +398,18 @@
 						value="${timereport.costs}" /></td>
 
 					<!-- Speichern -->
-					<td align="center"><html:image
+					<td align="center" class="hiddencontent"><html:image
 						onclick="confirmSave(this.form, ${timereport.id})"
 						src="/tb/images/Save.gif" alt="Save Timereport" /></td>
 
 					<!-- Aendern -->
-					<td align="center"><html:link
+					<td align="center" class="hiddencontent"><html:link
 						href="/tb/do/EditDailyReport?trId=${timereport.id}">
 						<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
 					</html:link></td>
 
 					<!-- Loeschen -->
-					<td align="center"><html:image
+					<td align="center" class="hiddencontent"><html:image
 						onclick="confirmDelete(this.form, ${timereport.id})"
 						src="/tb/images/Delete.gif" alt="Delete Timereport" /></td>
 
@@ -428,15 +428,15 @@
 					<td align="center"><c:out value="${timereport.costs}" /></td>
 
 					<!-- Speichern -->
-					<td align="center"><img src="/tb/images/verbot.gif"
+					<td align="center" class="hiddencontent"><img src="/tb/images/verbot.gif"
 						alt="Save Timereport" /></td>
 
 					<!-- Aendern -->
-					<td align="center"><img src="/tb/images/verbot.gif"
+					<td align="center" class="hiddencontent"><img src="/tb/images/verbot.gif"
 						alt="Edit Timereport" /></td>
 
 					<!-- Loeschen -->
-					<td align="center"><img src="/tb/images/verbot.gif"
+					<td align="center" class="hiddencontent"><img src="/tb/images/verbot.gif"
 						alt="Delete Timereport" /></td>
 
 				</c:otherwise>
@@ -468,7 +468,7 @@
 	<tr>
 		<html:form action="/CreateDailyReport">
 			<td class="noBborderStyle" colspan="6"><html:submit
-				styleId="button">
+				styleId="button" styleClass="hiddencontent">
 				<bean:message key="main.general.button.createnewreport.text" />
 			</html:submit></td>
 		</html:form>
@@ -476,7 +476,6 @@
 
 </table>
 <br>
-
 
 <span style="color:red"> <b> <html:errors
 	property="trSuborderId" footer="<br>" /> <html:errors
