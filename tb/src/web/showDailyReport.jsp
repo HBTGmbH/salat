@@ -484,29 +484,38 @@
 	footer="<br>" /><br>
 <html:errors property="comment" footer="<br>" /></b></span>
 
-<!-- Überstunden sind derzeit ausgeblendet -->
-<!-- 
+<!-- Überstunden und Urlaubstage -->
+
 <logic:notEqual name="currentEmployee" value="ALL EMPLOYEES"
 	scope="session">
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
 		<tr>
 			<td><b><bean:message
-				key="main.general.button.monthlyhourbalance.text" />: </b></td>
-			<td><logic:greaterEqual name="hourbalance" value="0.0"
-				scope="session">
-				<b><%=hourBalanceDisplay%></b>
-			</logic:greaterEqual> <logic:lessThan name="hourbalance" value="0.0" scope="session">
-				<b><span style="color:red"> <%=hourBalanceDisplay%> </span> </b>
-			</logic:lessThan></td>
+				key="main.general.hourbalance.text" />: </b></td>
+			<c:choose>
+				<c:when test="${overtimeIsNegative}">
+					<td><b><font color="red"><c:out value="${overtime}" /></font></b></td>
+				</c:when>
+				<c:otherwise>
+					<td><b><c:out value="${overtime}" /></b></td>
+				</c:otherwise>
+			</c:choose>
 		</tr>
 		<tr>
 			<td><b><bean:message
-				key="main.general.button.vacationused.text" />: </b></td>
-			<td><b><%=vacation%></b></td>
+				key="main.general.vacation.text" />: </b></td>
+			<c:choose>
+				<c:when test="${vacationused > vacationtotal}">
+					<td><b><font color="red"><c:out value="${vacationused}" />/<c:out value="${vacationtotal}" /></font></b></td>
+				</c:when>
+				<c:otherwise>
+					<td><b><c:out value="${vacationused}" />/<c:out value="${vacationtotal}" /></b></td>
+				</c:otherwise>
+			</c:choose>		
 		</tr>
 	</table>
 </logic:notEqual>
--->
+
 </body>
 </html:html>

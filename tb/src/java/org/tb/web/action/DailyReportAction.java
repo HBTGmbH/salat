@@ -7,6 +7,13 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 
 import org.tb.GlobalConstants;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Vacation;
+import org.tb.helper.TimereportHelper;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.VacationDAO;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
 
@@ -54,4 +61,41 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		return selectedDate;
 	}
 
+	/**
+	 * Calculates the overtime and vaction and sets the attributes in the session.
+	 * @param request
+	 * @param selectedYear
+	 * @param vacationDAO
+	 * @param employeecontract
+	 * @param employeeorderDAO
+	 * @param publicholidayDAO
+	 * @param timereportDAO
+	 */
+	public void refreshVacationAndOvertime(HttpServletRequest request, int selectedYear, VacationDAO vacationDAO, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO) {
+		TimereportHelper th = new TimereportHelper();
+		int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO);
+		Vacation vacation = vacationDAO.getVacationByYearAndEmployeecontract(employeecontract.getId(), selectedYear);
+		int totalVacation = vacation.getEntitlement();
+		int usedVacation = vacation.getUsed();
+		int overtimeHours = overtime[0];
+		int overtimeMinutes = overtime[1];
+		String overtimeString = overtimeHours+":";
+		if (overtimeMinutes < 0) {
+			request.getSession().setAttribute("overtimeIsNegative", true);
+			overtimeMinutes *= -1;
+		} else if (overtimeHours < 0){ 
+			request.getSession().setAttribute("overtimeIsNegative", true);
+		} else {
+			request.getSession().setAttribute("overtimeIsNegative", false);
+		}
+		if (overtimeMinutes < 10) {
+			overtimeString += 0;
+		}
+		overtimeString += overtimeMinutes;
+		request.getSession().setAttribute("vacationtotal", totalVacation);
+		request.getSession().setAttribute("vacationused", usedVacation);
+		request.getSession().setAttribute("overtime", overtimeString);
+		
+	}
+	
 }

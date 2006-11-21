@@ -1,6 +1,8 @@
 package org.tb.helper;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -8,9 +10,12 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
@@ -703,5 +708,91 @@ public class TimereportHelper {
 		return quittingTime;
 	}
 	
+	/**
+	 * 
+	 * @param employeecontract
+	 * @param employeeorderDAO
+	 * @param publicholidayDAO
+	 * @param timereportDAO
+	 * @return Returns an int[] containing the hours at index 0 and the minutes at index 1.
+	 */
+	public int[] calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO) {
+		int[] overtime = new int[2];
+		long overtimeHours;
+		long overtimeMinutes;
+		
+		Date today =  new Date();
+		Date contractBegin = employeecontract.getValidFrom();
+		
+		GregorianCalendar calendar = new GregorianCalendar();
+		calendar.setTime(today);
+		
+		// So = 1
+		// Mo = 2
+		// Di = 3
+		// Mi = 4
+		// Do = 5
+		// Fr = 6
+		// Sa = 7
+		int currentday = calendar.get(Calendar.DAY_OF_WEEK);
+		// set So = 8 
+		if (currentday == 1) {
+			currentday += 7;
+		}
+		
+		int numberOfHolidays = publicholidayDAO.getNumberOfHolidaysBetween(contractBegin, today);
+				
+		long diffMillis;
+        long diffDays;
+        diffMillis = today.getTime() - contractBegin.getTime();
+        diffDays = (diffMillis+(60*60*1000))/(24*60*60*1000);
+//      1 hour added because of possible differences caused by sommertime/wintertime
+        if (diffDays < 0) {
+        	throw new RuntimeException("implementation error while calculating overtime");
+        }
+		long weeks = diffDays/7;			// how many complete weeks?
+		long days = diffDays%7;				// days of incomplete week
+		diffDays = diffDays - (weeks * 2); 	// subtract weekends of complete weeks
+		
+		// check weekdays of incomplete week
+		if ((days + currentday) > 8) {
+			if (currentday == 8) {
+				// period starts with a sunday -> -1 day
+				diffDays -= 1;
+			} else {
+				// incomplete week covers a weekend -> -2 days
+				diffDays -= 2;
+			}
+		} else if ((days + currentday) == 8) {
+			// 1 day is a saturday -> -1 day
+			diffDays -= 1;
+		}
+		
+		// substract holidays
+		diffDays -= numberOfHolidays;
+		
+		// calculate working time
+		double dailyWorkingTime = employeecontract.getDailyWorkingTime() * 60;
+		if (dailyWorkingTime%1 != 0) {
+			throw new RuntimeException("daily working time has an invalid format (a.bc && (c = 0 || 5)): "+employeecontract.getDailyWorkingTime());
+		}
+		long expectedWorkingTimeInMinutes = (long)dailyWorkingTime * diffDays;
+		long actualWorkingTimeInMinutes = 0;
+		List<Timereport> reports = timereportDAO.getTimereportsByEmployeeContractId(employeecontract.getId());
+		if (reports != null) {
+			for (Timereport timereport : reports) {
+				actualWorkingTimeInMinutes += (timereport.getDurationhours()*60) + timereport.getDurationminutes();
+			}
+		} 
+		overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
+		overtimeHours = overtimeMinutes/60;
+		overtimeMinutes = overtimeMinutes%60;
+		
+		overtime[0] = (int)overtimeHours;
+		overtime[1] = (int)overtimeMinutes;
+		
+		return overtime;
+	}
 	
+		
 }

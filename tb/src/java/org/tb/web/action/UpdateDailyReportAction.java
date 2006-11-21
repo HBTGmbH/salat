@@ -19,6 +19,7 @@ import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
+import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
@@ -44,6 +45,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
 	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
 	private WorkingdayDAO workingdayDAO;
+	private EmployeeorderDAO employeeorderDAO;
 	
 	
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
@@ -76,6 +78,10 @@ public class UpdateDailyReportAction extends DailyReportAction {
 	
 	public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
 		this.workingdayDAO = workingdayDAO;
+	}
+	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
 	}
 
 	/* (non-Javadoc)
@@ -151,6 +157,11 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				
 				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+				
+				//refresh overtime
+				String year = (String) request.getSession().getAttribute("currentYear");
+				refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
+				
 				return mapping.findForward("success");
 			} 
 						

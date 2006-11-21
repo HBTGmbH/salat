@@ -151,5 +151,16 @@ public class PublicholidayDAO extends HibernateDaoSupport {
 
 		}
 	}
+	
+	/**
+	 * 
+	 * @param start
+	 * @param end
+	 * @return Returns the number of holidays between the two given dates.
+	 */
+	public int getNumberOfHolidaysBetween(Date start, Date end) {
+		List<Publicholiday> holidays = getSession().createQuery("from Publicholiday ph where ph.refdate >= ? and ph.refdate <= ? ").setDate(0, start).setDate(1, end).list();
+		return (holidays == null ? 0 : holidays.size());
+	}
 
 }

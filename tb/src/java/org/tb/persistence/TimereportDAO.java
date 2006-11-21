@@ -7,6 +7,7 @@ import java.util.List;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.helper.TimereportHelper;
@@ -46,6 +47,15 @@ public class TimereportDAO extends HibernateDaoSupport {
 		return getSession().createQuery("from Timereport order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").list();
 	}
 
+	/**
+	 * 
+	 * @param employeeContractId
+	 * @return Returns a list of all {@link Timereport}s associated to the given {@link Employeecontract#getId()}.
+	 */
+	public List<Timereport> getTimereportsByEmployeeContractId(long employeeContractId) {
+		return getSession().createQuery("from Timereport where employeecontract.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").setLong(0, employeeContractId).list();
+	}
+	
 	/**
 	 * Gets a list of Timereports by month/year.
 	 * month must have format EEE here, e.g. 'Jan' !

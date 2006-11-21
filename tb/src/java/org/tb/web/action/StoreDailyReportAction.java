@@ -35,6 +35,7 @@ import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.ReferencedayDAO;
@@ -63,6 +64,11 @@ public class StoreDailyReportAction extends DailyReportAction {
 	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
 	private WorkingdayDAO workingdayDAO;
+	private EmployeeorderDAO employeeorderDAO;
+	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
+	}
 	
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
@@ -441,6 +447,9 @@ public class StoreDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
 				
 				if (!addMoreReprts) {
+					// refresh overtime and vacation
+					String currentYear = (String) request.getSession().getAttribute("currentYear");
+					refreshVacationAndOvertime(request, new Integer(currentYear), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);					
 					return mapping.findForward("showDaily");
 				} else {
 					

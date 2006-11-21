@@ -29,7 +29,9 @@ import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
+import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
@@ -60,6 +62,18 @@ public class ShowDailyReportAction extends DailyReportAction {
 	private VacationDAO vacationDAO;
 	
 	private WorkingdayDAO workingdayDAO;
+	
+	private EmployeeorderDAO employeeorderDAO;
+	
+	private PublicholidayDAO publicholidayDAO;
+	
+	public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
+		this.publicholidayDAO = publicholidayDAO;
+	}
+	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
+	}
 
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
@@ -365,14 +379,17 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("hourbalance",
 						mr.getHourbalance());
 
-				// vacation balance
-				Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(yearString));
-				if (va == null) {
-					// should not be the case!
-					va = vacationDAO.setNewVacation(ec, Integer.parseInt(yearString));
-				} 
-				String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
-				request.getSession().setAttribute("vacation", vacationBalance);
+				// vacation and overtime balance
+				String year = (String) request.getSession().getAttribute("currentYear");
+				refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
+				
+//				Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(yearString));
+//				if (va == null) {
+//					// should not be the case!
+//					va = vacationDAO.setNewVacation(ec, Integer.parseInt(yearString));
+//				} 
+//				String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
+//				request.getSession().setAttribute("vacation", vacationBalance);
 
 			}
 
@@ -458,28 +475,31 @@ public class ShowDailyReportAction extends DailyReportAction {
 										.getTimereportsByDateAndEmployeeContractIdAndCustomerorderId(
 												ec.getId(), orderId, sqlDate, "W"));
 			}
-			// refresh hour balance
-			Monthlyreport mr = monthlyreportDAO
-					.getMonthlyreportByYearAndMonthAndEmployeecontract(ec
-							.getId(), Integer.parseInt(reportForm.getYear()),
-							DateUtils.getMonthMMFromShortstring(reportForm
-									.getMonth()));
-			if (mr == null) {
-				// add new daily report
-				mr = monthlyreportDAO.setNewReport(ec, Integer
-						.parseInt(reportForm.getYear()), DateUtils
-						.getMonthMMFromShortstring(reportForm.getMonth()));
-			}
-			request.getSession().setAttribute("hourbalance", mr.getHourbalance());
+			// refresh overtime and vacation
+			String year = (String) request.getSession().getAttribute("currentYear");
+			refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
 			
-			//	refresh vacation balance
-			Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(reportForm.getYear()));
-			if (va == null) {
-				// should not be the case!
-				va = vacationDAO.setNewVacation(ec, Integer.parseInt(reportForm.getYear()));
-			} 
-			String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
-			request.getSession().setAttribute("vacation", vacationBalance);
+//			Monthlyreport mr = monthlyreportDAO
+//					.getMonthlyreportByYearAndMonthAndEmployeecontract(ec
+//							.getId(), Integer.parseInt(reportForm.getYear()),
+//							DateUtils.getMonthMMFromShortstring(reportForm
+//									.getMonth()));
+//			if (mr == null) {
+//				// add new daily report
+//				mr = monthlyreportDAO.setNewReport(ec, Integer
+//						.parseInt(reportForm.getYear()), DateUtils
+//						.getMonthMMFromShortstring(reportForm.getMonth()));
+//			}
+//			request.getSession().setAttribute("hourbalance", mr.getHourbalance());
+//			
+//			//	refresh vacation balance
+//			Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(reportForm.getYear()));
+//			if (va == null) {
+//				// should not be the case!
+//				va = vacationDAO.setNewVacation(ec, Integer.parseInt(reportForm.getYear()));
+//			} 
+//			String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
+//			request.getSession().setAttribute("vacation", vacationBalance);
 		}
 
 		// refresh all relevant attributes
