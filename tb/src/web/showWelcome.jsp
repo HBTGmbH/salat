@@ -21,10 +21,10 @@ Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmplo
 <center><br>
 <br>
 <br>
-<h2 style="color: black"><bean:message key="main.general.mainmenu.hello.text" />&nbsp;<%=loginEmployee.getFirstname()%>&nbsp;<%=loginEmployee.getLastname()%>
+<h3 style="color: black"><bean:message key="main.general.mainmenu.hello.text" />&nbsp;<%=loginEmployee.getFirstname()%>&nbsp;<%=loginEmployee.getLastname()%>
 <br>
 <br>
-<bean:message key="main.general.mainmenu.welcome.text" /></h2>
+<bean:message key="main.general.mainmenu.welcome.text" /></h3>
 </center>
 </body>
 </html>
