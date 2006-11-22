@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -12,9 +13,11 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Overtime;
 import org.tb.bdom.Vacation;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeContractForm;
@@ -29,7 +32,11 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 	
 	private EmployeecontractDAO employeecontractDAO;
 	private EmployeeDAO employeeDAO;
+	private OvertimeDAO overtimeDAO;
 	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 	
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
 		this.employeecontractDAO = employeecontractDAO;
@@ -50,6 +57,23 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 		
 		// fill the form with properties of employee contract to be edited
 		setFormEntries(mapping, request, ecForm, ec);
+		
+		// set context
+		request.getSession().setAttribute("employeeContractContext", "edit");
+		
+		// get overtime-entries
+		List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
+		double totalOvertime = 0.0;
+		for (Overtime overtime : overtimes) {
+			totalOvertime += overtime.getTime();
+		}
+		request.getSession().setAttribute("overtimes", overtimes);
+		request.getSession().setAttribute("totalovertime", totalOvertime);
+		
+		// set day string for overime
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date now = new Date();
+		request.getSession().setAttribute("dateString", simpleDateFormat.format(now));
 		
 		// forward to employee contract add/edit form
 		return mapping.findForward("success");	

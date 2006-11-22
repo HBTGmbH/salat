@@ -91,6 +91,8 @@
 	</bean>
 	<bean name="workingdayDAO" class="org.tb.persistence.WorkingdayDAO">
 	</bean>
+	<bean name="overtimeDAO" class="org.tb.persistence.OvertimeDAO">
+	</bean>
 	
 	<!-- Business Logic -->
 	

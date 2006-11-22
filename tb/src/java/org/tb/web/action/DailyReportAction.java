@@ -11,12 +11,19 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Vacation;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
 
+	
+	private OvertimeDAO overtimeDAO;
+	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 	
 	protected Date getSelectedDateFromRequest(HttpServletRequest request) {
 		int day = new Integer((String) request.getSession().getAttribute("currentDay"));
@@ -73,7 +80,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 	 */
 	public void refreshVacationAndOvertime(HttpServletRequest request, int selectedYear, VacationDAO vacationDAO, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO) {
 		TimereportHelper th = new TimereportHelper();
-		int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO);
+		int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 		Vacation vacation = vacationDAO.getVacationByYearAndEmployeecontract(employeecontract.getId(), selectedYear);
 		int totalVacation = vacation.getEntitlement();
 		int usedVacation = vacation.getUsed();

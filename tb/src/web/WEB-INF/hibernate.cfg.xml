@@ -16,5 +16,6 @@
 		<mapping class="org.tb.bdom.Monthlyreport" />	
 		<mapping class="org.tb.bdom.Vacation" />
 		<mapping class="org.tb.bdom.Workingday" />	
+		<mapping class="org.tb.bdom.Overtime" />
 	</session-factory>
 </hibernate-configuration>

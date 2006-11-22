@@ -18,11 +18,13 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Monthlyreport;
+import org.tb.bdom.Overtime;
 import org.tb.bdom.Vacation;
 import org.tb.helper.EmployeeHelper;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.MonthlyreportDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
@@ -41,6 +43,11 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	private EmployeecontractDAO employeecontractDAO;
 	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
+	private OvertimeDAO overtimeDAO;
+	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
 		this.employeecontractDAO = employeecontractDAO;
@@ -61,7 +68,82 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddEmployeeContractForm ecForm = (AddEmployeeContractForm) form;
-	
+			
+			
+			if ((request.getParameter("task") != null) && 
+					(request.getParameter("task").equals("storeOvertime")) ||
+					(request.getParameter("ecId") != null)) {
+				
+				// check form entries
+				ActionMessages errors = getErrors(request);
+				if(errors == null) errors = new ActionMessages();
+				
+				// new overtime
+				Double overtimeDouble = 0.0;
+				if (ecForm.getNewOvertime() != null) {
+					String overtimeString = ecForm.getNewOvertime();
+//					if (overtimeString.contains(",")) {
+//						errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+//					}
+					
+					try {
+						overtimeDouble = Double.parseDouble(overtimeString);
+					
+						if (!GenericValidator.isDouble(overtimeString) ||
+								(!GenericValidator.isInRange(overtimeDouble, 
+										GlobalConstants.MIN_OVERTIME, GlobalConstants.MAX_OVERTIME))) {
+							errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+						}
+						if ((overtimeDouble * 100)%5 != 0.0) {
+							errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
+						}
+					} catch (NumberFormatException e) {
+						errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+					}
+				}
+				
+				// new comment
+				if (ecForm.getNewOvertimeComment().length() > GlobalConstants.EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH) {
+					errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.toolong"));
+				}
+				
+				saveErrors(request, errors);
+				
+				if (errors.size() > 0) {
+					return mapping.getInputForward();
+				}
+				
+				// get employeecontract
+				long ecId = -1;
+				ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
+				Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
+				
+				Overtime overtime = new Overtime();
+				overtime.setComment(ecForm.getNewOvertimeComment());
+				overtime.setEmployeecontract(ec);
+				overtime.setTime(overtimeDouble);
+				
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				
+				overtimeDAO.save(overtime, loginEmployee);
+				
+				// refresh list of overtime adjustments
+				List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
+				double totalOvertime = 0.0;
+				for (Overtime ot : overtimes) {
+					totalOvertime += ot.getTime();
+				}
+				request.getSession().setAttribute("overtimes", overtimes);
+				request.getSession().setAttribute("totalovertime", totalOvertime);
+				
+				// reset form
+				ecForm.setNewOvertime("0.0");
+				ecForm.setNewOvertimeComment("");
+				
+				return mapping.findForward("reset");
+			}
+			
+			
 			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("save")) ||
 					(request.getParameter("ecId") != null)) {
@@ -97,6 +179,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				ec.setFreelancer(ecForm.getFreelancer());
 				ec.setDailyWorkingTime(ecForm.getDailyworkingtime());
 				
+				
+				
 				// if necessary, add new monthly report for current month
 				if ((ec.getMonthlyreports() == null) || (ec.getMonthlyreports().size() <= 0)) {					
 					List<Monthlyreport> mrList = new ArrayList<Monthlyreport>();
@@ -125,6 +209,18 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				employeecontractDAO.save(ec, loginEmployee);
 				
+				Overtime overtime = new Overtime();
+				overtime.setComment("initial overtime");
+				overtime.setEmployeecontract(ec);
+				// if no value is selected, set 0.0
+				if (ecForm.getInitialOvertime() == null) {
+					ecForm.setInitialOvertime("0.0");
+				}
+				// the ecForm entry is checked before
+				overtime.setTime(new Double (ecForm.getInitialOvertime()));
+				
+				overtimeDAO.save(overtime, loginEmployee);
+				
 				request.getSession().setAttribute("currentEmployee", ecForm.getEmployeename());
 				
 				List<Employee> employeeOptionList = employeeDAO.getEmployees();
@@ -137,6 +233,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				if (!addMoreContracts) {
 					return mapping.findForward("success");
 				} else {
+					// set context
+					request.getSession().setAttribute("employeeContractContext", "create");
 					// reuse current input of the form and show add-page
 					return mapping.findForward("reset");
 				}
@@ -218,6 +316,31 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				(!GenericValidator.isInRange(ecForm.getDailyworkingtime(), 
 						0.0, GlobalConstants.MAX_DEBITHOURS))) {
 			errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat"));
+		}
+		if ((ecForm.getDailyworkingtime() * 100)%5 != 0.0) {
+			errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat2"));
+		}
+		
+		// check initial overtime
+		if (ecForm.getInitialOvertime() != null) {
+			String initialOvertimeString = ecForm.getInitialOvertime();
+//			if (initialOvertimeString.contains(",")) {
+//				errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+//			}
+			try {
+				Double initialOvertimeDouble = Double.parseDouble(initialOvertimeString);
+			
+				if (!GenericValidator.isDouble(initialOvertimeString) ||
+						(!GenericValidator.isInRange(initialOvertimeDouble, 
+								GlobalConstants.MIN_OVERTIME, GlobalConstants.MAX_OVERTIME))) {
+					errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+				}
+				if ((initialOvertimeDouble * 100)%5 != 0.0) {
+					errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
+				}
+			} catch (NumberFormatException e) {
+				errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+			}
 		}
 		
 		// check yearlyvacation format	

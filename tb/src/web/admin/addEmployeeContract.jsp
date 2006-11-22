@@ -5,6 +5,8 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -41,13 +43,22 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.employee.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="employeename"
-				value="<%=(String) request.getSession().getAttribute("currentEmployee")%>">
-				<html:options collection="employees" labelProperty="name"
-					property="name" />
-			</html:select> <html:hidden property="employeeId" /> <span style="color:red"><html:errors
-				property="employeename" /></span></td>
+			<td align="left" class="noBborderStyle">
+				<c:choose>
+					<c:when test="${employeeContractContext eq 'create'}">
+						<html:select
+							property="employeename"
+							value="${currentEmployee}">
+						<html:options collection="employees" labelProperty="name"
+							property="name" />
+						</html:select> <html:hidden property="employeeId" /> <span style="color:red"><html:errors
+							property="employeename" /></span>
+					</c:when>
+					<c:otherwise>
+						<b><c:out value="${currentEmployee}" /></b>
+					</c:otherwise>
+				</c:choose>
+			</td>
 		</tr>
 
 		<tr>
@@ -132,6 +143,22 @@
 				property="yearlyvacation" size="10" /> <span style="color:red"><html:errors
 				property="yearlyvacation" /></span></td>
 		</tr>
+		
+		<tr>
+			<c:choose>
+				<c:when test="${employeeContractContext eq 'create'}">
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.employeecontract.initialovertime.text" /></b></td>
+					<td align="left" class="noBborderStyle"><html:text
+						property="initialOvertime" size="10" /> <span style="color:red"><html:errors
+						property="initialOvertime" /></span></td>
+				</c:when>
+				<c:otherwise>
+					<td align="left" class="noBborderStyle"></td>	
+				</c:otherwise>
+			</c:choose>
+		</tr>
+			
 
 	</table>
 	<br>
@@ -152,6 +179,98 @@
 		</tr>
 	</table>
 	<html:hidden property="id" />
+</html:form>
+
+	<!-- overtime table -->
+	
+<html:form action="/StoreEmployeecontract?task=storeOvertime">			
+	<c:if test="${employeeContractContext eq 'edit'}">
+	<br>
+	<br>
+	<b><bean:message key="main.employeecontract.overtime.headline.text" /></b>
+	<br>
+	<br>
+		<table class="center backgroundcolor">
+			<tr>
+				<td class="noBborderStyle" align="right">
+					<b><bean:message key="main.employeecontract.overtime.total.text" />:</b>
+				</td>
+				<th>
+					<c:out value="${totalovertime}" />
+				</th>
+			</tr>
+			<tr>
+				<th>
+					<b><bean:message
+						key="main.employeecontract.overtime.date.text" /></b>
+				</th>
+				<th>
+					<b><bean:message
+						key="main.employeecontract.overtime.duration.text" /></b>
+				</th>
+				<th>
+					<b><bean:message
+						key="main.employeecontract.overtime.comment.text" /></b>
+				</th>
+			</tr>
+			<c:forEach var="overtime" items="${overtimes}" varStatus="statusID">
+				<c:choose>
+					<c:when test="${statusID.count%2==0}">
+						<tr class="primarycolor">
+					</c:when>
+					<c:otherwise>
+						<tr class="secondarycolor">
+					</c:otherwise>
+				</c:choose>
+					<td align="center"> 
+						<c:out value="${overtime.createdString}" />
+					</td>
+					<td align="center"> 
+						<c:out value="${overtime.time}" />
+					</td>
+					<td align="left">
+						<c:out value="${overtime.comment}" />
+					</td>
+				</tr>	
+			</c:forEach>
+			<tr>
+				<td align="center">
+					<c:out value="${dateString}" />
+				</td>
+				<td>
+					<html:text property="newOvertime" size="10" /> 
+				</td>					
+				<td>
+					<html:text property="newOvertimeComment" size="64" />
+				</td>
+				<td class="noBborderStyle">
+					<html:submit styleId="button" styleClass="hiddencontent">
+						<bean:message key="main.general.button.save.text" />						
+					</html:submit>
+				</td>
+			</tr>
+			<tr>
+				<td class="noBborderStyle" align="right">
+					<b><bean:message key="main.employeecontract.overtime.total.text" />:</b>
+				</td>
+				<th>
+					<c:out value="${totalovertime}" />
+				</th>
+			</tr>
+			
+			<!-- error messages -->
+			<tr>
+				<td class="noBborderStyle" colspan="4">
+					<span style="color:red"><html:errors property="newOvertime" /></span>
+				</td>
+			</tr>
+			<tr>
+				<td class="noBborderStyle" colspan="4">
+					<span style="color:red"><html:errors property="newOvertimeComment" /></span>
+				</td>
+			</tr>		
+		</table>
+	</c:if>
 </html:form>
 </body>
 

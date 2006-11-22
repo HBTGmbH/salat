@@ -11,10 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Overtime;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
@@ -716,7 +718,7 @@ public class TimereportHelper {
 	 * @param timereportDAO
 	 * @return Returns an int[] containing the hours at index 0 and the minutes at index 1.
 	 */
-	public int[] calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO) {
+	public int[] calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
 		int[] overtime = new int[2];
 		long overtimeHours;
 		long overtimeMinutes;
@@ -774,7 +776,7 @@ public class TimereportHelper {
 		// calculate working time
 		double dailyWorkingTime = employeecontract.getDailyWorkingTime() * 60;
 		if (dailyWorkingTime%1 != 0) {
-			throw new RuntimeException("daily working time has an invalid format (a.bc && (c = 0 || 5)): "+employeecontract.getDailyWorkingTime());
+			throw new RuntimeException("daily working time must be mutiple of 0.05: "+employeecontract.getDailyWorkingTime());
 		}
 		long expectedWorkingTimeInMinutes = (long)dailyWorkingTime * diffDays;
 		long actualWorkingTimeInMinutes = 0;
@@ -784,7 +786,13 @@ public class TimereportHelper {
 				actualWorkingTimeInMinutes += (timereport.getDurationhours()*60) + timereport.getDurationminutes();
 			}
 		} 
-		overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
+		long overtimeAdjustmentMinutes = 0;
+		List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
+		for (Overtime ot : overtimes) {
+			overtimeAdjustmentMinutes += (ot.getTime()*60);
+		}
+		
+		overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
 		overtimeHours = overtimeMinutes/60;
 		overtimeMinutes = overtimeMinutes%60;
 		

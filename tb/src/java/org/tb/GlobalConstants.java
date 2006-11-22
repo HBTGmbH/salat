@@ -15,6 +15,8 @@ public class GlobalConstants {
 	public static final double MAX_COSTS = 1.0E8;
 	public static final double MAX_HOURLY_RATE = 1000.0;
 	public static final double MAX_DEBITHOURS = 10000.0;
+	public static final double MAX_OVERTIME = 10000.0;
+	public static final double MIN_OVERTIME = -10000.0;
 	
 	public static final int COMMENT_MAX_LENGTH = 256;
 	public static final int STATUS_MAX_LENGTH = 64;
@@ -55,6 +57,7 @@ public class GlobalConstants {
 	public static final int EMPLOYEEORDER_STATUS_MAX_LENGTH = 64;
 	
 	public static final int EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH = 256;
+	public static final int EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH = 256;
 	
 	public static final int EMPLOYEE_FIRSTNAME_MAX_LENGTH = 256;
 	public static final int EMPLOYEE_LASTNAME_MAX_LENGTH = 256;

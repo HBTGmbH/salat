@@ -16,7 +16,9 @@ import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
+import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
+import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
@@ -34,6 +36,16 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
 	private WorkingdayDAO workingdayDAO;
+	private EmployeeorderDAO employeeorderDAO;
+	private PublicholidayDAO publicholidayDAO;
+	
+	public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
+		this.publicholidayDAO = publicholidayDAO;
+	}
+	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
+	}
 	
 		
 	public TimereportDAO getTimereportDAO() {
@@ -109,15 +121,21 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 		request.getSession().setAttribute("currentDay", trDay);
 		request.getSession().setAttribute("currentMonth", trMonth);
 		request.getSession().setAttribute("currentYear", trYear);			
-			
-		trMonth = DateUtils.getMonthMMStringFromShortstring(trMonth); // e.g., convert from 'Aug' to '08'
-		Monthlyreport mr = monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract(ec.getId(),
-										Integer.parseInt(trYear), Integer.parseInt(trMonth));		
-		request.getSession().setAttribute("hourbalance", mr.getHourbalance());
 		
-		Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(trYear));
-		String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
-		request.getSession().setAttribute("vacation", vacationBalance);
+//		refresh overtime
+		String year = (String) request.getSession().getAttribute("currentYear");
+		refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
+		
+		
+		
+//		trMonth = DateUtils.getMonthMMStringFromShortstring(trMonth); // e.g., convert from 'Aug' to '08'
+//		Monthlyreport mr = monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract(ec.getId(),
+//										Integer.parseInt(trYear), Integer.parseInt(trMonth));		
+//		request.getSession().setAttribute("hourbalance", mr.getHourbalance());
+//		
+//		Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(trYear));
+//		String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
+//		request.getSession().setAttribute("vacation", vacationBalance);
 		
 		return mapping.getInputForward();
 	}

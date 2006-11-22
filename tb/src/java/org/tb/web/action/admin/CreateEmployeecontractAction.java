@@ -56,6 +56,9 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
 		request.getSession().setAttribute("employeecontracts", employeecontracts);			
 		request.getSession().setAttribute("employees", employees);
 		
+		// set context
+		request.getSession().setAttribute("employeeContractContext", "create");
+		
 		// reset/init form entries
 		employeeContractForm.reset(mapping, request);
 		

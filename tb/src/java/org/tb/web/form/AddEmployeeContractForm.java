@@ -24,6 +24,9 @@ public class AddEmployeeContractForm extends ActionForm {
 	private Double dailyworkingtime;
 	private Integer yearlyvacation;
 	private String employeename;
+	private String initialOvertime;
+	private String newOvertime;
+	private String newOvertimeComment;
 	
 	private long employeeId;
 	
@@ -110,6 +113,50 @@ public class AddEmployeeContractForm extends ActionForm {
 		this.employeename = employeename;
 	}
 
+	
+	
+	/**
+	 * @return the newOvertime
+	 */
+	public String getNewOvertime() {
+		return newOvertime;
+	}
+
+	/**
+	 * @param newOvertime the newOvertime to set
+	 */
+	public void setNewOvertime(String newOvertime) {
+		this.newOvertime = newOvertime;
+	}
+
+	/**
+	 * @return the newOvertimeComment
+	 */
+	public String getNewOvertimeComment() {
+		return newOvertimeComment;
+	}
+
+	/**
+	 * @param newOvertimeComment the newOvertimeComment to set
+	 */
+	public void setNewOvertimeComment(String newOvertimeComment) {
+		this.newOvertimeComment = newOvertimeComment;
+	}
+
+	/**
+	 * @return the initialOvertime
+	 */
+	public String getInitialOvertime() {
+		return initialOvertime;
+	}
+
+	/**
+	 * @param initialOvertime the initialOvertime to set
+	 */
+	public void setInitialOvertime(String initialOvertime) {
+		this.initialOvertime = initialOvertime;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
@@ -119,7 +166,9 @@ public class AddEmployeeContractForm extends ActionForm {
 		validUntil = DateUtils.getCurrentYearString() + "-12-31";
 		freelancer = new Boolean(Boolean.FALSE);
 		dailyworkingtime = 8.0;
+		initialOvertime = "0.0";
 		yearlyvacation = 30;
+		newOvertime = "0.0";
 	}
 
 	@Override

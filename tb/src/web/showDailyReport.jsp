@@ -471,17 +471,22 @@
 	<!-- Add ist immer freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
 		<html:form action="/CreateDailyReport">
-			<td class="noBborderStyle" colspan="6"><html:submit
-				styleId="button">
-				<bean:message key="main.general.button.createnewreport.text" />
-			</html:submit>
+			<td class="noBborderStyle" colspan="6" align="left">
+				<html:submit styleId="button">
+					<bean:message key="main.general.button.createnewreport.text" />
+				</html:submit>
+			</td>
 		</html:form>
+	</tr>
+	<br>
+	<tr>
 		<html:form target="fenster"
 			onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 			action="/ShowDailyReport?task=print">
-			<html:submit styleId="button">
-				<bean:message key="main.general.button.printpreview.text" />
-			</html:submit>
+			<td class="noBborderStyle" colspan="6" align="left">
+				<html:submit styleId="button">
+					<bean:message key="main.general.button.printpreview.text" />
+				</html:submit>
 			</td>
 		</html:form>
 	</tr>
