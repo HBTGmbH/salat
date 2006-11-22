@@ -42,7 +42,7 @@ window.onload=startList;
 			<bean:message key="main.general.mainmenu.daily.text" />
 		</html:link></li>
 		<li><html:link styleClass="menu" action="/ShowMonthlyReport">
-			<bean:message key="main.general.mainmenu.monthly.text" />
+			<bean:message key="main.general.mainmenu.matrix.text" />
 		</html:link></li>
 	</ul>
 	</li>
