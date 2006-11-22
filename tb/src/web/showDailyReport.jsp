@@ -29,8 +29,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.mainmenu.daily.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all"/>
-<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
+<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
+<link rel="stylesheet" type="text/css" href="/tb/print.css"
+	media="print" />
 <script type="text/javascript" language="JavaScript">
     	
  	function setUpdateTimereportsAction(form) {	
@@ -101,8 +102,14 @@
 	function saveBreak(form) {
 		form.action = "/tb/do/ShowDailyReport?task=saveBreak";
 		form.submit();
-	}					
- 
+	}	
+					
+  	function setUpdateTimereportsAction(form) {	
+ 		form.action = "/tb/do/ShowDailyReport?task=refreshTimereports";
+		form.submit();
+	}	
+	
+
 </script>
 
 </head>
@@ -112,18 +119,18 @@
 </jsp:include>
 <br>
 <p>
-<h2 class="hiddencontent"><bean:message key="main.general.mainmenu.daily.text" /></h2>
+<h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
 </p>
 <br>
 <html:form action="/ShowDailyReport">
-	<table class="center backgroundcolor hiddencontent">
+	<table class="center backgroundcolor">
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:select
 				property="employeename"
 				value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
-				onchange="setUpdateTimereportsAction(this.form)" >
+				onchange="setUpdateTimereportsAction(this.form)">
 
 				<html:option value="ALL EMPLOYEES">
 					<bean:message key="main.general.allemployees.text" />
@@ -267,66 +274,65 @@
 		<c:choose>
 			<c:when test="${maxlabortime}">
 				<th align="center" color="red"><b><font color="red"><c:out
-					value="${labortime}"></c:out></font></b>
-				</th>
+					value="${labortime}"></c:out></font></b></th>
 			</c:when>
 			<c:otherwise>
 				<th align="center"><b><c:out value="${labortime}"></c:out></b>
 				</th>
 			</c:otherwise>
 		</c:choose>
-		<th align="center"><b><c:out value="${dailycosts}"></c:out></b>
-		</th>
+		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
 	</tr>
 
 	<tr>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message
-			key="main.timereport.monthly.employee.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
+			key="main.timereport.monthly.employee.text" /></b></th>
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
-			key="main.timereport.monthly.refday.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
+			key="main.timereport.monthly.refday.text" /></b></th>
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.sortofreport.text" />"><b><bean:message
-			key="main.timereport.monthly.sortofreport.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
+			key="main.timereport.monthly.sortofreport.text" /></b></th>
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
-			key="main.timereport.monthly.customerorder.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
+			key="main.timereport.monthly.customerorder.text" /></b></th>
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.suborder.text" />"><b><bean:message
-			key="main.timereport.monthly.suborder.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.dailyoverview.taskdescription.text" />" width="25%"><b><bean:message
-			key="main.timereport.monthly.taskdescription.text" /></b>
-		</th>
-		<th align="center" title="<bean:message
+			key="main.timereport.monthly.suborder.text" /></b></th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.dailyoverview.taskdescription.text" />"
+			width="25%"><b><bean:message
+			key="main.timereport.monthly.taskdescription.text" /></b></th>
+		<th align="center"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
-			key="main.timereport.monthly.hours.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
+			key="main.timereport.monthly.hours.text" /></b></th>
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.costs.text" />"><b><bean:message
-			key="main.timereport.monthly.costs.text" /></b>
-		</th>
+			key="main.timereport.monthly.costs.text" /></b></th>
 		<!--  
 		<th align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </th>	
 		-->
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.dailyoverview.save.text" />" class="hiddencontent"><b><bean:message
-			key="main.timereport.monthly.save.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.dailyoverview.edit.text" />" class="hiddencontent"><b><bean:message
-			key="main.timereport.monthly.edit.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.dailyoverview.delete.text" />" class="hiddencontent"><b><bean:message
-			key="main.timereport.monthly.delete.text" /></b>
-		</th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.dailyoverview.save.text" />"><b><bean:message
+			key="main.timereport.monthly.save.text" /></b></th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.dailyoverview.edit.text" />"><b><bean:message
+			key="main.timereport.monthly.edit.text" /></b></th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.dailyoverview.delete.text" />"><b><bean:message
+			key="main.timereport.monthly.delete.text" /></b></th>
 	</tr>
 
 	<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
@@ -398,18 +404,18 @@
 						value="${timereport.costs}" /></td>
 
 					<!-- Speichern -->
-					<td align="center" class="hiddencontent"><html:image
+					<td align="center"><html:image
 						onclick="confirmSave(this.form, ${timereport.id})"
 						src="/tb/images/Save.gif" alt="Save Timereport" /></td>
 
 					<!-- Aendern -->
-					<td align="center" class="hiddencontent"><html:link
+					<td align="center"><html:link
 						href="/tb/do/EditDailyReport?trId=${timereport.id}">
 						<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
 					</html:link></td>
 
 					<!-- Loeschen -->
-					<td align="center" class="hiddencontent"><html:image
+					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${timereport.id})"
 						src="/tb/images/Delete.gif" alt="Delete Timereport" /></td>
 
@@ -428,15 +434,15 @@
 					<td align="center"><c:out value="${timereport.costs}" /></td>
 
 					<!-- Speichern -->
-					<td align="center" class="hiddencontent"><img src="/tb/images/verbot.gif"
+					<td align="center"><img src="/tb/images/verbot.gif"
 						alt="Save Timereport" /></td>
 
 					<!-- Aendern -->
-					<td align="center" class="hiddencontent"><img src="/tb/images/verbot.gif"
+					<td align="center"><img src="/tb/images/verbot.gif"
 						alt="Edit Timereport" /></td>
 
 					<!-- Loeschen -->
-					<td align="center" class="hiddencontent"><img src="/tb/images/verbot.gif"
+					<td align="center"><img src="/tb/images/verbot.gif"
 						alt="Delete Timereport" /></td>
 
 				</c:otherwise>
@@ -452,25 +458,31 @@
 		<c:choose>
 			<c:when test="${maxlabortime}">
 				<th align="center" color="red"><b><font color="red"><c:out
-					value="${labortime}"></c:out></font></b>
-				</th>
+					value="${labortime}"></c:out></font></b></th>
 			</c:when>
 			<c:otherwise>
 				<th align="center"><b><c:out value="${labortime}"></c:out></b>
 				</th>
 			</c:otherwise>
 		</c:choose>
-		<th align="center"><b><c:out value="${dailycosts}"></c:out></b>
-		</th>
+		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
 	</tr>
 
 	<!-- Add ist immer freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
 		<html:form action="/CreateDailyReport">
 			<td class="noBborderStyle" colspan="6"><html:submit
-				styleId="button" styleClass="hiddencontent">
+				styleId="button">
 				<bean:message key="main.general.button.createnewreport.text" />
-			</html:submit></td>
+			</html:submit>
+		</html:form>
+		<html:form target="fenster"
+			onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
+			action="/ShowDailyReport?task=print">
+			<html:submit styleId="button">
+				<bean:message key="main.general.button.printpreview.text" />
+			</html:submit>
+			</td>
 		</html:form>
 	</tr>
 

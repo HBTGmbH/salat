@@ -134,6 +134,7 @@
 			<forward name="error" path="/admin/error.jsp" />
 			<forward name="newreport" path="/addDailyReport.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
+			<forward name="print" path="/showDailyReportPrint.jsp" />
 		</action>
 		
 		<!-- Admin -->

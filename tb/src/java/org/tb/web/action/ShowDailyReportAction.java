@@ -205,8 +205,12 @@ public class ShowDailyReportAction extends DailyReportAction {
 				return mapping.findForward("success");
 			}
 		}
-		
-				
+        
+        if ((request.getParameter("task") != null) &&
+                (request.getParameter("task").equals("print"))){
+            return mapping.findForward("print");
+        }
+        
 		if (request.getParameter("task") != null) {
 			// just go back to main menu
 			if (request.getParameter("task").equalsIgnoreCase("back")) {
@@ -215,7 +219,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 				return mapping.findForward("success");
 			}
 		}
-
+        
 		if (request.getParameter("task") == null) {
 						
 			// no special task - prepare everything to show reports
