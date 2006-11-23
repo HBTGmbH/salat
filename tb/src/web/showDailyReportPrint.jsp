@@ -25,7 +25,7 @@
             String vacation = (String)request.getSession().getAttribute("vacation");
 %>
 <%
-	Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 
+Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 %>
 <html>
 <head>
@@ -38,7 +38,11 @@
 
 </head>
 <body>
-<%=loginEmployee.getFirstname()%> <%=loginEmployee.getLastname()%>
+<c:out value="${currentEmployee}" /> / 
+<c:out value="${currentOrder}" /> / 
+<c:out value="${currentDay}" />. 
+<c:out value="${currentMonth}" /> 
+<c:out value="${currentYear}" />
 <table class="center">
 
 	<tr>
