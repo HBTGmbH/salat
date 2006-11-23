@@ -179,10 +179,28 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 				employeeorderDAO.save(eo, loginEmployee);
 				
-				List<Employee> employeeOptionList = employeeDAO.getEmployees();
-				request.getSession().setAttribute("employees", employeeOptionList);
+				// not necessary
+//				List<Employee> employeeOptionList = employeeDAO.getEmployees();
+//				request.getSession().setAttribute("employees", employeeOptionList);
 				
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
+				// refresh list of employee orders for overview
+				long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+				long orderId = (Long) request.getSession().getAttribute("currentOrderId");
+				if (employeeId == -1) {
+					if (orderId == -1) {
+						request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
+					} else {
+						request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderId(orderId));
+					}
+				} else {
+					if (orderId == -1) {
+						request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeId(employeeId));
+					} else {
+						request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeId(orderId, employeeId));
+					}
+				}
+				
+//				request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
 				request.getSession().removeAttribute("eoId");
 				
 				boolean addMoreOrders = Boolean.parseBoolean((String)request.getParameter("continue"));

@@ -64,12 +64,14 @@
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.hourlyrate.text" />"><b><bean:message
 			key="main.suborder.hourlyrate.text" /></b></th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
-			key="main.suborder.edit.text" /></b></th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.suborders.delete.text" />"><b><bean:message
-			key="main.suborder.delete.text" /></b></th>
+		<c:if test="${employeeAuthorized}">
+			<th align="left" title="<bean:message
+				key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
+				key="main.suborder.edit.text" /></b></th>
+			<th align="left" title="<bean:message
+				key="main.headlinedescription.suborders.delete.text" />"><b><bean:message
+				key="main.suborder.delete.text" /></b></th>
+		</c:if>
 	</tr>
 
 	<c:forEach var="suborder" items="${suborders}" varStatus="statusID">
@@ -95,7 +97,7 @@
 		<td><c:out value="${suborder.currency}" /></td>
 		<td><c:out value="${suborder.hourly_rate}" /></td>
 
-		<logic:equal name="employeeAuthorized" value="true" scope="session">
+		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
 				href="/tb/do/EditSuborder?soId=${suborder.id}">
 				<img src="/tb/images/Edit.gif" alt="Edit Suborder" />
@@ -105,16 +107,18 @@
 					onclick="confirmDelete(this.form, ${suborder.id})"
 					src="/tb/images/Delete.gif" alt="Delete Suborder" /></td>
 			</html:form>
-		</logic:equal>
+		</c:if>
 		</tr>
 	</c:forEach>
-	<tr>
-		<html:form action="/CreateSuborder">
-			<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
-				<bean:message key="main.general.button.createsuborder.text" />
-			</html:submit></td>
-		</html:form>
-	</tr>
+	<c:if test="${employeeAuthorized}">
+		<tr>
+			<html:form action="/CreateSuborder">
+				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+					<bean:message key="main.general.button.createsuborder.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</c:if>
 </table>
 </body>
 </html:html>

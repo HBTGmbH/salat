@@ -18,7 +18,7 @@ public class ShowEmployeeOrderForm extends ActionForm {
 
 
 	private long employeeId;
-	
+	private long orderId;
 	
 	
 	/**
@@ -33,6 +33,22 @@ public class ShowEmployeeOrderForm extends ActionForm {
 	 */
 	public void setEmployeeId(long employeeId) {
 		this.employeeId = employeeId;
+	}
+	
+	
+
+	/**
+	 * @return the orderId
+	 */
+	public long getOrderId() {
+		return orderId;
+	}
+
+	/**
+	 * @param orderId the orderId to set
+	 */
+	public void setOrderId(long orderId) {
+		this.orderId = orderId;
 	}
 
 	@Override

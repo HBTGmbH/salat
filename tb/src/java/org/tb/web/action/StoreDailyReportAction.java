@@ -399,14 +399,14 @@ public class StoreDailyReportAction extends DailyReportAction {
 				String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
 				String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM	
 				TimereportHelper th = new TimereportHelper();
-				if (reportForm.getSortOfReport().equals("W")) {
+//				if (reportForm.getSortOfReport().equals("W")) {
 					// update monthly hour balance...
 //					th.updateMonthlyHourBalance(tr, 1, timereportDAO, monthlyreportDAO);				
-					Monthlyreport mr = 
-						monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract
-						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
-					request.getSession().setAttribute("hourbalance", mr.getHourbalance());
-				}
+//					Monthlyreport mr = 
+//						monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract
+//						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
+//					request.getSession().setAttribute("hourbalance", mr.getHourbalance());
+//				}
 				if (reportForm.getSortOfReport().equals("V")) {
 					// update vacation balance
 					if (request.getSession().getAttribute("trId") == null) {

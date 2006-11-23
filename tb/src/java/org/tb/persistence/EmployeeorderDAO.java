@@ -97,6 +97,25 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	}
 
 	/**
+	 * 
+	 * @param orderId
+	 * @return Returns a list of all {@link Employeeorder}s associated to the given orderId.
+	 */
+	public List<Employeeorder> getEmployeeordersByOrderId(long orderId) {
+		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).list();
+	}
+	
+	/**
+	 * 
+	 * @param orderId
+	 * @param employeeId
+	 * @return Returns a list of all {@link Employeeorder}s associated to the given orderId and employeeId.
+	 */
+	public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeId(long orderId, long employeeId) {
+		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? and employeecontract.employee.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).setLong(1, employeeId).list();
+	}
+	
+	/**
 	 * Get a list of all Employeeorders ordered by employee, customer order, suborder.
 	 * 
 	 * @return List<Employeeorder> 

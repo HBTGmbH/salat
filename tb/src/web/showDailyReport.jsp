@@ -468,15 +468,17 @@
 		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
 	</tr>
 
-	<!-- Add ist immer freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
+	<!-- Add ist derzeit auch nur für sich selbst freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
-		<html:form action="/CreateDailyReport">
-			<td class="noBborderStyle" colspan="6" align="left">
-				<html:submit styleId="button">
-					<bean:message key="main.general.button.createnewreport.text" />
-				</html:submit>
-			</td>
-		</html:form>
+		<c:if test="${(loginEmployee.name == currentEmployee) || (loginEmployee.status eq 'bl')}">
+			<html:form action="/CreateDailyReport">
+				<td class="noBborderStyle" colspan="6" align="left">
+					<html:submit styleId="button">
+						<bean:message key="main.general.button.createnewreport.text" />
+					</html:submit>
+				</td>
+			</html:form>
+		</c:if>	
 	</tr>
 	<br>
 	<tr>

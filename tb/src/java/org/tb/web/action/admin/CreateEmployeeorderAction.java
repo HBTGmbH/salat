@@ -90,7 +90,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		
 	
 		// set relevant attributes
-		request.getSession().setAttribute("employees", employees);
+//		request.getSession().setAttribute("employees", employees);
 		request.getSession().setAttribute("employeeswithcontract", employeeswithcontract);
 		
 		List<Customerorder> orders = customerorderDAO.getCustomerorders();

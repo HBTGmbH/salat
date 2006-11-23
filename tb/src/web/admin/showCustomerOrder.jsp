@@ -86,14 +86,16 @@
 			title="<bean:message
 			key="main.headlinedescription.orders.hourlyrate.text" />"><b><bean:message
 			key="main.customerorder.hourlyrate.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.orders.edit.text" />"><b><bean:message
-			key="main.customerorder.edit.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.orders.delete.text" />"><b><bean:message
-			key="main.customerorder.delete.text" /></b></th>
+		<c:if test="${employeeAuthorized}">
+			<th align="left"
+				title="<bean:message
+				key="main.headlinedescription.orders.edit.text" />"><b><bean:message
+				key="main.customerorder.edit.text" /></b></th>
+			<th align="left"
+				title="<bean:message
+				key="main.headlinedescription.orders.delete.text" />"><b><bean:message
+				key="main.customerorder.delete.text" /></b></th>
+		</c:if>
 	</tr>
 	<c:forEach var="customerorder" items="${customerorders}"
 		varStatus="statusID">
@@ -116,7 +118,7 @@
 		<td><c:out value="${customerorder.currency}" /></td>
 		<td><c:out value="${customerorder.hourly_rate}" /></td>
 
-		<logic:equal name="employeeAuthorized" value="true" scope="session">
+		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
 				href="/tb/do/EditCustomerorder?coId=${customerorder.id}">
 				<img src="/tb/images/Edit.gif" alt="Edit Customerorder" />
@@ -126,17 +128,19 @@
 					onclick="confirmDelete(this.form, ${customerorder.id})"
 					src="/tb/images/Delete.gif" alt="Delete Customerorder" /></td>
 			</html:form>
-		</logic:equal>
+		</c:if>
 		</tr>
 	</c:forEach>
-	<tr>
-		<html:form action="/CreateCustomerorder">
-			<td class="noBborderStyle" colspan="4"><html:submit
-				styleId="button">
-				<bean:message key="main.general.button.createcustomerorder.text" />
-			</html:submit></td>
-		</html:form>
-	</tr>
+	<c:if test="${employeeAuthorized}">
+		<tr>
+			<html:form action="/CreateCustomerorder">
+				<td class="noBborderStyle" colspan="4"><html:submit
+					styleId="button">
+					<bean:message key="main.general.button.createcustomerorder.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</c:if>
 </table>
 </body>
 </html:html>

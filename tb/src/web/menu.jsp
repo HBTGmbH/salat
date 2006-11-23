@@ -46,7 +46,7 @@ window.onload=startList;
 		</html:link></li>
 	</ul>
 	</li>
-	<c:if test="${loginEmployee.status != 'ma'}">
+	
 		<li><bean:message key="main.general.mainmenu.employees.text" />
 		<ul>
 			<li class="first"><html:link styleClass="menu"
@@ -75,13 +75,12 @@ window.onload=startList;
 			</html:link></li>
 		</ul>
 		</li>
-	</c:if>
+	
 	<li><html:link action="/LogoutEmployee">
 		<bean:message key="main.general.logout.text" /> (<%=loginEmployee.getLoginname()%>/<%=loginEmployee.getStatus()%>)</html:link></li>
-	<c:if test="${loginEmployee.status == 'ma'}">
-		<li>&nbsp;</li>
-		<li>&nbsp;</li>
-	</c:if>
+	
+		
+	
 
 	<li id="last">&nbsp;</li>
 </ul>

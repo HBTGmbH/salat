@@ -9,8 +9,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
@@ -28,6 +30,11 @@ public class ShowEmployeeorderAction extends LoginRequiredAction {
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeecontractDAO employeecontractDAO;
 	private EmployeeDAO employeeDAO;
+	private CustomerorderDAO customerorderDAO;
+	
+	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
+		this.customerorderDAO = customerorderDAO;
+	}
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -56,18 +63,8 @@ public class ShowEmployeeorderAction extends LoginRequiredAction {
 		List<Employee> employees = employeeDAO.getEmployeesWithContractsValidForDate(now);
 		request.getSession().setAttribute("employees", employees);
 		
-		
-		// request.getSession().setAttribute("employeecontracts", employeeContracts);
-		request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());			
-		
-		if ((request.getParameter("task") != null) && ("updateEmployeeOrders".equals(request.getParameter("task")))) {
-			long employeeId = orderForm.getEmployeeId();
-			if (employeeId == -1) {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
-			} else {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeId(employeeId));
-			}
-		}
+		List<Customerorder> orders = customerorderDAO.getCustomerorders();
+		request.getSession().setAttribute("orders", orders);
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {
@@ -77,10 +74,49 @@ public class ShowEmployeeorderAction extends LoginRequiredAction {
 				// forward to show employee orders jsp
 				return mapping.findForward("success");
 			}
-		} else {	
-			// forward to show employee orders jsp
-			return mapping.findForward("success");
 		}
+			
+//		if (request.getParameter("task") == null) {
+			long employeeId = orderForm.getEmployeeId();
+			
+			if (employeeId == 0) {
+				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+				employeeId = loginEmployee.getId();
+			}
+			orderForm.setEmployeeId(employeeId);
+			
+			request.getSession().setAttribute("currentEmployeeId", employeeId);
+			long orderId = orderForm.getOrderId();
+			if (orderId == 0) {
+				orderId = -1;
+			}
+			
+			request.getSession().setAttribute("currentOrderId", orderId);
+			
+			
+			if (employeeId == -1) {
+				if (orderId == -1) {
+					request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
+				} else {
+					request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderId(orderId));
+				}
+			} else {
+				if (orderId == -1) {
+					request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeId(employeeId));
+				} else {
+					request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeId(orderId, employeeId));
+				}
+			}
+			
+			
+			
+			
+			return mapping.findForward("success");
+			
+//		} else {	
+			// forward to show employee orders jsp
+//			return mapping.findForward("success");
+//		}
 	}
-
+	
 }

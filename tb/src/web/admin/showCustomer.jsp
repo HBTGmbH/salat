@@ -51,12 +51,14 @@
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.customers.address.text" />"><b><bean:message
 			key="main.customer.address.text" /></b></th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.customers.edit.text" />"><b><bean:message
-			key="main.customer.edit.text" /></b></th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.customers.delete.text" />"><b><bean:message
-			key="main.customer.delete.text" /></b></th>
+		<c:if test="${employeeAuthorized}">
+			<th align="left" title="<bean:message
+				key="main.headlinedescription.customers.edit.text" />"><b><bean:message
+				key="main.customer.edit.text" /></b></th>
+			<th align="left" title="<bean:message
+				key="main.headlinedescription.customers.delete.text" />"><b><bean:message
+				key="main.customer.delete.text" /></b></th>
+		</c:if>
 	</tr>
 	<c:forEach var="customer" items="${customers}" varStatus="statusID">
 		<c:choose>
@@ -70,7 +72,7 @@
 		<td><c:out value="${customer.name}" /></td>
 		<td><c:out value="${customer.address}" /></td>
 
-		<logic:equal name="employeeAuthorized" value="true" scope="session">
+		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
 				href="/tb/do/EditCustomer?cuId=${customer.id}">
 				<img src="/tb/images/Edit.gif" alt="Edit Customer" />
@@ -80,16 +82,18 @@
 					onclick="confirmDelete(this.form, ${customer.id})"
 					src="/tb/images/Delete.gif" alt="Delete Customer" /></td>
 			</html:form>
-		</logic:equal>
+		</c:if>
 		</tr>
 	</c:forEach>
-	<tr>
-		<html:form action="/CreateCustomer">
-			<td class="noBborderStyle" colspan="2"><html:submit styleId="button">
-				<bean:message key="main.general.button.createcustomer.text" />
-			</html:submit></td>
-		</html:form>
-	</tr>
+	<c:if test="${employeeAuthorized}">
+		<tr>
+			<html:form action="/CreateCustomer">
+				<td class="noBborderStyle" colspan="2"><html:submit styleId="button">
+					<bean:message key="main.general.button.createcustomer.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</c:if>
 </table>
 </body>
 </html:html>

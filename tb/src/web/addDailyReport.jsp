@@ -90,14 +90,24 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.timereport.employee.fullname.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="employeename"
-				value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
-				onchange="setUpdateOrdersAction(this.form)">
-				<html:options collection="employees" labelProperty="name"
-					property="name" />
-
-			</html:select> <html:hidden property="employeecontractId" /></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="employeename"
+					value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
+					onchange="setUpdateOrdersAction(this.form)">				
+				<c:choose>
+					<c:when test="${loginEmployee.status eq 'bl'}">
+						<html:options collection="employees" labelProperty="name"
+								property="name" />	
+					</c:when>
+					<c:otherwise>
+						<html:option value="${loginEmployee.name}">
+							<c:out value="${loginEmployee.name}" />
+						</html:option>
+					</c:otherwise>
+				</c:choose>	
+				</html:select> 
+				<html:hidden property="employeecontractId" />	
+			</td>
 
 		</tr>
 

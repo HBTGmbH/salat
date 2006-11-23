@@ -33,7 +33,7 @@
 	}
 	
 	function setUpdateEmployeeOrders(form) {
-		form.action = "/tb/do/ShowEmployeeorder?task=updateEmployeeOrders";
+		form.action = "/tb/do/ShowEmployeeorder";
 		form.submit();
 	
 	}				
@@ -55,6 +55,7 @@
  	
 <html:form action="/ShowEmployeeorder">
 	<table class="center backgroundcolor">
+		<!-- select employee -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
@@ -67,6 +68,22 @@
 				</html:option>
 				<html:options collection="employees"
 					labelProperty="name" property="id" />
+			</html:select> 		
+			</td>
+		</tr>
+		<!-- select order -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.employeeorder.customerorder.text" />:</b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select
+					property="orderId"		
+					onchange="setUpdateEmployeeOrders(this.form)" >
+				<html:option value="-1">
+					<bean:message key="main.general.allorders.text" />
+				</html:option>
+				<html:options collection="orders"
+					labelProperty="sign" property="id" />
 			</html:select> 		
 			</td>
 		</tr>	
@@ -106,12 +123,14 @@
 		<th align="center" title="<bean:message
 			key="main.headlinedescription.employeeorders.statusreport.text" />"><b><bean:message
 			key="main.employeeorder.statusreport.text" /></b></th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
-			key="main.employeeorder.edit.text" /></b></th>
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.employeeorders.delete.text" />"><b><bean:message
-			key="main.employeeorder.delete.text" /></b></th>
+		<c:if test="${employeeAuthorized}">
+			<th align="left" title="<bean:message
+				key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
+				key="main.employeeorder.edit.text" /></b></th>
+			<th align="left" title="<bean:message
+				key="main.headlinedescription.employeeorders.delete.text" />"><b><bean:message
+				key="main.employeeorder.delete.text" /></b></th>
+		</c:if>
 	</tr>
 	<c:forEach var="employeeorder" items="${employeeorders}"
 		varStatus="statusID">
@@ -146,7 +165,7 @@
 		<td align="center"><html:checkbox name="employeeorder"
 			property="statusreport" disabled="true" /></td>
 
-		<logic:equal name="employeeAuthorized" value="true" scope="session">
+		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
 				href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
 				<img src="/tb/images/Edit.gif" alt="Edit Employeeorder" />
@@ -156,17 +175,18 @@
 					onclick="confirmDelete(this.form, ${employeeorder.id})"
 					src="/tb/images/Delete.gif" alt="Delete Employeeorder" /></td>
 			</html:form>
-		</logic:equal>
+		</c:if>
 		</tr>
 	</c:forEach>
-
-	<tr>
-		<html:form action="/CreateEmployeeorder">
-			<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
-				<bean:message key="main.general.button.createemployeeorder.text" />
-			</html:submit></td>
-		</html:form>
-	</tr>
+	<c:if test="${employeeAuthorized}">
+		<tr>
+			<html:form action="/CreateEmployeeorder">
+				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+					<bean:message key="main.general.button.createemployeeorder.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</c:if>
 </table>
 </body>
 </html:html>

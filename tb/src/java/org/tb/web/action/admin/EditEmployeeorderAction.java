@@ -95,7 +95,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		request.getSession().setAttribute("currentEmployee", theEmployee.getName());	
 		
 		List<Employee> employees = employeeDAO.getEmployees();
-		request.getSession().setAttribute("employees", employees);
+//		request.getSession().setAttribute("employees", employees);
 		
 		Employee emp;
 		Iterator it = employees.iterator();
@@ -113,7 +113,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		
 	
 		// set relevant attributes
-		request.getSession().setAttribute("employees", employees);
+//		request.getSession().setAttribute("employees", employees);
 		request.getSession().setAttribute("employeeswithcontract", employeeswithcontract);
 		
 		
