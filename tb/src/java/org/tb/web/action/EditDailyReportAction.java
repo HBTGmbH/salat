@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
@@ -91,7 +92,25 @@ public class EditDailyReportAction extends LoginRequiredAction {
 		Employeecontract ec = tr.getEmployeecontract();
 		Employee theEmployee = ec.getEmployee();
 		
-		List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractId(ec.getId());
+//		List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractId(ec.getId());
+		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+		List<Suborder> theSuborders = new ArrayList<Suborder>();
+		if ((orders != null) && (!orders.isEmpty())) {
+			reportForm.setOrder(orders.get(0).getSign());
+			reportForm.setOrderId(orders.get(0).getId());
+			theSuborders = 
+				suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId());
+			if ((theSuborders == null) || (theSuborders.isEmpty())) {
+				request.setAttribute("errorMessage", 
+						"Orders/suborders inconsistent for employee - please call system administrator.");
+				mapping.findForward("error");
+			}			
+		} else {
+			request.setAttribute("errorMessage", 
+			"no orders found for employee - please call system administrator.");
+			mapping.findForward("error");
+		}
+		
 		
 //		 prepare second collection of suborders sorted by description
 		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
@@ -100,7 +119,7 @@ public class EditDailyReportAction extends LoginRequiredAction {
 		
 		
 		request.getSession().setAttribute("trId", tr.getId());
-		request.getSession().setAttribute("orders", customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId()));
+		request.getSession().setAttribute("orders", orders);
 		request.getSession().setAttribute("suborders", theSuborders);
 		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 		
