@@ -37,6 +37,7 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.SuborderDAO;
@@ -65,6 +66,11 @@ public class StoreDailyReportAction extends DailyReportAction {
 	private VacationDAO vacationDAO;
 	private WorkingdayDAO workingdayDAO;
 	private EmployeeorderDAO employeeorderDAO;
+	private OvertimeDAO overtimeDAO;
+	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -154,20 +160,22 @@ public class StoreDailyReportAction extends DailyReportAction {
 				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
 				Employeecontract ec = null;	
 				
-				EmployeeHelper eh = new EmployeeHelper();
-				if (request.getSession().getAttribute("currentEmployee") != null) {
-					String currentEmployeeName = (String) request.getSession().getAttribute("currentEmployee");
-					if (currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
+				
+				if (request.getSession().getAttribute("currentEmployeeId") != null) {
+					long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+					
+					if (employeeId == -1) {
 						ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
 						request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
-					} else {
-						String[] firstAndLast = eh.splitEmployeename(currentEmployeeName);		
-						ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
-						request.getSession().setAttribute("currentEmployee", currentEmployeeName);
+						request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+					} else {		
+						ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
+						request.getSession().setAttribute("currentEmployee", ec.getEmployee().getId());
 					}
 				} else {
 					ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
 					request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+					request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 				}
 				
 				if (ec == null) {
@@ -449,7 +457,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				if (!addMoreReprts) {
 					// refresh overtime and vacation
 					String currentYear = (String) request.getSession().getAttribute("currentYear");
-					refreshVacationAndOvertime(request, new Integer(currentYear), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);					
+					refreshVacationAndOvertime(request, new Integer(currentYear), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);					
 					return mapping.findForward("showDaily");
 				} else {
 					
@@ -532,6 +540,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 		List<Employee> employeeOptionList = eh.getEmployeeWithContractsOptions(loginEmployee, employeeDAO, employeecontractDAO);
 		request.getSession().setAttribute("employees", employeeOptionList);
 		request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+		request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 		
 		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
 		request.getSession().setAttribute("orders", customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId()));

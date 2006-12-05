@@ -92,7 +92,8 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		Employeecontract ec = eo.getEmployeecontract();
 		Employee theEmployee = ec.getEmployee();
 		eoForm.setEmployeeId(theEmployee.getId());
-		request.getSession().setAttribute("currentEmployee", theEmployee.getName());	
+		request.getSession().setAttribute("currentEmployee", theEmployee.getName());
+		request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
 		
 		List<Employee> employees = employeeDAO.getEmployees();
 //		request.getSession().setAttribute("employees", employees);

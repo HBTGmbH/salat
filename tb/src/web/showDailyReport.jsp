@@ -11,24 +11,10 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<%
-            Double hourBalance = (Double)request.getSession().getAttribute("hourbalance");
-            int displayLength = 0;
-            for (int i = 0; i < hourBalance.toString().length(); i++) {
-                if (hourBalance.toString().charAt(i) == '.') {
-                    displayLength = Math.min(i + 3, hourBalance.toString().length());
-                    break;
-                }
-            }
-            String hourBalanceDisplay = hourBalance.toString().substring(0, displayLength);
-
-            String vacation = (String)request.getSession().getAttribute("vacation");
-%>
-
 <html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.mainmenu.daily.text" /></title>
+<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
 <link rel="stylesheet" type="text/css" href="/tb/print.css"
 	media="print" />
@@ -124,26 +110,35 @@
 <br>
 <html:form action="/ShowDailyReport">
 	<table class="center backgroundcolor">
+		
+		<!-- select employee -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="employeename"
-				value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
-				onchange="setUpdateTimereportsAction(this.form)">
+			<td align="left" class="noBborderStyle">
+				<html:select
+					property="employeeId"
+					value="${currentEmployeeId}"
+					onchange="setUpdateTimereportsAction(this.form)">
 
-				<html:option value="ALL EMPLOYEES">
-					<bean:message key="main.general.allemployees.text" />
-				</html:option>
+					<html:option value="-1">
+						<bean:message key="main.general.allemployees.text" />
+					</html:option>
 
-				<html:options collection="employeeswithcontract"
-					labelProperty="name" property="name" />
-			</html:select> <logic:equal name="currentEmployee" value="ALL EMPLOYEES"
+					<html:options collection="employeeswithcontract"
+						labelProperty="name" property="id" />
+			</html:select> 
+			<!--  
+			<logic:equal name="currentEmployeeId" value="-1"
 				scope="session">
 				<span style="color:red"> <b><bean:message
 					key="main.general.selectemployee.editable.text" />.</b> </span>
-			</logic:equal></td>
+			</logic:equal>
+			-->
+			</td>
 		</tr>
+		
+		<!-- select order -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.customerorder.text" />:</b></td>
@@ -160,18 +155,68 @@
 					property="sign" />
 				<html:hidden property="orderId" />
 			</html:select></td>
-
 		</tr>
+		
+		<!-- select view mode -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.monthlyreport.daymonthyear.text" />:</b></td>
+				key="main.general.timereport.view.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="day"
-				value="<%=(String) request.getSession().getAttribute("currentDay")%>"
+				property="view"
 				onchange="setUpdateTimereportsAction(this.form)">
-				<html:options collection="days" property="value"
-					labelProperty="label" />
-			</html:select> <html:select property="month"
+
+				<html:option value="day">
+					<bean:message
+				key="main.general.timereport.view.daily.text" />
+				</html:option>
+				<!--  
+				<html:option value="week">
+					Wochenansicht
+				</html:option>
+				-->
+				<html:option value="month">
+					<bean:message
+				key="main.general.timereport.view.monthly.text" />
+				</html:option>
+				<!--  
+				<html:option value="project">
+					Projektansicht
+				</html:option>
+				-->
+				<html:option value="custom">
+					<bean:message
+				key="main.general.timereport.view.custom.text" />
+				</html:option>
+
+				<html:hidden property="view" />
+			</html:select></td>
+		</tr>
+		
+		<!-- select first date -->
+		<tr>
+			<c:choose>
+				<c:when test="${view eq 'month'}">
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.monthlyreport.monthyear.text" />:</b></td>
+				</c:when>
+				<c:otherwise>
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.monthlyreport.daymonthyear.text" />:</b></td>
+				</c:otherwise>
+			</c:choose>
+			
+			<td align="left" class="noBborderStyle">
+				<c:if test="${!(view eq 'month')}">
+					<html:select
+						property="day"
+						value="<%=(String) request.getSession().getAttribute("currentDay")%>"
+						onchange="setUpdateTimereportsAction(this.form)">
+						<html:options collection="days" property="value"
+							labelProperty="label" />
+					</html:select>
+				</c:if>
+				
+			<html:select property="month"
 				value="<%=(String) request.getSession().getAttribute("currentMonth")%>"
 				onchange="setUpdateTimereportsAction(this.form)">
 				<html:option value="Jan">
@@ -217,49 +262,116 @@
 					labelProperty="label" />
 			</html:select></td>
 		</tr>
-
-		<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
+		
+		
+		<!-- select second date -->
+		<c:if test="${view eq 'custom'}">
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.startofwork.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.selectedhourbegin.text" />:</b> <html:select
-					property="selectedWorkHourBegin">
-					<html:options collection="hours" property="value"
-						labelProperty="label" />
-				</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
-				<html:select property="selectedWorkMinuteBegin">
-					<html:options collection="minutes" property="value"
-						labelProperty="label" />
-				</html:select></td>
-				<td align="center" class="noBborderStyle"><html:image
-					onclick="saveBegin(this.form)" src="/tb/images/Save.gif"
-					alt="save start of work" /></td>
+					key="main.monthlyreport.daymonthyear.text" />:</b></td>
+				<td align="left" class="noBborderStyle">				
+					<html:select
+						property="lastday"
+						value="${lastDay}"
+						onchange="setUpdateTimereportsAction(this.form)">
+						<html:options collection="days" property="value"
+							labelProperty="label" />
+					</html:select>			
+					<html:select property="lastmonth"
+						value="${lastMonth}"
+						onchange="setUpdateTimereportsAction(this.form)">
+						<html:option value="Jan">
+							<bean:message key="main.timereport.select.month.jan.text" />
+						</html:option>
+						<html:option value="Feb">
+							<bean:message key="main.timereport.select.month.feb.text" />
+						</html:option>
+						<html:option value="Mar">
+							<bean:message key="main.timereport.select.month.mar.text" />
+						</html:option>
+						<html:option value="Apr">
+							<bean:message key="main.timereport.select.month.apr.text" />
+						</html:option>
+						<html:option value="May">
+							<bean:message key="main.timereport.select.month.may.text" />
+						</html:option>
+						<html:option value="Jun">
+							<bean:message key="main.timereport.select.month.jun.text" />
+						</html:option>
+						<html:option value="Jul">
+							<bean:message key="main.timereport.select.month.jul.text" />
+						</html:option>
+						<html:option value="Aug">
+							<bean:message key="main.timereport.select.month.aug.text" />
+						</html:option>
+						<html:option value="Sep">
+							<bean:message key="main.timereport.select.month.sep.text" />
+						</html:option>
+						<html:option value="Oct">
+							<bean:message key="main.timereport.select.month.oct.text" />
+						</html:option>
+						<html:option value="Nov">
+							<bean:message key="main.timereport.select.month.nov.text" />
+						</html:option>
+						<html:option value="Dec">
+							<bean:message key="main.timereport.select.month.dec.text" />
+						</html:option>
+					</html:select> 
+					<html:select property="lastyear"
+						value="${lastYear}"
+						onchange="setUpdateTimereportsAction(this.form)">
+						<html:options collection="years" property="value"
+							labelProperty="label" />
+					</html:select>
+				</td>
 			</tr>
-			<tr>
-				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.breakduration.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.selectedhourbegin.text" />:</b> <html:select
-					property="selectedBreakHour">
-					<html:options collection="breakhours" property="value"
-						labelProperty="label" />
-				</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
-				<html:select property="selectedBreakMinute">
-					<html:options collection="breakminutes" property="value"
-						labelProperty="label" />
-				</html:select></td>
-				<td align="center" class="noBborderStyle"><html:image
-					onclick="saveBreak(this.form)" src="/tb/images/Save.gif"
-					alt="save break" /></td>
-			</tr>
-
-			<tr>
-				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.quittingtime.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><b><c:out
-					value="${quittingtime}"></c:out></b></td>
-			</tr>
+		</c:if>
+		
+		<!-- select working day begin and break -->
+		<c:if test="${view eq 'day'}">
+			<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
+				<tr>
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.timereport.startofwork.text" />:</b></td>
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.timereport.selectedhourbegin.text" />:</b> <html:select
+						property="selectedWorkHourBegin">
+						<html:options collection="hours" property="value"
+							labelProperty="label" />
+					</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
+					<html:select property="selectedWorkMinuteBegin">
+						<html:options collection="minutes" property="value"
+							labelProperty="label" />
+					</html:select></td>
+					<td align="center" class="noBborderStyle"><html:image
+						onclick="saveBegin(this.form)" src="/tb/images/Save.gif"
+						alt="save start of work" /></td>
+				</tr>
+				<tr>
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.timereport.breakduration.text" />:</b></td>
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.timereport.selectedhourbegin.text" />:</b> <html:select
+						property="selectedBreakHour">
+						<html:options collection="breakhours" property="value"
+							labelProperty="label" />
+					</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
+					<html:select property="selectedBreakMinute">
+						<html:options collection="breakminutes" property="value"
+							labelProperty="label" />
+					</html:select></td>
+					<td align="center" class="noBborderStyle"><html:image
+						onclick="saveBreak(this.form)" src="/tb/images/Save.gif"
+						alt="save break" /></td>
+				</tr>
+	
+				<tr>
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.timereport.quittingtime.text" />:</b></td>
+					<td align="left" class="noBborderStyle"><b><c:out
+						value="${quittingtime}"></c:out></b></td>
+				</tr>
+			</c:if>
 		</c:if>
 	</table>
 
@@ -379,10 +491,10 @@
 
 			<c:choose>
 				<c:when
-					test="${((loginEmployee.name == currentEmployee) && (timereport.status == 'open')) || ((loginEmployee.status == bl) && (timereport.status == 'commited'))}">
+					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status == 'open')) || ((loginEmployee.status == bl) && (timereport.status == 'commited'))}">
 
 					<!-- Kommentar -->
-					<td><html:textarea property="comment" cols="12" rows="1"
+					<td><html:textarea property="comment" cols="24" rows="1"
 						value="${timereport.taskdescription}" /> <!--  
 	     		 				<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
 	     		 				--></td>

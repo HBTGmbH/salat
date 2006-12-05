@@ -61,6 +61,7 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction {
 		// set current employee back to loginEmployee to make sure that current employee is not the
 		// one whose contract was just deleted...		 
 		request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+		request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 		
 		// back to employee contract display jsp
 		return mapping.getInputForward();

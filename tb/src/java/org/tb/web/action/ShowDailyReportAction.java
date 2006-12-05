@@ -2,7 +2,6 @@ package org.tb.web.action;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -18,9 +17,7 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Timereport;
-import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.EmployeeHelper;
@@ -30,7 +27,7 @@ import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.MonthlyreportDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
@@ -47,64 +44,55 @@ import org.tb.web.form.ShowDailyReportForm;
  */
 public class ShowDailyReportAction extends DailyReportAction {
 
-	private EmployeeDAO employeeDAO;
-
-	private EmployeecontractDAO employeecontractDAO;
-
-	private TimereportDAO timereportDAO;
-
+	private OvertimeDAO overtimeDAO;
 	private CustomerorderDAO customerorderDAO;
-
+	private TimereportDAO timereportDAO;
+	private EmployeecontractDAO employeecontractDAO;
 	private SuborderDAO suborderDAO;
-
-	private MonthlyreportDAO monthlyreportDAO;
-
-	private VacationDAO vacationDAO;
-	
-	private WorkingdayDAO workingdayDAO;
-	
 	private EmployeeorderDAO employeeorderDAO;
-	
+	private VacationDAO vacationDAO;
 	private PublicholidayDAO publicholidayDAO;
+	private WorkingdayDAO workingdayDAO;
+	private EmployeeDAO employeeDAO;
+	
+	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
+		this.employeeDAO = employeeDAO;
+	}
+	
+	public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
+		this.workingdayDAO = workingdayDAO;
+	}
 	
 	public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
 		this.publicholidayDAO = publicholidayDAO;
 	}
 	
-	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-		this.employeeorderDAO = employeeorderDAO;
-	}
-
-	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-		this.employeeDAO = employeeDAO;
-	}
-
-	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-		this.employeecontractDAO = employeecontractDAO;
-	}
-
-	public void setTimereportDAO(TimereportDAO timereportDAO) {
-		this.timereportDAO = timereportDAO;
-	}
-
-	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-		this.customerorderDAO = customerorderDAO;
-	}
-
-	public void setSuborderDAO(SuborderDAO suborderDAO) {
-		this.suborderDAO = suborderDAO;
-	}
-
-	public void setmonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
-		this.monthlyreportDAO = monthlyreportDAO;
-	}
-
 	public void setVacationDAO(VacationDAO vacationDAO) {
 		this.vacationDAO = vacationDAO;
 	}
-
-	public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
-		this.workingdayDAO = workingdayDAO;
+	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
+	}
+	
+	public void setSuborderDAO(SuborderDAO suborderDAO) {
+		this.suborderDAO = suborderDAO;
+	}
+	
+	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+		this.employeecontractDAO = employeecontractDAO;
+	}
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
+	
+	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
+		this.customerorderDAO = customerorderDAO;
+	}
+	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
 	}
 	
 	@Override
@@ -131,7 +119,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 			Workingday workingday;
 			try {
 				workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec);
-			} catch (ParseException e) {
+			} catch (Exception e) {
 				return mapping.findForward("error");
 			}
 			
@@ -153,7 +141,8 @@ public class ShowDailyReportAction extends DailyReportAction {
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshTimereports"))) {
 			// refresh list of timereports to be displayed
-			if (refreshTimereports(mapping, request, reportForm) != true) {
+			if (refreshTimereports(mapping, request, reportForm, customerorderDAO, timereportDAO, employeecontractDAO, 
+					suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO) != true) {
 				return mapping.findForward("error");
 			} else {
 								
@@ -221,6 +210,9 @@ public class ShowDailyReportAction extends DailyReportAction {
 		}
         
 		if (request.getParameter("task") == null) {
+			
+			// set daily view as standard
+			reportForm.setView(GlobalConstants.VIEW_DAILY);
 						
 			// no special task - prepare everything to show reports
 			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
@@ -323,16 +315,20 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("currentMonth", monthString);
 				request.getSession().setAttribute("currentYear", yearString);
 				
+				request.getSession().setAttribute("lastDay", dayString);
+				request.getSession().setAttribute("lastMonth", monthString);
+				request.getSession().setAttribute("lastYear", yearString);
+				
 				String sqlDateString = yearString + "-" + 
 					DateUtils.getMonthMMStringFromShortstring(monthString) + "-" + dayString;
 				java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);	
 
 				String currentEmployeeName = (String) request.getSession()
 						.getAttribute("currentEmployee");
+				Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
 				List<Timereport> timereports;
-				if ((currentEmployeeName != null)
-						&& (currentEmployeeName
-								.equalsIgnoreCase("ALL EMPLOYEES"))) {
+				if ((employeeId != null)
+						&& (employeeId == -1)) {
 					timereports = timereportDAO.getTimereportsByDate(sqlDate);
 				} else {
 					timereports = timereportDAO
@@ -348,9 +344,8 @@ public class ShowDailyReportAction extends DailyReportAction {
 
 				// orders
 				List<Customerorder> orders = null;
-				if ((currentEmployeeName != null)
-						&& (currentEmployeeName
-								.equalsIgnoreCase("ALL EMPLOYEES"))) {
+				if ((employeeId != null)
+						&& (employeeId == -1)) {
 					orders = customerorderDAO.getCustomerorders();
 				} else {
 					orders = customerorderDAO
@@ -367,33 +362,10 @@ public class ShowDailyReportAction extends DailyReportAction {
 					request.getSession().setAttribute("suborders",
 									suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
 				}
-				
-				// hour balance
-				Monthlyreport mr = monthlyreportDAO
-						.getMonthlyreportByYearAndMonthAndEmployeecontract(ec
-								.getId(), Integer.parseInt(yearString),
-								DateUtils
-										.getMonthMMFromShortstring(monthString));
-				if (mr == null) {
-					// add new daily report
-					mr = monthlyreportDAO.setNewReport(ec, Integer
-							.parseInt(yearString), DateUtils
-							.getMonthMMFromShortstring(monthString));
-				}
-				request.getSession().setAttribute("hourbalance",
-						mr.getHourbalance());
 
 				// vacation and overtime balance
 				String year = (String) request.getSession().getAttribute("currentYear");
-				refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
-				
-//				Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(yearString));
-//				if (va == null) {
-//					// should not be the case!
-//					va = vacationDAO.setNewVacation(ec, Integer.parseInt(yearString));
-//				} 
-//				String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
-//				request.getSession().setAttribute("vacation", vacationBalance);
+				refreshVacationAndOvertime(request, new Integer(year), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);
 
 			}
 
@@ -401,129 +373,6 @@ public class ShowDailyReportAction extends DailyReportAction {
 		return mapping.findForward("success");
 	}
 
-	/**
-	 * refreshes timereports to be displayed after changes of relevant criteria
-	 * (e.g., employee or order)
-	 * 
-	 * @param mapping
-	 * @param request
-	 * @param reportForm
-	 * 
-	 * @return boolean
-	 */
-	private boolean refreshTimereports(ActionMapping mapping,
-			HttpServletRequest request, ShowDailyReportForm reportForm) {
-
-		String sqlDateString = reportForm.getYear() + "-" + 
-			DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
-		java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);
-		
-		if (reportForm.getEmployeename().equalsIgnoreCase("ALL EMPLOYEES")) {
-			// consider timereports for all employees
-			List<Customerorder> orders = customerorderDAO.getCustomerorders();
-			request.getSession().setAttribute("orders", orders);
-
-			if ((reportForm.getOrder() == null)
-					|| (reportForm.getOrder().equals("ALL ORDERS"))) {
-				// get the timereports for specific date, all employees, all orders
-				request.getSession().setAttribute("timereports", timereportDAO
-						.getTimereportsByDate(sqlDate));
-			} else {
-				Customerorder co = customerorderDAO
-						.getCustomerorderBySign(reportForm.getOrder());
-				long orderId = co.getId();
-				// get the timereports for specific date, all employees, specific order
-				request.getSession().setAttribute("timereports", timereportDAO
-						.getTimereportsByDateAndCustomerorder(orderId, sqlDate, "W"));
-			}
-
-		} else {
-			// consider timereports for specific employee
-			EmployeeHelper eh = new EmployeeHelper();
-			String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
-			Employeecontract ec = employeecontractDAO
-					.getEmployeeContractByEmployeeName(firstAndLast[0],
-							firstAndLast[1]);
-
-			if (ec == null) {
-				request
-						.setAttribute("errorMessage",
-								"No employee contract found for employee - please call system administrator.");
-				return false;
-			}
-
-			// also refresh orders/suborders to be displayed for specific employee 
-			List<Customerorder> orders = customerorderDAO
-					.getCustomerordersByEmployeeContractId(ec.getId());
-			request.getSession().setAttribute("orders", orders);
-			if (orders.size() > 0) {
-				request.getSession().setAttribute("suborders",
-								suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
-			}
-
-			if ((reportForm.getOrder() == null)
-					|| (reportForm.getOrder().equals("ALL ORDERS"))) {
-				// get the timereports for specific date, specific employee, all orders
-				request.getSession().setAttribute("timereports", timereportDAO
-						.getTimereportsByDateAndEmployeeContractId(ec.getId(), sqlDate));
-			} else {
-				Customerorder co = customerorderDAO
-						.getCustomerorderBySign(reportForm.getOrder());
-				long orderId = co.getId();
-				// get the timereports for specific date, specific employee, specific order
-				// fill up order-specific list with 'working' reports only...
-				request.getSession()
-						.setAttribute(
-								"timereports",
-								timereportDAO
-										.getTimereportsByDateAndEmployeeContractIdAndCustomerorderId(
-												ec.getId(), orderId, sqlDate, "W"));
-			}
-			// refresh overtime and vacation
-			String year = (String) request.getSession().getAttribute("currentYear");
-			refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
-			
-//			Monthlyreport mr = monthlyreportDAO
-//					.getMonthlyreportByYearAndMonthAndEmployeecontract(ec
-//							.getId(), Integer.parseInt(reportForm.getYear()),
-//							DateUtils.getMonthMMFromShortstring(reportForm
-//									.getMonth()));
-//			if (mr == null) {
-//				// add new daily report
-//				mr = monthlyreportDAO.setNewReport(ec, Integer
-//						.parseInt(reportForm.getYear()), DateUtils
-//						.getMonthMMFromShortstring(reportForm.getMonth()));
-//			}
-//			request.getSession().setAttribute("hourbalance", mr.getHourbalance());
-//			
-//			//	refresh vacation balance
-//			Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(reportForm.getYear()));
-//			if (va == null) {
-//				// should not be the case!
-//				va = vacationDAO.setNewVacation(ec, Integer.parseInt(reportForm.getYear()));
-//			} 
-//			String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
-//			request.getSession().setAttribute("vacation", vacationBalance);
-		}
-
-		// refresh all relevant attributes
-		request.getSession().setAttribute("currentEmployee",
-				reportForm.getEmployeename());
-		if ((reportForm.getOrder() == null)
-				|| (reportForm.getOrder().equals("ALL ORDERS"))) {
-			request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-		} else {
-			request.getSession().setAttribute("currentOrder",
-					reportForm.getOrder());
-		}
-		request.getSession().setAttribute("currentDay", reportForm.getDay());
-		request.getSession().setAttribute("currentMonth", reportForm.getMonth());
-		request.getSession().setAttribute("currentYear", reportForm.getYear());
-
-		return true;
-
-	}
-	
 	
 	
 	/**
@@ -534,16 +383,10 @@ public class ShowDailyReportAction extends DailyReportAction {
 	private Employeecontract getEmployeeContractFromRequest(HttpServletRequest request) {
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
 		Employeecontract ec = null;	
+		long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
 		
-		EmployeeHelper eh = new EmployeeHelper();
-		if (request.getSession().getAttribute("currentEmployee") != null) {
-			String currentEmployeeName = (String) request.getSession().getAttribute("currentEmployee");
-			if (currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
-				ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
-			} else {
-				String[] firstAndLast = eh.splitEmployeename(currentEmployeeName);		
-				ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
-			}
+		if (employeeId != 0 && employeeId != -1) {	
+			ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);	
 		} else {
 			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
 		}
@@ -559,41 +402,13 @@ public class ShowDailyReportAction extends DailyReportAction {
 	 * {@link Employeecontract}. If this workingday does not exist in the database so far, a new one is created.
 	 * @throws ParseException
 	 */
-	private Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec) throws ParseException {
+	private Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec) throws Exception {
 		String dayString = reportForm.getDay();
 		String monthString = reportForm.getMonth();
 		String yearString = reportForm.getYear();
-		int month = 0;
-		
-		if (GlobalConstants.MONTH_SHORTFORM_JANUARY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JANUARY;			
-		} else if (GlobalConstants.MONTH_SHORTFORM_FEBRURAY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_FEBRURAY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_MARCH.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_MARCH;
-		} else if (GlobalConstants.MONTH_SHORTFORM_APRIL.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_APRIL;
-		} else if (GlobalConstants.MONTH_SHORTFORM_MAY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_MAY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_JUNE.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JUNE;
-		} else if (GlobalConstants.MONTH_SHORTFORM_JULY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JULY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_AUGUST.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_AUGUST;
-		} else if (GlobalConstants.MONTH_SHORTFORM_SEPTEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_SEPTEMBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_OCTOBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_OCTOBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_NOVEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_NOVEMBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_DECEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
-		}
-		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
-		Date tmp = simpleDateFormat.parse(yearString+month+dayString);
-		
+				
+		Date tmp = getDateFormStrings(dayString, monthString, yearString);
+				
 		java.sql.Date refDate = new java.sql.Date(tmp.getTime());
 		
 		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
@@ -620,7 +435,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 							"No employee contract found for employee - please call system administrator.");
 			throw new Exception("No employee contract found for employee");
 		}
-		TimereportHelper th = new TimereportHelper();
+		
 		Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract);
 		
 		reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());

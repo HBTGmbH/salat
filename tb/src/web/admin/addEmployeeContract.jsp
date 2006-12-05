@@ -10,7 +10,7 @@
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.addemployeecontract.text" /></title>
+<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployeecontract.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
 <script type="text/javascript" language="JavaScript">
@@ -47,10 +47,9 @@
 				<c:choose>
 					<c:when test="${employeeContractContext eq 'create'}">
 						<html:select
-							property="employeename"
-							value="${currentEmployee}">
+							property="employee">
 						<html:options collection="employees" labelProperty="name"
-							property="name" />
+							property="id" />
 						</html:select> <html:hidden property="employeeId" /> <span style="color:red"><html:errors
 							property="employeename" /></span>
 					</c:when>

@@ -157,13 +157,20 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
 					ec = employeecontractDAO.getEmployeeContractById(ecId);
 				} else {
+					ec = employeecontractDAO.getEmployeeContractByEmployeeId(ecForm.getEmployee());
+				}
+				if (ec == null) {
 					// new report
 					ec = new Employeecontract();
 				}
+				long employeeId = ecForm.getEmployee();
+				Employee theEmployee = (Employee) (employeeDAO.getEmployeeById(employeeId));
 				
-				EmployeeHelper eh = new EmployeeHelper();
-				String[] firstAndLast = eh.splitEmployeename(ecForm.getEmployeename());
-				Employee theEmployee = (Employee) (employeeDAO.getEmployeeByName(firstAndLast[0], firstAndLast[1]));
+				
+//				EmployeeHelper eh = new EmployeeHelper();
+				
+				
+				
 				ec.setEmployee(theEmployee);
 				
 				ActionMessages errorMessages = validateFormData(request, ecForm, theEmployee);
@@ -182,13 +189,13 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				
 				// if necessary, add new monthly report for current month
-				if ((ec.getMonthlyreports() == null) || (ec.getMonthlyreports().size() <= 0)) {					
-					List<Monthlyreport> mrList = new ArrayList<Monthlyreport>();
-					Monthlyreport mr = monthlyreportDAO.setNewReport
-								(ec, DateUtils.getCurrentYear(), DateUtils.getCurrentMonth());
-					mrList.add(mr);
-					ec.setMonthlyreports(mrList);
-				} 
+//				if ((ec.getMonthlyreports() == null) || (ec.getMonthlyreports().size() <= 0)) {					
+//					List<Monthlyreport> mrList = new ArrayList<Monthlyreport>();
+//					Monthlyreport mr = monthlyreportDAO.setNewReport
+//								(ec, DateUtils.getCurrentYear(), DateUtils.getCurrentMonth());
+//					mrList.add(mr);
+//					ec.setMonthlyreports(mrList);
+//				} 
 				
 				// if necessary, add new vacation for current year
 				Vacation va = null;
@@ -221,7 +228,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				overtimeDAO.save(overtime, loginEmployee);
 				
-				request.getSession().setAttribute("currentEmployee", ecForm.getEmployeename());
+				request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(ecForm.getEmployee()).getName());
+				request.getSession().setAttribute("currentEmployeeId", ecForm.getEmployee());
 				
 				List<Employee> employeeOptionList = employeeDAO.getEmployees();
 				request.getSession().setAttribute("employees", employeeOptionList);

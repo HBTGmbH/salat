@@ -23,12 +23,12 @@ public class AddEmployeeContractForm extends ActionForm {
 	private Boolean freelancer;
 	private Double dailyworkingtime;
 	private Integer yearlyvacation;
-	private String employeename;
+	private long employee;
 	private String initialOvertime;
 	private String newOvertime;
 	private String newOvertimeComment;
 	
-	private long employeeId;
+//	private long employeeId;
 	
 	private String action;
 
@@ -65,13 +65,13 @@ public class AddEmployeeContractForm extends ActionForm {
 		this.yearlyvacation = yearlyvacation;
 	}
 
-	public long getEmployeeId() {
-		return employeeId;
-	}
-
-	public void setEmployeeId(long employeeId) {
-		this.employeeId = employeeId;
-	}
+//	public long getEmployeeId() {
+//		return employeeId;
+//	}
+//
+//	public void setEmployeeId(long employeeId) {
+//		this.employeeId = employeeId;
+//	}
 
 	public Boolean getFreelancer() {
 		return freelancer;
@@ -105,12 +105,12 @@ public class AddEmployeeContractForm extends ActionForm {
 		this.validUntil = validUntil;
 	}
 
-	public String getEmployeename() {
-		return employeename;
+	public long getEmployee() {
+		return employee;
 	}
 
-	public void setEmployeename(String employeename) {
-		this.employeename = employeename;
+	public void setEmployee(long employee) {
+		this.employee = employee;
 	}
 
 	
@@ -160,7 +160,7 @@ public class AddEmployeeContractForm extends ActionForm {
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
+		employee = loginEmployee.getId();
 		taskdescription = "";
 		validFrom = DateUtils.getCurrentYearString() + "-01-01";
 		validUntil = DateUtils.getCurrentYearString() + "-12-31";

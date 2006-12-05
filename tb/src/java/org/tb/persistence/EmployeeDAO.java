@@ -116,18 +116,18 @@ public class EmployeeDAO extends HibernateDaoSupport {
 			"from Employee p where p.sign = ?").setString(0, sign).uniqueResult();
 	}
 	
-	/**
-	 * Gets the employee from the given name (unique).
-	 * 
-	 * @param String first
-	 * @param String last
-	 * 
-	 * @return Employee
-	 */
-	public Employee getEmployeeByName(String first, String last) {
-		return (Employee) getSession().createQuery(
-			"from Employee p where p.firstname = ? and p.lastname = ?").setString(0, first).setString(1, last).uniqueResult();
-	}
+//	/**
+//	 * Gets the employee from the given name (unique).
+//	 * 
+//	 * @param String first
+//	 * @param String last
+//	 * 
+//	 * @return Employee
+//	 */
+//	public Employee getEmployeeByName(String first, String last) {
+//		return (Employee) getSession().createQuery(
+//			"from Employee p where p.firstname = ? and p.lastname = ?").setString(0, first).setString(1, last).uniqueResult();
+//	}
 	
 	/**
 	 * Gets the employee with the given id.

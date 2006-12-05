@@ -60,6 +60,7 @@ public class DeleteEmployeeAction extends LoginRequiredAction {
 		// set current employee back to loginEmployee to make sure that current employee is not the
 		// one just deleted...
 		request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+		request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 		
 		// back to employee display jsp
 		return mapping.getInputForward();

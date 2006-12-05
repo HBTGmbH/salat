@@ -135,15 +135,15 @@
 	<bean name="hsqlDatabase" class="org.tb.util.HsqlDbWrapper" init-method="start" destroy-method="stop">
 		<property name="path">
 			
-			  
+			<!--  
 			<value>file:d:/temp/hsqldb/data/taetigkeitsberichte</value>
-			
+			-->
 			<!-- 
 			<value>file:/root/tb/hsqldb/taetigkeitsberichte</value>
 			--> 
-			<!--
+			
 			<value>file:/var/lib/hsqldb/taetigkeitsberichte</value>
-			-->
+			
 			 
 		</property>
 		<property name="name">

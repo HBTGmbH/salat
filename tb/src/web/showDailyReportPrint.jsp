@@ -11,26 +11,11 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<%
-            Double hourBalance = (Double)request.getSession().getAttribute("hourbalance");
-            int displayLength = 0;
-            for (int i = 0; i < hourBalance.toString().length(); i++) {
-                if (hourBalance.toString().charAt(i) == '.') {
-                    displayLength = Math.min(i + 3, hourBalance.toString().length());
-                    break;
-                }
-            }
-            String hourBalanceDisplay = hourBalance.toString().substring(0, displayLength);
 
-            String vacation = (String)request.getSession().getAttribute("vacation");
-%>
-<%
-Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-%>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.mainmenu.daily.text" /></title>
+<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/preview.css"
 	media="all" />
 <link rel="stylesheet" type="text/css" href="/tb/print.css"
@@ -133,53 +118,25 @@ Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmplo
 					title="<c:out value="${timereport.suborder.description}"></c:out>">
 				<c:out value="${timereport.suborder.sign}"></c:out><br>
 				</td>
-
-				<!-- visibility dependent on user and status -->
-
+				
+				<!-- Kommentar -->
 				<c:choose>
-					<c:when
-						test="${((loginEmployee.name == currentEmployee) && (timereport.status == 'open')) || ((loginEmployee.status == bl) && (timereport.status == 'commited'))}">
-
-						<!-- Kommentar -->
-						<c:choose>
-							<c:when test="${timereport.taskdescription==''}">
-								<td>&nbsp;</td>
-							</c:when>
-							<c:otherwise>
-								<td><c:out value="${timereport.taskdescription}" /></td>
-							</c:otherwise>
-						</c:choose>
-
-
-						<!-- Dauer -->
-						<td align=center nowrap><c:out
-							value="${timereport.durationhours}" /> : <c:out
-							value="${timereport.durationminutes}" /></td>
-
-						<!-- Kosten -->
-						<td><c:out value="${timereport.costs}" /></td>
+					<c:when test="${timereport.taskdescription==''}">
+						<td>&nbsp;</td>
 					</c:when>
 					<c:otherwise>
-
-						<!-- Kommentar -->
-						<c:choose>
-							<c:when test="${timereport.taskdescription==''}">
-								<td>&nbsp;</td>
-							</c:when>
-							<c:otherwise>
-								<td><c:out value="${timereport.taskdescription}" /></td>
-							</c:otherwise>
-						</c:choose>
-
-						<!-- Dauer -->
-						<td align="center" nowrap><c:out
-							value="${timereport.durationhours}" />:<c:out
-							value="${timereport.durationminutes}" /></td>
-
-						<!-- Kosten -->
-						<td align="center"><c:out value="${timereport.costs}" /></td>
+						<td><c:out value="${timereport.taskdescription}" /></td>
 					</c:otherwise>
 				</c:choose>
+
+				<!-- Dauer -->
+				<td align="center" nowrap><c:out
+					value="${timereport.durationhours}" />:<c:out
+					value="${timereport.durationminutes}" /></td>
+
+				<!-- Kosten -->
+				<td align="center"><c:out value="${timereport.costs}" /></td>
+					
 			</tr>
 
 		</html:form>

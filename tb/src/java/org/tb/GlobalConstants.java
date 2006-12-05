@@ -100,4 +100,12 @@ public class GlobalConstants {
 	public static final String TIMEREPORT_STATUS_COMMITED = "commited";
 	public static final String TIMEREPORT_STATUS_CLOSED = "closed";
 	
+	// view constants
+	public static final String VIEW_DAILY = "day";
+	public static final String VIEW_MONTHLY = "month";
+	public static final String VIEW_WEEKLY = "week";
+	public static final String VIEW_PROJECT = "project";
+	public static final String VIEW_CUSTOM = "custom";
+	
+	
 }

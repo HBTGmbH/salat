@@ -17,7 +17,13 @@ public class ShowDailyReportForm extends ActionForm {
 	private String day;
 	private String month;
 	private String year;
-	private String employeename;
+	
+	private String lastday;
+	private String lastmonth;
+	private String lastyear;
+	
+	
+	private long employeeId;
 	
 	private String comment;
 	private String order;
@@ -37,7 +43,7 @@ public class ShowDailyReportForm extends ActionForm {
 	private long orderId;
 	private long trSuborderId;
 	
-	
+	private String view;
 	
 	public String getDay() {
 		return day;
@@ -63,12 +69,12 @@ public class ShowDailyReportForm extends ActionForm {
 		this.year = year;
 	}
 
-	public String getEmployeename() {
-		return employeename;
+	public long getEmployeeId() {
+		return employeeId;
 	}
 
-	public void setEmployeename(String employeename) {
-		this.employeename = employeename;
+	public void setEmployeeId(long employeeId) {
+		this.employeeId = employeeId;
 	}
 	
 	public String getOrder() {
@@ -224,11 +230,76 @@ public class ShowDailyReportForm extends ActionForm {
 	public void setTrOrderId(long trOrderId) {
 		this.trOrderId = trOrderId;
 	}
+	
+	
+
+	/**
+	 * @return the view
+	 */
+	public String getView() {
+		return view;
+	}
+
+	/**
+	 * @param view the view to set
+	 */
+	public void setView(String view) {
+		this.view = view;
+	}
+	
+	
+
+	/**
+	 * @return the lastday
+	 */
+	public String getLastday() {
+		return lastday;
+	}
+
+	/**
+	 * @param lastday the lastday to set
+	 */
+	public void setLastday(String lastday) {
+		this.lastday = lastday;
+	}
+
+	/**
+	 * @return the lastmonth
+	 */
+	public String getLastmonth() {
+		return lastmonth;
+	}
+
+	/**
+	 * @param lastmonth the lastmonth to set
+	 */
+	public void setLastmonth(String lastmonth) {
+		this.lastmonth = lastmonth;
+	}
+
+	/**
+	 * @return the lastyear
+	 */
+	public String getLastyear() {
+		return lastyear;
+	}
+
+	/**
+	 * @param lastyear the lastyear to set
+	 */
+	public void setLastyear(String lastyear) {
+		this.lastyear = lastyear;
+	}
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		month = null;
-		employeename = null;
+		if (null != request.getSession().getAttribute("currentEmployeeId")) {
+			employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+		} else {
+			employeeId = -1;
+		}
+		
+		
 	}
 
 	@Override

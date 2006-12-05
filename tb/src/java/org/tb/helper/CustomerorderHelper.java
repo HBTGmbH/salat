@@ -42,17 +42,17 @@ public class CustomerorderHelper {
 	public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
 			CustomerorderDAO cd, EmployeeDAO ed, EmployeecontractDAO ecd, SuborderDAO sd) {
 		
-		EmployeeHelper eh = new EmployeeHelper();
-		String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
-		Employeecontract ec = ecd.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
-		
+		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeecontractId());		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 
 					"No employee contract found for employee - please call system administrator.");
 			return false;
 		}
 		
-		request.getSession().setAttribute("currentEmployee", reportForm.getEmployeename());
+		request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
+		request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
+		
+		ecd.getEmployeeContractById(reportForm.getEmployeecontractId());
 
 		// get orders related to employee
 		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());
@@ -94,9 +94,7 @@ public class CustomerorderHelper {
 	public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm,
 			CustomerorderDAO cd, EmployeeDAO ed, EmployeecontractDAO ecd, SuborderDAO sd) {
 
-		EmployeeHelper eh = new EmployeeHelper();
-		String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
-		Employeecontract ec = ecd.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+		Employeecontract ec = ecd.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
 		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 
@@ -104,7 +102,8 @@ public class CustomerorderHelper {
 			return false;
 		}
 		
-		request.getSession().setAttribute("currentEmployee", reportForm.getEmployeename());
+		request.getSession().setAttribute("currentEmployee", ed.getEmployeeById(reportForm.getEmployeeId()).getName());
+		request.getSession().setAttribute("currentEmployeeID", reportForm.getEmployeeId());
 
 		// get orders related to employee
 		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());

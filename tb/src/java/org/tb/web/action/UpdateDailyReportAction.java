@@ -21,6 +21,7 @@ import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
@@ -46,7 +47,11 @@ public class UpdateDailyReportAction extends DailyReportAction {
 	private VacationDAO vacationDAO;
 	private WorkingdayDAO workingdayDAO;
 	private EmployeeorderDAO employeeorderDAO;
+	private OvertimeDAO overtimeDAO;
 	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 	
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
@@ -97,7 +102,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				
 				Date theDate = tr.getReferenceday().getRefdate();
 				Employeecontract ec = tr.getEmployeecontract();
-//				double hours = TimereportHelper.calculateTime(reportForm);
 		
 				ActionMessages errorMessages = validateFormData(request, reportForm, theDate, tr);
 				if (errorMessages.size() > 0) {
@@ -105,29 +109,19 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				}
 				
 				tr.setTaskdescription(reportForm.getComment());	
-//				tr.setEmployeecontract(ec);
-	
-//				if (tr.getSortofreport().equals("W")) {
-					tr.setDurationhours(new Integer(reportForm.getSelectedDurationHour()));
-					tr.setDurationminutes(new Integer(reportForm.getSelectedDurationMinute()));					
-					tr.setCosts(reportForm.getCosts());
-//					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getTrSuborderId()));
-//					tr.setStatus(reportForm.getStatus());
-//				} else {
-//					// 'special' reports: set employee's suborder to null				
-//					tr.setSuborder(null);
-//					tr.setStatus("");
-//					tr.setCosts(0.0);
-//				}
+				tr.setDurationhours(new Integer(reportForm.getSelectedDurationHour()));
+				tr.setDurationminutes(new Integer(reportForm.getSelectedDurationMinute()));					
+				tr.setCosts(reportForm.getCosts());
+
 				
 				// save updated report
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				timereportDAO.save(tr, loginEmployee);
 				
-//				TimereportHelper th = new TimereportHelper();
+
 				if (tr.getSortofreport().equals("W")) {
 					// update monthly hour balance...
-//					th.updateMonthlyHourBalance(tr, 1, timereportDAO, monthlyreportDAO);
+
 					String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
 					String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM
 					
@@ -135,13 +129,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
 						monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract
 						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
 					request.getSession().setAttribute("hourbalance", mr.getHourbalance());
-				}
-				if (tr.getSortofreport().equals("V")) {
-					// update vacation balance
-					if (request.getSession().getAttribute("trId") == null) {
-						// new report
-//						th.updateVacation(tr, 1, vacationDAO);
-					}
 				}
 				
 				// get updated list of timereports from DB
@@ -160,7 +147,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				
 				//refresh overtime
 				String year = (String) request.getSession().getAttribute("currentYear");
-				refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
+				refreshVacationAndOvertime(request, new Integer(year), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);
 				
 				return mapping.findForward("success");
 			} 
@@ -188,41 +175,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
 		ActionMessages errors = getErrors(request);
 		if(errors == null) errors = new ActionMessages();
 		
-//		long trId = theTimereport.getId();
-		
-		// end time must be later than begin time
-//		int begin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
-//		int end = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
-//		boolean selectedHourEndError = false;
-//		if (theTimereport.getSortofreport().equals("W")) {
-//			if (begin >= end) {
-//				errors.add("selectedHourEnd", new ActionMessage("form.timereport.error.endbeforebegin"));
-//			}
-//		}
-		
-		// check if report types for one day are unique and if there is no time overlap with other reports
-//		boolean timeOverlap = false;
-//		List<Timereport> dailyReports = 
-//				timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-//		if ((dailyReports != null) && (dailyReports.size() > 0)) {
-//			for (Iterator iter = dailyReports.iterator(); iter.hasNext();) {
-//				Timereport tr = (Timereport) iter.next();
-//				if (tr.getId() != trId) { // do not check report against itself in case of edit
-//					// uniqueness of types
-//					// actually not checked - e.g., combination of sickness and work on ONE day
-//					// should be valid
-//					// time overlap
-//					// do not check for time overlap in this form, otherwise switching/moving of hours
-//					// might be very hard... --> consistency of working periods must be checked manually.
-//					if (timereportDAO.checkTimeOverlap(tr, reportForm) == true) {
-//						timeOverlap = true;
-//						if (!selectedHourEndError)
-//							errors.add("selectedHourEnd", new ActionMessage("form.timereport.error.timeoverlap"));		
-//						break;
-//					}
-//				}
-//			}
-//		}
 		
 		// if sort of report is not 'W' reports are only allowed for workdays
 		// e.g., vacation cannot be set on a Sunday
@@ -245,20 +197,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.invalidday"));		
 			}
 		}
-		
-		
-		// check hour sum (must be less than 10.0)
-//		if ((!timeOverlap) && (theTimereport.getSortofreport().equals("W"))) {
-//			List<Timereport> allReports = 
-//				timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-//			//double dailyHourSum = 
-//			//	hours + TimereportHelper.calculateTimereportWorkingHourSum(allReports, theTimereport.getId());
-//			double dailyHourSum = TimereportHelper.calculateDailyHourSum(allReports);
-//			if (dailyHourSum > GlobalConstants.MAX_HOURS_PER_DAY) {
-//				if (!selectedHourEndError)
-//					errors.add("selectedHourEnd", new ActionMessage("form.timereport.error.hours.exceeded"));
-//			}
-//		}
+
 		
 		if (theTimereport.getSortofreport().equals("W")) {
 			// check costs format		
@@ -274,25 +213,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
 			errors.add("comment", new ActionMessage("form.timereport.error.comment.toolarge"));
 		}
 			
-		// if edited from daily overview, orders/suborders must be checked for consistency		
-//		if (request.getParameter("trId") != null) {
-//			if (theTimereport.getSortofreport().equals("W")) {
-//				// selected suborder must belong to selected order
-//				long soId = reportForm.getTrSuborderId();
-//				Customerorder co = (Customerorder) customerorderDAO.getCustomerorderById(reportForm.getTrOrderId());
-//				boolean consistent = false;
-//				for (Iterator iter = co.getSuborders().iterator(); iter.hasNext();) {
-//					Suborder soInCo = (Suborder) iter.next();
-//					if (soInCo.getId() == soId) {
-//						consistent = true;
-//						break;
-//					}
-//				}
-//				if (!consistent) {
-//					errors.add("trSuborderId", new ActionMessage("form.timereport.error.order.suborder.inconsistent"));
-//				}
-//			}
-//		} 
 		
 		saveErrors(request, errors);
 		

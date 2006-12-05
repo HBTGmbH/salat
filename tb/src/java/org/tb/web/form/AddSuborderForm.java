@@ -98,8 +98,8 @@ public class AddSuborderForm extends ActionForm {
 		description = "";
 		invoice = "J";
 		currency = GlobalConstants.DEFAULT_CURRENCY;
-		hourlyRate = 0.0;
-		request.getSession().setAttribute("hourlyRate", new Double(0.0));
+//		hourlyRate = 0.0;
+//		request.getSession().setAttribute("hourlyRate", new Double(0.0));
 	}
 
 	@Override

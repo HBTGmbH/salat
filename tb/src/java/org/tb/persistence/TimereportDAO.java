@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
@@ -197,6 +198,41 @@ public class TimereportDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * Gets a list of Timereports by employee contract id and two dates.
+	 * 
+	 * @param long contractId
+	 * @param java.sql.Date begin
+	 * @param java.sql.Date end
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsByDatesAndEmployeeContractId(long contractId, java.sql.Date begin, java.sql.Date end) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by employeecontract.employee.lastname asc, referenceday.refdate asc, sequencenumber asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).list();
+
+		return allTimereports;
+	}
+	
+	/**
+	 * Gets a list of Timereports by associated to the given employee contract id, customer order id and the time period between the two given dates.
+	 * 
+	 * @param long contractId
+	 * @param java.sql.Date begin
+	 * @param java.sql.Date end
+	 * @param customerOrderId
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long contractId, java.sql.Date begin, java.sql.Date end, long customerOrderId) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate asc, sequencenumber asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).setLong(3, customerOrderId).list();
+
+		return allTimereports;
+	}
+	
+	/**
 	 * Gets a list of Timereports by date.
 	 * 
 	 * @param java.sql.Date dt
@@ -207,6 +243,39 @@ public class TimereportDAO extends HibernateDaoSupport {
 		
 		List<Timereport> allTimereports = 
 				getSession().createQuery("from Timereport t where t.referenceday.refdate = ? order by employeecontract.employee.lastname asc, sequencenumber asc").setDate(0, dt).list();
+
+		return allTimereports;
+	}
+	
+	/**
+	 * Gets a list of timereports, which lay between two dates.
+	 * 
+	 * @param java.sql.Date begin
+	 * @param java.sql.Date end
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsByDates(java.sql.Date begin, java.sql.Date end) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by employeecontract.employee.lastname asc, referenceday.refdate asc, sequencenumber asc").setDate(0, begin).setDate(1, end).list();
+
+		return allTimereports;
+	}
+	
+	/**
+	 * Gets a list of timereports, which lay between two dates and belong to the given {@link Customerorder} id.
+	 * 
+	 * @param java.sql.Date begin
+	 * @param java.sql.Date end
+	 * @param coId
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsByDatesAndCustomerOrderId(java.sql.Date begin, java.sql.Date end, long coId) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.customerorder.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate asc, sequencenumber asc").setDate(0, begin).setDate(1, end).setLong(2, coId).list();
 
 		return allTimereports;
 	}

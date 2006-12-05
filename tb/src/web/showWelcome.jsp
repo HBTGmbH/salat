@@ -11,7 +11,7 @@ Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmplo
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message
+<title><bean:message key="main.general.application.title" /> - <bean:message
 	key="main.general.mainmenu.welcome.title.text" /></title>
 </head>
 <body>

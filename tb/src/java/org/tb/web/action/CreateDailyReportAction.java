@@ -1,6 +1,5 @@
 package org.tb.web.action;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -79,19 +77,21 @@ public class CreateDailyReportAction extends DailyReportAction {
 		Employeecontract ec = null;	
 		
 		EmployeeHelper eh = new EmployeeHelper();
-		if (request.getSession().getAttribute("currentEmployee") != null) {
-			String currentEmployeeName = (String) request.getSession().getAttribute("currentEmployee");
-			if (currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
+		if (request.getSession().getAttribute("currentEmployeeId") != null) {
+			long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+			if (employeeId == -1) {
 				ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
 				request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
-			} else {
-				String[] firstAndLast = eh.splitEmployeename(currentEmployeeName);		
-				ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
-				request.getSession().setAttribute("currentEmployee", currentEmployeeName);
+				request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+			} else {	
+				ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
+				request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
+				request.getSession().setAttribute("currentEmployeeId", employeeId);
 			}
 		} else {
 			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
 			request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+			request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 		}
 		
 		if (ec == null) {

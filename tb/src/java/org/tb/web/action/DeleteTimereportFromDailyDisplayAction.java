@@ -18,6 +18,7 @@ import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
@@ -38,6 +39,11 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 	private WorkingdayDAO workingdayDAO;
 	private EmployeeorderDAO employeeorderDAO;
 	private PublicholidayDAO publicholidayDAO;
+	private OvertimeDAO overtimeDAO;
+	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 	
 	public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
 		this.publicholidayDAO = publicholidayDAO;
@@ -124,7 +130,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 		
 //		refresh overtime
 		String year = (String) request.getSession().getAttribute("currentYear");
-		refreshVacationAndOvertime(request, new Integer(year), vacationDAO, ec, employeeorderDAO, publicholidayDAO, timereportDAO);
+		refreshVacationAndOvertime(request, new Integer(year), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);
 		
 		
 		

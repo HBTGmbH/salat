@@ -131,6 +131,8 @@ public class EmployeeHelper {
 					employeeOptionList);
 			request.getSession().setAttribute("currentEmployee",
 					loginEmployee.getName());
+			request.getSession().setAttribute("currentEmployeeId", 
+					loginEmployee.getId());
 			request.getSession().setAttribute("currentOrder", "ALL ORDERS");
 		} else {
 			String currentEmployeeName = (String) request.getSession()

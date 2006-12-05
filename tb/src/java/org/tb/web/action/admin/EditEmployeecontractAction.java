@@ -91,13 +91,14 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 									AddEmployeeContractForm ecForm, Employeecontract ec) {
 		
 		Employee theEmployee = ec.getEmployee();
-		ecForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());
+		ecForm.setEmployee(theEmployee.getId());
 		request.getSession().setAttribute("currentEmployee", theEmployee.getName());
+		request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
 		
 		List<Employee> employees = employeeDAO.getEmployees();
 		request.getSession().setAttribute("employees", employees);
 		
-		ecForm.setEmployeeId(theEmployee.getId());
+//		ecForm.setEmployeeId(theEmployee.getId());
 		ecForm.setTaskdescription(ec.getTaskDescription());
 		ecForm.setFreelancer(ec.getFreelancer());
 		ecForm.setDailyworkingtime(ec.getDailyWorkingTime());
