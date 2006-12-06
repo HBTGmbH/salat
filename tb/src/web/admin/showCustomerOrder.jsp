@@ -68,8 +68,12 @@
 			key="main.customerorder.validuntil.text" /></b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.orders.responsecustomer.text" />"><b><bean:message
-			key="main.customerorder.responsiblecustomer.text" /></b></th>
+			key="main.headlinedescription.orders.responsecustomer.contract.text" />"><b><bean:message
+			key="main.customerorder.responsiblecustomer.contract.text" /></b></th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.responsecustomer.tech.text" />"><b><bean:message
+			key="main.customerorder.responsiblecustomer.tech.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.responsehbt.text" />"><b><bean:message
@@ -112,8 +116,9 @@
 		<td><c:out value="${customerorder.description}" /></td>
 		<td><c:out value="${customerorder.fromDate}" /></td>
 		<td><c:out value="${customerorder.untilDate}" /></td>
-		<td><c:out value="${customerorder.responsible_customer}" /></td>
-		<td><c:out value="${customerorder.responsible_hbt}" /></td>
+		<td><c:out value="${customerorder.responsible_customer_contractually}" /></td>
+		<td><c:out value="${customerorder.responsible_customer_technical}" /></td>
+		<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
 		<td><c:out value="${customerorder.order_customer}" /></td>
 		<td><c:out value="${customerorder.currency}" /></td>
 		<td><c:out value="${customerorder.hourly_rate}" /></td>

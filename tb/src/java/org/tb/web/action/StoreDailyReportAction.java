@@ -170,7 +170,8 @@ public class StoreDailyReportAction extends DailyReportAction {
 						request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 					} else {		
 						ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
-						request.getSession().setAttribute("currentEmployee", ec.getEmployee().getId());
+						request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
+						request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
 					}
 				} else {
 					ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());

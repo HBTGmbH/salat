@@ -18,6 +18,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddCustomerOrderForm;
@@ -33,7 +34,11 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 	
 	private CustomerDAO customerDAO;
 	private CustomerorderDAO customerorderDAO;
+	private EmployeeDAO employeeDAO;
 	
+	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
+		this.employeeDAO = employeeDAO;
+	}
 	
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
@@ -81,8 +86,11 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				co.setDescription(coForm.getDescription());
 				co.setHourly_rate(coForm.getHourlyRate());
 				co.setOrder_customer(coForm.getOrderCustomer());
-				co.setResponsible_customer(coForm.getResponsibleCustomer());
-				co.setResponsible_hbt(coForm.getResponsibleHbt());
+				
+				co.setResponsible_customer_contractually(coForm.getResponsibleCustomerContractually());
+				co.setResponsible_customer_technical(coForm.getResponsibleCustomerTechnical());
+				co.setResponsible_hbt(employeeDAO.getEmployeeById(coForm.getEmployeeId()));
+				
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				customerorderDAO.save(co, loginEmployee);
@@ -186,19 +194,19 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 		if (coForm.getOrderCustomer().length() <= 0) {
 			errors.add("orderCustomer", new ActionMessage("form.customerorder.error.ordercustomer.required"));
 		}
-		if (coForm.getResponsibleCustomer().length() > GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH) {
-			errors.add("responsibleCustomer", new ActionMessage("form.customerorder.error.responsiblecustomer.toolong"));
+		if (coForm.getResponsibleCustomerContractually().length() > GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH) {
+			errors.add("responsibleCustomerContractually", new ActionMessage("form.customerorder.error.responsiblecustomer.toolong"));
 		}
-		if (coForm.getResponsibleCustomer().length() <= 0) {
-			errors.add("responsibleCustomer", new ActionMessage("form.customerorder.error.responsiblecustomer.required"));
+		if (coForm.getResponsibleCustomerContractually().length() <= 0) {
+			errors.add("responsibleCustomerContractually", new ActionMessage("form.customerorder.error.responsiblecustomer.required"));
 		}
-		if (coForm.getResponsibleHbt().length() > GlobalConstants.CUSTOMERORDER_RESP_HBT_MAX_LENGTH) {
-			errors.add("responsibleHbt", new ActionMessage("form.customerorder.error.responsiblehbt.toolong"));
+		if (coForm.getResponsibleCustomerTechnical().length() > GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH) {
+			errors.add("responsibleCustomerTechnical", new ActionMessage("form.customerorder.error.responsiblecustomer.toolong"));
 		}
-		if (coForm.getResponsibleHbt().length() <= 0) {
-			errors.add("responsibleHbt", new ActionMessage("form.customerorder.error.responsiblehbt.required"));
+		if (coForm.getResponsibleCustomerTechnical().length() <= 0) {
+			errors.add("responsibleCustomerTechnical", new ActionMessage("form.customerorder.error.responsiblecustomer.required"));
 		}
-		
+				
 		
 		// check hourly rate format		
 		if (!GenericValidator.isDouble(coForm.getHourlyRate().toString()) ||

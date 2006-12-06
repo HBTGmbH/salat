@@ -108,7 +108,8 @@
 				style="border:0;vertical-align:top"> </a> <span style="color:red"><html:errors
 				property="validUntil" /></span></td>
 		</tr>
-
+		
+		<!-- Bezeichnung -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.description.text" /></b></td>
@@ -116,24 +117,38 @@
 				property="description" cols="30" rows="4" /> <span style="color:red"><html:errors
 				property="description" /></span></td>
 		</tr>
-
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.responsiblecustomer.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="responsibleCustomer" size="40"
-				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
-			<span style="color:red"><html:errors
-				property="responsibleCustomer" /></span></td>
-		</tr>
-
+		
+		<!-- Auftragverantwortlicher bei HBT -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.responsiblehbt.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="employeeId">
+					<html:options collection="employeeswithcontract" labelProperty="name"
+						property="id" />
+				</html:select>
+			</td>
+		</tr>
+		
+		<!-- Verantwortlicher beim Kunden (fachlich) -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.responsiblecustomer.tech.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="responsibleHbt" size="40"
-				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_HBT_MAX_LENGTH %>" />
-			<span style="color:red"><html:errors property="responsibleHbt" /></span>
+				property="responsibleCustomerTechnical" size="40"
+				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
+			<span style="color:red"><html:errors
+				property="responsibleCustomerTechnical" /></span></td>
+		</tr>
+
+		<!-- Verantwortlicher beim Kunden (vertraglich) -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.responsiblecustomer.contract.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="responsibleCustomerContractually" size="40"
+				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
+			<span style="color:red"><html:errors property="responsibleCustomerContractually" /></span>
 			</td>
 		</tr>
 

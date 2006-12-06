@@ -125,7 +125,7 @@
                         cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
                         cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
                         cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-                        cal.setTodayText(<bean:message key="main.date.popup.today" />);
+                        cal.setTodayText("<bean:message key="main.date.popup.today" />");
                         // cal.select(document.forms[0].referenceday,'anchor1','E yyyy-MM-dd');
                         cal.select(document.forms[0].referenceday,'anchor1','yyyy-MM-dd');
                     }

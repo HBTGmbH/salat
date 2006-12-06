@@ -10,8 +10,10 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customer;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddCustomerOrderForm;
 
@@ -25,6 +27,11 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 	
 	private CustomerDAO customerDAO;
 	private CustomerorderDAO customerorderDAO;
+	private EmployeeDAO employeeDAO;
+	
+	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
+		this.employeeDAO = employeeDAO;
+	}
 	
 	public void setCustomerDAO(CustomerDAO customerDAO) {
 		this.customerDAO = customerDAO;
@@ -53,6 +60,10 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 	
 		request.getSession().setAttribute("customerorders", customerorders);			
 		request.getSession().setAttribute("customers", customers);
+		
+		// get list of employees with employee contract
+		List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithContracts();
+		request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
 		
 		// reset/init form entries
 		customerOrderForm.reset(mapping, request);

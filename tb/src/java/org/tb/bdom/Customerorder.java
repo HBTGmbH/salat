@@ -46,10 +46,14 @@ public class Customerorder implements Serializable {
 	private List<Suborder> suborders;
 	
 	/** Responsible of Customer */
-	private String responsible_customer;
+	private String responsible_customer_technical;
+	private String responsible_customer_contractually;
 	
-	/** Responsible of HBT */
-	private String responsible_hbt;
+	/** Responsible employee of HBT */
+	@ManyToOne
+	@JoinColumn(name="RESPONSIBLE_HBT_ID")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	private Employee responsible_hbt;
 	
 	/** Orderer of Customer */
 	private String order_customer;
@@ -112,19 +116,47 @@ public class Customerorder implements Serializable {
 		this.order_customer = orderCustomer;
 	}
 
-	public String getResponsible_customer() {
-		return responsible_customer;
+	/**
+	 * @return the responsible_customer_contractually
+	 */
+	public String getResponsible_customer_contractually() {
+		return responsible_customer_contractually;
 	}
 
-	public void setResponsible_customer(String responsible_customer) {
-		this.responsible_customer = responsible_customer;
+	/**
+	 * @param responsible_customer_contractually the responsible_customer_contractually to set
+	 */
+	public void setResponsible_customer_contractually(
+			String responsible_customer_contractually) {
+		this.responsible_customer_contractually = responsible_customer_contractually;
 	}
 
-	public String getResponsible_hbt() {
+	/**
+	 * @return the responsible_customer_technical
+	 */
+	public String getResponsible_customer_technical() {
+		return responsible_customer_technical;
+	}
+
+	/**
+	 * @param responsible_customer_technical the responsible_customer_technical to set
+	 */
+	public void setResponsible_customer_technical(
+			String responsible_customer_technical) {
+		this.responsible_customer_technical = responsible_customer_technical;
+	}
+
+	/**
+	 * @return the responsible_hbt
+	 */
+	public Employee getResponsible_hbt() {
 		return responsible_hbt;
 	}
 
-	public void setResponsible_hbt(String responsible_hbt) {
+	/**
+	 * @param responsible_hbt the responsible_hbt to set
+	 */
+	public void setResponsible_hbt(Employee responsible_hbt) {
 		this.responsible_hbt = responsible_hbt;
 	}
 

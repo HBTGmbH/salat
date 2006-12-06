@@ -119,7 +119,8 @@ public class EmployeeHelper {
 			EmployeeDAO ed, EmployeecontractDAO ecd) {
 		Employeecontract ec = null;
 		
-		if (request.getSession().getAttribute("currentEmployee") == null) {
+		if (request.getSession().getAttribute("currentEmployeeId") == null || 
+				(Long)request.getSession().getAttribute("currentEmployeeId") == 0) {
 			// just logged in				
 			ec = ecd.getEmployeeContractByEmployeeId(loginEmployee.getId());
 			List<Employee> employeeOptionList = getEmployeeOptions(loginEmployee, ed);
@@ -135,11 +136,10 @@ public class EmployeeHelper {
 					loginEmployee.getId());
 			request.getSession().setAttribute("currentOrder", "ALL ORDERS");
 		} else {
-			String currentEmployeeName = (String) request.getSession()
-					.getAttribute("currentEmployee");
-			String[] firstAndLast = splitEmployeename(currentEmployeeName);
-			if (!currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
-				ec = ecd.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+			Long currentEmployeeId = (Long) request.getSession()
+					.getAttribute("currentEmployeeId");
+			if (null != currentEmployeeId && currentEmployeeId != -1 && currentEmployeeId != 0) {
+				ec = ecd.getEmployeeContractByEmployeeId(currentEmployeeId);
 			} else {
 				ec = ecd.getEmployeeContractByEmployeeId(loginEmployee.getId());
 			}

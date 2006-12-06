@@ -328,7 +328,7 @@
 		</c:if>
 		
 		<!-- select working day begin and break -->
-		<c:if test="${view eq 'day'}">
+		<c:if test="${view eq 'day' || view == null}">
 			<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message

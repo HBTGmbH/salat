@@ -154,6 +154,20 @@ public class EmployeeDAO extends HibernateDaoSupport {
 		return employees;
 	}
 	
+	/**
+	 * 
+	 * @param date
+	 * @return Returns all {@link Employee}s with a contract.
+	 */
+	public List<Employee> getEmployeesWithContracts() {
+		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
+		List<Employee> employees = new ArrayList<Employee>();
+		for (Employeecontract employeecontract : employeeContracts) {
+			employees.add(employeecontract.getEmployee());
+		}
+		return employees;
+	}
+	
 	
 	/**
 	 * Get a list of all Employees ordered by lastname.
