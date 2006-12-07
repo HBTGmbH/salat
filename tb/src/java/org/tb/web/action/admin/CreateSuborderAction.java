@@ -8,7 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
@@ -41,8 +43,18 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		
 		AddSuborderForm suborderForm = (AddSuborderForm) form;
 		
+		// get login employee
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		
 		// get lists of existing customerorders and suborders
-		List<Customerorder> customerorders = customerorderDAO.getCustomerorders();
+		List<Customerorder> customerorders;
+		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) {
+			customerorders = customerorderDAO.getCustomerorders();
+		} else {
+			customerorders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+		}
+		
+		
 		List<Suborder> suborders = suborderDAO.getSuborders();
 		
 		if ((customerorders == null) || (customerorders.size() <= 0)) {

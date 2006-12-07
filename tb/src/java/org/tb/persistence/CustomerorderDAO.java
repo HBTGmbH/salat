@@ -61,6 +61,17 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 	}
 
 	/**
+	 * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
+	 * 
+	 * @param responsibleHbtId
+	 * @return
+	 */
+	public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
+		return getSession().createQuery("from Customerorder where RESPONSIBLE_HBT_ID = ? order by sign").setLong(0, responsibleHbtId).list();
+	}
+	
+	
+	/**
 	 * Gets a list of all Customerorders by employee contract id.
 	 * 
 	 * @param long contractId

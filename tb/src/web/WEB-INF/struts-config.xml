@@ -169,7 +169,7 @@
 		</action>
 		
 		<!-- Customerorder -->
-		<action path="/CreateCustomerorder" validate="true" name="addCustomerOrderForm">
+		<action path="/CreateCustomerorder" name="addCustomerOrderForm">
 			<forward name="success" path="/admin/addCustomerOrder.jsp"/>
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -256,7 +256,7 @@
 		</action>	
 		
 		<!-- Employeecontract -->
-		<action path="/CreateEmployeecontract" validate="true" name="addEmployeeContractForm">
+		<action path="/CreateEmployeecontract" name="addEmployeeContractForm">
 			<forward name="success" path="/admin/addEmployeeContract.jsp"/>
 			<forward name="error" path="/admin/error.jsp" />
 		</action>

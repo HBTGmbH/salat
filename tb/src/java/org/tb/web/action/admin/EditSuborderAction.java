@@ -1,11 +1,16 @@
 package org.tb.web.action.admin;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
@@ -43,7 +48,14 @@ public class EditSuborderAction extends LoginRequiredAction {
 		setFormEntries(mapping, request, soForm, so);
 		
 		// make sure all customer orders are available in form
-		request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		List<Customerorder> customerorders;
+		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) {
+			customerorders = customerorderDAO.getCustomerorders();
+		} else {
+			customerorders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+		}
+		request.getSession().setAttribute("customerorders", customerorders);
 		
 		// forward to suborder add/edit form
 		return mapping.findForward("success");	

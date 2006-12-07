@@ -50,7 +50,7 @@
 							property="employee">
 						<html:options collection="employees" labelProperty="name"
 							property="id" />
-						</html:select> <html:hidden property="employeeId" /> <span style="color:red"><html:errors
+						</html:select>  <span style="color:red"><html:errors
 							property="employeename" /></span>
 					</c:when>
 					<c:otherwise>
@@ -58,8 +58,7 @@
 					</c:otherwise>
 				</c:choose>
 			</td>
-		</tr>
-
+		</tr> 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.taskdescription.text" /></b></td>
@@ -72,7 +71,9 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.validfrom.text" /></b></td>
-			<td align="left" class="noBborderStyle"><!-- JavaScript Stuff for popup calender -->
+			<td align="left" class="noBborderStyle">
+		
+			<!-- JavaScript Stuff for popup calender -->
 			<script type="text/javascript" language="JavaScript"
 				src="/tb/CalendarPopup.js"></script> <script type="text/javascript"
 				language="JavaScript">
@@ -157,7 +158,7 @@
 				</c:otherwise>
 			</c:choose>
 		</tr>
-			
+		
 
 	</table>
 	<br>
@@ -181,7 +182,7 @@
 </html:form>
 
 	<!-- overtime table -->
-	
+	 
 <html:form action="/StoreEmployeecontract?task=storeOvertime">			
 	<c:if test="${employeeContractContext eq 'edit'}">
 	<br>
@@ -258,6 +259,7 @@
 			</tr>
 			
 			<!-- error messages -->
+			
 			<tr>
 				<td class="noBborderStyle" colspan="4">
 					<span style="color:red"><html:errors property="newOvertime" /></span>
@@ -271,5 +273,6 @@
 		</table>
 	</c:if>
 </html:form>
+
 </body>
 

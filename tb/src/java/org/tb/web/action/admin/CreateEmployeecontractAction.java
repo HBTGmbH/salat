@@ -54,7 +54,15 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
 	
 		// set relevant attributes
 		request.getSession().setAttribute("employeecontracts", employeecontracts);			
-		request.getSession().setAttribute("employees", employees);
+//		request.getSession().setAttribute("employees", employees);
+		
+		Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+		if (employeeId == null || employeeId == 0 || employeeId == -1) {
+			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+			employeeId = loginEmployee.getId();
+		}
+		String currentEmployeeName = employeeDAO.getEmployeeById(employeeId).getName();
+		request.getSession().setAttribute("currentEmployee", currentEmployeeName);
 		
 		// set context
 		request.getSession().setAttribute("employeeContractContext", "create");

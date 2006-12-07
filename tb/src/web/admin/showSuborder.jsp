@@ -64,14 +64,12 @@
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.hourlyrate.text" />"><b><bean:message
 			key="main.suborder.hourlyrate.text" /></b></th>
-		<c:if test="${employeeAuthorized}">
-			<th align="left" title="<bean:message
-				key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
-				key="main.suborder.edit.text" /></b></th>
-			<th align="left" title="<bean:message
-				key="main.headlinedescription.suborders.delete.text" />"><b><bean:message
-				key="main.suborder.delete.text" /></b></th>
-		</c:if>
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
+			key="main.suborder.edit.text" /></b></th>
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.delete.text" />"><b><bean:message
+			key="main.suborder.delete.text" /></b></th>
 	</tr>
 
 	<c:forEach var="suborder" items="${suborders}" varStatus="statusID">
@@ -97,20 +95,28 @@
 		<td><c:out value="${suborder.currency}" /></td>
 		<td><c:out value="${suborder.hourly_rate}" /></td>
 
-		<c:if test="${employeeAuthorized}">
-			<td align="center"><html:link
-				href="/tb/do/EditSuborder?soId=${suborder.id}">
-				<img src="/tb/images/Edit.gif" alt="Edit Suborder" />
-			</html:link></td>
-			<html:form action="/DeleteSuborder">
+		<c:choose>
+			<c:when test="${employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
+				<td align="center">
+					<html:link href="/tb/do/EditSuborder?soId=${suborder.id}">
+						<img src="/tb/images/Edit.gif" alt="Edit Suborder" />
+					</html:link></td>
+					<html:form action="/DeleteSuborder">
 				<td align="center"><html:image
 					onclick="confirmDelete(this.form, ${suborder.id})"
 					src="/tb/images/Delete.gif" alt="Delete Suborder" /></td>
-			</html:form>
-		</c:if>
+					</html:form>
+			</c:when>
+			<c:otherwise>
+				<td align="center"><img src="/tb/images/verbot.gif"
+					alt="Edit Suborder" /></td>
+				<td align="center"><img src="/tb/images/verbot.gif"
+					alt="Delete Suborder" /></td>
+			</c:otherwise>
+		</c:choose>
 		</tr>
 	</c:forEach>
-	<c:if test="${employeeAuthorized}">
+	<c:if test="${employeeAuthorized || employeeIsResponsible}">
 		<tr>
 			<html:form action="/CreateSuborder">
 				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
