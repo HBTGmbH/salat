@@ -79,6 +79,9 @@ public class Suborder implements Serializable {
 	/** Update Counter */
 	private Integer updatecounter;
 	
+	/** STANDARD */
+	private Boolean standard;
+	
 
 	
 	public long getId() {
@@ -221,6 +224,22 @@ public class Suborder implements Serializable {
 	 */
 	public void setUpdatecounter(Integer updatecounter) {
 		this.updatecounter = updatecounter;
+	}
+	
+	
+
+	/**
+	 * @return the standard
+	 */
+	public Boolean getStandard() {
+		return standard;
+	}
+
+	/**
+	 * @param standard the standard to set
+	 */
+	public void setStandard(Boolean standard) {
+		this.standard = standard;
 	}
 
 	@Override

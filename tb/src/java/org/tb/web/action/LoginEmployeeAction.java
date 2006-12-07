@@ -1,5 +1,9 @@
 package org.tb.web.action;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -11,8 +15,14 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.SuborderDAO;
 import org.tb.web.form.LoginEmployeeForm;
 
 /**
@@ -25,7 +35,21 @@ public class LoginEmployeeAction extends Action {
 	
 	private EmployeeDAO employeeDAO;
 	private PublicholidayDAO publicholidayDAO;
+	private EmployeecontractDAO employeecontractDAO;
+	private SuborderDAO suborderDAO;
+	private EmployeeorderDAO employeeorderDAO;
 	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
+	}
+	
+	public void setSuborderDAO(SuborderDAO suborderDAO) {
+		this.suborderDAO = suborderDAO;
+	}
+	
+	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+		this.employeecontractDAO = employeecontractDAO;
+	}
 	
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
@@ -65,6 +89,52 @@ public class LoginEmployeeAction extends Action {
 		
 		// check if public holidays are available
 		publicholidayDAO.checkPublicHolidaysForCurrentYear();
+		
+		// check if employee has an employee contract and is has employee orders for all standard suborders
+		Date date = new Date();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+		String dateString = simpleDateFormat.format(date);
+		date = simpleDateFormat.parse(dateString);
+		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
+		
+		if (employeecontract != null) {
+			List<Suborder> standardSuborders  = suborderDAO.getStandardSuborders();
+			if (standardSuborders!= null && standardSuborders.size() > 0) {
+				// test if employeeorder exists
+				Employeeorder employeeorder;
+				for (Suborder suborder : standardSuborders) {
+					employeeorder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontract.getId(), suborder.getId(), date);
+					if (employeeorder == null) {
+						// create employeeorder
+						SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
+						String year = yearFormat.format(date);
+						Date fromDate = simpleDateFormat.parse(year+"0101");
+						Date untilDate = simpleDateFormat.parse(year+"1231");
+						java.sql.Date sqlFromDate = new java.sql.Date(fromDate.getTime());
+						java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
+						
+						employeeorder = new Employeeorder();
+						employeeorder.setDebithours(suborder.getCustomerorder().getHourly_rate());
+						employeeorder.setEmployeecontract(employeecontract);
+						employeeorder.setFromDate(sqlFromDate);
+//						employeeorder.setSign(sign);
+						employeeorder.setStandingorder(true);
+//						employeeorder.setStatus(status);
+						employeeorder.setStatusreport(false);
+						employeeorder.setSuborder(suborder);
+						employeeorder.setUntilDate(sqlUntilDate);
+						
+						// create tmp employee
+						Employee tmp = new Employee();
+						tmp.setSign("system");
+						
+						employeeorderDAO.save(employeeorder, tmp);
+						
+					}
+				}
+			}
+		}
+		
 		
 		return mapping.findForward("success");
 	}

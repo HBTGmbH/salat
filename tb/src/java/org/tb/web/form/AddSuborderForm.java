@@ -26,6 +26,7 @@ public class AddSuborderForm extends ActionForm {
 	
 	
 	private String action;
+	private Boolean standard;
 
 	
 	public long getId() {
@@ -92,12 +93,29 @@ public class AddSuborderForm extends ActionForm {
 		this.invoice = invoice;
 	}
 
+	
+	
+	/**
+	 * @return the standard
+	 */
+	public Boolean getStandard() {
+		return standard;
+	}
+
+	/**
+	 * @param standard the standard to set
+	 */
+	public void setStandard(Boolean standard) {
+		this.standard = standard;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		sign = "";
 		description = "";
 		invoice = "J";
 		currency = GlobalConstants.DEFAULT_CURRENCY;
+		standard = false;
 //		hourlyRate = 0.0;
 //		request.getSession().setAttribute("hourlyRate", new Double(0.0));
 	}

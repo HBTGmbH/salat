@@ -5,6 +5,8 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <%
             Long coId = (Long)request.getSession().getAttribute("currentOrderId");
@@ -104,6 +106,14 @@
 			<td align="left" class="noBborderStyle"><html:text
 				property="hourlyRate" size="10" value="<%=hrString%>" /> <span
 				style="color:red"><html:errors property="hourlyRate" /></span></td>
+		</tr>
+		
+		<!-- is it a standard suborder? -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.suborder.standard.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:checkbox
+				property="standard" /></td>
 		</tr>
 
 	</table>

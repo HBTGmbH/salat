@@ -138,6 +138,14 @@ public class SuborderDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * 
+	 * @return Returns all {@link Suborder}s where the standard flag is true.
+	 */
+	public List<Suborder> getStandardSuborders() {
+		return getSession().createQuery("from Suborder where standard = ? order by sign").setBoolean(0, true).list();
+	}
+	
+	/**
 	 * Calls {@link SuborderDAO#save(Suborder, Employee)} with {@link Employee} = null.
 	 * @param so
 	 */

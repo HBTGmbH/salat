@@ -108,9 +108,9 @@
 					</html:form>
 			</c:when>
 			<c:otherwise>
-				<td align="center"><img src="/tb/images/verbot.gif"
+				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
 					alt="Edit Suborder" /></td>
-				<td align="center"><img src="/tb/images/verbot.gif"
+				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
 					alt="Delete Suborder" /></td>
 			</c:otherwise>
 		</c:choose>

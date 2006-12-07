@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -51,6 +52,18 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	public Employeecontract getEmployeeContractByEmployeeId(long employeeId) {
 		return (Employeecontract) getSession().createQuery
 				("from Employeecontract e where e.employee.id = ?").setLong(0, employeeId).uniqueResult();
+	}
+	
+	/**
+	 * Gets the EmployeeContract with the given employee id, that is valid for the given date.
+	 * 
+	 * @param long employeeId
+	 * 
+	 * @return Employeecontract
+	 */
+	public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
+		return (Employeecontract) getSession().createQuery
+				("from Employeecontract e where e.employee.id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeId).setDate(1, date).setDate(2, date).uniqueResult();
 	}
 	
 	/**

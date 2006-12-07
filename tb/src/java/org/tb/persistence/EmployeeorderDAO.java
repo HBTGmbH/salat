@@ -2,6 +2,7 @@ package org.tb.persistence;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,6 +49,17 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	 */
 	public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
 		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ?").setLong(0, employeecontractId).setLong(1, suborderId).uniqueResult();
+	}
+	
+	/**
+	 * Returns the {@link Employeeorder} associated to the given employeecontractID and suborderId, that is valid for the given date.
+	 * 
+	 * @param employeecontractId
+	 * @param suborderId
+	 * @return
+	 */
+	public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(long employeecontractId, long suborderId, Date date) {
+		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ? and fromdate <= ? and untildate >= ?").setLong(0, employeecontractId).setLong(1, suborderId).setDate(2, date).setDate(3, date).uniqueResult();
 	}
 	
 	/**
