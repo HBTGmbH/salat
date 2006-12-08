@@ -68,6 +68,9 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		Employeeorder eo = employeeorderDAO.getEmployeeorderById(eoId);
 		request.getSession().setAttribute("eoId", eo.getId());
 		
+		request.getSession().setAttribute("selectedcustomerorder", eo.getSuborder().getCustomerorder());
+		request.getSession().setAttribute("selectedsuborder", eo.getSuborder());
+		
 		// fill the form with properties of employee order to be edited
 		setFormEntries(mapping, request, eoForm, eo);
 		

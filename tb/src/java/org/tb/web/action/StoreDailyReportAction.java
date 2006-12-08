@@ -46,6 +46,7 @@ import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.AddDailyReportForm;
+import org.tb.web.form.ShowDailyReportForm;
 
 /**
  * Action class for a timereport to be stored permanently.
@@ -355,7 +356,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 					tr.setDurationminutes(new Integer(reportForm.getSelectedMinuteDuration()));
 				}
 				
-				tr.setSortofreport(reportForm.getSortOfReport());
+				tr.setSortofreport(/*reportForm.getSortOfReport()*/"W");
 						
 				if ((tr.getReferenceday() == null) || 
 						(tr.getReferenceday().getRefdate() == null) || 
@@ -444,9 +445,20 @@ public class StoreDailyReportAction extends DailyReportAction {
 				}	
 				
 				// get updated list of timereports from DB
-				reports = timereportDAO
-				.getTimereportsByDateAndEmployeeContractId(
-						ec.getId(), theDate);
+				ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
+				showDailyReportForm.setDay((String)request.getSession().getAttribute("currentDay"));
+				showDailyReportForm.setMonth((String)request.getSession().getAttribute("currentMonth"));
+				showDailyReportForm.setYear((String)request.getSession().getAttribute("currentYear"));				
+				showDailyReportForm.setLastday((String)request.getSession().getAttribute("lastDay"));
+				showDailyReportForm.setLastmonth((String)request.getSession().getAttribute("lastMonth"));
+				showDailyReportForm.setLastyear((String)request.getSession().getAttribute("lastYear"));
+				showDailyReportForm.setEmployeeId(ec.getEmployee().getId());
+				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
+				
+				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
+				reports = (List<Timereport>) request.getSession().getAttribute("timereports");
+				
+				
 				numberOfReports = reports.size();
 				request.getSession().setAttribute("timereports", reports);
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
@@ -457,8 +469,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				
 				if (!addMoreReprts) {
 					// refresh overtime and vacation
-					String currentYear = (String) request.getSession().getAttribute("currentYear");
-					refreshVacationAndOvertime(request, new Integer(currentYear), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);					
+					refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);					
 					return mapping.findForward("showDaily");
 				} else {
 					

@@ -384,7 +384,7 @@
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
-			<c:when test="${maxlabortime}">
+			<c:when test="${maxlabortime && view eq 'day' && !(currentOrder eq 'ALL ORDERS')}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b></th>
 			</c:when>
@@ -405,10 +405,12 @@
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
 			key="main.timereport.monthly.refday.text" /></b></th>
+		<!--  
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.sortofreport.text" />"><b><bean:message
 			key="main.timereport.monthly.sortofreport.text" /></b></th>
+		-->
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
@@ -459,6 +461,8 @@
 				</c:otherwise>
 			</c:choose>
 			<td><c:out value="${timereport.employeecontract.employee.name}" /></td>
+			
+			<!-- Datum -->
 			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal
 				name="timereport" property="referenceday.holiday" value="true">
 				<span style="color:red"> <bean:write name="timereport"
@@ -469,6 +473,9 @@
 				<c:out value="${timereport.referenceday.dow}" />
 				<c:out value="${timereport.referenceday.refdate}" />
 			</logic:equal></td>
+			
+			<!-- Typ -->
+			<!--  
 			<td align="center"><logic:equal name="timereport"
 				property="sortofreport" value="W">
 				<bean:message key="main.timereport.monthly.sortofreport.work.text" />
@@ -478,10 +485,15 @@
 			</logic:equal> <logic:equal name="timereport" property="sortofreport" value="S">
 				<bean:message key="main.timereport.monthly.sortofreport.sick.text" />
 			</logic:equal></td>
+			-->
+			
+			<!-- Auftrag -->
 			<td
 				title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
 			<c:out value="${timereport.suborder.customerorder.sign}"></c:out><br>
 			</td>
+			
+			<!-- Unterauftrag -->
 			<td
 				title="<c:out value="${timereport.suborder.description}"></c:out>">
 			<c:out value="${timereport.suborder.sign}"></c:out><br>
@@ -546,15 +558,15 @@
 					<td align="center"><c:out value="${timereport.costs}" /></td>
 
 					<!-- Speichern -->
-					<td align="center"><img src="/tb/images/verbot.gif"
+					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
 						alt="Save Timereport" /></td>
 
 					<!-- Aendern -->
-					<td align="center"><img src="/tb/images/verbot.gif"
+					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
 						alt="Edit Timereport" /></td>
 
 					<!-- Loeschen -->
-					<td align="center"><img src="/tb/images/verbot.gif"
+					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
 						alt="Delete Timereport" /></td>
 
 				</c:otherwise>
@@ -568,7 +580,7 @@
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
-			<c:when test="${maxlabortime}">
+			<c:when test="${maxlabortime && view eq 'day' && !(currentOrder eq 'ALL ORDERS')}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b></th>
 			</c:when>
@@ -637,11 +649,11 @@
 			<td><b><bean:message
 				key="main.general.vacation.text" />: </b></td>
 			<c:choose>
-				<c:when test="${vacationused > vacationtotal}">
-					<td><b><font color="red"><c:out value="${vacationused}" />/<c:out value="${vacationtotal}" /></font></b></td>
+				<c:when test="${vacationextended}">
+					<td><b><font color="red"><c:out value="${vacationdaysused}" />:<c:out value="${vacationhoursused}" />:<c:out value="${vacationminutesused}" /> / <c:out value="${vacationtotal}" /></font></b></td>
 				</c:when>
 				<c:otherwise>
-					<td><b><c:out value="${vacationused}" />/<c:out value="${vacationtotal}" /></b></td>
+					<td><b><c:out value="${vacationdaysused}" />:<c:out value="${vacationhoursused}" />:<c:out value="${vacationminutesused}" /> / <c:out value="${vacationtotal}" />:0:0</b></td>
 				</c:otherwise>
 			</c:choose>		
 		</tr>

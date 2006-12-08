@@ -129,8 +129,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 		request.getSession().setAttribute("currentYear", trYear);			
 		
 //		refresh overtime
-		String year = (String) request.getSession().getAttribute("currentYear");
-		refreshVacationAndOvertime(request, new Integer(year), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);
+		refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 		
 		
 		

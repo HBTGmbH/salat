@@ -98,6 +98,7 @@ public class LoginEmployeeAction extends Action {
 		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
 		
 		if (employeecontract != null) {
+			request.getSession().setAttribute("employeeHasValidContract", true);
 			List<Suborder> standardSuborders  = suborderDAO.getStandardSuborders();
 			if (standardSuborders!= null && standardSuborders.size() > 0) {
 				// test if employeeorder exists
@@ -114,12 +115,16 @@ public class LoginEmployeeAction extends Action {
 						java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
 						
 						employeeorder = new Employeeorder();
-						employeeorder.setDebithours(suborder.getCustomerorder().getHourly_rate());
+						if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
+							employeeorder.setDebithours(employeecontract.getDailyWorkingTime() * employeecontract.getVacationEntitlement());
+						} else {
+							employeeorder.setDebithours(suborder.getCustomerorder().getHourly_rate());
+						}
 						employeeorder.setEmployeecontract(employeecontract);
 						employeeorder.setFromDate(sqlFromDate);
-//						employeeorder.setSign(sign);
+						employeeorder.setSign(" ");
 						employeeorder.setStandingorder(true);
-//						employeeorder.setStatus(status);
+						employeeorder.setStatus(" ");
 						employeeorder.setStatusreport(false);
 						employeeorder.setSuborder(suborder);
 						employeeorder.setUntilDate(sqlUntilDate);
@@ -133,6 +138,8 @@ public class LoginEmployeeAction extends Action {
 					}
 				}
 			}
+		} else {
+			request.getSession().setAttribute("employeeHasValidContract", false);
 		}
 		
 		

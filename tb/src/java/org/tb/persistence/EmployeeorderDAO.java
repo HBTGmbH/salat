@@ -52,6 +52,19 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * 
+	 * @param employeecontractId
+	 * @param customerOrderSign
+	 * @param date
+	 * @return
+	 */
+	public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(long employeecontractId, String customerOrderSign, java.sql.Date date) {
+		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.customerorder.sign = ? and fromdate <= ? and untildate >= ? ").setLong(0, employeecontractId).setString(1, customerOrderSign).setDate(2, date).setDate(3, date).list();
+
+	}
+	
+	
+	/**
 	 * Returns the {@link Employeeorder} associated to the given employeecontractID and suborderId, that is valid for the given date.
 	 * 
 	 * @param employeecontractId

@@ -19,6 +19,9 @@ import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.OvertimeDAO;
@@ -28,6 +31,7 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
+import org.tb.web.form.ShowDailyReportForm;
 import org.tb.web.form.UpdateDailyReportForm;
 
 
@@ -40,7 +44,7 @@ import org.tb.web.form.UpdateDailyReportForm;
 public class UpdateDailyReportAction extends DailyReportAction {
 	
 	private SuborderDAO suborderDAO;
-//	private CustomerorderDAO customerorderDAO;
+	private CustomerorderDAO customerorderDAO;
 	private TimereportDAO timereportDAO;
 	private PublicholidayDAO publicholidayDAO;
 	private MonthlyreportDAO monthlyreportDAO;
@@ -48,6 +52,16 @@ public class UpdateDailyReportAction extends DailyReportAction {
 	private WorkingdayDAO workingdayDAO;
 	private EmployeeorderDAO employeeorderDAO;
 	private OvertimeDAO overtimeDAO;
+	private EmployeeDAO employeeDAO;
+	private EmployeecontractDAO employeecontractDAO;
+	
+	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+		this.employeecontractDAO = employeecontractDAO;
+	}
+	
+	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
+		this.employeeDAO = employeeDAO;
+	}
 	
 	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
 		this.overtimeDAO = overtimeDAO;
@@ -57,9 +71,9 @@ public class UpdateDailyReportAction extends DailyReportAction {
 		this.suborderDAO = suborderDAO;
 	}
 	
-//	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-//		this.customerorderDAO = customerorderDAO;
-//	}
+	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
+		this.customerorderDAO = customerorderDAO;
+	}
 	
 	public TimereportDAO getTimereportDAO() {
 		return timereportDAO;
@@ -132,10 +146,19 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				}
 				
 				// get updated list of timereports from DB
-				List<Timereport> timereports = timereportDAO
-				.getTimereportsByDateAndEmployeeContractId(
-						ec.getId(), theDate);
-				request.getSession().setAttribute("timereports", timereports);
+				ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
+				showDailyReportForm.setDay((String)request.getSession().getAttribute("currentDay"));
+				showDailyReportForm.setMonth((String)request.getSession().getAttribute("currentMonth"));
+				showDailyReportForm.setYear((String)request.getSession().getAttribute("currentYear"));				
+				showDailyReportForm.setLastday((String)request.getSession().getAttribute("lastDay"));
+				showDailyReportForm.setLastmonth((String)request.getSession().getAttribute("lastMonth"));
+				showDailyReportForm.setLastyear((String)request.getSession().getAttribute("lastYear"));
+				showDailyReportForm.setEmployeeId(ec.getEmployee().getId());
+				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
+				
+				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
+				List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+				
 				
 				TimereportHelper th = new TimereportHelper();
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
@@ -146,8 +169,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
 				
 				//refresh overtime
-				String year = (String) request.getSession().getAttribute("currentYear");
-				refreshVacationAndOvertime(request, new Integer(year), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);
+				refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 				
 				return mapping.findForward("success");
 			} 

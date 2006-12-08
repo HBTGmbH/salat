@@ -159,13 +159,16 @@
 				property="standingorder" /></span></td>
 		</tr>
 
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeeorder.debithours.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="debithours" size="20" /> <span style="color:red"><html:errors
-				property="debithours" /></span></td>
-		</tr>
+		<!-- Sollstunden -->
+		<c:if test="${!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK')}">
+			<tr>
+				<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.employeeorder.debithours.text" /></b></td>
+				<td align="left" class="noBborderStyle"><html:text
+					property="debithours" size="20" /> <span style="color:red"><html:errors
+					property="debithours" /></span></td>
+			</tr>
+		</c:if>
 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

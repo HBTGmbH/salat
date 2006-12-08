@@ -2,6 +2,7 @@ package org.tb.web.action;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -13,6 +14,9 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
@@ -30,58 +34,6 @@ import org.tb.web.form.ShowDailyReportForm;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
 
-	
-//	protected OvertimeDAO overtimeDAO;
-//	protected CustomerorderDAO customerorderDAO;
-//	protected TimereportDAO timereportDAO;
-//	protected EmployeecontractDAO employeecontractDAO;
-//	protected SuborderDAO suborderDAO;
-//	protected EmployeeorderDAO employeeorderDAO;
-//	protected VacationDAO vacationDAO;
-//	protected PublicholidayDAO publicholidayDAO;
-//	protected WorkingdayDAO workingdayDAO;
-//	protected EmployeeDAO employeeDAO;
-//	
-//	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-//		this.employeeDAO = employeeDAO;
-//	}
-//	
-//	public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
-//		this.workingdayDAO = workingdayDAO;
-//	}
-//	
-//	public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
-//		this.publicholidayDAO = publicholidayDAO;
-//	}
-//	
-//	public void setVacationDAO(VacationDAO vacationDAO) {
-//		this.vacationDAO = vacationDAO;
-//	}
-//	
-//	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-//		this.employeeorderDAO = employeeorderDAO;
-//	}
-//	
-//	public void setSuborderDAO(SuborderDAO suborderDAO) {
-//		this.suborderDAO = suborderDAO;
-//	}
-//	
-//	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-//		this.employeecontractDAO = employeecontractDAO;
-//	}
-//	
-//	public void setTimereportDAO(TimereportDAO timereportDAO) {
-//		this.timereportDAO = timereportDAO;
-//	}
-//	
-//	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-//		this.customerorderDAO = customerorderDAO;
-//	}
-//	
-//	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-//		this.overtimeDAO = overtimeDAO;
-//	}
-	
 	
 
 	/**
@@ -164,13 +116,10 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 	 * @param selectedYear
 	 * @param employeecontract
 	 */
-	public void refreshVacationAndOvertime(HttpServletRequest request, int selectedYear, Employeecontract employeecontract, 
-			EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO, VacationDAO vacationDAO) {
+	public void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract, 
+			EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
 		TimereportHelper th = new TimereportHelper();
 		int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-		Vacation vacation = vacationDAO.getVacationByYearAndEmployeecontract(employeecontract.getId(), selectedYear);
-		int totalVacation = vacation.getEntitlement();
-		int usedVacation = vacation.getUsed();
 		int overtimeHours = overtime[0];
 		int overtimeMinutes = overtime[1];
 		String overtimeString = overtimeHours+":";
@@ -186,10 +135,43 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			overtimeString += 0;
 		}
 		overtimeString += overtimeMinutes;
-		request.getSession().setAttribute("vacationtotal", totalVacation);
-		request.getSession().setAttribute("vacationused", usedVacation);
 		request.getSession().setAttribute("overtime", overtimeString);
 		
+		//vacation
+		Date now = new Date();
+
+		java.sql.Date sqlNowDate = new java.sql.Date(now.getTime());
+		
+		List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, sqlNowDate);
+		List<Timereport> vacationReports = new ArrayList<Timereport>();
+		for (Employeeorder employeeorder : employeeOrders) {
+			Suborder suborder = employeeorder.getSuborder();
+			vacationReports.addAll(timereportDAO.getTimereportsBySuborderId(suborder.getId()));
+		}
+		
+		int[] vacationTime = th.calculateLaborTimeAsArray(vacationReports);
+		int totalVacation = employeecontract.getVacationEntitlement();
+		double dailyWorkingTime = employeecontract.getDailyWorkingTime();
+		int dailyWorkingTimeMinutes = new Double(dailyWorkingTime*60).intValue();
+		int vacationMinutes = vacationTime[0]*60 + vacationTime[1];
+		
+		if (vacationMinutes > dailyWorkingTimeMinutes*totalVacation) {
+			request.getSession().setAttribute("vacationextended", true);
+		} else {
+			request.getSession().setAttribute("vacationextended", false);
+		}
+	
+		int usedVacationDays = vacationMinutes/dailyWorkingTimeMinutes;
+		vacationMinutes -= dailyWorkingTimeMinutes * usedVacationDays;
+		int usedVacationHours = vacationMinutes/60;
+		int usedVacationMinutes = vacationMinutes%60;
+		
+		
+		request.getSession().setAttribute("vacationtotal", totalVacation);
+		request.getSession().setAttribute("vacationdaysused", usedVacationDays);
+		request.getSession().setAttribute("vacationhoursused", usedVacationHours);
+		request.getSession().setAttribute("vacationminutesused", usedVacationMinutes);
+
 	}
 	
 	protected boolean refreshTimereports(ActionMapping mapping,
@@ -200,6 +182,9 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
 		//selected view and selected dates
 		String selectedView = reportForm.getView();
+		if (selectedView == null) {
+			throw new RuntimeException("view = null");
+		}
 		Date beginDate;
 		Date endDate;
 		
@@ -234,7 +219,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			}
 			
 		} catch (Exception e) {
-			throw new RuntimeException("date cannot be parsed for form");
+			throw new RuntimeException("date cannot be parsed for form",e);
 		}
 		java.sql.Date beginSqlDate = new java.sql.Date(beginDate.getTime());
 		java.sql.Date endSqlDate = new java.sql.Date(endDate.getTime());
@@ -304,8 +289,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 												ec.getId(), beginSqlDate, endSqlDate, orderId));
 			}
 			// refresh overtime and vacation
-			String year = (String) request.getSession().getAttribute("currentYear");
-			refreshVacationAndOvertime(request, new Integer(year), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);
+			refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 		}
 
 		// refresh all relevant attributes

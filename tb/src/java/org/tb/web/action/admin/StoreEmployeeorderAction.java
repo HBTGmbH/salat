@@ -173,7 +173,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				eo.setSign(eoForm.getSign());
 				eo.setStatus(eoForm.getStatus());
 				eo.setStandingorder(eoForm.getStandingorder());
-				eo.setDebithours(eoForm.getDebithours());
+				if (eo.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
+					eo.setDebithours(eo.getEmployeecontract().getVacationEntitlement()*eo.getEmployeecontract().getDailyWorkingTime());
+				} else if (eo.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
+					eo.setDebithours(0.0);
+				} else {
+					eo.setDebithours(eoForm.getDebithours());
+				}
 				eo.setStatusreport(eoForm.getStatusreport());
 
 				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

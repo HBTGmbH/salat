@@ -138,6 +138,7 @@
 				style="border:0;vertical-align:top"> </a> <span style="color:red"><html:errors
 				property="referenceday" /></span></td>
 		</tr>
+		<!-- 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.timereport.sortofreport.text" /></b></td>
@@ -156,6 +157,7 @@
 			</html:select> <span style="color:red"><html:errors property="sortOfReport" /></span>
 			</td>
 		</tr>
+		-->
 
 		<logic:equal name="report" value="W" scope="session">
 			<tr>

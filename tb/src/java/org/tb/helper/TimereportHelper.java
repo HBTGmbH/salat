@@ -608,6 +608,31 @@ public class TimereportHelper {
 	 * @return Returns the calculated time as String (hh:mm)
 	 */
 	public String calculateLaborTime(List<Timereport> timereports) {
+		int [] labortime = calculateLaborTimeAsArray(timereports);
+		int laborTimeHour = labortime[0];
+		int laborTimeMinute = labortime[1];
+				
+		String laborTimeString;
+		if (laborTimeHour < 10) {
+			laborTimeString = "0"+laborTimeHour+":";
+		} else {
+			laborTimeString = laborTimeHour+":";
+		}
+		if (laborTimeMinute < 10) {
+			return laborTimeString+"0"+laborTimeMinute;
+		} else {
+			return laborTimeString+laborTimeMinute;
+		}
+	}
+	
+	/**
+	 * Calculates the overall labortime for a list of {@link Timereport}s.
+	 * 
+	 * @param timereports
+	 * @return Returns the calculated time as int[] (index 0: hours, index 1: minutes)
+	 */
+	public int[] calculateLaborTimeAsArray(List<Timereport> timereports) {
+		int[] labortime = new int[2];
 		int laborTimeHour = 0;
 		int laborTimeMinute = 0;
 		
@@ -621,18 +646,9 @@ public class TimereportHelper {
 		}
 		laborTimeHour += (laborTimeMinute/60);
 		laborTimeMinute = laborTimeMinute%60;
-		
-		String laborTimeString;
-		if (laborTimeHour < 10) {
-			laborTimeString = "0"+laborTimeHour+":";
-		} else {
-			laborTimeString = laborTimeHour+":";
-		}
-		if (laborTimeMinute < 10) {
-			return laborTimeString+"0"+laborTimeMinute;
-		} else {
-			return laborTimeString+laborTimeMinute;
-		}
+		labortime[0] = laborTimeHour;
+		labortime[1] = laborTimeMinute;
+		return labortime;
 	}
 	
 	/**

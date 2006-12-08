@@ -107,5 +107,10 @@ public class GlobalConstants {
 	public static final String VIEW_PROJECT = "project";
 	public static final String VIEW_CUSTOM = "custom";
 	
+	// customer order signs
+	public static final String CUSTOMERORDER_SIGN_ILL = "KRANK";
+	public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
+	public static final String CUSTOMERORDER_SIGN_EXTRA_VACATION = "SONDERURLAUB";
+	
 	
 }

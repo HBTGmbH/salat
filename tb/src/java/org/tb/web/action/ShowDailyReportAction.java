@@ -242,6 +242,12 @@ public class ShowDailyReportAction extends DailyReportAction {
 				return mapping.findForward("error");
 			}
 			
+			// set view
+			String view = (String) request.getSession().getAttribute("view");
+			if (view == null || view == "") {
+				request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
+			}
+			
 			request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
 			request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 			request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
@@ -364,8 +370,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 				}
 
 				// vacation and overtime balance
-				String year = (String) request.getSession().getAttribute("currentYear");
-				refreshVacationAndOvertime(request, new Integer(year), ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, vacationDAO);
+				refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 
 			}
 
