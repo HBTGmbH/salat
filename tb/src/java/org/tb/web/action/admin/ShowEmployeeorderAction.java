@@ -75,12 +75,22 @@ public class ShowEmployeeorderAction extends LoginRequiredAction {
 				return mapping.findForward("success");
 			}
 		}
+		
+//		 check if loginEmployee has responsibility for some orders
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+		boolean employeeIsResponsible = false;
+		
+		if (orders != null && orders.size() > 0) {
+			employeeIsResponsible =  true;
+		}
+		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
+		
 			
 //		if (request.getParameter("task") == null) {
 			long employeeId = orderForm.getEmployeeId();
 			
 			if (employeeId == 0) {
-				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 				employeeId = loginEmployee.getId();
 			}
 			orderForm.setEmployeeId(employeeId);

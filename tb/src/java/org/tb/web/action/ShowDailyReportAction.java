@@ -158,7 +158,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 					return mapping.findForward("error");
 				}
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-				
+				request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
 				return mapping.findForward("success");
 			}
 		}
@@ -267,9 +267,21 @@ public class ShowDailyReportAction extends DailyReportAction {
 				DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
 				java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);	
 				
-				List<Timereport> timereports = timereportDAO
-				.getTimereportsByDateAndEmployeeContractId(ec
+				Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+				if (currentEmployeeId == null || currentEmployeeId == 0) {
+					currentEmployeeId = loginEmployee.getId();
+					request.getSession().setAttribute("currentEmployeeId", currentEmployeeId);
+				} 
+				
+				List<Timereport> timereports;
+				
+				if (currentEmployeeId == -1) {
+					// all employees
+					timereports = timereportDAO.getTimereportsByDate(sqlDate);
+				} else {
+					timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec
 						.getId(), sqlDate);
+				}
 				
 				String laborTimeString = th.calculateLaborTime(timereports);
 				request.getSession().setAttribute("labortime", laborTimeString);
@@ -358,7 +370,8 @@ public class ShowDailyReportAction extends DailyReportAction {
 							.getCustomerordersByEmployeeContractId(ec.getId());
 				}
 				request.getSession().setAttribute("orders", orders);
-				request.getSession().setAttribute("currentOrder", "ALL ORDERS");
+//				request.getSession().setAttribute("currentOrder", "ALL ORDERS");
+//				request.getSession().setAttribute("currentOrderId", -1);
 				
 				if (orders.size() > 0) {
 //					List<List> suborderlists = new ArrayList<List>();
@@ -368,12 +381,14 @@ public class ShowDailyReportAction extends DailyReportAction {
 					request.getSession().setAttribute("suborders",
 									suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
 				}
-
-				// vacation and overtime balance
-				refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-
 			}
+			// vacation and overtime balance
+			refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 
+			// set current order = all orders
+			request.getSession().setAttribute("currentOrder", "ALL ORDERS");
+			request.getSession().setAttribute("currentOrderId", -1);
+			
 		}
 		return mapping.findForward("success");
 	}

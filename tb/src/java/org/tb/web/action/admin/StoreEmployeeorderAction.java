@@ -94,6 +94,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					eoForm.useDatesFromCustomerOrder(co);
 					eoForm.setOrderId(co.getId());
 					checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
+					request.getSession().setAttribute("currentOrderId", co.getId());
 					return mapping.getInputForward();
 				}
 			}
@@ -115,7 +116,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			if ((request.getParameter("task") != null) &&
 					(request.getParameter("task").equals("refreshEmployees"))) {
 				// check if employeeorder for this employee, order, suborder already exists
-				//eoForm.getOrderId();
+				request.getSession().setAttribute("currentEmployeeId", eoForm.getEmployeeId());
 				checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
 				return mapping.getInputForward();
 			}

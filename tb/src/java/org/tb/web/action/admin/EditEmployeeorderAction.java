@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -121,7 +122,14 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		request.getSession().setAttribute("employeeswithcontract", employeeswithcontract);
 		
 		
-		List<Customerorder> orders = customerorderDAO.getCustomerorders();
+		List<Customerorder> orders;
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) {
+			orders = customerorderDAO.getCustomerorders();
+		} else {
+			orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+		}
+		
 		request.getSession().setAttribute("orders", orders);
 		
 		Customerorder customerorder;

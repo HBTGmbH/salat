@@ -594,7 +594,7 @@
 
 	<!-- Add ist derzeit auch nur für sich selbst freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
-		<c:if test="${(loginEmployee.name == currentEmployee) || (loginEmployee.status eq 'bl')}">
+		<c:if test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || (loginEmployee.status eq 'bl')}">
 			<html:form action="/CreateDailyReport">
 				<td class="noBborderStyle" colspan="6" align="left">
 					<html:submit styleId="button">

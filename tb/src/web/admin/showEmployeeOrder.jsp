@@ -62,8 +62,9 @@
 			<td align="left" class="noBborderStyle">
 				<html:select
 					property="employeeId"		
-					onchange="setUpdateEmployeeOrders(this.form)" >
-				<html:option value="-1">
+					onchange="setUpdateEmployeeOrders(this.form)"
+					value="${currentEmployeeId}" >
+					<html:option value="-1">
 					<bean:message key="main.general.allemployees.text" />
 				</html:option>
 				<html:options collection="employees"
@@ -78,7 +79,8 @@
 			<td align="left" class="noBborderStyle">
 				<html:select
 					property="orderId"		
-					onchange="setUpdateEmployeeOrders(this.form)" >
+					onchange="setUpdateEmployeeOrders(this.form)" 
+					value="${currentOrderId}">
 				<html:option value="-1">
 					<bean:message key="main.general.allorders.text" />
 				</html:option>
@@ -123,14 +125,12 @@
 		<th align="center" title="<bean:message
 			key="main.headlinedescription.employeeorders.statusreport.text" />"><b><bean:message
 			key="main.employeeorder.statusreport.text" /></b></th>
-		<c:if test="${employeeAuthorized}">
-			<th align="left" title="<bean:message
-				key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
-				key="main.employeeorder.edit.text" /></b></th>
-			<th align="left" title="<bean:message
-				key="main.headlinedescription.employeeorders.delete.text" />"><b><bean:message
-				key="main.employeeorder.delete.text" /></b></th>
-		</c:if>
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
+			key="main.employeeorder.edit.text" /></b></th>
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.employeeorders.delete.text" />"><b><bean:message
+			key="main.employeeorder.delete.text" /></b></th>
 	</tr>
 	<c:forEach var="employeeorder" items="${employeeorders}"
 		varStatus="statusID">
@@ -165,20 +165,29 @@
 		<td align="center"><html:checkbox name="employeeorder"
 			property="statusreport" disabled="true" /></td>
 
-		<c:if test="${employeeAuthorized}">
-			<td align="center"><html:link
-				href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
-				<img src="/tb/images/Edit.gif" alt="Edit Employeeorder" />
-			</html:link></td>
-			<html:form action="/DeleteEmployeeorder">
-				<td align="center"><html:image
-					onclick="confirmDelete(this.form, ${employeeorder.id})"
-					src="/tb/images/Delete.gif" alt="Delete Employeeorder" /></td>
-			</html:form>
-		</c:if>
+		<c:choose>
+			<c:when test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
+				<td align="center">
+					<html:link	href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
+						<img src="/tb/images/Edit.gif" alt="Edit Employeeorder" />
+					</html:link>
+				</td>
+				<html:form action="/DeleteEmployeeorder">
+					<td align="center">
+						<html:image onclick="confirmDelete(this.form, ${employeeorder.id})"
+							src="/tb/images/Delete.gif" alt="Delete Employeeorder" /></td>
+				</html:form>
+			</c:when>
+			<c:otherwise>
+				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
+					alt="Edit Employeeorder" /></td>
+				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
+					alt="Delete Employeeorder" /></td>
+			</c:otherwise>
+		</c:choose>
 		</tr>
 	</c:forEach>
-	<c:if test="${employeeAuthorized}">
+	<c:if test="${employeeAuthorized || employeeIsResponsible}">
 		<tr>
 			<html:form action="/CreateEmployeeorder">
 				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
