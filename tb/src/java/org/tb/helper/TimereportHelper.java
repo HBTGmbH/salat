@@ -1,5 +1,6 @@
 package org.tb.helper;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -12,6 +13,7 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Overtime;
+import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
@@ -740,10 +742,23 @@ public class TimereportHelper {
 		long overtimeMinutes;
 		
 		Date today =  new Date();
+		SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
+		String year = yearFormat.format(today);
+//		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//		Date firstDayOfCurrentYear;
+//		try {
+//			firstDayOfCurrentYear = simpleDateFormat
+//					.parse(year + "-01-01");
+//		} catch (Exception e) {
+//			throw new RuntimeException("unexpected error while parsing date");
+//		}		
 		Date contractBegin = employeecontract.getValidFrom();
 		
 		GregorianCalendar calendar = new GregorianCalendar();
-		calendar.setTime(today);
+//		calendar.setTime(firstDayOfCurrentYear);
+		
+		calendar.clear();
+		calendar.set(new Integer(year), Calendar.JANUARY, 1);
 		
 		// So = 1
 		// Mo = 2
@@ -752,19 +767,28 @@ public class TimereportHelper {
 		// Do = 5
 		// Fr = 6
 		// Sa = 7
-		int currentday = calendar.get(Calendar.DAY_OF_WEEK);
-		// set So = 8 
-		if (currentday == 1) {
-			currentday += 7;
+		int firstday = calendar.get(Calendar.DAY_OF_WEEK);
+				
+		int numberOfHolidays = 0;
+				
+		List<Publicholiday> holidays = publicholidayDAO.getPublicHolidaysBetween(contractBegin, today);
+		for (Publicholiday publicholiday : holidays) {
+			calendar.setTimeInMillis(publicholiday.getRefdate().getTime());
+			if ((calendar.get(Calendar.DAY_OF_WEEK) != 1) && (calendar.get(Calendar.DAY_OF_WEEK) != 8)) {
+				numberOfHolidays += 1;
+			}
 		}
 		
-		int numberOfHolidays = publicholidayDAO.getNumberOfHolidaysBetween(contractBegin, today);
-				
+		
 		long diffMillis;
         long diffDays;
         diffMillis = today.getTime() - contractBegin.getTime();
         diffDays = (diffMillis+(60*60*1000))/(24*60*60*1000);
-//      1 hour added because of possible differences caused by sommertime/wintertime
+        // 1 hour added because of possible differences caused by sommertime/wintertime
+        
+        // add 1 day (number of days are needed, not the difference)
+        diffDays += 1;
+        
         if (diffDays < 0) {
         	throw new RuntimeException("implementation error while calculating overtime");
         }
@@ -773,18 +797,25 @@ public class TimereportHelper {
 		diffDays = diffDays - (weeks * 2); 	// subtract weekends of complete weeks
 		
 		// check weekdays of incomplete week
-		if ((days + currentday) > 8) {
-			if (currentday == 8) {
-				// period starts with a sunday -> -1 day
-				diffDays -= 1;
+		if (days > 0) {
+			if (firstday == 1) {
+				// firstday is a sunday
+				if (days == 6) {
+					// subtract two days (sunday+saturday)
+					diffDays -= 2;
+				} else {
+					// subtract one day (sunday)
+					diffDays -= 1;
+				}
 			} else {
-				// incomplete week covers a weekend -> -2 days
-				diffDays -= 2;
+				if (firstday + days == 8) {
+					diffDays -= 1;
+				} else if (firstday + days > 8) {
+					diffDays -= 2;
+				}
 			}
-		} else if ((days + currentday) == 8) {
-			// 1 day is a saturday -> -1 day
-			diffDays -= 1;
 		}
+		
 		
 		// substract holidays
 		diffDays -= numberOfHolidays;

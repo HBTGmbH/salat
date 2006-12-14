@@ -144,8 +144,7 @@ public class EditDailyReportAction extends LoginRequiredAction {
 			reportForm.setSelectedMinuteBegin(displayTime[1]);
 			reportForm.setSelectedHourEnd(displayTime[2]);
 			reportForm.setSelectedMinuteEnd(displayTime[3]);
-			reportForm.setComment(tr.getTaskdescription());
-			
+						
 			TimereportHelper.refreshHours(reportForm);
 		} else {
 			reportForm.setSelectedHourDuration(tr.getDurationhours());
@@ -176,6 +175,7 @@ public class EditDailyReportAction extends LoginRequiredAction {
 			reportForm.setCosts(tr.getCosts());		
 			reportForm.setStatus(tr.getStatus());
 		}
+		reportForm.setComment(tr.getTaskdescription());
 	}
 	
 }

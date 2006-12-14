@@ -11,6 +11,7 @@ import java.util.List;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Publicholiday;
+import org.tb.bdom.Referenceday;
 import org.tb.util.DateUtils;
 
 /**
@@ -161,6 +162,17 @@ public class PublicholidayDAO extends HibernateDaoSupport {
 	public int getNumberOfHolidaysBetween(Date start, Date end) {
 		List<Publicholiday> holidays = getSession().createQuery("from Publicholiday ph where ph.refdate >= ? and ph.refdate <= ? ").setDate(0, start).setDate(1, end).list();
 		return (holidays == null ? 0 : holidays.size());
+	}
+	
+	/**
+	 * Returns a List of all {@link Publicholiday}s with a {@link Referenceday#getRefdate()} between the two given dates.
+	 * 
+	 * @param start
+	 * @param end
+	 * @return
+	 */
+	public List<Publicholiday> getPublicHolidaysBetween(Date start, Date end) {
+		return getSession().createQuery("from Publicholiday ph where ph.refdate >= ? and ph.refdate <= ? ").setDate(0, start).setDate(1, end).list();
 	}
 
 }
