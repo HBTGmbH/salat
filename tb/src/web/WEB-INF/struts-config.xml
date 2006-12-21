@@ -46,6 +46,8 @@
 		<form-bean name="showEmployeeContractForm" type="org.tb.web.form.ShowEmployeeContractForm" />
 		<form-bean name="addEmployeeForm" type="org.tb.web.form.AddEmployeeForm" />
 		<form-bean name="showEmployeeForm" type="org.tb.web.form.ShowEmployeeForm" />
+		<form-bean name="showSettingsForm" type="org.tb.web.form.ShowSettingsForm" />
+		<form-bean name="showWelcomeForm" type="org.tb.web.form.ShowWelcomeForm" />
 	</form-beans>
 
 
@@ -135,6 +137,16 @@
 			<forward name="newreport" path="/addDailyReport.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="print" path="/showDailyReportPrint.jsp" />
+		</action>
+		
+		<action path="/ShowSettings" input="/showSettings.jsp" validate="true" name="showSettingsForm">
+			<forward name="success" path="/showSettings.jsp"/>
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+		
+		<action path="/ShowWelcome" input="/showWelcome.jsp" validate="true" name="showWelcomeForm">
+			<forward name="success" path="/showWelcome.jsp"/>
+			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
 		<!-- Admin -->

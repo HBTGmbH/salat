@@ -9,6 +9,8 @@ package org.tb;
  */
 public class GlobalConstants {
 
+	public static final int STARTING_YEAR = 2005;
+	
 	public static final double MIN_HOURS_PER_DAY = 0.01;
 	public static final double MAX_HOURS_PER_DAY = 10.0;
 	
@@ -63,6 +65,7 @@ public class GlobalConstants {
 	public static final int EMPLOYEE_LASTNAME_MAX_LENGTH = 256;
 	public static final int EMPLOYEE_LOGINNAME_MAX_LENGTH = 5;
 	public static final int EMPLOYEE_PASSWORD_MAX_LENGTH = 256;
+	public static final int EMPLOYEE_PASSWORD_MIN_LENGTH = 6;
 	public static final int EMPLOYEE_SIGN_MAX_LENGTH = 5;
 	public static final int EMPLOYEE_STATUS_MAX_LENGTH = 16;
 	

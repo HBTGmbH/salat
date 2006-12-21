@@ -6,6 +6,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import org.tb.GlobalConstants;
+
 /**
  * @author oda
  * 
@@ -227,9 +229,8 @@ public class DateUtils {
 	public static List getYearsToDisplay() {
 		List theList = new ArrayList();
 		
-		for (int i=0; i<2; i++) {
-			int year = getCurrentYear() - i;
-			String yearString = "" + year;
+		for (int i=GlobalConstants.STARTING_YEAR; i <= getCurrentYear(); i++) {
+			String yearString = "" + i;
 			theList.add(new OptionItem(yearString, yearString));
 		}
 				

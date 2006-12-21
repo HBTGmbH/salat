@@ -122,15 +122,26 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 		int overtimeHours = overtime[0];
 		int overtimeMinutes = overtime[1];
-		String overtimeString = overtimeHours+":";
+		
+		boolean overtimeIsNegative = false;
 		if (overtimeMinutes < 0) {
-			request.getSession().setAttribute("overtimeIsNegative", true);
+			overtimeIsNegative = true;
 			overtimeMinutes *= -1;
 		} else if (overtimeHours < 0){ 
-			request.getSession().setAttribute("overtimeIsNegative", true);
+			overtimeIsNegative = true;
+			overtimeHours *= -1;
 		} else {
-			request.getSession().setAttribute("overtimeIsNegative", false);
+			overtimeIsNegative = false;
 		}
+		request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
+		
+		String overtimeString;
+		if(overtimeIsNegative) {
+			overtimeString = "-"+overtimeHours+":";
+		} else {
+			overtimeString = overtimeHours+":";
+		}
+		
 		if (overtimeMinutes < 10) {
 			overtimeString += 0;
 		}

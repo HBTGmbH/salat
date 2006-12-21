@@ -152,10 +152,14 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				// I.e., copy properties from the form into the employee contract before saving.
 				long ecId = -1;
 				Employeecontract ec = null;
+				long employeeId = ecForm.getEmployee();
 				if (request.getSession().getAttribute("ecId") != null) {
 					// edited employeecontract
 					ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
 					ec = employeecontractDAO.getEmployeeContractById(ecId);
+					if (ec != null) {
+						employeeId = ec.getEmployee().getId();
+					}					
 				} else {
 					ec = employeecontractDAO.getEmployeeContractByEmployeeId(ecForm.getEmployee());
 				}
@@ -163,7 +167,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					// new report
 					ec = new Employeecontract();
 				}
-				long employeeId = ecForm.getEmployee();
+				
 				Employee theEmployee = (Employee) (employeeDAO.getEmployeeById(employeeId));
 				
 				

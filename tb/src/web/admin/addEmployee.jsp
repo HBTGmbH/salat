@@ -5,11 +5,8 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
-
-<%
-            String genderString = (String)request.getSession().getAttribute("gender");
-            String statusString = (String)request.getSession().getAttribute("employeeStatus");
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -88,7 +85,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employee.status.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="status" value="<%=statusString%>">
+				property="status" value="<c:out value='${statusString}' />">
 				<html:option value="ma">
 					<bean:message key="main.employee.status.ma" />
 				</html:option>
@@ -105,7 +102,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employee.gender.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="gender" value="<%=genderString%>">
+				property="gender" value="<c:out value='${genderString}' />" >
 				<html:option value="m">
 					<bean:message key="main.general.employee.gender.male" />
 				</html:option>

@@ -744,18 +744,10 @@ public class TimereportHelper {
 		Date today =  new Date();
 		SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
 		String year = yearFormat.format(today);
-//		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//		Date firstDayOfCurrentYear;
-//		try {
-//			firstDayOfCurrentYear = simpleDateFormat
-//					.parse(year + "-01-01");
-//		} catch (Exception e) {
-//			throw new RuntimeException("unexpected error while parsing date");
-//		}		
+	
 		Date contractBegin = employeecontract.getValidFrom();
 		
 		GregorianCalendar calendar = new GregorianCalendar();
-//		calendar.setTime(firstDayOfCurrentYear);
 		
 		calendar.clear();
 		calendar.set(new Integer(year), Calendar.JANUARY, 1);
