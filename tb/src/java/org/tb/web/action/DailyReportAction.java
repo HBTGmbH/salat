@@ -17,8 +17,6 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
-import org.tb.bdom.Vacation;
-import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
@@ -29,7 +27,6 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
-import org.tb.util.DateUtils;
 import org.tb.web.form.ShowDailyReportForm;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
@@ -185,6 +182,24 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
 	}
 	
+	
+	/**
+	 * Refreshes the list of timereports and all session attributes, that depend on the list of timereports.
+	 * 
+	 * @param mapping
+	 * @param request
+	 * @param reportForm
+	 * @param customerorderDAO
+	 * @param timereportDAO
+	 * @param employeecontractDAO
+	 * @param suborderDAO
+	 * @param employeeorderDAO
+	 * @param publicholidayDAO
+	 * @param overtimeDAO
+	 * @param vacationDAO
+	 * @param employeeDAO
+	 * @return Returns true, if refreshing was succesful. 
+	 */
 	protected boolean refreshTimereports(ActionMapping mapping,
 			HttpServletRequest request, ShowDailyReportForm reportForm, CustomerorderDAO customerorderDAO, 
 			TimereportDAO timereportDAO, EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
@@ -239,13 +254,31 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 //			DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
 //		java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);
 		
+		// test, if an order is select, the selected employee is not associated with
+		long employeeId = reportForm.getEmployeeId();
+		if (employeeId != 0 && employeeId != -1) {
+			String selectedOrder = reportForm.getOrder();
+			Customerorder order = customerorderDAO
+					.getCustomerorderBySign(selectedOrder);
+			List<Employeeorder> employeeOrders = null;
+			if (order != null) {
+				employeeOrders = employeeorderDAO
+						.getEmployeeordersByOrderIdAndEmployeeId(order.getId(),
+								employeeId);
+			}
+			if (employeeOrders == null || employeeOrders.isEmpty()) {
+				reportForm.setOrder(GlobalConstants.ALL_ORDERS);
+			}
+		}		
+		
+		
 		if (reportForm.getEmployeeId() == -1) {
 			// consider timereports for all employees
 			List<Customerorder> orders = customerorderDAO.getCustomerorders();
 			request.getSession().setAttribute("orders", orders);
 
 			if ((reportForm.getOrder() == null)
-					|| (reportForm.getOrder().equals("ALL ORDERS"))) {
+					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, all employees, all orders
 				request.getSession().setAttribute("timereports", timereportDAO
 						.getTimereportsByDates(beginSqlDate, endSqlDate));
@@ -260,7 +293,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
 		} else {
 			// consider timereports for specific employee
-			long employeeId = reportForm.getEmployeeId();
+			// long employeeId = reportForm.getEmployeeId();
 			
 			Employeecontract ec = employeecontractDAO
 					.getEmployeeContractByEmployeeId(employeeId);
@@ -282,7 +315,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			}
 
 			if ((reportForm.getOrder() == null)
-					|| (reportForm.getOrder().equals("ALL ORDERS"))) {
+					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, specific employee, all orders
 				request.getSession().setAttribute("timereports", timereportDAO
 						.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate));
@@ -305,14 +338,14 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
 		// refresh all relevant attributes
 		if (reportForm.getEmployeeId() == -1) {
-			request.getSession().setAttribute("currentEmployee", "ALL EMPLOYEES");
+			request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
 		} else {
 			request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(reportForm.getEmployeeId()).getName());
 		}
 		request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
 		if ((reportForm.getOrder() == null)
 				|| (reportForm.getOrder().equals("ALL ORDERS"))) {
-			request.getSession().setAttribute("currentOrder", "ALL ORDERS");
+			request.getSession().setAttribute("currentOrder", GlobalConstants.ALL_ORDERS);
 		} else {
 			request.getSession().setAttribute("currentOrder",
 					reportForm.getOrder());

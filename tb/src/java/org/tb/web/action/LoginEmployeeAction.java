@@ -73,6 +73,18 @@ public class LoginEmployeeAction extends Action {
 			return mapping.getInputForward();
 			//return mapping.findForward("error");
 		}
+		
+		Date date = new Date();
+		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
+		if(employeecontract == null) {
+			ActionMessages errors = getErrors(request);
+			if(errors == null) errors = new ActionMessages();
+			errors.add(null, new ActionMessage("form.login.error.invalidcontract"));
+
+			saveErrors(request, errors);
+			return mapping.getInputForward();
+		}
+		
 		request.getSession().setAttribute("loginEmployee", loginEmployee);
 		String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
 		request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
@@ -91,11 +103,11 @@ public class LoginEmployeeAction extends Action {
 		publicholidayDAO.checkPublicHolidaysForCurrentYear();
 		
 		// check if employee has an employee contract and is has employee orders for all standard suborders
-		Date date = new Date();
+//		Date date = new Date();
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
 		String dateString = simpleDateFormat.format(date);
 		date = simpleDateFormat.parse(dateString);
-		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
+//		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
 		
 		if (employeecontract != null) {
 			request.getSession().setAttribute("employeeHasValidContract", true);

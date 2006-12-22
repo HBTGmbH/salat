@@ -95,8 +95,9 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 		
 		coForm.setResponsibleCustomerContractually(co.getResponsible_customer_contractually());
 		coForm.setResponsibleCustomerTechnical(co.getResponsible_customer_technical());
-		coForm.setEmployeeId(co.getResponsible_hbt().getId());
-		
+		if (co.getResponsible_hbt() != null) {
+			coForm.setEmployeeId(co.getResponsible_hbt().getId());
+		}
 		coForm.setSign(co.getSign());
 		coForm.setDescription(co.getDescription());
 		
