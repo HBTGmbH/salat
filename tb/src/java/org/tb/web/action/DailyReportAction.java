@@ -124,12 +124,11 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		if (overtimeMinutes < 0) {
 			overtimeIsNegative = true;
 			overtimeMinutes *= -1;
-		} else if (overtimeHours < 0){ 
+		}
+		if (overtimeHours < 0){ 
 			overtimeIsNegative = true;
 			overtimeHours *= -1;
-		} else {
-			overtimeIsNegative = false;
-		}
+		} 
 		request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
 		
 		String overtimeString;
@@ -140,7 +139,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		}
 		
 		if (overtimeMinutes < 10) {
-			overtimeString += 0;
+			overtimeString += "0";
 		}
 		overtimeString += overtimeMinutes;
 		request.getSession().setAttribute("overtime", overtimeString);

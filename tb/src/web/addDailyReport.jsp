@@ -80,10 +80,10 @@
 </jsp:include>
 <br>
 <html:form action="/StoreDailyReport">
-	<p>
-	<h2><bean:message
-		key="main.general.entertimereportproperties.text" />:</h2>
-	</p>
+	
+	<h2><p><bean:message
+		key="main.general.entertimereportproperties.text" />:</p></h2>
+	
 	<br>
 	<table width="800" border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
@@ -221,10 +221,14 @@
            			 --> <span style="color:red"><html:errors
 						property="selectedHourEnd" /></span></td>
 				</tr>
+				<tr>
+					<td align="left" class="noBborderStyle"><i><bean:message
+					key="main.timereport.or.text" /></i></td>
+				</tr>
 			</c:if>
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.orduration.text" />:</b></td>
+					key="main.timereport.duration.text" />:</b></td>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.timereport.selectedhourduration.text" />:</b> <html:select
 					property="selectedHourDuration"

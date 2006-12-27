@@ -791,14 +791,8 @@ public class TimereportHelper {
 		// check weekdays of incomplete week
 		if (days > 0) {
 			if (firstday == 1) {
-				// firstday is a sunday
-				if (days == 6) {
-					// subtract two days (sunday+saturday)
-					diffDays -= 2;
-				} else {
-					// subtract one day (sunday)
-					diffDays -= 1;
-				}
+				// firstday is a sunday	
+				diffDays -= 1;				
 			} else {
 				if (firstday + days == 8) {
 					diffDays -= 1;

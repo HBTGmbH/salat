@@ -76,7 +76,7 @@ public class LoginEmployeeAction extends Action {
 		
 		Date date = new Date();
 		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
-		if(employeecontract == null) {
+		if(employeecontract == null && !(loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
 			ActionMessages errors = getErrors(request);
 			if(errors == null) errors = new ActionMessages();
 			errors.add(null, new ActionMessage("form.login.error.invalidcontract"));
@@ -91,13 +91,15 @@ public class LoginEmployeeAction extends Action {
 		request.getSession().setAttribute("report", "W");  
 		
 		if ((loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL)) || 
-			(loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PL))) {
+		    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_GF)) ||
+		    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
 				request.getSession().setAttribute("employeeAuthorized", "true");
 		}
 		
-		if(employeeDAO.isAdmin(loginEmployee)) {
-			request.getSession().setAttribute("admin", Boolean.TRUE);
-		}
+		// not necessary at the moment
+//		if(employeeDAO.isAdmin(loginEmployee)) {
+//			request.getSession().setAttribute("admin", Boolean.TRUE);
+//		}
 		
 		// check if public holidays are available
 		publicholidayDAO.checkPublicHolidaysForCurrentYear();

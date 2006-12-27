@@ -38,9 +38,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<p>
-<h2><bean:message key="main.general.mainmenu.employees.text" /></h2>
-</p>
+
+<h2><p><bean:message key="main.general.mainmenu.employees.text" /></p></h2>
+
 <br>
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
@@ -73,7 +73,7 @@
 			title="<bean:message
 			key="main.headlinedescription.employees.gender.text" />"><b><bean:message
 			key="main.employee.gender.text" /></b></th>
-		<c:if test="${loginEmployee.status eq 'bl'}">
+		<c:if test="${employeeAuthorized}">
 			<th align="left"
 				title="<bean:message
 				key="main.headlinedescription.employees.edit.text" />"><b><bean:message
@@ -86,7 +86,7 @@
 	</tr>
 
 	<c:forEach var="employee" items="${employees}" varStatus="statusID">
-		<c:if test="${employee.lastname!='admin'}">
+		<c:if test="${employee.lastname!='admin' || loginEmployee.status eq 'adm'}">
 			<c:choose>
 				<c:when test="${statusID.count%2==0}">
 					<tr class="primarycolor">
@@ -129,7 +129,6 @@
 		</tr>
 	</c:if>
 
-</table>
 </table>
 </body>
 </html:html>

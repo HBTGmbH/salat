@@ -46,9 +46,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<p>
-<h2><bean:message key="main.general.mainmenu.employeeorders.text" /></h2>
-</p>
+
+<h2><p><bean:message key="main.general.mainmenu.employeeorders.text" /></p></h2>
+
 <br>
 <span style="color:red"><html:errors footer="<br>"/>
 </span>

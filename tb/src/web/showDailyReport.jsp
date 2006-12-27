@@ -104,9 +104,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<p>
-<h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
-</p>
+
+<h2><p><bean:message key="main.general.mainmenu.daily.text" /></p></h2>
+
 <br>
 <html:form action="/ShowDailyReport">
 	<table class="center backgroundcolor">
@@ -503,7 +503,7 @@
 
 			<c:choose>
 				<c:when
-					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status == 'open')) || ((loginEmployee.status == bl) && (timereport.status == 'commited'))}">
+					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf') && (timereport.status eq 'commited')) || loginEmplyee.status eq 'adm'}">
 
 					<!-- Kommentar -->
 					<td><html:textarea property="comment" cols="24" rows="1"
@@ -512,7 +512,7 @@
 	     		 				--></td>
 
 					<!-- Dauer -->
-					<td align=center nowrap><html:select name="timereport"
+					<td align="center" nowrap="nowrap"><html:select name="timereport"
 						property="selectedDurationHour"
 						value="${timereport.durationhours}">
 						<html:options collection="hoursDuration" property="value"
@@ -594,7 +594,7 @@
 
 	<!-- Add ist derzeit auch nur für sich selbst freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
-		<c:if test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || (loginEmployee.status eq 'bl')}">
+		<c:if test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
 			<html:form action="/CreateDailyReport">
 				<td class="noBborderStyle" colspan="6" align="left">
 					<html:submit styleId="button">

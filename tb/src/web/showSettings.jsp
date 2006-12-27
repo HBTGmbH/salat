@@ -24,9 +24,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-	<p>
-	<h2><bean:message key="main.general.mainmenu.settings.title.text" />:</h2>
-	</p>
+	
+	<h2><p><bean:message key="main.general.mainmenu.settings.title.text" />:</p></h2>
+	
 	<br>
 	<html:form action="/ShowSettings">
 	<table border="0" cellspacing="0" cellpadding="2"

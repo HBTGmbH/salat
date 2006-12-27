@@ -30,9 +30,9 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	<p>
-	<h2><bean:message key="main.general.entercustomerproperties.text" />:</h2>
-	</p>
+	
+	<h2><p><bean:message key="main.general.entercustomerproperties.text" />:</p></h2>
+	
 	<br>
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">

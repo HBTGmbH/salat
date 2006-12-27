@@ -41,9 +41,9 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	<p>
-	<h2><bean:message key="main.general.entersuborderproperties.text" />:</h2>
-	</p>
+	
+	<h2><p><bean:message key="main.general.entersuborderproperties.text" />:</p></h2>
+	
 	<br>
 	<table class="center backgroundcolor">
 		<tr>

@@ -30,9 +30,9 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	<p>
-	<h2><bean:message key="main.general.enteremployeeproperties.text" />:</h2>
-	</p>
+	
+	<h2><p><bean:message key="main.general.enteremployeeproperties.text" />:</p></h2>
+	
 	<br>
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
@@ -85,15 +85,29 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employee.status.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="status" value="<c:out value='${statusString}' />">
+				property="status" >
 				<html:option value="ma">
 					<bean:message key="main.employee.status.ma" />
+				</html:option>
+				<!-- 
+				<html:option value="av">
+					<bean:message key="main.employee.status.av" />
 				</html:option>
 				<html:option value="pl">
 					<bean:message key="main.employee.status.pl" />
 				</html:option>
+				-->
 				<html:option value="bl">
 					<bean:message key="main.employee.status.bl" />
+				</html:option>
+				<html:option value="gf">
+					<bean:message key="main.employee.status.gf" />
+				</html:option>
+				<html:option value="restricted">
+					<bean:message key="main.employee.status.restricted" />
+				</html:option>
+				<html:option value="adm">
+					<bean:message key="main.employee.status.adm" />
 				</html:option>
 			</html:select></td>
 		</tr>
