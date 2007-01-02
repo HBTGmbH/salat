@@ -28,6 +28,8 @@
 <c:out value="${currentDay}" />. 
 <c:out value="${currentMonth}" /> 
 <c:out value="${currentYear}" />
+<FORM ONSUBMIT="javascript:window.print();return false;"><input
+	class="hiddencontent" type="submit" value="Drucken"></form>
 <table class="center">
 
 	<tr>
@@ -158,7 +160,5 @@
 		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
 	</tr>
 </table>
-<FORM ONSUBMIT="javascript:window.print();return false;"><input
-	class="hiddencontent" type="submit" value="Drucken"></form>
 </body>
 </html>
