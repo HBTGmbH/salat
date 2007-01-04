@@ -35,9 +35,9 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	
-	<h2><p><bean:message
-		key="main.general.enteremployeeorderproperties.text" />:</p></h2>
+	<p>
+	<h2><bean:message
+		key="main.general.enteremployeeorderproperties.text" />:</h2></p>
 	<br>
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">

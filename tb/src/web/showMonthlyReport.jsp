@@ -14,9 +14,9 @@
 
 </head>
 <body>
-
-<h2><p>in Bearbeitung...  =P</p></h2>
-
+<p>
+<h2>in Bearbeitung...  =P</h2>
+</p>
 <p></p>
 <br>
 <br>

@@ -102,9 +102,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-
-<h2><p><bean:message key="main.general.mainmenu.daily.text" /></p></h2>
-
+<p>
+<h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
+</p>
 <br>
 <html:form action="/ShowDailyReport">
 	<table class="center backgroundcolor">

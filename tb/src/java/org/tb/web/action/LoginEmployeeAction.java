@@ -28,7 +28,7 @@ import org.tb.web.form.LoginEmployeeForm;
 /**
  * Action class for the login of an employee
  * 
- * @author oda
+ * @author oda, th
  *
  */
 public class LoginEmployeeAction extends Action {
@@ -91,9 +91,9 @@ public class LoginEmployeeAction extends Action {
 		request.getSession().setAttribute("report", "W");  
 		
 		if ((loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL)) || 
-		    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_GF)) ||
-		    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
-				request.getSession().setAttribute("employeeAuthorized", "true");
+			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_GF)) ||
+			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
+					request.getSession().setAttribute("employeeAuthorized", "true");
 		}
 		
 		// not necessary at the moment
@@ -113,49 +113,89 @@ public class LoginEmployeeAction extends Action {
 		
 		if (employeecontract != null) {
 			request.getSession().setAttribute("employeeHasValidContract", true);
-			List<Suborder> standardSuborders  = suborderDAO.getStandardSuborders();
-			if (standardSuborders!= null && standardSuborders.size() > 0) {
-				// test if employeeorder exists
-				Employeeorder employeeorder;
-				for (Suborder suborder : standardSuborders) {
-					employeeorder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontract.getId(), suborder.getId(), date);
-					if (employeeorder == null) {
-						// create employeeorder
-						SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-						String year = yearFormat.format(date);
-						Date fromDate = simpleDateFormat.parse(year+"0101");
-						Date untilDate = simpleDateFormat.parse(year+"1231");
-						java.sql.Date sqlFromDate = new java.sql.Date(fromDate.getTime());
-						java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
-						
-						employeeorder = new Employeeorder();
-						if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-							employeeorder.setDebithours(employeecontract.getDailyWorkingTime() * employeecontract.getVacationEntitlement());
-						} else {
-							employeeorder.setDebithours(suborder.getCustomerorder().getHourly_rate());
+			
+			if (!(loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
+				List<Suborder> standardSuborders = suborderDAO
+						.getStandardSuborders();
+				if (standardSuborders != null && standardSuborders.size() > 0) {
+					// test if employeeorder exists
+					Employeeorder employeeorder;
+					for (Suborder suborder : standardSuborders) {
+						employeeorder = employeeorderDAO
+								.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+										employeecontract.getId(), suborder
+												.getId(), date);
+						if (employeeorder == null) {
+							// create employeeorder
+							SimpleDateFormat yearFormat = new SimpleDateFormat(
+									"yyyy");
+							String year = yearFormat.format(date);
+							Date fromDate = simpleDateFormat.parse(year
+									+ "0101");
+							Date untilDate = simpleDateFormat.parse(year
+									+ "1231");
+							java.sql.Date sqlFromDate = new java.sql.Date(
+									fromDate.getTime());
+							java.sql.Date sqlUntilDate = new java.sql.Date(
+									untilDate.getTime());
+
+							employeeorder = new Employeeorder();
+							if (suborder
+									.getCustomerorder()
+									.getSign()
+									.equals(
+											GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
+								employeeorder.setDebithours(employeecontract
+										.getDailyWorkingTime()
+										* employeecontract
+												.getVacationEntitlement());
+							} else {
+								employeeorder.setDebithours(suborder
+										.getCustomerorder().getHourly_rate());
+							}
+							employeeorder.setEmployeecontract(employeecontract);
+							employeeorder.setFromDate(sqlFromDate);
+							employeeorder.setSign(" ");
+							employeeorder.setStandingorder(true);
+							employeeorder.setStatus(" ");
+							employeeorder.setStatusreport(false);
+							employeeorder.setSuborder(suborder);
+							employeeorder.setUntilDate(sqlUntilDate);
+
+							// create tmp employee
+							Employee tmp = new Employee();
+							tmp.setSign("system");
+
+							employeeorderDAO.save(employeeorder, tmp);
+
 						}
-						employeeorder.setEmployeecontract(employeecontract);
-						employeeorder.setFromDate(sqlFromDate);
-						employeeorder.setSign(" ");
-						employeeorder.setStandingorder(true);
-						employeeorder.setStatus(" ");
-						employeeorder.setStatusreport(false);
-						employeeorder.setSuborder(suborder);
-						employeeorder.setUntilDate(sqlUntilDate);
-						
-						// create tmp employee
-						Employee tmp = new Employee();
-						tmp.setSign("system");
-						
-						employeeorderDAO.save(employeeorder, tmp);
-						
 					}
 				}
+			}
+			if (employeecontract.getReportAcceptanceDate() == null) {
+				java.sql.Date validFromDate = employeecontract.getValidFrom();
+				employeecontract.setReportAcceptanceDate(validFromDate);
+				// create tmp employee
+				Employee tmp = new Employee();
+				tmp.setSign("system");
+				employeecontractDAO.save(employeecontract, tmp);
+			}
+			if (employeecontract.getReportReleaseDate() == null) {
+				java.sql.Date validFromDate = employeecontract.getValidFrom();
+				employeecontract.setReportReleaseDate(validFromDate);
+				// create tmp employee
+				Employee tmp = new Employee();
+				tmp.setSign("system");
+				employeecontractDAO.save(employeecontract, tmp);
 			}
 		} else {
 			request.getSession().setAttribute("employeeHasValidContract", false);
 		}
 		
+		// show change password site, if password equals username
+		if (loginEmployee.getLoginname().equalsIgnoreCase(loginEmployee.getPassword())) {
+			return mapping.findForward("password");
+		}
 		
 		return mapping.findForward("success");
 	}
