@@ -192,7 +192,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 			errors.add("orderCustomer", new ActionMessage("form.customerorder.error.ordercustomer.toolong"));
 		}
 		if (coForm.getOrderCustomer().length() <= 0) {
-			errors.add("orderCustomer", new ActionMessage("form.customerorder.error.ordercustomer.required"));
+			coForm.setOrderCustomer("-");
 		}
 		if (coForm.getResponsibleCustomerContractually().length() > GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH) {
 			errors.add("responsibleCustomerContractually", new ActionMessage("form.customerorder.error.responsiblecustomer.toolong"));

@@ -52,6 +52,12 @@ public class Employeecontract implements Serializable {
 	/** fixed until date */
 	private Date fixedUntil;
 	
+	/** report acceptance date */
+	private java.sql.Date reportAcceptanceDate;
+	
+	/** report release date */
+	private java.sql.Date reportReleaseDate;
+	
 	/** Creation Date */
 	private java.util.Date created;
 	
@@ -188,7 +194,23 @@ public class Employeecontract implements Serializable {
 	public void setVacations(List<Vacation> vacations) {
 		this.vacations = vacations;
 	}
-	
+		
+	public java.sql.Date getReportAcceptanceDate() {
+		return reportAcceptanceDate;
+	}
+
+	public void setReportAcceptanceDate(java.sql.Date reportAcceptanceDate) {
+		this.reportAcceptanceDate = reportAcceptanceDate;
+	}
+
+	public java.sql.Date getReportReleaseDate() {
+		return reportReleaseDate;
+	}
+
+	public void setReportReleaseDate(java.sql.Date reportReleaseDate) {
+		this.reportReleaseDate = reportReleaseDate;
+	}
+
 	/**
 	 * @return the created
 	 */

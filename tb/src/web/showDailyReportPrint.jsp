@@ -1,5 +1,3 @@
-<%@ page import="org.tb.bdom.Employee"%>
-
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
@@ -23,17 +21,18 @@
 
 </head>
 <body>
-<c:out value="${currentEmployee}" /> / 
-<c:out value="${currentOrder}" /> / 
-<c:out value="${currentDay}" />. 
-<c:out value="${currentMonth}" /> 
-<c:out value="${currentYear}" />
-<FORM ONSUBMIT="javascript:window.print();return false;"><input
-	class="hiddencontent" type="submit" value="Drucken"></form>
+<FORM ONSUBMIT="javascript:window.print();return false;">
+	<div align="right"><input class="hiddencontent" type="submit" value="Drucken"></div>
+	<c:out value="${currentEmployee}" /> / 
+	<c:out value="${currentOrder}" /> / 
+	<c:out value="${currentDay}" />. 
+	<c:out value="${currentMonth}" /> 
+	<c:out value="${currentYear}" />
+</form>
 <table class="center">
 
 	<tr>
-		<td colspan="5" class="noBborderStyle">&nbsp;</td>
+		<td colspan="4" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
@@ -58,10 +57,12 @@
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
 			key="main.timereport.monthly.refday.text" /></b></th>
+		<!--  
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.sortofreport.text" />"><b><bean:message
 			key="main.timereport.monthly.sortofreport.text" /></b></th>
+		-->
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
@@ -103,6 +104,7 @@
 					<c:out value="${timereport.referenceday.dow}" />
 					<c:out value="${timereport.referenceday.refdate}" />
 				</logic:equal></td>
+				<!--  
 				<td align="center"><logic:equal name="timereport"
 					property="sortofreport" value="W">
 					<bean:message key="main.timereport.monthly.sortofreport.work.text" />
@@ -112,6 +114,7 @@
 				</logic:equal> <logic:equal name="timereport" property="sortofreport" value="S">
 					<bean:message key="main.timereport.monthly.sortofreport.sick.text" />
 				</logic:equal></td>
+				-->
 				<td
 					title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
 				<c:out value="${timereport.suborder.customerorder.sign}"></c:out><br>
@@ -132,7 +135,7 @@
 				</c:choose>
 
 				<!-- Dauer -->
-				<td align="center" nowrap><c:out
+				<td align="center" nowrap="nowrap"><c:out
 					value="${timereport.durationhours}" />:<c:out
 					value="${timereport.durationminutes}" /></td>
 
@@ -144,7 +147,7 @@
 		</html:form>
 	</c:forEach>
 	<tr>
-		<td colspan="5" class="noBborderStyle">&nbsp;</td>
+		<td colspan="4" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>

@@ -43,6 +43,9 @@ public class CreateEmployeeAction extends LoginRequiredAction {
 		request.getSession().setAttribute("employeeStatus", "Employee");
 		request.getSession().setAttribute("employees", employees);
 		
+		// make sure, no emId still exists in session
+		request.getSession().removeAttribute("emId");
+		
 		// forward to form jsp
 		return mapping.findForward("success");		
 	}

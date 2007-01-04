@@ -87,6 +87,9 @@ public class CreateSuborderAction extends LoginRequiredAction {
 			suborderForm.setHourlyRate(customerorders.get(0).getHourly_rate());
 			suborderForm.setCurrency(customerorders.get(0).getCurrency());
 		}
+		
+		// make sure, no soId still exists in session
+		request.getSession().removeAttribute("soId");
 				
 		// forward to form jsp
 		return mapping.findForward("success");

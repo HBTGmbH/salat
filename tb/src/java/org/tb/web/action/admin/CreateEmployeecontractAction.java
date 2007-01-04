@@ -70,6 +70,9 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
 		// reset/init form entries
 		employeeContractForm.reset(mapping, request);
 		
+		// make sure, no ecId still exists in session
+		request.getSession().removeAttribute("ecId");
+		
 		// forward to form jsp
 		return mapping.findForward("success");
 	}

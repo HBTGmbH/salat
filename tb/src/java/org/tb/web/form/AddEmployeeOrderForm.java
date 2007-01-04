@@ -28,7 +28,7 @@ public class AddEmployeeOrderForm extends ActionForm {
 	private Double debithours;
 	private String status;
 	private Boolean statusreport;
-	private String employeename;
+//	private String employeename;
 	private String order;
 	private String suborder;
 	private long employeeId;
@@ -57,13 +57,13 @@ public class AddEmployeeOrderForm extends ActionForm {
 	}
 
 	
-	public String getEmployeename() {
-		return employeename;
-	}
-
-	public void setEmployeename(String employeename) {
-		this.employeename = employeename;
-	}
+//	public String getEmployeename() {
+//		return employeename;
+//	}
+//
+//	public void setEmployeename(String employeename) {
+//		this.employeename = employeename;
+//	}
 	
 	public String getOrder() {
 		return order;
@@ -179,9 +179,15 @@ public class AddEmployeeOrderForm extends ActionForm {
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
-		employeeId = loginEmployee.getId();
+		Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+		if (currentEmployeeId != null && currentEmployeeId != -1 && currentEmployeeId != 0) {
+			employeeId = currentEmployeeId;
+		} else {
+			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+			employeeId = loginEmployee.getId();
+		}
+//		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
+		
 		sign = "";
 		status = "";
 		validFrom = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'

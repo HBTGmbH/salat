@@ -40,6 +40,10 @@ public class CreateCustomerAction extends LoginRequiredAction {
 		// init form entries
 		customerForm.setName("");
 		customerForm.setAddress("");
+		
+		// make sure, no cuId still exists in session
+		request.getSession().removeAttribute("cuId");
+		
 	
 		// forward to form jsp
 		return mapping.findForward("success");		

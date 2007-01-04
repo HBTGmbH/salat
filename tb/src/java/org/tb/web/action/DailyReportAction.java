@@ -1,7 +1,5 @@
 package org.tb.web.action;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -33,58 +31,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
 	
 
-	/**
-	 * Parses the Stings to create a {@link java.util.Date}. The day- and year-String are expected to represent integers. 
-	 * The month-String must be of the sort 'Jan', 'Feb', 'Mar', ...
-	 * 
-	 *  
-	 * 
-	 * @param dayString
-	 * @param monthString
-	 * @param yearString
-	 * @return Returns the date associated to the given Strings.
-	 */
-	protected Date getDateFormStrings(String dayString, String monthString, String yearString) throws Exception {
-		int day = new Integer(dayString);
-		int year = new Integer(yearString);
-		int month = 0;
-		
-		if (GlobalConstants.MONTH_SHORTFORM_JANUARY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JANUARY;			
-		} else if (GlobalConstants.MONTH_SHORTFORM_FEBRURAY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_FEBRURAY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_MARCH.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_MARCH;
-		} else if (GlobalConstants.MONTH_SHORTFORM_APRIL.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_APRIL;
-		} else if (GlobalConstants.MONTH_SHORTFORM_MAY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_MAY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_JUNE.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JUNE;
-		} else if (GlobalConstants.MONTH_SHORTFORM_JULY.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_JULY;
-		} else if (GlobalConstants.MONTH_SHORTFORM_AUGUST.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_AUGUST;
-		} else if (GlobalConstants.MONTH_SHORTFORM_SEPTEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_SEPTEMBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_OCTOBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_OCTOBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_NOVEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_NOVEMBER;
-		} else if (GlobalConstants.MONTH_SHORTFORM_DECEMBER.equals(monthString)) {
-			month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
-		}
-		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		Date selectedDate;
-		try {
-			selectedDate = simpleDateFormat.parse(year+"-"+month+"-"+day);
-		} catch (ParseException e) {
-			//no date could be constructed - use current date instead
-			selectedDate = new Date();
-		}
-		return selectedDate;
-	}
+
 	
 	/**
 	 * 
@@ -98,7 +45,8 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		
 		Date date;
 		try {
-			date = getDateFormStrings(dayString, monthString, yearString);
+			TimereportHelper th = new TimereportHelper();
+			date = th.getDateFormStrings(dayString, monthString, yearString, true);
 		} catch (Exception e) {
 			// if parsing fails, return current date
 			date = new Date();
@@ -167,12 +115,17 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		} else {
 			request.getSession().setAttribute("vacationextended", false);
 		}
-	
-		int usedVacationDays = vacationMinutes/dailyWorkingTimeMinutes;
-		vacationMinutes -= dailyWorkingTimeMinutes * usedVacationDays;
-		int usedVacationHours = vacationMinutes/60;
-		int usedVacationMinutes = vacationMinutes%60;
 		
+		int usedVacationDays = 0;
+		int usedVacationHours = 0;
+		int usedVacationMinutes = 0;
+		
+		if (dailyWorkingTime != 0) {
+			usedVacationDays = vacationMinutes/dailyWorkingTimeMinutes;
+			vacationMinutes -= dailyWorkingTimeMinutes * usedVacationDays;
+			usedVacationHours = vacationMinutes/60;
+			usedVacationMinutes = vacationMinutes%60;
+		} 
 		
 		request.getSession().setAttribute("vacationtotal", totalVacation);
 		request.getSession().setAttribute("vacationdaysused", usedVacationDays);
@@ -214,13 +167,16 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		Date endDate;
 		
 		try {
+			TimereportHelper th = new TimereportHelper();
+			
 			if (selectedView.equals(GlobalConstants.VIEW_DAILY)) {
 				request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
-				beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear());
+				
+				beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
 				endDate = beginDate;
 			} else if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
 				request.getSession().setAttribute("view", GlobalConstants.VIEW_MONTHLY);
-				beginDate = getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear());
+				beginDate = th.getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear(), true);
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.setTime(beginDate);
 				int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -229,16 +185,16 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 					maxDayString+="0";
 				}
 				maxDayString+=maxday;
-				endDate = getDateFormStrings(maxDayString, reportForm.getMonth(), reportForm.getYear());
+				endDate = th.getDateFormStrings(maxDayString, reportForm.getMonth(), reportForm.getYear(), true);
 			} else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
 				request.getSession().setAttribute("view", GlobalConstants.VIEW_CUSTOM);
-				beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear());
+				beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
 				if (reportForm.getLastday() == null || reportForm.getLastmonth() == null || reportForm.getLastyear() == null) {
 					reportForm.setLastday(reportForm.getDay());
 					reportForm.setLastmonth(reportForm.getMonth());
 					reportForm.setLastyear(reportForm.getYear());
 				}
-				endDate = getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear());
+				endDate = th.getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear(), true);
 			} else {
 				throw new RuntimeException("no view type selected");
 			}

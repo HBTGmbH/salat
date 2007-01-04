@@ -20,6 +20,7 @@
 	<bean name="/DeleteTimereportFromMonthlyDisplay" class="org.tb.web.action.DeleteTimereportFromMonthlyDisplayAction" />
 	<bean name="/ShowSettings" class="org.tb.web.action.ShowSettingsAction" />
 	<bean name="/ShowWelcome" class="org.tb.web.action.ShowWelcomeAction" />
+	<bean name="/ShowRelease" class="org.tb.web.action.ShowReleaseAction" />
 
 	<!-- Struts Admin Actions -->
 	<bean name="/CreateCustomer" class="org.tb.web.action.admin.CreateCustomerAction" />
@@ -137,15 +138,15 @@
 	<bean name="hsqlDatabase" class="org.tb.util.HsqlDbWrapper" init-method="start" destroy-method="stop">
 		<property name="path">
 			
-			<!--  
+			  
 			<value>file:d:/temp/hsqldb/data/taetigkeitsberichte</value>
-			-->
+			
 			<!-- 
 			<value>file:/root/tb/hsqldb/taetigkeitsberichte</value>
 			--> 
-			
+			<!--
 			<value>file:/var/lib/hsqldb/taetigkeitsberichte</value>
-			
+			-->
 			 
 		</property>
 		<property name="name">

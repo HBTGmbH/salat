@@ -68,6 +68,9 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 		// reset/init form entries
 		customerOrderForm.reset(mapping, request);
 		
+		// make sure, no coId still exists in the session
+		request.getSession().removeAttribute("coId");
+		
 		// forward to form jsp
 		return mapping.findForward("success");
 	}

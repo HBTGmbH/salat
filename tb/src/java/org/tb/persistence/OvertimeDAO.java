@@ -1,11 +1,13 @@
 package org.tb.persistence;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Overtime;
+import org.tb.bdom.Vacation;
 
 public class OvertimeDAO extends HibernateDaoSupport {
 	
@@ -25,6 +27,15 @@ public class OvertimeDAO extends HibernateDaoSupport {
 	 */
 	public List<Overtime> getOvertimesByEmployeeContractId(long employeeContractId) {
 		return (List<Overtime>) getSession().createQuery("from Overtime where employeecontract.id = ? order by employeecontract.id asc, created asc").setLong(0, employeeContractId).list();
+	}
+	
+	/**
+	 * 
+	 * @param overtimeId
+	 * @return Returns the {@link Overtime} associated to the given id.
+	 */
+	public Overtime getOvertimeById(long overtimeId) {
+		return (Overtime) getSession().createQuery("from Overtime where id = ? ").setLong(0, overtimeId).uniqueResult();
 	}
 	
 	/**
@@ -53,6 +64,31 @@ public class OvertimeDAO extends HibernateDaoSupport {
 		session.saveOrUpdate(overtime);
 		session.flush();
 		session.clear();
+	}
+	
+	/**
+	 * Deletes the {@link Overtime} associated to the given id.
+	 * @param overtimeId
+	 * @return Returns true, if delete action was succesful.
+	 */
+	public boolean deleteOvertimeById(long overtimeId) {
+		List<Overtime> allOvertimes = getOvertimes();
+		Overtime overtimeToDelete = getOvertimeById(overtimeId);
+		boolean overtimeDeleted = false;
+		
+		for (Iterator iter = allOvertimes.iterator(); iter.hasNext();) {
+			Overtime overtime = (Overtime) iter.next();
+			if(overtime.getId() == overtimeToDelete.getId()) {				
+				Session session = getSession();
+				session.delete(overtimeToDelete);
+				session.flush();
+				overtimeDeleted = true;
+				
+				break;
+			}
+		}
+		
+		return overtimeDeleted;
 	}
 	
 

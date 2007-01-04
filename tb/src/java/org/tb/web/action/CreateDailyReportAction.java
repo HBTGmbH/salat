@@ -202,6 +202,9 @@ public class CreateDailyReportAction extends DailyReportAction {
 		Suborder so = theSuborders.get(0);
 		request.getSession().setAttribute("currentSuborderId", so.getId());
 		
+		// make sure, no cuId still exists in session
+		request.getSession().removeAttribute("trId");
+		
 		return mapping.findForward("success");	
 	}
 	

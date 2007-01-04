@@ -70,37 +70,39 @@
 	</tr>
 
 	<c:forEach var="employeecontract" items="${employeecontracts}" varStatus="statusID">
-		<c:choose>
-			<c:when test="${statusID.count%2==0}">
-				<tr class="primarycolor">
-			</c:when>
-			<c:otherwise>
-				<tr class="secondarycolor">
-			</c:otherwise>
-		</c:choose>
-		<td><c:out value="${employeecontract.employee.name}" /></td>
-		<td><c:out value="${employeecontract.taskDescription}" /></td>
-		<td><c:out value="${employeecontract.validFrom}" /></td>
-		<td><c:out value="${employeecontract.validUntil}" /></td>
-		<td align="center"><html:checkbox name="employeecontract"
-			property="freelancer" disabled="true" /></td>
-		<td align="center"><c:out
-			value="${employeecontract.dailyWorkingTime}" /></td>
-		<td align="center"><c:out
-			value="${employeecontract.vacationEntitlement}" /></td>
+		<c:if test="${employeecontract.employee.lastname!='admin' || loginEmployee.status eq 'adm'}">
+			<c:choose>
+				<c:when test="${statusID.count%2==0}">
+					<tr class="primarycolor">
+				</c:when>
+				<c:otherwise>
+					<tr class="secondarycolor">
+				</c:otherwise>
+			</c:choose>
+			<td><c:out value="${employeecontract.employee.name}" /></td>
+			<td><c:out value="${employeecontract.taskDescription}" /></td>
+			<td><c:out value="${employeecontract.validFrom}" /></td>
+			<td><c:out value="${employeecontract.validUntil}" /></td>
+			<td align="center"><html:checkbox name="employeecontract"
+				property="freelancer" disabled="true" /></td>
+			<td align="center"><c:out
+				value="${employeecontract.dailyWorkingTime}" /></td>
+			<td align="center"><c:out
+				value="${employeecontract.vacationEntitlement}" /></td>
 
-		<c:if test="${employeeAuthorized}">
-			<td align="center"><html:link
-				href="/tb/do/EditEmployeecontract?ecId=${employeecontract.id}">
-				<img src="/tb/images/Edit.gif" alt="Edit Employeecontract" />
-			</html:link></td>
-			<html:form action="/DeleteEmployeecontract">
-				<td align="center"><html:image
-					onclick="confirmDelete(this.form, ${employeecontract.id})"
-					src="/tb/images/Delete.gif" alt="Delete Employeecontract" /></td>
-			</html:form>
+			<c:if test="${employeeAuthorized}">
+				<td align="center"><html:link
+					href="/tb/do/EditEmployeecontract?ecId=${employeecontract.id}">
+					<img src="/tb/images/Edit.gif" alt="Edit Employeecontract" />
+				</html:link></td>
+				<html:form action="/DeleteEmployeecontract">
+					<td align="center"><html:image
+						onclick="confirmDelete(this.form, ${employeecontract.id})"
+						src="/tb/images/Delete.gif" alt="Delete Employeecontract" /></td>
+				</html:form>
+			</c:if>
+			</tr>
 		</c:if>
-		</tr>
 	</c:forEach>
 	<c:if test="${employeeAuthorized}">
 		<tr>

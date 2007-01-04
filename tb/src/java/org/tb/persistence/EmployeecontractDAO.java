@@ -10,6 +10,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Monthlyreport;
+import org.tb.bdom.Overtime;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 
@@ -25,6 +26,11 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
 	private TimereportDAO timereportDAO;
+	private OvertimeDAO overtimeDAO;
+	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -198,7 +204,15 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 							monthlyreportDAO.deleteMonthlyreportById(mr.getId());
 						}
 					}
-				}				
+				}
+				
+				if (deleteOk) {
+					List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecToDelete.getId());
+					for (Overtime overtime : overtimes) {
+						overtimeDAO.deleteOvertimeById(overtime.getId());
+					}
+				}
+				
 				if (deleteOk) {
 					List<Vacation> allVacations = vacationDAO.getVacations();
 					for (Iterator iter4 = allVacations.iterator(); iter4.hasNext();) {

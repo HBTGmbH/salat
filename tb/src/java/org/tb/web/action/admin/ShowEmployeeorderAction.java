@@ -9,14 +9,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.ShowEmployeeOrderForm;
 
 /**
@@ -25,7 +24,7 @@ import org.tb.web.form.ShowEmployeeOrderForm;
  * @author oda
  *
  */
-public class ShowEmployeeorderAction extends LoginRequiredAction {
+public class ShowEmployeeorderAction extends EmployeeOrderAction {
 
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeecontractDAO employeecontractDAO;
@@ -61,6 +60,16 @@ public class ShowEmployeeorderAction extends LoginRequiredAction {
 		// List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsValidForDate(now);
 		
 		List<Employee> employees = employeeDAO.getEmployeesWithContractsValidForDate(now);
+		
+		// make sure, that admin is in list
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
+				loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+			if (!employees.contains(loginEmployee)) {
+				employees.add(loginEmployee);
+			}
+		}
+		
 		request.getSession().setAttribute("employees", employees);
 		
 		List<Customerorder> orders = customerorderDAO.getCustomerorders();
@@ -76,8 +85,8 @@ public class ShowEmployeeorderAction extends LoginRequiredAction {
 			}
 		}
 		
-//		 check if loginEmployee has responsibility for some orders
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+ 		// check if loginEmployee has responsibility for some orders
+//		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 		boolean employeeIsResponsible = false;
 		
@@ -88,38 +97,8 @@ public class ShowEmployeeorderAction extends LoginRequiredAction {
 		
 			
 //		if (request.getParameter("task") == null) {
-			long employeeId = orderForm.getEmployeeId();
 			
-			if (employeeId == 0) {
-				employeeId = loginEmployee.getId();
-			}
-			orderForm.setEmployeeId(employeeId);
-			
-			request.getSession().setAttribute("currentEmployeeId", employeeId);
-			long orderId = orderForm.getOrderId();
-			if (orderId == 0) {
-				orderId = -1;
-			}
-			
-			request.getSession().setAttribute("currentOrderId", orderId);
-			
-			
-			if (employeeId == -1) {
-				if (orderId == -1) {
-					request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
-				} else {
-					request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderId(orderId));
-				}
-			} else {
-				if (orderId == -1) {
-					request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeId(employeeId));
-				} else {
-					request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeId(orderId, employeeId));
-				}
-			}
-			
-			
-			
+			refreshEmployeeOrders(request, orderForm, employeeorderDAO);		
 			
 			return mapping.findForward("success");
 			

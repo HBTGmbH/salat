@@ -49,7 +49,7 @@ public class DeleteSuborderAction extends LoginRequiredAction {
 		
 		saveErrors(request, errors);
 		
-		request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
+		request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
 		
 		// back to suborder display jsp
 		return mapping.getInputForward();

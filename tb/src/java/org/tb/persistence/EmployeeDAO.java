@@ -151,6 +151,9 @@ public class EmployeeDAO extends HibernateDaoSupport {
 		for (Employeecontract employeecontract : employeeContracts) {
 			employees.add(employeecontract.getEmployee());
 		}
+		// remove admin
+		Employee admin = getEmployeeBySign("adm");
+		employees.remove(admin);
 		return employees;
 	}
 	
@@ -165,6 +168,9 @@ public class EmployeeDAO extends HibernateDaoSupport {
 		for (Employeecontract employeecontract : employeeContracts) {
 			employees.add(employeecontract.getEmployee());
 		}
+		// remove admin 
+		Employee admin = getEmployeeBySign("adm");
+		employees.remove(admin);		
 		return employees;
 	}
 	

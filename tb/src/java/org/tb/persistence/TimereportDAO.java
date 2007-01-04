@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -205,6 +206,25 @@ public class TimereportDAO extends HibernateDaoSupport {
 
 		return allTimereports;
 	}
+	
+	/**
+	 * Gets a list of all {@link Timereport}s that fulfill following criteria: 
+	 * 1) associated to the given employee contract id
+	 * 2) valid before and at the given date
+	 * 3) status is open 
+	 * 
+	 * @param contractId
+	 * @param dt
+	 * @return
+	 */
+	public List<Timereport> getOpenTimereportsByEmployeeContractIdBeforeDate(long contractId, java.sql.Date dt) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate <= ? and status = ?").setLong(0, contractId).setDate(1, dt).setString(2, GlobalConstants.TIMEREPORT_STATUS_OPEN).list();
+
+		return allTimereports;
+	}
+	
 	
 	/**
 	 * Gets a list of Timereports by employee contract id and two dates.

@@ -226,16 +226,17 @@ public class ShowDailyReportAction extends DailyReportAction {
 				return mapping.findForward("error");
 			}
 			
-			List<Employee> employees = employeeDAO.getEmployees();
-			List<Employee> employeesWithContract = new LinkedList<Employee>();
-			Iterator<Employee> it = employees.iterator();
-			Employee emp;
-			while (it.hasNext()) {
-				emp = (Employee) it.next();
-				if (employeecontractDAO.getEmployeeContractByEmployeeId(emp.getId()) != null) {
-					employeesWithContract.add(emp);
+//			List<Employee> employees = employeeDAO.getEmployees();
+			List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
+			
+ 			// make sure, that admin is in list
+			if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
+					loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+				if (!employeesWithContract.contains(loginEmployee)) {
+					employeesWithContract.add(loginEmployee);
 				}
 			}
+			
 			if ((employeesWithContract == null) || (employeesWithContract.size() <= 0)) {
 				request.setAttribute("errorMessage", 
 						"No employees with valid contracts found - please call system administrator.");
@@ -426,8 +427,9 @@ public class ShowDailyReportAction extends DailyReportAction {
 		String dayString = reportForm.getDay();
 		String monthString = reportForm.getMonth();
 		String yearString = reportForm.getYear();
-				
-		Date tmp = getDateFormStrings(dayString, monthString, yearString);
+		
+		TimereportHelper th = new TimereportHelper();
+		Date tmp = th.getDateFormStrings(dayString, monthString, yearString, true);
 				
 		java.sql.Date refDate = new java.sql.Date(tmp.getTime());
 		

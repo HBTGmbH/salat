@@ -11,7 +11,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.ShowEmployeeOrderForm;
 
 /**
  * action class for deleting an employee order
@@ -19,7 +19,7 @@ import org.tb.web.action.LoginRequiredAction;
  * @author oda
  *
  */
-public class DeleteEmployeeorderAction extends LoginRequiredAction {
+public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 	
 	private EmployeeorderDAO employeeorderDAO;
 	
@@ -47,9 +47,9 @@ public class DeleteEmployeeorderAction extends LoginRequiredAction {
 		}
 		
 		saveErrors(request, errors);
-		
-		request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeorders());
-		
+
+		refreshEmployeeOrders(request, null, employeeorderDAO);	
+				
 		// back to employee order display jsp
 		return mapping.getInputForward();
 	}

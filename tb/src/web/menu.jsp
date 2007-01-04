@@ -42,6 +42,11 @@ window.onload=startList;
 					<bean:message key="main.general.mainmenu.matrix.text" />
 				</html:link>
 			</li>
+			<li>
+				<html:link styleClass="menu" action="/ShowRelease">
+					<bean:message key="main.general.mainmenu.release.title.text" />
+				</html:link>
+			</li>
 		</ul>
 	</li>
 	<li><bean:message key="main.general.mainmenu.employees.text" />

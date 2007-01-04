@@ -1,7 +1,5 @@
 package org.tb.web.action.admin;
 
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -15,7 +13,6 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
@@ -23,7 +20,6 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
@@ -67,22 +63,8 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		AddEmployeeOrderForm employeeOrderForm = (AddEmployeeOrderForm) form;
 		
 		// get lists of existing employees and suborders
-		List<Employee> employees = employeeDAO.getEmployees();
-		
-		if ((employees == null) || (employees.size() <= 0)) {
-			request.setAttribute("errorMessage", 
-					"No employee contracts found - please call system administrator.");
-			return mapping.findForward("error");
-		}
-		Employee emp;
-		Iterator it = employees.iterator();
-		List<Employee> employeeswithcontract = new ArrayList<Employee>();
-		while (it.hasNext()) {
-			emp = (Employee) it.next();
-			if (employeecontractDAO.getEmployeeContractByEmployeeId(emp.getId()) != null) {
-				employeeswithcontract.add(emp);
-			}
-		}
+		List<Employee> employeeswithcontract = employeeDAO.getEmployeesWithContracts();
+				
 		if ((employeeswithcontract == null) || (employeeswithcontract.size() <= 0)) {
 			request.setAttribute("errorMessage", 
 					"No employees with valid contracts found - please call system administrator.");
@@ -97,8 +79,10 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		List<Customerorder> orders;
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		
-		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) {
-			orders = customerorderDAO.getCustomerorders();
+		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) || 
+			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) ||
+			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM) ) {
+				orders = customerorderDAO.getCustomerorders();
 		} else {
 			orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 		}
@@ -152,6 +136,8 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			}			
 		}
 		
+		// make sure, no eoId still exists in session
+		request.getSession().removeAttribute("eoId");
 		
 		// forward to form jsp
 		checkDatabaseForEmployeeOrder(request, employeeOrderForm, employeecontractDAO, employeeorderDAO);
