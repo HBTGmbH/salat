@@ -1,0 +1,319 @@
+7.7.06
+
+create table employeeorder (
+id bigint not null primary key ,
+suborder_id bigint,
+employeecontract_id bigint,
+sign varchar(16),
+fromdate timestamp,
+untildate timestamp,
+standingorder boolean,
+debithours double,
+status varchar(64),
+statusreport boolean,
+lastupdate timestamp
+)
+
+ALTER TABLE timereport add costs double
+
+create table timereport (
+id bigint not null primary key ,
+employeecontract_id bigint,
+referenceday_id bigint,
+suborder_id bigint,
+hours double not null,
+costs double,
+taskdescription varchar(256),
+status varchar(64),
+lastupdate timestamp
+)
+
+create table referenceday (
+id bigint not null primary key ,
+refdate timestamp not null,
+name varchar(64)
+)
+
+alter table timereport 
+ADD  FOREIGN KEY (referenceday_ID) 
+REFERENCES referenceday (ID) 
+
+alter table timereport 
+ADD  FOREIGN KEY (employeecontract_ID) 
+REFERENCES employeecontract (ID) 
+
+alter table timereport 
+ADD  FOREIGN KEY (suborder_ID) 
+REFERENCES suborder (ID) 
+
+----------------------------------------
+
+6.7.06
+create table invoice (
+id bigint not null primary key ,
+customer_id bigint,
+description varchar(256)
+)
+
+alter table invoice 
+ADD  FOREIGN KEY (customer_ID) 
+REFERENCES customer (ID) 
+
+create TABLE customerorder (
+id bigint not null primary key ,
+sign varchar(16) not null,
+customer_id bigint,
+description varchar(256),
+responsible_customer varchar(64) not null,
+responsible_hbt varchar(64) not null,
+order_customer varchar(256),
+fromDate Date not null,
+untilDate Date not null,
+currency varchar(64),
+hourly_rate double,
+lastupdate timestamp
+)
+
+alter table customerorder 
+ADD  FOREIGN KEY (customer_ID) 
+REFERENCES customer (ID) 
+
+create TABLE suborder (
+id bigint not null primary key ,
+customerorder_id bigint,
+sign varchar(16) not null,
+description varchar(256),
+invoice char not null,
+currency varchar(64) not null,
+hourly_rate double not null,
+lastupdate timestamp
+)
+
+alter table suborder
+ADD  FOREIGN KEY (customerorder_ID) 
+REFERENCES customerorder (ID) 
+
+ALTER TABLE customerorder DROP COLUMN untildate
+
+ALTER TABLE customerorder 
+add COLUMN fromdate timestamp
+
+create table employeecontract (
+id bigint not null primary key ,
+employee_id bigint,
+validFrom timestamp,
+validUntil timestamp,
+freelancer char,
+dailyworkingtime double,
+taskdescription varchar(256),
+fixedUntil timestamp,
+lastupdate timestamp
+)
+
+alter table employeecontract 
+ADD  FOREIGN KEY (employee_ID) 
+REFERENCES employee (ID) 
+
+create table timereport (
+id bigint not null primary key ,
+employeecontract_id bigint,
+refday_id timestamp,
+suborder_id bigint,
+hours double not null,
+costs double,
+taskdescription varchar(256),
+status varchar(64),
+lastupdate timestamp
+)
+
+alter table timereport 
+ADD  FOREIGN KEY (suborder_ID) 
+REFERENCES suborder (ID) 
+
+create table referenceday (
+refdate timestamp not null primary key   ,
+workingday boolean,
+name varchar(64)
+)
+
+-----------------------------------------------
+
+5.7.06
+
+INSERT INTO employee 
+(id,loginname,password,firstname,lastname,sign,gender,status)
+VALUES (1,'oda','oda','Olaf','Danne','oda','m','ma')
+
+INSERT INTO employee 
+(id,loginname,password,firstname,lastname,sign,gender,status)
+VALUES (2,'fw','fw','Friedemann','Weik','fw','m','bl')
+
+ALTER TABLE employee 
+  ADD CONSTRAINT empl_uq1 
+  UNIQUE (sign)
+
+-----------------------------------------------
+
+4.7.06
+
+create TABLE order_1 (
+id bigint not null primary key ,
+sign varchar(16) not null,
+customer_id bigint not null,
+description varchar(256),
+responsible_customer varchar(64) not null,
+responsible_hbt varchar(64) not null,
+order_customer varchar(256),
+fromDate Date not null,
+untilDate Date not null,
+currency varchar(64),
+hourly_rate double,
+lastupdate timestamp
+)
+
+alter table order_1 
+ADD  FOREIGN KEY (customer_ID) 
+REFERENCES customer (ID) 
+
+create TABLE order_2 (
+id bigint not null primary key ,
+order_1_id bigint not null,
+sign varchar(16) not null,
+description varchar(256),
+invoice varchar(5) not null,
+currency varchar(64),
+hourly_rate double,
+lastupdate timestamp
+)
+
+alter table order_2 
+ADD  FOREIGN KEY (order_1_ID) 
+REFERENCES order_1 (ID) 
+
+create table employee (
+id bigint not null primary key ,
+loginname varchar(256) not null,
+password varchar(256) not null,
+firstname varchar(256) not null,
+lastname varchar(256) not null,
+sign varchar(5),
+gender char,
+lastupdate timestamp
+)
+
+create table employeecontract (
+id bigint not null primary key ,
+employee_id bigint not null,
+validFrom Date,
+validUntil Date,
+isfreelancer varchar(5),
+dailyworkingtime double,
+taskdescription varchar(256),
+fixedUntil Date,
+lastupdate timestamp
+)
+
+alter table employeecontract 
+ADD  FOREIGN KEY (employee_ID) 
+REFERENCES employee (ID) 
+
+create table timereport (
+id bigint not null primary key ,
+employeecontract_id bigint not null,
+refday_id date not null,
+order_2_id bigint not null,
+hours double not null,
+taskdescription varchar(256),
+status varchar(64),
+lastupdate timestamp
+)
+
+alter table timereport 
+ADD  FOREIGN KEY (order_2_ID) 
+REFERENCES order_2 (ID) 
+
+alter table timereport 
+ADD  FOREIGN KEY (refday_id) 
+REFERENCES referenceday (refdate) 
+
+alter table timereport 
+ADD  FOREIGN KEY (employee_ID) 
+REFERENCES employee (ID) 
+
+alter table timereport 
+ADD  FOREIGN KEY (employeecontract_ID) 
+REFERENCES employeecontract (ID) 
+
+-------------------------------------
+3.7.06
+
+create TABLE customer (
+id bigint not null primary key ,
+name varchar(256) not null,
+address varchar(256) not null)
+
+
+create TABLE order_2 (
+id bigint not null primary key ,
+order_1_id bigint not null,
+sign varchar(16) not null,
+description varchar(256)
+)
+
+alter table order_2 
+ADD  FOREIGN KEY (order_1_ID) 
+REFERENCES order_1 (ID) 
+
+create TABLE order_3 (
+id bigint not null primary key ,
+order_2_id bigint not null,
+sign varchar(16) not null,
+description varchar(256),
+invoice varchar(5) not null,
+currency varchar(64) not null,
+hourly_rate double)
+
+alter table order_3 
+ADD  FOREIGN KEY (order_2_ID) 
+REFERENCES order_2 (ID) 
+
+create table referenceday (
+refdate date not null primary key   ,
+isworkingday varchar(5) not null,
+name varchar(64)
+)
+
+create table mitarbeiter (
+id bigint not null primary key ,
+name varchar(256) not null,
+password varchar(256) not null,
+sign varchar(5),
+isfreelancer varchar(5),
+dailyworkingtime double,
+taskdescription varchar(256)
+)
+
+create table timereport (
+id bigint not null primary key ,
+employee_id bigint not null,
+refday_id date not null,
+order_3_id bigint not null,
+hours double not null,
+taskdescription varchar(256) not null,
+signedby varchar(64) not null
+)
+
+alter table timereport 
+ADD  FOREIGN KEY (order_3_ID) 
+REFERENCES order_3 (ID) 
+
+alter table timereport 
+ADD  FOREIGN KEY (refday) 
+REFERENCES referenceday (refdate) 
+
+alter table timereport 
+ADD  FOREIGN KEY (employee_ID) 
+REFERENCES employee (ID) 
+
+
+

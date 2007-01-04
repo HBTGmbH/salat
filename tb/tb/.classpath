@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/commons-validator.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/ejb3-persistence.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/hibernate3.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/hibernate-annotations.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/hibernate-entitymanager.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/hsqldb.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/log4j-1.2.8.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/spring.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/struts.jar"/>
+	<classpathentry kind="lib" path="lib/servlet.jar"/>
+	<classpathentry sourcepath="ECLIPSE_HOME/plugins/org.eclipse.jdt.source_3.1.1/src/org.junit_3.8.1/junitsrc.zip" kind="var" path="JUNIT_HOME/junit.jar"/>
+	<classpathentry kind="output" path="src/web/WEB-INF/classes"/>
+</classpath>
