@@ -141,7 +141,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	 * @return List<Employeecontract>
 	 */
 	public List<Employeecontract> getEmployeeContracts() {
-		return getSession().createQuery("from Employeecontract e order by employee.lastname").list();
+		return getSession().createQuery("from Employeecontract e order by employee.lastname asc, validFrom asc").list();
 	}
 
 	/**

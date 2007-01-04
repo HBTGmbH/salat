@@ -27,6 +27,11 @@
 		form.action = "/tb/do/ShowRelease?task=refreshDate";
 		form.submit();
 	}
+	
+	function setUpdateEmployeeContract(form) {
+		form.action = "/tb/do/ShowRelease?task=updateEmployeeContract";
+		form.submit();
+	}
 		
 </script>
 
@@ -52,7 +57,21 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.release.employee.text" />:</b></td>
 			<td align="left" class="noBborderStyle">
-				<c:out value="${loginEmployee.name}" />	
+				<c:choose>
+					<c:when test="${employeeAuthorized}">
+						<html:select property="employeeContractId"
+							onchange="setUpdateEmployeeContract(this.form)">
+							<c:forEach var="employeecontract" items="${employeecontracts}" >
+								<html:option value="<c:out value='${employeecontract.id}' />">
+									<c:out value="${employeecontract.employee.name}" /> (<c:out value="${employeecontract.validFrom}" /> - <c:out value="${employeecontract.validUntil}" />)
+								</html:option>							
+							</c:forEach>
+						</html:select> 
+					</c:when>
+					<c:otherwise>
+						<c:out value="${loginEmployee.name}" />
+					</c:otherwise>
+				</c:choose>		
 			</td>
 		</tr>
 		<tr>

@@ -9,6 +9,7 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
+import org.tb.bdom.Employeecontract;
 import org.tb.helper.TimereportHelper;
 
 public class ShowReleaseForm extends ActionForm {
@@ -16,7 +17,7 @@ public class ShowReleaseForm extends ActionForm {
 	private String day;
 	private String month;
 	private String year;
-	
+	Long employeeContractId;
 	
 	public String getDay() {
 		return day;
@@ -36,6 +37,13 @@ public class ShowReleaseForm extends ActionForm {
 	public void setYear(String year) {
 		this.year = year;
 	}
+	public Long getEmployeeContractId() {
+		return employeeContractId;
+	}
+	public void setEmployeeContractId(Long employeeContractId) {
+		this.employeeContractId = employeeContractId;
+	}
+	
 	
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -48,6 +56,10 @@ public class ShowReleaseForm extends ActionForm {
 		request.getSession().setAttribute("releaseDay", day);
 		request.getSession().setAttribute("releaseMonth", month);
 		request.getSession().setAttribute("releaseYear", year);
+		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+		if (employeecontract != null) {
+			employeeContractId = employeecontract.getId();
+		}
 		
 	}
 

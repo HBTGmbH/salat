@@ -738,15 +738,113 @@ public class TimereportHelper {
 	 * @return Returns an int[] containing the hours at index 0 and the minutes at index 1.
 	 */
 	public int[] calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
+//		int[] overtime = new int[2];
+//		long overtimeHours;
+//		long overtimeMinutes;
+		
+		Date today =  new Date();
+//		SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
+//		String year = yearFormat.format(today);
+	
+		Date contractBegin = employeecontract.getValidFrom();
+		
+		return calculateOvertime(contractBegin, today, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+		
+//		GregorianCalendar calendar = new GregorianCalendar();
+//		
+//		calendar.clear();
+//		calendar.set(new Integer(year), Calendar.JANUARY, 1);
+//		
+//		// So = 1
+//		// Mo = 2
+//		// Di = 3
+//		// Mi = 4
+//		// Do = 5
+//		// Fr = 6
+//		// Sa = 7
+//		int firstday = calendar.get(Calendar.DAY_OF_WEEK);
+//				
+//		int numberOfHolidays = 0;
+//				
+//		List<Publicholiday> holidays = publicholidayDAO.getPublicHolidaysBetween(contractBegin, today);
+//		for (Publicholiday publicholiday : holidays) {
+//			calendar.setTimeInMillis(publicholiday.getRefdate().getTime());
+//			if ((calendar.get(Calendar.DAY_OF_WEEK) != 1) && (calendar.get(Calendar.DAY_OF_WEEK) != 8)) {
+//				numberOfHolidays += 1;
+//			}
+//		}
+//		
+//		
+//		long diffMillis;
+//        long diffDays;
+//        diffMillis = today.getTime() - contractBegin.getTime();
+//        diffDays = (diffMillis+(60*60*1000))/(24*60*60*1000);
+//        // 1 hour added because of possible differences caused by sommertime/wintertime
+//        
+//        // add 1 day (number of days are needed, not the difference)
+//        diffDays += 1;
+//        
+//        if (diffDays < 0) {
+//        	throw new RuntimeException("implementation error while calculating overtime");
+//        }
+//		long weeks = diffDays/7;			// how many complete weeks?
+//		long days = diffDays%7;				// days of incomplete week
+//		diffDays = diffDays - (weeks * 2); 	// subtract weekends of complete weeks
+//		
+//		// check weekdays of incomplete week
+//		if (days > 0) {
+//			if (firstday == 1) {
+//				// firstday is a sunday			
+//				diffDays -= 1;
+//			} else {
+//				if (firstday + days == 8) {
+//					diffDays -= 1;
+//				} else if (firstday + days > 8) {
+//					diffDays -= 2;
+//				}
+//			}
+//		}
+//		
+//		
+//		// substract holidays
+//		diffDays -= numberOfHolidays;
+//		
+//		// calculate working time
+//		double dailyWorkingTime = employeecontract.getDailyWorkingTime() * 60;
+//		if (dailyWorkingTime%1 != 0) {
+//			throw new RuntimeException("daily working time must be mutiple of 0.05: "+employeecontract.getDailyWorkingTime());
+//		}
+//		long expectedWorkingTimeInMinutes = (long)dailyWorkingTime * diffDays;
+//		long actualWorkingTimeInMinutes = 0;
+//		List<Timereport> reports = timereportDAO.getTimereportsByEmployeeContractId(employeecontract.getId());
+//		if (reports != null) {
+//			for (Timereport timereport : reports) {
+//				actualWorkingTimeInMinutes += (timereport.getDurationhours()*60) + timereport.getDurationminutes();
+//			}
+//		} 
+//		long overtimeAdjustmentMinutes = 0;
+//		List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
+//		for (Overtime ot : overtimes) {
+//			overtimeAdjustmentMinutes += (ot.getTime()*60);
+//		}
+//		
+//		overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
+//		overtimeHours = overtimeMinutes/60;
+//		overtimeMinutes = overtimeMinutes%60;
+//		
+//		overtime[0] = (int)overtimeHours;
+//		overtime[1] = (int)overtimeMinutes;
+//		
+//		return overtime;
+	}
+	
+	public int[] calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
 		int[] overtime = new int[2];
 		long overtimeHours;
 		long overtimeMinutes;
 		
-		Date today =  new Date();
 		SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-		String year = yearFormat.format(today);
-	
-		Date contractBegin = employeecontract.getValidFrom();
+		String year = yearFormat.format(end);	
 		
 		GregorianCalendar calendar = new GregorianCalendar();
 		
@@ -764,7 +862,7 @@ public class TimereportHelper {
 				
 		int numberOfHolidays = 0;
 				
-		List<Publicholiday> holidays = publicholidayDAO.getPublicHolidaysBetween(contractBegin, today);
+		List<Publicholiday> holidays = publicholidayDAO.getPublicHolidaysBetween(start, end);
 		for (Publicholiday publicholiday : holidays) {
 			calendar.setTimeInMillis(publicholiday.getRefdate().getTime());
 			if ((calendar.get(Calendar.DAY_OF_WEEK) != 1) && (calendar.get(Calendar.DAY_OF_WEEK) != 8)) {
@@ -775,7 +873,7 @@ public class TimereportHelper {
 		
 		long diffMillis;
         long diffDays;
-        diffMillis = today.getTime() - contractBegin.getTime();
+        diffMillis = end.getTime() - start.getTime();
         diffDays = (diffMillis+(60*60*1000))/(24*60*60*1000);
         // 1 hour added because of possible differences caused by sommertime/wintertime
         

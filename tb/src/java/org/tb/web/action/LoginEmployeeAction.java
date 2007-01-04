@@ -93,7 +93,7 @@ public class LoginEmployeeAction extends Action {
 		if ((loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL)) || 
 			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_GF)) ||
 			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
-					request.getSession().setAttribute("employeeAuthorized", "true");
+					request.getSession().setAttribute("employeeAuthorized", true);
 		}
 		
 		// not necessary at the moment
@@ -188,6 +188,8 @@ public class LoginEmployeeAction extends Action {
 				tmp.setSign("system");
 				employeecontractDAO.save(employeecontract, tmp);
 			}
+			// set used employee contract of login employee
+			request.getSession().setAttribute("loginEmployeeContract", employeecontract);
 		} else {
 			request.getSession().setAttribute("employeeHasValidContract", false);
 		}

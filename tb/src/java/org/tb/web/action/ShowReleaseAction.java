@@ -59,6 +59,12 @@ public class ShowReleaseAction extends LoginRequiredAction {
 		
 		TimereportHelper th = new TimereportHelper();
 		
+		if ((Boolean) request.getSession().getAttribute("employeeAuthorized")) {
+			List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
+			request.getSession().setAttribute("employeecontracts", employeeContracts);
+		}
+		
+		
 		if ((request.getParameter("task") != null)
 				&& ((request.getParameter("task").equals("release")))) {
 			
