@@ -378,11 +378,11 @@
 <table class="center backgroundcolor">
 
 	<tr>
-		<td colspan="5" class="noBborderStyle">&nbsp;</td>
+		<td colspan="4" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
-			<c:when test="${maxlabortime && view eq 'day' && !(currentOrder eq 'ALL ORDERS')}">
+			<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b></th>
 			</c:when>
@@ -574,11 +574,11 @@
 		</html:form>
 	</c:forEach>
 	<tr>
-		<td colspan="5" class="noBborderStyle">&nbsp;</td>
+		<td colspan="4" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
-			<c:when test="${maxlabortime && view eq 'day' && !(currentOrder eq 'ALL ORDERS')}">
+			<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b></th>
 			</c:when>

@@ -48,8 +48,10 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		
 		// get lists of existing customerorders and suborders
 		List<Customerorder> customerorders;
-		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) {
-			customerorders = customerorderDAO.getCustomerorders();
+		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
+			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) ||
+			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+				customerorders = customerorderDAO.getCustomerorders();
 		} else {
 			customerorders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 		}

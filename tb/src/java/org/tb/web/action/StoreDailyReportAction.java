@@ -304,6 +304,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				EmployeeHelper eh = new EmployeeHelper();
 				String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
 				Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+				
 				double hours = TimereportHelper.calculateTime(reportForm);
 				
 				long trId = -1;
@@ -401,13 +402,20 @@ public class StoreDailyReportAction extends DailyReportAction {
 						tr.setSequencenumber(timereports.get(lastindex).getSequencenumber() + 1);
 					}
 				}
+				
+				java.util.Date releaseDate = ec.getReportReleaseDate();
+				java.util.Date refDate = tr.getReferenceday().getRefdate();
+				if (!refDate.after(releaseDate)) {
+					tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+				}
+				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				timereportDAO.save(tr, loginEmployee);
 				
 				
 				
-				String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
-				String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM	
+//				String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
+//				String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM	
 				TimereportHelper th = new TimereportHelper();
 //				if (reportForm.getSortOfReport().equals("W")) {
 					// update monthly hour balance...
@@ -417,21 +425,21 @@ public class StoreDailyReportAction extends DailyReportAction {
 //						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
 //					request.getSession().setAttribute("hourbalance", mr.getHourbalance());
 //				}
-				if (reportForm.getSortOfReport().equals("V")) {
-					// update vacation balance
-					if (request.getSession().getAttribute("trId") == null) {
-						// new report
-						th.updateVacation(tr, 1, vacationDAO);
-						Vacation va = vacationDAO.getVacationByYearAndEmployeecontract
-							(ec.getId(), Integer.parseInt(year));
-						if (va == null) {
-							// should not be the case!
-							va = vacationDAO.setNewVacation(ec, Integer.parseInt(year));
-						} 
-						String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
-						request.getSession().setAttribute("vacation", vacationBalance);
-					}				
-				}
+//				if (reportForm.getSortOfReport().equals("V")) {
+//					// update vacation balance
+//					if (request.getSession().getAttribute("trId") == null) {
+//						// new report
+//						th.updateVacation(tr, 1, vacationDAO);
+//						Vacation va = vacationDAO.getVacationByYearAndEmployeecontract
+//							(ec.getId(), Integer.parseInt(year));
+//						if (va == null) {
+//							// should not be the case!
+//							va = vacationDAO.setNewVacation(ec, Integer.parseInt(year));
+//						} 
+//						String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
+//						request.getSession().setAttribute("vacation", vacationBalance);
+//					}				
+//				}
 															
 				request.getSession().setAttribute("currentDay", DateUtils.getDayString(theDate));
 				request.getSession().setAttribute("currentMonth", DateUtils.getMonthShortString(theDate));
@@ -718,6 +726,34 @@ public class StoreDailyReportAction extends DailyReportAction {
 		if (!GenericValidator.maxLength(reportForm.getComment(),GlobalConstants.COMMENT_MAX_LENGTH)) {
 			errors.add("comment", new ActionMessage("form.timereport.error.comment.toolarge"));
 		}
+		
+		// check date vs release status
+		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(ecId);
+		Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");		
+		Boolean authorized = (Boolean) request.getSession().getAttribute("employeeAuthorized");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		java.util.Date refDate = null;
+		Date releaseDate = employeecontract.getReportReleaseDate();
+		Date acceptanceDate = employeecontract.getReportAcceptanceDate();
+		try {
+			refDate = simpleDateFormat.parse(reportForm
+					.getReferenceday());
+		} catch (Exception e) {
+			throw new RuntimeException("date cannot be parsed (yyyy-MM-dd)");
+		}		
+		if (authorized && loginEmployeecontract.getId() != ecId) {
+			if (releaseDate.before(refDate)) {
+				errors.add("release", new ActionMessage("form.timereport.error.not.released"));
+			}
+		} else {
+			if (!releaseDate.before(refDate)) {
+				errors.add("release", new ActionMessage("form.timereport.error.released"));
+			}
+		}
+		if (!refDate.after(acceptanceDate)) {
+			errors.add("release", new ActionMessage("form.timereport.error.accepted"));
+		}
+		
 		
 		saveErrors(request, errors);		
 		return errors;

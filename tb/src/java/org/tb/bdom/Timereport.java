@@ -81,6 +81,18 @@ public class Timereport implements Serializable {
 	/** Update Counter */
 	private Integer updatecounter;
 	
+	/** Date of Release */
+	private java.util.Date released;
+	
+	/** Sign of the releasing person */
+	private String releasedby;
+	
+	/** Date of Acceptance */
+	private java.util.Date accepted;
+	
+	/** Sign of the accepting person */
+	private String acceptedby;
+	
 	
 	public long getId() {
 		return id;
@@ -244,6 +256,38 @@ public class Timereport implements Serializable {
 	 */
 	public void setUpdatecounter(Integer updatecounter) {
 		this.updatecounter = updatecounter;
+	}
+
+	public java.util.Date getAccepted() {
+		return accepted;
+	}
+
+	public void setAccepted(java.util.Date accepted) {
+		this.accepted = accepted;
+	}
+
+	public String getAcceptedby() {
+		return acceptedby;
+	}
+
+	public void setAcceptedby(String acceptedby) {
+		this.acceptedby = acceptedby;
+	}
+
+	public java.util.Date getReleased() {
+		return released;
+	}
+
+	public void setReleased(java.util.Date released) {
+		this.released = released;
+	}
+
+	public String getReleasedby() {
+		return releasedby;
+	}
+
+	public void setReleasedby(String releasedby) {
+		this.releasedby = releasedby;
 	}
 	
 	

@@ -108,7 +108,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 		if ((request.getParameter("task") != null)
 				&& ((request.getParameter("task").equals("saveBegin")) || (request.getParameter("task").equals("saveBreak")) )) {
 			
-			Employeecontract ec = getEmployeeContractFromRequest(request);	
+			Employeecontract ec = getEmployeeContractFromRequest(request, employeecontractDAO);	
 						
 			if (ec == null) {
 				request.setAttribute("errorMessage",
@@ -118,7 +118,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 
 			Workingday workingday;
 			try {
-				workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec);
+				workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec, workingdayDAO);
 			} catch (Exception e) {
 				return mapping.findForward("error");
 			}
@@ -134,6 +134,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 			
 			request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
 			
+			request.getSession().setAttribute("reportForm", reportForm);
 			return mapping.findForward("success");
 		}
 		
@@ -153,7 +154,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 				//refresh workingday
 				Workingday workingday;
 				try {
-					workingday = refreshWorkingday(mapping, reportForm, request);
+					workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
 				} catch (Exception e) {
 					return mapping.findForward("error");
 				}
@@ -175,6 +176,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+				request.getSession().setAttribute("reportForm", reportForm);
 				return mapping.findForward("success");
 			}
 		}
@@ -191,6 +193,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+				request.getSession().setAttribute("reportForm", reportForm);
 				return mapping.findForward("success");
 			}
 		}
@@ -292,7 +295,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 //				refresh workingday
 				Workingday workingday;
 				try {
-					workingday = refreshWorkingday(mapping, reportForm, request);
+					workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
 				} catch (Exception e) {
 					return mapping.findForward("error");
 				}
@@ -391,79 +394,80 @@ public class ShowDailyReportAction extends DailyReportAction {
 			request.getSession().setAttribute("currentOrderId", -1);
 			
 		}
+		request.getSession().setAttribute("reportForm", reportForm);
 		return mapping.findForward("success");
 	}
 
 	
 	
-	/**
-	 * 
-	 * @param request
-	 * @return
-	 */
-	private Employeecontract getEmployeeContractFromRequest(HttpServletRequest request) {
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
-		Employeecontract ec = null;	
-		long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-		
-		if (employeeId != 0 && employeeId != -1) {	
-			ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);	
-		} else {
-			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
-		}
-		return ec;
-	}
-	
-	
-	/**
-	 * 
-	 * @param reportForm
-	 * @param ec
-	 * @return Returns the adequate {@link Workingday} for the selected date in the reportForm and the given
-	 * {@link Employeecontract}. If this workingday does not exist in the database so far, a new one is created.
-	 * @throws ParseException
-	 */
-	private Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec) throws Exception {
-		String dayString = reportForm.getDay();
-		String monthString = reportForm.getMonth();
-		String yearString = reportForm.getYear();
-		
-		TimereportHelper th = new TimereportHelper();
-		Date tmp = th.getDateFormStrings(dayString, monthString, yearString, true);
-				
-		java.sql.Date refDate = new java.sql.Date(tmp.getTime());
-		
-		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
-		if (workingday == null) {
-			workingday = new Workingday();
-			workingday.setRefday(refDate);
-			workingday.setEmployeecontract(ec);
-		}
-		return workingday;
-	}
-	
-	
-	/**
-	 * Refreshes the workingday.
-	 * @param mapping
-	 * @param reportForm
-	 * @param request
-	 * @throws Exception
-	 */
-	private Workingday refreshWorkingday(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request) throws Exception {
-		Employeecontract employeecontract = getEmployeeContractFromRequest(request);
-		if (employeecontract == null) {
-			request.setAttribute("errorMessage",
-							"No employee contract found for employee - please call system administrator.");
-			throw new Exception("No employee contract found for employee");
-		}
-		
-		Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract);
-		
-		reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
-		reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
-		reportForm.setSelectedBreakHour(workingday.getBreakhours());
-		reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
-		return workingday;
-	}
+//	/**
+//	 * 
+//	 * @param request
+//	 * @return
+//	 */
+//	private Employeecontract getEmployeeContractFromRequest(HttpServletRequest request) {
+//		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
+//		Employeecontract ec = null;	
+//		long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+//		
+//		if (employeeId != 0 && employeeId != -1) {	
+//			ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);	
+//		} else {
+//			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+//		}
+//		return ec;
+//	}
+//	
+//	
+//	/**
+//	 * 
+//	 * @param reportForm
+//	 * @param ec
+//	 * @return Returns the adequate {@link Workingday} for the selected date in the reportForm and the given
+//	 * {@link Employeecontract}. If this workingday does not exist in the database so far, a new one is created.
+//	 * @throws ParseException
+//	 */
+//	private Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec) throws Exception {
+//		String dayString = reportForm.getDay();
+//		String monthString = reportForm.getMonth();
+//		String yearString = reportForm.getYear();
+//		
+//		TimereportHelper th = new TimereportHelper();
+//		Date tmp = th.getDateFormStrings(dayString, monthString, yearString, true);
+//				
+//		java.sql.Date refDate = new java.sql.Date(tmp.getTime());
+//		
+//		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
+//		if (workingday == null) {
+//			workingday = new Workingday();
+//			workingday.setRefday(refDate);
+//			workingday.setEmployeecontract(ec);
+//		}
+//		return workingday;
+//	}
+//	
+//	
+//	/**
+//	 * Refreshes the workingday.
+//	 * @param mapping
+//	 * @param reportForm
+//	 * @param request
+//	 * @throws Exception
+//	 */
+//	private Workingday refreshWorkingday(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request) throws Exception {
+//		Employeecontract employeecontract = getEmployeeContractFromRequest(request);
+//		if (employeecontract == null) {
+//			request.setAttribute("errorMessage",
+//							"No employee contract found for employee - please call system administrator.");
+//			throw new Exception("No employee contract found for employee");
+//		}
+//		
+//		Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract);
+//		
+//		reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
+//		reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
+//		reportForm.setSelectedBreakHour(workingday.getBreakhours());
+//		reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+//		return workingday;
+//	}
 }

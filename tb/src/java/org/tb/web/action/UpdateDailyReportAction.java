@@ -133,17 +133,17 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				timereportDAO.save(tr, loginEmployee);
 				
 
-				if (tr.getSortofreport().equals("W")) {
-					// update monthly hour balance...
-
-					String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
-					String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM
-					
-					Monthlyreport mr = 
-						monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract
-						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
-					request.getSession().setAttribute("hourbalance", mr.getHourbalance());
-				}
+//				if (tr.getSortofreport().equals("W")) {
+//					// update monthly hour balance...
+//
+//					String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
+//					String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM
+//					
+//					Monthlyreport mr = 
+//						monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract
+//						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
+//					request.getSession().setAttribute("hourbalance", mr.getHourbalance());
+//				}
 				
 				// get updated list of timereports from DB
 				ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();

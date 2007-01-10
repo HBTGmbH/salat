@@ -75,7 +75,7 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employee.password.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
+			<td align="left" class="noBborderStyle"><html:password
 				property="password" size="30"
 				maxlength="<%="" + org.tb.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="password" /></span></td>
@@ -116,7 +116,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employee.gender.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="gender" value="<c:out value='${genderString}' />" >
+				property="gender" >
 				<html:option value="m">
 					<bean:message key="main.general.employee.gender.male" />
 				</html:option>

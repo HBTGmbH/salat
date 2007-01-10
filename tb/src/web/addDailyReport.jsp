@@ -136,7 +136,7 @@
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
 				alt="<bean:message key="main.date.popup.alt.text" />"
 				style="border:0;vertical-align:top"> </a> <span style="color:red"><html:errors
-				property="referenceday" /></span></td>
+				property="referenceday" /> <html:errors property="release" /></span></td>
 		</tr>
 		<!-- 
 		<tr>

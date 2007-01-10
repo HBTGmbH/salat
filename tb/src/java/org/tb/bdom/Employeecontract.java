@@ -2,6 +2,7 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -198,6 +199,15 @@ public class Employeecontract implements Serializable {
 	public java.sql.Date getReportAcceptanceDate() {
 		return reportAcceptanceDate;
 	}
+	
+	public String getReportAcceptanceDateString() {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+		if (reportAcceptanceDate != null) {
+			return simpleDateFormat.format(reportAcceptanceDate); 
+		} else {
+			return simpleDateFormat.format(validFrom); 
+		}
+	}
 
 	public void setReportAcceptanceDate(java.sql.Date reportAcceptanceDate) {
 		this.reportAcceptanceDate = reportAcceptanceDate;
@@ -205,6 +215,15 @@ public class Employeecontract implements Serializable {
 
 	public java.sql.Date getReportReleaseDate() {
 		return reportReleaseDate;
+	}
+	
+	public String getReportReleaseDateString() {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+		if (reportReleaseDate != null) {
+			return simpleDateFormat.format(reportReleaseDate);
+		} else {
+			return simpleDateFormat.format(validFrom);
+		}
 	}
 
 	public void setReportReleaseDate(java.sql.Date reportReleaseDate) {
@@ -279,6 +298,11 @@ public class Employeecontract implements Serializable {
 	 */
 	public void setUpdatecounter(Integer updatecounter) {
 		this.updatecounter = updatecounter;
+	}
+	
+	public String getTimeString() {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+		return simpleDateFormat.format(validFrom) + " - " + simpleDateFormat.format(validUntil);
 	}
 
 	public Integer getVacationEntitlement() {

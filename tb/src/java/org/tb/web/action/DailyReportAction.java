@@ -1,5 +1,6 @@
 package org.tb.web.action;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -11,10 +12,12 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
@@ -25,6 +28,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
+import org.tb.persistence.WorkingdayDAO;
 import org.tb.web.form.ShowDailyReportForm;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
@@ -264,10 +268,10 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			List<Customerorder> orders = customerorderDAO
 					.getCustomerordersByEmployeeContractId(ec.getId());
 			request.getSession().setAttribute("orders", orders);
-			if (orders.size() > 0) {
-				request.getSession().setAttribute("suborders",
-								suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
-			}
+//			if (orders.size() > 0) {
+//				request.getSession().setAttribute("suborders",
+//								suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
+//			}
 
 			if ((reportForm.getOrder() == null)
 					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
@@ -313,8 +317,80 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		request.getSession().setAttribute("lastMonth", reportForm.getLastmonth());
 		request.getSession().setAttribute("lastYear", reportForm.getLastyear());
 
+		request.getSession().setAttribute("reportForm", reportForm);
+		
 		return true;
 
 	}
 	
+	/**
+	 * Refreshes the workingday.
+	 * @param mapping
+	 * @param reportForm
+	 * @param request
+	 * @throws Exception
+	 */
+	protected Workingday refreshWorkingday(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, EmployeecontractDAO employeecontractDAO, WorkingdayDAO workingdayDAO) throws Exception {
+		
+		Employeecontract employeecontract = getEmployeeContractFromRequest(request, employeecontractDAO);
+		if (employeecontract == null) {
+			request.setAttribute("errorMessage",
+							"No employee contract found for employee - please call system administrator.");
+			throw new Exception("No employee contract found for employee");
+		}
+		
+		Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract, workingdayDAO);
+		
+		reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
+		reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
+		reportForm.setSelectedBreakHour(workingday.getBreakhours());
+		reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+		return workingday;
+	}
+	
+	/**
+	 * 
+	 * @param request
+	 * @return
+	 */
+	protected Employeecontract getEmployeeContractFromRequest(HttpServletRequest request, EmployeecontractDAO employeecontractDAO) {
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
+		Employeecontract ec = null;	
+		long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+		
+		if (employeeId != 0 && employeeId != -1) {	
+			ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);	
+		} else {
+			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+		}
+		return ec;
+	}
+	
+	
+	/**
+	 * 
+	 * @param reportForm
+	 * @param ec
+	 * @return Returns the adequate {@link Workingday} for the selected date in the reportForm and the given
+	 * {@link Employeecontract}. If this workingday does not exist in the database so far, a new one is created.
+	 * @throws ParseException
+	 */
+	protected Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec, WorkingdayDAO workingdayDAO) throws Exception {
+		String dayString = reportForm.getDay();
+		String monthString = reportForm.getMonth();
+		String yearString = reportForm.getYear();
+		
+		TimereportHelper th = new TimereportHelper();
+		Date tmp = th.getDateFormStrings(dayString, monthString, yearString, true);
+				
+		java.sql.Date refDate = new java.sql.Date(tmp.getTime());
+		
+		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
+		if (workingday == null) {
+			workingday = new Workingday();
+			workingday.setRefday(refDate);
+			workingday.setEmployeecontract(ec);
+		}
+		return workingday;
+	}
 }

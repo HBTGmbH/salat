@@ -225,6 +225,42 @@ public class TimereportDAO extends HibernateDaoSupport {
 		return allTimereports;
 	}
 	
+	/**
+	 * Gets a list of all {@link Timereport}s that fulfill following criteria: 
+	 * 1) associated to the given employee contract id
+	 * 2) valid before and at the given date
+	 * 3) status is commited 
+	 * 
+	 * @param contractId
+	 * @param dt
+	 * @return
+	 */
+	public List<Timereport> getCommitedTimereportsByEmployeeContractIdBeforeDate(long contractId, java.sql.Date dt) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate <= ? and status = ?").setLong(0, contractId).setDate(1, dt).setString(2, GlobalConstants.TIMEREPORT_STATUS_COMMITED).list();
+
+		return allTimereports;
+	}
+	
+	/**
+	 * Gets a list of all {@link Timereport}s that fulfill following criteria: 
+	 * 1) associated to the given employee contract id
+	 * 2) valid after and at the given date
+	 * 
+	 * 
+	 * @param contractId
+	 * @param dt
+	 * @return
+	 */
+	public List<Timereport> getTimereportsByEmployeeContractIdAfterDate(long contractId, java.sql.Date dt) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? ").setLong(0, contractId).setDate(1, dt).list();
+
+		return allTimereports;
+	}
+	
 	
 	/**
 	 * Gets a list of Timereports by employee contract id and two dates.

@@ -94,6 +94,8 @@ public class LoginEmployeeAction extends Action {
 			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_GF)) ||
 			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
 					request.getSession().setAttribute("employeeAuthorized", true);
+		} else {
+			request.getSession().setAttribute("employeeAuthorized", false);
 		}
 		
 		// not necessary at the moment
@@ -190,6 +192,7 @@ public class LoginEmployeeAction extends Action {
 			}
 			// set used employee contract of login employee
 			request.getSession().setAttribute("loginEmployeeContract", employeecontract);
+			request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
 		} else {
 			request.getSession().setAttribute("employeeHasValidContract", false);
 		}
