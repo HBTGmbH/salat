@@ -12,6 +12,7 @@
 	<bean name="/LogoutEmployee" class="org.tb.web.action.LogoutEmployeeAction" />
 	<bean name="/CreateDailyReport" class="org.tb.web.action.CreateDailyReportAction" />
 	<bean name="/ShowMonthlyReport" class="org.tb.web.action.ShowMonthlyReportAction" />
+	<bean name="/ShowMatrix" class="org.tb.web.action.ShowMatrixAction" />
 	<bean name="/ShowDailyReport" class="org.tb.web.action.ShowDailyReportAction" />
 	<bean name="/UpdateDailyReport" class="org.tb.web.action.UpdateDailyReportAction" />
 	<bean name="/StoreDailyReport" class="org.tb.web.action.StoreDailyReportAction" />

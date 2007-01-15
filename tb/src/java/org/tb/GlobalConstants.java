@@ -122,5 +122,10 @@ public class GlobalConstants {
 	public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
 	public static final String CUSTOMERORDER_SIGN_EXTRA_VACATION = "SONDERURLAUB";
 	
+    // matrix constants
+    public static final int MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES = 1;
+    public static final int MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES = 2;
+    public static final int MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES = 3;
+    public static final int MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES = 4;
 	
 }

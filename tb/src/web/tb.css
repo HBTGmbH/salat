@@ -26,8 +26,7 @@ table {
 	empty-cells: show;
 }
 
-table.backgroundcolor { 
-	/*background-color: #a3bddb;*/
+table.backgroundcolor { /*background-color: #a3bddb;*/
 	color: black;
 }
 
@@ -54,26 +53,65 @@ tr.secondarycolor {
 	background-color: #c1d5eb;
 }
 
+/*-- Tätigkeitsbericht --*/
+table.matrix {
+	border-collapse: collapse;
+	border-spacing: 0px;
+	empty-cells: show;
+	font-family: verdana, arial, sans-serif;
+	font-size: 9pt;
+	color: black;
+}
+
+tr.matrix,td.matrix,th.matrix {
+	font-family: verdana, arial, sans-serif;
+	font-size: 8pt;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+tr.matrix,td.matrix {
+	border: 1px black solid;
+}
+
+th.matrix #borderdouble {
+	border-style: double;
+	border-color: black;
+}
+
+.underline {
+	text-decoration: underline;
+}
+
+.bold {
+	font-weight: bold;
+}
+
+.borderdotted{
+	border-style:dotted;	
+}
+
 #button {
 	background-color: #7390b1;
 	color: #ffffff;
 }
 
-img{
-	border: 0px;	
+img {
+	border: 0px;
 }
 
-.layer1{
-	z-index:1;
+.layer1 {
+	z-index: 1;
 }
 
-.layer2{
-	z-index:2;
+.layer2 {
+	z-index: 2;
 }
 
 /*-- Menu --*/
-
-a:link, a:visited {
+a:link,a:visited {
 	color: white;
 }
 
@@ -105,35 +143,33 @@ a:hover {
 ul {
 	font-family: verdana, arial, sans-serif;
 	font-size: 11pt;
-	font-weight:bold;
+	font-weight: bold;
 	padding: 0;
 	margin: 0;
 	list-style: none;
 }
 
 li {
-	text-align:center;
+	text-align: center;
 	float: left;
 	position: relative;
 	width: 19.9%;
 	border: 1px solid black;
 	border-width: 1px 0;
-	
-	color:white;
+	color: white;
 }
 
-
-ul#nav li{
+ul#nav li {
 	background-color: #94b0d0;
 }
 
-ul#nav li:hover, ul#nav li.over{
+ul#nav li:hover,ul#nav li.over {
 	background-color: #7390b1;
 }
 
-ul#nav li li{
+ul#nav li li {
 	width: 100%;
-	border:0px;
+	border: 0px;
 }
 
 li#first {
@@ -142,7 +178,7 @@ li#first {
 
 li#last {
 	border-right-width: 1px;
-	max-width:100%;
+	max-width: 100%;
 }
 
 li ul {
