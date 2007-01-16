@@ -10,7 +10,8 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Insert title here</title>
+<title><bean:message key="main.general.application.title" /> -
+<bean:message key="main.general.mainmenu.matrix.title.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 <script type="text/javascript" language="JavaScript">	
  	function setUpdateMergedreportsAction(form) {	
@@ -233,33 +234,34 @@
 	</table>
 </html:form>
 
-<table class="matrix">
+<table class="matrix" width="100%">
 	<tr class="matrix">
-		<th class="matrix" colspan="3"><span style="font-size:12pt;"><bean:message
+		<th class="matrix" colspan="2"><span style="font-size:12pt;"><bean:message
 			key="main.matrixoverview.headline.hbtgmbh.text" /></span><br>
 		<bean:message key="main.matrixoverview.headline.adress.text" />,<br>
 		<bean:message key="main.matrixoverview.headline.place.text" />, <bean:message
 			key="main.matrixoverview.headline.phone.text" /></th>
 		<th class="matrix" colspan="${daysofmonth+1}">
-		<h2><bean:message key="main.matrixoverview.headline.tb.text" /></h2>
-		<table width="100%" style="text-align:left">
-			<tr width="100%">
-				<th class="matrix noBborderStyle"><span style="text-align:left"><bean:message
-					key="main.matrixoverview.headline.name.text" />: <c:out
-					value="${loginEmployee.name}" /></span>
-				</th>
-				<th class="matrix noBborderStyle"><span
-					style="text-align:center"><bean:message
-					key="main.matrixoverview.headline.month.text" />: <c:out
-					value="${currentDay}" /> </span>
-				</th>
-				<th class="matrix noBborderStyle"><span
-					style="text-align:right"><bean:message
-					key="main.matrixoverview.headline.year.text" />: <c:out
-					value="${currentYear}" /></span>
+		<center>
+		<table width="60%">
+			<tr>
+				<th class="matrix noBborderStyle" colspan="3">
+				<h2><bean:message key="main.matrixoverview.headline.tb.text" /></h2>
 				</th>
 			</tr>
+			<tr>
+				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
+					key="main.matrixoverview.headline.name.text" />:--> <c:out
+					value="${loginEmployee.name}" /></th>
+				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
+					key="main.matrixoverview.headline.month.text" />:--> <c:out
+					value="${currentDay}" /></th>
+				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
+					key="main.matrixoverview.headline.year.text" />:--> <c:out
+					value="${currentYear}" /></th>
+			</tr>
 		</table>
+		</center>
 		<br>
 		</th>
 	</tr>
@@ -311,16 +313,17 @@
 					<td class="matrix" style="font-size: 7pt;border:1px black solid;">
 				</c:if>
 				<c:if
-					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
+					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
 				<c:if
 					test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-					<c:out
-						value="${(((bookingday.durationHours*60)+(bookingday.durationMinutes))/60)}"></c:out>
+					<!--<c:out
+						value="${(((bookingday.durationHours*60)+(bookingday.durationMinutes))/60)}"></c:out>-->
+					<c:out value="${bookingday.roundHours}"></c:out>
 				</c:if>
 				</td>
 			</c:forEach>
 			<td class="matrix" align="right"><c:out
-				value="${mergedreport.sum}"></c:out></td>
+				value="${mergedreport.roundSum}"></c:out></td>
 		</tr>
 	</c:forEach>
 	<tr class="matrix">
@@ -330,7 +333,7 @@
 
 			<td class="matrix"><c:if
 				test="${!(dayhourcount.workingHour eq '0.0')}">
-				<c:out value="${dayhourcount.workingHour}"></c:out>
+				<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
 			</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 
 		</c:forEach>
@@ -341,26 +344,30 @@
 		<td class="matrix" style="border-style:solid none none solid;"><bean:message
 			key="main.matrixoverview.headline.underline.text" /></td>
 		<td style="border-style:solid solid none none;"
-			class="underline bold matrix" colspan="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td class="matrix" rowspan="2" colspan="6">
 		<table>
 			<tr class="matrix">
 				<td class="matrix" style="border-style:none;"><bean:message
-			key="main.matrixoverview.headline.actualtime.text" /></td>
+					key="main.matrixoverview.headline.actualtime.text" /></td>
 				<td class="matrix underline" style="border-style:none;"><c:out
 					value="${dayhourssum}"></c:out></td>
 			</tr>
 			<tr class="matrix">
 				<td class="matrix" style="border-style:none;"><bean:message
-			key="main.matrixoverview.headline.targettime.text" /></td>
-				<td class="matrix underline" style="border-style:none;">- <c:out
-					value="${dayhourstarget}"></c:out></td>
+					key="main.matrixoverview.headline.targettime.text" /></td>
+				<td class="matrix underline" style="border-style:none;"><c:if
+					test="${!(dayhourssum eq '0.0')}">
+					<c:out value="${dayhourstarget}"></c:out>
+				</c:if><c:if test="${(dayhourssum eq '0.0')}">0.0</c:if></td>
 			</tr>
 			<tr class="matrix">
 				<td class="matrix" style="border-style:none;"><bean:message
-			key="main.matrixoverview.headline.difference.text" /></td>
-				<td class="matrix underline" style="border-style:none;">= <c:out
-					value="${dayhourssum-dayhourstarget}"></c:out></td>
+					key="main.matrixoverview.headline.difference.text" /></td>
+				<td class="matrix underline" style="border-style:none;"><c:if
+					test="${!(dayhourssum eq '0.0')}">
+					<c:out value="${dayhourssum-dayhourstarget}"></c:out>
+				</c:if><c:if test="${(dayhourssum eq '0.0')}">0.0</c:if></td>
 			</tr>
 		</table>
 		</td>
@@ -371,7 +378,7 @@
 	<tr class="matrix">
 		<td class="matrix" style="border-style:none none solid solid;">Bereichsleitg.:</td>
 		<td style="border-style:none solid solid none;"
-			class="underline bold matrix" colspan="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td class="matrix" style="text-align:right;"
 			colspan="${daysofmonth-5}">Resturlaub: n/a Tage</td>
 	</tr>

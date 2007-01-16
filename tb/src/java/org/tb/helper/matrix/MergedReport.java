@@ -165,6 +165,12 @@ public class MergedReport implements Comparable {
     public ArrayList getWeek() {
         return week;
     }
+    
+    public Double getRoundSum(){
+        Double duration=(sum+0.05)*10;
+        int temp = duration.intValue();
+        return temp/10.0;
+    }
 
 }
 

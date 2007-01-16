@@ -42,6 +42,12 @@ public class DayAndWorkingHourCount {
     public void setWorkingHour(double workingHour) {
         this.workingHour = workingHour;
     }
+    
+    public double getRoundWorkingHour(){
+        Double duration=(workingHour+0.05)*10;
+        int temp = duration.intValue();
+        return temp/10.0;
+    }
 }
 
 

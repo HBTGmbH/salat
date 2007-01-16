@@ -77,6 +77,13 @@ public class BookingDay implements Comparable{
     public void setSatSun(boolean satSun) {
         this.satSun = satSun;
     }
+    
+    public double getRoundHours(){
+        Double duration = (((durationHours*60)+(durationMinutes))/60.0);
+        duration=(duration+0.05)*10;
+        int temp = duration.intValue();
+        return temp/10.0;
+    }
 }
 
 /*
