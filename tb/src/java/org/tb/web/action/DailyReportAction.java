@@ -103,9 +103,10 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		
 		List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, sqlNowDate);
 		List<Timereport> vacationReports = new ArrayList<Timereport>();
+		
 		for (Employeeorder employeeorder : employeeOrders) {
 			Suborder suborder = employeeorder.getSuborder();
-			vacationReports.addAll(timereportDAO.getTimereportsBySuborderId(suborder.getId()));
+			vacationReports.addAll(timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(suborder.getId(), employeecontract.getId()));
 		}
 		
 		int[] vacationTime = th.calculateLaborTimeAsArray(vacationReports);

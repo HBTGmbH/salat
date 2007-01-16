@@ -60,6 +60,16 @@ public class TimereportDAO extends HibernateDaoSupport {
 
 	/**
 	 * 
+	 * @param ecId
+	 * @param suborderId
+	 * @return
+	 */
+	public List<Timereport> getTimereportsBySuborderIdAndEmployeeContractId(long suborderId, long ecId) {
+		return getSession().createQuery("from Timereport tr where tr.suborder.id = ? and tr.employeecontract.id = ? order by employeecontract.employee.lastname asc, referenceday.refdate desc, sequencenumber asc").setLong(0, suborderId).setLong(1, ecId).list();
+	}
+	
+	/**
+	 * 
 	 * @param employeeContractId
 	 * @return Returns a list of all {@link Timereport}s associated to the given {@link Employeecontract#getId()}.
 	 */

@@ -11,6 +11,27 @@
 
 <html:html>
 <head>
+
+<style type="text/css">
+.info{
+    position:relative; /*this is the key*/
+    z-index:24; background-color:#fff;
+    color:#000;
+    text-decoration:none}
+
+.info:hover{z-index:25; background-color:#ff0}
+
+.info span{display: none}
+
+.info:hover span{ /*the span will display just on :hover state*/
+    display:table;
+    position:absolute;
+    top:2em; left:-20em; width:20em;
+    border:1px solid #0cf;
+    background-color:#cff; color:#000;
+    text-align: left}
+</style>
+
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
@@ -433,6 +454,7 @@
 		<!--  
 		<th align="left"> <b><bean:message key="main.timereport.monthly.status.text"/></b> </th>	
 		-->
+		<!-- 
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.save.text" />"><b><bean:message
@@ -445,6 +467,11 @@
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.delete.text" />"><b><bean:message
 			key="main.timereport.monthly.delete.text" /></b></th>
+		 -->
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.dailyoverview.saveeditdelete.text" />"><b><bean:message
+			key="main.timereport.monthly.saveeditdelete.text" /></b></th>
+		<th align="left" ><b>Info</b></th>
 	</tr>
 
 	<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
@@ -525,21 +552,37 @@
 					<td><html:text property="costs" size="8"
 						value="${timereport.costs}" /></td>
 
-					<!-- Speichern -->
+					<!--  
 					<td align="center"><html:image
 						onclick="confirmSave(this.form, ${timereport.id})"
 						src="/tb/images/Save.gif" alt="Save Timereport" /></td>
 
-					<!-- Aendern -->
+					
 					<td align="center"><html:link
 						href="/tb/do/EditDailyReport?trId=${timereport.id}">
 						<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
 					</html:link></td>
 
-					<!-- Loeschen -->
+					
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${timereport.id})"
 						src="/tb/images/Delete.gif" alt="Delete Timereport" /></td>
+					-->
+						
+					<!-- Bearbeiten -->
+					<td align="center">
+						<html:image onclick="confirmSave(this.form, ${timereport.id})"
+							src="/tb/images/Save.gif" alt="Speichern" 
+							title="Speichern"/>
+						&nbsp;
+						<html:link title="Ändern" 
+							href="/tb/do/EditDailyReport?trId=${timereport.id}">
+							<img src="/tb/images/Edit.gif" alt="Ändern" />
+						</html:link>
+						&nbsp;
+						<html:image onclick="confirmDelete(this.form, ${timereport.id})"
+							src="/tb/images/Delete.gif" alt="Löschen" title="Löschen" />	
+					</td>
 
 				</c:when>
 				<c:otherwise>
@@ -548,27 +591,77 @@
 					<td><c:out value="${timereport.taskdescription}" /></td>
 
 					<!-- Dauer -->
-					<td align="center" nowrap><c:out
-						value="${timereport.durationhours}" />:<c:out
-						value="${timereport.durationminutes}" /></td>
+					<td align="center" nowrap>
+						<c:if test="${timereport.durationhours < 10}">0</c:if><c:out 
+							value="${timereport.durationhours}" />:<c:if 
+							test="${timereport.durationminutes < 10}">0</c:if><c:out
+							value="${timereport.durationminutes}" />
+					</td>
 
 					<!-- Kosten -->
 					<td align="center"><c:out value="${timereport.costs}" /></td>
 
-					<!-- Speichern -->
+					<!-- 
 					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
 						alt="Save Timereport" /></td>
 
-					<!-- Aendern -->
+					
 					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
 						alt="Edit Timereport" /></td>
 
-					<!-- Loeschen -->
+					
 					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
 						alt="Delete Timereport" /></td>
+					-->
+						
+					<!-- Bearbeiten -->
+					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
+						alt="Delete Timereport" /></td>	
 
 				</c:otherwise>
 			</c:choose>
+			<!-- Info -->
+			<td align="center"><a class="info" href="#"><img width="12px" height="12px" src="/tb/images/info_button.gif"
+						alt="Info" /> <span><table>
+										<tr>
+											<td class="noBborderStyle">Status:</td>
+											<td class="noBborderStyle">
+												<c:out value="${timereport.status}" /></td>
+										</tr>
+										<tr>
+											<td class="noBborderStyle" valign="top">Erstellt:</td>
+											<td class="noBborderStyle">
+												<c:out value="${timereport.created}" /></td>
+											<td class="noBborderStyle" valign="top">von</td>
+											<td class="noBborderStyle" valign="top">
+												<c:out value="${timereport.createdby}" /></td>
+										</tr>
+										<tr>
+											<td class="noBborderStyle" valign="top">Editiert:</td>
+											<td class="noBborderStyle">
+												<c:out value="${timereport.lastupdate}" /></td>
+											<td class="noBborderStyle" valign="top">von</td>
+											<td class="noBborderStyle" valign="top">
+												<c:out value="${timereport.lastupdatedby}" /></td>
+										</tr>
+										<tr>
+											<td class="noBborderStyle" valign="top">Freigegeben:</td>
+											<td class="noBborderStyle">
+												<c:out value="${timereport.released}" /></td>
+											<td class="noBborderStyle" valign="top">von</td>
+											<td class="noBborderStyle" valign="top">
+												<c:out value="${timereport.releasedby}" /></td>
+										</tr>
+										<tr>
+											<td class="noBborderStyle" valign="top">Abgenommen:</td>
+											<td class="noBborderStyle">
+												<c:out value="${timereport.accepted}" /></td>
+											<td class="noBborderStyle" valign="top">von</td>
+											<td class="noBborderStyle" valign="top">
+												<c:out value="${timereport.acceptedby}" /></td>
+										</tr>
+									  </table></span></a></td>	
+			
 			</tr>
 
 		</html:form>
@@ -590,7 +683,7 @@
 		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
 	</tr>
 
-	<!-- Add ist derzeit auch nur für sich selbst freigegeben - Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
+	<!-- Add Report: Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
 		<c:if test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
 			<html:form action="/CreateDailyReport">

@@ -17,13 +17,10 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Overtime;
 import org.tb.bdom.Vacation;
-import org.tb.helper.EmployeeHelper;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
@@ -41,7 +38,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	
 	private EmployeeDAO employeeDAO;
 	private EmployeecontractDAO employeecontractDAO;
-	private MonthlyreportDAO monthlyreportDAO;
 	private VacationDAO vacationDAO;
 	private OvertimeDAO overtimeDAO;
 	
@@ -57,10 +53,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 		this.employeeDAO = employeeDAO;
 	}
 	
-	public void setMonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
-		this.monthlyreportDAO = monthlyreportDAO;
-	}
-
 	public void setVacationDAO(VacationDAO vacationDAO) {
 		this.vacationDAO = vacationDAO;
 	}
@@ -163,9 +155,11 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				} else {
 					ec = employeecontractDAO.getEmployeeContractByEmployeeId(ecForm.getEmployee());
 				}
+				boolean newContract = false;
 				if (ec == null) {
-					// new report
+					// new employee contract
 					ec = new Employeecontract();
+					newContract = true;
 				}
 				
 				Employee theEmployee = (Employee) (employeeDAO.getEmployeeById(employeeId));
@@ -220,17 +214,18 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				employeecontractDAO.save(ec, loginEmployee);
 				
-				Overtime overtime = new Overtime();
-				overtime.setComment("initial overtime");
-				overtime.setEmployeecontract(ec);
-				// if no value is selected, set 0.0
-				if (ecForm.getInitialOvertime() == null) {
-					ecForm.setInitialOvertime("0.0");
-				}
-				// the ecForm entry is checked before
-				overtime.setTime(new Double (ecForm.getInitialOvertime()));
-				
-				overtimeDAO.save(overtime, loginEmployee);
+				if (newContract) {
+					Overtime overtime = new Overtime();
+					overtime.setComment("initial overtime");
+					overtime.setEmployeecontract(ec);
+					// if no value is selected, set 0.0
+					if (ecForm.getInitialOvertime() == null) {
+						ecForm.setInitialOvertime("0.0");
+					}
+					// the ecForm entry is checked before
+					overtime.setTime(new Double(ecForm.getInitialOvertime()));
+					overtimeDAO.save(overtime, loginEmployee);
+				}		
 				
 				request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(ecForm.getEmployee()).getName());
 				request.getSession().setAttribute("currentEmployeeId", ecForm.getEmployee());
@@ -329,7 +324,13 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 						0.0, GlobalConstants.MAX_DEBITHOURS))) {
 			errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat"));
 		}
-		if ((ecForm.getDailyworkingtime() * 100)%5 != 0.0) {
+		Double time = ecForm.getDailyworkingtime() * 100000;
+		time += 0.0000005;
+		int time2 = time.intValue();
+		int modulo = time2%5000;
+		ecForm.setDailyworkingtime(time2/100000.0);
+		
+		if (modulo != 0) {
 			errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat2"));
 		}
 		
