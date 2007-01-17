@@ -18,8 +18,10 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 
+import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.DailyReportAction;
 
@@ -133,6 +135,7 @@ public class MatrixHelper {
                     if (tempBookingDay.getDate().equals(gc.getTime())) {
                         if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
                             tempBookingDay.setSatSun(true);
+                            
                         }else{
                             dayHoursTarget++;
                         }
@@ -154,11 +157,17 @@ public class MatrixHelper {
             gc.add(Calendar.DAY_OF_MONTH, 1);
         }
         Collections.sort(mergedReportList);
-        double dayHoursSum = 0;
+        Double dayHoursSum = 0.0;
         for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
             tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
             dayHoursSum += tempDayAndWorkingHourCount.workingHour;
         }
+
+        dayHoursSum=(dayHoursSum+0.05)*10;
+        int temp = dayHoursSum.intValue();
+        dayHoursSum = temp/10.0;
+        
+        
         int bla = mergedReportList.size();
         dayHoursTarget=(dayHoursTarget/bla*8.0);
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget);

@@ -251,7 +251,7 @@
 			<tr>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.name.text" />:--> <c:out
-					value="${loginEmployee.name}" /></th>
+					value="${currentEmployee}" /></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.month.text" />:--> <c:out
 					value="${currentMonth}" /></th>
@@ -330,13 +330,13 @@
 			key="main.matrixoverview.table.overall.text" /></td>
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
-			<td class="matrix"><c:if
+			<td class="matrix bold"><c:if
 				test="${!(dayhourcount.workingHour eq '0.0')}">
 				<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
 			</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 
 		</c:forEach>
-		<td align="right"><c:out value="${dayhourssum}"></c:out></td>
+		<td class="matrix bold" align="right"><c:out value="${dayhourssum}"></c:out></td>
 	</tr>
 
 	<tr class="matrix">
