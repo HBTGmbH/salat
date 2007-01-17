@@ -174,8 +174,12 @@ public class MatrixHelper {
         int dayHoursTargetTemp = dayHoursTarget.intValue();
         dayHoursTarget = dayHoursTargetTemp / 10.0;
 
-        Double dayHoursDiff = dayHoursTarget - dayHoursSum;
-        dayHoursDiff = (dayHoursDiff + 0.05) * 10;
+        Double dayHoursDiff = dayHoursSum - dayHoursTarget;
+        if (dayHoursDiff < 0) {
+        	dayHoursDiff = (dayHoursDiff - 0.05) * 10;
+        } else {
+        	dayHoursDiff = (dayHoursDiff + 0.05) * 10;
+        }
         int dayHoursDiffTemp = dayHoursDiff.intValue();
         dayHoursDiff = dayHoursDiffTemp / 10.0;
 

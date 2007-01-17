@@ -912,7 +912,7 @@ public class TimereportHelper {
 		}
 		long expectedWorkingTimeInMinutes = (long)dailyWorkingTime * diffDays;
 		long actualWorkingTimeInMinutes = 0;
-		List<Timereport> reports = timereportDAO.getTimereportsByEmployeeContractId(employeecontract.getId());
+		List<Timereport> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), new java.sql.Date(start.getTime()), new java.sql.Date(end.getTime()));
 		if (reports != null) {
 			for (Timereport timereport : reports) {
 				actualWorkingTimeInMinutes += (timereport.getDurationhours()*60) + timereport.getDurationminutes();

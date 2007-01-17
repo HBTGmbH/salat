@@ -305,11 +305,11 @@
 			<!--<td><c:out value="${mergedreport.sign}"></c:out></td>-->
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
-					<td class="matrix"
+					<td class="matrix" align="right"
 						style="font-size: 7pt;border:1px black solid;background-color:lightgrey;">
 				</c:if>
 				<c:if test="${bookingday.satSun==false}">
-					<td class="matrix" style="font-size: 7pt;border:1px black solid;">
+					<td class="matrix" align="right" style="font-size: 7pt;border:1px black solid;">
 				</c:if>
 				<c:if
 					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
@@ -330,7 +330,8 @@
 			key="main.matrixoverview.table.overall.text" /></td>
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
-			<td class="matrix" style="font-size: 7pt;border-top:2px black solid;"><c:if
+			<td class="matrix" style="font-size: 7pt;border-top:2px black solid;" align="right"><c:if
+
 				test="${!(dayhourcount.workingHour eq '0.0')}">
 				<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
 			</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>

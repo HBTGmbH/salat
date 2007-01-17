@@ -86,7 +86,14 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 										GlobalConstants.MIN_OVERTIME, GlobalConstants.MAX_OVERTIME))) {
 							errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
 						}
-						if ((overtimeDouble * 100)%5 != 0.0) {
+						
+						Double time = overtimeDouble * 100000;
+						time += 0.5;
+						int time2 = time.intValue();
+						int modulo = time2%5000;
+						ecForm.setNewOvertime(""+(time2/100000.0));
+												
+						if (modulo != 0) {
 							errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
 						}
 					} catch (NumberFormatException e) {
@@ -348,7 +355,15 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 								GlobalConstants.MIN_OVERTIME, GlobalConstants.MAX_OVERTIME))) {
 					errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
 				}
-				if ((initialOvertimeDouble * 100)%5 != 0.0) {
+				
+				time = initialOvertimeDouble * 100000;
+				time += 0.5;
+				time2 = time.intValue();
+				modulo = time2%5000;
+				ecForm.setInitialOvertime(""+(time2/100000.0));
+				
+				
+				if (modulo != 0) {
 					errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
 				}
 			} catch (NumberFormatException e) {
