@@ -124,7 +124,7 @@ public class MatrixHelper {
         }
         day = 0;
         gc.setTime(dateFirst);
-        Double dayHoursTarget=0.0;
+        Double dayHoursTarget = 0.0;
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
 
@@ -135,8 +135,8 @@ public class MatrixHelper {
                     if (tempBookingDay.getDate().equals(gc.getTime())) {
                         if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
                             tempBookingDay.setSatSun(true);
-                            
-                        }else{
+
+                        } else {
                             dayHoursTarget++;
                         }
                         if (!dayHoursCount.isEmpty()) {
@@ -163,21 +163,22 @@ public class MatrixHelper {
             dayHoursSum += tempDayAndWorkingHourCount.workingHour;
         }
 
-        dayHoursSum=(dayHoursSum+0.05)*10;
-        int temp = dayHoursSum.intValue();
-        dayHoursSum = temp/10.0;
-        
-        dayHoursTarget=(dayHoursTarget+0.05)*10;
-        int temp2 = dayHoursTarget.intValue();
-        dayHoursTarget = temp2/10.0;
-        
-        Double dayHoursDiff = dayHoursTarget-dayHoursSum;
-        dayHoursDiff=(dayHoursDiff+0.05)*10;
-        int temp3 = dayHoursDiff.intValue();
-        dayHoursDiff = temp3/10.0;
-        
-        int bla = mergedReportList.size();
-        dayHoursTarget=(dayHoursTarget/bla*8.0);
+        dayHoursSum = (dayHoursSum + 0.05) * 10;
+        int dayHoursSumTemp = dayHoursSum.intValue();
+        dayHoursSum = dayHoursSumTemp / 10.0;
+
+        int mergedReportListSize = mergedReportList.size();
+        dayHoursTarget = (dayHoursTarget / mergedReportListSize * 8.0);
+
+        dayHoursTarget = (dayHoursTarget + 0.05) * 10;
+        int dayHoursTargetTemp = dayHoursTarget.intValue();
+        dayHoursTarget = dayHoursTargetTemp / 10.0;
+
+        Double dayHoursDiff = dayHoursTarget - dayHoursSum;
+        dayHoursDiff = (dayHoursDiff + 0.05) * 10;
+        int dayHoursDiffTemp = dayHoursDiff.intValue();
+        dayHoursDiff = dayHoursDiffTemp / 10.0;
+
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
 

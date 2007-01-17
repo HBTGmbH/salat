@@ -326,17 +326,17 @@
 		</tr>
 	</c:forEach>
 	<tr class="matrix">
-		<td colspan="2" class="matrix bold" align="right"><bean:message
+		<td colspan="2" class="matrix bold" style="border-top:2px black solid;" align="right"><bean:message
 			key="main.matrixoverview.table.overall.text" /></td>
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
-			<td class="matrix bold"><c:if
+			<td class="matrix" style="font-size: 7pt;border-top:2px black solid;"><c:if
 				test="${!(dayhourcount.workingHour eq '0.0')}">
 				<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
 			</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 
 		</c:forEach>
-		<td class="matrix bold" align="right"><c:out value="${dayhourssum}"></c:out></td>
+		<td class="matrix bold" style="border-top:2px black solid;" align="right"><c:out value="${dayhourssum}"></c:out></td>
 	</tr>
 
 	<tr class="matrix">
