@@ -1,4 +1,3 @@
-<%@ page import="org.tb.bdom.Employee"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 
@@ -255,7 +254,7 @@
 					value="${loginEmployee.name}" /></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.month.text" />:--> <c:out
-					value="${currentDay}" /></th>
+					value="${currentMonth}" /></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.year.text" />:--> <c:out
 					value="${currentYear}" /></th>
@@ -278,7 +277,7 @@
 		<!-- <td>AuftragsBezeichnung</td> -->
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
-			<td class="matrix bold"><c:out value="${dayhourcount.day}"></c:out></td>
+			<td align="center" class="matrix bold">&nbsp;<c:out value="${dayhourcount.dayString}"/>&nbsp;</td>
 
 		</c:forEach>
 

@@ -48,6 +48,15 @@ public class DayAndWorkingHourCount {
         int temp = duration.intValue();
         return temp/10.0;
     }
+    
+    public String getDayString() {
+    	String dayString = "";
+    	if (day < 10) {
+    		dayString+="0";
+       	}
+    	dayString = dayString + day;
+    	return dayString;
+    }
 }
 
 
