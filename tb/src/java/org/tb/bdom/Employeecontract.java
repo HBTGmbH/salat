@@ -201,7 +201,7 @@ public class Employeecontract implements Serializable {
 	}
 	
 	public String getReportAcceptanceDateString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		if (reportAcceptanceDate != null) {
 			return simpleDateFormat.format(reportAcceptanceDate); 
 		} else {
@@ -218,7 +218,7 @@ public class Employeecontract implements Serializable {
 	}
 	
 	public String getReportReleaseDateString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		if (reportReleaseDate != null) {
 			return simpleDateFormat.format(reportReleaseDate);
 		} else {
@@ -301,7 +301,7 @@ public class Employeecontract implements Serializable {
 	}
 	
 	public String getTimeString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		return simpleDateFormat.format(validFrom) + " - " + simpleDateFormat.format(validUntil);
 	}
 

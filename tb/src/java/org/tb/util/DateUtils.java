@@ -230,7 +230,7 @@ public class DateUtils {
 	public static List getYearsToDisplay() {
 		List theList = new ArrayList();
 		
-		for (int i=GlobalConstants.STARTING_YEAR; i <= getCurrentYear(); i++) {
+		for (int i=GlobalConstants.STARTING_YEAR; i <= getCurrentYear()+1; i++) {
 			String yearString = "" + i;
 			theList.add(new OptionItem(yearString, yearString));
 		}

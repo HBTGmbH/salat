@@ -9,7 +9,7 @@ package org.tb;
  */
 public class GlobalConstants {
 
-	public static final int STARTING_YEAR = 2005;
+	public static final int STARTING_YEAR = 2007;
 	
 	public static final double MIN_HOURS_PER_DAY = 0.01;
 	public static final double MAX_HOURS_PER_DAY = 10.0;

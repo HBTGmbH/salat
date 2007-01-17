@@ -325,7 +325,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 			errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat"));
 		}
 		Double time = ecForm.getDailyworkingtime() * 100000;
-		time += 0.0000005;
+		time += 0.5;
 		int time2 = time.intValue();
 		int modulo = time2%5000;
 		ecForm.setDailyworkingtime(time2/100000.0);

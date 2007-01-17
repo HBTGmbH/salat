@@ -622,7 +622,7 @@
 			</c:choose>
 			<!-- Info -->
 			<td align="center"><a class="info" href="#"><img width="12px" height="12px" src="/tb/images/info_button.gif"
-						alt="Info" /> <span><table>
+						alt="derzeit nur mit Firefox" /> <span><table>
 										<tr>
 											<td class="noBborderStyle">Status:</td>
 											<td class="noBborderStyle">
@@ -722,33 +722,11 @@
 
 <logic:notEqual name="currentEmployee" value="ALL EMPLOYEES"
 	scope="session">
-	<table border="0" cellspacing="0" cellpadding="2"
-		class="center backgroundcolor">
-		<tr>
-			<td><b><bean:message
-				key="main.general.hourbalance.text" />: </b></td>
-			<c:choose>
-				<c:when test="${overtimeIsNegative}">
-					<td><b><font color="red"><c:out value="${overtime}" /></font></b></td>
-				</c:when>
-				<c:otherwise>
-					<td><b><c:out value="${overtime}" /></b></td>
-				</c:otherwise>
-			</c:choose>
-		</tr>
-		<tr>
-			<td><b><bean:message
-				key="main.general.vacation.text" />: </b></td>
-			<c:choose>
-				<c:when test="${vacationextended}">
-					<td><b><font color="red"><c:out value="${vacationdaysused}" />:<c:out value="${vacationhoursused}" />:<c:out value="${vacationminutesused}" /> / <c:out value="${vacationtotal}" /></font></b></td>
-				</c:when>
-				<c:otherwise>
-					<td><b><c:out value="${vacationdaysused}" />:<c:out value="${vacationhoursused}" />:<c:out value="${vacationminutesused}" /> / <c:out value="${vacationtotal}" />:0:0</b></td>
-				</c:otherwise>
-			</c:choose>		
-		</tr>
-	</table>
+
+	<jsp:include flush="true" page="/info.jsp">
+		<jsp:param name="info" value="Info" />
+	</jsp:include>
+	
 </logic:notEqual>
 
 </body>

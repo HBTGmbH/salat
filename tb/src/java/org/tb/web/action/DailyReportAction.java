@@ -1,6 +1,7 @@
 package org.tb.web.action;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -10,6 +11,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMapping;
+import org.hibernate.cfg.annotations.SetBinder;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -18,6 +20,7 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.helper.VacationViewer;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
@@ -96,47 +99,120 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		overtimeString += overtimeMinutes;
 		request.getSession().setAttribute("overtime", overtimeString);
 		
+		try {
+			//overtime this month
+			Date currentDate = new Date();
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("ddMMyyyy");
+			String dateString = simpleDateFormat.format(currentDate);
+			String monthYearString = dateString.substring(2);
+			Date start = simpleDateFormat.parse("01" + monthYearString);
+			int[] monthlyOvertime = th.calculateOvertime(start, currentDate,
+					employeecontract, employeeorderDAO, publicholidayDAO,
+					timereportDAO, overtimeDAO, false);
+			int monthlyOvertimeHours = monthlyOvertime[0];
+			int monthlyOvertimeMinutes = monthlyOvertime[1];
+			boolean monthlyOvertimeIsNegative = false;
+			if (monthlyOvertimeMinutes < 0) {
+				monthlyOvertimeIsNegative = true;
+				monthlyOvertimeMinutes *= -1;
+			}
+			if (monthlyOvertimeHours < 0) {
+				monthlyOvertimeIsNegative = true;
+				monthlyOvertimeHours *= -1;
+			}
+			request.getSession().setAttribute("monthlyOvertimeIsNegative",
+					monthlyOvertimeIsNegative);
+			String monthlyOvertimeString;
+			if (monthlyOvertimeIsNegative) {
+				monthlyOvertimeString = "-" + monthlyOvertimeHours + ":";
+			} else {
+				monthlyOvertimeString = monthlyOvertimeHours + ":";
+			}
+			if (monthlyOvertimeMinutes < 10) {
+				monthlyOvertimeString += "0";
+			}
+			monthlyOvertimeString += monthlyOvertimeMinutes;
+			request.getSession().setAttribute("monthlyOvertime",
+					monthlyOvertimeString);
+			
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
+			request.getSession().setAttribute("overtimeMonth",
+					format.format(start));
+		} catch (ParseException e) {
+			throw new RuntimeException("Error occured while parsing date");
+		}	
+		
+		
+		
 		//vacation
-		Date now = new Date();
-
-		java.sql.Date sqlNowDate = new java.sql.Date(now.getTime());
+//		Date now = new Date();
+//
+//		java.sql.Date sqlNowDate = new java.sql.Date(now.getTime());
+//		
+//		List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, sqlNowDate);
+//		List<Timereport> vacationReports = new ArrayList<Timereport>();
+//		
+//		for (Employeeorder employeeorder : employeeOrders) {
+//			Suborder suborder = employeeorder.getSuborder();
+//			vacationReports.addAll(timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(suborder.getId(), employeecontract.getId()));
+//		}
+//		
+//		int[] vacationTime = th.calculateLaborTimeAsArray(vacationReports);
+//		int totalVacation = employeecontract.getVacationEntitlement();
+//		double dailyWorkingTime = employeecontract.getDailyWorkingTime();
+//		int dailyWorkingTimeMinutes = new Double(dailyWorkingTime*60).intValue();
+//		int vacationMinutes = vacationTime[0]*60 + vacationTime[1];
+//		
+//		if (vacationMinutes > dailyWorkingTimeMinutes*totalVacation) {
+//			request.getSession().setAttribute("vacationextended", true);
+//		} else {
+//			request.getSession().setAttribute("vacationextended", false);
+//		}
+//		
+//		int usedVacationDays = 0;
+//		int usedVacationHours = 0;
+//		int usedVacationMinutes = 0;
+//		
+//		if (dailyWorkingTime != 0) {
+//			usedVacationDays = vacationMinutes/dailyWorkingTimeMinutes;
+//			vacationMinutes -= dailyWorkingTimeMinutes * usedVacationDays;
+//			usedVacationHours = vacationMinutes/60;
+//			usedVacationMinutes = vacationMinutes%60;
+//		} 
+//		
+//		request.getSession().setAttribute("vacationtotal", totalVacation);
+//		request.getSession().setAttribute("vacationdaysused", usedVacationDays);
+//		request.getSession().setAttribute("vacationhoursused", usedVacationHours);
+//		request.getSession().setAttribute("vacationminutesused", usedVacationMinutes);
 		
-		List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, sqlNowDate);
-		List<Timereport> vacationReports = new ArrayList<Timereport>();
 		
-		for (Employeeorder employeeorder : employeeOrders) {
-			Suborder suborder = employeeorder.getSuborder();
-			vacationReports.addAll(timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(suborder.getId(), employeecontract.getId()));
+		// vacation v2
+		java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
+		
+		List<Employeeorder> orders = new ArrayList<Employeeorder>();
+		
+		List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), "RESTURLAUB", today);
+		List<Employeeorder> vacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, today);
+		
+		orders.addAll(specialVacationOrders);
+		orders.addAll(vacationOrders);
+		
+		List<VacationViewer> vacations = new ArrayList<VacationViewer>();
+		
+		for (Employeeorder employeeorder : orders) {
+			VacationViewer vacationView = new VacationViewer(employeecontract);
+			vacationView.setSuborderSign(employeeorder.getSuborder().getDescription());
+			vacationView.setBudget(employeeorder.getDebithours());
+			
+			List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(employeeorder.getSuborder().getId(), employeecontract.getId());
+			for (Timereport timereport : timereports) {
+				vacationView.addVacationHours(timereport.getDurationhours());
+				vacationView.addVacationMinutes(timereport.getDurationminutes());
+			}
+			vacations.add(vacationView);
 		}
+		request.getSession().setAttribute("vacations", vacations);
 		
-		int[] vacationTime = th.calculateLaborTimeAsArray(vacationReports);
-		int totalVacation = employeecontract.getVacationEntitlement();
-		double dailyWorkingTime = employeecontract.getDailyWorkingTime();
-		int dailyWorkingTimeMinutes = new Double(dailyWorkingTime*60).intValue();
-		int vacationMinutes = vacationTime[0]*60 + vacationTime[1];
-		
-		if (vacationMinutes > dailyWorkingTimeMinutes*totalVacation) {
-			request.getSession().setAttribute("vacationextended", true);
-		} else {
-			request.getSession().setAttribute("vacationextended", false);
-		}
-		
-		int usedVacationDays = 0;
-		int usedVacationHours = 0;
-		int usedVacationMinutes = 0;
-		
-		if (dailyWorkingTime != 0) {
-			usedVacationDays = vacationMinutes/dailyWorkingTimeMinutes;
-			vacationMinutes -= dailyWorkingTimeMinutes * usedVacationDays;
-			usedVacationHours = vacationMinutes/60;
-			usedVacationMinutes = vacationMinutes%60;
-		} 
-		
-		request.getSession().setAttribute("vacationtotal", totalVacation);
-		request.getSession().setAttribute("vacationdaysused", usedVacationDays);
-		request.getSession().setAttribute("vacationhoursused", usedVacationHours);
-		request.getSession().setAttribute("vacationminutesused", usedVacationMinutes);
-
 	}
 	
 	

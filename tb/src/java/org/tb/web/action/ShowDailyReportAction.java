@@ -3,8 +3,6 @@ package org.tb.web.action;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -247,10 +245,10 @@ public class ShowDailyReportAction extends DailyReportAction {
 			}
 			
 			// set view
-			String view = (String) request.getSession().getAttribute("view");
-			if (view == null || view == "") {
+//			String view = (String) request.getSession().getAttribute("view");
+//			if (view == null || view == "") {
 				request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
-			}
+//			}
 			
 			request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
 			request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());

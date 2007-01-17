@@ -1,6 +1,8 @@
 package org.tb.web.action;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -18,11 +20,16 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
+import org.tb.helper.TimereportHelper;
+import org.tb.helper.VacationViewer;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.form.LoginEmployeeForm;
 
 /**
@@ -38,6 +45,17 @@ public class LoginEmployeeAction extends Action {
 	private EmployeecontractDAO employeecontractDAO;
 	private SuborderDAO suborderDAO;
 	private EmployeeorderDAO employeeorderDAO;
+	private OvertimeDAO overtimeDAO;
+	private TimereportDAO timereportDAO;
+	
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
+	
+	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+		this.overtimeDAO = overtimeDAO;
+	}
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -193,6 +211,117 @@ public class LoginEmployeeAction extends Action {
 			// set used employee contract of login employee
 			request.getSession().setAttribute("loginEmployeeContract", employeecontract);
 			request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
+			
+			
+			
+			// get info about vacation, overtime and report status
+			String releaseDate = employeecontract.getReportAcceptanceDateString();
+			String acceptanceDate = employeecontract.getReportAcceptanceDateString();
+			
+			request.getSession().setAttribute("releasedUntil", releaseDate);
+			request.getSession().setAttribute("acceptedUntil", acceptanceDate);
+			
+			TimereportHelper th = new TimereportHelper();
+			int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+			int overtimeHours = overtime[0];
+			int overtimeMinutes = overtime[1];
+			
+			boolean overtimeIsNegative = false;
+			if (overtimeMinutes < 0) {
+				overtimeIsNegative = true;
+				overtimeMinutes *= -1;
+			}
+			if (overtimeHours < 0){ 
+				overtimeIsNegative = true;
+				overtimeHours *= -1;
+			} 
+			request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
+			
+			String overtimeString;
+			if(overtimeIsNegative) {
+				overtimeString = "-"+overtimeHours+":";
+			} else {
+				overtimeString = overtimeHours+":";
+			}
+			
+			if (overtimeMinutes < 10) {
+				overtimeString += "0";
+			}
+			overtimeString += overtimeMinutes;
+			request.getSession().setAttribute("overtime", overtimeString);
+			
+			try {
+				//overtime this month
+				Date currentDate = new Date();
+				SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyyyy");
+				String dateString2 = dateFormat.format(currentDate);
+				String monthYearString = dateString2.substring(2);
+				Date start = dateFormat.parse("01" + monthYearString);
+				int[] monthlyOvertime = th.calculateOvertime(start, currentDate,
+						employeecontract, employeeorderDAO, publicholidayDAO,
+						timereportDAO, overtimeDAO, false);
+				int monthlyOvertimeHours = monthlyOvertime[0];
+				int monthlyOvertimeMinutes = monthlyOvertime[1];
+				boolean monthlyOvertimeIsNegative = false;
+				if (monthlyOvertimeMinutes < 0) {
+					monthlyOvertimeIsNegative = true;
+					monthlyOvertimeMinutes *= -1;
+				}
+				if (monthlyOvertimeHours < 0) {
+					monthlyOvertimeIsNegative = true;
+					monthlyOvertimeHours *= -1;
+				}
+				request.getSession().setAttribute("monthlyOvertimeIsNegative",
+						monthlyOvertimeIsNegative);
+				String monthlyOvertimeString;
+				if (monthlyOvertimeIsNegative) {
+					monthlyOvertimeString = "-" + monthlyOvertimeHours + ":";
+				} else {
+					monthlyOvertimeString = monthlyOvertimeHours + ":";
+				}
+				if (monthlyOvertimeMinutes < 10) {
+					monthlyOvertimeString += "0";
+				}
+				monthlyOvertimeString += monthlyOvertimeMinutes;
+				request.getSession().setAttribute("monthlyOvertime",
+						monthlyOvertimeString);
+				
+				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
+				request.getSession().setAttribute("overtimeMonth",
+						format.format(start));
+			} catch (ParseException e) {
+				throw new RuntimeException("Error occured while parsing date");
+			}
+			
+			
+//			 vacation v2
+			java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
+			
+			List<Employeeorder> orders = new ArrayList<Employeeorder>();
+			
+			List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), "RESTURLAUB", today);
+			List<Employeeorder> vacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, today);
+			
+			orders.addAll(specialVacationOrders);
+			orders.addAll(vacationOrders);
+			
+			List<VacationViewer> vacations = new ArrayList<VacationViewer>();
+			
+			for (Employeeorder employeeorder : orders) {
+				VacationViewer vacationView = new VacationViewer(employeecontract);
+				vacationView.setSuborderSign(employeeorder.getSuborder().getDescription());
+				vacationView.setBudget(employeeorder.getDebithours());
+				
+				List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(employeeorder.getSuborder().getId(), employeecontract.getId());
+				for (Timereport timereport : timereports) {
+					vacationView.addVacationHours(timereport.getDurationhours());
+					vacationView.addVacationMinutes(timereport.getDurationminutes());
+				}
+				vacations.add(vacationView);
+			}
+			request.getSession().setAttribute("vacations", vacations);
+
+			
 		} else {
 			request.getSession().setAttribute("employeeHasValidContract", false);
 		}

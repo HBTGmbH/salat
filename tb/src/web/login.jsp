@@ -95,7 +95,11 @@ while(names.hasMoreElements()) {
 				<!--  
 				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">
 				-->
-				Version 1.32.6
+				Version 1.34.6
+			</td>
+			<td valign="bottom" align="left" class="noBborderStyle">
+				<tr>
+				<b>ACHTUNG: In dieser Version sind ein paar neue Funktionen eingebaut, die sich noch im Beta-Stadium befinden!</b>
 			</td>
 		</tr>
 		<tr height="10px"/>

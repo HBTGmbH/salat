@@ -748,7 +748,7 @@ public class TimereportHelper {
 	
 		Date contractBegin = employeecontract.getValidFrom();
 		
-		return calculateOvertime(contractBegin, today, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+		return calculateOvertime(contractBegin, today, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
 		
 //		GregorianCalendar calendar = new GregorianCalendar();
 //		
@@ -838,7 +838,7 @@ public class TimereportHelper {
 //		return overtime;
 	}
 	
-	public int[] calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
+	public int[] calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO, boolean useOverTimeAdjustment) {
 		int[] overtime = new int[2];
 		long overtimeHours;
 		long overtimeMinutes;
@@ -919,11 +919,14 @@ public class TimereportHelper {
 			}
 		} 
 		long overtimeAdjustmentMinutes = 0;
-		List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
-		for (Overtime ot : overtimes) {
-			overtimeAdjustmentMinutes += (ot.getTime()*60);
-		}
 		
+		if (useOverTimeAdjustment) {
+			List<Overtime> overtimes = overtimeDAO
+					.getOvertimesByEmployeeContractId(employeecontract.getId());
+			for (Overtime ot : overtimes) {
+				overtimeAdjustmentMinutes += (ot.getTime() * 60);
+			}
+		}		
 		overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
 		overtimeHours = overtimeMinutes/60;
 		overtimeMinutes = overtimeMinutes%60;

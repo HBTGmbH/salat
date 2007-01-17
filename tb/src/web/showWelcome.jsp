@@ -20,6 +20,11 @@
 <br>
 <br>
 <bean:message key="main.general.mainmenu.welcome.text" /></h3>
+<br>
+<br>
+<jsp:include flush="true" page="/info.jsp">
+	<jsp:param name="info" value="Info" />
+</jsp:include>
 </center>
 </body>
 </html>

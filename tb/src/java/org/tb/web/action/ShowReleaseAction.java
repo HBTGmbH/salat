@@ -275,7 +275,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			request.getSession().setAttribute("reopenDays", getDayList(releaseDateFromContract));
 		}
 
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		
 		String releasedUntil = simpleDateFormat.format(releaseDateFromContract);
 		request.getSession().setAttribute("releasedUntil", releasedUntil);
