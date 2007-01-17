@@ -177,6 +177,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                     request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                     request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
+                    request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 } else {
                     // get the timereports for specific date, all employees, specific order
                     ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
@@ -190,6 +191,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                     request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                     request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
+                    request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 }
 
             } else {
@@ -223,6 +225,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                     request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                     request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
+                    request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 } else {
                     // get the timereports for specific date, specific employee, specific order
                     ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
@@ -236,6 +239,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                     request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                     request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
+                    request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 }
             }
 
@@ -355,6 +359,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                 request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                 request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
+                request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
 
@@ -414,6 +419,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                 request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                 request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
+                request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
 

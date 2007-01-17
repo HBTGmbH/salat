@@ -124,7 +124,7 @@ public class MatrixHelper {
         }
         day = 0;
         gc.setTime(dateFirst);
-        double dayHoursTarget=0;
+        Double dayHoursTarget=0.0;
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
 
@@ -167,10 +167,18 @@ public class MatrixHelper {
         int temp = dayHoursSum.intValue();
         dayHoursSum = temp/10.0;
         
+        dayHoursTarget=(dayHoursTarget+0.05)*10;
+        int temp2 = dayHoursTarget.intValue();
+        dayHoursTarget = temp2/10.0;
+        
+        Double dayHoursDiff = dayHoursTarget-dayHoursSum;
+        dayHoursDiff=(dayHoursDiff+0.05)*10;
+        int temp3 = dayHoursDiff.intValue();
+        dayHoursDiff = temp3/10.0;
         
         int bla = mergedReportList.size();
         dayHoursTarget=(dayHoursTarget/bla*8.0);
-        return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget);
+        return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
 
     public List<List> getMonths(Date dateFirst, Date dateLast) {

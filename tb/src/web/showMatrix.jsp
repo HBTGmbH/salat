@@ -365,7 +365,7 @@
 					key="main.matrixoverview.headline.difference.text" /></td>
 				<td class="matrix underline" style="border-style:none;"><c:if
 					test="${!(dayhourssum eq '0.0')}">
-					<c:out value="${dayhourssum-dayhourstarget}"></c:out>
+					<c:out value="${dayhoursdiff}"></c:out>
 				</c:if><c:if test="${(dayhourssum eq '0.0')}">0.0</c:if></td>
 			</tr>
 		</table>

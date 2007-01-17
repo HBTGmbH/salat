@@ -25,19 +25,27 @@ public class ReportWrapper {
      * @author cb
      * @since 02.01.2007
      */
-    public ReportWrapper(List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, double dayHoursSum, double dayHoursTarget) {
+    public ReportWrapper(List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, double dayHoursSum, double dayHoursTarget, double dayHoursDiff) {
         super();
         this.mergedReportList = mergedReportList;
         this.dayAndWorkingHourCountList = dayAndWorkingHourCountList;
         this.dayHoursSum = dayHoursSum;
         this.dayHoursTarget = dayHoursTarget;
+        this.dayHoursDiff = dayHoursDiff;
     }
     
     List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
     List<DayAndWorkingHourCount> dayAndWorkingHourCountList = new ArrayList<DayAndWorkingHourCount>();
     double dayHoursSum;
     double dayHoursTarget;
+    double dayHoursDiff;
     
+    public double getDayHoursDiff() {
+        return dayHoursDiff;
+    }
+    public void setDayHoursDiff(double dayHoursDiff) {
+        this.dayHoursDiff = dayHoursDiff;
+    }
     public double getDayHoursTarget() {
         return dayHoursTarget;
     }
