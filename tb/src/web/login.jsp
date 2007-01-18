@@ -24,6 +24,9 @@ while(names.hasMoreElements()) {
 	href="/tb/tb.css" />
 </head>
 <body>
+<jsp:include flush="true" page="/version.jsp">
+	<jsp:param name="version" value="Version" />
+</jsp:include>
 <b>
 <span style="color:red">
 <html:errors />
@@ -89,20 +92,6 @@ while(names.hasMoreElements()) {
 				<bean:message key="main.general.loginscreen.de.2"/>
 			</td>
 		</tr>
-		<tr height="30px"></tr>
-		<tr>
-			<td valign="bottom" align="left" class="noBborderStyle">
-				<!--  
-				<img src="/tb/images/Button/Sanduhr_1.gif" border="0">
-				-->
-				Version 1.35.6
-			</td>
-			<td valign="bottom" align="left" class="noBborderStyle">
-				<tr>
-				<b>ACHTUNG: In dieser Version sind ein paar neue Funktionen eingebaut, die sich noch im Beta-Stadium befinden!</b>
-			</td>
-		</tr>
-		<tr height="10px"/>
 		<tr><td colspan="2" class="noBborderStyle"><font color="red"> </font>
 		</td></tr> 
 	</table>

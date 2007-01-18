@@ -24,6 +24,9 @@ window.onload=startList;
 //--><!]]></script>
 
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<jsp:include flush="true" page="/version.jsp">
+	<jsp:param name="version" value="Version" />
+</jsp:include>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 <center>
 <h1><bean:message key="main.general.mainmenu.menu.text" /></h1>

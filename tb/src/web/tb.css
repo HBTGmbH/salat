@@ -20,6 +20,32 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	border-spacing: 0px;
 }
 
+.info {
+	border: 0px;
+	border-collapse: collapse;
+	border-spacing: 0px;
+	font-size: 7pt;
+}
+
+
+
+.tooltip {
+	position:absolute;
+	left:3em;
+	background-color:#f1f7ff;
+	border:1px solid #94b0d0;
+	width:350px; padding:6px;
+	z-index: 4;
+	display: none;
+}
+
+.version {
+	position:absolute;
+	right:12px;
+	top:1px;
+	font-size:7pt;
+}
+
 table {
 	border-collapse: separate;
 	border-spacing: 2px;

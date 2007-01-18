@@ -11,27 +11,6 @@
 
 <html:html>
 <head>
-
-<style type="text/css">
-.info{
-    position:relative; /*this is the key*/
-    z-index:24; background-color:#fff;
-    color:#000;
-    text-decoration:none}
-
-.info:hover{z-index:25; background-color:#ff0}
-
-.info span{display: none}
-
-.info:hover span{ /*the span will display just on :hover state*/
-    display:table;
-    position:absolute;
-    top:2em; left:-20em; width:20em;
-    border:1px solid #0cf;
-    background-color:#cff; color:#000;
-    text-align: left}
-</style>
-
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
@@ -114,7 +93,20 @@
 		form.submit();
 	}	
 	
+	function showWMTT(Trigger,id) {
+  	  wmtt = document.getElementById(id);
+    	var hint;
+   	 hint = Trigger.getAttribute("hint");
+   	 //if((hint != null) && (hint != "")){
+   	 	//wmtt.innerHTML = hint;
+    	wmtt.style.display = "block";
+   	 //}
+	}
 
+	function hideWMTT() {
+		wmtt.style.display = "none";
+	}
+	
 </script>
 
 </head>
@@ -396,10 +388,10 @@
 
 </html:form>
 <br>
-<table class="center backgroundcolor">
+<table class="center backgroundcolor" width="100%">
 
 	<tr>
-		<td colspan="4" class="noBborderStyle">&nbsp;</td>
+		<td colspan="5" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
@@ -416,10 +408,11 @@
 	</tr>
 
 	<tr>
+		<th align="left" ><b>Info</b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message
-			key="main.timereport.monthly.employee.text" /></b></th>
+			key="main.timereport.monthly.employee.sign.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
@@ -437,7 +430,7 @@
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.suborder.text" />"><b><bean:message
-			key="main.timereport.monthly.suborder.text" /></b></th>
+			key="main.timereport.monthly.suborder.short.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.taskdescription.text" />"
@@ -471,7 +464,6 @@
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.dailyoverview.saveeditdelete.text" />"><b><bean:message
 			key="main.timereport.monthly.saveeditdelete.text" /></b></th>
-		<th align="left" ><b>Info</b></th>
 	</tr>
 
 	<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
@@ -485,7 +477,83 @@
 					<tr class="secondarycolor">
 				</c:otherwise>
 			</c:choose>
-			<td><c:out value="${timereport.employeecontract.employee.name}" /></td>
+			
+			<!-- Info -->
+			<td align="center">				
+				<div class="tooltip" id="info<c:out value='${timereport.id}' />">
+				<table>
+					<tr>
+						<td class="info">Mitarbeiter:</td>
+						<td class="info" colspan="3">
+							<c:out value="${timereport.employeecontract.employee.name}" /></td>
+					</tr>
+					<tr>
+						<td class="info">Auftrag:</td>
+						<td class="info" colspan="3">
+							<c:out value="${timereport.suborder.customerorder.sign}" /></td>
+					</tr>
+					<tr>
+						<td class="info">&nbsp;</td>
+						<td class="info" colspan="3">
+							<c:out value="${timereport.suborder.customerorder.description}" /></td>
+					</tr>
+					<tr>
+						<td class="info">Unterauftrag:</td>
+						<td class="info" colspan="3">
+							<c:out value="${timereport.suborder.sign}" /></td>
+					</tr>
+					<tr>
+						<td class="info">&nbsp;</td>
+						<td class="info" colspan="3">
+							<c:out value="${timereport.suborder.description}" /></td>
+					</tr>
+					<tr>
+						<td class="info">Status:</td>
+						<td class="info">
+							<c:out value="${timereport.status}" /></td>
+					</tr>
+					<tr>
+						<td class="info" valign="top">Erstellt:</td>
+						<td class="info">
+							<c:out value="${timereport.created}" /></td>
+						<td class="info" valign="top">von</td>
+						<td class="info" valign="top">
+							<c:out value="${timereport.createdby}" /></td>
+					</tr>
+					<tr>
+						<td class="info" valign="top">Editiert:</td>
+						<td class="info">
+							<c:out value="${timereport.lastupdate}" /></td>
+						<td class="info" valign="top">von</td>
+						<td class="info" valign="top">
+							<c:out value="${timereport.lastupdatedby}" /></td>
+					</tr>
+					<tr>
+						<td class="info" valign="top">Freigegeben:</td>
+						<td class="info">
+							<c:out value="${timereport.released}" /></td>
+						<td class="info" valign="top">von</td>
+						<td class="info" valign="top">
+							<c:out value="${timereport.releasedby}" /></td>
+					</tr>
+					<tr>
+						<td class="info" valign="top">Abgenommen:</td>
+						<td class="info">
+							<c:out value="${timereport.accepted}" /></td>
+						<td class="info" valign="top">von</td>
+						<td class="info" valign="top">
+							<c:out value="${timereport.acceptedby}" /></td>
+					</tr>
+				</table>
+				
+				</div>
+				<img onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')" 
+					onMouseOut="hideWMTT()" width="12px" height="12px" 
+					src="/tb/images/info_button.gif" /> 				
+			</td>		
+			
+			<!-- Mitarbeiter -->
+			<td><c:out value="${timereport.employeecontract.employee.sign}" /></td>
 			
 			<!-- Datum -->
 			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal
@@ -531,7 +599,7 @@
 					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf') && (timereport.status eq 'commited')) || loginEmplyee.status eq 'adm'}">
 
 					<!-- Kommentar -->
-					<td><html:textarea property="comment" cols="24" rows="1"
+					<td><html:textarea property="comment" cols="30" rows="1" 
 						value="${timereport.taskdescription}" /> <!--  
 	     		 				<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
 	     		 				--></td>
@@ -549,7 +617,7 @@
 					</html:select></td>
 
 					<!-- Kosten -->
-					<td><html:text property="costs" size="8"
+					<td><html:text property="costs" size="4"
 						value="${timereport.costs}" /></td>
 
 					<!--  
@@ -588,7 +656,16 @@
 				<c:otherwise>
 
 					<!-- Kommentar -->
-					<td><c:out value="${timereport.taskdescription}" /></td>
+					<td>
+						<c:choose>
+							<c:when test="${timereport.taskdescription eq ''}">
+								&nbsp;
+							</c:when>
+							<c:otherwise>
+								<c:out value="${timereport.taskdescription}" />
+							</c:otherwise>
+						</c:choose>
+					</td>
 
 					<!-- Dauer -->
 					<td align="center" nowrap>
@@ -619,55 +696,13 @@
 						alt="Delete Timereport" /></td>	
 
 				</c:otherwise>
-			</c:choose>
-			<!-- Info -->
-			<td align="center"><a class="info" href="#"><img width="12px" height="12px" src="/tb/images/info_button.gif"
-						alt="derzeit nur mit Firefox" /> <span><table>
-										<tr>
-											<td class="noBborderStyle">Status:</td>
-											<td class="noBborderStyle">
-												<c:out value="${timereport.status}" /></td>
-										</tr>
-										<tr>
-											<td class="noBborderStyle" valign="top">Erstellt:</td>
-											<td class="noBborderStyle">
-												<c:out value="${timereport.created}" /></td>
-											<td class="noBborderStyle" valign="top">von</td>
-											<td class="noBborderStyle" valign="top">
-												<c:out value="${timereport.createdby}" /></td>
-										</tr>
-										<tr>
-											<td class="noBborderStyle" valign="top">Editiert:</td>
-											<td class="noBborderStyle">
-												<c:out value="${timereport.lastupdate}" /></td>
-											<td class="noBborderStyle" valign="top">von</td>
-											<td class="noBborderStyle" valign="top">
-												<c:out value="${timereport.lastupdatedby}" /></td>
-										</tr>
-										<tr>
-											<td class="noBborderStyle" valign="top">Freigegeben:</td>
-											<td class="noBborderStyle">
-												<c:out value="${timereport.released}" /></td>
-											<td class="noBborderStyle" valign="top">von</td>
-											<td class="noBborderStyle" valign="top">
-												<c:out value="${timereport.releasedby}" /></td>
-										</tr>
-										<tr>
-											<td class="noBborderStyle" valign="top">Abgenommen:</td>
-											<td class="noBborderStyle">
-												<c:out value="${timereport.accepted}" /></td>
-											<td class="noBborderStyle" valign="top">von</td>
-											<td class="noBborderStyle" valign="top">
-												<c:out value="${timereport.acceptedby}" /></td>
-										</tr>
-									  </table></span></a></td>	
-			
-			</tr>
+			</c:choose>		
+		</tr>
 
 		</html:form>
 	</c:forEach>
 	<tr>
-		<td colspan="4" class="noBborderStyle">&nbsp;</td>
+		<td colspan="5" class="noBborderStyle">&nbsp;</td>
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
@@ -728,6 +763,7 @@
 	</jsp:include>
 	
 </logic:notEqual>
+
 
 </body>
 </html:html>
