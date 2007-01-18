@@ -59,9 +59,9 @@
 				property="employeeId" value="${currentEmployeeId}"
 				onchange="setUpdateMergedreportsAction(this.form)">
 
-				<html:option value="-1">
+				<!--<html:option value="-1">
 					<bean:message key="main.general.allemployees.text" />
-				</html:option>
+				</html:option>-->
 
 				<html:options collection="employeeswithcontract"
 					labelProperty="name" property="id" />
@@ -277,7 +277,28 @@
 		<!-- <td>AuftragsBezeichnung</td> -->
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
-			<td align="center" class="matrix bold">&nbsp;<c:out value="${dayhourcount.dayString}"/>&nbsp;</td>
+			<!-- 			<td align="center" class="matrix bold"> -->
+			<c:if test="${dayhourcount.satSun==true}">
+				<c:if test="${dayhourcount.publicHoliday==true}">
+					<td class="matrix bold" align="right"
+						style="background-color:c1c1c1;">
+				</c:if>
+				<c:if test="${dayhourcount.publicHoliday==false}">
+					<td class="matrix bold" align="right"
+						style="background-color:lightgrey;">
+				</c:if>
+			</c:if>
+			<c:if test="${dayhourcount.satSun==false}">
+				<c:if test="${dayhourcount.publicHoliday==true}">
+					<td class="matrix bold" align="right"
+						style="background-color:c1c1c1;">
+				</c:if>
+				<c:if test="${dayhourcount.publicHoliday==false}">
+					<td class="matrix bold" align="right">
+				</c:if>
+
+			</c:if>
+			&nbsp;<c:out value="${dayhourcount.dayString}" />&nbsp;</td>
 
 		</c:forEach>
 
@@ -305,11 +326,25 @@
 			<!--<td><c:out value="${mergedreport.sign}"></c:out></td>-->
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
-					<td class="matrix" align="right"
-						style="font-size: 7pt;border:1px black solid;background-color:lightgrey;">
+					<c:if test="${bookingday.publicHoliday==true}">
+						<td class="matrix" align="right"
+							style="font-size: 7pt;border:1px black solid;background-color:c1c1c1;">
+					</c:if>
+					<c:if test="${bookingday.publicHoliday==false}">
+						<td class="matrix" align="right"
+							style="font-size: 7pt;border:1px black solid;background-color:lightgrey;">
+					</c:if>
 				</c:if>
 				<c:if test="${bookingday.satSun==false}">
-					<td class="matrix" align="right" style="font-size: 7pt;border:1px black solid;">
+					<c:if test="${bookingday.publicHoliday==true}">
+						<td class="matrix" align="right"
+							style="font-size: 7pt;border:1px black solid;background-color:c1c1c1;">
+					</c:if>
+					<c:if test="${bookingday.publicHoliday==false}">
+						<td class="matrix" align="right"
+							style="font-size: 7pt;border:1px black solid;">
+					</c:if>
+
 				</c:if>
 				<c:if
 					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
@@ -326,22 +361,24 @@
 		</tr>
 	</c:forEach>
 	<tr class="matrix">
-		<td colspan="2" class="matrix bold" style="border-top:2px black solid;" align="right"><bean:message
+		<td colspan="2" class="matrix bold"
+			style="border-top:2px black solid;" align="right"><bean:message
 			key="main.matrixoverview.table.overall.text" /></td>
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
-			<td class="matrix" style="font-size: 7pt;border-top:2px black solid;" align="right"><c:if
-
+			<td class="matrix" style="font-size: 7pt;border-top:2px black solid;"
+				align="right"><c:if
 				test="${!(dayhourcount.workingHour eq '0.0')}">
 				<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
 			</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 
 		</c:forEach>
-		<td class="matrix bold" style="border-top:2px black solid;" align="right"><c:out value="${dayhourssum}"></c:out></td>
+		<td class="matrix bold" style="border-top:2px black solid;"
+			align="right"><c:out value="${dayhourssum}"></c:out></td>
 	</tr>
 
 	<tr class="matrix">
-		<td class="matrix" style="border-style:solid none none solid;"><bean:message
+		<td class="matrix" style="border-style:none none none solid;"><bean:message
 			key="main.matrixoverview.headline.underline.text" /></td>
 		<td style="border-style:solid solid none none;"
 			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>

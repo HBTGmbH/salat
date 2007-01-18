@@ -109,7 +109,7 @@ public class ShowMatrixAction extends DailyReportAction {
         // check if special tasks initiated from the daily display need to be carried out...
         ShowMatrixForm reportForm = (ShowMatrixForm)form;
         TimereportHelper th = new TimereportHelper();
-        
+
         if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refreshMergedreports"))) {
 
             //selected view and selected dates
@@ -132,7 +132,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     dateLast = th.getDateFormStrings(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), false);
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
                     request.getSession().setAttribute("matrixview", GlobalConstants.VIEW_CUSTOM);
-                    dateFirst = th.getDateFormStrings(reportForm.getFromDay(), reportForm.getFromMonth(), reportForm.getFromYear(),false);
+                    dateFirst = th.getDateFormStrings(reportForm.getFromDay(), reportForm.getFromMonth(), reportForm.getFromYear(), false);
                     if (reportForm.getUntilDay() == null || reportForm.getUntilMonth() == null || reportForm.getUntilYear() == null) {
                         GregorianCalendar gc = new GregorianCalendar();
                         gc.setTime(dateFirst);
@@ -171,6 +171,7 @@ public class ShowMatrixAction extends DailyReportAction {
                             reportForm.getEmployeeId(),
                             timereportDAO,
                             employeecontractDAO,
+                            publicholidayDAO,
                             GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES,
                             -1);
                     request.getSession().setAttribute("mergedreports", tempReportWrapper.getMergedReportList());
@@ -185,6 +186,7 @@ public class ShowMatrixAction extends DailyReportAction {
                             reportForm.getEmployeeId(),
                             timereportDAO,
                             employeecontractDAO,
+                            publicholidayDAO,
                             GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES,
                             order.getId());
                     request.getSession().setAttribute("mergedreports", tempReportWrapper.getMergedReportList());
@@ -219,6 +221,7 @@ public class ShowMatrixAction extends DailyReportAction {
                             reportForm.getEmployeeId(),
                             timereportDAO,
                             employeecontractDAO,
+                            publicholidayDAO,
                             GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES,
                             -1);
                     request.getSession().setAttribute("mergedreports", tempReportWrapper.getMergedReportList());
@@ -233,6 +236,7 @@ public class ShowMatrixAction extends DailyReportAction {
                             reportForm.getEmployeeId(),
                             timereportDAO,
                             employeecontractDAO,
+                            publicholidayDAO,
                             GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES,
                             order.getId());
                     request.getSession().setAttribute("mergedreports", tempReportWrapper.getMergedReportList());
@@ -300,19 +304,20 @@ public class ShowMatrixAction extends DailyReportAction {
                 return mapping.findForward("error");
             }
 
-            // put employees with contract to session
-            List<Employee> employees = employeeDAO.getEmployees();
-            List<Employee> employeesWithContract = new LinkedList<Employee>();
-            Iterator<Employee> it = employees.iterator();
-            Employee emp;
-            while (it.hasNext()) {
-                emp = (Employee)it.next();
-                if (employeecontractDAO.getEmployeeContractByEmployeeId(emp.getId()) != null) {
-                    employeesWithContract.add(emp);
+//          List<Employee> employees = employeeDAO.getEmployees();
+            List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
+            
+            // make sure, that admin is in list
+            if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
+                    loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+                if (!employeesWithContract.contains(loginEmployee)) {
+                    employeesWithContract.add(loginEmployee);
                 }
             }
+            
             if ((employeesWithContract == null) || (employeesWithContract.size() <= 0)) {
-                request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
+                request.setAttribute("errorMessage", 
+                        "No employees with valid contracts found - please call system administrator.");
                 return mapping.findForward("error");
             }
             request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
@@ -341,7 +346,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 maxDayString += maxday;
 
                 try {
-                    dateLast = th.getDateFormStrings(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(),false);
+                    dateLast = th.getDateFormStrings(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), false);
                 } catch (Exception e) {
                     System.out.println("this should not happen");
                 }
@@ -353,6 +358,7 @@ public class ShowMatrixAction extends DailyReportAction {
                         loginEmployee.getId(),
                         timereportDAO,
                         employeecontractDAO,
+                        publicholidayDAO,
                         GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES,
                         reportForm.getOrderId());
                 request.getSession().setAttribute("mergedreports", tempReportWrapper.getMergedReportList());
@@ -360,7 +366,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                 request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
                 request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
-                
+
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
 
             } else {
@@ -393,7 +399,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 Date dateFirst = new Date();
                 Date dateLast = new Date();
                 try {
-                    dateFirst = th.getDateFormStrings("01", monthString, yearString,false);
+                    dateFirst = th.getDateFormStrings("01", monthString, yearString, false);
                 } catch (Exception e) {
                     System.out.println("this should not happen");
                 }
@@ -407,20 +413,27 @@ public class ShowMatrixAction extends DailyReportAction {
                 maxDayString += maxday;
 
                 try {
-                    dateLast = th.getDateFormStrings(maxDayString, monthString, yearString,false);
+                    dateLast = th.getDateFormStrings(maxDayString, monthString, yearString, false);
                 } catch (Exception e) {
                     System.out.println("this should not happen");
                 }
 
                 MatrixHelper mh = new MatrixHelper();
 
-                ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst, dateLast, loginEmployee.getId(), timereportDAO, employeecontractDAO, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, 0);
+                ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
+                        dateLast,
+                        loginEmployee.getId(),
+                        timereportDAO,
+                        employeecontractDAO,
+                        publicholidayDAO,
+                        GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES,
+                        0);
                 request.getSession().setAttribute("mergedreports", tempReportWrapper.getMergedReportList());
                 request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                 request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                 request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
                 request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
-                
+
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
 
                 // orders

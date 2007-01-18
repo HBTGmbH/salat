@@ -30,9 +30,11 @@ public class BookingDay implements Comparable{
         this.durationHours = durationHours;
         this.durationMinutes = durationMinutes;
         this.satSun=false;
+        this.publicHoliday=false;
     }
 
-    private boolean satSun; 
+    private boolean satSun;
+    private boolean publicHoliday;
     private Date date;
     private long durationHours;
     private long durationMinutes;
@@ -83,6 +85,14 @@ public class BookingDay implements Comparable{
         duration=(duration+0.05)*10;
         int temp = duration.intValue();
         return temp/10.0;
+    }
+
+    public boolean getPublicHoliday() {
+        return publicHoliday;
+    }
+
+    public void setPublicHoliday(boolean publicHoliday) {
+        this.publicHoliday = publicHoliday;
     }
 }
 

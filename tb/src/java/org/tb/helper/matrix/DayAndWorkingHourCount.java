@@ -10,6 +10,8 @@
  */
 package org.tb.helper.matrix;
 
+import java.util.Date;
+
 /**
  * @author cb
  * @since 29.12.2006
@@ -21,15 +23,27 @@ public class DayAndWorkingHourCount {
      * @author cb
      * @since 29.12.2006
      */
-    public DayAndWorkingHourCount(int day, double workingHour) {
+    public DayAndWorkingHourCount(int day, double workingHour, Date date) {
         super();
         this.day = day;
+        this.date = date;
         this.workingHour = workingHour;
+        this.publicHoliday = false;
+        this.satSun = false;
     }
     
-    public int day;
-    public double workingHour;
+    private int day;
+    private Date date;
+    private double workingHour;
+    private boolean publicHoliday;
+    private boolean satSun;
     
+    public boolean getSatSun() {
+        return satSun;
+    }
+    public void setSatSun(boolean satSun) {
+        this.satSun = satSun;
+    }
     public int getDay() {
         return day;
     }
@@ -56,6 +70,18 @@ public class DayAndWorkingHourCount {
        	}
     	dayString = dayString + day;
     	return dayString;
+    }
+    public boolean getPublicHoliday() {
+        return publicHoliday;
+    }
+    public void setPublicHoliday(boolean publicHoliday) {
+        this.publicHoliday = publicHoliday;
+    }
+    public Date getDate() {
+        return date;
+    }
+    public void setDate(Date date) {
+        this.date = date;
     }
 }
 

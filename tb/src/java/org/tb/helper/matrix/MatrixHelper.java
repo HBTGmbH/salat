@@ -31,7 +31,7 @@ import org.tb.web.action.DailyReportAction;
  */
 public class MatrixHelper {
 
-    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, int method, long customerOrderId) {
+    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method, long customerOrderId) {
         List<Timereport> timeReportList;
         java.sql.Date beginSqlDate = new java.sql.Date(dateFirst.getTime());
         java.sql.Date endSqlDate = new java.sql.Date(dateLast.getTime());
@@ -44,11 +44,12 @@ public class MatrixHelper {
             timeReportList = new ArrayList<Timereport>();
             throw new RuntimeException("this should not happen!");
         }
-        //        List bla = getMonths(dateFirst, dateLast);
+        //        List test = getMonths(dateFirst, dateLast);
         List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
         int mrIndex = 0;
         MergedReport tempMergedReport;
         BookingDay tempBookingDay;
+        Publicholiday tempPublicHoliday;
         long durationMinutes;
         long durationHours;
         Date date;
@@ -116,15 +117,17 @@ public class MatrixHelper {
         gc.setTime(dateFirst);
         int day = 0;
         DayAndWorkingHourCount tempDayAndWorkingHourCount;
+        DayAndWorkingHourCount tempDayAndWorkingHourCount2;
         ArrayList<DayAndWorkingHourCount> dayHoursCount = new ArrayList<DayAndWorkingHourCount>();
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
-            dayHoursCount.add(new DayAndWorkingHourCount(day, 0));
+            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, gc.getTime()));
             gc.add(Calendar.DAY_OF_MONTH, 1);
         }
         day = 0;
         gc.setTime(dateFirst);
         Double dayHoursTarget = 0.0;
+        List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
 
@@ -133,18 +136,30 @@ public class MatrixHelper {
                 for (Iterator iter2 = tempMergedReport.getBookingDay().iterator(); iter2.hasNext();) {
                     tempBookingDay = (BookingDay)iter2.next();
                     if (tempBookingDay.getDate().equals(gc.getTime())) {
-                        if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
-                            tempBookingDay.setSatSun(true);
-
-                        } else {
-                            dayHoursTarget++;
-                        }
                         if (!dayHoursCount.isEmpty()) {
-                            for (Iterator iter3 = dayHoursCount.iterator(); iter3.hasNext();) {
-                                tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter3.next();
+                            if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
+                                tempBookingDay.setSatSun(true);
+//                                tempDayAndWorkingHourCount.setSatSun(true);
+                            } else {
+                                dayHoursTarget++;
+                            }
+                            for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
+                                tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
                                 if (tempDayAndWorkingHourCount.getDay() == day) {
-                                    dayHoursCount.set(dayHoursCount.indexOf(tempDayAndWorkingHourCount), new DayAndWorkingHourCount(day, ((tempBookingDay.getDurationHours() * 60)
-                                            + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60));
+                                    tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day, ((tempBookingDay.getDurationHours() * 60)
+                                            + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60, tempBookingDay.getDate());
+                                    dayHoursCount.set(dayHoursCount.indexOf(tempDayAndWorkingHourCount), tempDayAndWorkingHourCount2);
+                                    for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
+                                        tempPublicHoliday = (Publicholiday)iter3.next();
+                                        if (tempPublicHoliday.getRefdate().equals(gc.getTime())) {
+                                            tempBookingDay.setPublicHoliday(true);
+                                            dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setPublicHoliday(true);
+                                        }
+
+                                    }
+                                    if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
+                                        dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setSatSun(true);
+                                    }
                                 }
                             }
                         } else {
@@ -158,9 +173,9 @@ public class MatrixHelper {
         }
         Collections.sort(mergedReportList);
         Double dayHoursSum = 0.0;
-        for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
-            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
-            dayHoursSum += tempDayAndWorkingHourCount.workingHour;
+        for (Iterator iter5 = dayHoursCount.iterator(); iter5.hasNext();) {
+            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter5.next();
+            dayHoursSum += tempDayAndWorkingHourCount.getWorkingHour();
         }
 
         dayHoursSum = (dayHoursSum + 0.05) * 10;
@@ -168,7 +183,7 @@ public class MatrixHelper {
         dayHoursSum = dayHoursSumTemp / 10.0;
 
         int mergedReportListSize = mergedReportList.size();
-        dayHoursTarget = (dayHoursTarget / mergedReportListSize * 8.0);
+        dayHoursTarget = (dayHoursTarget / mergedReportListSize * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
 
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;
         int dayHoursTargetTemp = dayHoursTarget.intValue();
@@ -176,9 +191,9 @@ public class MatrixHelper {
 
         Double dayHoursDiff = dayHoursSum - dayHoursTarget;
         if (dayHoursDiff < 0) {
-        	dayHoursDiff = (dayHoursDiff - 0.05) * 10;
+            dayHoursDiff = (dayHoursDiff - 0.05) * 10;
         } else {
-        	dayHoursDiff = (dayHoursDiff + 0.05) * 10;
+            dayHoursDiff = (dayHoursDiff + 0.05) * 10;
         }
         int dayHoursDiffTemp = dayHoursDiff.intValue();
         dayHoursDiff = dayHoursDiffTemp / 10.0;
