@@ -71,8 +71,8 @@ public class MergedReport implements Comparable {
         this.week.add(new WeekAndWorkinghourCount(week, hour));
     }
 
-    public void addDayAndWorkinghourCount(int day, long hour) {
-        this.day.add(new DayAndWorkingHourCount(day, hour));
+    public void addDayAndWorkinghourCount(int day, long hour, Date date) {
+        this.day.add(new DayAndWorkingHourCount(day, hour, date));
     }
 
     public void setSum() {
