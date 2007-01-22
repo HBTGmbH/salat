@@ -52,7 +52,7 @@ public class ShowWelcomeAction extends DailyReportAction {
 		
 		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(loginEmployeeContractId);
 		
-		String releaseDate = employeecontract.getReportAcceptanceDateString();
+		String releaseDate = employeecontract.getReportReleaseDateString();
 		String acceptanceDate = employeecontract.getReportAcceptanceDateString();
 		
 		request.getSession().setAttribute("releasedUntil", releaseDate);

@@ -449,7 +449,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 	 * @param tr
 	 */
 	public void save(Timereport tr) {
-		save(tr, null);
+		save(tr, null, true);
 	}
 	
 	/**
@@ -458,7 +458,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 	 * @param Timereport tr
 	 * 
 	 */
-	public void save(Timereport tr, Employee loginEmployee) {
+	public void save(Timereport tr, Employee loginEmployee, boolean changeUpdateDate) {
 		if (loginEmployee == null) {
 			throw new RuntimeException("the login-user must be passed to the db");
 		}
@@ -467,7 +467,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 		if (creationDate == null) {
 			tr.setCreated(new java.util.Date());
 			tr.setCreatedby(loginEmployee.getSign());
-		} else {
+		} else if (changeUpdateDate){
 			tr.setLastupdate(new java.util.Date());
 			tr.setLastupdatedby(loginEmployee.getSign());
 			Integer updateCounter = tr.getUpdatecounter();

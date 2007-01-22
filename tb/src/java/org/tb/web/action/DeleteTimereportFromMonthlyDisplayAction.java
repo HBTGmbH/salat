@@ -66,7 +66,7 @@ public class DeleteTimereportFromMonthlyDisplayAction extends LoginRequiredActio
 		TimereportHelper th = new TimereportHelper();
 		if (tr.getSortofreport().equals("W")) {
 			// update monthly hour balance...
-			th.updateMonthlyHourBalance(tr, -1, timereportDAO, monthlyreportDAO);
+//			th.updateMonthlyHourBalance(tr, -1, timereportDAO, monthlyreportDAO);
 		}
 		if (tr.getSortofreport().equals("V")) {
 			// update vacation...

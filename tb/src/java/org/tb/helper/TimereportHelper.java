@@ -2,6 +2,7 @@ package org.tb.helper;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -1064,6 +1065,34 @@ public class TimereportHelper {
 		}
 		
 		return date;
+	}
+	
+	public List<Date> getDatesForTimePeriod(Date startDate, int numberOfLaborDays, PublicholidayDAO publicholidayDAO) {
+		List<Date> dates = new ArrayList<Date>(numberOfLaborDays);
+		GregorianCalendar calendar = new GregorianCalendar();
+		int loopcounter = 0;
+		for (int i = 0; i < numberOfLaborDays; i++) {			
+			calendar.clear();
+			calendar.setTime(startDate);
+			int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
+			calendar.set(Calendar.DAY_OF_YEAR, dayOfYear+loopcounter);
+			loopcounter++;
+			int weekday = calendar.get(Calendar.DAY_OF_WEEK);
+			if (weekday != 1 && weekday != 7) {
+				// weekday is no sa, su
+				Date laborDay = calendar.getTime();
+				String holidayName = publicholidayDAO.getPublicHoliday(new java.sql.Date(laborDay.getTime()));
+				if (holidayName == null || holidayName.equals("")) {
+					// labor day is not a holiday
+					dates.add(laborDay);
+				} else {
+					i--;
+				}
+			} else {
+				i--;
+			}
+		}
+		return dates;
 	}
 		
 }

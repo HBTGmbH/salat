@@ -33,7 +33,7 @@ import org.tb.web.form.AddDailyReportForm;
  * @author oda
  *
  */
-public class EditDailyReportAction extends LoginRequiredAction {
+public class EditDailyReportAction extends DailyReportAction {
 	
 	private TimereportDAO timereportDAO;
 	private CustomerorderDAO customerorderDAO;
@@ -122,6 +122,8 @@ public class EditDailyReportAction extends LoginRequiredAction {
 		request.getSession().setAttribute("orders", orders);
 		request.getSession().setAttribute("suborders", theSuborders);
 		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+		request.getSession().setAttribute("serialBookings", getSerialDayList());
+		
 		
 		reportForm.reset(mapping, request);
 		reportForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());

@@ -138,6 +138,16 @@
 				style="border:0;vertical-align:top"> </a> <span style="color:red"><html:errors
 				property="referenceday" /> <html:errors property="release" /></span></td>
 		</tr>
+		<!-- Serienbuchung -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.timereport.serialbooking.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:select property="numberOfSerialDays" >
+					<html:options collection="serialBookings" labelProperty="label"
+						property="value" /></html:select><b>&nbsp;<bean:message
+				key="main.timereport.labordays.text" /></b></td>
+			
+		</tr>
 		<!-- 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

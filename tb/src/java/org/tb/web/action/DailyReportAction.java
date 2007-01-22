@@ -32,6 +32,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
+import org.tb.util.OptionItem;
 import org.tb.web.form.ShowDailyReportForm;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
@@ -469,5 +470,24 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			workingday.setEmployeecontract(ec);
 		}
 		return workingday;
+	}
+	
+	protected List<OptionItem> getSerialDayList() {
+		int maxDays = GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
+		List<OptionItem> days = new ArrayList<OptionItem>();
+		days.add(new OptionItem("0", "--"));		
+		String dayValue = "";
+		String dayLabel = "";
+		for (int i=1; i<=maxDays; i++) {
+			if (i<10) {
+				dayLabel = "0" + i;
+				dayValue = "0" + i;
+			} else if (i>=10) {
+				dayLabel = "" + i;
+				dayValue = "" + i;
+			}
+			days.add(new OptionItem(dayValue, dayLabel));
+		}
+		return days;
 	}
 }

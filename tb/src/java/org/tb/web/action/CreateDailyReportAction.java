@@ -113,6 +113,8 @@ public class CreateDailyReportAction extends DailyReportAction {
 		request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
 		request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
 		request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
+		request.getSession().setAttribute("serialBookings", getSerialDayList());
+		
 		
 		TimereportHelper th = new TimereportHelper();
 	

@@ -39,6 +39,8 @@ public class AddDailyReportForm extends ActionForm {
 	private long suborderDescriptionId;
 	private long employeecontractId;
 	
+	private int numberOfSerialDays;
+	
 	private String action;
 
 	
@@ -221,6 +223,14 @@ public class AddDailyReportForm extends ActionForm {
 	public void setStatus(String status) {
 		this.status = status;
 	}
+		
+	public int getNumberOfSerialDays() {
+		return numberOfSerialDays;
+	}
+
+	public void setNumberOfSerialDays(int numberOfSerialDays) {
+		this.numberOfSerialDays = numberOfSerialDays;
+	}
 
 	
 	
@@ -240,6 +250,7 @@ public class AddDailyReportForm extends ActionForm {
 		referenceday = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		hours = 8.0;
 		costs = 0.0;
+		numberOfSerialDays = 0;
 	}
 
 	@Override

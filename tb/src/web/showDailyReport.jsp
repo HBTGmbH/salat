@@ -483,12 +483,14 @@
 				<div class="tooltip" id="info<c:out value='${timereport.id}' />">
 				<table>
 					<tr>
-						<td class="info">Mitarbeiter:</td>
+						<td class="info"><bean:message
+						key="main.timereport.tooltip.employee" />:</td>
 						<td class="info" colspan="3">
 							<c:out value="${timereport.employeecontract.employee.name}" /></td>
 					</tr>
 					<tr>
-						<td class="info">Auftrag:</td>
+						<td class="info"><bean:message
+						key="main.timereport.tooltip.order" />:</td>
 						<td class="info" colspan="3">
 							<c:out value="${timereport.suborder.customerorder.sign}" /></td>
 					</tr>
@@ -498,7 +500,8 @@
 							<c:out value="${timereport.suborder.customerorder.description}" /></td>
 					</tr>
 					<tr>
-						<td class="info">Unterauftrag:</td>
+						<td class="info"><bean:message
+						key="main.timereport.tooltip.suborder" />:</td>
 						<td class="info" colspan="3">
 							<c:out value="${timereport.suborder.sign}" /></td>
 					</tr>
@@ -508,39 +511,48 @@
 							<c:out value="${timereport.suborder.description}" /></td>
 					</tr>
 					<tr>
-						<td class="info">Status:</td>
+						<td class="info"><bean:message
+						key="main.timereport.tooltip.status" />:</td>
 						<td class="info">
 							<c:out value="${timereport.status}" /></td>
 					</tr>
 					<tr>
-						<td class="info" valign="top">Erstellt:</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.created" />:</td>
 						<td class="info">
 							<c:out value="${timereport.created}" /></td>
-						<td class="info" valign="top">von</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
 						<td class="info" valign="top">
 							<c:out value="${timereport.createdby}" /></td>
 					</tr>
 					<tr>
-						<td class="info" valign="top">Editiert:</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.edited" />:</td>
 						<td class="info">
 							<c:out value="${timereport.lastupdate}" /></td>
-						<td class="info" valign="top">von</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
 						<td class="info" valign="top">
 							<c:out value="${timereport.lastupdatedby}" /></td>
 					</tr>
 					<tr>
-						<td class="info" valign="top">Freigegeben:</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.released" />:</td>
 						<td class="info">
 							<c:out value="${timereport.released}" /></td>
-						<td class="info" valign="top">von</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
 						<td class="info" valign="top">
 							<c:out value="${timereport.releasedby}" /></td>
 					</tr>
 					<tr>
-						<td class="info" valign="top">Abgenommen:</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.accepted" />:</td>
 						<td class="info">
 							<c:out value="${timereport.accepted}" /></td>
-						<td class="info" valign="top">von</td>
+						<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
 						<td class="info" valign="top">
 							<c:out value="${timereport.acceptedby}" /></td>
 					</tr>

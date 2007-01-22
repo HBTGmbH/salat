@@ -113,7 +113,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 				timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
 				timereport.setReleasedby(loginEmployee.getSign());
 				timereport.setReleased(new java.util.Date());
-				timereportDAO.save(timereport, loginEmployee);
+				timereportDAO.save(timereport, loginEmployee, false);
 			}
 			releaseDateFromContract = releaseDate;
 			
@@ -146,7 +146,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 				timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
 				timereport.setAcceptedby(loginEmployee.getSign());
 				timereport.setAccepted(new java.util.Date());
-				timereportDAO.save(timereport, loginEmployee);
+				timereportDAO.save(timereport, loginEmployee, false);
 			}
 			acceptanceDateFromContract = acceptanceDate;
 			
@@ -183,7 +183,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontract.getId(), sqlReopenDate);		
 			for (Timereport timereport : timereports) {
 				timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
-				timereportDAO.save(timereport, loginEmployee);
+				timereportDAO.save(timereport, loginEmployee, false);
 			}
 			
 			long timeMillis = sqlReopenDate.getTime();

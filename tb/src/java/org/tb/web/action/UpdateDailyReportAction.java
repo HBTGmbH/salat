@@ -130,7 +130,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				
 				// save updated report
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-				timereportDAO.save(tr, loginEmployee);
+				timereportDAO.save(tr, loginEmployee, true);
 				
 
 //				if (tr.getSortofreport().equals("W")) {

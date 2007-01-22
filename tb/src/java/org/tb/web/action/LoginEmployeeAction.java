@@ -215,7 +215,7 @@ public class LoginEmployeeAction extends Action {
 			
 			
 			// get info about vacation, overtime and report status
-			String releaseDate = employeecontract.getReportAcceptanceDateString();
+			String releaseDate = employeecontract.getReportReleaseDateString();
 			String acceptanceDate = employeecontract.getReportAcceptanceDateString();
 			
 			request.getSession().setAttribute("releasedUntil", releaseDate);

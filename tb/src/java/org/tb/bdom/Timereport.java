@@ -290,6 +290,20 @@ public class Timereport implements Serializable {
 		this.releasedby = releasedby;
 	}
 	
+	public Timereport getTwin() {
+		Timereport timereport = new Timereport();
+		timereport.setCosts(costs);
+		timereport.setDurationhours(durationhours);
+		timereport.setDurationminutes(durationminutes);
+		timereport.setEmployeecontract(employeecontract);
+		timereport.setSortofreport(sortofreport);
+		timereport.setStatus(status);
+		timereport.setSuborder(suborder);
+		timereport.setTaskdescription(taskdescription);
+		timereport.setSequencenumber(0);
+		
+		return timereport;
+	}
 	
 		
 	

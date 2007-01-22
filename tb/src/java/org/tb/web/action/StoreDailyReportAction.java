@@ -214,15 +214,16 @@ public class StoreDailyReportAction extends DailyReportAction {
 				} 
 				request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
 				
-				// set the begin time as the end time of the latest existing timereport of current employee
-				// for current day. If no other reports exist so far, set standard begin time (0800).
-				int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
-				reportForm.setSelectedHourBegin(beginTime[0]);
-				reportForm.setSelectedMinuteBegin(beginTime[1]);
+				
 //				TimereportHelper.refreshHours(reportForm);
 				
 				
 				if (workingday != null) {
+					// set the begin time as the end time of the latest existing timereport of current employee
+					// for current day. If no other reports exist so far, set standard begin time (0800).
+					int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
+					reportForm.setSelectedHourBegin(beginTime[0]);
+					reportForm.setSelectedMinuteBegin(beginTime[1]);
 					// set end time in reportform
 					java.util.Date today = new java.util.Date();
 					SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
@@ -245,8 +246,18 @@ public class StoreDailyReportAction extends DailyReportAction {
 						reportForm.setSelectedMinuteEnd(beginTime[1]);
 						reportForm.setSelectedHourEnd(beginTime[0]);
 					} 
-				}	
-				TimereportHelper.refreshHours(reportForm);
+					TimereportHelper.refreshHours(reportForm);
+				} else {
+					// working day is not available
+					reportForm.setSelectedHourBegin(0);
+					reportForm.setSelectedHourDuration(0);
+					reportForm.setSelectedHourEnd(0);
+					reportForm.setSelectedMinuteBegin(0);
+					reportForm.setSelectedMinuteDuration(0);
+					reportForm.setSelectedMinuteEnd(0);
+				}
+				
+				
 				
 				return mapping.findForward("success");			
 			}
@@ -410,8 +421,32 @@ public class StoreDailyReportAction extends DailyReportAction {
 				}
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-				timereportDAO.save(tr, loginEmployee);
-				
+//				boolean serialBooking = reportForm.getSerialBooking();
+				int numberOfLaborDays = reportForm.getNumberOfSerialDays();
+				if (numberOfLaborDays > 1) {
+					if (tr.getId() != 0) {
+						timereportDAO.deleteTimereportById(tr.getId());
+					}					
+					Date startDate = tr.getReferenceday().getRefdate();
+//					SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+//					String dateDebug = format.format(startDate);
+					TimereportHelper th = new TimereportHelper();
+					List<java.util.Date> dates = th.getDatesForTimePeriod(startDate, numberOfLaborDays, publicholidayDAO);
+					for (java.util.Date date : dates) {
+						java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+						Referenceday rd = referencedayDAO.getReferencedayByDate(sqlDate);					
+						if (rd == null) {
+							// new referenceday to be added in database
+							referencedayDAO.addReferenceday(sqlDate);	
+							rd = referencedayDAO.getReferencedayByDate(sqlDate);
+						} 
+						Timereport serialReport = tr.getTwin();
+						serialReport.setReferenceday(rd);
+						timereportDAO.save(serialReport, loginEmployee, true);
+					}
+				} else {
+					timereportDAO.save(tr, loginEmployee, true);
+				}
 				
 				
 //				String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
@@ -486,6 +521,8 @@ public class StoreDailyReportAction extends DailyReportAction {
 						int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
 						reportForm.setSelectedHourBegin(beginTime[0]);
 						reportForm.setSelectedMinuteBegin(beginTime[1]);
+						
+						reportForm.setNumberOfSerialDays(0);
 						
 						SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 						
