@@ -36,7 +36,7 @@ public class MergedReport implements Comparable {
         this.subOrderSign = subOrderSign;
         this.customOrderSign = customOrderSign;
         this.taskdescription = taskdescription;
-        addBookingDay(date, durationHours, durationMinutes);
+        addBookingDay(date, durationHours, durationMinutes, taskdescription);
     }
 
     private String sign;
@@ -50,11 +50,11 @@ public class MergedReport implements Comparable {
         return bookingDay.size();
     }
 
-    public void mergeBookingDay(BookingDay tempBookingDay, Date date, long durationHours, long durationMinutes) {
-        bookingDay.set(bookingDay.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes));
+    public void mergeBookingDay(BookingDay tempBookingDay, Date date, long durationHours, long durationMinutes, String taskdescription) {
+        bookingDay.set(bookingDay.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes, tempBookingDay.getTaskdescription()+taskdescription));
     }
 
-    public void addBookingDay(Date date, long durationHours, long durationMinutes) {
+    public void addBookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
         /*BookingDay tempBookingDay = null;
          for(Iterator iter = bookingDay.iterator();iter.hasNext();){
          tempBookingDay = (BookingDay)iter.next();
@@ -62,7 +62,7 @@ public class MergedReport implements Comparable {
          bookingDay.set(bookingDay.indexOf(tempBookingDay), new BookingDay(date, durationHours, durationMinutes));
          }
          }*/
-        bookingDay.add(new BookingDay(date, durationHours, durationMinutes));
+        bookingDay.add(new BookingDay(date, durationHours, durationMinutes, taskdescription));
     }
 
     public void setSum() {
@@ -93,7 +93,7 @@ public class MergedReport implements Comparable {
                 }
             }
             if (!dateAvailable) {
-                addBookingDay(gc.getTime(), 0, 0);
+                addBookingDay(gc.getTime(), 0, 0, null);
             }
             gc.add(Calendar.DAY_OF_WEEK, 1);
         }

@@ -270,7 +270,9 @@ public class ShowMatrixAction extends DailyReportAction {
             GregorianCalendar gc = new GregorianCalendar();
             gc.setTime(dateFirst);
             request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-
+            
+            refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+            
             return mapping.findForward("success");
 
         }
@@ -368,7 +370,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
 
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-
+                refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
             } else {
 
                 // call from main menu: set current month, year, 
@@ -433,9 +435,9 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
                 request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
                 request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
-
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-
+                refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+                
                 // orders
                 List<Customerorder> orders = null;
                 Long employeeId = (Long)request.getSession().getAttribute("currentEmployeeId");

@@ -37,15 +37,6 @@ public class MatrixHelper {
         java.sql.Date beginSqlDate = new java.sql.Date(dateFirst.getTime());
         java.sql.Date endSqlDate = new java.sql.Date(dateLast.getTime());
 
-        if (method == 1 || method == 3) {
-            timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate);
-        } else if (method == 2 || method == 4) {
-            timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate, customerOrderId);
-        } else {
-            timeReportList = new ArrayList<Timereport>();
-            throw new RuntimeException("this should not happen!");
-        }
-        //        List test = getMonths(dateFirst, dateLast);
         List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
         int mrIndex = 0;
         MergedReport tempMergedReport;
@@ -66,7 +57,17 @@ public class MatrixHelper {
         weekDaysMap.put(6, "main.matrixoverview.weekdays.friday.text");
         weekDaysMap.put(7, "main.matrixoverview.weekdays.saturday.text");
         weekDaysMap.put(1, "main.matrixoverview.weekdays.sunday.text");
-        
+        //        List test = getMonths(dateFirst, dateLast);
+         
+        if (method == 1 || method == 3) {
+            timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate);
+        } else if (method == 2 || method == 4) {
+            timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate, customerOrderId);
+        } else {
+            timeReportList = new ArrayList<Timereport>();
+            throw new RuntimeException("this should not happen!");
+        }
+
         for (Iterator iter = timeReportList.iterator(); iter.hasNext();) {
             tempTimeReport = (Timereport)iter.next();
             taskdescription = tempTimeReport.getTaskdescription();
@@ -86,7 +87,7 @@ public class MatrixHelper {
                         for (Iterator iter3 = tempMergedReport.getBookingDay().iterator(); iter3.hasNext();) {
                             tempBookingDay = (BookingDay)iter3.next();
                             if (tempBookingDay.getDate().equals(date)) {
-                                tempMergedReport.mergeBookingDay(tempBookingDay, date, durationHours, durationMinutes);
+                                tempMergedReport.mergeBookingDay(tempBookingDay, date, durationHours, durationMinutes, taskdescription);
                                 bookingDayAvailable = true;
                                 break;
                             } else {
@@ -101,7 +102,7 @@ public class MatrixHelper {
                 }
                 if (!bookingDayAvailable) {
                     if (mergedReportAvailable) {
-                        tempMergedReport.addBookingDay(date, durationHours, durationMinutes);
+                        tempMergedReport.addBookingDay(date, durationHours, durationMinutes, taskdescription);
                         tempMergedReport.addTaskdescription(taskdescription);
                         mergedReportList.set(mrIndex, tempMergedReport);
                     } else {
@@ -213,49 +214,49 @@ public class MatrixHelper {
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
 
-    public List<List> getMonths(Date dateFirst, Date dateLast) {
-        Calendar gcFirst = GregorianCalendar.getInstance();
-        Calendar gcLast = GregorianCalendar.getInstance();
-        Calendar tempGc = GregorianCalendar.getInstance();
-        gcFirst.setTime(dateFirst);
-        gcLast.setTime(dateLast);
-        List<List> dateAL = new ArrayList<List>();
-        List<Date> tempDateAl = new ArrayList<Date>();
-
-        Date dateFirstBegin = dateFirst;
-        tempDateAl.add(dateFirstBegin);
-        tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
-        Date dateFirstEnd = tempGc.getTime();
-        tempDateAl.add(dateFirstEnd);
-        dateAL.add(tempDateAl);
-        tempDateAl.clear();
-
-        if (gcFirst.get(GregorianCalendar.MONTH) != gcLast.get(GregorianCalendar.MONTH)) {
-            tempGc.set(gcLast.get(GregorianCalendar.YEAR), gcLast.get(GregorianCalendar.MONTH), gcLast.getMinimum(GregorianCalendar.DAY_OF_MONTH));
-            Date dateLastBegin = tempGc.getTime();
-            Date dateLastEnd = dateLast;
-
-            tempDateAl.add(dateLastBegin);
-            tempDateAl.add(dateLastEnd);
-            dateAL.add(tempDateAl);
-            tempDateAl.clear();
-            gcFirst.add(Calendar.MONTH, 1);
-            while ((gcFirst.getTime().after(dateFirst) && gcFirst.getTime().before(dateLast)) || gcFirst.getTime().equals(dateFirst) || gcFirst.getTime().equals(dateLast)) {
-                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMinimum(GregorianCalendar.DAY_OF_MONTH));
-                dateFirstBegin = tempGc.getTime();
-                tempDateAl.add(dateFirstBegin);
-                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
-                dateLastBegin = tempGc.getTime();
-                tempDateAl.add(dateLastBegin);
-                dateAL.add(dateAL.size() - 1, tempDateAl);
-                tempDateAl.clear();
-                gcFirst.add(Calendar.MONTH, 1);
-            }
-        }
-
-        return dateAL;
-
-    }
+//    public List<List> getMonths(Date dateFirst, Date dateLast) {
+//        Calendar gcFirst = GregorianCalendar.getInstance();
+//        Calendar gcLast = GregorianCalendar.getInstance();
+//        Calendar tempGc = GregorianCalendar.getInstance();
+//        gcFirst.setTime(dateFirst);
+//        gcLast.setTime(dateLast);
+//        List<List> dateAL = new ArrayList<List>();
+//        List<Date> tempDateAl = new ArrayList<Date>();
+//
+//        Date dateFirstBegin = dateFirst;
+//        tempDateAl.add(dateFirstBegin);
+//        tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
+//        Date dateFirstEnd = tempGc.getTime();
+//        tempDateAl.add(dateFirstEnd);
+//        dateAL.add(tempDateAl);
+//        tempDateAl.clear();
+//
+//        if (gcFirst.get(GregorianCalendar.MONTH) != gcLast.get(GregorianCalendar.MONTH)) {
+//            tempGc.set(gcLast.get(GregorianCalendar.YEAR), gcLast.get(GregorianCalendar.MONTH), gcLast.getMinimum(GregorianCalendar.DAY_OF_MONTH));
+//            Date dateLastBegin = tempGc.getTime();
+//            Date dateLastEnd = dateLast;
+//
+//            tempDateAl.add(dateLastBegin);
+//            tempDateAl.add(dateLastEnd);
+//            dateAL.add(tempDateAl);
+//            tempDateAl.clear();
+//            gcFirst.add(Calendar.MONTH, 1);
+//            while ((gcFirst.getTime().after(dateFirst) && gcFirst.getTime().before(dateLast)) || gcFirst.getTime().equals(dateFirst) || gcFirst.getTime().equals(dateLast)) {
+//                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMinimum(GregorianCalendar.DAY_OF_MONTH));
+//                dateFirstBegin = tempGc.getTime();
+//                tempDateAl.add(dateFirstBegin);
+//                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
+//                dateLastBegin = tempGc.getTime();
+//                tempDateAl.add(dateLastBegin);
+//                dateAL.add(dateAL.size() - 1, tempDateAl);
+//                tempDateAl.clear();
+//                gcFirst.add(Calendar.MONTH, 1);
+//            }
+//        }
+//
+//        return dateAL;
+//
+//    }
 }
 
 /*

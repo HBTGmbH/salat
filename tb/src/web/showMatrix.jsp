@@ -11,7 +11,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.matrix.title.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
+<link rel="stylesheet" type="text/css" href="/tb/print.css"
+	media="print" />
 <script type="text/javascript" language="JavaScript">	
  	function setUpdateMergedreportsAction(form) {	
  		form.action = "/tb/do/ShowMatrix?task=refreshMergedreports";
@@ -282,25 +284,29 @@
 			<!-- 			<td align="center" class="matrix bold"> -->
 			<c:if test="${dayhourcount.satSun==true}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
-					<td title="${dayhourcount.publicHolidayName} / <bean:message
-					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right"
-						style="background-color:c1c1c1;">
+					<td
+						title="${dayhourcount.publicHolidayName} / <bean:message
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right" style="background-color:c1c1c1;">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
 					<td title="<bean:message
-					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right"
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right"
 						style="background-color:lightgrey;">
 				</c:if>
 			</c:if>
 			<c:if test="${dayhourcount.satSun==false}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
-					<td title="${dayhourcount.publicHolidayName} / <bean:message
-					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right"
-						style="background-color:c1c1c1;">
+					<td
+						title="${dayhourcount.publicHolidayName} / <bean:message
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right" style="background-color:c1c1c1;">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
 					<td title="<bean:message
-					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right">
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right">
 				</c:if>
 
 			</c:if>
@@ -335,21 +341,21 @@
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">
-						<td class="matrix" align="right"
+						<td title="${bookingday.taskdescription}" class="matrix" align="right"
 							style="font-size: 7pt;border:1px black solid;background-color:c1c1c1;">
 					</c:if>
 					<c:if test="${bookingday.publicHoliday==false}">
-						<td class="matrix" align="right"
+						<td title="${bookingday.taskdescription}" class="matrix" align="right"
 							style="font-size: 7pt;border:1px black solid;background-color:lightgrey;">
 					</c:if>
 				</c:if>
 				<c:if test="${bookingday.satSun==false}">
 					<c:if test="${bookingday.publicHoliday==true}">
-						<td class="matrix" align="right"
+						<td title="${bookingday.taskdescription}" class="matrix" align="right"
 							style="font-size: 7pt;border:1px black solid;background-color:c1c1c1;">
 					</c:if>
 					<c:if test="${bookingday.publicHoliday==false}">
-						<td class="matrix" align="right"
+						<td title="${bookingday.taskdescription}" class="matrix" align="right"
 							style="font-size: 7pt;border:1px black solid;">
 					</c:if>
 
@@ -418,7 +424,7 @@
 		</td>
 		<td class="matrix" style="text-align:right;"
 			colspan="${daysofmonth-5}"><bean:message
-			key="main.matrixoverview.table.overtime.text" /></td>
+			key="main.matrixoverview.table.overtime.text" /></c:out></td>
 	</tr>
 
 	<tr class="matrix">
@@ -428,7 +434,7 @@
 			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td class="matrix" style="text-align:right;"
 			colspan="${daysofmonth-5}"><bean:message
-			key="main.matrixoverview.table.vacation.text" /></td>
+			key="main.matrixoverview.table.vacation.text" /></c:out></td>
 	</tr>
 </table>
 </body>

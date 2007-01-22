@@ -16,7 +16,7 @@ import java.util.Date;
  * @author cb
  * @since 04.12.2006
  */
-public class BookingDay implements Comparable{
+public class BookingDay implements Comparable {
     /**
      * @param date
      * @param durationHours
@@ -24,13 +24,14 @@ public class BookingDay implements Comparable{
      * @author cb
      * @since 04.12.2006
      */
-    public BookingDay(Date date, long durationHours, long durationMinutes) {
+    public BookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
         super();
         this.date = date;
         this.durationHours = durationHours;
         this.durationMinutes = durationMinutes;
-        this.satSun=false;
-        this.publicHoliday=false;
+        this.satSun = false;
+        this.publicHoliday = false;
+        this.taskdescription = taskdescription;
     }
 
     private boolean satSun;
@@ -38,6 +39,7 @@ public class BookingDay implements Comparable{
     private Date date;
     private long durationHours;
     private long durationMinutes;
+    private String taskdescription;
 
     public long getDurationHours() {
         return durationHours;
@@ -62,7 +64,7 @@ public class BookingDay implements Comparable{
     public Date getDate() {
         return date;
     }
-    
+
     public int compareTo(Object o) {
         if (o instanceof BookingDay) {
             return this.date.compareTo(((BookingDay)o).date);
@@ -79,12 +81,12 @@ public class BookingDay implements Comparable{
     public void setSatSun(boolean satSun) {
         this.satSun = satSun;
     }
-    
-    public double getRoundHours(){
-        Double duration = (((durationHours*60)+(durationMinutes))/60.0);
-        duration=(duration+0.05)*10;
+
+    public double getRoundHours() {
+        Double duration = (((durationHours * 60) + (durationMinutes)) / 60.0);
+        duration = (duration + 0.05) * 10;
         int temp = duration.intValue();
-        return temp/10.0;
+        return temp / 10.0;
     }
 
     public boolean getPublicHoliday() {
@@ -93,6 +95,14 @@ public class BookingDay implements Comparable{
 
     public void setPublicHoliday(boolean publicHoliday) {
         this.publicHoliday = publicHoliday;
+    }
+
+    public String getTaskdescription() {
+        return taskdescription;
+    }
+
+    public void setTaskdescription(String taskdescription) {
+        this.taskdescription = taskdescription;
     }
 
 }
