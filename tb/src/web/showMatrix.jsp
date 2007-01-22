@@ -424,7 +424,7 @@
 		</td>
 		<td class="matrix" style="text-align:right;"
 			colspan="${daysofmonth-5}"><bean:message
-			key="main.matrixoverview.table.overtime.text" /></c:out></td>
+			key="main.matrixoverview.table.overtime.text" /></td>
 	</tr>
 
 	<tr class="matrix">
@@ -434,7 +434,7 @@
 			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td class="matrix" style="text-align:right;"
 			colspan="${daysofmonth-5}"><bean:message
-			key="main.matrixoverview.table.vacation.text" /></c:out></td>
+			key="main.matrixoverview.table.vacation.text" /></td>
 	</tr>
 </table>
 </body>
