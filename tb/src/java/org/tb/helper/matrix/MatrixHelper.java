@@ -15,15 +15,16 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.web.action.DailyReportAction;
 
 /**
  * @author cb
@@ -57,6 +58,15 @@ public class MatrixHelper {
         Timereport tempTimeReport;
         boolean mergedReportAvailable;
         boolean bookingDayAvailable;
+        Map weekDaysMap = new HashMap<Integer, String>();
+        weekDaysMap.put(2, "main.matrixoverview.weekdays.monday.text");
+        weekDaysMap.put(3, "main.matrixoverview.weekdays.tuesday.text");
+        weekDaysMap.put(4, "main.matrixoverview.weekdays.wednesday.text");
+        weekDaysMap.put(5, "main.matrixoverview.weekdays.thursday.text");
+        weekDaysMap.put(6, "main.matrixoverview.weekdays.friday.text");
+        weekDaysMap.put(7, "main.matrixoverview.weekdays.saturday.text");
+        weekDaysMap.put(1, "main.matrixoverview.weekdays.sunday.text");
+        
         for (Iterator iter = timeReportList.iterator(); iter.hasNext();) {
             tempTimeReport = (Timereport)iter.next();
             taskdescription = tempTimeReport.getTaskdescription();
@@ -154,12 +164,14 @@ public class MatrixHelper {
                                         if (tempPublicHoliday.getRefdate().equals(gc.getTime())) {
                                             tempBookingDay.setPublicHoliday(true);
                                             dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setPublicHoliday(true);
+                                            dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setPublicHolidayName(tempPublicHoliday.getName());
                                         }
 
                                     }
                                     if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
                                         dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setSatSun(true);
                                     }
+                                    dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setWeekDay((String)weekDaysMap.get(gc.get(gc.DAY_OF_WEEK)));
                                 }
                             }
                         } else {

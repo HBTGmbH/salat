@@ -45,8 +45,6 @@ public class MergedReport implements Comparable {
     private String taskdescription;
     private double sum;
     private ArrayList bookingDay = new ArrayList<BookingDay>();
-    private ArrayList week = new ArrayList<WeekAndWorkinghourCount>();
-    private ArrayList day = new ArrayList<DayAndWorkingHourCount>();
 
     public int getCountOfDays() {
         return bookingDay.size();
@@ -65,14 +63,6 @@ public class MergedReport implements Comparable {
          }
          }*/
         bookingDay.add(new BookingDay(date, durationHours, durationMinutes));
-    }
-
-    public void addWeekAndWorkinghourCount(int week, long hour) {
-        this.week.add(new WeekAndWorkinghourCount(week, hour));
-    }
-
-    public void addDayAndWorkinghourCount(int day, long hour, Date date) {
-        this.day.add(new DayAndWorkingHourCount(day, hour, date));
     }
 
     public void setSum() {
@@ -156,14 +146,6 @@ public class MergedReport implements Comparable {
 
     public void setSign(String sign) {
         this.sign = sign;
-    }
-
-    public ArrayList getDay() {
-        return day;
-    }
-
-    public ArrayList getWeek() {
-        return week;
     }
     
     public Double getRoundSum(){

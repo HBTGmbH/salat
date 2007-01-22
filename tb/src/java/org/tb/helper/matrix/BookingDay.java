@@ -94,6 +94,7 @@ public class BookingDay implements Comparable{
     public void setPublicHoliday(boolean publicHoliday) {
         this.publicHoliday = publicHoliday;
     }
+
 }
 
 /*

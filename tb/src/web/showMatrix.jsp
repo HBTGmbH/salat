@@ -265,43 +265,51 @@
 		</th>
 	</tr>
 
-	<tr>
+	<!-- <tr>
 		<td colspan="2" class="matrix bold">Kalenderwoche / Stunden</td>
 		<td colspan="${daysofmonth}" class="matrix bold">n/a</td>
 		<td rowspan="2" class="matrix bold">Summe</td>
-	</tr>
+	</tr> -->
 
 	<tr>
-		<td class="matrix bold">Auftrags-Nr</td>
-		<td class="matrix bold">Auftrags-UnterNr</td>
+		<td class="matrix bold"><bean:message
+			key="main.matrixoverview.table.customerordernr.text" /></td>
+		<td class="matrix bold"><bean:message
+			key="main.matrixoverview.table.subordernr.text" /></td>
 		<!-- <td>AuftragsBezeichnung</td> -->
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
 			<!-- 			<td align="center" class="matrix bold"> -->
 			<c:if test="${dayhourcount.satSun==true}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
-					<td class="matrix bold" align="right"
+					<td title="${dayhourcount.publicHolidayName} / <bean:message
+					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right"
 						style="background-color:c1c1c1;">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
-					<td class="matrix bold" align="right"
+					<td title="<bean:message
+					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right"
 						style="background-color:lightgrey;">
 				</c:if>
 			</c:if>
 			<c:if test="${dayhourcount.satSun==false}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
-					<td class="matrix bold" align="right"
+					<td title="${dayhourcount.publicHolidayName} / <bean:message
+					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right"
 						style="background-color:c1c1c1;">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
-					<td class="matrix bold" align="right">
+					<td title="<bean:message
+					key="${dayhourcount.weekDay}" />" class="matrix bold" align="right">
 				</c:if>
 
 			</c:if>
-			&nbsp;<c:out value="${dayhourcount.dayString}" />&nbsp;</td>
-
+			&nbsp;<c:out value="${dayhourcount.dayString}" />&nbsp;
+		
+		</td>
 		</c:forEach>
-
+		<td class="matrix bold"><bean:message
+			key="main.matrixoverview.table.sum.text" /></td>
 	</tr>
 
 	<!--<c:forEach var="mergedreport" items="${mergedreports}">
@@ -409,15 +417,18 @@
 		</table>
 		</td>
 		<td class="matrix" style="text-align:right;"
-			colspan="${daysofmonth-5}">Überstunden kummuliert: n/a Stunden</td>
+			colspan="${daysofmonth-5}"><bean:message
+			key="main.matrixoverview.table.overtime.text" /></td>
 	</tr>
 
 	<tr class="matrix">
-		<td class="matrix" style="border-style:none none solid solid;">Bereichsleitg.:</td>
+		<td class="matrix" style="border-style:none none solid solid;"><bean:message
+			key="main.matrixoverview.table.headofdepartment.text" /></td>
 		<td style="border-style:none solid solid none;"
 			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td class="matrix" style="text-align:right;"
-			colspan="${daysofmonth-5}">Resturlaub: n/a Tage</td>
+			colspan="${daysofmonth-5}"><bean:message
+			key="main.matrixoverview.table.vacation.text" /></td>
 	</tr>
 </table>
 </body>
