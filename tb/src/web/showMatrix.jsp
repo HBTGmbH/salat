@@ -32,27 +32,7 @@
 <br>
 <html:form action="/ShowMatrix">
 	<table class="center backgroundcolor">
-		<!-- 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="employeename"
-				value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
-				onchange="setUpdateMergedreportsAction(this.form)">
-
-				<html:option value="ALL EMPLOYEES">
-					<bean:message key="main.general.allemployees.text" />
-				</html:option>
-
-				<html:options collection="employeeswithcontract"
-					labelProperty="name" property="name" />
-			</html:select> <logic:equal name="currentEmployee" value="ALL EMPLOYEES"
-				scope="session">
-				<span style="color:red"> <b><bean:message
-					key="main.general.selectemployee.editable.text" />.</b> </span>
-			</logic:equal></td>
-		</tr>
- -->
+		
 		<!-- select employee -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

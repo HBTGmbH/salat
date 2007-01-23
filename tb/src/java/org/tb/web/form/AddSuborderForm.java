@@ -18,6 +18,7 @@ public class AddSuborderForm extends ActionForm {
 	private long id;
 	private String sign;
 	private String description;
+	private String shortdescription;
 	private String invoice;
 	private String currency;
 	private Double hourlyRate;
@@ -108,11 +109,22 @@ public class AddSuborderForm extends ActionForm {
 	public void setStandard(Boolean standard) {
 		this.standard = standard;
 	}
+	
+	public String getShortdescription() {
+		return shortdescription;
+	}
 
+	public void setShortdescription(String shortdescription) {
+		this.shortdescription = shortdescription;
+	}
+
+	
+	
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		sign = "";
 		description = "";
+		shortdescription = "";
 		invoice = "J";
 		currency = GlobalConstants.DEFAULT_CURRENCY;
 		standard = false;

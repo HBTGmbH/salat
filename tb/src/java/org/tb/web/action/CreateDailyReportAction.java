@@ -130,6 +130,20 @@ public class CreateDailyReportAction extends DailyReportAction {
 		if (workingday != null) {
 			workingDayIsAvailable = true;
 		} 
+		
+//		 workingday should only be available for today
+		java.util.Date today = new java.util.Date();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		String todayString = simpleDateFormat.format(today);
+		try {
+			today = simpleDateFormat.parse(todayString);
+		} catch (Exception e) {
+			throw new RuntimeException("this should never happen...!");
+		}
+		if (!selectedDate.equals(today)) {
+			workingDayIsAvailable = false;
+		}	
+		
 		request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
 		
 		// set the begin time as the end time of the latest existing timereport of current employee
@@ -138,12 +152,10 @@ public class CreateDailyReportAction extends DailyReportAction {
 		reportForm.setSelectedHourBegin(beginTime[0]);
 		reportForm.setSelectedMinuteBegin(beginTime[1]);
 //		TimereportHelper.refreshHours(reportForm);
-		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		
-		if (workingday != null) {
+				
+		if (workingDayIsAvailable) {
 			// set end time in reportform
-			java.util.Date today = new Date();
+			today = new Date();
 			SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
 			SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
 			
@@ -151,7 +163,7 @@ public class CreateDailyReportAction extends DailyReportAction {
 			int minute = new Integer(minuteFormat.format(today));
 			minute = (minute/5)*5;
 			
-			String todayString = simpleDateFormat.format(today);
+			todayString = simpleDateFormat.format(today);
 			try {
 				today = simpleDateFormat.parse(todayString);
 			} catch (Exception e) {

@@ -192,11 +192,14 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		
 		List<Employeeorder> orders = new ArrayList<Employeeorder>();
 		
-		List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), "RESTURLAUB", today);
+		List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION, today);
 		List<Employeeorder> vacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, today);
+		List<Employeeorder> extraVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION, today);
+
 		
 		orders.addAll(specialVacationOrders);
 		orders.addAll(vacationOrders);
+		orders.addAll(extraVacationOrders);
 		
 		List<VacationViewer> vacations = new ArrayList<VacationViewer>();
 		
@@ -214,6 +217,12 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		}
 		request.getSession().setAttribute("vacations", vacations);
 		
+		
+		String releaseDate = employeecontract.getReportReleaseDateString();
+		String acceptanceDate = employeecontract.getReportAcceptanceDateString();
+		
+		request.getSession().setAttribute("releasedUntil", releaseDate);
+		request.getSession().setAttribute("acceptedUntil", acceptanceDate);
 	}
 	
 	

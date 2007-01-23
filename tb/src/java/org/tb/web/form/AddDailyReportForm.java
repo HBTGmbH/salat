@@ -243,10 +243,12 @@ public class AddDailyReportForm extends ActionForm {
 		suborder="";
 		status = "";
 		sortOfReport = "W";
-		selectedHourBegin = GlobalConstants.BEGINHOUR;
-		selectedMinuteBegin = GlobalConstants.BEGINMINUTE;
-		selectedHourEnd = GlobalConstants.ENDHOUR;
-		selectedMinuteEnd = GlobalConstants.ENDMINUTE;
+//		selectedHourBegin = GlobalConstants.BEGINHOUR;
+//		selectedMinuteBegin = GlobalConstants.BEGINMINUTE;
+//		selectedHourEnd = GlobalConstants.ENDHOUR;
+//		selectedMinuteEnd = GlobalConstants.ENDMINUTE;
+		selectedHourDuration = 0;
+		selectedMinuteDuration = 0;
 		referenceday = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		hours = 8.0;
 		costs = 0.0;

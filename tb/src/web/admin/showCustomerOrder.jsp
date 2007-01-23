@@ -60,6 +60,10 @@
 			key="main.customerorder.description.text" /></b></th>
 		<th align="left"
 			title="<bean:message
+			key="main.headlinedescription.orders.description.text" />"><b><bean:message
+			key="main.customerorder.description.text" /></b></th>
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.orders.validfrom.text" />"><b><bean:message
 			key="main.customerorder.validfrom.text" /></b></th>
 		<th align="left"
@@ -114,6 +118,7 @@
 		<td><c:out value="${customerorder.customer.name}" /></td>
 		<td><c:out value="${customerorder.sign}" /></td>
 		<td><c:out value="${customerorder.description}" /></td>
+		<td><c:out value="${customerorder.shortdescription}" /></td>
 		<td><c:out value="${customerorder.fromDate}" /></td>
 		<td><c:out value="${customerorder.untilDate}" /></td>
 		<td><c:out value="${customerorder.responsible_customer_contractually}" /></td>

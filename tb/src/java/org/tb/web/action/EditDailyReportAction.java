@@ -1,5 +1,6 @@
 package org.tb.web.action;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -137,6 +138,20 @@ public class EditDailyReportAction extends DailyReportAction {
 		if (workingday != null) {
 			workingDayIsAvailable = true;
 		} 
+		
+//		 workingday should only be available for today
+		java.util.Date today = new java.util.Date();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		String todayString = simpleDateFormat.format(today);
+		try {
+			today = simpleDateFormat.parse(todayString);
+		} catch (Exception e) {
+			throw new RuntimeException("this should never happen...!");
+		}
+		if (!utilDate.equals(today)) {
+			workingDayIsAvailable = false;
+		}	
+		
 		request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
 		TimereportHelper th = new TimereportHelper();
 		int[] displayTime = th.determineTimesToDisplay(ec.getId(), timereportDAO, reportDate, workingday, tr);

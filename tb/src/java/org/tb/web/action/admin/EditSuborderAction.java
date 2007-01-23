@@ -76,6 +76,7 @@ public class EditSuborderAction extends LoginRequiredAction {
 		soForm.setHourlyRate(so.getHourly_rate());
 		soForm.setSign(so.getSign());
 		soForm.setDescription(so.getDescription());
+		soForm.setShortdescription(so.getShortdescription());
 		soForm.setInvoice(Character.toString(so.getInvoice()));
 		soForm.setStandard(so.getStandard());
 		

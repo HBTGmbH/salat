@@ -20,6 +20,7 @@ public class AddCustomerOrderForm extends ActionForm {
 	private long id;
 	private String sign;
 	private String description;
+	private String shortdescription;
 	private String validFrom;
 	private String validUntil;
 	private String responsibleCustomerTechnical;
@@ -159,11 +160,22 @@ public class AddCustomerOrderForm extends ActionForm {
 	public void setResponsibleCustomerTechnical(String responsibleCustomerTechnical) {
 		this.responsibleCustomerTechnical = responsibleCustomerTechnical;
 	}
+	
+	
+
+	public String getShortdescription() {
+		return shortdescription;
+	}
+
+	public void setShortdescription(String shortdescription) {
+		this.shortdescription = shortdescription;
+	}
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		sign = "";
 		description = "";
+		shortdescription = "";
 		validFrom = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		validUntil = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		responsibleCustomerTechnical = "";

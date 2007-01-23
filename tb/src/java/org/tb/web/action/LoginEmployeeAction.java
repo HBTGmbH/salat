@@ -108,6 +108,8 @@ public class LoginEmployeeAction extends Action {
 		request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
 		request.getSession().setAttribute("report", "W");  
 		
+		request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+		
 		if ((loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL)) || 
 			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_GF)) ||
 			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
@@ -299,11 +301,14 @@ public class LoginEmployeeAction extends Action {
 			
 			List<Employeeorder> orders = new ArrayList<Employeeorder>();
 			
-			List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), "RESTURLAUB", today);
+			List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION, today);
 			List<Employeeorder> vacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, today);
+			List<Employeeorder> extraVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION, today);
+
 			
 			orders.addAll(specialVacationOrders);
 			orders.addAll(vacationOrders);
+			orders.addAll(extraVacationOrders);
 			
 			List<VacationViewer> vacations = new ArrayList<VacationViewer>();
 			
@@ -330,6 +335,11 @@ public class LoginEmployeeAction extends Action {
 		if (loginEmployee.getLoginname().equalsIgnoreCase(loginEmployee.getPassword())) {
 			return mapping.findForward("password");
 		}
+		
+//		 create collection of employees with contracts
+		List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithContractsValidForDate(date);
+		request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
+
 		
 		return mapping.findForward("success");
 	}

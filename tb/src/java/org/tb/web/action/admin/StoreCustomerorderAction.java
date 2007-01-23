@@ -84,6 +84,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				co.setUntilDate(untilDate);
 				co.setSign(coForm.getSign());
 				co.setDescription(coForm.getDescription());
+				co.setShortdescription(coForm.getShortdescription());
 				co.setHourly_rate(coForm.getHourlyRate());
 				co.setOrder_customer(coForm.getOrderCustomer());
 				
@@ -181,6 +182,9 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 		}
 		if (coForm.getDescription().length() > GlobalConstants.CUSTOMERORDER_DESCRIPTION_MAX_LENGTH) {
 			errors.add("description", new ActionMessage("form.customerorder.error.description.toolong"));
+		}
+		if (coForm.getShortdescription().length() > GlobalConstants.CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
+			errors.add("shortdescription", new ActionMessage("form.customerorder.error.shortdescription.toolong"));
 		}
 		if (coForm.getCurrency().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
 			errors.add("currency", new ActionMessage("form.customerorder.error.currency.toolong"));

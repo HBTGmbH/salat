@@ -84,6 +84,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				so.setCustomerorder(customerorderDAO.getCustomerorderById(soForm.getCustomerorderId()));
 				so.setSign(soForm.getSign());
 				so.setDescription(soForm.getDescription());
+				so.setShortdescription(soForm.getShortdescription());
 				so.setHourly_rate(soForm.getHourlyRate());
 				so.setInvoice(soForm.getInvoice().charAt(0));
 				so.setStandard(soForm.getStandard());
@@ -172,6 +173,9 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		}
 		if (soForm.getDescription().length() > GlobalConstants.CUSTOMERORDER_DESCRIPTION_MAX_LENGTH) {
 			errors.add("description", new ActionMessage("form.suborder.error.description.toolong"));
+		}
+		if (soForm.getShortdescription().length() > GlobalConstants.CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
+			errors.add("shortdescription", new ActionMessage("form.suborder.error.shortdescription.toolong"));
 		}
 		if (soForm.getCurrency().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
 			errors.add("currency", new ActionMessage("form.suborder.error.currency.toolong"));

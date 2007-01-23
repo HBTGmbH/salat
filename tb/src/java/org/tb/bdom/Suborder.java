@@ -58,6 +58,9 @@ public class Suborder implements Serializable {
 	/** Description */
 	private String description;
 	
+	/** Short Description */
+	private String shortdescription;
+	
 	/** Currency */
 	private String currency;
 
@@ -241,7 +244,27 @@ public class Suborder implements Serializable {
 	public void setStandard(Boolean standard) {
 		this.standard = standard;
 	}
+	
+	public String getShortdescription() {
+		if (shortdescription == null || shortdescription.equals("")) {
+			if (description == null) {
+				description = "";
+			}
+			if (description.length() > 12) {
+				shortdescription = description.substring(0, 9) + "...";
+			} else {
+				shortdescription = description;
+			}
+		}
+		return shortdescription;
+	}
 
+	public void setShortdescription(String shortdescription) {
+		this.shortdescription = shortdescription;
+	}
+
+	
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Suborder) {

@@ -87,7 +87,7 @@
                         cal.select(document.forms[0].validUntil,'until','yyyy-MM-dd');
                     }
                 </script> <html:text property="validFrom" readonly="false"
-				size="10" maxlength="10" /> <a
+				size="12" maxlength="10" /> <a
 				href="javascript:calenderPopupFrom()" name="from" ID="from"
 				style="text-decoration:none;"> <img
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
@@ -100,7 +100,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.validuntil.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="validUntil" readonly="false" size="10" maxlength="10" />
+				property="validUntil" readonly="false" size="12" maxlength="10" />
 			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
 				style="text-decoration:none;"> <img
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
@@ -116,6 +116,16 @@
 			<td align="left" class="noBborderStyle"><html:textarea
 				property="description" cols="30" rows="4" /> <span style="color:red"><html:errors
 				property="description" /></span></td>
+		</tr>
+		
+		<!-- Kurzbezeichnung -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.shortdescription.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="shortdescription" size="12"
+				maxlength="12" /> <span style="color:red"><html:errors
+				property="shortdescription" /></span></td>
 		</tr>
 		
 		<!-- Auftragverantwortlicher bei HBT -->
@@ -166,7 +176,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.currency.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="currency" size="10"
+				property="currency" size="12"
 				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="currency" /></span></td>
 		</tr>
@@ -175,7 +185,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.hourlyrate.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="hourlyRate" size="10" /> <span style="color:red"><html:errors
+				property="hourlyRate" size="12" /> <span style="color:red"><html:errors
 				property="hourlyRate" /></span></td>
 		</tr>
 

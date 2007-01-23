@@ -21,11 +21,9 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Monthlyreport;
 import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
-import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
 import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
 import org.tb.helper.CustomerorderHelper;
@@ -127,7 +125,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 		// check if special tasks initiated from the form or the daily display need to be carried out...
 		AddDailyReportForm reportForm = (AddDailyReportForm) form;
 		
-		boolean refreshOrders = false;
+		boolean refreshTime = false;
 
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("refreshOrders"))) {
@@ -138,7 +136,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 					return mapping.findForward("error");
 				} else {
 					//return mapping.findForward("success");
-					refreshOrders = true;
+					refreshTime = true;
 				}
 			}
 			
@@ -150,14 +148,15 @@ public class StoreDailyReportAction extends DailyReportAction {
 						suborderDAO, employeecontractDAO) != true) {
 					return mapping.findForward("error");
 				} else {
-					return mapping.findForward("success");
+					//return mapping.findForward("success");
+					refreshTime = true;
 				}
 			}
 			
 			if (((request.getParameter("task") != null) && 
-					(request.getParameter("task").equals("adjustBeginTime"))) || refreshOrders) {
+					(request.getParameter("task").equals("adjustBeginTime"))) || refreshTime) {
 				// refresh begin time to be displayed
-				refreshOrders = false;
+				refreshTime = false;
 				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
 				Employeecontract ec = null;	
 				
@@ -212,34 +211,62 @@ public class StoreDailyReportAction extends DailyReportAction {
 				if (workingday != null) {
 					workingDayIsAvailable = true;
 				} 
+								
+				// workingday should only be available for today
+				java.util.Date today = new java.util.Date();
+				String todayString = simpleDateFormat.format(today);
+				try {
+					today = simpleDateFormat.parse(todayString);
+				} catch (Exception e) {
+					throw new RuntimeException("this should never happen...!");
+				}
+				if (!selectedDate.equals(today)) {
+					workingDayIsAvailable = false;
+				}		
 				request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
+
+				Double dailyWorkingTime = ec.getDailyWorkingTime();
+				dailyWorkingTime *= 60;
+				int dailyWorkingTimeMinutes = dailyWorkingTime.intValue();
+				Customerorder selectedOrder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
+				boolean standardOrder = false;
+				if (selectedOrder != null && 
+						(selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) ||
+						 selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION) ||
+						 selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_ILL) ||
+						 selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION))) {
+					// selected order is a standard order => set daily working time als default time	
+					standardOrder = true;
+				}
 				
-				
-//				TimereportHelper.refreshHours(reportForm);
-				
-				
-				if (workingday != null) {
+				if (workingDayIsAvailable) {
 					// set the begin time as the end time of the latest existing timereport of current employee
 					// for current day. If no other reports exist so far, set standard begin time (0800).
 					int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
 					reportForm.setSelectedHourBegin(beginTime[0]);
 					reportForm.setSelectedMinuteBegin(beginTime[1]);
 					// set end time in reportform
-					java.util.Date today = new java.util.Date();
+					today = new java.util.Date();
 					SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
 					SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
 					int hour = new Integer(hourFormat.format(today));
 					int minute = new Integer(minuteFormat.format(today));
 					minute = (minute/5)*5;
 					
-					String todayString = simpleDateFormat.format(today);
+					todayString = simpleDateFormat.format(today);
 					try {
 						today = simpleDateFormat.parse(todayString);
 					} catch (Exception e) {
 						throw new RuntimeException("this should never happen...!");
 					}	
-					
-					if ((beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) && selectedDate.equals(today)) {
+					if (standardOrder) {
+						int minutes = reportForm.getSelectedHourBegin() * 60 + reportForm.getSelectedMinuteBegin();
+						minutes += dailyWorkingTimeMinutes;
+						int hours = minutes/60;
+						minutes = minutes%60;
+						reportForm.setSelectedMinuteEnd(minutes);
+						reportForm.setSelectedHourEnd(hours);
+					} else if ((beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) && selectedDate.equals(today)) {
 						reportForm.setSelectedMinuteEnd(minute);
 						reportForm.setSelectedHourEnd(hour);
 					} else {
@@ -249,12 +276,21 @@ public class StoreDailyReportAction extends DailyReportAction {
 					TimereportHelper.refreshHours(reportForm);
 				} else {
 					// working day is not available
-					reportForm.setSelectedHourBegin(0);
-					reportForm.setSelectedHourDuration(0);
-					reportForm.setSelectedHourEnd(0);
-					reportForm.setSelectedMinuteBegin(0);
-					reportForm.setSelectedMinuteDuration(0);
-					reportForm.setSelectedMinuteEnd(0);
+//					reportForm.setSelectedHourBegin(0);
+//					reportForm.setSelectedHourDuration(0);
+//					reportForm.setSelectedHourEnd(0);
+//					reportForm.setSelectedMinuteBegin(0);
+//					reportForm.setSelectedMinuteDuration(0);
+//					reportForm.setSelectedMinuteEnd(0);
+					
+					
+					if (standardOrder) {
+						int hours = dailyWorkingTimeMinutes / 60;
+						int minutes = dailyWorkingTimeMinutes % 60;
+						reportForm.setSelectedHourDuration(hours);
+						reportForm.setSelectedMinuteDuration(minutes);
+					}					
+					
 				}
 				
 				
@@ -658,15 +694,21 @@ public class StoreDailyReportAction extends DailyReportAction {
 			errors.add("referenceday", new ActionMessage("form.timereport.error.date.invalidyear"));
 		}
 		
-		// end time must be later than begin time
-		int begin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
-		int end = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
-		if (reportForm.getSortOfReport().equals("W")) {		
-			if (begin >= end) {
-				errors.add("selectedHourBegin", new ActionMessage("form.timereport.error.endbeforebegin"));
-			}
-		}
+		Boolean workingDayIsAvailable = (Boolean) request.getSession().getAttribute("workingDayIsAvailable");
 		
+		if (workingDayIsAvailable) {
+			// end time must be later than begin time
+			int begin = reportForm.getSelectedHourBegin() * 100
+					+ reportForm.getSelectedMinuteBegin();
+			int end = reportForm.getSelectedHourEnd() * 100
+					+ reportForm.getSelectedMinuteEnd();
+			if (reportForm.getSortOfReport().equals("W")) {
+				if (begin >= end) {
+					errors.add("selectedHourBegin", new ActionMessage(
+							"form.timereport.error.endbeforebegin"));
+				}
+			}
+		}		
 		// check if report types for one day are unique and if there is no time overlap with other work reports
 //		boolean timeOverlap = false;
 		List<Timereport> dailyReports = 

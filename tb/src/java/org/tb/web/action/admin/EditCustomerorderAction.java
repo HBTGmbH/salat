@@ -100,6 +100,7 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 		}
 		coForm.setSign(co.getSign());
 		coForm.setDescription(co.getDescription());
+		coForm.setShortdescription(co.getShortdescription());
 		
 		Date fromDate = new Date(co.getFromDate().getTime()); // convert to java.util.Date
 		//coForm.setValidFrom(DateUtils.getDateString(fromDate));

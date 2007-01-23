@@ -42,6 +42,7 @@ public class GlobalConstants {
 	
 	public static final int CUSTOMERORDER_SIGN_MAX_LENGTH = 16;
 	public static final int CUSTOMERORDER_DESCRIPTION_MAX_LENGTH = 256;
+	public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 12;
 	public static final int CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH = 64;
 	public static final int CUSTOMERORDER_RESP_HBT_MAX_LENGTH = 64;
 	public static final int CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH = 64;
@@ -120,7 +121,8 @@ public class GlobalConstants {
 	// customer order signs
 	public static final String CUSTOMERORDER_SIGN_ILL = "KRANK";
 	public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
-	public static final String CUSTOMERORDER_SIGN_EXTRA_VACATION = "SONDERURLAUB";
+	public static final String CUSTOMERORDER_SIGN_EXTRA_VACATION = "S-URLAUB";
+	public static final String CUSTOMERORDER_SIGN_REMAINING_VACATION = "RESTURLAUB";
 	
     // matrix constants
     public static final int MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES = 1;
