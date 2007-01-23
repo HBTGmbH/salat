@@ -1,0 +1,208 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+
+<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
+<%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
+<%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title><bean:message key="main.general.application.title" /> -
+<bean:message key="main.general.mainmenu.matrix.title.text" /></title>
+<link rel="stylesheet" type="text/css" href="/tb/matrixprint.css"
+	media="all" />
+<link rel="stylesheet" type="text/css" href="/tb/print.css"
+	media="print" />
+<script type="text/javascript" language="JavaScript">	
+ 	function setUpdateMergedreportsAction(form) {	
+ 		form.action = "/tb/do/ShowMatrix?task=refreshMergedreports";
+		form.submit();
+	}
+</script>
+</head>
+<body>
+<FORM ONSUBMIT="javascript:window.print();return false;">
+<div align="right"><input class="hiddencontent" type="submit"
+	value="Drucken"></div>
+<c:out value="${currentEmployee}" /> / <c:out value="${currentOrder}" />
+/ <c:out value="${currentDay}" />. <c:out value="${currentMonth}" /> <c:out
+	value="${currentYear}" /></form>
+
+<table style="border:1px black solid;" class="matrix" width="100%">
+	<tr class="matrix">
+		<th class="matrix" colspan="2"><span style="font-size:12pt;"><bean:message
+			key="main.matrixoverview.headline.hbtgmbh.text" /></span><br>
+		<bean:message key="main.matrixoverview.headline.adress.text" />,<br>
+		<bean:message key="main.matrixoverview.headline.place.text" />, <bean:message
+			key="main.matrixoverview.headline.phone.text" /></th>
+		<th class="matrix" colspan="${daysofmonth+1}">
+		<center>
+		<table width="60%">
+			<tr>
+				<th class="matrix noBborderStyle" colspan="3"><span
+					style="font-size:12pt;"><bean:message
+					key="main.matrixoverview.headline.tb.text" /></span></th>
+			</tr>
+			<tr>
+				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
+					key="main.matrixoverview.headline.name.text" />:--> <c:out
+					value="${currentEmployee}" /></th>
+				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
+					key="main.matrixoverview.headline.month.text" />:--> <c:out
+					value="${currentMonth}" /></th>
+				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
+					key="main.matrixoverview.headline.year.text" />:--> <c:out
+					value="${currentYear}" /></th>
+			</tr>
+		</table>
+		</center>
+		<br>
+		</th>
+	</tr>
+
+	<!-- <tr>
+		<td colspan="2" class="matrix bold">Kalenderwoche / Stunden</td>
+		<td colspan="${daysofmonth}" class="matrix bold">n/a</td>
+		<td rowspan="2" class="matrix bold">Summe</td>
+	</tr> -->
+
+	<tr>
+		<td class="matrix bold"><bean:message
+			key="main.matrixoverview.table.customerordernr.text" /></td>
+		<td class="matrix bold"><bean:message
+			key="main.matrixoverview.table.subordernr.text" /></td>
+		<!-- <td>AuftragsBezeichnung</td> -->
+		<c:forEach var="dayhourcount" items="${dayhourcounts}">
+
+			<!-- 			<td align="center" class="matrix bold"> -->
+			<c:if test="${dayhourcount.satSun==true}">
+				<c:if test="${dayhourcount.publicHoliday==true}">
+					<td
+						title="${dayhourcount.publicHolidayName} / <bean:message
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right" style="background-color:c1c1c1;">
+				</c:if>
+				<c:if test="${dayhourcount.publicHoliday==false}">
+					<td title="<bean:message
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right"
+						style="background-color:lightgrey;">
+				</c:if>
+			</c:if>
+			<c:if test="${dayhourcount.satSun==false}">
+				<c:if test="${dayhourcount.publicHoliday==true}">
+					<td color="c1c1c1"
+						title="${dayhourcount.publicHolidayName} / <bean:message
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right" style="background-color:c1c1c1;">
+				</c:if>
+				<c:if test="${dayhourcount.publicHoliday==false}">
+					<td title="<bean:message
+					key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right">
+				</c:if>
+
+			</c:if>
+			&nbsp;<c:out value="${dayhourcount.dayString}" />&nbsp;
+		
+		</td>
+		</c:forEach>
+		<td class="matrix bold"><bean:message
+			key="main.matrixoverview.table.sum.text" /></td>
+	</tr>
+
+	<!--<c:forEach var="mergedreport" items="${mergedreports}">
+		<tr class="matrix">
+			<td class="matrix"
+				title="<c:out value="${mergedreport.taskdescription}"></c:out>"><c:out
+				value="${mergedreport.customOrderSign}"></c:out>/<c:out
+				value="${mergedreport.subOrderSign}"></c:out></td>
+			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
+				<td class="matrix"><c:out value="${bookingday.durationHours}"></c:out>,<c:out
+					value="${bookingday.durationMinutes}"></c:out></td>
+			</c:forEach>
+		</tr>
+	</c:forEach>
+	-->
+	<c:forEach var="mergedreport" items="${mergedreports}">
+		<tr class="matrix">
+			<td class="matrix" style="font-size: 6pt;border:1px black solid;"
+				title="<c:out value="${mergedreport.taskdescription}"></c:out>">
+			<c:out value="${mergedreport.customOrderSign}"></c:out></td>
+			<td class="matrix" class="matrix"
+				style="font-size: 6pt;border:1px black solid;"><c:out
+				value="${mergedreport.subOrderSign}"></c:out></td>
+			<!--<td><c:out value="${mergedreport.sign}"></c:out></td>-->
+			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
+				<c:if test="${bookingday.satSun==true}">
+					<c:if test="${bookingday.publicHoliday==true}">
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right"
+							style="font-size: 6pt;border:1px black solid;background-color:c1c1c1;">
+					</c:if>
+					<c:if test="${bookingday.publicHoliday==false}">
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right"
+							style="font-size: 6pt;border:1px black solid;background-color:lightgrey;">
+					</c:if>
+				</c:if>
+				<c:if test="${bookingday.satSun==false}">
+					<c:if test="${bookingday.publicHoliday==true}">
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right"
+							style="font-size: 6pt;border:1px black solid;background-color:c1c1c1;">
+					</c:if>
+					<c:if test="${bookingday.publicHoliday==false}">
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right" style="font-size: 6pt;border:1px black solid;">
+					</c:if>
+
+				</c:if>
+				<c:if
+					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
+				<c:if
+					test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+					<!--<c:out
+						value="${(((bookingday.durationHours*60)+(bookingday.durationMinutes))/60)}"></c:out>-->
+					<c:out value="${bookingday.roundHours}"></c:out>
+				</c:if>
+				</td>
+			</c:forEach>
+			<td class="matrix" align="right"><c:out
+				value="${mergedreport.roundSum}"></c:out></td>
+		</tr>
+	</c:forEach>
+	<tr class="matrix">
+		<td colspan="2" class="matrix bold"
+			style="border-top:2px black solid;" align="right"><bean:message
+			key="main.matrixoverview.table.overall.text" /></td>
+		<c:forEach var="dayhourcount" items="${dayhourcounts}">
+
+			<td class="matrix" style="font-size: 6pt;border-top:2px black solid;"
+				align="right"><c:if
+				test="${!(dayhourcount.workingHour eq '0.0')}">
+				<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+			</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+
+		</c:forEach>
+		<td class="matrix bold" style="border-top:2px black solid;"
+			align="right"><c:out value="${dayhourssum}"></c:out></td>
+	</tr>
+</table>
+<br>
+<br>
+<table>
+	<tr>
+		<td
+			style="font-size: 12pt;border:1px black solid;border-style:none none solid none;"
+			class="bold matrix" width="250px">&nbsp;</td>
+		<td style="font-size: 12pt;border:0px black solid;" width="40px">&nbsp;</td>
+		<td
+			style="font-size: 12pt;border:1px black solid;border-style:none none solid none;"
+			class="bold matrix" width="250px">&nbsp;</td>
+	</tr>
+</table>
+</body>
+</html>

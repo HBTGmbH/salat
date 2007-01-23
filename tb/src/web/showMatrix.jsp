@@ -321,22 +321,25 @@
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">
-						<td title="${bookingday.taskdescription}" class="matrix" align="right"
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right"
 							style="font-size: 7pt;border:1px black solid;background-color:c1c1c1;">
 					</c:if>
 					<c:if test="${bookingday.publicHoliday==false}">
-						<td title="${bookingday.taskdescription}" class="matrix" align="right"
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right"
 							style="font-size: 7pt;border:1px black solid;background-color:lightgrey;">
 					</c:if>
 				</c:if>
 				<c:if test="${bookingday.satSun==false}">
 					<c:if test="${bookingday.publicHoliday==true}">
-						<td title="${bookingday.taskdescription}" class="matrix" align="right"
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right"
 							style="font-size: 7pt;border:1px black solid;background-color:c1c1c1;">
 					</c:if>
 					<c:if test="${bookingday.publicHoliday==false}">
-						<td title="${bookingday.taskdescription}" class="matrix" align="right"
-							style="font-size: 7pt;border:1px black solid;">
+						<td title="${bookingday.taskdescription}" class="matrix"
+							align="right" style="font-size: 7pt;border:1px black solid;">
 					</c:if>
 
 				</c:if>
@@ -415,6 +418,30 @@
 		<td class="matrix" style="text-align:right;"
 			colspan="${daysofmonth-5}"><bean:message
 			key="main.matrixoverview.table.vacation.text" /></td>
+	</tr>
+</table>
+<table>
+	<tr>
+		<c:if
+			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
+			<html:form action="/CreateDailyReport">
+				<td class="noBborderStyle" align="left"><html:submit
+					styleId="button">
+					<bean:message key="main.general.button.createnewreport.text" />
+				</html:submit></td>
+			</html:form>
+		</c:if>
+	</tr>
+	<br>
+	<tr>
+		<html:form target="fenster"
+			onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
+			action="/ShowMatrix?task=print">
+			<td class="noBborderStyle" align="left"><html:submit
+				styleId="button">
+				<bean:message key="main.general.button.printpreview.text" />
+			</html:submit></td>
+		</html:form>
 	</tr>
 </table>
 </body>
