@@ -283,7 +283,7 @@ public class ShowMatrixAction extends DailyReportAction {
             gc.setTime(dateFirst);
             request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
             
-            refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+//            refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
             
             return mapping.findForward("success");
 
@@ -397,7 +397,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 String yearString = dt.toString().substring(length - 4, length);
 
                 request.getSession().setAttribute("currentDay", dayString);
-                request.getSession().setAttribute("currentMonth", monthMap.get(reportForm.getFromMonth()));
+                request.getSession().setAttribute("currentMonth", monthMap.get(monthString));
                 request.getSession().setAttribute("currentYear", yearString);
 
                 reportForm.setFromDay("01");

@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.persistence.EmployeecontractDAO;
@@ -58,11 +59,22 @@ public class MatrixHelper {
         weekDaysMap.put(7, "main.matrixoverview.weekdays.saturday.text");
         weekDaysMap.put(1, "main.matrixoverview.weekdays.sunday.text");
         //        List test = getMonths(dateFirst, dateLast);
-         
+
         if (method == 1 || method == 3) {
-            timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate);
+            if (employeeId == -1) {
+                timeReportList = trDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
+            } else {
+                timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate);
+            }
         } else if (method == 2 || method == 4) {
-            timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate, customerOrderId);
+            if (employeeId == -1) {
+                timeReportList = trDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, customerOrderId);
+            } else {
+                timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(),
+                        beginSqlDate,
+                        endSqlDate,
+                        customerOrderId);
+            }
         } else {
             timeReportList = new ArrayList<Timereport>();
             throw new RuntimeException("this should not happen!");
@@ -105,13 +117,11 @@ public class MatrixHelper {
                         tempMergedReport.addBookingDay(date, durationHours, durationMinutes, taskdescription);
                         mergedReportList.set(mrIndex, tempMergedReport);
                     } else {
-                        mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(),
-                                tempTimeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
+                        mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(), tempTimeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
                     }
                 }
             } else {
-                mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(), tempTimeReport
-                        .getSuborder(), taskdescription, date, durationHours, durationMinutes));
+                mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(), tempTimeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
             }
         }
         //        }
@@ -149,15 +159,16 @@ public class MatrixHelper {
                         if (!dayHoursCount.isEmpty()) {
                             if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
                                 tempBookingDay.setSatSun(true);
-//                                tempDayAndWorkingHourCount.setSatSun(true);
+                                //                                tempDayAndWorkingHourCount.setSatSun(true);
                             } else {
                                 dayHoursTarget++;
                             }
                             for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
                                 tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
                                 if (tempDayAndWorkingHourCount.getDay() == day) {
-                                    tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day, ((tempBookingDay.getDurationHours() * 60)
-                                            + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60, tempBookingDay.getDate());
+                                    tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day,
+                                            ((tempBookingDay.getDurationHours() * 60) + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60, tempBookingDay
+                                                    .getDate());
                                     dayHoursCount.set(dayHoursCount.indexOf(tempDayAndWorkingHourCount), tempDayAndWorkingHourCount2);
                                     for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
                                         tempPublicHoliday = (Publicholiday)iter3.next();
@@ -195,8 +206,18 @@ public class MatrixHelper {
         dayHoursSum = dayHoursSumTemp / 10.0;
 
         int mergedReportListSize = mergedReportList.size();
-        dayHoursTarget = (dayHoursTarget / mergedReportListSize * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
-
+        if (employeeId == -1) {
+            List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
+            Employeecontract tempEmployeeContract;
+            Double tempDailyWorkingTime=0.0;
+            for(Iterator iter = employeeContractList.iterator();iter.hasNext();){
+                tempEmployeeContract = (Employeecontract)iter.next();
+                tempDailyWorkingTime+=tempEmployeeContract.getDailyWorkingTime();
+            }
+            dayHoursTarget = (dayHoursTarget / mergedReportListSize * tempDailyWorkingTime);
+        }else{
+            dayHoursTarget = (dayHoursTarget / mergedReportListSize * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
+        }
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;
         int dayHoursTargetTemp = dayHoursTarget.intValue();
         dayHoursTarget = dayHoursTargetTemp / 10.0;
@@ -213,49 +234,49 @@ public class MatrixHelper {
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
 
-//    public List<List> getMonths(Date dateFirst, Date dateLast) {
-//        Calendar gcFirst = GregorianCalendar.getInstance();
-//        Calendar gcLast = GregorianCalendar.getInstance();
-//        Calendar tempGc = GregorianCalendar.getInstance();
-//        gcFirst.setTime(dateFirst);
-//        gcLast.setTime(dateLast);
-//        List<List> dateAL = new ArrayList<List>();
-//        List<Date> tempDateAl = new ArrayList<Date>();
-//
-//        Date dateFirstBegin = dateFirst;
-//        tempDateAl.add(dateFirstBegin);
-//        tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
-//        Date dateFirstEnd = tempGc.getTime();
-//        tempDateAl.add(dateFirstEnd);
-//        dateAL.add(tempDateAl);
-//        tempDateAl.clear();
-//
-//        if (gcFirst.get(GregorianCalendar.MONTH) != gcLast.get(GregorianCalendar.MONTH)) {
-//            tempGc.set(gcLast.get(GregorianCalendar.YEAR), gcLast.get(GregorianCalendar.MONTH), gcLast.getMinimum(GregorianCalendar.DAY_OF_MONTH));
-//            Date dateLastBegin = tempGc.getTime();
-//            Date dateLastEnd = dateLast;
-//
-//            tempDateAl.add(dateLastBegin);
-//            tempDateAl.add(dateLastEnd);
-//            dateAL.add(tempDateAl);
-//            tempDateAl.clear();
-//            gcFirst.add(Calendar.MONTH, 1);
-//            while ((gcFirst.getTime().after(dateFirst) && gcFirst.getTime().before(dateLast)) || gcFirst.getTime().equals(dateFirst) || gcFirst.getTime().equals(dateLast)) {
-//                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMinimum(GregorianCalendar.DAY_OF_MONTH));
-//                dateFirstBegin = tempGc.getTime();
-//                tempDateAl.add(dateFirstBegin);
-//                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
-//                dateLastBegin = tempGc.getTime();
-//                tempDateAl.add(dateLastBegin);
-//                dateAL.add(dateAL.size() - 1, tempDateAl);
-//                tempDateAl.clear();
-//                gcFirst.add(Calendar.MONTH, 1);
-//            }
-//        }
-//
-//        return dateAL;
-//
-//    }
+    //    public List<List> getMonths(Date dateFirst, Date dateLast) {
+    //        Calendar gcFirst = GregorianCalendar.getInstance();
+    //        Calendar gcLast = GregorianCalendar.getInstance();
+    //        Calendar tempGc = GregorianCalendar.getInstance();
+    //        gcFirst.setTime(dateFirst);
+    //        gcLast.setTime(dateLast);
+    //        List<List> dateAL = new ArrayList<List>();
+    //        List<Date> tempDateAl = new ArrayList<Date>();
+    //
+    //        Date dateFirstBegin = dateFirst;
+    //        tempDateAl.add(dateFirstBegin);
+    //        tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
+    //        Date dateFirstEnd = tempGc.getTime();
+    //        tempDateAl.add(dateFirstEnd);
+    //        dateAL.add(tempDateAl);
+    //        tempDateAl.clear();
+    //
+    //        if (gcFirst.get(GregorianCalendar.MONTH) != gcLast.get(GregorianCalendar.MONTH)) {
+    //            tempGc.set(gcLast.get(GregorianCalendar.YEAR), gcLast.get(GregorianCalendar.MONTH), gcLast.getMinimum(GregorianCalendar.DAY_OF_MONTH));
+    //            Date dateLastBegin = tempGc.getTime();
+    //            Date dateLastEnd = dateLast;
+    //
+    //            tempDateAl.add(dateLastBegin);
+    //            tempDateAl.add(dateLastEnd);
+    //            dateAL.add(tempDateAl);
+    //            tempDateAl.clear();
+    //            gcFirst.add(Calendar.MONTH, 1);
+    //            while ((gcFirst.getTime().after(dateFirst) && gcFirst.getTime().before(dateLast)) || gcFirst.getTime().equals(dateFirst) || gcFirst.getTime().equals(dateLast)) {
+    //                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMinimum(GregorianCalendar.DAY_OF_MONTH));
+    //                dateFirstBegin = tempGc.getTime();
+    //                tempDateAl.add(dateFirstBegin);
+    //                tempGc.set(gcFirst.get(GregorianCalendar.YEAR), gcFirst.get(GregorianCalendar.MONTH), gcFirst.getMaximum(GregorianCalendar.DAY_OF_MONTH));
+    //                dateLastBegin = tempGc.getTime();
+    //                tempDateAl.add(dateLastBegin);
+    //                dateAL.add(dateAL.size() - 1, tempDateAl);
+    //                tempDateAl.clear();
+    //                gcFirst.add(Calendar.MONTH, 1);
+    //            }
+    //        }
+    //
+    //        return dateAL;
+    //
+    //    }
 }
 
 /*

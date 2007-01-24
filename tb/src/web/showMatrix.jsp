@@ -41,9 +41,9 @@
 				property="employeeId" value="${currentEmployeeId}"
 				onchange="setUpdateMergedreportsAction(this.form)">
 
-				<!--<html:option value="-1">
+				<html:option value="-1">
 					<bean:message key="main.general.allemployees.text" />
-				</html:option>-->
+				</html:option>
 
 				<html:options collection="employeeswithcontract"
 					labelProperty="name" property="id" />
