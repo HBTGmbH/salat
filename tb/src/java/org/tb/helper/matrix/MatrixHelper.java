@@ -148,6 +148,29 @@ public class MatrixHelper {
         gc.setTime(dateFirst);
         Double dayHoursTarget = 0.0;
         List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
+
+        while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
+            day++;
+            for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
+                tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
+                if (tempDayAndWorkingHourCount.getDay() == day) {
+                    for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
+                        tempPublicHoliday = (Publicholiday)iter3.next();
+                        if (tempPublicHoliday.getRefdate().equals(gc.getTime())) {
+                            dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setPublicHoliday(true);
+                            dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setPublicHolidayName(tempPublicHoliday.getName());
+                        }
+                    }
+                    if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
+                        dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setSatSun(true);
+                    }
+                    dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setWeekDay((String)weekDaysMap.get(gc.get(gc.DAY_OF_WEEK)));
+                }
+            }
+            gc.add(Calendar.DAY_OF_MONTH, 1);
+        }
+        gc.setTime(dateFirst);
+        day = 0;
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
 
@@ -156,38 +179,31 @@ public class MatrixHelper {
                 for (Iterator iter2 = tempMergedReport.getBookingDay().iterator(); iter2.hasNext();) {
                     tempBookingDay = (BookingDay)iter2.next();
                     if (tempBookingDay.getDate().equals(gc.getTime())) {
-                        if (!dayHoursCount.isEmpty()) {
-                            if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
-                                tempBookingDay.setSatSun(true);
-                                //                                tempDayAndWorkingHourCount.setSatSun(true);
-                            } else {
-                                dayHoursTarget++;
-                            }
-                            for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
-                                tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
-                                if (tempDayAndWorkingHourCount.getDay() == day) {
-                                    tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day,
-                                            ((tempBookingDay.getDurationHours() * 60) + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60, tempBookingDay
-                                                    .getDate());
-                                    dayHoursCount.set(dayHoursCount.indexOf(tempDayAndWorkingHourCount), tempDayAndWorkingHourCount2);
-                                    for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
-                                        tempPublicHoliday = (Publicholiday)iter3.next();
-                                        if (tempPublicHoliday.getRefdate().equals(gc.getTime())) {
-                                            tempBookingDay.setPublicHoliday(true);
-                                            dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setPublicHoliday(true);
-                                            dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setPublicHolidayName(tempPublicHoliday.getName());
-                                        }
+                        //                        if (!dayHoursCount.isEmpty()) {
+                        if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
+                            tempBookingDay.setSatSun(true);
+                        } else {
+                            dayHoursTarget++;
+                        }
+                        for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
+                            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
+                            if (tempDayAndWorkingHourCount.getDay() == day) {
+                                tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day,
+                                        ((tempBookingDay.getDurationHours() * 60) + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60, tempBookingDay
+                                                .getDate());
+                                dayHoursCount.set(dayHoursCount.indexOf(tempDayAndWorkingHourCount), tempDayAndWorkingHourCount2);
+                                for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
+                                    tempPublicHoliday = (Publicholiday)iter3.next();
+                                    if (tempPublicHoliday.getRefdate().equals(gc.getTime())) {
+                                        tempBookingDay.setPublicHoliday(true);
+                                    }
 
-                                    }
-                                    if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
-                                        dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setSatSun(true);
-                                    }
-                                    dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount2)).setWeekDay((String)weekDaysMap.get(gc.get(gc.DAY_OF_WEEK)));
                                 }
                             }
-                        } else {
-                            throw new RuntimeException("This should not happen!");
                         }
+                        //                        } else {
+                        //                            throw new RuntimeException("This should not happen!");
+                        //                        }
                     }
                 }
 
@@ -209,13 +225,13 @@ public class MatrixHelper {
         if (employeeId == -1) {
             List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
             Employeecontract tempEmployeeContract;
-            Double tempDailyWorkingTime=0.0;
-            for(Iterator iter = employeeContractList.iterator();iter.hasNext();){
+            Double tempDailyWorkingTime = 0.0;
+            for (Iterator iter = employeeContractList.iterator(); iter.hasNext();) {
                 tempEmployeeContract = (Employeecontract)iter.next();
-                tempDailyWorkingTime+=tempEmployeeContract.getDailyWorkingTime();
+                tempDailyWorkingTime += tempEmployeeContract.getDailyWorkingTime();
             }
             dayHoursTarget = (dayHoursTarget / mergedReportListSize * tempDailyWorkingTime);
-        }else{
+        } else {
             dayHoursTarget = (dayHoursTarget / mergedReportListSize * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
         }
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;
