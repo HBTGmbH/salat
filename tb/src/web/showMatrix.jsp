@@ -291,7 +291,7 @@
 						class="matrix bold" align="right" style="background-color:c1c1c1;">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
-					<td title="<c:if test="${dayhourcount.weekDay==true}"><bean:message
+					<td title="<c:if test="${dayhourcount.weekDay!=null}"><bean:message
 					key="${dayhourcount.weekDay}" /></c:if>"
 						class="matrix bold" align="right">
 				</c:if>
