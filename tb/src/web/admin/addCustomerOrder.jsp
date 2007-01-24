@@ -123,8 +123,8 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.shortdescription.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="shortdescription" size="12"
-				maxlength="12" /> <span style="color:red"><html:errors
+				property="shortdescription" size="20"
+				maxlength="20" /> <span style="color:red"><html:errors
 				property="shortdescription" /></span></td>
 		</tr>
 		
@@ -176,7 +176,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.currency.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="currency" size="12"
+				property="currency" size="20"
 				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="currency" /></span></td>
 		</tr>
@@ -185,7 +185,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.hourlyrate.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="hourlyRate" size="12" /> <span style="color:red"><html:errors
+				property="hourlyRate" size="20" /> <span style="color:red"><html:errors
 				property="hourlyRate" /></span></td>
 		</tr>
 

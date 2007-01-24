@@ -42,7 +42,7 @@ public class GlobalConstants {
 	
 	public static final int CUSTOMERORDER_SIGN_MAX_LENGTH = 16;
 	public static final int CUSTOMERORDER_DESCRIPTION_MAX_LENGTH = 256;
-	public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 12;
+	public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 20;
 	public static final int CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH = 64;
 	public static final int CUSTOMERORDER_RESP_HBT_MAX_LENGTH = 64;
 	public static final int CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH = 64;

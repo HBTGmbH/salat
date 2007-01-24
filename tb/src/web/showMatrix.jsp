@@ -317,7 +317,8 @@
 		<tr class="matrix">
 			<td class="matrix">
 			<c:out value="${mergedreport.customOrder.sign}"></c:out><br><c:out value="${mergedreport.subOrder.sign}" /></td>
-			<td class="matrix">&nbsp;</td>
+			<td class="matrix"><c:out value="${mergedreport.customOrder.shortdescription}"></c:out><br>
+			<c:out value="${mergedreport.subOrder.shortdescription}" /></td></td>
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">

@@ -26,10 +26,7 @@
 <FORM ONSUBMIT="javascript:window.print();return false;">
 <div align="right"><input class="hiddencontent" type="submit"
 	value="Drucken"></div>
-<c:out value="${currentEmployee}" /> / <c:out value="${currentOrder}" />
-/ <c:out value="${currentDay}" />. <c:out value="${currentMonth}" /> <c:out
-	value="${currentYear}" /></form>
-
+</form>
 <table style="border:1px black solid;" class="matrix" width="100%">
 	<tr class="matrix">
 		<th class="matrix" colspan="2"><span style="font-size:12pt;"><bean:message
@@ -70,9 +67,9 @@
 
 	<tr>
 		<td class="matrix bold"><bean:message
-			key="main.matrixoverview.table.customerordernr.text" /></td>
+			key="main.matrixoverview.table.order" /></td>
 		<td class="matrix bold"><bean:message
-			key="main.matrixoverview.table.subordernr.text" /></td>
+			key="main.matrixoverview.table.description" /></td>
 		<!-- <td>AuftragsBezeichnung</td> -->
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
@@ -116,10 +113,11 @@
 	<c:forEach var="mergedreport" items="${mergedreports}">
 		<tr class="matrix">
 			<td class="matrix" style="font-size: 6pt;border:1px black solid;">
-			<c:out value="${mergedreport.customOrder.sign}"></c:out></td>
-			<td class="matrix" class="matrix"
-				style="font-size: 6pt;border:1px black solid;"><c:out
-				value="${mergedreport.subOrder.sign}"></c:out></td>
+			<c:out value="${mergedreport.customOrder.sign}" /><br>
+			<c:out value="${mergedreport.subOrder.sign}" /></td>
+			<td class="matrix" style="font-size: 6pt;border:1px black solid;">
+			<c:out value="${mergedreport.customOrder.shortdescription}"></c:out><br>
+			<c:out value="${mergedreport.subOrder.shortdescription}" /></td>
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">

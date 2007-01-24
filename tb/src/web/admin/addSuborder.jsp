@@ -79,8 +79,8 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.shortdescription.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="shortdescription" size="12"
-				maxlength="12" /> <span style="color:red"><html:errors
+				property="shortdescription" size="20"
+				maxlength="20" /> <span style="color:red"><html:errors
 				property="shortdescription" /></span></td>
 		</tr>
 
@@ -106,7 +106,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.currency.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="currency" size="12" value="<%=currency%>" /> <span
+				property="currency" size="20" value="<%=currency%>" /> <span
 				style="color:red"><html:errors property="currency" /></span></td>
 		</tr>
 
@@ -114,7 +114,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.hourlyrate.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="hourlyRate" size="12" value="<%=hrString%>" /> <span
+				property="hourlyRate" size="20" value="<%=hrString%>" /> <span
 				style="color:red"><html:errors property="hourlyRate" /></span></td>
 		</tr>
 		
