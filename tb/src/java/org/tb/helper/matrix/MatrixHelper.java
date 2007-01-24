@@ -82,7 +82,7 @@ public class MatrixHelper {
                 for (Iterator iter2 = mergedReportList.iterator(); iter2.hasNext();) {
                     tempMergedReport = (MergedReport)iter2.next();
                     mrIndex = mergedReportList.indexOf(tempMergedReport);
-                    if ((tempMergedReport.getCustomOrderSign() + tempMergedReport.getSubOrderSign()).equals(tempTimeReport.getSuborder().getCustomerorder().getSign()
+                    if ((tempMergedReport.getCustomOrder().getSign() + tempMergedReport.getSubOrder().getSign()).equals(tempTimeReport.getSuborder().getCustomerorder().getSign()
                             + tempTimeReport.getSuborder().getSign())) {
                         for (Iterator iter3 = tempMergedReport.getBookingDay().iterator(); iter3.hasNext();) {
                             tempBookingDay = (BookingDay)iter3.next();
@@ -103,16 +103,15 @@ public class MatrixHelper {
                 if (!bookingDayAvailable) {
                     if (mergedReportAvailable) {
                         tempMergedReport.addBookingDay(date, durationHours, durationMinutes, taskdescription);
-                        tempMergedReport.addTaskdescription(taskdescription);
                         mergedReportList.set(mrIndex, tempMergedReport);
                     } else {
-                        mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder().getDescription(), tempTimeReport.getSuborder().getCustomerorder().getSign(),
-                                tempTimeReport.getSuborder().getSign(), taskdescription, date, durationHours, durationMinutes));
+                        mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(),
+                                tempTimeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
                     }
                 }
             } else {
-                mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder().getDescription(), tempTimeReport.getSuborder().getCustomerorder().getSign(), tempTimeReport
-                        .getSuborder().getSign(), taskdescription, date, durationHours, durationMinutes));
+                mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(), tempTimeReport
+                        .getSuborder(), taskdescription, date, durationHours, durationMinutes));
             }
         }
         //        }

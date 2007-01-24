@@ -313,26 +313,11 @@
 			key="main.matrixoverview.table.sum.text" /></td>
 	</tr>
 
-	<!--<c:forEach var="mergedreport" items="${mergedreports}">
-		<tr class="matrix">
-			<td class="matrix"
-				title="<c:out value="${mergedreport.taskdescription}"></c:out>"><c:out
-				value="${mergedreport.customOrderSign}"></c:out>/<c:out
-				value="${mergedreport.subOrderSign}"></c:out></td>
-			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
-				<td class="matrix"><c:out value="${bookingday.durationHours}"></c:out>,<c:out
-					value="${bookingday.durationMinutes}"></c:out></td>
-			</c:forEach>
-		</tr>
-	</c:forEach>
-	-->
 	<c:forEach var="mergedreport" items="${mergedreports}">
 		<tr class="matrix">
-			<td class="matrix"
-				title="<c:out value="${mergedreport.taskdescription}"></c:out>">
-			<c:out value="${mergedreport.customOrderSign}"></c:out><br><c:out value="${mergedreport.subOrderSign}" /></td>
+			<td class="matrix">
+			<c:out value="${mergedreport.customOrder.sign}"></c:out><br><c:out value="${mergedreport.subOrder.sign}" /></td>
 			<td class="matrix">&nbsp;</td>
-			<!--<td><c:out value="${mergedreport.sign}"></c:out></td>-->
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">

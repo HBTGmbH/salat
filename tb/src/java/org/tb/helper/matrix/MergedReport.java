@@ -17,6 +17,9 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Suborder;
+
 /**
  * @author cb
  * @since 04.12.2006
@@ -30,19 +33,15 @@ public class MergedReport implements Comparable {
      * @author cb
      * @since 04.12.2006
      */
-    public MergedReport(String sign, String customOrderSign, String subOrderSign, String taskdescription, Date date, long durationHours, long durationMinutes) {
+    public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, Date date, long durationHours, long durationMinutes) {
         super();
-        this.sign = sign;
-        this.subOrderSign = subOrderSign;
-        this.customOrderSign = customOrderSign;
-        this.taskdescription = taskdescription;
+        this.subOrder = subOrder;
+        this.customOrder = customOrder;
         addBookingDay(date, durationHours, durationMinutes, taskdescription);
     }
 
-    private String sign;
-    private String subOrderSign;
-    private String customOrderSign;
-    private String taskdescription;
+    private Suborder subOrder;
+    private Customerorder customOrder;
     private double sum;
     private ArrayList bookingDay = new ArrayList<BookingDay>();
 
@@ -99,22 +98,8 @@ public class MergedReport implements Comparable {
         }
     }
 
-    public void addTaskdescription(String taskdescription) {
-        if (!taskdescription.equals("") && !taskdescription.equals(null)) {
-            this.taskdescription = this.taskdescription + "/" + taskdescription;
-        }
-    }
-
     public ArrayList getBookingDay() {
         return bookingDay;
-    }
-
-    public String getSubOrderSign() {
-        return subOrderSign;
-    }
-
-    public String getCustomOrderSign() {
-        return customOrderSign;
     }
 
     public String toString() {
@@ -124,34 +109,38 @@ public class MergedReport implements Comparable {
             temp = (BookingDay)iter.next();
             test = test + temp.getDate() + "-" + temp.getDurationHours() + "/" + temp.getDurationMinutes() + " // ";
         }
-        return "<br>" + customOrderSign + subOrderSign + " - " + taskdescription + " - " + test;
+        return "<br>" + customOrder.getSign() + subOrder.getSign() + " - " + test;
     }
 
     public int compareTo(Object o) {
         if (o instanceof MergedReport) {
-            return (this.customOrderSign + this.subOrderSign).compareTo((((MergedReport)o).customOrderSign + ((MergedReport)o).subOrderSign));
+            return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo((((MergedReport)o).customOrder.getSign() + ((MergedReport)o).subOrder.getSign()));
         } else {
             throw new IllegalArgumentException("Parameter must be a MergedReport");
         }
 
-    }
-
-    public String getTaskdescription() {
-        return taskdescription;
-    }
-
-    public String getSign() {
-        return sign;
-    }
-
-    public void setSign(String sign) {
-        this.sign = sign;
     }
     
     public Double getRoundSum(){
         Double duration=(sum+0.05)*10;
         int temp = duration.intValue();
         return temp/10.0;
+    }
+
+    public Customerorder getCustomOrder() {
+        return customOrder;
+    }
+
+    public void setCustomOrder(Customerorder customOrder) {
+        this.customOrder = customOrder;
+    }
+
+    public Suborder getSubOrder() {
+        return subOrder;
+    }
+
+    public void setSubOrder(Suborder subOrder) {
+        this.subOrder = subOrder;
     }
 
 }
