@@ -32,7 +32,7 @@
 <br>
 <html:form action="/ShowMatrix">
 	<table class="center backgroundcolor">
-		
+
 		<!-- select employee -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
@@ -235,7 +235,8 @@
 					key="main.matrixoverview.headline.name.text" />:--> <c:out
 					value="${currentEmployee}" /></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
-					key="main.matrixoverview.headline.month.text" />:--> <bean:message key="${currentMonth}" /></th>
+					key="main.matrixoverview.headline.month.text" />:--> <bean:message
+					key="${currentMonth}" /></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.year.text" />:--> <c:out
 					value="${currentYear}" /></th>
@@ -253,26 +254,18 @@
 	</tr> -->
 
 	<tr>
-		<td class="matrix bold">
-			<!--
+		<td class="matrix bold"><!--
 			<bean:message
 				key="main.matrixoverview.table.customerordernr.text" />
-			-->
-			<bean:message
-				key="main.matrixoverview.table.order" />
-		</td>
-		<td class="matrix bold">
-			<!-- 
+			--> <bean:message key="main.matrixoverview.table.order" /></td>
+		<td class="matrix bold"><!-- 
 			<bean:message
 				key="main.matrixoverview.table.subordernr.text" />
-			-->
-			<bean:message
-				key="main.matrixoverview.table.description" />
-		</td>
-		
-		
+			--> <bean:message key="main.matrixoverview.table.description" /></td>
+
+
 		<!-- <td>AuftragsBezeichnung</td> -->
-		
+
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
 			<!-- 			<td align="center" class="matrix bold"> -->
@@ -298,8 +291,8 @@
 						class="matrix bold" align="right" style="background-color:c1c1c1;">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
-					<td title="<bean:message
-					key="${dayhourcount.weekDay}" />"
+					<td title="<c:if test="${dayhourcount.weekDay==true}"><bean:message
+					key="${dayhourcount.weekDay}" /></c:if>"
 						class="matrix bold" align="right">
 				</c:if>
 
@@ -314,10 +307,13 @@
 
 	<c:forEach var="mergedreport" items="${mergedreports}">
 		<tr class="matrix">
-			<td class="matrix">
-			<c:out value="${mergedreport.customOrder.sign}"></c:out><br><c:out value="${mergedreport.subOrder.sign}" /></td>
-			<td class="matrix"><c:out value="${mergedreport.customOrder.shortdescription}"></c:out><br>
-			<c:out value="${mergedreport.subOrder.shortdescription}" /></td></td>
+			<td class="matrix"><c:out
+				value="${mergedreport.customOrder.sign}"></c:out><br>
+			<c:out value="${mergedreport.subOrder.sign}" /></td>
+			<td class="matrix"><c:out
+				value="${mergedreport.customOrder.shortdescription}"></c:out><br>
+			<c:out value="${mergedreport.subOrder.shortdescription}" /></td>
+			</td>
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">
