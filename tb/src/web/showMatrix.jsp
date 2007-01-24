@@ -235,8 +235,7 @@
 					key="main.matrixoverview.headline.name.text" />:--> <c:out
 					value="${currentEmployee}" /></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
-					key="main.matrixoverview.headline.month.text" />:--> <c:out
-					value="${currentMonth}" /></th>
+					key="main.matrixoverview.headline.month.text" />:--> <bean:message key="${currentMonth}" /></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.year.text" />:--> <c:out
 					value="${currentYear}" /></th>

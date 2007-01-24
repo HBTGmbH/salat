@@ -13,9 +13,9 @@ package org.tb.web.action;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,8 +27,6 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Timereport;
-import org.tb.bdom.Workingday;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.matrix.MatrixHelper;
@@ -110,6 +108,20 @@ public class ShowMatrixAction extends DailyReportAction {
         ShowMatrixForm reportForm = (ShowMatrixForm)form;
         TimereportHelper th = new TimereportHelper();
 
+        Map<String, String> monthMap = new HashMap<String, String>();
+        monthMap.put("Jan", "main.timereport.select.month.jan.text");
+        monthMap.put("Feb", "main.timereport.select.month.feb.text");
+        monthMap.put("Mar", "main.timereport.select.month.mar.text");
+        monthMap.put("Apr", "main.timereport.select.month.apr.text");
+        monthMap.put("Mai", "main.timereport.select.month.mai.text");
+        monthMap.put("Jun", "main.timereport.select.month.jun.text");
+        monthMap.put("Jul", "main.timereport.select.month.jul.text");
+        monthMap.put("Aug", "main.timereport.select.month.aug.text");
+        monthMap.put("Sep", "main.timereport.select.month.sep.text");
+        monthMap.put("Oct", "main.timereport.select.month.oct.text");
+        monthMap.put("Nov", "main.timereport.select.month.nov.text");
+        monthMap.put("Dec", "main.timereport.select.month.dec.text");
+                
         if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refreshMergedreports"))) {
 
             //selected view and selected dates
@@ -260,7 +272,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("currentOrder", reportForm.getOrder());
             }
             request.getSession().setAttribute("currentDay", reportForm.getFromDay());
-            request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
+            request.getSession().setAttribute("currentMonth", monthMap.get(reportForm.getFromMonth()));
             request.getSession().setAttribute("currentYear", reportForm.getFromYear());
 
             request.getSession().setAttribute("lastDay", reportForm.getUntilDay());
@@ -328,7 +340,7 @@ public class ShowMatrixAction extends DailyReportAction {
             if (reportForm.getFromMonth() != null) {
                 // call from list select change
                 request.getSession().setAttribute("currentDay", reportForm.getFromDay());
-                request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
+                request.getSession().setAttribute("currentMonth", monthMap.get(reportForm.getFromMonth()));
                 request.getSession().setAttribute("currentYear", reportForm.getFromYear());
 
                 Date dateFirst = new Date();
@@ -385,7 +397,7 @@ public class ShowMatrixAction extends DailyReportAction {
                 String yearString = dt.toString().substring(length - 4, length);
 
                 request.getSession().setAttribute("currentDay", dayString);
-                request.getSession().setAttribute("currentMonth", monthString);
+                request.getSession().setAttribute("currentMonth", monthMap.get(reportForm.getFromMonth()));
                 request.getSession().setAttribute("currentYear", yearString);
 
                 reportForm.setFromDay("01");

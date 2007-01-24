@@ -49,7 +49,7 @@ public class MatrixHelper {
         Timereport tempTimeReport;
         boolean mergedReportAvailable;
         boolean bookingDayAvailable;
-        Map weekDaysMap = new HashMap<Integer, String>();
+        Map<Integer, String> weekDaysMap = new HashMap<Integer, String>();
         weekDaysMap.put(2, "main.matrixoverview.weekdays.monday.text");
         weekDaysMap.put(3, "main.matrixoverview.weekdays.tuesday.text");
         weekDaysMap.put(4, "main.matrixoverview.weekdays.wednesday.text");
