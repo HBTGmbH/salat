@@ -54,7 +54,7 @@
 			key="main.suborder.sign.text" /></b></th>
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.description.text" />"><b><bean:message
-			key="main.suborder.description.text" /></b></th>
+			key="main.suborder.shortdescription.short.text" /></b></th>
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.description.text" />"><b><bean:message
 			key="main.suborder.description.text" /></b></th>
@@ -86,8 +86,8 @@
 		</c:choose>
 		<td title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
 		<td><c:out value="${suborder.sign}" /></td>
-		<td><c:out value="${suborder.description}" /></td>
 		<td><c:out value="${suborder.shortdescription}" /></td>
+		<td><c:out value="${suborder.description}" /></td>
 		<td align="center"><logic:equal name="suborder"
 			property="invoice" value="Y">
 			<bean:message key="main.suborder.invoice.yes.text" />

@@ -254,11 +254,26 @@
 	</tr> -->
 
 	<tr>
-		<td class="matrix bold"><bean:message
-			key="main.matrixoverview.table.customerordernr.text" /></td>
-		<td class="matrix bold"><bean:message
-			key="main.matrixoverview.table.subordernr.text" /></td>
+		<td class="matrix bold">
+			<!--
+			<bean:message
+				key="main.matrixoverview.table.customerordernr.text" />
+			-->
+			<bean:message
+				key="main.matrixoverview.table.order" />
+		</td>
+		<td class="matrix bold">
+			<!-- 
+			<bean:message
+				key="main.matrixoverview.table.subordernr.text" />
+			-->
+			<bean:message
+				key="main.matrixoverview.table.description" />
+		</td>
+		
+		
 		<!-- <td>AuftragsBezeichnung</td> -->
+		
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
 			<!-- 			<td align="center" class="matrix bold"> -->
@@ -315,8 +330,8 @@
 		<tr class="matrix">
 			<td class="matrix"
 				title="<c:out value="${mergedreport.taskdescription}"></c:out>">
-			<c:out value="${mergedreport.customOrderSign}"></c:out></td>
-			<td class="matrix"><c:out value="${mergedreport.subOrderSign}"></c:out></td>
+			<c:out value="${mergedreport.customOrderSign}"></c:out><br><c:out value="${mergedreport.subOrderSign}" /></td>
+			<td class="matrix">&nbsp;</td>
 			<!--<td><c:out value="${mergedreport.sign}"></c:out></td>-->
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
@@ -375,11 +390,7 @@
 	</tr>
 
 	<tr class="matrix">
-		<td class="matrix" style="border-style:none none none solid;"><bean:message
-			key="main.matrixoverview.headline.underline.text" /></td>
-		<td style="border-style:solid solid none none;"
-			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td class="matrix" rowspan="2" colspan="6">
+		<td class="matrix" colspan="34">
 		<table>
 			<tr class="matrix">
 				<td class="matrix" style="border-style:none;"><bean:message
@@ -405,26 +416,13 @@
 			</tr>
 		</table>
 		</td>
-		<td class="matrix" style="text-align:right;"
-			colspan="${daysofmonth-5}"><bean:message
-			key="main.matrixoverview.table.overtime.text" /></td>
-	</tr>
-
-	<tr class="matrix">
-		<td class="matrix" style="border-style:none none solid solid;"><bean:message
-			key="main.matrixoverview.table.headofdepartment.text" /></td>
-		<td style="border-style:none solid solid none;"
-			class="underline bold matrix">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td class="matrix" style="text-align:right;"
-			colspan="${daysofmonth-5}"><bean:message
-			key="main.matrixoverview.table.vacation.text" /></td>
 	</tr>
 </table>
 <table>
 	<tr>
 		<c:if
 			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
-			<html:form action="/CreateDailyReport">
+			<html:form action="/CreateDailyReport?task=matrix">
 				<td class="noBborderStyle" align="left"><html:submit
 					styleId="button">
 					<bean:message key="main.general.button.createnewreport.text" />

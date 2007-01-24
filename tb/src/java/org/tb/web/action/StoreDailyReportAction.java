@@ -126,7 +126,6 @@ public class StoreDailyReportAction extends DailyReportAction {
 		AddDailyReportForm reportForm = (AddDailyReportForm) form;
 		
 		boolean refreshTime = false;
-
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("refreshOrders"))) {
 				// refresh orders to be displayed in the select menu
@@ -148,8 +147,23 @@ public class StoreDailyReportAction extends DailyReportAction {
 						suborderDAO, employeecontractDAO) != true) {
 					return mapping.findForward("error");
 				} else {
-					//return mapping.findForward("success");
-					refreshTime = true;
+					Customerorder selectedOrder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
+
+					boolean standardOrder = false;
+					if (selectedOrder != null && 
+							(selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) ||
+							 selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION) ||
+							 selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_ILL) ||
+							 selectedOrder.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION))) {
+						// selected order is a standard order => set daily working time als default time	
+						standardOrder = true;
+					}
+					
+					if (standardOrder) {
+						refreshTime = true;
+					} else {
+						return mapping.findForward("success");
+					}
 				}
 			}
 			
@@ -349,8 +363,10 @@ public class StoreDailyReportAction extends DailyReportAction {
 				// I.e., copy properties from the form into the timereport before saving.
 				
 				EmployeeHelper eh = new EmployeeHelper();
-				String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
-				Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+//				String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
+//				Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+				
+				Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
 				
 				double hours = TimereportHelper.calculateTime(reportForm);
 				

@@ -18,7 +18,7 @@ import org.tb.util.DateUtils;
 public class AddDailyReportForm extends ActionForm {
 
 	private long id;
-	private String employeename;
+//	private String employeename;
 	private String referenceday;
 	private String sortOfReport;
 	private String comment;
@@ -38,6 +38,7 @@ public class AddDailyReportForm extends ActionForm {
 	private long suborderSignId;
 	private long suborderDescriptionId;
 	private long employeecontractId;
+	private Long employeeId;
 	
 	private int numberOfSerialDays;
 	
@@ -92,13 +93,13 @@ public class AddDailyReportForm extends ActionForm {
 		this.action = action;
 	}
 	
-	public String getEmployeename() {
-		return employeename;
-	}
-
-	public void setEmployeename(String employeename) {
-		this.employeename = employeename;
-	}
+//	public String getEmployeename() {
+//		return employeename;
+//	}
+//
+//	public void setEmployeename(String employeename) {
+//		this.employeename = employeename;
+//	}
 	
 	public String getSortOfReport() {
 		return sortOfReport;
@@ -231,13 +232,22 @@ public class AddDailyReportForm extends ActionForm {
 	public void setNumberOfSerialDays(int numberOfSerialDays) {
 		this.numberOfSerialDays = numberOfSerialDays;
 	}
+	
+	public long getEmployeeId() {
+		return employeeId;
+	}
+
+	public void setEmployeeId(long employeeId) {
+		this.employeeId = employeeId;
+	}
 
 	
 	
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
+		employeeId = loginEmployee.getId();
+//		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
 		comment = "";
 		order = "";
 		suborder="";
@@ -253,6 +263,7 @@ public class AddDailyReportForm extends ActionForm {
 		hours = 8.0;
 		costs = 0.0;
 		numberOfSerialDays = 0;
+//		employeecontractId = (Long) request.getSession().getAttribute("loginEmployeeContractId");
 	}
 
 	@Override

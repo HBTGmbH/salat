@@ -100,7 +100,8 @@ public class CreateDailyReportAction extends DailyReportAction {
 			return mapping.findForward("error");
 		}
 
-		List<Employee> employeeOptionList = eh.getEmployeeWithContractsOptions(loginEmployee, employeeDAO, employeecontractDAO);
+//		List<Employee> employeeOptionList = eh.getEmployeeWithContractsOptions(loginEmployee, employeeDAO, employeecontractDAO);
+		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
 		request.getSession().setAttribute("employees", employeeOptionList);
 
 		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
@@ -218,6 +219,11 @@ public class CreateDailyReportAction extends DailyReportAction {
 		
 		// make sure, no cuId still exists in session
 		request.getSession().removeAttribute("trId");
+		
+		if ((request.getParameter("task") != null) && 
+				(request.getParameter("task").equals("matrix"))) {
+			reportForm.setReferenceday(todayString);
+		}
 		
 		return mapping.findForward("success");	
 	}

@@ -38,8 +38,10 @@ public class SuborderHelper {
 			SuborderDAO sd, EmployeecontractDAO ecd) {
 
 		EmployeeHelper eh = new EmployeeHelper();
-		String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
-		Employeecontract ec = ecd.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+//		String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
+//		Employeecontract ec = ecd.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
+		
+		Employeecontract ec = ecd.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
 		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 

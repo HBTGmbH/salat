@@ -1,7 +1,9 @@
 package org.tb.helper;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +44,15 @@ public class CustomerorderHelper {
 	public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
 			CustomerorderDAO cd, EmployeeDAO ed, EmployeecontractDAO ecd, SuborderDAO sd) {
 		
-		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeecontractId());		
+		String dateString = reportForm.getReferenceday();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date date;
+		try {
+			date = simpleDateFormat.parse(dateString);
+		} catch (Exception e) {
+			throw new RuntimeException("error wile parsing date");
+		}		
+		Employeecontract ec = ecd.getEmployeeContractByEmployeeIdAndDate(reportForm.getEmployeeId(), date);		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 
 					"No employee contract found for employee - please call system administrator.");
@@ -103,7 +113,7 @@ public class CustomerorderHelper {
 		}
 		
 		request.getSession().setAttribute("currentEmployee", ed.getEmployeeById(reportForm.getEmployeeId()).getName());
-		request.getSession().setAttribute("currentEmployeeID", reportForm.getEmployeeId());
+		request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
 
 		// get orders related to employee
 		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());

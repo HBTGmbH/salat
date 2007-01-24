@@ -91,22 +91,22 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.timereport.employee.fullname.text" /></b></td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="employeename"
-					value="<%=(String) request.getSession().getAttribute("currentEmployee")%>"
+				<html:select property="employeeId"
+					value="${currentEmployeeId}"
 					onchange="setUpdateOrdersAction(this.form)">				
 				<c:choose>
 					<c:when test="${loginEmployee.status eq 'bl'}">
 						<html:options collection="employees" labelProperty="name"
-								property="name" />	
+								property="id" />	
 					</c:when>
 					<c:otherwise>
-						<html:option value="${loginEmployee.name}">
+						<html:option value="${loginEmployee.id}">
 							<c:out value="${loginEmployee.name}" />
 						</html:option>
 					</c:otherwise>
 				</c:choose>	
 				</html:select> 
-				<html:hidden property="employeecontractId" />	
+				<html:hidden property="employeecontractId" />
 			</td>
 
 		</tr>
