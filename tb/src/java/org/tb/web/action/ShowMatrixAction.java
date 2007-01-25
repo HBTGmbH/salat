@@ -489,7 +489,12 @@ public class ShowMatrixAction extends DailyReportAction {
                 }
                 request.getSession().setAttribute("orders", orders);
                 request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-                request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
+//                request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
+                if (employeeId == -1) {
+                    request.getSession().setAttribute("currentEmployee", "ALL EMPLOYEES");
+                } else {
+                    request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
+                }
                 if (orders.size() > 0) {
                     //                  List<List> suborderlists = new ArrayList<List>();
                     //                  for (Customerorder customerorder : orders) {

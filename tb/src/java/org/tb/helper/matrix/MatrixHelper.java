@@ -148,13 +148,20 @@ public class MatrixHelper {
         gc.setTime(dateFirst);
         Double dayHoursTarget = 0.0;
         List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
-
+        boolean dayIsPublicHoliday = false;
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
-            if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
-
-            }else{
-                dayHoursTarget++;
+            dayIsPublicHoliday = false;
+            if ((gc.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SATURDAY) && (gc.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SUNDAY)) {
+                for (Iterator iter = publicHolidayList.iterator(); iter.hasNext();) {
+                    tempPublicHoliday = (Publicholiday)iter.next();
+                    if (tempPublicHoliday.getRefdate().equals(gc.getTime())) {
+                        dayIsPublicHoliday = true;
+                    }
+                }
+                if(!dayIsPublicHoliday){
+                    dayHoursTarget++;
+                }
             }
             for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
                 tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
@@ -238,9 +245,9 @@ public class MatrixHelper {
                 tempEmployeeContract = (Employeecontract)iter.next();
                 tempDailyWorkingTime += tempEmployeeContract.getDailyWorkingTime();
             }
-                dayHoursTarget = (dayHoursTarget * tempDailyWorkingTime);
+            dayHoursTarget = (dayHoursTarget * tempDailyWorkingTime);
         } else {
-                dayHoursTarget = (dayHoursTarget * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
+            dayHoursTarget = (dayHoursTarget * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
         }
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;
         int dayHoursTargetTemp = dayHoursTarget.intValue();
