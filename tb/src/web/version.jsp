@@ -1,1 +1,1 @@
-<div class="version">Version 1.40.6 2007-01-23</div>
+<div class="version">Version 1.41.6 2007-01-25</div>

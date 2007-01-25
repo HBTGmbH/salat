@@ -13,6 +13,7 @@ import org.tb.bdom.Employee;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.ShowSuborderForm;
 
 /**
  * action class for showing all suborders
@@ -39,7 +40,18 @@ public class ShowSuborderAction extends LoginRequiredAction {
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
 		
-		request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+		
+		ShowSuborderForm suborderForm = (ShowSuborderForm) form;
+		
+		String filter = suborderForm.getFilter();
+		
+		filter = "%"+filter+"%";
+		
+		if (filter != null && !filter.equalsIgnoreCase("")) {
+			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
+		} else {
+			request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+		}
 		
 		// check if loginEmployee has responsibility for some orders
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

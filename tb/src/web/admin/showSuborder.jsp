@@ -43,7 +43,12 @@
 <br>
 <span style="color:red"><html:errors footer="<br>"/>
 </span>
-
+<html:form action="/ShowSuborder">
+	<html:text property="filter" size="40"/>
+	<html:submit styleId="button">
+		<bean:message key="main.general.button.filter.text" />
+	</html:submit>
+</html:form>
 <table class="center backgroundcolor">
 	<tr>
 		<th align="left" title="<bean:message

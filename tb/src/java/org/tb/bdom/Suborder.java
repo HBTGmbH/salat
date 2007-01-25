@@ -249,6 +249,9 @@ public class Suborder implements Serializable {
 	}
 	
 	public Boolean getCommentnecessary() {
+		if (commentnecessary == null) {
+			return false;
+		}
 		return commentnecessary;
 	}
 

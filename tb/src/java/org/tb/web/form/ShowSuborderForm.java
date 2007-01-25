@@ -16,10 +16,22 @@ import org.apache.struts.action.ActionMapping;
  */
 public class ShowSuborderForm extends ActionForm {
 
+	private String filter;
 	
+	
+	
+	
+	public String getFilter() {
+		return filter;
+	}
+
+	public void setFilter(String filter) {
+		this.filter = filter;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		// actually, nothing to reset
+		filter = "";
 	}
 
 	@Override

@@ -137,6 +137,10 @@ public class SuborderDAO extends HibernateDaoSupport {
 		return suborders;
 	}
 	
+	public List<Suborder> getSubordersByFilter(String filter) {
+		return getSession().createQuery("from Suborder s where sign like ? or description like ? or s.customerorder.sign like ? or s.customerorder.description like ? or shortdescription like?  or s.customerorder.shortdescription like ? or hourly_rate like ? order by s.customerorder.sign ,sign").setString(0, filter).setString(1, filter).setString(2, filter).setString(3, filter).setString(4, filter).setString(5, filter).setString(6, filter).list();
+	}
+	
 	/**
 	 * 
 	 * @return Returns all {@link Suborder}s where the standard flag is true.
