@@ -822,6 +822,15 @@ public class StoreDailyReportAction extends DailyReportAction {
 			errors.add("comment", new ActionMessage("form.timereport.error.comment.toolarge"));
 		}
 		
+		// check if comment is necessary
+		Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+		Boolean commentnecessary = suborder.getCommentnecessary();
+		if(commentnecessary && (reportForm.getComment() == null || reportForm.getComment().trim().equals(""))) {
+			errors.add("comment", new ActionMessage("form.timereport.error.comment.necessary"));
+		}
+		
+		
+		
 		// check date vs release status
 		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(ecId);
 		Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");		

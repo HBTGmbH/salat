@@ -39,6 +39,7 @@ public class CreateCustomerAction extends LoginRequiredAction {
 		
 		// init form entries
 		customerForm.setName("");
+		customerForm.setShortname("");
 		customerForm.setAddress("");
 		
 		// make sure, no cuId still exists in session

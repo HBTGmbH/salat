@@ -298,9 +298,9 @@ public class Customerorder implements Serializable {
 				description = "";
 			}
 			if (description.length() > 20) {
-				shortdescription = description.substring(0, 17) + "...";
+				return description.substring(0, 17) + "...";
 			} else {
-				shortdescription = description;
+				return description;
 			}
 		}
 		return shortdescription;

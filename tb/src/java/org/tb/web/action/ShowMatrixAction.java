@@ -113,7 +113,7 @@ public class ShowMatrixAction extends DailyReportAction {
         monthMap.put("Feb", "main.timereport.select.month.feb.text");
         monthMap.put("Mar", "main.timereport.select.month.mar.text");
         monthMap.put("Apr", "main.timereport.select.month.apr.text");
-        monthMap.put("Mai", "main.timereport.select.month.mai.text");
+        monthMap.put("May", "main.timereport.select.month.mai.text");
         monthMap.put("Jun", "main.timereport.select.month.jun.text");
         monthMap.put("Jul", "main.timereport.select.month.jul.text");
         monthMap.put("Aug", "main.timereport.select.month.aug.text");
@@ -271,8 +271,13 @@ public class ShowMatrixAction extends DailyReportAction {
             } else {
                 request.getSession().setAttribute("currentOrder", reportForm.getOrder());
             }
+//            String x = monthMap.get(reportForm.getFromMonth());
+            
+            
+            
             request.getSession().setAttribute("currentDay", reportForm.getFromDay());
-            request.getSession().setAttribute("currentMonth", monthMap.get(reportForm.getFromMonth()));
+            request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
+            request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getFromMonth()));
             request.getSession().setAttribute("currentYear", reportForm.getFromYear());
 
             request.getSession().setAttribute("lastDay", reportForm.getUntilDay());
@@ -340,7 +345,8 @@ public class ShowMatrixAction extends DailyReportAction {
             if (reportForm.getFromMonth() != null) {
                 // call from list select change
                 request.getSession().setAttribute("currentDay", reportForm.getFromDay());
-                request.getSession().setAttribute("currentMonth", monthMap.get(reportForm.getFromMonth()));
+                request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
+                request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getFromMonth()));
                 request.getSession().setAttribute("currentYear", reportForm.getFromYear());
 
                 Date dateFirst = new Date();
@@ -383,6 +389,7 @@ public class ShowMatrixAction extends DailyReportAction {
 
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
 //                refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+//                String currentMonth = (String) request.getSession().getAttribute("currentMonth");
             } else {
 
                 // call from main menu: set current month, year, 
@@ -396,8 +403,20 @@ public class ShowMatrixAction extends DailyReportAction {
                 int length = dt.toString().length();
                 String yearString = dt.toString().substring(length - 4, length);
 
+                // set Month for first call
+                if (reportForm.getFromMonth() == null || reportForm.getFromMonth().trim().equalsIgnoreCase("")) {
+                	String month = (String) request.getSession().getAttribute("currentMonth");
+					if (month == null || month.trim().equals("")) {
+						Date date = new Date();
+						String[] dateArray = th.getDateAsStringArray(date);
+						month = dateArray[1];
+					}                	
+					reportForm.setFromMonth(month);
+                }
+                
                 request.getSession().setAttribute("currentDay", dayString);
-                request.getSession().setAttribute("currentMonth", monthMap.get(monthString));
+                request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
+                request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getFromMonth()));
                 request.getSession().setAttribute("currentYear", yearString);
 
                 reportForm.setFromDay("01");

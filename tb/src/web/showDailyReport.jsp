@@ -343,35 +343,31 @@
 			<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.startofwork.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.selectedhourbegin.text" />:</b> <html:select
+						key="main.timereport.startofwork.text" /></b> <i>(hh:mm)</i><b>:</b></td>
+					<td align="left" class="noBborderStyle"><html:select
 						property="selectedWorkHourBegin">
 						<html:options collection="hours" property="value"
 							labelProperty="label" />
-					</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
+					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
 					<html:select property="selectedWorkMinuteBegin">
 						<html:options collection="minutes" property="value"
 							labelProperty="label" />
-					</html:select></td>
-					<td align="center" class="noBborderStyle"><html:image
+					</html:select>&nbsp;&nbsp;<html:image
 						onclick="saveBegin(this.form)" src="/tb/images/Save.gif"
 						alt="save start of work" /></td>
 				</tr>
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.breakduration.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.selectedhourbegin.text" />:</b> <html:select
+						key="main.timereport.breakduration.text" /></b> <i>(hh:mm)</i><b>:</b></td>
+					<td align="left" class="noBborderStyle"><html:select
 						property="selectedBreakHour">
 						<html:options collection="breakhours" property="value"
 							labelProperty="label" />
-					</html:select> <b><bean:message key="main.timereport.selectedminutebegin.text" />:</b>
+					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
 					<html:select property="selectedBreakMinute">
 						<html:options collection="breakminutes" property="value"
 							labelProperty="label" />
-					</html:select></td>
-					<td align="center" class="noBborderStyle"><html:image
+					</html:select>&nbsp;&nbsp;<html:image
 						onclick="saveBreak(this.form)" src="/tb/images/Save.gif"
 						alt="save break" /></td>
 				</tr>

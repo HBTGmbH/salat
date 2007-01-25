@@ -172,7 +172,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				eo.setFromDate(fromDate);
 				eo.setUntilDate(untilDate);
 				eo.setSign(eoForm.getSign());
-				eo.setStatus(eoForm.getStatus());
+//				eo.setStatus(eoForm.getStatus());
 				eo.setStandingorder(eoForm.getStandingorder());
 				if (eo.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
 					eo.setDebithours(eo.getEmployeecontract().getVacationEntitlement()*eo.getEmployeecontract().getDailyWorkingTime());
@@ -326,9 +326,10 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 //			errors.add("sign", new ActionMessage("form.employeeorder.error.sign.required"));
 //		}
 		
-		if (eoForm.getStatus().length() > GlobalConstants.EMPLOYEEORDER_STATUS_MAX_LENGTH) {
-			errors.add("status", new ActionMessage("form.employeeorder.error.status.toolong"));
-		}
+//		if (eoForm.getStatus().length() > GlobalConstants.EMPLOYEEORDER_STATUS_MAX_LENGTH) {
+//			errors.add("status", new ActionMessage("form.employeeorder.error.status.toolong"));
+//		}
+		
 		// actually, status is not required
 //		if (eoForm.getStatus().length() <= 0) {
 //			errors.add("status", new ActionMessage("form.employeeorder.error.status.required"));

@@ -71,6 +71,11 @@
 		
 	}	
 			
+	function backToOverview(form) {	
+ 		form.action = "/tb/do/ShowDailyReport";
+		form.submit();
+	}		
+			
 </script>
 
 </head>
@@ -194,32 +199,31 @@
 			<c:if test="${workingDayIsAvailable}">
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.begin.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.selectedhourbegin.text" />:</b> <html:select
+						key="main.timereport.begin.text" /></b> <i>(hh:mm)</i><b>:</b></td>
+					<td align="left" class="noBborderStyle"><html:select
 						property="selectedHourBegin"
 						onchange="setUpdateHoursAction(this.form)">
 						<html:options collection="hours" property="value"
 							labelProperty="label" />
-					</html:select> <b><bean:message
-						key="main.timereport.selectedminutebegin.text" />:</b> <html:select
+					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> <html:select
 						property="selectedMinuteBegin"
 						onchange="setUpdateHoursAction(this.form)">
 						<html:options collection="minutes" property="value"
 							labelProperty="label" />
-					</html:select> <span style="color:red"><html:errors
+					</html:select>
+					<i><bean:message key="main.timereport.optional.help.text" /></i>
+					<span style="color:red"><html:errors
 						property="selectedHourBegin" /></span></td>
 				</tr>
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.end.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.selectedhourend.text" />:</b> <html:select
+						key="main.timereport.end.text" /></b> <i>(hh:mm)</i><b>:</b></td>
+					<td align="left" class="noBborderStyle"><html:select
 						property="selectedHourEnd"
 						onchange="setUpdateHoursAction(this.form)">
 						<html:options collection="hours" property="value"
 							labelProperty="label" />
-					</html:select> <b><bean:message key="main.timereport.selectedminuteend.text" />:</b>
+					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
 					<html:select property="selectedMinuteEnd"
 						onchange="setUpdateHoursAction(this.form)">
 						<html:options collection="minutes" property="value"
@@ -228,7 +232,9 @@
 					<b><bean:message key="main.timereport.orduration.text" />: </b>
            		     <html:text property="hours" size="6" maxlength="6" 
            		     		onchange="setUpdatePeriodAction(this.form)"/>   
-           			 --> <span style="color:red"><html:errors
+           			 --> 
+           			 <i><bean:message key="main.timereport.optional.help.text" /></i>
+           			 <span style="color:red"><html:errors
 						property="selectedHourEnd" /></span></td>
 				</tr>
 				<tr>
@@ -238,15 +244,13 @@
 			</c:if>
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.duration.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.timereport.selectedhourduration.text" />:</b> <html:select
+					key="main.timereport.duration.text" /></b> <i>(hh:mm)</i><b>:</b></td>
+				<td align="left" class="noBborderStyle"><html:select
 					property="selectedHourDuration"
 					onchange="setUpdatePeriodAction(this.form)">
 					<html:options collection="hoursDuration" property="value"
 						labelProperty="label" />
-				</html:select> <b><bean:message
-					key="main.timereport.selectedminuteduration.text" />:</b> <html:select
+				</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> <html:select
 					property="selectedMinuteDuration"
 					onchange="setUpdatePeriodAction(this.form)">
 					<html:options collection="minutes" property="value"
@@ -303,6 +307,10 @@
 			<td class="noBborderStyle"><html:submit
 				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button">
 				<bean:message key="main.general.button.reset.text" />
+			</html:submit></td>
+			<td class="noBborderStyle"><html:submit
+				onclick="backToOverview(this.form)" styleId="button">
+				<bean:message key="main.general.button.back.text" />
 			</html:submit></td>
 		</tr>
 	</table>

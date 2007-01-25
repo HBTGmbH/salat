@@ -38,6 +38,7 @@ public class GlobalConstants {
 	public static final int MAX_VACATION_PER_YEAR = 100;
 	
 	public static final int CUSTOMERNAME_MAX_LENGTH = 256;
+	public static final int CUSTOMERSHORTNAME_MAX_LENGTH = 12;
 	public static final int CUSTOMERADDRESS_MAX_LENGTH = 256;
 	
 	public static final int CUSTOMERORDER_SIGN_MAX_LENGTH = 16;

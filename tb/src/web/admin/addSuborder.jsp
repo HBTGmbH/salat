@@ -125,6 +125,15 @@
 			<td align="left" class="noBborderStyle"><html:checkbox
 				property="standard" /></td>
 		</tr>
+		
+		<!-- comment necessary? -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.suborder.commentnecessary.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:checkbox
+				property="commentnecessary" /></td>
+		</tr>
+		
 
 	</table>
 	<br>

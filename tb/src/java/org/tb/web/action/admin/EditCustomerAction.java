@@ -52,6 +52,7 @@ public class EditCustomerAction extends LoginRequiredAction {
 	private void setFormEntries(ActionMapping mapping, HttpServletRequest request, 
 									AddCustomerForm customerForm, Customer cu) {
 		customerForm.setName(cu.getName());
+		customerForm.setShortname(cu.getShortname());
 		customerForm.setAddress(cu.getAddress());
 	}
 	

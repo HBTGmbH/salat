@@ -28,6 +28,7 @@ public class AddSuborderForm extends ActionForm {
 	
 	private String action;
 	private Boolean standard;
+	private Boolean commentnecessary;
 
 	
 	public long getId() {
@@ -118,6 +119,14 @@ public class AddSuborderForm extends ActionForm {
 		this.shortdescription = shortdescription;
 	}
 
+	public Boolean getCommentnecessary() {
+		return commentnecessary;
+	}
+
+	public void setCommentnecessary(Boolean commentnecessary) {
+		this.commentnecessary = commentnecessary;
+	}
+
 	
 	
 	@Override
@@ -128,6 +137,7 @@ public class AddSuborderForm extends ActionForm {
 		invoice = "J";
 		currency = GlobalConstants.DEFAULT_CURRENCY;
 		standard = false;
+		commentnecessary = false;
 //		hourlyRate = 0.0;
 //		request.getSession().setAttribute("hourlyRate", new Double(0.0));
 	}

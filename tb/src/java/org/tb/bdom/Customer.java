@@ -33,6 +33,9 @@ public class Customer implements Serializable {
 	/** Name */
 	private String name;
 	
+	/** Shortname */
+	private String shortname;
+	
 	/** Address */
 	private String address;
 	
@@ -175,6 +178,23 @@ public class Customer implements Serializable {
 		this.updatecounter = updatecounter;
 	}
 
+	public String getShortname() {
+		if (shortname == null || shortname.equals("")) {
+			if (name.length() > 12) {
+				return name.substring(0,9) + "...";
+			} else {
+				return name;
+			}
+		}
+		return shortname;
+	}
+
+	public void setShortname(String shortname) {
+		this.shortname = shortname;
+	}
+
+	
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Customer) {

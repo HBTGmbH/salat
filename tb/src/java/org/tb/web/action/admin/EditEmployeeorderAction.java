@@ -162,7 +162,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		eoForm.setSuborderId(eo.getSuborder().getId());
 		eoForm.setDebithours(eo.getDebithours());
 		eoForm.setSign(eo.getSign());
-		eoForm.setStatus(eo.getStatus());
+//		eoForm.setStatus(eo.getStatus());
 		eoForm.setStandingorder(eo.getStandingorder());
 		eoForm.setStatusreport(eo.getStatusreport());
 		

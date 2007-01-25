@@ -61,6 +61,7 @@ public class StoreCustomerAction extends LoginRequiredAction {
 				}
 				
 				cu.setName(cuForm.getName());
+				cu.setShortname(cuForm.getShortname());
 				cu.setAddress(cuForm.getAddress());
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
@@ -135,6 +136,9 @@ public class StoreCustomerAction extends LoginRequiredAction {
 		// check length of text fields and if they are filled
 		if (cuForm.getName().length() > GlobalConstants.CUSTOMERNAME_MAX_LENGTH) {
 			errors.add("name", new ActionMessage("form.customer.error.name.toolong"));
+		}
+		if (cuForm.getShortname().length() > GlobalConstants.CUSTOMERSHORTNAME_MAX_LENGTH) {
+			errors.add("shortname", new ActionMessage("form.customer.error.shortname.toolong"));
 		}
 		if (cuForm.getName().length() <= 0) {
 			errors.add("name", new ActionMessage("form.customer.error.name.required"));

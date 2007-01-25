@@ -16,6 +16,7 @@ public class AddCustomerForm extends ActionForm {
 
 	private long id;
 	private String name;
+	private String shortname;
 	private String address;
 	private String action;
 	
@@ -51,10 +52,21 @@ public class AddCustomerForm extends ActionForm {
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public String getShortname() {
+		return shortname;
+	}
 
+	public void setShortname(String shortname) {
+		this.shortname = shortname;
+	}
+
+	
+	
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		name = "";
+		shortname =  "";
 		address = "";
 	}
 

@@ -119,9 +119,11 @@
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
 			key="main.employeeorder.debithours.text" /></b></th>
+		<!--  
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.employeeorders.status.text" />"><b><bean:message
 			key="main.employeeorder.status.text" /></b></th>
+		-->
 		<th align="center" title="<bean:message
 			key="main.headlinedescription.employeeorders.statusreport.text" />"><b><bean:message
 			key="main.employeeorder.statusreport.text" /></b></th>
@@ -154,6 +156,7 @@
 		<td align="center"><html:checkbox name="employeeorder"
 			property="standingorder" disabled="true" /></td>
 		<td><c:out value="${employeeorder.debithours}" /></td>
+		<!--  
 		<c:choose>
 			<c:when test="${employeeorder.status==''}">
 				<td>&nbsp;</td>
@@ -162,6 +165,7 @@
 				<td><c:out value="${employeeorder.status}" /></td>
 			</c:otherwise>
 		</c:choose>
+		-->
 		<td align="center"><html:checkbox name="employeeorder"
 			property="statusreport" disabled="true" /></td>
 

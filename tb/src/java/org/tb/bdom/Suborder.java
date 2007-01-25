@@ -85,6 +85,9 @@ public class Suborder implements Serializable {
 	/** STANDARD */
 	private Boolean standard;
 	
+	/** Comment necessary */
+	private Boolean commentnecessary;
+	
 
 	
 	public long getId() {
@@ -245,15 +248,23 @@ public class Suborder implements Serializable {
 		this.standard = standard;
 	}
 	
+	public Boolean getCommentnecessary() {
+		return commentnecessary;
+	}
+
+	public void setCommentnecessary(Boolean commentnecessary) {
+		this.commentnecessary = commentnecessary;
+	}
+
 	public String getShortdescription() {
 		if (shortdescription == null || shortdescription.equals("")) {
 			if (description == null) {
 				description = "";
 			}
 			if (description.length() > 20) {
-				shortdescription = description.substring(0, 17) + "...";
+				return description.substring(0, 17) + "...";
 			} else {
-				shortdescription = description;
+				return description;
 			}
 		}
 		return shortdescription;

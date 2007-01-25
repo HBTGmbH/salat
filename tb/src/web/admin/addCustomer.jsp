@@ -46,6 +46,14 @@
 		</tr>
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customer.shortname.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="shortname" size="40"
+				maxlength="12" />
+			<span style="color:red"><html:errors property="shortname" /></span></td>
+		</tr>
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customer.address.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:textarea
 				property="address" cols="30" rows="4" /> <span style="color:red"><html:errors

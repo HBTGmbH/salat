@@ -88,6 +88,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				so.setHourly_rate(soForm.getHourlyRate());
 				so.setInvoice(soForm.getInvoice().charAt(0));
 				so.setStandard(soForm.getStandard());
+				so.setCommentnecessary(soForm.getCommentnecessary());
 					
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				suborderDAO.save(so, loginEmployee);

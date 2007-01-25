@@ -47,6 +47,9 @@
 	<tr>
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.customers.customername.text" />"><b><bean:message
+			key="main.customer.shortname.text" /></b></th>
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.customers.customername.text" />"><b><bean:message
 			key="main.customer.name.text" /></b></th>
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.customers.address.text" />"><b><bean:message
@@ -69,6 +72,7 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
+		<td><c:out value="${customer.shortname}" /></td>
 		<td><c:out value="${customer.name}" /></td>
 		<td><c:out value="${customer.address}" /></td>
 

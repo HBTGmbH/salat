@@ -169,16 +169,15 @@
 					property="debithours" /></span></td>
 			</tr>
 		</c:if>
-
+		<!--  
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.status.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="status" size="30"
-				maxlength="<%="" + org.tb.GlobalConstants.EMPLOYEEORDER_STATUS_MAX_LENGTH %>" />
+				property="status" size="30" />
 			<span style="color:red"><html:errors property="status" /></span></td>
 		</tr>
-
+		-->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.statusreport.text" /></b></td>
