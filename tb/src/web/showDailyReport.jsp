@@ -354,7 +354,7 @@
 							labelProperty="label" />
 					</html:select>&nbsp;&nbsp;<html:image
 						onclick="saveBegin(this.form)" src="/tb/images/Save.gif"
-						alt="save start of work" /></td>
+						alt="save start of work" />&nbsp;&nbsp;<i>(optional)</i></td>
 				</tr>
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
@@ -369,7 +369,7 @@
 							labelProperty="label" />
 					</html:select>&nbsp;&nbsp;<html:image
 						onclick="saveBreak(this.form)" src="/tb/images/Save.gif"
-						alt="save break" /></td>
+						alt="save break" />&nbsp;&nbsp;<i>(optional)</i></td>
 				</tr>
 	
 				<tr>
@@ -436,7 +436,7 @@
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
 			key="main.timereport.monthly.hours.text" /></b></th>
-		<th align="left"
+		<th align="center"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.costs.text" />"><b><bean:message
 			key="main.timereport.monthly.costs.text" /></b></th>
@@ -457,7 +457,7 @@
 			key="main.headlinedescription.dailyoverview.delete.text" />"><b><bean:message
 			key="main.timereport.monthly.delete.text" /></b></th>
 		 -->
-		<th align="left" title="<bean:message
+		<th align="center" title="<bean:message
 			key="main.headlinedescription.dailyoverview.saveeditdelete.text" />"><b><bean:message
 			key="main.timereport.monthly.saveeditdelete.text" /></b></th>
 	</tr>
@@ -625,7 +625,7 @@
 					</html:select></td>
 
 					<!-- Kosten -->
-					<td><html:text property="costs" size="4"
+					<td align="center"><html:text property="costs" size="4"
 						value="${timereport.costs}" /></td>
 
 					<!--  
