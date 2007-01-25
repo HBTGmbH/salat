@@ -121,7 +121,7 @@ public class ShowMatrixAction extends DailyReportAction {
         monthMap.put("Oct", "main.timereport.select.month.oct.text");
         monthMap.put("Nov", "main.timereport.select.month.nov.text");
         monthMap.put("Dec", "main.timereport.select.month.dec.text");
-                
+
         if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refreshMergedreports"))) {
 
             //selected view and selected dates
@@ -243,14 +243,28 @@ public class ShowMatrixAction extends DailyReportAction {
                     request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 } else {
                     // get the timereports for specific date, specific employee, specific order
-                    ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
-                            dateLast,
-                            reportForm.getEmployeeId(),
-                            timereportDAO,
-                            employeecontractDAO,
-                            publicholidayDAO,
-                            GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES,
-                            order.getId());
+                    Employeecontract tempEmployeeContract = employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
+                    List<Customerorder> tempCustomerOrder = customerorderDAO.getCustomerordersByEmployeeContractId(tempEmployeeContract.getId());
+                    ReportWrapper tempReportWrapper;
+                    if (tempCustomerOrder.contains(order)) {
+                        tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
+                                dateLast,
+                                reportForm.getEmployeeId(),
+                                timereportDAO,
+                                employeecontractDAO,
+                                publicholidayDAO,
+                                GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES,
+                                order.getId());
+                    } else {
+                        tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
+                                dateLast,
+                                reportForm.getEmployeeId(),
+                                timereportDAO,
+                                employeecontractDAO,
+                                publicholidayDAO,
+                                GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES,
+                                -1);
+                    }
                     request.getSession().setAttribute("mergedreports", tempReportWrapper.getMergedReportList());
                     request.getSession().setAttribute("dayhourcounts", tempReportWrapper.getDayAndWorkingHourCountList());
                     request.getSession().setAttribute("dayhourssum", tempReportWrapper.getDayHoursSum());
@@ -271,10 +285,8 @@ public class ShowMatrixAction extends DailyReportAction {
             } else {
                 request.getSession().setAttribute("currentOrder", reportForm.getOrder());
             }
-//            String x = monthMap.get(reportForm.getFromMonth());
-            
-            
-            
+            //            String x = monthMap.get(reportForm.getFromMonth());
+
             request.getSession().setAttribute("currentDay", reportForm.getFromDay());
             request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
             request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getFromMonth()));
@@ -287,9 +299,9 @@ public class ShowMatrixAction extends DailyReportAction {
             GregorianCalendar gc = new GregorianCalendar();
             gc.setTime(dateFirst);
             request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-            
-//            refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-            
+
+            //            refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+
             return mapping.findForward("success");
 
         }
@@ -323,20 +335,18 @@ public class ShowMatrixAction extends DailyReportAction {
                 return mapping.findForward("error");
             }
 
-//          List<Employee> employees = employeeDAO.getEmployees();
+            //          List<Employee> employees = employeeDAO.getEmployees();
             List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
-            
+
             // make sure, that admin is in list
-            if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
-                    loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+            if (loginEmployee.getSign().equalsIgnoreCase("adm") && loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
                 if (!employeesWithContract.contains(loginEmployee)) {
                     employeesWithContract.add(loginEmployee);
                 }
             }
-            
+
             if ((employeesWithContract == null) || (employeesWithContract.size() <= 0)) {
-                request.setAttribute("errorMessage", 
-                        "No employees with valid contracts found - please call system administrator.");
+                request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
                 return mapping.findForward("error");
             }
             request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
@@ -388,8 +398,8 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
 
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-//                refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-//                String currentMonth = (String) request.getSession().getAttribute("currentMonth");
+                //                refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+                //                String currentMonth = (String) request.getSession().getAttribute("currentMonth");
             } else {
 
                 // call from main menu: set current month, year, 
@@ -405,15 +415,15 @@ public class ShowMatrixAction extends DailyReportAction {
 
                 // set Month for first call
                 if (reportForm.getFromMonth() == null || reportForm.getFromMonth().trim().equalsIgnoreCase("")) {
-                	String month = (String) request.getSession().getAttribute("currentMonth");
-					if (month == null || month.trim().equals("")) {
-						Date date = new Date();
-						String[] dateArray = th.getDateAsStringArray(date);
-						month = dateArray[1];
-					}                	
-					reportForm.setFromMonth(month);
+                    String month = (String)request.getSession().getAttribute("currentMonth");
+                    if (month == null || month.trim().equals("")) {
+                        Date date = new Date();
+                        String[] dateArray = th.getDateAsStringArray(date);
+                        month = dateArray[1];
+                    }
+                    reportForm.setFromMonth(month);
                 }
-                
+
                 request.getSession().setAttribute("currentDay", dayString);
                 request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
                 request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getFromMonth()));
@@ -467,8 +477,8 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("dayhourstarget", tempReportWrapper.getDayHoursTarget());
                 request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-//                refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-                
+                //                refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+
                 // orders
                 List<Customerorder> orders = null;
                 Long employeeId = (Long)request.getSession().getAttribute("currentEmployeeId");
