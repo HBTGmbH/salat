@@ -44,14 +44,22 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		ShowSuborderForm suborderForm = (ShowSuborderForm) form;
 		
 		String filter = suborderForm.getFilter();
-		
+		request.getSession().setAttribute("suborderFilter", filter);
 		filter = "%"+filter+"%";
 		
 		if (filter != null && !filter.equalsIgnoreCase("")) {
 			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
+//			request.getSession().setAttribute("suborderFilter", filter);
 		} else {
-			request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+//			filter = (String) request.getSession().getAttribute("suborderFilter");
+//			if (filter != null && !filter.equalsIgnoreCase("")) {
+//				request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
+//			} else {
+				request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+//			}
 		}
+		
+		
 		
 		// check if loginEmployee has responsibility for some orders
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

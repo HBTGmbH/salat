@@ -93,7 +93,12 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				suborderDAO.save(so, loginEmployee);
 				
-				request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+				String filter = (String) request.getSession().getAttribute("suborderFilter");
+				if (filter != null && !filter.equalsIgnoreCase("")) {
+					request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
+				} else {
+					request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+				}
 				request.getSession().removeAttribute("soId");
 				
 				// store used customer order id for the next creation of a suborder

@@ -115,7 +115,7 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
-		<td><c:out value="${customerorder.customer.name}" /></td>
+		<td><c:out value="${customerorder.customer.shortname}" /></td>
 		<td><c:out value="${customerorder.sign}" /></td>
 		<td><c:out value="${customerorder.shortdescription}" /></td>
 		<td><c:out value="${customerorder.description}" /></td>

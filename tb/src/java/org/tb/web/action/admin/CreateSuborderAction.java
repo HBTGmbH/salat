@@ -84,10 +84,23 @@ public class CreateSuborderAction extends LoginRequiredAction {
 			if (request.getSession().getAttribute("lastCoId") == null) {
 				request.getSession().setAttribute("currentOrderId", new Long(customerorders.get(0).getId()));
 			}
-			request.getSession().setAttribute("hourlyRate", customerorders.get(0).getHourly_rate());
-			request.getSession().setAttribute("currency", customerorders.get(0).getCurrency());
-			suborderForm.setHourlyRate(customerorders.get(0).getHourly_rate());
-			suborderForm.setCurrency(customerorders.get(0).getCurrency());
+			Long customerOrderId = suborderForm.getCustomerorderId();
+			if (customerOrderId != null && customerorderDAO.getCustomerorderById(customerOrderId) != null) {
+				
+				Customerorder customerorder = customerorderDAO.getCustomerorderById(customerOrderId);
+				
+				request.getSession().setAttribute("hourlyRate", customerorder.getHourly_rate());
+				request.getSession().setAttribute("currency", customerorder.getCurrency());
+				suborderForm.setHourlyRate(customerorder.getHourly_rate());
+				suborderForm.setCurrency(customerorder.getCurrency());
+				
+			} else {
+			
+				request.getSession().setAttribute("hourlyRate", customerorders.get(0).getHourly_rate());
+				request.getSession().setAttribute("currency", customerorders.get(0).getCurrency());
+				suborderForm.setHourlyRate(customerorders.get(0).getHourly_rate());
+				suborderForm.setCurrency(customerorders.get(0).getCurrency());
+			}
 		}
 		
 		// make sure, no soId still exists in session
