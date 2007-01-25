@@ -151,6 +151,11 @@ public class MatrixHelper {
 
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
+            if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
+
+            }else{
+                dayHoursTarget++;
+            }
             for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
                 tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
                 if (tempDayAndWorkingHourCount.getDay() == day) {
@@ -171,6 +176,7 @@ public class MatrixHelper {
         }
         gc.setTime(dateFirst);
         day = 0;
+
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             day++;
 
@@ -182,8 +188,6 @@ public class MatrixHelper {
                         //                        if (!dayHoursCount.isEmpty()) {
                         if ((gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gc.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
                             tempBookingDay.setSatSun(true);
-                        } else {
-                            dayHoursTarget++;
                         }
                         for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
                             tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
@@ -191,6 +195,10 @@ public class MatrixHelper {
                                 tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day,
                                         ((tempBookingDay.getDurationHours() * 60) + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60, tempBookingDay
                                                 .getDate());
+                                tempDayAndWorkingHourCount2.setPublicHoliday(tempDayAndWorkingHourCount.getPublicHoliday());
+                                tempDayAndWorkingHourCount2.setPublicHolidayName(tempDayAndWorkingHourCount.getPublicHolidayName());
+                                tempDayAndWorkingHourCount2.setSatSun(tempDayAndWorkingHourCount.getSatSun());
+                                tempDayAndWorkingHourCount2.setWeekDay(tempDayAndWorkingHourCount.getWeekDay());
                                 dayHoursCount.set(dayHoursCount.indexOf(tempDayAndWorkingHourCount), tempDayAndWorkingHourCount2);
                                 for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
                                     tempPublicHoliday = (Publicholiday)iter3.next();
@@ -230,9 +238,9 @@ public class MatrixHelper {
                 tempEmployeeContract = (Employeecontract)iter.next();
                 tempDailyWorkingTime += tempEmployeeContract.getDailyWorkingTime();
             }
-            dayHoursTarget = (dayHoursTarget / mergedReportListSize * tempDailyWorkingTime);
+                dayHoursTarget = (dayHoursTarget * tempDailyWorkingTime);
         } else {
-            dayHoursTarget = (dayHoursTarget / mergedReportListSize * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
+                dayHoursTarget = (dayHoursTarget * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
         }
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;
         int dayHoursTargetTemp = dayHoursTarget.intValue();
