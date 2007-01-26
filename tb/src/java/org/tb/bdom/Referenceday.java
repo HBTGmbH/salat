@@ -1,7 +1,9 @@
 package org.tb.bdom;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -43,7 +45,7 @@ public class Referenceday implements Serializable {
 	
 	/** Day of week */
 	private String dow;
-	
+
 	/** Public Holiday y/n */
 	private Boolean holiday;
 	
@@ -84,9 +86,17 @@ public class Referenceday implements Serializable {
 	}
 
 	public String getDow() {
-		return dow;
+        Map<String, String> weekDaysMap = new HashMap<String, String>();
+        weekDaysMap.put("Mon", "main.matrixoverview.weekdays.monday.text");
+        weekDaysMap.put("Tue", "main.matrixoverview.weekdays.tuesday.text");
+        weekDaysMap.put("Wed", "main.matrixoverview.weekdays.wednesday.text");
+        weekDaysMap.put("Thu", "main.matrixoverview.weekdays.thursday.text");
+        weekDaysMap.put("Fri", "main.matrixoverview.weekdays.friday.text");
+        weekDaysMap.put("Sat", "main.matrixoverview.weekdays.saturday.text");
+        weekDaysMap.put("Sun", "main.matrixoverview.weekdays.sunday.text");
+        return weekDaysMap.get(dow);
 	}
-
+    
 	public void setDow(String dow) {
 		this.dow = dow;
 	}

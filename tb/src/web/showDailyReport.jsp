@@ -12,7 +12,8 @@
 <html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
+<title><bean:message key="main.general.application.title" /> -
+<bean:message key="main.general.mainmenu.daily.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
 <link rel="stylesheet" type="text/css" href="/tb/print.css"
 	media="print" />
@@ -121,34 +122,30 @@
 <br>
 <html:form action="/ShowDailyReport">
 	<table class="center backgroundcolor">
-		
+
 		<!-- select employee -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle">
-				<html:select
-					property="employeeId"
-					value="${currentEmployeeId}"
-					onchange="setUpdateTimereportsAction(this.form)">
+			<td align="left" class="noBborderStyle"><html:select
+				property="employeeId" value="${currentEmployeeId}"
+				onchange="setUpdateTimereportsAction(this.form)">
 
-					<html:option value="-1">
-						<bean:message key="main.general.allemployees.text" />
-					</html:option>
+				<html:option value="-1">
+					<bean:message key="main.general.allemployees.text" />
+				</html:option>
 
-					<html:options collection="employeeswithcontract"
-						labelProperty="name" property="id" />
-			</html:select> 
-			<!--  
+				<html:options collection="employeeswithcontract"
+					labelProperty="name" property="id" />
+			</html:select> <!--  
 			<logic:equal name="currentEmployeeId" value="-1"
 				scope="session">
 				<span style="color:red"> <b><bean:message
 					key="main.general.selectemployee.editable.text" />.</b> </span>
 			</logic:equal>
-			-->
-			</td>
+			--></td>
 		</tr>
-		
+
 		<!-- select order -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
@@ -167,18 +164,16 @@
 				<html:hidden property="orderId" />
 			</html:select></td>
 		</tr>
-		
+
 		<!-- select view mode -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.general.timereport.view.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="view"
-				onchange="setUpdateTimereportsAction(this.form)">
+				property="view" onchange="setUpdateTimereportsAction(this.form)">
 
 				<html:option value="day">
-					<bean:message
-				key="main.general.timereport.view.daily.text" />
+					<bean:message key="main.general.timereport.view.daily.text" />
 				</html:option>
 				<!--  
 				<html:option value="week">
@@ -186,8 +181,7 @@
 				</html:option>
 				-->
 				<html:option value="month">
-					<bean:message
-				key="main.general.timereport.view.monthly.text" />
+					<bean:message key="main.general.timereport.view.monthly.text" />
 				</html:option>
 				<!--  
 				<html:option value="project">
@@ -195,14 +189,13 @@
 				</html:option>
 				-->
 				<html:option value="custom">
-					<bean:message
-				key="main.general.timereport.view.custom.text" />
+					<bean:message key="main.general.timereport.view.custom.text" />
 				</html:option>
 
 				<html:hidden property="view" />
 			</html:select></td>
 		</tr>
-		
+
 		<!-- select first date -->
 		<tr>
 			<c:choose>
@@ -215,19 +208,16 @@
 						key="main.monthlyreport.daymonthyear.text" />:</b></td>
 				</c:otherwise>
 			</c:choose>
-			
-			<td align="left" class="noBborderStyle">
-				<c:if test="${!(view eq 'month')}">
-					<html:select
-						property="day"
-						value="<%=(String) request.getSession().getAttribute("currentDay")%>"
-						onchange="setUpdateTimereportsAction(this.form)">
-						<html:options collection="days" property="value"
-							labelProperty="label" />
-					</html:select>
-				</c:if>
-				
-			<html:select property="month"
+
+			<td align="left" class="noBborderStyle"><c:if
+				test="${!(view eq 'month')}">
+				<html:select property="day"
+					value="<%=(String) request.getSession().getAttribute("currentDay")%>"
+					onchange="setUpdateTimereportsAction(this.form)">
+					<html:options collection="days" property="value"
+						labelProperty="label" />
+				</html:select>
+			</c:if> <html:select property="month"
 				value="<%=(String) request.getSession().getAttribute("currentMonth")%>"
 				onchange="setUpdateTimereportsAction(this.form)">
 				<html:option value="Jan">
@@ -273,71 +263,64 @@
 					labelProperty="label" />
 			</html:select></td>
 		</tr>
-		
-		
+
+
 		<!-- select second date -->
 		<c:if test="${view eq 'custom'}">
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.monthlyreport.daymonthyear.text" />:</b></td>
-				<td align="left" class="noBborderStyle">				
-					<html:select
-						property="lastday"
-						value="${lastDay}"
-						onchange="setUpdateTimereportsAction(this.form)">
-						<html:options collection="days" property="value"
-							labelProperty="label" />
-					</html:select>			
-					<html:select property="lastmonth"
-						value="${lastMonth}"
-						onchange="setUpdateTimereportsAction(this.form)">
-						<html:option value="Jan">
-							<bean:message key="main.timereport.select.month.jan.text" />
-						</html:option>
-						<html:option value="Feb">
-							<bean:message key="main.timereport.select.month.feb.text" />
-						</html:option>
-						<html:option value="Mar">
-							<bean:message key="main.timereport.select.month.mar.text" />
-						</html:option>
-						<html:option value="Apr">
-							<bean:message key="main.timereport.select.month.apr.text" />
-						</html:option>
-						<html:option value="May">
-							<bean:message key="main.timereport.select.month.may.text" />
-						</html:option>
-						<html:option value="Jun">
-							<bean:message key="main.timereport.select.month.jun.text" />
-						</html:option>
-						<html:option value="Jul">
-							<bean:message key="main.timereport.select.month.jul.text" />
-						</html:option>
-						<html:option value="Aug">
-							<bean:message key="main.timereport.select.month.aug.text" />
-						</html:option>
-						<html:option value="Sep">
-							<bean:message key="main.timereport.select.month.sep.text" />
-						</html:option>
-						<html:option value="Oct">
-							<bean:message key="main.timereport.select.month.oct.text" />
-						</html:option>
-						<html:option value="Nov">
-							<bean:message key="main.timereport.select.month.nov.text" />
-						</html:option>
-						<html:option value="Dec">
-							<bean:message key="main.timereport.select.month.dec.text" />
-						</html:option>
-					</html:select> 
-					<html:select property="lastyear"
-						value="${lastYear}"
-						onchange="setUpdateTimereportsAction(this.form)">
-						<html:options collection="years" property="value"
-							labelProperty="label" />
-					</html:select>
-				</td>
+				<td align="left" class="noBborderStyle"><html:select
+					property="lastday" value="${lastDay}"
+					onchange="setUpdateTimereportsAction(this.form)">
+					<html:options collection="days" property="value"
+						labelProperty="label" />
+				</html:select> <html:select property="lastmonth" value="${lastMonth}"
+					onchange="setUpdateTimereportsAction(this.form)">
+					<html:option value="Jan">
+						<bean:message key="main.timereport.select.month.jan.text" />
+					</html:option>
+					<html:option value="Feb">
+						<bean:message key="main.timereport.select.month.feb.text" />
+					</html:option>
+					<html:option value="Mar">
+						<bean:message key="main.timereport.select.month.mar.text" />
+					</html:option>
+					<html:option value="Apr">
+						<bean:message key="main.timereport.select.month.apr.text" />
+					</html:option>
+					<html:option value="May">
+						<bean:message key="main.timereport.select.month.may.text" />
+					</html:option>
+					<html:option value="Jun">
+						<bean:message key="main.timereport.select.month.jun.text" />
+					</html:option>
+					<html:option value="Jul">
+						<bean:message key="main.timereport.select.month.jul.text" />
+					</html:option>
+					<html:option value="Aug">
+						<bean:message key="main.timereport.select.month.aug.text" />
+					</html:option>
+					<html:option value="Sep">
+						<bean:message key="main.timereport.select.month.sep.text" />
+					</html:option>
+					<html:option value="Oct">
+						<bean:message key="main.timereport.select.month.oct.text" />
+					</html:option>
+					<html:option value="Nov">
+						<bean:message key="main.timereport.select.month.nov.text" />
+					</html:option>
+					<html:option value="Dec">
+						<bean:message key="main.timereport.select.month.dec.text" />
+					</html:option>
+				</html:select> <html:select property="lastyear" value="${lastYear}"
+					onchange="setUpdateTimereportsAction(this.form)">
+					<html:options collection="years" property="value"
+						labelProperty="label" />
+				</html:select></td>
 			</tr>
 		</c:if>
-		
+
 		<!-- select working day begin and break -->
 		<c:if test="${view eq 'day' || view == null}">
 			<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
@@ -348,13 +331,12 @@
 						property="selectedWorkHourBegin">
 						<html:options collection="hours" property="value"
 							labelProperty="label" />
-					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-					<html:select property="selectedWorkMinuteBegin">
+					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> <html:select
+						property="selectedWorkMinuteBegin">
 						<html:options collection="minutes" property="value"
 							labelProperty="label" />
-					</html:select>&nbsp;&nbsp;<html:image
-						onclick="saveBegin(this.form)" src="/tb/images/Save.gif"
-						alt="save start of work" />&nbsp;&nbsp;<i>(optional)</i></td>
+					</html:select>&nbsp;&nbsp;<html:image onclick="saveBegin(this.form)"
+						src="/tb/images/Save.gif" alt="save start of work" />&nbsp;&nbsp;<i>(optional)</i></td>
 				</tr>
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
@@ -363,15 +345,14 @@
 						property="selectedBreakHour">
 						<html:options collection="breakhours" property="value"
 							labelProperty="label" />
-					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-					<html:select property="selectedBreakMinute">
+					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> <html:select
+						property="selectedBreakMinute">
 						<html:options collection="breakminutes" property="value"
 							labelProperty="label" />
-					</html:select>&nbsp;&nbsp;<html:image
-						onclick="saveBreak(this.form)" src="/tb/images/Save.gif"
-						alt="save break" />&nbsp;&nbsp;<i>(optional)</i></td>
+					</html:select>&nbsp;&nbsp;<html:image onclick="saveBreak(this.form)"
+						src="/tb/images/Save.gif" alt="save break" />&nbsp;&nbsp;<i>(optional)</i></td>
 				</tr>
-	
+
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
 						key="main.timereport.quittingtime.text" />:</b></td>
@@ -391,7 +372,8 @@
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
-			<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
+			<c:when
+				test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b></th>
 			</c:when>
@@ -404,7 +386,7 @@
 	</tr>
 
 	<tr>
-		<th align="left" ><b>Info</b></th>
+		<th align="left"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message
@@ -457,7 +439,8 @@
 			key="main.headlinedescription.dailyoverview.delete.text" />"><b><bean:message
 			key="main.timereport.monthly.delete.text" /></b></th>
 		 -->
-		<th align="center" title="<bean:message
+		<th align="center"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.saveeditdelete.text" />"><b><bean:message
 			key="main.timereport.monthly.saveeditdelete.text" /></b></th>
 	</tr>
@@ -473,108 +456,103 @@
 					<tr class="secondarycolor">
 				</c:otherwise>
 			</c:choose>
-			
+
 			<!-- Info -->
-			<td align="center">				
-				<div class="tooltip" id="info<c:out value='${timereport.id}' />">
-				<table>
-					<tr>
-						<td class="info"><bean:message
+			<td align="center">
+			<div class="tooltip" id="info<c:out value='${timereport.id}' />">
+			<table>
+				<tr>
+					<td class="info"><bean:message
 						key="main.timereport.tooltip.employee" />:</td>
-						<td class="info" colspan="3">
-							<c:out value="${timereport.employeecontract.employee.name}" /></td>
-					</tr>
-					<tr>
-						<td class="info"><bean:message
+					<td class="info" colspan="3"><c:out
+						value="${timereport.employeecontract.employee.name}" /></td>
+				</tr>
+				<tr>
+					<td class="info"><bean:message
 						key="main.timereport.tooltip.order" />:</td>
-						<td class="info" colspan="3">
-							<c:out value="${timereport.suborder.customerorder.sign}" /></td>
-					</tr>
-					<tr>
-						<td class="info">&nbsp;</td>
-						<td class="info" colspan="3">
-							<c:out value="${timereport.suborder.customerorder.description}" /></td>
-					</tr>
-					<tr>
-						<td class="info"><bean:message
+					<td class="info" colspan="3"><c:out
+						value="${timereport.suborder.customerorder.sign}" /></td>
+				</tr>
+				<tr>
+					<td class="info">&nbsp;</td>
+					<td class="info" colspan="3"><c:out
+						value="${timereport.suborder.customerorder.description}" /></td>
+				</tr>
+				<tr>
+					<td class="info"><bean:message
 						key="main.timereport.tooltip.suborder" />:</td>
-						<td class="info" colspan="3">
-							<c:out value="${timereport.suborder.sign}" /></td>
-					</tr>
-					<tr>
-						<td class="info">&nbsp;</td>
-						<td class="info" colspan="3">
-							<c:out value="${timereport.suborder.description}" /></td>
-					</tr>
-					<tr>
-						<td class="info"><bean:message
+					<td class="info" colspan="3"><c:out
+						value="${timereport.suborder.sign}" /></td>
+				</tr>
+				<tr>
+					<td class="info">&nbsp;</td>
+					<td class="info" colspan="3"><c:out
+						value="${timereport.suborder.description}" /></td>
+				</tr>
+				<tr>
+					<td class="info"><bean:message
 						key="main.timereport.tooltip.status" />:</td>
-						<td class="info">
-							<c:out value="${timereport.status}" /></td>
-					</tr>
-					<tr>
-						<td class="info" valign="top"><bean:message
+					<td class="info"><c:out value="${timereport.status}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.created" />:</td>
-						<td class="info">
-							<c:out value="${timereport.created}" /></td>
-						<td class="info" valign="top"><bean:message
+					<td class="info"><c:out value="${timereport.created}" /></td>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
-						<td class="info" valign="top">
-							<c:out value="${timereport.createdby}" /></td>
-					</tr>
-					<tr>
-						<td class="info" valign="top"><bean:message
+					<td class="info" valign="top"><c:out
+						value="${timereport.createdby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.edited" />:</td>
-						<td class="info">
-							<c:out value="${timereport.lastupdate}" /></td>
-						<td class="info" valign="top"><bean:message
+					<td class="info"><c:out value="${timereport.lastupdate}" /></td>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
-						<td class="info" valign="top">
-							<c:out value="${timereport.lastupdatedby}" /></td>
-					</tr>
-					<tr>
-						<td class="info" valign="top"><bean:message
+					<td class="info" valign="top"><c:out
+						value="${timereport.lastupdatedby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.released" />:</td>
-						<td class="info">
-							<c:out value="${timereport.released}" /></td>
-						<td class="info" valign="top"><bean:message
+					<td class="info"><c:out value="${timereport.released}" /></td>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
-						<td class="info" valign="top">
-							<c:out value="${timereport.releasedby}" /></td>
-					</tr>
-					<tr>
-						<td class="info" valign="top"><bean:message
+					<td class="info" valign="top"><c:out
+						value="${timereport.releasedby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.accepted" />:</td>
-						<td class="info">
-							<c:out value="${timereport.accepted}" /></td>
-						<td class="info" valign="top"><bean:message
+					<td class="info"><c:out value="${timereport.accepted}" /></td>
+					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
-						<td class="info" valign="top">
-							<c:out value="${timereport.acceptedby}" /></td>
-					</tr>
-				</table>
-				
-				</div>
-				<img onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')" 
-					onMouseOut="hideWMTT()" width="12px" height="12px" 
-					src="/tb/images/info_button.gif" /> 				
-			</td>		
-			
+					<td class="info" valign="top"><c:out
+						value="${timereport.acceptedby}" /></td>
+				</tr>
+			</table>
+
+			</div>
+			<img
+				onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
+				onMouseOut="hideWMTT()" width="12px" height="12px"
+				src="/tb/images/info_button.gif" /></td>
+
 			<!-- Mitarbeiter -->
 			<td><c:out value="${timereport.employeecontract.employee.sign}" /></td>
-			
+
 			<!-- Datum -->
 			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal
 				name="timereport" property="referenceday.holiday" value="true">
-				<span style="color:red"> <bean:write name="timereport"
-					property="referenceday.dow" /> <bean:write name="timereport"
-					property="referenceday.refdate" /> </span>
+				<span style="color:red"> <bean:message
+						key="${timereport.referenceday.dow}" /><br>
+					<c:out value="${timereport.referenceday.refdate}" /></span>
 			</logic:equal> <logic:equal name="timereport" property="referenceday.holiday"
 				value="false">
 				<c:out value="${timereport.referenceday.dow}" />
 				<c:out value="${timereport.referenceday.refdate}" />
 			</logic:equal></td>
-			
+
 			<!-- Typ -->
 			<!--  
 			<td align="center"><logic:equal name="timereport"
@@ -587,13 +565,13 @@
 				<bean:message key="main.timereport.monthly.sortofreport.sick.text" />
 			</logic:equal></td>
 			-->
-			
+
 			<!-- Auftrag -->
 			<td
 				title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
 			<c:out value="${timereport.suborder.customerorder.sign}"></c:out><br>
 			</td>
-			
+
 			<!-- Unterauftrag -->
 			<td
 				title="<c:out value="${timereport.suborder.description}"></c:out>">
@@ -607,14 +585,14 @@
 					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf') && (timereport.status eq 'commited')) || loginEmplyee.status eq 'adm'}">
 
 					<!-- Kommentar -->
-					<td><html:textarea property="comment" cols="30" rows="1" 
+					<td><html:textarea property="comment" cols="30" rows="1"
 						value="${timereport.taskdescription}" /> <!--  
 	     		 				<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
 	     		 				--></td>
 
 					<!-- Dauer -->
-					<td align="center" nowrap="nowrap"><html:select name="timereport"
-						property="selectedDurationHour"
+					<td align="center" nowrap="nowrap"><html:select
+						name="timereport" property="selectedDurationHour"
 						value="${timereport.durationhours}">
 						<html:options collection="hoursDuration" property="value"
 							labelProperty="label" />
@@ -644,44 +622,37 @@
 						onclick="confirmDelete(this.form, ${timereport.id})"
 						src="/tb/images/Delete.gif" alt="Delete Timereport" /></td>
 					-->
-						
+
 					<!-- Bearbeiten -->
-					<td align="center">
-						<html:image onclick="confirmSave(this.form, ${timereport.id})"
-							src="/tb/images/Save.gif" alt="Speichern" 
-							title="Speichern"/>
-						&nbsp;
-						<html:link title="Ändern" 
-							href="/tb/do/EditDailyReport?trId=${timereport.id}">
-							<img src="/tb/images/Edit.gif" alt="Ändern" />
-						</html:link>
-						&nbsp;
-						<html:image onclick="confirmDelete(this.form, ${timereport.id})"
-							src="/tb/images/Delete.gif" alt="Löschen" title="Löschen" />	
-					</td>
+					<td align="center"><html:image
+						onclick="confirmSave(this.form, ${timereport.id})"
+						src="/tb/images/Save.gif" alt="Speichern" title="Speichern" />
+					&nbsp; <html:link title="Ändern"
+						href="/tb/do/EditDailyReport?trId=${timereport.id}">
+						<img src="/tb/images/Edit.gif" alt="Ändern" />
+					</html:link> &nbsp; <html:image
+						onclick="confirmDelete(this.form, ${timereport.id})"
+						src="/tb/images/Delete.gif" alt="Löschen" title="Löschen" /></td>
 
 				</c:when>
 				<c:otherwise>
 
 					<!-- Kommentar -->
-					<td>
-						<c:choose>
-							<c:when test="${timereport.taskdescription eq ''}">
+					<td><c:choose>
+						<c:when test="${timereport.taskdescription eq ''}">
 								&nbsp;
 							</c:when>
-							<c:otherwise>
-								<c:out value="${timereport.taskdescription}" />
-							</c:otherwise>
-						</c:choose>
-					</td>
+						<c:otherwise>
+							<c:out value="${timereport.taskdescription}" />
+						</c:otherwise>
+					</c:choose></td>
 
 					<!-- Dauer -->
-					<td align="center" nowrap>
-						<c:if test="${timereport.durationhours < 10}">0</c:if><c:out 
-							value="${timereport.durationhours}" />:<c:if 
-							test="${timereport.durationminutes < 10}">0</c:if><c:out
-							value="${timereport.durationminutes}" />
-					</td>
+					<td align="center" nowrap><c:if
+						test="${timereport.durationhours < 10}">0</c:if><c:out
+						value="${timereport.durationhours}" />:<c:if
+						test="${timereport.durationminutes < 10}">0</c:if><c:out
+						value="${timereport.durationminutes}" /></td>
 
 					<!-- Kosten -->
 					<td align="center"><c:out value="${timereport.costs}" /></td>
@@ -698,14 +669,14 @@
 					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
 						alt="Delete Timereport" /></td>
 					-->
-						
+
 					<!-- Bearbeiten -->
-					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
-						alt="Delete Timereport" /></td>	
+					<td align="center"><img width="12px" height="12px"
+						src="/tb/images/verbot.gif" alt="Delete Timereport" /></td>
 
 				</c:otherwise>
-			</c:choose>		
-		</tr>
+			</c:choose>
+			</tr>
 
 		</html:form>
 	</c:forEach>
@@ -714,7 +685,8 @@
 		<td class="noBborderStyle" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
-			<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
+			<c:when
+				test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
 				<th align="center" color="red"><b><font color="red"><c:out
 					value="${labortime}"></c:out></font></b></th>
 			</c:when>
@@ -728,26 +700,25 @@
 
 	<!-- Add Report: Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
 	<tr>
-		<c:if test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
+		<c:if
+			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
 			<html:form action="/CreateDailyReport">
-				<td class="noBborderStyle" colspan="6" align="left">
-					<html:submit styleId="button">
-						<bean:message key="main.general.button.createnewreport.text" />
-					</html:submit>
-				</td>
+				<td class="noBborderStyle" colspan="6" align="left"><html:submit
+					styleId="button">
+					<bean:message key="main.general.button.createnewreport.text" />
+				</html:submit></td>
 			</html:form>
-		</c:if>	
+		</c:if>
 	</tr>
 	<br>
 	<tr>
 		<html:form target="fenster"
 			onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 			action="/ShowDailyReport?task=print">
-			<td class="noBborderStyle" colspan="6" align="left">
-				<html:submit styleId="button">
-					<bean:message key="main.general.button.printpreview.text" />
-				</html:submit>
-			</td>
+			<td class="noBborderStyle" colspan="6" align="left"><html:submit
+				styleId="button">
+				<bean:message key="main.general.button.printpreview.text" />
+			</html:submit></td>
 		</html:form>
 	</tr>
 
@@ -769,7 +740,7 @@
 	<jsp:include flush="true" page="/info.jsp">
 		<jsp:param name="info" value="Info" />
 	</jsp:include>
-	
+
 </logic:notEqual>
 
 

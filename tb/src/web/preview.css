@@ -4,20 +4,9 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	color: black;
 }
 
-.borderStyle {
-	border-spacing: 2px;
-	border-collapse: seperate;
-}
-
-.noBborderStyle {
-	border: 0px;
+table {
 	border-collapse: collapse;
 	border-spacing: 0px;
-}
-
-table {
-	border-collapse: separate;
-	border-spacing: 2px;
 	empty-cells: show;
 }
 
@@ -30,3 +19,15 @@ tr,td,th {
 	padding-left: 4px;
 	padding-right: 4px;
 }
+
+.borderStyle {
+	border-spacing: 2px;
+	border-collapse: seperate;
+}
+
+.noBborderStyle {
+	border: 0px;
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
+
