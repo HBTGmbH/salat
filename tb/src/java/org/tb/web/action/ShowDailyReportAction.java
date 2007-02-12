@@ -3,7 +3,9 @@ package org.tb.web.action;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -198,6 +200,21 @@ public class ShowDailyReportAction extends DailyReportAction {
         
         if ((request.getParameter("task") != null) &&
                 (request.getParameter("task").equals("print"))){
+            //conversion and localization of day values
+            Map<String, String> monthMap = new HashMap<String, String>();
+            monthMap.put("Jan", "main.timereport.select.month.jan.text");
+            monthMap.put("Feb", "main.timereport.select.month.feb.text");
+            monthMap.put("Mar", "main.timereport.select.month.mar.text");
+            monthMap.put("Apr", "main.timereport.select.month.apr.text");
+            monthMap.put("May", "main.timereport.select.month.mai.text");
+            monthMap.put("Jun", "main.timereport.select.month.jun.text");
+            monthMap.put("Jul", "main.timereport.select.month.jul.text");
+            monthMap.put("Aug", "main.timereport.select.month.aug.text");
+            monthMap.put("Sep", "main.timereport.select.month.sep.text");
+            monthMap.put("Oct", "main.timereport.select.month.oct.text");
+            monthMap.put("Nov", "main.timereport.select.month.nov.text");
+            monthMap.put("Dec", "main.timereport.select.month.dec.text");
+            request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getMonth()));
             return mapping.findForward("print");
         }
         

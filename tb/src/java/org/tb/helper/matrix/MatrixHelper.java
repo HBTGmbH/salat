@@ -74,7 +74,6 @@ public class MatrixHelper {
         Double dayHoursSum = 0.0;
         Double tempDailyWorkingTime;
         int dayHoursSumTemp;
-        int mergedReportListSize;
         int dayHoursTargetTemp;
         Double dayHoursDiff;
         
