@@ -548,10 +548,11 @@
 						key="${timereport.referenceday.dow}" /><br>
 					<c:out value="${timereport.referenceday.refdate}" /></span>
 			</logic:equal> <logic:equal name="timereport" property="referenceday.holiday"
-				value="false">
-				<c:out value="${timereport.referenceday.dow}" />
-				<c:out value="${timereport.referenceday.refdate}" />
-			</logic:equal></td>
+					value="false">
+					<bean:message key="${timereport.referenceday.dow}" />
+					<br>
+					<c:out value="${timereport.referenceday.refdate}" />
+				</logic:equal></td>
 
 			<!-- Typ -->
 			<!--  

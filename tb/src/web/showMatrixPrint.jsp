@@ -43,9 +43,10 @@
 					key="main.matrixoverview.headline.tb.text" /></span></th>
 			</tr>
 			<tr>
-				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
-					key="main.matrixoverview.headline.name.text" />:--> <c:out
-					value="${currentEmployee}" /></th>
+				<th width="33%" class="matrix noBborderStyle"><c:if test="${currentEmployee eq 'ALL EMPLOYEES'}"><bean:message
+					key="main.matrixoverview.headline.allemployees.text" /></c:if>
+				<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}"><c:out
+					value="${currentEmployee}" /></c:if></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.month.text" />:--> <bean:message
 					key="${MonthKey}" /></th>

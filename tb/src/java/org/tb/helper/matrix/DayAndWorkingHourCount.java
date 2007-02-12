@@ -17,11 +17,13 @@ import java.util.Date;
  * @since 29.12.2006
  */
 public class DayAndWorkingHourCount {
+
     /**
      * @param day
      * @param workingHour
+     * @param date
      * @author cb
-     * @since 29.12.2006
+     * @since 09.02.2007
      */
     public DayAndWorkingHourCount(int day, double workingHour, Date date) {
         super();

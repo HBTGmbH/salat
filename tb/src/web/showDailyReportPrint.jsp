@@ -45,12 +45,14 @@
 					key="main.matrixoverview.headline.tb.text" /></span></th>
 			</tr>
 			<tr>
-				<th class="matrix noBborderStyle"><c:out
-					value="${currentEmployee}" /></th>
+				<th class="matrix noBborderStyle"><c:if test="${currentEmployee eq 'ALL EMPLOYEES'}"><bean:message
+					key="main.matrixoverview.headline.allemployees.text" /></c:if>
+				<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}"><c:out
+					value="${currentEmployee}" /></c:if></th>
 
 				<c:if test="${view eq 'day'}">
 					<th width="20%" class="matrix noBborderStyle"><c:out
-						value="${currentDay}" /></th>
+						value="${currentDay}" />.</th>
 					<th width="20%" class="matrix noBborderStyle"><bean:message
 						key="${MonthKey}" /></th>
 					<th width="20%" class="matrix noBborderStyle"><c:out
@@ -64,7 +66,7 @@
 				</c:if>
 				<c:if test="${view eq 'custom'}">
 					<th width="10%" class="matrix noBborderStyle"><c:out
-						value="${currentDay}" /></th>
+						value="${currentDay}" />.</th>
 					<th width="10%" class="matrix noBborderStyle"><c:out
 						value="${lastDay}" /></th>
 					<th width="20%" class="matrix noBborderStyle"><bean:message

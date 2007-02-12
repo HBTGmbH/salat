@@ -104,10 +104,7 @@ public class ShowMatrixAction extends DailyReportAction {
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 
-        // check if special tasks initiated from the daily display need to be carried out...
-        ShowMatrixForm reportForm = (ShowMatrixForm)form;
-        TimereportHelper th = new TimereportHelper();
-
+        //conversion and localization of day values
         Map<String, String> monthMap = new HashMap<String, String>();
         monthMap.put("Jan", "main.timereport.select.month.jan.text");
         monthMap.put("Feb", "main.timereport.select.month.feb.text");
@@ -122,13 +119,17 @@ public class ShowMatrixAction extends DailyReportAction {
         monthMap.put("Nov", "main.timereport.select.month.nov.text");
         monthMap.put("Dec", "main.timereport.select.month.dec.text");
 
+        // check if special tasks initiated from the daily display need to be carried out...
+        ShowMatrixForm reportForm = (ShowMatrixForm)form;
+        TimereportHelper th = new TimereportHelper();
+
+        //call on MatrixView with parameter refreshMergedreports to update request 
         if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refreshMergedreports"))) {
 
             //selected view and selected dates
             String selectedView = reportForm.getMatrixview();
             Date dateFirst;
             Date dateLast;
-
             try {
                 if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
                     request.getSession().setAttribute("matrixview", GlobalConstants.VIEW_MONTHLY);
@@ -162,15 +163,12 @@ public class ShowMatrixAction extends DailyReportAction {
                 } else {
                     throw new RuntimeException("no view type selected");
                 }
-
             } catch (Exception e) {
                 throw new RuntimeException("date cannot be parsed for form");
             }
 
             MatrixHelper mh = new MatrixHelper();
-
             Customerorder order = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
-
             if (reportForm.getEmployeeId() == -1) {
                 // consider timereports for all employees
                 List<Customerorder> orders = customerorderDAO.getCustomerorders();
@@ -210,20 +208,17 @@ public class ShowMatrixAction extends DailyReportAction {
 
             } else {
                 // consider timereports for specific employee
-                long employeeId = reportForm.getEmployeeId();
-
-                Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
-
-                if (ec == null) {
+                Employeecontract employeeContract = employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
+                if (employeeContract == null) {
                     request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
                     return mapping.findForward("error");
                 }
 
                 // also refresh orders/suborders to be displayed for specific employee 
-                List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+                List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(employeeContract.getId());
                 request.getSession().setAttribute("orders", orders);
                 if (orders.size() > 0) {
-                    request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
+                    request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractId(employeeContract.getId()));
                 }
 
                 if ((reportForm.getOrder() == null) || (reportForm.getOrder().equals("ALL ORDERS"))) {
@@ -285,31 +280,27 @@ public class ShowMatrixAction extends DailyReportAction {
             } else {
                 request.getSession().setAttribute("currentOrder", reportForm.getOrder());
             }
-            //            String x = monthMap.get(reportForm.getFromMonth());
-
             request.getSession().setAttribute("currentDay", reportForm.getFromDay());
             request.getSession().setAttribute("currentMonth", reportForm.getFromMonth());
             request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getFromMonth()));
             request.getSession().setAttribute("currentYear", reportForm.getFromYear());
-
             request.getSession().setAttribute("lastDay", reportForm.getUntilDay());
             request.getSession().setAttribute("lastMonth", reportForm.getUntilMonth());
             request.getSession().setAttribute("lastYear", reportForm.getUntilYear());
-
             GregorianCalendar gc = new GregorianCalendar();
             gc.setTime(dateFirst);
             request.getSession().setAttribute("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-
-            //            refreshVacationAndOvertime(request, employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId()), employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
 
             return mapping.findForward("success");
 
         }
 
+        //call on MatrixView with parameter print
         if ((request.getParameter("task") != null) && (request.getParameter("task").equals("print"))) {
             return mapping.findForward("print");
         }
 
+        //call on MatrixView with any parameter to forward or go back 
         if (request.getParameter("task") != null) {
             // just go back to main menu
             if (request.getParameter("task").equalsIgnoreCase("back")) {
@@ -319,6 +310,7 @@ public class ShowMatrixAction extends DailyReportAction {
             }
         }
 
+        //call on MatrixView without a parameter
         if (request.getParameter("task") == null) {
 
             // set daily view as standard
@@ -489,7 +481,6 @@ public class ShowMatrixAction extends DailyReportAction {
                 }
                 request.getSession().setAttribute("orders", orders);
                 request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-//                request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
                 if (employeeId == -1) {
                     request.getSession().setAttribute("currentEmployee", "ALL EMPLOYEES");
                 } else {
@@ -510,9 +501,10 @@ public class ShowMatrixAction extends DailyReportAction {
     }
 
     /**
-     * 
      * @param request
      * @return
+     * @author cb
+     * @since 08.02.2007
      */
     private Employeecontract getEmployeeContractFromRequest(HttpServletRequest request) {
         Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
