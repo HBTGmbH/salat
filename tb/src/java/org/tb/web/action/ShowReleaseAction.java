@@ -58,11 +58,20 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			
 		}		
 		
+		if ((Boolean) request.getSession().getAttribute("employeeAuthorized") && releaseForm.getEmployeeContractId() == null) {
+			Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+			employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, new Date());
+			releaseForm.setEmployeeContractId(employeecontract.getId());
+			
+		}
+		
+		
 		if (employeecontract == null) {
 			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 			employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), new Date());
 			releaseForm.setEmployeeContractId(employeecontract.getId());
 		}	
+		
 		
 //		if ((request.getSession().getAttribute("employeeAuthorized") != null) && ((Boolean) request.getSession().getAttribute("employeeAuthorized"))) {
 			List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
@@ -70,6 +79,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 //		}
 		
 		request.getSession().setAttribute("employeeContractId", employeecontract.getId());
+		request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
 		
 		// date from contract
 		Date releaseDateFromContract = employeecontract.getReportReleaseDate();

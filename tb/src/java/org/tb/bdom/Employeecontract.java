@@ -2,7 +2,10 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -315,6 +318,70 @@ public class Employeecontract implements Serializable {
 		else {
 			return GlobalConstants.VACATION_PER_YEAR;
 		}
+	}
+	
+	/**
+	 * Checks, if the employeecontract is released until the last day of the preceding month.
+	 * @return Returns true, if the contract is not released until the last day of the preceding month, false otherwise.
+	 */
+	public boolean getReleaseWarning() {
+		boolean releaseWarning = false;
+		GregorianCalendar calendar = new GregorianCalendar();
+		Date release = getReportReleaseDate();
+		
+		java.util.Date now = new java.util.Date();
+		int month = calendar.get(Calendar.MONTH);
+		int year = calendar.get(Calendar.YEAR);
+
+		if (month == 0) {
+			year--;
+			month = 11;
+		} else {
+			month--;
+		}
+		calendar.clear();
+		calendar.set(Calendar.MONTH, month);
+		calendar.set(Calendar.YEAR, year);
+		int date = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+		calendar.set(Calendar.DATE, date);
+		now = calendar.getTime();
+		
+		if (release.before(now)) {
+			releaseWarning = true;
+		}
+		return releaseWarning;
+	}
+	
+	/**
+	 * Checks, if the employeecontract is accepted until the last day of the preceding month.
+	 * @return Returns true, if the contract is not accepted until the last day of the preceding month, false otherwise.
+	 */
+	public boolean getAcceptanceWarning() {
+		boolean acceptanceWarning = false;
+		GregorianCalendar calendar = new GregorianCalendar();
+		Date acceptance = getReportAcceptanceDate();
+		
+		java.util.Date now = new java.util.Date();
+		int month = calendar.get(Calendar.MONTH);
+		int year = calendar.get(Calendar.YEAR);
+
+		if (month == 0) {
+			year--;
+			month = 11;
+		} else {
+			month--;
+		}
+		calendar.clear();
+		calendar.set(Calendar.MONTH, month);
+		calendar.set(Calendar.YEAR, year);
+		int date = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+		calendar.set(Calendar.DATE, date);
+		now = calendar.getTime();
+		
+		if (acceptance.before(now)) {
+			acceptanceWarning = true;
+		}
+		return acceptanceWarning;
 	}
 	
 }

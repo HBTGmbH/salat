@@ -11,6 +11,7 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.EmployeeOrderComparator;
 
 /**
@@ -23,6 +24,11 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 
 	private EmployeeOrderComparator employeeOrderComparator = new EmployeeOrderComparator();
 	private EmployeecontractDAO employeecontractDAO;
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 	
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
 		this.employeecontractDAO = employeecontractDAO;
@@ -199,9 +205,16 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		for (Iterator iter = allEmployeeorders.iterator(); iter.hasNext();) {
 			Employeeorder eo = (Employeeorder) iter.next();
 			if(eo.getId() == eoToDelete.getId()) {
+				boolean deleteOk = false;
+				
 				// check if related status reports exist - if so, no deletion possible				
 				// TODO as soon as table STATUSREPORT is available...
-				boolean deleteOk = true;
+				
+				// check if related timereports exist
+				List<Timereport> timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(eo.getEmployeecontract().getId(), eo.getFromDate(), eo.getUntilDate(), eo.getSuborder().getId());
+				if (timereports == null || timereports.isEmpty()) {
+					deleteOk = true;
+				}
 				
 				if (deleteOk) {
 					Session session = getSession();

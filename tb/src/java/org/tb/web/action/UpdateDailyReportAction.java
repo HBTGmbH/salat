@@ -234,7 +234,12 @@ public class UpdateDailyReportAction extends DailyReportAction {
 		if (!GenericValidator.maxLength(reportForm.getComment(),GlobalConstants.COMMENT_MAX_LENGTH)) {
 			errors.add("comment", new ActionMessage("form.timereport.error.comment.toolarge"));
 		}
-			
+		
+		// check if comment is necessary
+		Boolean commentnecessary = theTimereport.getSuborder().getCommentnecessary();
+		if(commentnecessary && (reportForm.getComment() == null || reportForm.getComment().trim().equals(""))) {
+			errors.add("comment", new ActionMessage("form.timereport.error.comment.necessary"));
+		}
 		
 		saveErrors(request, errors);
 		

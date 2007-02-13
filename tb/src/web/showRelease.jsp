@@ -124,7 +124,7 @@
 			</tr>
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.monthlyreport.daymonthyear.text" />:</b></td>
+						key="main.release.release.until.text" />:</b></td>
 				<td align="left" class="noBborderStyle">				
 					<html:select property="day">
 						<html:options collection="days" property="value"
@@ -199,7 +199,7 @@
 			</tr> 
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.monthlyreport.daymonthyear.text" />:</b></td>
+						key="main.release.accept.until.text" />:</b></td>
 				<td align="left" class="noBborderStyle">				
 					<html:select property="acceptanceDay">
 						<html:options collection="acceptanceDays" property="value"
@@ -274,7 +274,7 @@
 			</tr> 
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.monthlyreport.daymonthyear.text" />:</b></td>
+						key="main.release.reopen.until.text" />:</b></td>
 				<td align="left" class="noBborderStyle">				
 					<html:select property="reopenDay">
 						<html:options collection="reopenDays" property="value"
@@ -368,8 +368,26 @@
 				</c:choose>
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td align="center"><c:out value="${employeecontract.timeString}" /></td>
-					<td align="center"><c:out value="${employeecontract.reportReleaseDateString}" /></td>
-					<td align="center"><c:out value="${employeecontract.reportAcceptanceDateString}" /></td>
+					<td align="center">
+						<c:choose>
+							<c:when test="${employeecontract.releaseWarning}">
+								<font color="red"><c:out value="${employeecontract.reportReleaseDateString}" /></font>		
+							</c:when>
+							<c:otherwise>
+								<c:out value="${employeecontract.reportReleaseDateString}" />
+							</c:otherwise>
+						</c:choose>
+					</td>
+					<td align="center">
+						<c:choose>
+							<c:when test="${employeecontract.acceptanceWarning}">
+								<font color="red"><c:out value="${employeecontract.reportAcceptanceDateString}" /></font>		
+							</c:when>
+							<c:otherwise>
+								<c:out value="${employeecontract.reportAcceptanceDateString}" />
+							</c:otherwise>
+						</c:choose>
+					</td>
 				</tr>
 			</c:if>
 		</c:forEach>

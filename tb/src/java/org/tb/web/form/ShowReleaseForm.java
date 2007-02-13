@@ -95,7 +95,7 @@ public class ShowReleaseForm extends ActionForm {
 		Date releaseDate = new Date();
 		Date acceptanceDate = new Date();
 		if (employeecontract != null) {
-			employeeContractId = employeecontract.getId();
+//			employeeContractId = employeecontract.getId();
 			releaseDate = employeecontract.getReportReleaseDate();
 			acceptanceDate = employeecontract.getReportAcceptanceDate();
 			if (releaseDate == null) {

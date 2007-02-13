@@ -407,8 +407,8 @@
 			key="main.timereport.monthly.customerorder.text" /></b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.dailyoverview.suborder.text" />"><b><bean:message
-			key="main.timereport.monthly.suborder.short.text" /></b></th>
+			key="main.headlinedescription.dailyoverview.description.text" />"><b><bean:message
+			key="main.customerorder.shortdescription.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.taskdescription.text" />"
@@ -570,13 +570,14 @@
 			<!-- Auftrag -->
 			<td
 				title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
-			<c:out value="${timereport.suborder.customerorder.sign}"></c:out><br>
+			<c:out value="${timereport.suborder.customerorder.sign}" /><br>
+			<c:out value="${timereport.suborder.sign}" />
 			</td>
 
-			<!-- Unterauftrag -->
-			<td
-				title="<c:out value="${timereport.suborder.description}"></c:out>">
-			<c:out value="${timereport.suborder.sign}"></c:out><br>
+			<!-- Bezeichnung -->
+			<td>
+			<c:out value="${timereport.suborder.customerorder.shortdescription}" /><br>
+			<c:out value="${timereport.suborder.shortdescription}" />
 			</td>
 
 			<!-- visibility dependent on user and status -->
@@ -738,7 +739,7 @@
 <logic:notEqual name="currentEmployee" value="ALL EMPLOYEES"
 	scope="session">
 
-	<jsp:include flush="true" page="/info.jsp">
+	<jsp:include flush="true" page="/info2.jsp">
 		<jsp:param name="info" value="Info" />
 	</jsp:include>
 

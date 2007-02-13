@@ -7,6 +7,7 @@
 
 <table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
+	<!-- overtime -->
 	<tr>
 		<th align="left" colspan="4">
 			<b><bean:message
@@ -41,6 +42,7 @@
 			&nbsp;
 		</td>
 	</tr>
+	<!-- vacation -->
 	<tr>
 		<th align="left" colspan="4">
 			<b><bean:message
@@ -73,6 +75,7 @@
 			&nbsp;
 		</td>
 	</tr>
+	<!-- reports -->
 	<tr>
 		<th align="left" colspan="4">
 			<b><bean:message
@@ -83,14 +86,36 @@
 		<td align="left" class="noBborderStyle"><b><bean:message
 			key="main.release.released.until.text" />:</b></td>
 		<td align="left" class="noBborderStyle">
-			<b><c:out value="${releasedUntil}" /></b>	
+			<b>	
+				<c:choose>
+					<c:when test="${releaseWarning}">
+						<font color="red">
+							<c:out value="${releasedUntil}" />
+						</font>
+					</c:when>
+					<c:otherwise>
+						<c:out value="${releasedUntil}" />
+					</c:otherwise>
+				</c:choose>	
+			</b>	
 		</td>
 	</tr>
 	<tr>
 		<td align="left" class="noBborderStyle"><b><bean:message
 			key="main.release.accepted.until.text" />:</b></td>
 		<td align="left" class="noBborderStyle">
-			<b><c:out value="${acceptedUntil}" /></b>	
+			<b>	
+				<c:choose>
+					<c:when test="${acceptanceWarning}">
+						<font color="red">
+							<c:out value="${acceptedUntil}" />
+						</font>
+					</c:when>
+					<c:otherwise>
+						<c:out value="${acceptedUntil}" />
+					</c:otherwise>
+				</c:choose>	
+			</b>
 		</td>
 	</tr>
 </table>

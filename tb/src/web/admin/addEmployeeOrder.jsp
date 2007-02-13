@@ -160,7 +160,7 @@
 		</tr>
 
 		<!-- Sollstunden -->
-		<c:if test="${!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK')}">
+		<c:if test="${loginEmployee.status == 'adm' || (!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK'))}">
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.employeeorder.debithours.text" /></b></td>

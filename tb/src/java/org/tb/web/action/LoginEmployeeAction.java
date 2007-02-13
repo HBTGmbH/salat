@@ -3,7 +3,9 @@ package org.tb.web.action;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -217,6 +219,9 @@ public class LoginEmployeeAction extends Action {
 			
 			
 			// get info about vacation, overtime and report status
+			request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
+			request.getSession().setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
+			
 			String releaseDate = employeecontract.getReportReleaseDateString();
 			String acceptanceDate = employeecontract.getReportAcceptanceDateString();
 			

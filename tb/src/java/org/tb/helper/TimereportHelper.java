@@ -845,12 +845,17 @@ public class TimereportHelper {
 		long overtimeMinutes;
 		
 		SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-		String year = yearFormat.format(end);	
+		String year = yearFormat.format(start);
+		
+		SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
+		String month = monthFormat.format(start);
+		
+		int monthIntValue = Integer.valueOf(month);
 		
 		GregorianCalendar calendar = new GregorianCalendar();
 		
 		calendar.clear();
-		calendar.set(new Integer(year), Calendar.JANUARY, 1);
+		calendar.set(new Integer(year), monthIntValue-1, 1);
 		
 		// So = 1
 		// Mo = 2

@@ -217,12 +217,16 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		}
 		request.getSession().setAttribute("vacations", vacations);
 		
-		
+		// release
+		request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
+		request.getSession().setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
+	
 		String releaseDate = employeecontract.getReportReleaseDateString();
 		String acceptanceDate = employeecontract.getReportAcceptanceDateString();
 		
 		request.getSession().setAttribute("releasedUntil", releaseDate);
 		request.getSession().setAttribute("acceptedUntil", acceptanceDate);
+		
 	}
 	
 	
@@ -490,11 +494,12 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		for (int i=1; i<=maxDays; i++) {
 			if (i<10) {
 				dayLabel = "0" + i;
-				dayValue = "0" + i;
+//				dayValue = "0" + i;
 			} else if (i>=10) {
 				dayLabel = "" + i;
-				dayValue = "" + i;
+//				dayValue = "" + i;
 			}
+			dayValue = "" + i;
 			days.add(new OptionItem(dayValue, dayLabel));
 		}
 		return days;
