@@ -389,12 +389,18 @@
 		<th align="left"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message
-			key="main.timereport.monthly.employee.sign.text" /></b></th>
+			key="main.headlinedescription.dailyoverview.employee.text" />"><html:link 
+						href="/tb/do/ShowDailyReport?task=sort&column=employee"><b><bean:message
+			key="main.timereport.monthly.employee.sign.text" /></b></html:link>
+			<c:if test="${timereportSortColumn eq 'employee'}"> <c:out value="${timereportSortModus}" /></c:if>
+			</th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
-			key="main.timereport.monthly.refday.text" /></b></th>
+			key="main.headlinedescription.dailyoverview.refday.text" />"><html:link 
+						href="/tb/do/ShowDailyReport?task=sort&column=refday"><b><bean:message
+			key="main.timereport.monthly.refday.text" /></b></html:link>
+			<c:if test="${timereportSortColumn eq 'refday'}"> <c:out value="${timereportSortModus}" /></c:if>
+			</th>
 		<!--  
 		<th align="left"
 			title="<bean:message
@@ -403,8 +409,11 @@
 		-->
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
-			key="main.timereport.monthly.customerorder.text" /></b></th>
+			key="main.headlinedescription.dailyoverview.customerorder.text" />"><html:link 
+						href="/tb/do/ShowDailyReport?task=sort&column=order"><b><bean:message
+			key="main.timereport.monthly.customerorder.text" /></b></html:link>
+			<c:if test="${timereportSortColumn eq 'order'}"> <c:out value="${timereportSortModus}" /></c:if>
+			</th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.description.text" />"><b><bean:message

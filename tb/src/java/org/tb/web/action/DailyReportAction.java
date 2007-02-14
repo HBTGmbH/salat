@@ -4,6 +4,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -330,15 +332,25 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			if ((reportForm.getOrder() == null)
 					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, all employees, all orders
-				request.getSession().setAttribute("timereports", timereportDAO
-						.getTimereportsByDates(beginSqlDate, endSqlDate));
+				List<Timereport> timereports = timereportDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
+				if (request.getSession().getAttribute("timereportComparator") != null) {
+					Comparator<Timereport> comparator = (Comparator<Timereport>) request
+							.getSession().getAttribute("timereportComparator");
+					Collections.sort(timereports, comparator);
+				}				
+				request.getSession().setAttribute("timereports", timereports);
 			} else {
 				Customerorder co = customerorderDAO
 						.getCustomerorderBySign(reportForm.getOrder());
 				long orderId = co.getId();
 				// get the timereports for specific date, all employees, specific order
-				request.getSession().setAttribute("timereports", timereportDAO
-						.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, orderId));
+				List<Timereport> timereports = timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, orderId);
+				if (request.getSession().getAttribute("timereportComparator") != null) {
+					Comparator<Timereport> comparator = (Comparator<Timereport>) request
+							.getSession().getAttribute("timereportComparator");
+					Collections.sort(timereports, comparator);
+				}	
+				request.getSession().setAttribute("timereports", timereports);
 			}
 
 		} else {
@@ -367,8 +379,14 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			if ((reportForm.getOrder() == null)
 					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, specific employee, all orders
-				request.getSession().setAttribute("timereports", timereportDAO
-						.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate));
+				List<Timereport> timereports = timereportDAO
+					.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate);
+				if (request.getSession().getAttribute("timereportComparator") != null) {
+					Comparator<Timereport> comparator = (Comparator<Timereport>) request
+							.getSession().getAttribute("timereportComparator");
+					Collections.sort(timereports, comparator);
+				}
+				request.getSession().setAttribute("timereports", timereports);
 			} else {
 				Customerorder co = customerorderDAO
 						.getCustomerorderBySign(reportForm.getOrder());

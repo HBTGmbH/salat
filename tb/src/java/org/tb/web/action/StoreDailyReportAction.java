@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -556,6 +557,12 @@ public class StoreDailyReportAction extends DailyReportAction {
 				
 				
 				numberOfReports = reports.size();
+				
+				if (request.getSession().getAttribute("timereportComparator") != null) {
+					Comparator<Timereport> comparator = (Comparator<Timereport>) request
+					.getSession().getAttribute("timereportComparator");
+					Collections.sort(reports, comparator);
+				}
 				request.getSession().setAttribute("timereports", reports);
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));

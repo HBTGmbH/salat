@@ -2,6 +2,8 @@ package org.tb.web.action;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +21,12 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.bdom.comparators.TimereportByEmployeeAscComparator;
+import org.tb.bdom.comparators.TimereportByEmployeeDescComparator;
+import org.tb.bdom.comparators.TimereportByOrderAscComparator;
+import org.tb.bdom.comparators.TimereportByOrderDescComparator;
+import org.tb.bdom.comparators.TimereportByRefdayAscComparator;
+import org.tb.bdom.comparators.TimereportByRefdayDescComparator;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.SuborderHelper;
@@ -105,6 +113,57 @@ public class ShowDailyReportAction extends DailyReportAction {
 		
 		// check if special tasks initiated from the daily display need to be carried out...
 		ShowDailyReportForm reportForm = (ShowDailyReportForm) form;
+		
+		String sortModus = (String) request.getSession().getAttribute("timereportSortModus");
+		if (sortModus == null || !sortModus.equals("+") || !sortModus.equals("-")) {
+			request.getSession().setAttribute("timereportSortModus", "+");
+		}
+		String sortColumn = (String) request.getSession().getAttribute("timereportSortColumn");
+		if (sortColumn == null || sortColumn.trim().equals("")) {
+			request.getSession().setAttribute("timereportSortColumn", "employee");
+		}
+		
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("sort"))) {
+			List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+			String column = request.getParameter("column");
+			Comparator<Timereport> comparator = new TimereportByEmployeeAscComparator();
+			if ("employee".equals(column)){
+				if (sortColumn.equalsIgnoreCase(column) && sortModus.equals("+")) {
+					comparator = new TimereportByEmployeeDescComparator();
+					request.getSession().setAttribute("timereportSortModus", "-");
+				} else {
+					comparator = new TimereportByEmployeeAscComparator();
+					request.getSession().setAttribute("timereportSortModus", "+");
+					request.getSession().setAttribute("timereportSortColumn", column);
+				}
+			} else if ("refday".equals(column)){
+				if (sortColumn.equalsIgnoreCase(column) && sortModus.equals("+")) {
+					comparator = new TimereportByRefdayDescComparator();
+					request.getSession().setAttribute("timereportSortModus", "-");
+				} else {
+					comparator = new TimereportByRefdayAscComparator();
+					request.getSession().setAttribute("timereportSortModus", "+");
+					request.getSession().setAttribute("timereportSortColumn", column);
+				}
+			} else if ("order".equals(column)){
+				if (sortColumn.equalsIgnoreCase(column) && sortModus.equals("+")) {
+					comparator = new TimereportByOrderDescComparator();
+					request.getSession().setAttribute("timereportSortModus", "-");
+				} else {
+					comparator = new TimereportByOrderAscComparator();
+					request.getSession().setAttribute("timereportSortModus", "+");
+					request.getSession().setAttribute("timereportSortColumn", column);
+				}
+			}
+			Collections.sort(timereports, comparator);
+			request.getSession().setAttribute("timereports", timereports);
+			request.getSession().setAttribute("timereportComparator", comparator);
+			return mapping.findForward("success");
+		}
+		
+		
+		
 		if ((request.getParameter("task") != null)
 				&& ((request.getParameter("task").equals("saveBegin")) || (request.getParameter("task").equals("saveBreak")) )) {
 			
@@ -315,6 +374,12 @@ public class ShowDailyReportAction extends DailyReportAction {
 					return mapping.findForward("error");
 				}
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+				
+				if (request.getSession().getAttribute("timereportComparator") != null) {
+					Comparator<Timereport> comparator = (Comparator<Timereport>) request
+						.getSession().getAttribute("timereportComparator");
+					Collections.sort(timereports, comparator);
+				}
 				request.getSession().setAttribute("timereports", timereports);
 			} else {
 				java.util.Date today = new java.util.Date();
@@ -376,6 +441,12 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("labortime", laborTimeString);
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+				
+				if (request.getSession().getAttribute("timereportComparator") != null) {
+					Comparator<Timereport> comparator = (Comparator<Timereport>) request
+					.getSession().getAttribute("timereportComparator");
+					Collections.sort(timereports, comparator);
+				}
 				request.getSession().setAttribute("timereports", timereports);
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
 
