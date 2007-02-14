@@ -82,6 +82,10 @@ public class EditDailyReportAction extends DailyReportAction {
 		// fill the form with properties of the timereport to be edited
 		setFormEntries(mapping, request, reportForm, tr);
 		
+		// store last selected order
+		String lastOrder = (String) request.getSession().getAttribute("currentOrder");
+		request.getSession().setAttribute("lastOrder", lastOrder);
+		
 		return mapping.findForward("success");	
 	}
 	

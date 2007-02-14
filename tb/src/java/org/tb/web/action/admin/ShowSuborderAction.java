@@ -45,6 +45,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		
 		String filter = suborderForm.getFilter();
 		request.getSession().setAttribute("suborderFilter", filter);
+		filter = filter.toUpperCase();
 		filter = "%"+filter+"%";
 		
 		if (filter != null && !filter.equalsIgnoreCase("")) {

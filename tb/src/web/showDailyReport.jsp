@@ -159,7 +159,7 @@
 					<bean:message key="main.general.allorders.text" />
 				</html:option>
 
-				<html:options collection="orders" labelProperty="sign"
+				<html:options collection="orders" labelProperty="signAndDescription"
 					property="sign" />
 				<html:hidden property="orderId" />
 			</html:select></td>

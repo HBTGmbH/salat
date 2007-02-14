@@ -85,7 +85,7 @@
 					<bean:message key="main.general.allorders.text" />
 				</html:option>
 				<html:options collection="orders"
-					labelProperty="sign" property="id" />
+					labelProperty="signAndDescription" property="id" />
 			</html:select> 		
 			</td>
 		</tr>	

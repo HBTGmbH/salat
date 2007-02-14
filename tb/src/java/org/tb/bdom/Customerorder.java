@@ -310,6 +310,9 @@ public class Customerorder implements Serializable {
 		this.shortdescription = shortdescription;
 	}
 
+	public String getSignAndDescription() {
+		return sign+" - "+getShortdescription();
+	}
 	
 	
 	@Override

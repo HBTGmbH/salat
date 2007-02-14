@@ -181,7 +181,7 @@
 
 				<td align="left" class="noBborderStyle"><html:select
 					property="orderId" onchange="setUpdateSubordersAction(this.form)">
-					<html:options collection="orders" labelProperty="sign"
+					<html:options collection="orders" labelProperty="signAndDescription"
 						property="id" />
 				</html:select> <b> / </b> <html:select property="suborderSignId"
 					styleClass="mandatory" value="<%=soIdString%>"

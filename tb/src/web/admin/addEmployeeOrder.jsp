@@ -71,7 +71,7 @@
 			<td align="left" class="noBborderStyle"><html:select
 				property="orderId"
 				onchange="setStoreAction(this.form, 'refreshSuborders')">
-				<html:options collection="orderswithsuborders" labelProperty="sign"
+				<html:options collection="orderswithsuborders" labelProperty="signAndDescription"
 					property="id" />
 			</html:select> <c:out value="${selectedcustomerorder.description}"></c:out> <span
 				style="color:red"><html:errors property="orderId" /></span></td>
@@ -82,7 +82,7 @@
 		<td align="left" class="noBborderStyle"><html:select
 			property="suborderId" styleClass="mandatory"
 			onchange="setStoreAction(this.form, 'refreshSuborderDescription')">
-			<html:options collection="suborders" labelProperty="sign"
+			<html:options collection="suborders" labelProperty="signAndDescription"
 				property="id" />
 		</html:select> <c:if test="${selectedsuborder!=null}">
 			<c:out value="${selectedsuborder.description}"></c:out>

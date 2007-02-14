@@ -225,6 +225,10 @@ public class CreateDailyReportAction extends DailyReportAction {
 			reportForm.setReferenceday(todayString);
 		}
 		
+		// store last selected order
+		String lastOrder = (String) request.getSession().getAttribute("currentOrder");
+		request.getSession().setAttribute("lastOrder", lastOrder);
+		
 		return mapping.findForward("success");	
 	}
 	

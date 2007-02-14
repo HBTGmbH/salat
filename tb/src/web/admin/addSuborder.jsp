@@ -52,7 +52,7 @@
 			<td align="left" class="noBborderStyle"><html:select
 				property="customerorderId" value="<%=coIdString%>"
 				onchange="setStoreAction(this.form,'refreshHourlyRate')">
-				<html:options collection="customerorders" labelProperty="sign"
+				<html:options collection="customerorders" labelProperty="signAndDescription"
 					property="id" />
 			</html:select></td>
 		</tr>

@@ -549,6 +549,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setLastyear((String)request.getSession().getAttribute("lastYear"));
 				showDailyReportForm.setEmployeeId(ec.getEmployee().getId());
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
+				showDailyReportForm.setOrder((String)request.getSession().getAttribute("lastOrder"));
 				
 				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
 				reports = (List<Timereport>) request.getSession().getAttribute("timereports");

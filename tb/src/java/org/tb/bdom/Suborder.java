@@ -277,7 +277,9 @@ public class Suborder implements Serializable {
 		this.shortdescription = shortdescription;
 	}
 
-	
+	public String getSignAndDescription() {
+		return sign+" - "+getShortdescription();
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
