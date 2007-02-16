@@ -46,8 +46,10 @@ public class MatrixHelper {
      * @author cb
      * @since 08.02.2007
      */
-    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method, long customerOrderId) {
+    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method, long customerOrderId,
+            boolean invoice) {
         List<Timereport> timeReportList;
+        List<Timereport> tempTimeReportList;
         java.sql.Date beginSqlDate = new java.sql.Date(dateFirst.getTime());
         java.sql.Date endSqlDate = new java.sql.Date(dateLast.getTime());
         List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
@@ -76,7 +78,7 @@ public class MatrixHelper {
         int dayHoursSumTemp;
         int dayHoursTargetTemp;
         Double dayHoursDiff;
-        
+
         //conversion and localization of weekday values
         Map<Integer, String> weekDaysMap = new HashMap<Integer, String>();
         weekDaysMap.put(2, "main.matrixoverview.weekdays.monday.text");
@@ -106,6 +108,19 @@ public class MatrixHelper {
         } else {
             timeReportList = new ArrayList<Timereport>();
             throw new RuntimeException("this should not happen!");
+        }
+
+        //devide billable orders if necessary
+        tempTimeReportList = new ArrayList<Timereport>();
+        if (invoice == true) {
+            for (Iterator iter = timeReportList.iterator(); iter.hasNext();) {
+                tempTimeReport = (Timereport)iter.next();
+                if (tempTimeReport.getSuborder().getInvoice() == 'Y') {
+                    tempTimeReportList.add(tempTimeReport);
+                }
+            }
+            timeReportList.clear();
+            timeReportList.addAll(tempTimeReportList);
         }
 
         //filling a list with new or merged 'mergedreports'
@@ -150,7 +165,7 @@ public class MatrixHelper {
                     }
                 }
             } else {
-            //create a first entry before begin to fill the list
+                //create a first entry before begin to fill the list
                 mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(), tempTimeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
             }
         }
@@ -164,7 +179,8 @@ public class MatrixHelper {
         }
 
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
-        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst) || gregorianCalendar.getTime().equals(dateLast)) {
+        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst)
+                || gregorianCalendar.getTime().equals(dateLast)) {
             day++;
             dayHoursCount.add(new DayAndWorkingHourCount(day, 0, gregorianCalendar.getTime()));
             gregorianCalendar.add(Calendar.DAY_OF_MONTH, 1);
@@ -172,7 +188,8 @@ public class MatrixHelper {
 
         day = 0;
         gregorianCalendar.setTime(dateFirst);
-        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst) || gregorianCalendar.getTime().equals(dateLast)) {
+        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst)
+                || gregorianCalendar.getTime().equals(dateLast)) {
             day++;
             dayIsPublicHoliday = false;
             //counting weekdays for dayhourstargettime
@@ -210,7 +227,8 @@ public class MatrixHelper {
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
         gregorianCalendar.setTime(dateFirst);
         day = 0;
-        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst) || gregorianCalendar.getTime().equals(dateLast)) {
+        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst)
+                || gregorianCalendar.getTime().equals(dateLast)) {
             day++;
             for (Iterator iter = mergedReportList.iterator(); iter.hasNext();) {
                 tempMergedReport = (MergedReport)iter.next();
@@ -247,10 +265,10 @@ public class MatrixHelper {
             }
             gregorianCalendar.add(Calendar.DAY_OF_MONTH, 1);
         }
-        
+
         //sort mergedreportlist by custom- and subordersign
         Collections.sort(mergedReportList);
-        
+
         //calculate dayhourssum
         for (Iterator iter5 = dayHoursCount.iterator(); iter5.hasNext();) {
             tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter5.next();

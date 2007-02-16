@@ -212,6 +212,13 @@
 				</html:select></td>
 			</tr>
 		</c:if>
+		<!-- select invoice -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.monthlyreport.invoice.text" />:</b></td>
+			<td align="left" class="noBborderStyle"><html:checkbox
+				property="invoice" onchange="setUpdateMergedreportsAction(this.form)"/></td>
+		</tr>
 	</table>
 </html:form>
 
@@ -231,10 +238,12 @@
 				</th>
 			</tr>
 			<tr>
-				<th width="33%" class="matrix noBborderStyle"><c:if test="${currentEmployee eq 'ALL EMPLOYEES'}"><bean:message
-					key="main.matrixoverview.headline.allemployees.text" /></c:if>
-				<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}"><c:out
-					value="${currentEmployee}" /></c:if></th>
+				<th width="33%" class="matrix noBborderStyle"><c:if
+					test="${currentEmployee eq 'ALL EMPLOYEES'}">
+					<bean:message key="main.matrixoverview.headline.allemployees.text" />
+				</c:if> <c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">
+					<c:out value="${currentEmployee}" />
+				</c:if></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.month.text" />:--> <bean:message
 					key="${MonthKey}" /></th>

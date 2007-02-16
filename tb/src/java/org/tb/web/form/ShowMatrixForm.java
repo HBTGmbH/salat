@@ -12,6 +12,7 @@ package org.tb.web.form;
 
 import java.util.Date;
 
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -37,8 +38,14 @@ public class ShowMatrixForm extends ActionForm {
 
     private String matrixview;
     private long orderId;
+    
+    private boolean invoice;
 
-    public long getEmployeeId() {
+    
+    
+
+
+	public long getEmployeeId() {
         return employeeId;
     }
 
@@ -130,6 +137,7 @@ public class ShowMatrixForm extends ActionForm {
     public void reset(ActionMapping arg0, HttpServletRequest arg1) {
         // TODO Auto-generated method stub
         super.reset(arg0, arg1);
+        invoice = false;
     }
 
     @Override
@@ -137,6 +145,14 @@ public class ShowMatrixForm extends ActionForm {
         // TODO Auto-generated method stub
         return super.validate(arg0, arg1);
     }
+
+	public boolean isInvoice() {
+		return invoice;
+	}
+
+	public void setInvoice(boolean invoice) {
+		this.invoice = invoice;
+	}
 
 }
 
