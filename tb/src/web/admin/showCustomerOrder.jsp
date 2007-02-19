@@ -45,6 +45,18 @@
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
+<bean:size id="customerordersSize" name="customerorders" />
+<c:if test="${customerordersSize>10}">
+	<c:if test="${employeeAuthorized}">
+		<tr>
+			<html:form action="/CreateCustomerorder">
+				<td class="noBborderStyle" colspan="4"><html:submit
+					styleId="button">
+					<bean:message key="main.general.button.createcustomerorder.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</c:if></c:if>
 	<tr>
 		<th align="left"
 			title="<bean:message

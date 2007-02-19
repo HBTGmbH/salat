@@ -45,6 +45,19 @@
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
+<bean:size id="employeesSize" name="employees" />
+<c:if test="${employeesSize>10}">
+	<c:if test="${employeeAuthorized}">
+		<tr>
+			<html:form action="/CreateEmployee">
+				<td class="noBborderStyle" colspan="4"><html:submit
+					styleId="button">
+					<bean:message key="main.general.button.createemployee.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</c:if>
+	</c:if>
 	<tr>
 		<th align="left"
 			title="<bean:message

@@ -18,8 +18,8 @@
 <html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.application.title" /> - <bean:message
-	key="main.general.mainmenu.employeeorders.text" /></title>
+<title><bean:message key="main.general.application.title" /> -
+<bean:message key="main.general.mainmenu.employeeorders.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
 <script type="text/javascript" language="JavaScript">
@@ -50,73 +50,85 @@
 <h2><bean:message key="main.general.mainmenu.employeeorders.text" /></h2>
 </p>
 <br>
-<span style="color:red"><html:errors footer="<br>"/>
-</span>
- 	
+<span style="color:red"><html:errors footer="<br>" /> </span>
+
 <html:form action="/ShowEmployeeorder">
 	<table class="center backgroundcolor">
 		<!-- select employee -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle">
-				<html:select
-					property="employeeId"		
-					onchange="setUpdateEmployeeOrders(this.form)"
-					value="${currentEmployeeId}" >
-					<html:option value="-1">
+			<td align="left" class="noBborderStyle"><html:select
+				property="employeeId" onchange="setUpdateEmployeeOrders(this.form)"
+				value="${currentEmployeeId}">
+				<html:option value="-1">
 					<bean:message key="main.general.allemployees.text" />
 				</html:option>
-				<html:options collection="employees"
-					labelProperty="name" property="id" />
-			</html:select> 		
-			</td>
+				<html:options collection="employees" labelProperty="name"
+					property="id" />
+			</html:select></td>
 		</tr>
 		<!-- select order -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.customerorder.text" />:</b></td>
-			<td align="left" class="noBborderStyle">
-				<html:select
-					property="orderId"		
-					onchange="setUpdateEmployeeOrders(this.form)" 
-					value="${currentOrderId}">
+			<td align="left" class="noBborderStyle"><html:select
+				property="orderId" onchange="setUpdateEmployeeOrders(this.form)"
+				value="${currentOrderId}">
 				<html:option value="-1">
 					<bean:message key="main.general.allorders.text" />
 				</html:option>
-				<html:options collection="orders"
-					labelProperty="signAndDescription" property="id" />
-			</html:select> 		
-			</td>
-		</tr>	
+				<html:options collection="orders" labelProperty="signAndDescription"
+					property="id" />
+			</html:select></td>
+		</tr>
 	</table>
 </html:form>
 
 <table class="center backgroundcolor">
+	<bean:size id="employeeordersSize" name="employeeorders" />
+	<c:if test="${employeeordersSize>10}">
+		<c:if test="${employeeAuthorized || employeeIsResponsible}">
+			<tr>
+				<html:form action="/CreateEmployeeorder">
+					<td class="noBborderStyle" colspan="4"><html:submit
+						styleId="button">
+						<bean:message key="main.general.button.createemployeeorder.text" />
+					</html:submit></td>
+				</html:form>
+			</tr>
+		</c:if>
+	</c:if>
 	<tr>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.employeename.text" />"><b><bean:message
-			key="main.employeeorder.employee.text" /></b>
-		</th>
-		<th align="left" title="<bean:message
+			key="main.employeeorder.employee.text" /></b></th>
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.ordernumber.text" />"><b><bean:message
 			key="main.employeeorder.customerorder.text" /></b></th>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.subordernumber.text" />"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></th>
 		<!--  
 		<td align="left"> <b><bean:message key="main.employeeorder.sign.text"/></b> </td>	
 		-->
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.validfrom.text" />"><b><bean:message
 			key="main.employeeorder.validfrom.text" /></b></th>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.validuntil.text" />"><b><bean:message
 			key="main.employeeorder.validuntil.text" /></b></th>
-		<th align="center" title="<bean:message
+		<th align="center"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.standingorder.text" />"><b><bean:message
 			key="main.employeeorder.standingorder.text" /></b></th>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
 			key="main.employeeorder.debithours.text" /></b></th>
 		<!--  
@@ -124,13 +136,16 @@
 			key="main.headlinedescription.employeeorders.status.text" />"><b><bean:message
 			key="main.employeeorder.status.text" /></b></th>
 		-->
-		<th align="center" title="<bean:message
+		<th align="center"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.statusreport.text" />"><b><bean:message
 			key="main.employeeorder.statusreport.text" /></b></th>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
 			key="main.employeeorder.edit.text" /></b></th>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.employeeorders.delete.text" />"><b><bean:message
 			key="main.employeeorder.delete.text" /></b></th>
 	</tr>
@@ -146,8 +161,11 @@
 		</c:choose>
 		<td><c:out
 			value="${employeeorder.employeecontract.employee.name}" /></td>
-		<td title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out value="${employeeorder.suborder.customerorder.sign}" /></td>
-		<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out value="${employeeorder.suborder.sign}" /></td>
+		<td
+			title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
+			value="${employeeorder.suborder.customerorder.sign}" /></td>
+		<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out
+			value="${employeeorder.suborder.sign}" /></td>
 		<!-- 
       	<td><bean:write name="employeeorder" property="sign"/></td>
       	 -->
@@ -170,23 +188,23 @@
 			property="statusreport" disabled="true" /></td>
 
 		<c:choose>
-			<c:when test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
-				<td align="center">
-					<html:link	href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
-						<img src="/tb/images/Edit.gif" alt="Edit Employeeorder" />
-					</html:link>
-				</td>
+			<c:when
+				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
+				<td align="center"><html:link
+					href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
+					<img src="/tb/images/Edit.gif" alt="Edit Employeeorder" />
+				</html:link></td>
 				<html:form action="/DeleteEmployeeorder">
-					<td align="center">
-						<html:image onclick="confirmDelete(this.form, ${employeeorder.id})"
-							src="/tb/images/Delete.gif" alt="Delete Employeeorder" /></td>
+					<td align="center"><html:image
+						onclick="confirmDelete(this.form, ${employeeorder.id})"
+						src="/tb/images/Delete.gif" alt="Delete Employeeorder" /></td>
 				</html:form>
 			</c:when>
 			<c:otherwise>
-				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
-					alt="Edit Employeeorder" /></td>
-				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
-					alt="Delete Employeeorder" /></td>
+				<td align="center"><img height="12px" width="12px"
+					src="/tb/images/verbot.gif" alt="Edit Employeeorder" /></td>
+				<td align="center"><img height="12px" width="12px"
+					src="/tb/images/verbot.gif" alt="Delete Employeeorder" /></td>
 			</c:otherwise>
 		</c:choose>
 		</tr>
@@ -194,7 +212,8 @@
 	<c:if test="${employeeAuthorized || employeeIsResponsible}">
 		<tr>
 			<html:form action="/CreateEmployeeorder">
-				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+				<td class="noBborderStyle" colspan="4"><html:submit
+					styleId="button">
 					<bean:message key="main.general.button.createemployeeorder.text" />
 				</html:submit></td>
 			</html:form>

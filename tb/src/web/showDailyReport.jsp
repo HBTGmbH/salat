@@ -362,9 +362,36 @@
 			</c:if>
 		</c:if>
 	</table>
-
 </html:form>
-<br>
+
+<bean:size id="timereportsSize" name="timereports" />
+<c:if test="${timereportsSize>10}">
+	<table>
+		<tr>
+			<c:if
+				test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
+				<html:form action="/CreateDailyReport">
+					<td class="noBborderStyle" colspan="6" align="left"><html:submit
+						styleId="button">
+						<bean:message key="main.general.button.createnewreport.text" />
+					</html:submit></td>
+				</html:form>
+			</c:if>
+		</tr>
+		<br>
+		<tr>
+			<html:form target="fenster"
+				onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
+				action="/ShowDailyReport?task=print">
+				<td class="noBborderStyle" colspan="6" align="left"><html:submit
+					styleId="button">
+					<bean:message key="main.general.button.printpreview.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</table>
+</c:if>
+
 <table class="center backgroundcolor" width="100%">
 
 	<tr>
@@ -389,18 +416,20 @@
 		<th align="left"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.dailyoverview.employee.text" />"><html:link 
-						href="/tb/do/ShowDailyReport?task=sort&column=employee"><b><bean:message
-			key="main.timereport.monthly.employee.sign.text" /></b></html:link>
-			<c:if test="${timereportSortColumn eq 'employee'}"> <c:out value="${timereportSortModus}" /></c:if>
-			</th>
+			key="main.headlinedescription.dailyoverview.employee.text" />"><html:link
+			href="/tb/do/ShowDailyReport?task=sort&column=employee">
+			<b><bean:message key="main.timereport.monthly.employee.sign.text" /></b>
+		</html:link> <c:if test="${timereportSortColumn eq 'employee'}">
+			<c:out value="${timereportSortModus}" />
+		</c:if></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.dailyoverview.refday.text" />"><html:link 
-						href="/tb/do/ShowDailyReport?task=sort&column=refday"><b><bean:message
-			key="main.timereport.monthly.refday.text" /></b></html:link>
-			<c:if test="${timereportSortColumn eq 'refday'}"> <c:out value="${timereportSortModus}" /></c:if>
-			</th>
+			key="main.headlinedescription.dailyoverview.refday.text" />"><html:link
+			href="/tb/do/ShowDailyReport?task=sort&column=refday">
+			<b><bean:message key="main.timereport.monthly.refday.text" /></b>
+		</html:link> <c:if test="${timereportSortColumn eq 'refday'}">
+			<c:out value="${timereportSortModus}" />
+		</c:if></th>
 		<!--  
 		<th align="left"
 			title="<bean:message
@@ -409,11 +438,12 @@
 		-->
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.dailyoverview.customerorder.text" />"><html:link 
-						href="/tb/do/ShowDailyReport?task=sort&column=order"><b><bean:message
-			key="main.timereport.monthly.customerorder.text" /></b></html:link>
-			<c:if test="${timereportSortColumn eq 'order'}"> <c:out value="${timereportSortModus}" /></c:if>
-			</th>
+			key="main.headlinedescription.dailyoverview.customerorder.text" />"><html:link
+			href="/tb/do/ShowDailyReport?task=sort&column=order">
+			<b><bean:message key="main.timereport.monthly.customerorder.text" /></b>
+		</html:link> <c:if test="${timereportSortColumn eq 'order'}">
+			<c:out value="${timereportSortModus}" />
+		</c:if></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.description.text" />"><b><bean:message
@@ -554,14 +584,14 @@
 			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal
 				name="timereport" property="referenceday.holiday" value="true">
 				<span style="color:red"> <bean:message
-						key="${timereport.referenceday.dow}" /><br>
-					<c:out value="${timereport.referenceday.refdate}" /></span>
+					key="${timereport.referenceday.dow}" /><br>
+				<c:out value="${timereport.referenceday.refdate}" /></span>
 			</logic:equal> <logic:equal name="timereport" property="referenceday.holiday"
-					value="false">
-					<bean:message key="${timereport.referenceday.dow}" />
-					<br>
-					<c:out value="${timereport.referenceday.refdate}" />
-				</logic:equal></td>
+				value="false">
+				<bean:message key="${timereport.referenceday.dow}" />
+				<br>
+				<c:out value="${timereport.referenceday.refdate}" />
+			</logic:equal></td>
 
 			<!-- Typ -->
 			<!--  
@@ -580,14 +610,12 @@
 			<td
 				title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
 			<c:out value="${timereport.suborder.customerorder.sign}" /><br>
-			<c:out value="${timereport.suborder.sign}" />
-			</td>
+			<c:out value="${timereport.suborder.sign}" /></td>
 
 			<!-- Bezeichnung -->
-			<td>
-			<c:out value="${timereport.suborder.customerorder.shortdescription}" /><br>
-			<c:out value="${timereport.suborder.shortdescription}" />
-			</td>
+			<td><c:out
+				value="${timereport.suborder.customerorder.shortdescription}" /><br>
+			<c:out value="${timereport.suborder.shortdescription}" /></td>
 
 			<!-- visibility dependent on user and status -->
 

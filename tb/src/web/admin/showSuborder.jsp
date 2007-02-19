@@ -49,7 +49,22 @@
 		<bean:message key="main.general.button.filter.text" />
 	</html:submit>
 </html:form>
+
 <table class="center backgroundcolor">
+<bean:size id="subordersSize" name="suborders" />
+<c:if test="${subordersSize>10}">
+
+	<c:if test="${employeeAuthorized || employeeIsResponsible}">
+		<tr>
+			<html:form action="/CreateSuborder">
+				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+					<bean:message key="main.general.button.createsuborder.text" />
+				</html:submit></td>
+			</html:form>
+		</tr>
+	</c:if>
+</c:if>
+
 	<tr>
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.customerorder.text" />"><b><bean:message

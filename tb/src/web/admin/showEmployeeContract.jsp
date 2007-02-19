@@ -16,8 +16,8 @@
 <html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.application.title" /> - <bean:message
-	key="main.general.mainmenu.employeecontracts.text" /></title>
+<title><bean:message key="main.general.application.title" /> -
+<bean:message key="main.general.mainmenu.employeecontracts.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
 <script type="text/javascript" language="JavaScript">
@@ -39,38 +39,63 @@
 </jsp:include>
 <br>
 <p>
-<h2><bean:message key="main.general.mainmenu.employeecontracts.text" /></h2>
+<h2><bean:message
+	key="main.general.mainmenu.employeecontracts.text" /></h2>
 </p>
 <br>
-<span style="color:red"><html:errors footer="<br>"/>
-</span>
+<span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
+	<bean:size id="employeecontractsSize" name="employeecontracts" />
+	<c:if test="${employeecontractsSize>10}">
+		<c:if test="${employeeAuthorized}">
+			<tr>
+				<html:form action="/CreateEmployeecontract">
+					<td class="noBborderStyle" colspan="4"><html:submit
+						styleId="button">
+						<bean:message
+							key="main.general.button.createemployeecontract.text" />
+					</html:submit></td>
+				</html:form>
+			</tr>
+		</c:if>
+	</c:if>
 	<tr>
-		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.employeename.text" />"><b><bean:message
+		<th align="left"
+			title="<bean:message key="main.headlinedescription.employeecontracts.employeename.text" />"><b><bean:message
 			key="main.employeecontract.employee.text" /></b></th>
-		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.taskdescription.text" />"><b><bean:message
+		<th align="left"
+			title="<bean:message key="main.headlinedescription.employeecontracts.taskdescription.text" />"><b><bean:message
 			key="main.employeecontract.taskdescription.text" /></b></th>
-		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.validfrom.text" />"><b><bean:message
+		<th align="left"
+			title="<bean:message key="main.headlinedescription.employeecontracts.validfrom.text" />"><b><bean:message
 			key="main.employeecontract.validfrom.text" /></b></th>
-		<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.validuntil.text" />"><b><bean:message
+		<th align="left"
+			title="<bean:message key="main.headlinedescription.employeecontracts.validuntil.text" />"><b><bean:message
 			key="main.employeecontract.validuntil.text" /></b></th>
-		<th align="center" title="<bean:message key="main.headlinedescription.employeecontracts.freelancer.text" />"><b><bean:message
+		<th align="center"
+			title="<bean:message key="main.headlinedescription.employeecontracts.freelancer.text" />"><b><bean:message
 			key="main.employeecontract.freelancer.text" /></b></th>
-		<th align="center" title="<bean:message key="main.headlinedescription.employeecontracts.dailyworkingtime.text" />"><b><bean:message
+		<th align="center"
+			title="<bean:message key="main.headlinedescription.employeecontracts.dailyworkingtime.text" />"><b><bean:message
 			key="main.employeecontract.dailyworkingtime.text" /></b></th>
-		<th align="center" title="<bean:message key="main.headlinedescription.employeecontracts.vacationdaysperyear.text" />"><b><bean:message
+		<th align="center"
+			title="<bean:message key="main.headlinedescription.employeecontracts.vacationdaysperyear.text" />"><b><bean:message
 			key="main.employeecontract.yearlyvacation.text" /></b></th>
 		<c:if test="${employeeAuthorized}">
-			<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text" />"><b><bean:message
+			<th align="left"
+				title="<bean:message key="main.headlinedescription.employeecontracts.edit.text" />"><b><bean:message
 				key="main.employeecontract.edit.text" /></b></th>
-			<th align="left" title="<bean:message key="main.headlinedescription.employeecontracts.delete.text" />"><b><bean:message
+			<th align="left"
+				title="<bean:message key="main.headlinedescription.employeecontracts.delete.text" />"><b><bean:message
 				key="main.employeecontract.delete.text" /></b></th>
 		</c:if>
 	</tr>
 
-	<c:forEach var="employeecontract" items="${employeecontracts}" varStatus="statusID">
-		<c:if test="${employeecontract.employee.lastname!='admin' || loginEmployee.status eq 'adm'}">
+	<c:forEach var="employeecontract" items="${employeecontracts}"
+		varStatus="statusID">
+		<c:if
+			test="${employeecontract.employee.lastname!='admin' || loginEmployee.status eq 'adm'}">
 			<c:choose>
 				<c:when test="${statusID.count%2==0}">
 					<tr class="primarycolor">
@@ -107,7 +132,8 @@
 	<c:if test="${employeeAuthorized}">
 		<tr>
 			<html:form action="/CreateEmployeecontract">
-				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+				<td class="noBborderStyle" colspan="4"><html:submit
+					styleId="button">
 					<bean:message key="main.general.button.createemployeecontract.text" />
 				</html:submit></td>
 			</html:form>

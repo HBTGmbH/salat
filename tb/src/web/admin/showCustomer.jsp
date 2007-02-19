@@ -15,7 +15,8 @@
 <html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.customers.text" /></title>
+<title><bean:message key="main.general.application.title" /> -
+<bean:message key="main.general.mainmenu.customers.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
 <script type="text/javascript" language="JavaScript">
@@ -40,25 +41,42 @@
 <h2><bean:message key="main.general.mainmenu.customers.text" /></h2>
 </p>
 <br>
-<span style="color:red"><html:errors footer="<br>"/>
-</span>
+<span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="backgroundcolor">
+	<bean:size id="customersSize" name="customers" />
+	<c:if test="${customersSize>10}">
+		<c:if test="${employeeAuthorized}">
+			<tr>
+				<html:form action="/CreateCustomer">
+					<td class="noBborderStyle" colspan="2"><html:submit
+						styleId="button">
+						<bean:message key="main.general.button.createcustomer.text" />
+					</html:submit></td>
+				</html:form>
+			</tr>
+		</c:if>
+	</c:if>
 	<tr>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.customers.customername.text" />"><b><bean:message
 			key="main.customer.shortname.text" /></b></th>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.customers.customername.text" />"><b><bean:message
 			key="main.customer.name.text" /></b></th>
-		<th align="left" title="<bean:message
+		<th align="left"
+			title="<bean:message
 			key="main.headlinedescription.customers.address.text" />"><b><bean:message
 			key="main.customer.address.text" /></b></th>
 		<c:if test="${employeeAuthorized}">
-			<th align="left" title="<bean:message
+			<th align="left"
+				title="<bean:message
 				key="main.headlinedescription.customers.edit.text" />"><b><bean:message
 				key="main.customer.edit.text" /></b></th>
-			<th align="left" title="<bean:message
+			<th align="left"
+				title="<bean:message
 				key="main.headlinedescription.customers.delete.text" />"><b><bean:message
 				key="main.customer.delete.text" /></b></th>
 		</c:if>
@@ -92,7 +110,8 @@
 	<c:if test="${employeeAuthorized}">
 		<tr>
 			<html:form action="/CreateCustomer">
-				<td class="noBborderStyle" colspan="2"><html:submit styleId="button">
+				<td class="noBborderStyle" colspan="2"><html:submit
+					styleId="button">
 					<bean:message key="main.general.button.createcustomer.text" />
 				</html:submit></td>
 			</html:form>
