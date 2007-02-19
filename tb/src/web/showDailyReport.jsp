@@ -123,7 +123,29 @@
 <html:form action="/ShowDailyReport">
 	<table class="center backgroundcolor">
 
+		<!-- select employeecontract -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.monthlyreport.employee.fullname.text" />:</b></td>
+			<td align="left" class="noBborderStyle"><html:select 
+				property="employeeContractId" value="${currentEmployeeContract.id}"
+				onchange="setUpdateTimereportsAction(this.form)">
+
+				<html:option value="-1">
+					<bean:message key="main.general.allemployees.text" />
+				</html:option>
+				<c:forEach var="employeecontract" items="${employeecontracts}" >
+					<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+						<html:option value="${employeecontract.id}">
+							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+						</html:option>
+					</c:if>							
+				</c:forEach>
+			</html:select> </td>
+		</tr>
+
 		<!-- select employee -->
+		<!--  
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
@@ -137,14 +159,17 @@
 
 				<html:options collection="employeeswithcontract"
 					labelProperty="name" property="id" />
-			</html:select> <!--  
+			</html:select> 
+			-->
+			<!--  
 			<logic:equal name="currentEmployeeId" value="-1"
 				scope="session">
 				<span style="color:red"> <b><bean:message
 					key="main.general.selectemployee.editable.text" />.</b> </span>
 			</logic:equal>
-			--></td>
+			--><!--  </td>
 		</tr>
+		-->
 
 		<!-- select order -->
 		<tr>
@@ -504,7 +529,8 @@
 					<td class="info"><bean:message
 						key="main.timereport.tooltip.employee" />:</td>
 					<td class="info" colspan="3"><c:out
-						value="${timereport.employeecontract.employee.name}" /></td>
+						value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out
+						value="${timereport.employeecontract.timeString}" />)</td>
 				</tr>
 				<tr>
 					<td class="info"><bean:message
@@ -578,7 +604,7 @@
 				src="/tb/images/info_button.gif" /></td>
 
 			<!-- Mitarbeiter -->
-			<td><c:out value="${timereport.employeecontract.employee.sign}" /></td>
+			<td title="<c:out value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${timereport.employeecontract.timeString}" />)"><c:out value="${timereport.employeecontract.employee.sign}" /></td>
 
 			<!-- Datum -->
 			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal

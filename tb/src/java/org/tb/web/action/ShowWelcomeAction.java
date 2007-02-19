@@ -61,25 +61,28 @@ public class ShowWelcomeAction extends DailyReportAction {
 		
 		ShowWelcomeForm welcomeForm = (ShowWelcomeForm) form;
 		Employeecontract employeecontract;
-		Date date = new Date();
+//		Date date = new Date();
 		
-		// create collection of employees with contracts
-		List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithContractsValidForDate(date);
-		request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
+		// create collection of employeecontracts
+		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		request.getSession().setAttribute("employeecontracts", employeecontracts);
 		
 		if ((request.getParameter("task") != null) &&
                 (request.getParameter("task").equals("refresh"))){
 			
-			long employeeId = welcomeForm.getEmployeeId();
+			long employeeContractId = welcomeForm.getEmployeeContractId();
 			
-			employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
-			request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
-		} else {
-			Long employeeContractId = (Long) request.getSession().getAttribute("loginEmployeeContractId");
 			employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
-			long employeeId = employeecontract.getEmployee().getId();
-			welcomeForm.setEmployeeId(employeeId);
 			request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+		} else {
+			employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+			if (employeecontract == null) {
+				employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+			}
+			welcomeForm.setEmployeeContractId(employeecontract.getId());
+			request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 		}
 		
 		

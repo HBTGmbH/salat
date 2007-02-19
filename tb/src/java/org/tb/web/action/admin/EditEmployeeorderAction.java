@@ -1,6 +1,5 @@
 package org.tb.web.action.admin;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -17,14 +16,12 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
@@ -95,36 +92,30 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		
 		Employeecontract ec = eo.getEmployeecontract();
 		Employee theEmployee = ec.getEmployee();
-		eoForm.setEmployeeId(theEmployee.getId());
+//		eoForm.setEmployeeId(theEmployee.getId());
+//		eoForm.setEmployeeContractId(ec.getId());
 		request.getSession().setAttribute("currentEmployee", theEmployee.getName());
 		request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
+		request.getSession().setAttribute("currentEmployeeContract", ec);
 		
-		List<Employee> employees = employeeDAO.getEmployees();
+//		List<Employee> employees = employeeDAO.getEmployees();
 //		request.getSession().setAttribute("employees", employees);
 		
-		Employee emp;
-		Iterator it = employees.iterator();
-		List<Employee> employeeswithcontract = new ArrayList<Employee>();
-		while (it.hasNext()) {
-			emp = (Employee) it.next();
-			if (employeecontractDAO.getEmployeeContractByEmployeeId(emp.getId()) != null) {
-				employeeswithcontract.add(emp);
-			}
-		}
-		if ((employeeswithcontract == null) || (employeeswithcontract.size() <= 0)) {
+		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		
+		if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
 			request.setAttribute("errorMessage", 
 					"No employees with valid contracts found - please call system administrator.");
 		}
 		
-	
 		// set relevant attributes
-//		request.getSession().setAttribute("employees", employees);
-		request.getSession().setAttribute("employeeswithcontract", employeeswithcontract);
-		
-		
+		request.getSession().setAttribute("employeecontracts", employeeContracts);
+				
 		List<Customerorder> orders;
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) {
+		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
+			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) ||
+			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 			orders = customerorderDAO.getCustomerorders();
 		} else {
 			orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
@@ -157,7 +148,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		//request.getSession().setAttribute("suborders", suborders);		
 		request.getSession().setAttribute("suborders", eo.getSuborder().getCustomerorder().getSuborders());
 		
-		eoForm.setEmployeecontractId(ec.getId());
+		eoForm.setEmployeeContractId(ec.getId());
 		eoForm.setOrderId(eo.getSuborder().getCustomerorder().getId());
 		eoForm.setSuborderId(eo.getSuborder().getId());
 		eoForm.setDebithours(eo.getDebithours());

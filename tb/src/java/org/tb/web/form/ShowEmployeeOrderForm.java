@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.bdom.Employeecontract;
 
 /**
  * Form for showing all employee orders.
@@ -17,22 +18,22 @@ import org.apache.struts.action.ActionMapping;
 public class ShowEmployeeOrderForm extends ActionForm {
 
 
-	private long employeeId;
+	private long employeeContractId;
 	private long orderId;
 	
 	
 	/**
-	 * @return the employeeName
+	 * @return the employeeContractId
 	 */
-	public long getEmployeeId() {
-		return employeeId;
+	public long getEmployeeContractId() {
+		return employeeContractId;
 	}
 
 	/**
-	 * @param employeeName the employeeName to set
+	 * @param employeeContractId the employeeContractId to set
 	 */
-	public void setEmployeeId(long employeeId) {
-		this.employeeId = employeeId;
+	public void setEmployeeContractId(long employeeContractId) {
+		this.employeeContractId = employeeContractId;
 	}
 	
 	
@@ -53,7 +54,13 @@ public class ShowEmployeeOrderForm extends ActionForm {
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		// actually, nothing to reset
+		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		if (currentEmployeeContract != null) {
+			employeeContractId = currentEmployeeContract.getId();
+		} else {
+			Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+			employeeContractId = loginEmployeeContract.getId();
+		}
 	}
 
 	@Override

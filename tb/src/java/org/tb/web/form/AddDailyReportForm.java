@@ -7,6 +7,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
 
 /**
@@ -37,8 +38,9 @@ public class AddDailyReportForm extends ActionForm {
 	private long orderId;
 	private long suborderSignId;
 	private long suborderDescriptionId;
-	private long employeecontractId;
-	private Long employeeId;
+//	private long employeecontractId;
+//	private Long employeeId;
+	private Long employeeContractId;
 	
 	private int numberOfSerialDays;
 	
@@ -209,13 +211,13 @@ public class AddDailyReportForm extends ActionForm {
 		this.referenceday = referenceday;
 	}
 
-	public long getEmployeecontractId() {
-		return employeecontractId;
-	}
-
-	public void setEmployeecontractId(long employeecontractId) {
-		this.employeecontractId = employeecontractId;
-	}
+//	public long getEmployeecontractId() {
+//		return employeecontractId;
+//	}
+//
+//	public void setEmployeecontractId(long employeecontractId) {
+//		this.employeecontractId = employeecontractId;
+//	}
 
 	public String getStatus() {
 		return status;
@@ -233,20 +235,34 @@ public class AddDailyReportForm extends ActionForm {
 		this.numberOfSerialDays = numberOfSerialDays;
 	}
 	
-	public long getEmployeeId() {
-		return employeeId;
+//	public long getEmployeeId() {
+//		return employeeId;
+//	}
+//
+//	public void setEmployeeId(long employeeId) {
+//		this.employeeId = employeeId;
+//	}
+
+	/**
+	 * @return the employeeContractId
+	 */
+	public Long getEmployeeContractId() {
+		return employeeContractId;
 	}
 
-	public void setEmployeeId(long employeeId) {
-		this.employeeId = employeeId;
+	/**
+	 * @param employeeContractId the employeeContractId to set
+	 */
+	public void setEmployeeContractId(Long employeeContractId) {
+		this.employeeContractId = employeeContractId;
 	}
-
 	
 	
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		employeeId = loginEmployee.getId();
+//		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+		employeeContractId = loginEmployeecontract.getId();
 //		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
 		comment = "";
 		order = "";
@@ -273,5 +289,7 @@ public class AddDailyReportForm extends ActionForm {
 		// actually, no checks here
 		return errors;
 	}
+
+	
 
 }

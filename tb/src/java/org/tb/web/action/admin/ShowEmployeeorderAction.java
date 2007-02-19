@@ -1,6 +1,5 @@
 package org.tb.web.action.admin;
 
-import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -9,9 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -54,23 +53,25 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		
 		ShowEmployeeOrderForm orderForm = (ShowEmployeeOrderForm) form;
 		
+//		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 		
 		// get valid employeecontracts
-		Date now = new Date();
-		// List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsValidForDate(now);
+		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		request.getSession().setAttribute("employeecontracts", employeeContracts);
 		
-		List<Employee> employees = employeeDAO.getEmployeesWithContractsValidForDate(now);
-		
-		// make sure, that admin is in list
+//		Date now = new Date();
+//		List<Employee> employees = employeeDAO.getEmployeesWithContractsValidForDate(now);
+//		
+//		// make sure, that admin is in list
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
-				loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-			if (!employees.contains(loginEmployee)) {
-				employees.add(loginEmployee);
-			}
-		}
-		
-		request.getSession().setAttribute("employees", employees);
+//		if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
+//				loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+//			if (!employees.contains(loginEmployee)) {
+//				employees.add(loginEmployee);
+//			}
+//		}
+//		
+//		request.getSession().setAttribute("employees", employees);
 		
 		List<Customerorder> orders = customerorderDAO.getCustomerorders();
 		request.getSession().setAttribute("orders", orders);
@@ -98,7 +99,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 			
 //		if (request.getParameter("task") == null) {
 			
-			refreshEmployeeOrders(request, orderForm, employeeorderDAO);		
+			refreshEmployeeOrders(request, orderForm, employeeorderDAO, employeecontractDAO);		
 			
 			return mapping.findForward("success");
 			

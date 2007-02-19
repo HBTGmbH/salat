@@ -128,8 +128,12 @@ public class EditDailyReportAction extends DailyReportAction {
 		subordersByDescription.addAll(theSuborders);
 		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
 		
-		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
-		request.getSession().setAttribute("employees", employeeOptionList);
+//		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
+//		request.getSession().setAttribute("employees", employeeOptionList);
+		
+		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		request.getSession().setAttribute("employeecontracts", employeecontracts);
+		
 		request.getSession().setAttribute("trId", tr.getId());
 		request.getSession().setAttribute("orders", orders);
 		request.getSession().setAttribute("suborders", theSuborders);
@@ -139,7 +143,7 @@ public class EditDailyReportAction extends DailyReportAction {
 		
 		reportForm.reset(mapping, request);
 //		reportForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());
-		reportForm.setEmployeeId(theEmployee.getId());
+		reportForm.setEmployeeContractId(ec.getId());
 		Date utilDate = new Date(tr.getReferenceday().getRefdate().getTime()); // convert to java.util.Date
 		
 		reportForm.setReferenceday(DateUtils.getSqlDateString(utilDate));

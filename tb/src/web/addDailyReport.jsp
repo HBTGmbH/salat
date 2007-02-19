@@ -96,22 +96,31 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.timereport.employee.fullname.text" /></b></td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="employeeId"
-					value="${currentEmployeeId}"
+				<html:select property="employeeContractId"
+					value="${currentEmployeeContract.id}"
 					onchange="setUpdateOrdersAction(this.form)">				
 				<c:choose>
 					<c:when test="${loginEmployee.status eq 'bl'}">
+						<c:forEach var="employeecontract" items="${employeecontracts}" >
+							<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+								<html:option value="${employeecontract.id}">
+									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+								</html:option>
+							</c:if>							
+						</c:forEach>
+						<!--  
 						<html:options collection="employees" labelProperty="name"
 								property="id" />	
+						-->
 					</c:when>
 					<c:otherwise>
-						<html:option value="${loginEmployee.id}">
-							<c:out value="${loginEmployee.name}" />
+						<html:option value="${loginEmployeeContract.id}">
+							<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${loginEmployeeContract.timeString}" />)
 						</html:option>
 					</c:otherwise>
 				</c:choose>	
 				</html:select> 
-				<html:hidden property="employeecontractId" />
+				
 			</td>
 
 		</tr>

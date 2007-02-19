@@ -52,7 +52,7 @@ public class CustomerorderHelper {
 		} catch (Exception e) {
 			throw new RuntimeException("error wile parsing date");
 		}		
-		Employeecontract ec = ecd.getEmployeeContractByEmployeeIdAndDate(reportForm.getEmployeeId(), date);		
+		Employeecontract ec = ecd.getEmployeeContractByIdAndDate(reportForm.getEmployeeContractId(), date);		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 
 					"No employee contract found for employee - please call system administrator.");
@@ -62,7 +62,7 @@ public class CustomerorderHelper {
 		request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
 		request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
 		
-		ecd.getEmployeeContractById(reportForm.getEmployeecontractId());
+//		ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 
 		// get orders related to employee
 		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());
@@ -104,7 +104,7 @@ public class CustomerorderHelper {
 	public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm,
 			CustomerorderDAO cd, EmployeeDAO ed, EmployeecontractDAO ecd, SuborderDAO sd) {
 
-		Employeecontract ec = ecd.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
+		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 
@@ -112,8 +112,10 @@ public class CustomerorderHelper {
 			return false;
 		}
 		
-		request.getSession().setAttribute("currentEmployee", ed.getEmployeeById(reportForm.getEmployeeId()).getName());
-		request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
+		request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
+		request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
+		request.getSession().setAttribute("currentEmployeeContract", ec);
+		
 
 		// get orders related to employee
 		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());

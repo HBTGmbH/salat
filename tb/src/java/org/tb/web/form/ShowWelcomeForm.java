@@ -4,14 +4,14 @@ import org.apache.struts.action.ActionForm;
 
 public class ShowWelcomeForm extends ActionForm {
 	
-	private Long employeeId;
+	private Long employeeContractId;
 
-	public Long getEmployeeId() {
-		return employeeId;
+	public Long getEmployeeContractId() {
+		return employeeContractId;
 	}
 
-	public void setEmployeeId(Long employeeId) {
-		this.employeeId = employeeId;
+	public void setEmployeeContractId(Long employeeContractId) {
+		this.employeeContractId = employeeContractId;
 	}
 	
 	

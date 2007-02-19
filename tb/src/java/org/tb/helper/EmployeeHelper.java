@@ -51,37 +51,37 @@ public class EmployeeHelper {
 	}
 	
 	
-	/**
-	 * fills up employee list dependent on status of employee currently logged in:
-	 * 	- 'ma' will only see himself in all employee selection lists
-	 *  - 'bl', 'pl' will see all employees in employee selection lists
-	 *  - only employees with employeecontracts will be shown
-	 * 
-	 * @param loginEmployee
-	 * @param ed - EmployeeDAO being used
-	 * @param ecd - EmployeecontractDAO being used
-	 * @return List<Employee> - selection list
-	 */
-	public List<Employee> getEmployeeWithContractsOptions(Employee loginEmployee, EmployeeDAO ed, EmployeecontractDAO ecd) {
-		List<Employee> employees = ed.getEmployees();
-		List<Employee> optionList = new ArrayList<Employee>();
-		
-		for (Iterator iter = employees.iterator(); iter.hasNext();) {
-			Employee emp = (Employee) iter.next();
-			
-			if((emp.getId() == loginEmployee.getId()) && (ecd.getEmployeeContractByEmployeeId(emp.getId()) != null)) {
-				optionList.add(emp);
-			} else {
-				if (((loginEmployee.getStatus().equalsIgnoreCase("bl")) ||
-					(loginEmployee.getStatus().equalsIgnoreCase("pl"))) && 
-					(ecd.getEmployeeContractByEmployeeId(emp.getId()) != null)) {
-					optionList.add(emp);
-				}
-			}
-		}
-		
-		return optionList;
-	}
+//	/**
+//	 * fills up employee list dependent on status of employee currently logged in:
+//	 * 	- 'ma' will only see himself in all employee selection lists
+//	 *  - 'bl', 'pl' will see all employees in employee selection lists
+//	 *  - only employees with employeecontracts will be shown
+//	 * 
+//	 * @param loginEmployee
+//	 * @param ed - EmployeeDAO being used
+//	 * @param ecd - EmployeecontractDAO being used
+//	 * @return List<Employee> - selection list
+//	 */
+//	public List<Employee> getEmployeeWithContractsOptions(Employee loginEmployee, EmployeeDAO ed, EmployeecontractDAO ecd) {
+//		List<Employee> employees = ed.getEmployees();
+//		List<Employee> optionList = new ArrayList<Employee>();
+//		
+//		for (Iterator iter = employees.iterator(); iter.hasNext();) {
+//			Employee emp = (Employee) iter.next();
+//			
+//			if((emp.getId() == loginEmployee.getId()) && (ecd.getEmployeeContractByEmployeeId(emp.getId()) != null)) {
+//				optionList.add(emp);
+//			} else {
+//				if (((loginEmployee.getStatus().equalsIgnoreCase("bl")) ||
+//					(loginEmployee.getStatus().equalsIgnoreCase("pl"))) && 
+//					(ecd.getEmployeeContractByEmployeeId(emp.getId()) != null)) {
+//					optionList.add(emp);
+//				}
+//			}
+//		}
+//		
+//		return optionList;
+//	}
 	
 	
 	
@@ -117,34 +117,34 @@ public class EmployeeHelper {
 	 */
 	public Employeecontract setCurrentEmployee(Employee loginEmployee, HttpServletRequest request,
 			EmployeeDAO ed, EmployeecontractDAO ecd) {
-		Employeecontract ec = null;
 		
-		if (request.getSession().getAttribute("currentEmployeeId") == null || 
-				(Long)request.getSession().getAttribute("currentEmployeeId") == 0) {
-			// just logged in				
-			ec = ecd.getEmployeeContractByEmployeeId(loginEmployee.getId());
-			List<Employee> employeeOptionList = getEmployeeOptions(loginEmployee, ed);
-			List<Employee> employeeWithContractList = getEmployeeWithContractsOptions(loginEmployee, ed, ecd);
-			
-			request.getSession().setAttribute("employeeswithcontract", 
-					employeeWithContractList);
-			request.getSession().setAttribute("employees",
-					employeeOptionList);
-			request.getSession().setAttribute("currentEmployee",
-					loginEmployee.getName());
-			request.getSession().setAttribute("currentEmployeeId", 
-					loginEmployee.getId());
-			request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-		} else {
-			Long currentEmployeeId = (Long) request.getSession()
-					.getAttribute("currentEmployeeId");
-			if (null != currentEmployeeId && currentEmployeeId != -1 && currentEmployeeId != 0) {
-				ec = ecd.getEmployeeContractByEmployeeId(currentEmployeeId);
-			} else {
-				ec = ecd.getEmployeeContractByEmployeeId(loginEmployee.getId());
-			}
+		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+		
+//		Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+		
+		if (currentEmployeeContract == null) {
+			currentEmployeeContract = loginEmployeeContract;
 		}
+						
 		
-		return ec;
+		List<Employee> employeeOptionList = getEmployeeOptions(loginEmployee, ed);
+		List<Employee> employeeWithContractList = ed.getEmployeesWithContracts();
+		List<Employeecontract> employeeContracts = ecd.getEmployeeContractsOrderedByEmployeeSign();
+			
+		request.getSession().setAttribute("employeeswithcontract", 
+				employeeWithContractList);
+		request.getSession().setAttribute("employees",
+				employeeOptionList);
+		request.getSession().setAttribute("employeecontracts",
+				employeeContracts);
+		request.getSession().setAttribute("currentEmployee",
+				currentEmployeeContract.getEmployee().getName());
+		request.getSession().setAttribute("currentEmployeeId", 
+				currentEmployeeContract.getEmployee().getId());
+		request.getSession().setAttribute("currentOrder", "ALL ORDERS");
+			
+		
+		return currentEmployeeContract;
 	}
 }

@@ -887,7 +887,10 @@ public class TimereportHelper {
         diffDays += 1;
         
         if (diffDays < 0) {
-        	throw new RuntimeException("implementation error while calculating overtime");
+        	// throw new RuntimeException("implementation error while calculating overtime");
+        	overtime[0] = 0;
+        	overtime[1] = 0;
+        	return overtime;
         }
 		long weeks = diffDays/7;			// how many complete weeks?
 		long days = diffDays%7;				// days of incomplete week

@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeecontractDAO;
@@ -23,7 +22,7 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 	 * @param eoForm
 	 */
 	protected void checkDatabaseForEmployeeOrder(HttpServletRequest request, AddEmployeeOrderForm eoForm, EmployeecontractDAO employeecontractDAO, EmployeeorderDAO employeeorderDAO) {
-		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeId(eoForm.getEmployeeId());
+		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
 		long employeecontractId = employeecontract.getId();
 		long suborderId = eoForm.getSuborderId();
 		
@@ -51,45 +50,58 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 	 * @param orderForm
 	 * @param employeeorderDAO
 	 */
-	protected void refreshEmployeeOrders(HttpServletRequest request, ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO) {
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		
-		Long employeeId;		
-		Long orderId;
+	protected void refreshEmployeeOrders(HttpServletRequest request, ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO, EmployeecontractDAO employeecontractDAO) {
+		Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		Long employeeContractId = 0L;		
+		Long orderId = 0L;
 		if (orderForm != null) {
-			employeeId = orderForm.getEmployeeId();
+			employeeContractId = orderForm.getEmployeeContractId();
 			orderId = orderForm.getOrderId();
-		} else {
-			employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-			orderId = (Long) request.getSession().getAttribute("currentOrderId");
+		}	
+			
+		if (employeeContractId == null || employeeContractId == 0) {
+			if (currentEmployeeContract != null) {
+				employeeContractId = currentEmployeeContract.getId();
+			} else {
+				employeeContractId = loginEmployeeContract.getId();
+			} 
+			
 		}
 		
-		if (employeeId == null || employeeId == 0) {
-			employeeId = loginEmployee.getId();
+		if (orderId == null || orderId == 0) {
+			if (request.getSession().getAttribute("currentOrderId") != null) {
+				orderId = (Long) request.getSession().getAttribute("currentOrderId");
+			}			
 		}
-		if (orderForm != null) {
-			orderForm.setEmployeeId(employeeId);
-		}
-		
 		if (orderId == null || orderId == 0) {
 			orderId = -1l;
 		}
 		
-		request.getSession().setAttribute("currentEmployeeId", employeeId);
+		if (orderForm != null) {
+			orderForm.setEmployeeContractId(employeeContractId);
+			orderForm.setOrderId(orderId);
+		}
+		
 		request.getSession().setAttribute("currentOrderId", orderId);
 				
-		if (employeeId == -1) {
+		if (employeeContractId == -1) {
 			if (orderId == -1) {
 				request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
 			} else {
 				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderId(orderId));
 			}
+			request.getSession().setAttribute("currentEmployeeId", loginEmployeeContract.getEmployee().getId());
+			request.getSession().setAttribute("currentEmployeeContract", null);
 		} else {
+			currentEmployeeContract = employeecontractDAO.getEmployeeContractById(employeeContractId);
 			if (orderId == -1) {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeId(employeeId));
+				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeeContractId));
 			} else {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeId(orderId, employeeId));
+				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(orderId, employeeContractId));
 			}
+			request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
+			request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
 		}
 	}
 

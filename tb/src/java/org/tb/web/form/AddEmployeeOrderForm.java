@@ -9,7 +9,7 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
 
 /**
@@ -31,11 +31,12 @@ public class AddEmployeeOrderForm extends ActionForm {
 //	private String employeename;
 	private String order;
 	private String suborder;
-	private long employeeId;
+//	private long employeeId;
 	
-	private long employeecontractId;
+//	private long employeecontractId;
 	private long orderId;
 	private long suborderId;
+	private Long employeeContractId;
 	
 	private String action;
 
@@ -87,14 +88,6 @@ public class AddEmployeeOrderForm extends ActionForm {
 
 	public void setDebithours(Double debithours) {
 		this.debithours = debithours;
-	}
-
-	public long getEmployeecontractId() {
-		return employeecontractId;
-	}
-
-	public void setEmployeecontractId(long employeecontractId) {
-		this.employeecontractId = employeecontractId;
 	}
 
 	public String getSign() {
@@ -161,30 +154,28 @@ public class AddEmployeeOrderForm extends ActionForm {
 		this.validUntil = validUntil;
 	}
 
-	
-	
 	/**
-	 * @return the employeeId
+	 * @return the employeeContractId
 	 */
-	public long getEmployeeId() {
-		return employeeId;
+	public Long getEmployeeContractId() {
+		return employeeContractId;
 	}
 
 	/**
-	 * @param employeeId the employeeId to set
+	 * @param employeeContractId the employeeContractId to set
 	 */
-	public void setEmployeeId(long employeeId) {
-		this.employeeId = employeeId;
+	public void setEmployeeContractId(Long employeeContractId) {
+		this.employeeContractId = employeeContractId;
 	}
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
-		Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-		if (currentEmployeeId != null && currentEmployeeId != -1 && currentEmployeeId != 0) {
-			employeeId = currentEmployeeId;
+		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		if (currentEmployeeContract != null) {
+			employeeContractId = currentEmployeeContract.getId();
 		} else {
-			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-			employeeId = loginEmployee.getId();
+			Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+			employeeContractId = loginEmployeeContract.getId();
 		}
 //		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
 		

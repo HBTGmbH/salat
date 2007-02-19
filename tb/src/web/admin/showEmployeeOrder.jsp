@@ -1,5 +1,3 @@
-<%@ page import="org.tb.bdom.Employee"%>
-
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
@@ -54,19 +52,26 @@
 
 <html:form action="/ShowEmployeeorder">
 	<table class="center backgroundcolor">
-		<!-- select employee -->
+		<!-- select employeecontract -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="employeeId" onchange="setUpdateEmployeeOrders(this.form)"
-				value="${currentEmployeeId}">
-				<html:option value="-1">
-					<bean:message key="main.general.allemployees.text" />
-				</html:option>
-				<html:options collection="employees" labelProperty="name"
-					property="id" />
-			</html:select></td>
+			<td align="left" class="noBborderStyle">
+				<html:select
+					property="employeeContractId"		
+					onchange="setUpdateEmployeeOrders(this.form)" >
+					<html:option value="-1">
+						<bean:message key="main.general.allemployees.text" />
+					</html:option>
+					<c:forEach var="employeecontract" items="${employeecontracts}" >
+						<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+							<html:option value="${employeecontract.id}">
+								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+							</html:option>
+						</c:if>							
+					</c:forEach>
+				</html:select> 		
+			</td>
 		</tr>
 		<!-- select order -->
 		<tr>
@@ -159,8 +164,7 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
-		<td><c:out
-			value="${employeeorder.employeecontract.employee.name}" /></td>
+		<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" />)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
 		<td
 			title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
 			value="${employeeorder.suborder.customerorder.sign}" /></td>

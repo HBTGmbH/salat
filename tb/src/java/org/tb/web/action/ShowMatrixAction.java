@@ -175,7 +175,7 @@ public class ShowMatrixAction extends DailyReportAction {
 
             MatrixHelper mh = new MatrixHelper();
             Customerorder order = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
-            if (reportForm.getEmployeeId() == -1) {
+            if (reportForm.getEmployeeContractId() == -1) {
                 // consider timereports for all employees
                 List<Customerorder> orders = customerorderDAO.getCustomerorders();
                 request.getSession().setAttribute("orders", orders);
@@ -184,7 +184,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     // get the timereports for specific date, all employees, all orders
                     ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
                             dateLast,
-                            reportForm.getEmployeeId(),
+                            reportForm.getEmployeeContractId(),
                             timereportDAO,
                             employeecontractDAO,
                             publicholidayDAO,
@@ -199,7 +199,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     // get the timereports for specific date, all employees, specific order
                     ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
                             dateLast,
-                            reportForm.getEmployeeId(),
+                            reportForm.getEmployeeContractId(),
                             timereportDAO,
                             employeecontractDAO,
                             publicholidayDAO,
@@ -214,7 +214,7 @@ public class ShowMatrixAction extends DailyReportAction {
 
             } else {
                 // consider timereports for specific employee
-                Employeecontract employeeContract = employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
+                Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                 if (employeeContract == null) {
                     request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
                     return mapping.findForward("error");
@@ -231,7 +231,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     // get the timereports for specific date, specific employee, all orders
                     ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
                             dateLast,
-                            reportForm.getEmployeeId(),
+                            reportForm.getEmployeeContractId(),
                             timereportDAO,
                             employeecontractDAO,
                             publicholidayDAO,
@@ -244,13 +244,13 @@ public class ShowMatrixAction extends DailyReportAction {
                     request.getSession().setAttribute("dayhoursdiff", tempReportWrapper.getDayHoursDiff());
                 } else {
                     // get the timereports for specific date, specific employee, specific order
-                    Employeecontract tempEmployeeContract = employeecontractDAO.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
+                    Employeecontract tempEmployeeContract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                     List<Customerorder> tempCustomerOrder = customerorderDAO.getCustomerordersByEmployeeContractId(tempEmployeeContract.getId());
                     ReportWrapper tempReportWrapper;
                     if (tempCustomerOrder.contains(order)) {
                         tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
                                 dateLast,
-                                reportForm.getEmployeeId(),
+                                reportForm.getEmployeeContractId(),
                                 timereportDAO,
                                 employeecontractDAO,
                                 publicholidayDAO,
@@ -259,7 +259,7 @@ public class ShowMatrixAction extends DailyReportAction {
                     } else {
                         tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
                                 dateLast,
-                                reportForm.getEmployeeId(),
+                                reportForm.getEmployeeContractId(),
                                 timereportDAO,
                                 employeecontractDAO,
                                 publicholidayDAO,
@@ -275,12 +275,17 @@ public class ShowMatrixAction extends DailyReportAction {
             }
 
             // refresh all relevant attributes
-            if (reportForm.getEmployeeId() == -1) {
+            if (reportForm.getEmployeeContractId() == -1) {
                 request.getSession().setAttribute("currentEmployee", "ALL EMPLOYEES");
+                request.getSession().setAttribute("currentEmployeeContract", null);
+                request.getSession().setAttribute("currentEmployeeId", -1);
             } else {
-                request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(reportForm.getEmployeeId()).getName());
+            	Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+                request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
+                request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+                request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
             }
-            request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
+//            request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeCId());
             if ((reportForm.getOrder() == null) || (reportForm.getOrder().equals("ALL ORDERS"))) {
                 request.getSession().setAttribute("currentOrder", "ALL ORDERS");
             } else {
@@ -334,20 +339,21 @@ public class ShowMatrixAction extends DailyReportAction {
             }
 
             //          List<Employee> employees = employeeDAO.getEmployees();
-            List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
+//            List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
+            List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
 
             // make sure, that admin is in list
-            if (loginEmployee.getSign().equalsIgnoreCase("adm") && loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-                if (!employeesWithContract.contains(loginEmployee)) {
-                    employeesWithContract.add(loginEmployee);
-                }
-            }
+//            if (loginEmployee.getSign().equalsIgnoreCase("adm") && loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+//                if (!employeesWithContract.contains(loginEmployee)) {
+//                    employeesWithContract.add(loginEmployee);
+//                }
+//            }
 
-            if ((employeesWithContract == null) || (employeesWithContract.size() <= 0)) {
+            if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
                 request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
                 return mapping.findForward("error");
             }
-            request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
+            request.getSession().setAttribute("employeecontracts", employeeContracts);
             request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
             if (reportForm.getFromMonth() != null) {
@@ -380,10 +386,16 @@ public class ShowMatrixAction extends DailyReportAction {
                 }
 
                 MatrixHelper mh = new MatrixHelper();
-
+                
+                Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+                Long ecId = -1l;
+                if (employeecontract != null) {
+                	ecId = employeecontract.getId();
+                }
+                
                 ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
                         dateLast,
-                        (Long)request.getSession().getAttribute("currentEmployeeId"),
+                        ecId,
                         timereportDAO,
                         employeecontractDAO,
                         publicholidayDAO,
@@ -461,10 +473,16 @@ public class ShowMatrixAction extends DailyReportAction {
                 }
 
                 MatrixHelper mh = new MatrixHelper();
-
+                
+                Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+                Long ecId = -1l;
+                if (employeecontract != null) {
+                	ecId = employeecontract.getId();
+                }
+                                
                 ReportWrapper tempReportWrapper = mh.getEmployeeMatrix(dateFirst,
                         dateLast,
-                        (Long)request.getSession().getAttribute("currentEmployeeId"),
+                        ecId,
                         timereportDAO,
                         employeecontractDAO,
                         publicholidayDAO,
@@ -514,14 +532,11 @@ public class ShowMatrixAction extends DailyReportAction {
      * @since 08.02.2007
      */
     private Employeecontract getEmployeeContractFromRequest(HttpServletRequest request) {
-        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-        Employeecontract ec = null;
-        long employeeId = (Long)request.getSession().getAttribute("currentEmployeeId");
-
-        if (employeeId != 0 && employeeId != -1) {
-            ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
-        } else {
-            ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+        Employeecontract loginEmployeeContract = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
+        Employeecontract ec = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+        
+        if (ec == null) {
+        	ec = loginEmployeeContract;
         }
         return ec;
     }

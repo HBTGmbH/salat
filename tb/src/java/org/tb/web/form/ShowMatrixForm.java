@@ -31,7 +31,8 @@ public class ShowMatrixForm extends ActionForm {
     private String untilMonth;
     private String fromYear;
     private String untilYear;
-    private long employeeId;
+//    private long employeeId;
+    private Long employeeContractId;
 
     private String order;
     private String suborder;
@@ -45,13 +46,13 @@ public class ShowMatrixForm extends ActionForm {
     
 
 
-	public long getEmployeeId() {
-        return employeeId;
-    }
-
-    public void setEmployeeId(long employeeId) {
-        this.employeeId = employeeId;
-    }
+//	public long getEmployeeId() {
+//        return employeeId;
+//    }
+//
+//    public void setEmployeeId(long employeeId) {
+//        this.employeeId = employeeId;
+//    }
 
     public String getFromDay() {
         return fromDay;
@@ -133,7 +134,21 @@ public class ShowMatrixForm extends ActionForm {
         this.untilYear = untilYear;
     }
 
-    @Override
+    /**
+	 * @return the employeeContractId
+	 */
+	public Long getEmployeeContractId() {
+		return employeeContractId;
+	}
+
+	/**
+	 * @param employeeContractId the employeeContractId to set
+	 */
+	public void setEmployeeContractId(Long employeeContractId) {
+		this.employeeContractId = employeeContractId;
+	}
+
+	@Override
     public void reset(ActionMapping arg0, HttpServletRequest arg1) {
         // TODO Auto-generated method stub
         super.reset(arg0, arg1);

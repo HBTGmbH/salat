@@ -10,6 +10,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
@@ -126,8 +127,10 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 			} catch (Exception e) {
 				return mapping.findForward("error");
 			}
+			Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
 			request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-			request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
+			request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 			return mapping.findForward("success");
 		}
 		

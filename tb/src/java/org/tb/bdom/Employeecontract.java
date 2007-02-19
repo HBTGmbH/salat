@@ -329,6 +329,11 @@ public class Employeecontract implements Serializable {
 		GregorianCalendar calendar = new GregorianCalendar();
 		Date release = getReportReleaseDate();
 		
+		if (release == null) {
+			// new contract without initial login
+			return false;
+		}
+		
 		java.util.Date now = new java.util.Date();
 		int month = calendar.get(Calendar.MONTH);
 		int year = calendar.get(Calendar.YEAR);
@@ -360,6 +365,11 @@ public class Employeecontract implements Serializable {
 		boolean acceptanceWarning = false;
 		GregorianCalendar calendar = new GregorianCalendar();
 		Date acceptance = getReportAcceptanceDate();
+		
+		if (acceptance == null) {
+			// new contract without initial login
+			return false;
+		}
 		
 		java.util.Date now = new java.util.Date();
 		int month = calendar.get(Calendar.MONTH);

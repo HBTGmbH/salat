@@ -1,9 +1,6 @@
 package org.tb.web.action.admin;
 
 import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.Iterator;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,15 +17,12 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
-import org.tb.helper.EmployeeHelper;
-import org.tb.helper.SuborderHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
@@ -116,7 +110,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			if ((request.getParameter("task") != null) &&
 					(request.getParameter("task").equals("refreshEmployees"))) {
 				// check if employeeorder for this employee, order, suborder already exists
-				request.getSession().setAttribute("currentEmployeeId", eoForm.getEmployeeId());
+				Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
+				request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+				request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 				checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
 				return mapping.getInputForward();
 			}
@@ -131,7 +127,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				
 				Employeeorder eo = null;
 				
-				Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeId(eoForm.getEmployeeId());
+				Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
 				long employeecontractId = employeecontract.getId();
 				long suborderId = eoForm.getSuborderId();
 				
@@ -163,7 +159,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					return mapping.getInputForward();
 				}
 				
-				Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeId(eoForm.getEmployeeId());
+				Employeecontract ec = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
 				eo.setEmployeecontract(ec);
 				eo.setSuborder(suborderDAO.getSuborderById(eoForm.getSuborderId()));
 				
@@ -191,9 +187,10 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 //				request.getSession().setAttribute("employees", employeeOptionList);
 				
 				// refresh list of employee orders for overview
-				long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+//				long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+				employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 				long orderId = (Long) request.getSession().getAttribute("currentOrderId");
-				if (employeeId == -1) {
+				if (employeecontract == null) {
 					if (orderId == -1) {
 						request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
 					} else {
@@ -201,9 +198,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					}
 				} else {
 					if (orderId == -1) {
-						request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeId(employeeId));
+						request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeecontract.getId()));
 					} else {
-						request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeId(orderId, employeeId));
+						request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(orderId, employeecontract.getId()));
 					}
 				}
 				

@@ -53,15 +53,22 @@
 				</c:otherwise>
 			</c:choose></td>
 		</tr>
+		
+		<!-- select employee contract -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.employee.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="employeeId"
+				property="employeeContractId"
 				onchange="setStoreAction(this.form, 'refreshEmployees')">
-				<html:options collection="employeeswithcontract"
-					labelProperty="name" property="id" />
-			</html:select> <html:hidden property="employeecontractId" /></td>
+				<c:forEach var="employeecontract" items="${employeecontracts}" >
+					<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+						<html:option value="${employeecontract.id}">
+							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+						</html:option>
+					</c:if>							
+				</c:forEach>
+			</html:select> </td>
 		</tr>
 
 		<tr>

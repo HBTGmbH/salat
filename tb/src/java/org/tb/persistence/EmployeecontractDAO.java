@@ -48,17 +48,17 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 		this.timereportDAO = timereportDAO;
 	}
 	
-	/**
-	 * Gets the EmployeeContract with the given employee id.
-	 * 
-	 * @param long employeeId
-	 * 
-	 * @return Employeecontract
-	 */
-	public Employeecontract getEmployeeContractByEmployeeId(long employeeId) {
-		return (Employeecontract) getSession().createQuery
-				("from Employeecontract e where e.employee.id = ?").setLong(0, employeeId).uniqueResult();
-	}
+//	/**
+//	 * Gets the EmployeeContract with the given employee id.
+//	 * 
+//	 * @param long employeeId
+//	 * 
+//	 * @return Employeecontract
+//	 */
+//	public Employeecontract getEmployeeContractByEmployeeId(long employeeId) {
+//		return (Employeecontract) getSession().createQuery
+//				("from Employeecontract e where e.employee.id = ?").setLong(0, employeeId).uniqueResult();
+//	}
 	
 	/**
 	 * Gets the EmployeeContract with the given employee id, that is valid for the given date.
@@ -72,24 +72,52 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 				("from Employeecontract e where e.employee.id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeId).setDate(1, date).setDate(2, date).uniqueResult();
 	}
 	
+	
 	/**
-	 * Gets the EmployeeContract with the given employee name.
+	 * Gets the EmployeeContract with the given employee contract id, that is valid for the given date.
 	 * 
-	 * @param String first
-	 * @param String last
+	 * @param employeeContractId
+	 * @param date 
+	 * @return Employeecontract
+	 */
+	public Employeecontract getEmployeeContractByIdAndDate(long employeeContractId, Date date) {
+		return (Employeecontract) getSession().createQuery
+				("from Employeecontract e where id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeContractId).setDate(1, date).setDate(2, date).uniqueResult();
+	}
+	
+	
+	/**
+	 * Gets the EmployeeContracts with the given employee id, that are valid for the given dates.
+	 * 
+	 * @param long employeeId
+	 * @param date1
+	 * @param date2
 	 * 
 	 * @return Employeecontract
 	 */
-	public Employeecontract getEmployeeContractByEmployeeName(String first, String last) {
-		Employee emp = (Employee) getSession().createQuery
-			("from Employee e where e.firstname = ? and e.lastname = ?").setString(0, first).setString(1, last).uniqueResult();
-		if (emp == null) return null;
-		
-		Employeecontract ec = (Employeecontract) getSession().createQuery
-			("from Employeecontract e where e.employee.id = ?").setLong(0, emp.getId()).uniqueResult();
-		
-		return ec;
+	public List<Employeecontract> getEmployeeContractsByEmployeeIdAndDates(long employeeId, Date date1, Date date2) {
+		return (List<Employeecontract>) getSession().createQuery
+				("from Employeecontract e where e.employee.id = ? and ((validfrom <= ? and validuntil >= ? ) or (e.employee.id = ? and validfrom <= ? and validuntil >= ? )) order by validfrom").setLong(0, employeeId).setDate(1, date1).setDate(2, date1).setDate(3, date2).setDate(4, date2).list();
 	}
+	
+//	/**
+//	 * Gets the EmployeeContract with the given employee name.
+//	 * 
+//	 * @param String first
+//	 * @param String last
+//	 * 
+//	 * @return Employeecontract
+//	 */
+//	public Employeecontract getEmployeeContractByEmployeeName(String first, String last) {
+//		Employee emp = (Employee) getSession().createQuery
+//			("from Employee e where e.firstname = ? and e.lastname = ?").setString(0, first).setString(1, last).uniqueResult();
+//		if (emp == null) return null;
+//		
+//		Employeecontract ec = (Employeecontract) getSession().createQuery
+//			("from Employeecontract e where e.employee.id = ?").setLong(0, emp.getId()).uniqueResult();
+//		
+//		return ec;
+//	}
 	
 	/**
 	 * Gets the EmployeeContract with the given id.
@@ -142,6 +170,15 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	 */
 	public List<Employeecontract> getEmployeeContracts() {
 		return getSession().createQuery("from Employeecontract e order by employee.lastname asc, validFrom asc").list();
+	}
+	
+	/**
+	 * Get a list of all Employeecontracts ordered by employee sign.
+	 * 
+	 * @return List<Employeecontract>
+	 */
+	public List<Employeecontract> getEmployeeContractsOrderedByEmployeeSign() {
+		return getSession().createQuery("from Employeecontract e order by employee.sign asc, validFrom asc").list();
 	}
 
 	/**

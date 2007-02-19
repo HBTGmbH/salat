@@ -153,7 +153,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setLastday((String)request.getSession().getAttribute("lastDay"));
 				showDailyReportForm.setLastmonth((String)request.getSession().getAttribute("lastMonth"));
 				showDailyReportForm.setLastyear((String)request.getSession().getAttribute("lastYear"));
-				showDailyReportForm.setEmployeeId(ec.getEmployee().getId());
+				showDailyReportForm.setEmployeeContractId(ec.getId());
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
 				showDailyReportForm.setOrder((String)request.getSession().getAttribute("currentOrder"));
 				

@@ -209,8 +209,20 @@ public class ShowDailyReportAction extends DailyReportAction {
 				List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
-				//refresh workingday
+				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));	
+				
+				if (reportForm.getEmployeeContractId() == -1) {
+					request.getSession().setAttribute("currentEmployeeId", -1);
+					request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
+					request.getSession().setAttribute("currentEmployeeContract", null);
+				} else {
+					Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+					request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+					request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
+					request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+				}	
+			
+				// refresh workingday				
 				Workingday workingday;
 				try {
 					workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
@@ -218,7 +230,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 					return mapping.findForward("error");
 				}
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-				request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
+				
 				return mapping.findForward("success");
 			}
 		}
@@ -306,6 +318,8 @@ public class ShowDailyReportAction extends DailyReportAction {
 //			List<Employee> employees = employeeDAO.getEmployees();
 			List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
 			
+			List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+			
  			// make sure, that admin is in list
 			if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
 					loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
@@ -320,12 +334,19 @@ public class ShowDailyReportAction extends DailyReportAction {
 				return mapping.findForward("error");
 			}
 			
+			if ((employeecontracts == null) || (employeecontracts.size() <= 0)) {
+				request.setAttribute("errorMessage", 
+						"No employees with valid contracts found - please call system administrator.");
+				return mapping.findForward("error");
+			}
+			
 			// set view
 //			String view = (String) request.getSession().getAttribute("view");
 //			if (view == null || view == "") {
 				request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
 //			}
 			
+			request.getSession().setAttribute("employeecontracts", employeecontracts);	
 			request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
 			request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 			request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
@@ -477,7 +498,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 
 			// set current order = all orders
 			request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-			request.getSession().setAttribute("currentOrderId", -1);
+			request.getSession().setAttribute("currentOrderId", -1l);
 			
 		}
 		request.getSession().setAttribute("reportForm", reportForm);

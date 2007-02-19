@@ -41,7 +41,7 @@ public class SuborderHelper {
 //		String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
 //		Employeecontract ec = ecd.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
 		
-		Employeecontract ec = ecd.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
+		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 
@@ -79,7 +79,7 @@ public class SuborderHelper {
 	public boolean refreshDailyOverviewSuborders(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm,
 			SuborderDAO sd, EmployeecontractDAO ecd) {
 		
-		Employeecontract ec = ecd.getEmployeeContractByEmployeeId(reportForm.getEmployeeId());
+		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 

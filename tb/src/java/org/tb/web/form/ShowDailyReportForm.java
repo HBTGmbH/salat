@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.bdom.Employeecontract;
 
 /**
  * Form for showing timereports in 'daily' display.
@@ -23,7 +24,8 @@ public class ShowDailyReportForm extends ActionForm {
 	private String lastyear;
 	
 	
-	private long employeeId;
+//	private long employeeId;
+	private long employeeContractId;
 	
 	private String comment;
 	private String order;
@@ -69,13 +71,13 @@ public class ShowDailyReportForm extends ActionForm {
 		this.year = year;
 	}
 
-	public long getEmployeeId() {
-		return employeeId;
-	}
-
-	public void setEmployeeId(long employeeId) {
-		this.employeeId = employeeId;
-	}
+//	public long getEmployeeId() {
+//		return employeeId;
+//	}
+//
+//	public void setEmployeeId(long employeeId) {
+//		this.employeeId = employeeId;
+//	}
 	
 	public String getOrder() {
 		return order;
@@ -290,13 +292,36 @@ public class ShowDailyReportForm extends ActionForm {
 	public void setLastyear(String lastyear) {
 		this.lastyear = lastyear;
 	}
+	
+
+	/**
+	 * @return the employeeContractId
+	 */
+	public long getEmployeeContractId() {
+		return employeeContractId;
+	}
+
+	/**
+	 * @param employeeContractId the employeeContractId to set
+	 */
+	public void setEmployeeContractId(long employeeContractId) {
+		this.employeeContractId = employeeContractId;
+	}
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		if (null != request.getSession().getAttribute("currentEmployeeId")) {
-			employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+//		if (null != request.getSession().getAttribute("currentEmployeeId")) {
+//			employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+//		} else {
+//			employeeId = -1;
+//		}
+		
+		Employeecontract employeecontract;
+		if (null != request.getSession().getAttribute("currentEmployeeContract")) {
+			employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+			employeeContractId = employeecontract.getId();
 		} else {
-			employeeId = -1;
+			employeeContractId = -1;
 		}
 		
 		

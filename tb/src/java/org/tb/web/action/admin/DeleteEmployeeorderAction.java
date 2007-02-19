@@ -10,6 +10,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.bdom.Employeeorder;
+import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.web.form.ShowEmployeeOrderForm;
 
@@ -22,6 +23,11 @@ import org.tb.web.form.ShowEmployeeOrderForm;
 public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 	
 	private EmployeeorderDAO employeeorderDAO;
+	private EmployeecontractDAO employeecontractDAO;
+	
+	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+		this.employeecontractDAO = employeecontractDAO;
+	}
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -48,7 +54,7 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 		
 		saveErrors(request, errors);
 
-		refreshEmployeeOrders(request, null, employeeorderDAO);	
+		refreshEmployeeOrders(request, null, employeeorderDAO, employeecontractDAO);	
 				
 		// back to employee order display jsp
 		return mapping.getInputForward();

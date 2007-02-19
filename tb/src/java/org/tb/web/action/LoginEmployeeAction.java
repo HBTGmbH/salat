@@ -3,9 +3,7 @@ package org.tb.web.action;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -215,7 +213,7 @@ public class LoginEmployeeAction extends Action {
 			// set used employee contract of login employee
 			request.getSession().setAttribute("loginEmployeeContract", employeecontract);
 			request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
-			
+			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 			
 			
 			// get info about vacation, overtime and report status
@@ -264,9 +262,26 @@ public class LoginEmployeeAction extends Action {
 				String dateString2 = dateFormat.format(currentDate);
 				String monthYearString = dateString2.substring(2);
 				Date start = dateFormat.parse("01" + monthYearString);
-				int[] monthlyOvertime = th.calculateOvertime(start, currentDate,
+				
+				if (employeecontract.getValidFrom().after(start) && !employeecontract.getValidFrom().after(currentDate)) {
+					start = employeecontract.getValidFrom();
+				}
+				if (employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
+					currentDate = employeecontract.getValidUntil();
+				}	
+				int[] monthlyOvertime;
+				if (employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate)) {
+					monthlyOvertime = new int[2];
+					monthlyOvertime[0] = 0;
+					monthlyOvertime[1] = 0;
+				} else {
+					monthlyOvertime = th.calculateOvertime(start, currentDate,
 						employeecontract, employeeorderDAO, publicholidayDAO,
 						timereportDAO, overtimeDAO, false);
+				}
+//				int[] monthlyOvertime = th.calculateOvertime(start, currentDate,
+//						employeecontract, employeeorderDAO, publicholidayDAO,
+//						timereportDAO, overtimeDAO, false);
 				int monthlyOvertimeHours = monthlyOvertime[0];
 				int monthlyOvertimeMinutes = monthlyOvertime[1];
 				boolean monthlyOvertimeIsNegative = false;
@@ -341,9 +356,9 @@ public class LoginEmployeeAction extends Action {
 			return mapping.findForward("password");
 		}
 		
-//		 create collection of employees with contracts
-		List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithContractsValidForDate(date);
-		request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
+		// create collection of employeecontracts
+		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		request.getSession().setAttribute("employeecontracts", employeecontracts);
 
 		
 		return mapping.findForward("success");

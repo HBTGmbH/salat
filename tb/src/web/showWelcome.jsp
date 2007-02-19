@@ -31,10 +31,15 @@
 <br>
 <br>
 <html:form action="/ShowWelcome">
-<html:select property="employeeId" onchange="setUpdate(this.form)"
-			 value="${currentEmployeeId}">
-	<html:options collection="employeeswithcontract"
-		labelProperty="name" property="id" />
+<html:select property="employeeContractId" onchange="setUpdate(this.form)"
+			 value="${currentEmployeeContract.id}">
+	<c:forEach var="employeecontract" items="${employeecontracts}" >
+		<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+			<html:option value="${employeecontract.id}">
+				<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+			</html:option>
+		</c:if>							
+	</c:forEach>
 </html:select>
 </html:form>
 <jsp:include flush="true" page="/info.jsp">

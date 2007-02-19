@@ -13,17 +13,15 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMapping;
-import org.hibernate.cfg.annotations.SetBinder;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
-import org.tb.helper.VacationViewer;
 import org.tb.helper.TimereportHelper;
+import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -109,9 +107,23 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			String dateString = simpleDateFormat.format(currentDate);
 			String monthYearString = dateString.substring(2);
 			Date start = simpleDateFormat.parse("01" + monthYearString);
-			int[] monthlyOvertime = th.calculateOvertime(start, currentDate,
+			
+			if (employeecontract.getValidFrom().after(start) && !employeecontract.getValidFrom().after(currentDate)) {
+				start = employeecontract.getValidFrom();
+			}
+			if (employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
+				currentDate = employeecontract.getValidUntil();
+			}	
+			int[] monthlyOvertime;
+			if (employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate)) {
+				monthlyOvertime = new int[2];
+				monthlyOvertime[0] = 0;
+				monthlyOvertime[1] = 0;
+			} else {
+				monthlyOvertime = th.calculateOvertime(start, currentDate,
 					employeecontract, employeeorderDAO, publicholidayDAO,
 					timereportDAO, overtimeDAO, false);
+			}
 			int monthlyOvertimeHours = monthlyOvertime[0];
 			int monthlyOvertimeMinutes = monthlyOvertime[1];
 			boolean monthlyOvertimeIsNegative = false;
@@ -307,16 +319,16 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 //		java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);
 		
 		// test, if an order is select, the selected employee is not associated with
-		long employeeId = reportForm.getEmployeeId();
-		if (employeeId != 0 && employeeId != -1) {
+		long employeeContractId = reportForm.getEmployeeContractId();
+		if (employeeContractId != 0 && employeeContractId != -1) {
 			String selectedOrder = reportForm.getOrder();
 			Customerorder order = customerorderDAO
 					.getCustomerorderBySign(selectedOrder);
 			List<Employeeorder> employeeOrders = null;
 			if (order != null) {
 				employeeOrders = employeeorderDAO
-						.getEmployeeordersByOrderIdAndEmployeeId(order.getId(),
-								employeeId);
+						.getEmployeeordersByOrderIdAndEmployeeContractId(order.getId(),
+								employeeContractId);
 			}
 			if (employeeOrders == null || employeeOrders.isEmpty()) {
 				reportForm.setOrder(GlobalConstants.ALL_ORDERS);
@@ -324,7 +336,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		}		
 		
 		
-		if (reportForm.getEmployeeId() == -1) {
+		if (reportForm.getEmployeeContractId() == -1) {
 			// consider timereports for all employees
 			List<Customerorder> orders = customerorderDAO.getCustomerorders();
 			request.getSession().setAttribute("orders", orders);
@@ -358,7 +370,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			// long employeeId = reportForm.getEmployeeId();
 			
 			Employeecontract ec = employeecontractDAO
-					.getEmployeeContractByEmployeeId(employeeId);
+					.getEmployeeContractById(employeeContractId);
 
 			if (ec == null) {
 				request
@@ -405,12 +417,17 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		}
 
 		// refresh all relevant attributes
-		if (reportForm.getEmployeeId() == -1) {
+		if (reportForm.getEmployeeContractId() == -1) {
 			request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
+			request.getSession().setAttribute("currentEmployeeContract", null);
+			request.getSession().setAttribute("currentEmployeeId", -1);
 		} else {
-			request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(reportForm.getEmployeeId()).getName());
+			Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+			request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
+			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+			request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
 		}
-		request.getSession().setAttribute("currentEmployeeId", reportForm.getEmployeeId());
+		
 		if ((reportForm.getOrder() == null)
 				|| (reportForm.getOrder().equals("ALL ORDERS"))) {
 			request.getSession().setAttribute("currentOrder", GlobalConstants.ALL_ORDERS);
@@ -465,12 +482,15 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 	protected Employeecontract getEmployeeContractFromRequest(HttpServletRequest request, EmployeecontractDAO employeecontractDAO) {
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
 		Employeecontract ec = null;	
-		long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-		
-		if (employeeId != 0 && employeeId != -1) {	
-			ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);	
-		} else {
-			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+//		Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+		ec = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+//		if (employeeId != 0 && employeeId != -1) {	
+//			ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);	
+//		} else {
+//			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+//		}
+		if (ec == null) {
+			ec = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 		}
 		return ec;
 	}

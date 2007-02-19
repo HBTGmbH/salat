@@ -1,6 +1,8 @@
 package org.tb.web.action.admin;
 
 import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -159,9 +161,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					if (ec != null) {
 						employeeId = ec.getEmployee().getId();
 					}					
-				} else {
-					ec = employeecontractDAO.getEmployeeContractByEmployeeId(ecForm.getEmployee());
-				}
+				} 
 				boolean newContract = false;
 				if (ec == null) {
 					// new employee contract
@@ -178,7 +178,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				ec.setEmployee(theEmployee);
 				
-				ActionMessages errorMessages = validateFormData(request, ecForm, theEmployee);
+				ActionMessages errorMessages = validateFormData(request, ecForm, theEmployee, ec);
 				if (errorMessages.size() > 0) {
 					return mapping.getInputForward();
 				}
@@ -290,7 +290,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	 * @return
 	 */
 	private ActionMessages validateFormData(HttpServletRequest request, AddEmployeeContractForm ecForm,
-			Employee theEmployee) {
+			Employee theEmployee, Employeecontract employeecontract) {
 
 		ActionMessages errors = getErrors(request);
 		if(errors == null) errors = new ActionMessages();
@@ -308,14 +308,51 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 			errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
 		} 
 		
+		String validFrom = ecForm.getValidFrom();
+		String validUntil = ecForm.getValidUntil();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		java.util.Date newContractValidFrom;
+		java.util.Date newContractValidUntil;
+		try {
+			newContractValidFrom = simpleDateFormat.parse(validFrom);
+			newContractValidUntil = simpleDateFormat.parse(validUntil);							
+			
+		} catch (ParseException e) {
+			// this is not expected...
+			throw new RuntimeException("Date cannot be parsed - fatal error!");
+		}
+		
+		if (newContractValidFrom.after(newContractValidUntil)){
+			errors.add("validFrom", new ActionMessage("form.employeecontract.error.endbeforebegin"));		
+		}
+		
 		// for a new employeecontract, check if other contract for this employee already exists
 		if (request.getSession().getAttribute("ecId") == null) {
 			List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContracts();
 			for (Iterator iter = allEmployeecontracts.iterator(); iter.hasNext();) {
 				Employeecontract ec = (Employeecontract) iter.next();
-				if (ec.getEmployee().getId() == theEmployee.getId()) {
-					errors.add("employeename", new ActionMessage("form.employeecontract.error.employee.alreadyexists"));		
-					break;
+				if ((ec.getEmployee().getId() == theEmployee.getId()) && ec.getId() != employeecontract.getId() ) {
+					// contract for the same employee found but not the same contract - check overleap
+					java.util.Date existingContractValidFrom = ec.getValidFrom();
+					java.util.Date existingContractValidUntil = ec.getValidUntil();
+					
+					if (!newContractValidFrom.before(existingContractValidFrom) && !newContractValidUntil.after(existingContractValidUntil)) {
+						errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));		
+						break;
+					}
+					
+					if (!newContractValidFrom.after(existingContractValidUntil) && newContractValidUntil.after(existingContractValidUntil)){
+						errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));		
+						break;
+					}
+					
+					if (!newContractValidUntil.before(existingContractValidFrom) && newContractValidFrom.before(existingContractValidFrom)){
+						errors.add("validUntil", new ActionMessage("form.employeecontract.error.overleap"));		
+						break;
+					}
+					
+//					errors.add("employeename", new ActionMessage("form.employeecontract.error.employee.alreadyexists"));		
+//					break;
 				}
 			}
 		}

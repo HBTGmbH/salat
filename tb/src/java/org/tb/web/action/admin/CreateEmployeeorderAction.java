@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
@@ -62,10 +63,10 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		
 		AddEmployeeOrderForm employeeOrderForm = (AddEmployeeOrderForm) form;
 		
-		// get lists of existing employees and suborders
-		List<Employee> employeeswithcontract = employeeDAO.getEmployeesWithContracts();
+		// get lists of existing employee contracts and suborders
+		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
 				
-		if ((employeeswithcontract == null) || (employeeswithcontract.size() <= 0)) {
+		if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
 			request.setAttribute("errorMessage", 
 					"No employees with valid contracts found - please call system administrator.");
 			return mapping.findForward("error");
@@ -74,7 +75,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 	
 		// set relevant attributes
 //		request.getSession().setAttribute("employees", employees);
-		request.getSession().setAttribute("employeeswithcontract", employeeswithcontract);
+		request.getSession().setAttribute("employeecontracts", employeeContracts);
 		
 		List<Customerorder> orders;
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

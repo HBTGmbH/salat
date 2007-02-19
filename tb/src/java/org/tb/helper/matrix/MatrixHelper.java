@@ -46,7 +46,7 @@ public class MatrixHelper {
      * @author cb
      * @since 08.02.2007
      */
-    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method, long customerOrderId,
+    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method, long customerOrderId,
             boolean invoice) {
         List<Timereport> timeReportList;
         List<Timereport> tempTimeReportList;
@@ -91,16 +91,16 @@ public class MatrixHelper {
 
         //choice of timereports by date, employeecontractid and/or customerorderid
         if (method == 1 || method == 3) {
-            if (employeeId == -1) {
+            if (employeeContractId == -1) {
                 timeReportList = trDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
             } else {
-                timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(), beginSqlDate, endSqlDate);
+                timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, beginSqlDate, endSqlDate);
             }
         } else if (method == 2 || method == 4) {
-            if (employeeId == -1) {
+            if (employeeContractId == -1) {
                 timeReportList = trDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, customerOrderId);
             } else {
-                timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ecDAO.getEmployeeContractByEmployeeId(employeeId).getId(),
+                timeReportList = trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeeContractId,
                         beginSqlDate,
                         endSqlDate,
                         customerOrderId);
@@ -279,7 +279,7 @@ public class MatrixHelper {
         dayHoursSum = dayHoursSumTemp / 10.0;
 
         //calculate dayhourstarget
-        if (employeeId == -1) {
+        if (employeeContractId == -1) {
             List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
             Employeecontract tempEmployeeContract;
             tempDailyWorkingTime = 0.0;
@@ -289,7 +289,8 @@ public class MatrixHelper {
             }
             dayHoursTarget = (dayHoursTarget * tempDailyWorkingTime);
         } else {
-            dayHoursTarget = (dayHoursTarget * ecDAO.getEmployeeContractByEmployeeId(employeeId).getDailyWorkingTime());
+        	Employeecontract employeecontract = ecDAO.getEmployeeContractById(employeeContractId);
+            dayHoursTarget = (dayHoursTarget * employeecontract.getDailyWorkingTime());
         }
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;
         dayHoursTargetTemp = dayHoursTarget.intValue();

@@ -74,24 +74,29 @@ public class CreateDailyReportAction extends DailyReportAction {
 		
 		AddDailyReportForm reportForm = (AddDailyReportForm) form;
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
+		Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 		Employeecontract ec = null;	
 		
 		EmployeeHelper eh = new EmployeeHelper();
-		if (request.getSession().getAttribute("currentEmployeeId") != null) {
-			long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-			if (employeeId == -1) {
-				ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
-				request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
-				request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-			} else {	
-				ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
-				request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
-				request.getSession().setAttribute("currentEmployeeId", employeeId);
-			}
+		if (request.getSession().getAttribute("currentEmployeeContract") != null) {
+			Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+//			long currentEmployeeContractId = currentEmployeeContract.getId();
+//			long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+//			if (employeeId == -1) {
+//				ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+//				request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+//				request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+//			} else {	
+				ec = currentEmployeeContract;
+				request.getSession().setAttribute("currentEmployee", currentEmployeeContract.getEmployee().getName());
+				request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
+//			}
 		} else {
-			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+//			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
+			ec = loginEmployeeContract;
 			request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
 			request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+			request.getSession().setAttribute("currentEmployeeContract", loginEmployeeContract);
 		}
 		
 		if (ec == null) {
@@ -101,9 +106,12 @@ public class CreateDailyReportAction extends DailyReportAction {
 		}
 
 //		List<Employee> employeeOptionList = eh.getEmployeeWithContractsOptions(loginEmployee, employeeDAO, employeecontractDAO);
-		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
-		request.getSession().setAttribute("employees", employeeOptionList);
+//		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
+//		request.getSession().setAttribute("employees", employeeOptionList);
 
+		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		request.getSession().setAttribute("employeecontracts", employeecontracts);
+		
 		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
 	
 		// set attributes to be analyzed by target jsp
