@@ -44,15 +44,28 @@ public class CustomerorderHelper {
 	public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
 			CustomerorderDAO cd, EmployeeDAO ed, EmployeecontractDAO ecd, SuborderDAO sd) {
 		
-		String dateString = reportForm.getReferenceday();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		Date date;
-		try {
-			date = simpleDateFormat.parse(dateString);
-		} catch (Exception e) {
-			throw new RuntimeException("error wile parsing date");
-		}		
-		Employeecontract ec = ecd.getEmployeeContractByIdAndDate(reportForm.getEmployeeContractId(), date);		
+//		String dateString = reportForm.getReferenceday();
+//		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//		Date date;
+//		try {
+//			date = simpleDateFormat.parse(dateString);
+//		} catch (Exception e) {
+//			throw new RuntimeException("error wile parsing date");
+//		}		
+//		Employeecontract ec = ecd.getEmployeeContractByIdAndDate(reportForm.getEmployeeContractId(), date);		
+		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
+//		Date ec1beginn = ec.getValidFrom();
+//		Date ec1end = ec.getValidUntil();
+//		Date ec2beginn = ec2.getValidFrom();
+//		Date ec2end = ec2.getValidUntil();
+//		SimpleDateFormat debugFormat = new SimpleDateFormat("dd.MM.yyyy");
+//		String ec1beginString = debugFormat.format(ec1beginn);
+//		String ec1endString = debugFormat.format(ec1end);
+//		String ec2beginString = debugFormat.format(ec2beginn);
+//		String ec2endString = debugFormat.format(ec2end);
+//		System.out.println(ec1beginString + " " + ec1endString + " " + ec2beginString + " " + ec2endString);
+		
+		
 		if (ec == null) {
 			request.setAttribute("errorMessage", 
 					"No employee contract found for employee - please call system administrator.");
@@ -61,6 +74,7 @@ public class CustomerorderHelper {
 		
 		request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
 		request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
+		request.getSession().setAttribute("currentEmployeeContract", ec);
 		
 //		ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 
@@ -68,15 +82,41 @@ public class CustomerorderHelper {
 		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());
 		request.getSession().setAttribute("orders", orders);
 		
+		Customerorder customerorder = cd.getCustomerorderById(reportForm.getOrderId());
+		Long suborderId;
+		List<Suborder> theSuborders;
+		if (customerorder != null && orders.contains(customerorder)) {
+			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorder.getId());
+			Suborder suborder = sd.getSuborderById(reportForm.getSuborderSignId());
+			if (suborder != null && theSuborders.contains(suborder)) {
+				suborderId = suborder.getId();
+			} else {
+				suborderId = theSuborders.get(0).getId();
+			}
+		} else {
+			customerorder = orders.get(0);
+			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorder.getId());
+			suborderId = theSuborders.get(0).getId();
+		}
+		
 		if ((orders == null) || (orders.size() <= 0)) {
 			request.setAttribute("errorMessage", 
 					"No orders found for employee - please call system administrator.");
 			return false;
 		}
-		// get suborders related to employee AND selected customer order...
-		long customerorderId = orders.get(0).getId();
 		
-		List<Suborder> theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId);
+		// set form entries
+		reportForm.setOrderId(customerorder.getId());
+		reportForm.setSuborderSignId(suborderId);
+		reportForm.setSuborderDescriptionId(suborderId);
+		
+//		request.getSession().setAttribute("currentOrder", customerorder.getSign());
+		request.getSession().setAttribute("soIdString", suborderId);
+		
+		// get suborders related to employee AND selected customer order...
+//		long customerorderId = orders.get(0).getId();
+		
+//		List<Suborder> theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId);
 		
 //		 prepare second collection of suborders sorted by description
 		List<Suborder> subordersByDescription = new ArrayList<Suborder>();

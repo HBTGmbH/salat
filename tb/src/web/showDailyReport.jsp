@@ -601,7 +601,12 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/tb/images/info_button.gif" /></td>
+				src="/tb/images/info_button.gif" />
+			<c:if test="${!timereport.fitsToContract}">
+				<img width="20px" height="20px" src="/tb/images/Pin rot.gif" title="<bean:message
+						key="main.timereport.warning.datedoesnotfit" />"/>
+			</c:if>
+			</td>
 
 			<!-- Mitarbeiter -->
 			<td title="<c:out value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${timereport.employeecontract.timeString}" />)"><c:out value="${timereport.employeecontract.employee.sign}" /></td>

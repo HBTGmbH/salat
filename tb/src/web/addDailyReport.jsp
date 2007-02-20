@@ -100,7 +100,7 @@
 					value="${currentEmployeeContract.id}"
 					onchange="setUpdateOrdersAction(this.form)">				
 				<c:choose>
-					<c:when test="${loginEmployee.status eq 'bl'}">
+					<c:when test="${employeeAuthorized}">
 						<c:forEach var="employeecontract" items="${employeecontracts}" >
 							<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 								<html:option value="${employeecontract.id}">
@@ -114,9 +114,18 @@
 						-->
 					</c:when>
 					<c:otherwise>
+						<c:forEach var="employeecontract" items="${employeecontracts}" >
+							<c:if test="${employeecontract.employee.id == loginEmployee.id}">
+								<html:option value="${employeecontract.id}">
+									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+								</html:option>
+							</c:if>							
+						</c:forEach>
+						<!-- 
 						<html:option value="${loginEmployeeContract.id}">
 							<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${loginEmployeeContract.timeString}" />)
 						</html:option>
+						 -->
 					</c:otherwise>
 				</c:choose>	
 				</html:select> 
