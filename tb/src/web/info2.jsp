@@ -5,7 +5,7 @@
 
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 
-<table border="0" cellspacing="0" cellpadding="2" width="100%"
+<table border="0" cellspacing="2px" cellpadding="0" width="100%"
 		class="center backgroundcolor">
 	<tr>
 		<th align="left" width="33%">

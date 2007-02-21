@@ -140,22 +140,22 @@ public class EmployeeDAO extends HibernateDaoSupport {
 		return (Employee) getSession().createQuery("from Employee em where em.id = ?").setLong(0, id).uniqueResult();
 	}
 	
-	/**
-	 * 
-	 * @param date
-	 * @return Returns all {@link Employee}s with a contract, that is valid for the given {@link Date}.
-	 */
-	public List<Employee> getEmployeesWithContractsValidForDate(java.util.Date date) {
-		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsValidForDate(date);
-		List<Employee> employees = new ArrayList<Employee>();
-		for (Employeecontract employeecontract : employeeContracts) {
-			employees.add(employeecontract.getEmployee());
-		}
-		// remove admin
-		Employee admin = getEmployeeBySign("adm");
-		employees.remove(admin);
-		return employees;
-	}
+//	/**
+//	 * 
+//	 * @param date
+//	 * @return Returns all {@link Employee}s with a contract, that is valid for the given {@link Date}.
+//	 */
+//	public List<Employee> getEmployeesWithContractsValidForDate(java.util.Date date) {
+//		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsValidForDate(date);
+//		List<Employee> employees = new ArrayList<Employee>();
+//		for (Employeecontract employeecontract : employeeContracts) {
+//			employees.add(employeecontract.getEmployee());
+//		}
+//		// remove admin
+//		Employee admin = getEmployeeBySign("adm");
+//		employees.remove(admin);
+//		return employees;
+//	}
 	
 	/**
 	 * 

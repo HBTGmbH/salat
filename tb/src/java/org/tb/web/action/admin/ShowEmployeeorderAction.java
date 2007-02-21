@@ -56,7 +56,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 //		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 		
 		// get valid employeecontracts
-		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeeContracts);
 		
 //		Date now = new Date();

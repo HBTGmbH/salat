@@ -105,17 +105,33 @@
 					<tr class="secondarycolor">
 				</c:otherwise>
 			</c:choose>
-			<td><c:out value="${employeecontract.employee.name}" /></td>
-			<td><c:out value="${employeecontract.taskDescription}" /></td>
-			<td><c:out value="${employeecontract.validFrom}" /></td>
-			<td><c:out value="${employeecontract.validUntil}" /></td>
-			<td align="center"><html:checkbox name="employeecontract"
-				property="freelancer" disabled="true" /></td>
-			<td align="center"><c:out
-				value="${employeecontract.dailyWorkingTime}" /></td>
-			<td align="center"><c:out
-				value="${employeecontract.vacationEntitlement}" /></td>
-
+			<c:choose>
+				<c:when test="${employeecontract.hide}">
+					<td style="color:gray"><c:out value="${employeecontract.employee.name}" /></td>
+					<td style="color:gray"><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
+					<td style="color:gray"><c:out value="${employeecontract.validFrom}" /></td>
+					<td style="color:gray"><c:out value="${employeecontract.validUntil}" /></td>
+					<td align="center"><html:checkbox name="employeecontract"
+						property="freelancer" disabled="true" /></td>
+					<td align="center" style="color:gray"><c:out
+						value="${employeecontract.dailyWorkingTime}" /></td>
+					<td align="center" style="color:gray"><c:out
+						value="${employeecontract.vacationEntitlement}" /></td>
+				</c:when>
+				<c:otherwise>
+					<td><c:out value="${employeecontract.employee.name}" /></td>
+					<td><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
+					<td><c:out value="${employeecontract.validFrom}" /></td>
+					<td><c:out value="${employeecontract.validUntil}" /></td>
+					<td align="center"><html:checkbox name="employeecontract"
+						property="freelancer" disabled="true" /></td>
+					<td align="center"><c:out
+						value="${employeecontract.dailyWorkingTime}" /></td>
+					<td align="center"><c:out
+						value="${employeecontract.vacationEntitlement}" /></td>
+				</c:otherwise>
+			</c:choose>
+			
 			<c:if test="${employeeAuthorized}">
 				<td align="center"><html:link
 					href="/tb/do/EditEmployeecontract?ecId=${employeecontract.id}">

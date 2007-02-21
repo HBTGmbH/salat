@@ -67,7 +67,7 @@ public class ShowWelcomeAction extends DailyReportAction {
 //		Date date = new Date();
 		
 		// create collection of employeecontracts
-		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeecontracts);
 		
 		if ((request.getParameter("task") != null) &&

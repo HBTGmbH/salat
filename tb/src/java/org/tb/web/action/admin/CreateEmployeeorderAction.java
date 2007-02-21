@@ -64,7 +64,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		AddEmployeeOrderForm employeeOrderForm = (AddEmployeeOrderForm) form;
 		
 		// get lists of existing employee contracts and suborders
-		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 				
 		if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
 			request.setAttribute("errorMessage", 

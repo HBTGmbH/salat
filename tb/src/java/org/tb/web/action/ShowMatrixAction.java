@@ -340,7 +340,7 @@ public class ShowMatrixAction extends DailyReportAction {
 
             //          List<Employee> employees = employeeDAO.getEmployees();
 //            List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
-            List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+            List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 
             // make sure, that admin is in list
 //            if (loginEmployee.getSign().equalsIgnoreCase("adm") && loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {

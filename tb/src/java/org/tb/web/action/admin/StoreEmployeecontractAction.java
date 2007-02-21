@@ -189,6 +189,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				ec.setValidUntil(untilDate);
 				ec.setTaskDescription(ecForm.getTaskdescription());
 				ec.setFreelancer(ecForm.getFreelancer());
+				ec.setHide(ecForm.getHide());
 				ec.setDailyWorkingTime(ecForm.getDailyworkingtime());
 				
 				

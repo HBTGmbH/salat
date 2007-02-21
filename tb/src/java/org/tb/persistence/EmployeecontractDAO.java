@@ -73,32 +73,32 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	}
 	
 	
-	/**
-	 * Gets the EmployeeContract with the given employee contract id, that is valid for the given date.
-	 * 
-	 * @param employeeContractId
-	 * @param date 
-	 * @return Employeecontract
-	 */
-	public Employeecontract getEmployeeContractByIdAndDate(long employeeContractId, Date date) {
-		return (Employeecontract) getSession().createQuery
-				("from Employeecontract e where id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeContractId).setDate(1, date).setDate(2, date).uniqueResult();
-	}
+//	/**
+//	 * Gets the EmployeeContract with the given employee contract id, that is valid for the given date.
+//	 * 
+//	 * @param employeeContractId
+//	 * @param date 
+//	 * @return Employeecontract
+//	 */
+//	public Employeecontract getEmployeeContractByIdAndDate(long employeeContractId, Date date) {
+//		return (Employeecontract) getSession().createQuery
+//				("from Employeecontract e where id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeContractId).setDate(1, date).setDate(2, date).uniqueResult();
+//	}
 	
 	
-	/**
-	 * Gets the EmployeeContracts with the given employee id, that are valid for the given dates.
-	 * 
-	 * @param long employeeId
-	 * @param date1
-	 * @param date2
-	 * 
-	 * @return Employeecontract
-	 */
-	public List<Employeecontract> getEmployeeContractsByEmployeeIdAndDates(long employeeId, Date date1, Date date2) {
-		return (List<Employeecontract>) getSession().createQuery
-				("from Employeecontract e where e.employee.id = ? and ((validfrom <= ? and validuntil >= ? ) or (e.employee.id = ? and validfrom <= ? and validuntil >= ? )) order by validfrom").setLong(0, employeeId).setDate(1, date1).setDate(2, date1).setDate(3, date2).setDate(4, date2).list();
-	}
+//	/**
+//	 * Gets the EmployeeContracts with the given employee id, that are valid for the given dates.
+//	 * 
+//	 * @param long employeeId
+//	 * @param date1
+//	 * @param date2
+//	 * 
+//	 * @return Employeecontract
+//	 */
+//	public List<Employeecontract> getEmployeeContractsByEmployeeIdAndDates(long employeeId, Date date1, Date date2) {
+//		return (List<Employeecontract>) getSession().createQuery
+//				("from Employeecontract e where e.employee.id = ? and ((validfrom <= ? and validuntil >= ? ) or (e.employee.id = ? and validfrom <= ? and validuntil >= ? )) order by validfrom").setLong(0, employeeId).setDate(1, date1).setDate(2, date1).setDate(3, date2).setDate(4, date2).list();
+//	}
 	
 //	/**
 //	 * Gets the EmployeeContract with the given employee name.
@@ -173,22 +173,24 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	}
 	
 	/**
-	 * Get a list of all Employeecontracts ordered by employee sign.
+	 * Get a list of all Employeecontracts where the hide flag is unset or that is currently valid ordered by employee sign.
 	 * 
 	 * @return List<Employeecontract>
 	 */
-	public List<Employeecontract> getEmployeeContractsOrderedByEmployeeSign() {
-		return getSession().createQuery("from Employeecontract e order by employee.sign asc, validFrom asc").list();
+	public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
+		java.util.Date date = new Date();
+		Boolean hide = false;
+		return getSession().createQuery("from Employeecontract e where hide = ? or (validFrom <= ? and validUntil >= ?) order by employee.sign asc, validFrom asc").setBoolean(0, hide).setDate(1, date).setDate(2, date).list();
 	}
 
-	/**
-	 * 
-	 * @param date
-	 * @return Returns a list of all {@link Employeecontract}s that are valid for the given date.
-	 */
-	public List<Employeecontract> getEmployeeContractsValidForDate(java.util.Date date) {
-		return getSession().createQuery("from Employeecontract e where e.validFrom <= ? and e.validUntil >= ? order by employee.lastname").setDate(0, date).setDate(1, date).list();
-	}
+//	/**
+//	 * 
+//	 * @param date
+//	 * @return Returns a list of all {@link Employeecontract}s that are valid for the given date.
+//	 */
+//	public List<Employeecontract> getEmployeeContractsValidForDate(java.util.Date date) {
+//		return getSession().createQuery("from Employeecontract e where e.validFrom <= ? and e.validUntil >= ? order by employee.lastname").setDate(0, date).setDate(1, date).list();
+//	}
 	
 	
 	/**

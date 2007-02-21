@@ -316,23 +316,23 @@ public class ShowDailyReportAction extends DailyReportAction {
 			}
 			
 //			List<Employee> employees = employeeDAO.getEmployees();
-			List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
+//			List<Employee> employeesWithContract = employeeDAO.getEmployeesWithContracts();
 			
-			List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+			List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 			
- 			// make sure, that admin is in list
-			if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
-					loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-				if (!employeesWithContract.contains(loginEmployee)) {
-					employeesWithContract.add(loginEmployee);
-				}
-			}
-			
-			if ((employeesWithContract == null) || (employeesWithContract.size() <= 0)) {
-				request.setAttribute("errorMessage", 
-						"No employees with valid contracts found - please call system administrator.");
-				return mapping.findForward("error");
-			}
+// 			// make sure, that admin is in list
+//			if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
+//					loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+//				if (!employeesWithContract.contains(loginEmployee)) {
+//					employeesWithContract.add(loginEmployee);
+//				}
+//			}
+//			
+//			if ((employeesWithContract == null) || (employeesWithContract.size() <= 0)) {
+//				request.setAttribute("errorMessage", 
+//						"No employees with valid contracts found - please call system administrator.");
+//				return mapping.findForward("error");
+//			}
 			
 			if ((employeecontracts == null) || (employeecontracts.size() <= 0)) {
 				request.setAttribute("errorMessage", 
@@ -347,7 +347,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 //			}
 			
 			request.getSession().setAttribute("employeecontracts", employeecontracts);	
-			request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
+//			request.getSession().setAttribute("employeeswithcontract", employeesWithContract);
 			request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 			request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
 			request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());

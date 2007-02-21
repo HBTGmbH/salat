@@ -59,9 +59,11 @@ public class ShowReleaseAction extends LoginRequiredAction {
 		}		
 		
 		if ((Boolean) request.getSession().getAttribute("employeeAuthorized") && releaseForm.getEmployeeContractId() == null) {
-			Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-			employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, new Date());
-			releaseForm.setEmployeeContractId(employeecontract.getId());
+			Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+			if (currentEmployeeContract != null) {
+				employeecontract = currentEmployeeContract;
+				releaseForm.setEmployeeContractId(employeecontract.getId());
+			}			
 			
 		}
 		
@@ -74,7 +76,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 		
 		
 //		if ((request.getSession().getAttribute("employeeAuthorized") != null) && ((Boolean) request.getSession().getAttribute("employeeAuthorized"))) {
-			List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
+			List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 			request.getSession().setAttribute("employeecontracts", employeeContracts);
 //		}
 		

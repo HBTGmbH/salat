@@ -131,7 +131,7 @@ public class EditDailyReportAction extends DailyReportAction {
 //		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
 //		request.getSession().setAttribute("employees", employeeOptionList);
 		
-		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeecontracts);
 		
 		request.getSession().setAttribute("trId", tr.getId());

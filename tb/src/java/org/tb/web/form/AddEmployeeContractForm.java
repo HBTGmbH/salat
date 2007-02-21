@@ -27,6 +27,7 @@ public class AddEmployeeContractForm extends ActionForm {
 	private String initialOvertime;
 	private String newOvertime;
 	private String newOvertimeComment;
+	private Boolean hide;
 	
 //	private long employeeId;
 	
@@ -112,9 +113,21 @@ public class AddEmployeeContractForm extends ActionForm {
 	public void setEmployee(long employee) {
 		this.employee = employee;
 	}
+	
+	/**
+	 * @return the hide
+	 */
+	public Boolean getHide() {
+		return hide;
+	}
 
-	
-	
+	/**
+	 * @param hide the hide to set
+	 */
+	public void setHide(Boolean hide) {
+		this.hide = hide;
+	}
+
 	/**
 	 * @return the newOvertime
 	 */
@@ -165,6 +178,7 @@ public class AddEmployeeContractForm extends ActionForm {
 		validFrom = DateUtils.getCurrentYearString() + "-01-01";
 		validUntil = DateUtils.getCurrentYearString() + "-12-31";
 		freelancer = new Boolean(Boolean.FALSE);
+		hide = new Boolean(Boolean.FALSE);
 		dailyworkingtime = 8.0;
 		initialOvertime = "0.0";
 		yearlyvacation = 30;

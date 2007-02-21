@@ -101,7 +101,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 //		List<Employee> employees = employeeDAO.getEmployees();
 //		request.getSession().setAttribute("employees", employees);
 		
-		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		
 		if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
 			request.setAttribute("errorMessage", 

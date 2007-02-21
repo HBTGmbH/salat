@@ -373,7 +373,7 @@ public class LoginEmployeeAction extends Action {
 		}
 		
 		// create collection of employeecontracts
-		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
+		List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeecontracts);
 
 		

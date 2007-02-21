@@ -77,6 +77,9 @@ public class Employeecontract implements Serializable {
 	/** Update Counter */
 	private Integer updatecounter;
 	
+	/** Hide Flag */
+	private Boolean hide;
+	
 	/** Employee */
 	@OneToOne
 	@JoinColumn(name="EMPLOYEE_ID")
@@ -303,6 +306,20 @@ public class Employeecontract implements Serializable {
 		this.updatecounter = updatecounter;
 	}
 	
+	/**
+	 * @return the hide
+	 */
+	public Boolean getHide() {
+		return hide;
+	}
+
+	/**
+	 * @param hide the hide to set
+	 */
+	public void setHide(Boolean hide) {
+		this.hide = hide;
+	}
+
 	public String getTimeString() {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		return simpleDateFormat.format(validFrom) + " - " + simpleDateFormat.format(validUntil);

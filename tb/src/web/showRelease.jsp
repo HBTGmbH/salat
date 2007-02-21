@@ -91,7 +91,7 @@
 							<c:forEach var="employeecontract" items="${employeecontracts}" >
 								<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 									<html:option value="${employeecontract.id}">
-										<c:out value="${employeecontract.employee.name}" /> (<c:out value="${employeecontract.timeString}" />)
+										<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
 									</html:option>
 								</c:if>							
 							</c:forEach>
@@ -348,6 +348,8 @@
 		</tr>
 		<tr>
 			<th align="left"><b>
+				<bean:message key="main.employeeorder.employee.text" /></b></th>
+			<th align="left"><b>
 				<bean:message key="main.release.employee.text" /></b></th>
 			<th align="left"><b>
 				<bean:message key="main.release.timeperiod.text" /></b></th>
@@ -366,6 +368,7 @@
 						<tr class="secondarycolor">
 					</c:otherwise>
 				</c:choose>
+					<td><c:out value="${employeecontract.employee.sign}" /></td>
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td align="center"><c:out value="${employeecontract.timeString}" /></td>
 					<td align="center">
