@@ -157,6 +157,12 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
 				showDailyReportForm.setOrder((String)request.getSession().getAttribute("currentOrder"));
 				
+				Long currentSuborderId = (Long) request.getSession().getAttribute("currentSuborderId");
+				if (currentSuborderId == null || currentSuborderId == 0) {
+					currentSuborderId = -1l;
+				}
+				showDailyReportForm.setSuborderId(currentSuborderId);
+				
 				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
 				List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
 				

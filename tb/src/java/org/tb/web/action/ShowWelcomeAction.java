@@ -1,6 +1,7 @@
 package org.tb.web.action;
 
-import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -9,8 +10,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.tb.bdom.Employee;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Warning;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
@@ -93,6 +96,21 @@ public class ShowWelcomeAction extends DailyReportAction {
 //		request.getSession().setAttribute("acceptedUntil", acceptanceDate);
 		
 		refreshVacationAndOvertime(request, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+		
+		List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
+		List<Warning> warnings = new ArrayList<Warning>();
+		for (Timereport timereport : timereports) {
+			Warning warning = new Warning();
+			warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE);
+			warning.setText(timereport.getTimeReportAsString());
+			warnings.add(warning);
+		}
+		if (warnings != null && !warnings.isEmpty()) {
+			request.getSession().setAttribute("warnings", warnings);
+			request.getSession().setAttribute("warningsPresent", true);
+		} else {
+			request.getSession().setAttribute("warningsPresent", false);
+		}
 		
 		return mapping.findForward("success");
 	}

@@ -22,21 +22,38 @@ startList = function() {
 window.onload=startList;
 
 //--><!]]></script>
-
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<!--  
 <jsp:include flush="true" page="/version.jsp">
 	<jsp:param name="version" value="Version" />
 </jsp:include>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+
 <center>
-<h1><bean:message key="main.general.mainmenu.menu.text" /></h1>
+<h2><bean:message key="main.general.mainmenu.menu.text" /></h2>
 </center>
+-->
+<table width="100%">
+  <tr>
+    <td class="noBborderStyle" align="center" width="33%"></td>
+    <td class="noBborderStyle" align="center" valign="top" width="33%"><h2><bean:message key="main.general.mainmenu.menu.text" /></h2></td>
+    <td class="noBborderStyle" align="right" valign="top" width="33%">
+    	<jsp:include flush="true" page="/version.jsp">
+			<jsp:param name="version" value="Version" />
+		</jsp:include>
+	</td>
+  </tr>
+</table>
 <div class="menu hiddencontent">
 <ul id="nav">
 	<li id="first"><bean:message
 		key="main.general.mainmenu.timereports.text" />
 	<ul>
 		<li class="first"><html:link styleClass="menu"
+			action="/CreateDailyReport">
+			<bean:message key="main.general.mainmenu.newreport.text" />
+		</html:link></li>
+		<li><html:link styleClass="menu"
 			action="/ShowDailyReport">
 			<bean:message key="main.general.mainmenu.daily.text" />
 		</html:link></li>
@@ -85,6 +102,12 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowSettings">
 			<bean:message key="main.general.mainmenu.settings.text" />
 		</html:link></li>
+		<li><html:link styleClass="menu" target="_blank" href="http://wiki/mediawiki/index.php/Benutzerhandbuch_SALAT">
+			<bean:message key="main.general.mainmenu.bhbintern.text" />
+		</html:link></li>
+		<li><html:link styleClass="menu" target="_blank" href="https://wiki.hbt.de/mediawiki/index.php/Benutzerhandbuch_SALAT">
+			<bean:message key="main.general.mainmenu.bhbextern.text" />
+		</html:link></li>
 	</ul>
 	</li>
 	<li id="last"><html:link action="/LogoutEmployee">
@@ -94,3 +117,4 @@ window.onload=startList;
 		</html:link></li>
 </ul>
 </div>
+<br>

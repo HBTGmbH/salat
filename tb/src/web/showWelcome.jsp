@@ -1,6 +1,9 @@
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
+<%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -21,17 +24,10 @@
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
-<center><br>
-<br>
-<br>
-<h3 style="color: black"><bean:message key="main.general.mainmenu.hello.text" />&nbsp;<c:out value="${loginEmployee.name}" />
-<br>
-<br>
-<bean:message key="main.general.mainmenu.welcome.text" /></h3>
-<br>
+<br><h2><bean:message key="main.general.mainmenu.overview.text" /></h2>
 <br>
 <html:form action="/ShowWelcome">
-<html:select property="employeeContractId" onchange="setUpdate(this.form)"
+&nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)"
 			 value="${currentEmployeeContract.id}">
 	<c:forEach var="employeecontract" items="${employeecontracts}" >
 		<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
@@ -42,9 +38,32 @@
 	</c:forEach>
 </html:select>
 </html:form>
-<jsp:include flush="true" page="/info.jsp">
+<jsp:include flush="true" page="/info2.jsp">
 	<jsp:param name="info" value="Info" />
 </jsp:include>
-</center>
+<br>
+<!-- warnings -->
+<c:if test="${warningsPresent}">
+	<table border="0" cellspacing="0" cellpadding="2" width="100%"
+			class="center backgroundcolor">
+		<tr>
+			<th align="left" colspan="2">
+				<b><bean:message key="main.info.headline.warning" /></b>
+			</th>
+		</tr>
+		<c:forEach var="warning" items="${warnings}" >
+			<tr>
+				<td class="noBborderStyle" align="left">
+					<c:if test="${warning.sort eq 'timereportnotinrange'}">
+						<bean:message key="main.info.warning.timereportnotinrange" />:
+					</c:if>			
+				</td>
+				<td class="noBborderStyle" align="left">
+					<c:out value="${warning.text}" />
+				</td>
+			</tr>
+		</c:forEach>
+	</table>
+</c:if>
 </body>
 </html>

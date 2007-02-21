@@ -132,4 +132,6 @@ public class GlobalConstants {
     public static final int MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES = 4;
 	
     public static final int MAX_SERIAL_BOOKING_DAYS = 20;
+    
+    public static final String WARNING_SORT_TIMEREPORT_NOT_IN_RANGE = "timereportnotinrange";
 }

@@ -73,41 +73,27 @@ public class CreateDailyReportAction extends DailyReportAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
 		AddDailyReportForm reportForm = (AddDailyReportForm) form;
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 	
 		Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 		Employeecontract ec = null;	
 		
-		EmployeeHelper eh = new EmployeeHelper();
-		if (request.getSession().getAttribute("currentEmployeeContract") != null) {
+		if (request.getSession().getAttribute("currentEmployeeContract") != null &&
+				(Boolean) request.getSession().getAttribute("employeeAuthorized")) {
 			Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
-//			long currentEmployeeContractId = currentEmployeeContract.getId();
-//			long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-//			if (employeeId == -1) {
-//				ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
-//				request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
-//				request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-//			} else {	
-				ec = currentEmployeeContract;
-				request.getSession().setAttribute("currentEmployee", currentEmployeeContract.getEmployee().getName());
-				request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
-//			}
+			ec = currentEmployeeContract;
+						
 		} else {
-//			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
-			ec = loginEmployeeContract;
-			request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
-			request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-			request.getSession().setAttribute("currentEmployeeContract", loginEmployeeContract);
+			ec = loginEmployeeContract;			
 		}
+		request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
+		request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
+		request.getSession().setAttribute("currentEmployeeContract", ec);
+		
 		
 		if (ec == null) {
 			request.setAttribute("errorMessage",
 							"No employee contract found for employee - please call system administrator.");
 			return mapping.findForward("error");
 		}
-
-//		List<Employee> employeeOptionList = eh.getEmployeeWithContractsOptions(loginEmployee, employeeDAO, employeecontractDAO);
-//		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
-//		request.getSession().setAttribute("employees", employeeOptionList);
 
 		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeecontracts);

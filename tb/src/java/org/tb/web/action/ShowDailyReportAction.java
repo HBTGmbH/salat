@@ -502,6 +502,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 			
 		}
 		request.getSession().setAttribute("reportForm", reportForm);
+		request.getSession().setAttribute("currentSuborderId",reportForm.getSuborderId());
 		return mapping.findForward("success");
 	}
 }

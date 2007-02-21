@@ -111,7 +111,7 @@ public class CustomerorderHelper {
 		reportForm.setSuborderDescriptionId(suborderId);
 		
 //		request.getSession().setAttribute("currentOrder", customerorder.getSign());
-		request.getSession().setAttribute("soIdString", suborderId);
+		request.getSession().setAttribute("currentSuborderId", suborderId);
 		
 		// get suborders related to employee AND selected customer order...
 //		long customerorderId = orders.get(0).getId();

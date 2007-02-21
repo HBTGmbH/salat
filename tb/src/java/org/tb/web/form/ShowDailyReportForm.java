@@ -43,6 +43,7 @@ public class ShowDailyReportForm extends ActionForm {
 	
 	private long trOrderId;
 	private long orderId;
+	private long suborderId;
 	private long trSuborderId;
 	
 	private String view;
@@ -306,6 +307,20 @@ public class ShowDailyReportForm extends ActionForm {
 	 */
 	public void setEmployeeContractId(long employeeContractId) {
 		this.employeeContractId = employeeContractId;
+	}
+
+	/**
+	 * @return the suborderId
+	 */
+	public long getSuborderId() {
+		return suborderId;
+	}
+
+	/**
+	 * @param suborderId the suborderId to set
+	 */
+	public void setSuborderId(long suborderId) {
+		this.suborderId = suborderId;
 	}
 
 	@Override

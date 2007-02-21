@@ -24,9 +24,11 @@ while(names.hasMoreElements()) {
 	href="/tb/tb.css" />
 </head>
 <body>
+<div align="right"> 
 <jsp:include flush="true" page="/version.jsp">
 	<jsp:param name="version" value="Version" />
 </jsp:include>
+</div>
 <b>
 <span style="color:red">
 <html:errors />

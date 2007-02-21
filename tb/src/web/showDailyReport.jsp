@@ -116,9 +116,7 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<p>
 <h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
-</p>
 <br>
 <html:form action="/ShowDailyReport">
 	<table class="center backgroundcolor">
@@ -175,19 +173,39 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.customerorder.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="order"
-				value="<%=(String) request.getSession().getAttribute("currentOrder")%>"
-				onchange="setUpdateTimereportsAction(this.form)">
+			<td align="left" class="noBborderStyle">
+				<html:select
+					property="order"
+					value="${currentOrder}"
+					onchange="setUpdateTimereportsAction(this.form)">
 
-				<html:option value="ALL ORDERS">
-					<bean:message key="main.general.allorders.text" />
-				</html:option>
+					<html:option value="ALL ORDERS">
+						<bean:message key="main.general.allorders.text" />
+					</html:option>
 
-				<html:options collection="orders" labelProperty="signAndDescription"
-					property="sign" />
-				<html:hidden property="orderId" />
-			</html:select></td>
+					<html:options collection="orders" labelProperty="signAndDescription"
+						property="sign" />
+					<html:hidden property="orderId" />
+				</html:select>
+				
+				<!-- select suborder -->
+				<c:if test="${currentOrder != 'ALL ORDERS'}">
+					<c:forEach var="order" items="${orders}" >
+						<c:if test="${order.sign == currentOrder}">
+							 / 
+							<html:select
+								property="suborderId"
+								onchange="setUpdateTimereportsAction(this.form)">
+								<html:option value="-1">
+									<bean:message key="main.general.allsuborders.text" />
+								</html:option>
+								<html:options collection="suborders" labelProperty="signAndDescription"
+									property="id" />							
+							</html:select>						
+						</c:if>
+					</c:forEach>
+				</c:if>
+			</td>
 		</tr>
 
 		<!-- select view mode -->
@@ -393,15 +411,12 @@
 <c:if test="${timereportsSize>10}">
 	<table>
 		<tr>
-			<c:if
-				test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
-				<html:form action="/CreateDailyReport">
-					<td class="noBborderStyle" colspan="6" align="left"><html:submit
-						styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
+			<html:form action="/CreateDailyReport">
+				<td class="noBborderStyle" colspan="6" align="left"><html:submit
+					styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
 						<bean:message key="main.general.button.createnewreport.text" />
-					</html:submit></td>
-				</html:form>
-			</c:if>
+				</html:submit></td>
+			</html:form>
 			<html:form target="fenster"
 				onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 				action="/ShowDailyReport?task=print">
@@ -764,18 +779,15 @@
 		</c:choose>
 		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
 	</tr>
-
-	<!-- Add Report: Berechtigung wird auf der addDailyReport nach Zeitraum und Auftrag geprueft -->
-	<tr>
-		<c:if
-			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
-			<html:form action="/CreateDailyReport">
-				<td class="noBborderStyle" colspan="6" align="left"><html:submit
-					styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
-					<bean:message key="main.general.button.createnewreport.text" />
-				</html:submit></td>
-			</html:form>
-		</c:if>
+</table>
+<table>
+	<tr>		
+		<html:form action="/CreateDailyReport">
+			<td class="noBborderStyle" colspan="6" align="left"><html:submit
+				styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
+				<bean:message key="main.general.button.createnewreport.text" />
+			</html:submit></td>
+		</html:form>	
 		<html:form target="fenster"
 			onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 			action="/ShowDailyReport?task=print">
@@ -785,7 +797,6 @@
 			</html:submit></td>
 		</html:form>
 	</tr>
-
 </table>
 <br>
 

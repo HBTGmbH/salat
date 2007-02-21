@@ -21,6 +21,7 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
+import org.tb.bdom.Warning;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
 import org.tb.persistence.EmployeeDAO;
@@ -346,6 +347,21 @@ public class LoginEmployeeAction extends Action {
 			}
 			request.getSession().setAttribute("vacations", vacations);
 
+			// get warnings
+			List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
+			List<Warning> warnings = new ArrayList<Warning>();
+			for (Timereport timereport : timereports) {
+				Warning warning = new Warning();
+				warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE);
+				warning.setText(timereport.getTimeReportAsString());
+				warnings.add(warning);
+			}
+			if (warnings != null && !warnings.isEmpty()) {
+				request.getSession().setAttribute("warnings", warnings);
+				request.getSession().setAttribute("warningsPresent", true);
+			} else {
+				request.getSession().setAttribute("warningsPresent", false);
+			}
 			
 		} else {
 			request.getSession().setAttribute("employeeHasValidContract", false);

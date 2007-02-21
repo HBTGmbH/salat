@@ -18,6 +18,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
@@ -335,7 +336,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			}
 		}		
 		
-		
+		List<Timereport> timereports = new ArrayList<Timereport>();
 		if (reportForm.getEmployeeContractId() == -1) {
 			// consider timereports for all employees
 			List<Customerorder> orders = customerorderDAO.getCustomerorders();
@@ -344,25 +345,26 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			if ((reportForm.getOrder() == null)
 					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, all employees, all orders
-				List<Timereport> timereports = timereportDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
-				if (request.getSession().getAttribute("timereportComparator") != null) {
-					Comparator<Timereport> comparator = (Comparator<Timereport>) request
-							.getSession().getAttribute("timereportComparator");
-					Collections.sort(timereports, comparator);
-				}				
-				request.getSession().setAttribute("timereports", timereports);
+				timereports = timereportDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
+				
 			} else {
 				Customerorder co = customerorderDAO
 						.getCustomerorderBySign(reportForm.getOrder());
 				long orderId = co.getId();
-				// get the timereports for specific date, all employees, specific order
-				List<Timereport> timereports = timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, orderId);
-				if (request.getSession().getAttribute("timereportComparator") != null) {
-					Comparator<Timereport> comparator = (Comparator<Timereport>) request
-							.getSession().getAttribute("timereportComparator");
-					Collections.sort(timereports, comparator);
-				}	
-				request.getSession().setAttribute("timereports", timereports);
+				request.getSession().setAttribute("suborders", co.getSuborders());
+				
+				Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderId());
+				if (suborder == null || suborder.getCustomerorder().getId() != orderId) {
+					reportForm.setSuborderId(-1l);
+				}
+				
+				if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {				
+					// get the timereports for specific date, all employees, specific order
+					timereports = timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, orderId);
+				} else {				
+					timereports = timereportDAO.getTimereportsByDatesAndSuborderId(beginSqlDate, endSqlDate, reportForm.getSuborderId());
+				}
+				
 			}
 
 		} else {
@@ -387,34 +389,51 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 //				request.getSession().setAttribute("suborders",
 //								suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
 //			}
-
+			
+			
 			if ((reportForm.getOrder() == null)
 					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, specific employee, all orders
-				List<Timereport> timereports = timereportDAO
+				timereports = timereportDAO
 					.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate);
-				if (request.getSession().getAttribute("timereportComparator") != null) {
-					Comparator<Timereport> comparator = (Comparator<Timereport>) request
-							.getSession().getAttribute("timereportComparator");
-					Collections.sort(timereports, comparator);
-				}
-				request.getSession().setAttribute("timereports", timereports);
+				
 			} else {
 				Customerorder co = customerorderDAO
 						.getCustomerorderBySign(reportForm.getOrder());
 				long orderId = co.getId();
+				request.getSession().setAttribute("suborders", co.getSuborders());
+				
+				Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderId());
+				if (suborder == null || suborder.getCustomerorder().getId() != orderId) {
+					reportForm.setSuborderId(-1l);
+				}
+				
 				// get the timereports for specific date, specific employee, specific order
 				// fill up order-specific list with 'working' reports only...
-				request.getSession()
-						.setAttribute(
-								"timereports",
-								timereportDAO
-										.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(
-												ec.getId(), beginSqlDate, endSqlDate, orderId));
+				if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {
+					timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(
+							ec.getId(), beginSqlDate, endSqlDate, orderId);
+				} else {
+					timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(
+							ec.getId(), beginSqlDate, endSqlDate, reportForm.getSuborderId());
+				}
+				
 			}
 			// refresh overtime and vacation
-			refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+			if (reportForm.getEmployeeContractId() != -1) {
+				refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+			}
 		}
+		
+		// set timereports in session
+		if (request.getSession().getAttribute("timereportComparator") != null) {
+			Comparator<Timereport> comparator = (Comparator<Timereport>) request
+					.getSession().getAttribute("timereportComparator");
+			Collections.sort(timereports, comparator);
+		}				
+		request.getSession().setAttribute("timereports", timereports);
+		
+		request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());
 
 		// refresh all relevant attributes
 		if (reportForm.getEmployeeContractId() == -1) {

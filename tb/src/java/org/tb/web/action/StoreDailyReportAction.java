@@ -536,7 +536,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("currentYear", DateUtils.getYearString(theDate));
 				
 				List<Timereport> reports;
-				int numberOfReports;
+//				int numberOfReports;
 				if (request.getSession().getAttribute("trId") != null) {
 					
 					request.getSession().removeAttribute("trId");
@@ -553,19 +553,20 @@ public class StoreDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setEmployeeContractId(ec.getId());
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
 				showDailyReportForm.setOrder((String)request.getSession().getAttribute("lastOrder"));
+				showDailyReportForm.setSuborderId(-1l);
 				
 				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
 				reports = (List<Timereport>) request.getSession().getAttribute("timereports");
 				
 				
-				numberOfReports = reports.size();
+//				numberOfReports = reports.size();
 				
-				if (request.getSession().getAttribute("timereportComparator") != null) {
-					Comparator<Timereport> comparator = (Comparator<Timereport>) request
-					.getSession().getAttribute("timereportComparator");
-					Collections.sort(reports, comparator);
-				}
-				request.getSession().setAttribute("timereports", reports);
+//				if (request.getSession().getAttribute("timereportComparator") != null) {
+//					Comparator<Timereport> comparator = (Comparator<Timereport>) request
+//					.getSession().getAttribute("timereportComparator");
+//					Collections.sort(reports, comparator);
+//				}
+//				request.getSession().setAttribute("timereports", reports);
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));

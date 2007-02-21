@@ -1,6 +1,7 @@
 package org.tb.persistence;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -219,6 +220,24 @@ public class TimereportDAO extends HibernateDaoSupport {
 	
 	/**
 	 * Gets a list of all {@link Timereport}s that fulfill following criteria: 
+	 * 1) associated to the given employee contract
+	 * 2) refdate out of range of the employee contract
+	 * 
+	 * @param employeecontract
+	 * @return Returns a {@link List} with all {@link Timereport}s, that fulfill the criteria.
+	 */
+	public List<Timereport> getTimereportsOutOfRangeForEmployeeContract(Employeecontract employeecontract) {
+		Long employeeContractId = employeecontract.getId();
+		Date contractBegin = employeecontract.getValidFrom();
+		Date contractEnd = employeecontract.getValidUntil();
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and (t.referenceday.refdate < ? or  t.referenceday.refdate > ?) order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc").setLong(0, employeeContractId).setDate(1, contractBegin).setDate(2, contractEnd).list();
+
+		return allTimereports;
+	}
+	
+	/**
+	 * Gets a list of all {@link Timereport}s that fulfill following criteria: 
 	 * 1) associated to the given employee contract id
 	 * 2) valid before and at the given date
 	 * 3) status is open 
@@ -383,6 +402,26 @@ public class TimereportDAO extends HibernateDaoSupport {
 		}
 		return allTimereports;
 	}
+	
+	/**
+	 * Gets a list of timereports, which lay between two dates and belong to the given {@link Suborder} id.
+	 * 
+	 * @param java.sql.Date begin
+	 * @param java.sql.Date end
+	 * @param suborderId
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsByDatesAndSuborderId(java.sql.Date begin, java.sql.Date end, long suborderId) {		
+		List<Timereport> allTimereports; 
+		if (begin.compareTo(end) == 0) {
+			allTimereports = getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate asc, sequencenumber asc").setDate(0, begin).setDate(1, end).setLong(2, suborderId).list();
+		} else {
+			allTimereports = getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate asc, suborder.customerorder.sign asc, suborder.sign asc").setDate(0, begin).setDate(1, end).setLong(2, suborderId).list();
+		}
+		return allTimereports;
+	}
+	
 	
 	/**
 	 * Gets a list of 'W' Timereports by employee contract id and customer id and month/year.

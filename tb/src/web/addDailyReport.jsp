@@ -1,22 +1,20 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-     "http://www.w3.org/TR/html4/loose.dtd">
-
-<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-<%
-            Long soId = (Long)request.getSession().getAttribute("currentSuborderId");
-            String soIdString = soId.toString();
-%>
 
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/loose.dtd">
+
+<html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
-
 <script type="text/javascript" language="JavaScript">
  	var req;
  		
@@ -84,11 +82,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<html:form action="/StoreDailyReport">
-	<p>
+<html:form action="/StoreDailyReport">	
 	<h2><bean:message
 		key="main.general.entertimereportproperties.text" />:</h2>
-	</p>
 	<br>
 	<table width="800" border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
@@ -108,10 +104,6 @@
 								</html:option>
 							</c:if>							
 						</c:forEach>
-						<!--  
-						<html:options collection="employees" labelProperty="name"
-								property="id" />	
-						-->
 					</c:when>
 					<c:otherwise>
 						<c:forEach var="employeecontract" items="${employeecontracts}" >
@@ -202,12 +194,12 @@
 					<html:options collection="orders" labelProperty="signAndDescription"
 						property="id" />
 				</html:select> <b> / </b> <html:select property="suborderSignId"
-					styleClass="mandatory" value="<%=soIdString%>"
+					styleClass="mandatory" value="${currentSuborderId}"
 					onchange="adjustSuborderSignChangedAction(this.form)">
 					<html:options collection="suborders" labelProperty="sign"
 						property="id" />
 				</html:select> <html:select property="suborderDescriptionId"
-					styleClass="mandatory" value="<%=soIdString%>"
+					styleClass="mandatory" value="${currentSuborderId}"
 					onchange="adjustSuborderDescriptionChangedAction(this.form)">
 					<html:options collection="subordersByDescription"
 						labelProperty="description" property="id" />
@@ -335,4 +327,4 @@
 	<html:hidden property="id" />
 </html:form>
 </body>
-
+</html:html>
