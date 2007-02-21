@@ -97,7 +97,7 @@
 			<tr>
 				<html:form action="/CreateEmployeeorder">
 					<td class="noBborderStyle" colspan="4"><html:submit
-						styleId="button">
+						styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
 						<bean:message key="main.general.button.createemployeeorder.text" />
 					</html:submit></td>
 				</html:form>
@@ -196,19 +196,19 @@
 				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
 				<td align="center"><html:link
 					href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
-					<img src="/tb/images/Edit.gif" alt="Edit Employeeorder" />
+					<img src="/tb/images/Edit.gif" alt="Edit Employeeorder"  titleKey="main.headlinedescription.employeeorders.edit.text"/>
 				</html:link></td>
 				<html:form action="/DeleteEmployeeorder">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employeeorder.id})"
-						src="/tb/images/Delete.gif" alt="Delete Employeeorder" /></td>
+						src="/tb/images/Delete.gif" alt="Delete Employeeorder"  titleKey="main.headlinedescription.employeeorders.delete.text"/></td>
 				</html:form>
 			</c:when>
 			<c:otherwise>
 				<td align="center"><img height="12px" width="12px"
-					src="/tb/images/verbot.gif" alt="Edit Employeeorder" /></td>
+					src="/tb/images/verbot.gif" alt="Edit Employeeorder" title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>"/></td>
 				<td align="center"><img height="12px" width="12px"
-					src="/tb/images/verbot.gif" alt="Delete Employeeorder" /></td>
+					src="/tb/images/verbot.gif" alt="Delete Employeeorder" title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>"/></td>
 			</c:otherwise>
 		</c:choose>
 		</tr>
@@ -217,7 +217,7 @@
 		<tr>
 			<html:form action="/CreateEmployeeorder">
 				<td class="noBborderStyle" colspan="4"><html:submit
-					styleId="button">
+					styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
 					<bean:message key="main.general.button.createemployeeorder.text" />
 				</html:submit></td>
 			</html:form>

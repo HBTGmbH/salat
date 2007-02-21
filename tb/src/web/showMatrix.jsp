@@ -223,7 +223,7 @@
 				key="main.monthlyreport.invoice.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:checkbox
 				property="invoice"
-				onchange="setUpdateMergedreportsAction(this.form)" /></td>
+				onclick="setUpdateMergedreportsAction(this.form)" /></td>
 		</tr>
 	</table>
 </html:form>
@@ -236,19 +236,16 @@
 				test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
 				<html:form action="/CreateDailyReport?task=matrix">
 					<td class="noBborderStyle" align="left"><html:submit
-						styleId="button">
+						styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
 						<bean:message key="main.general.button.createnewreport.text" />
 					</html:submit></td>
 				</html:form>
 			</c:if>
-		</tr>
-		<br>
-		<tr>
 			<html:form target="fenster"
 				onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 				action="/ShowMatrix?task=print">
 				<td class="noBborderStyle" align="left"><html:submit
-					styleId="button">
+					styleId="button" titleKey="main.general.button.printpreview.alttext.text">
 					<bean:message key="main.general.button.printpreview.text" />
 				</html:submit></td>
 			</html:form>
@@ -445,19 +442,16 @@
 			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
 			<html:form action="/CreateDailyReport?task=matrix">
 				<td class="noBborderStyle" align="left"><html:submit
-					styleId="button">
+					styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
 					<bean:message key="main.general.button.createnewreport.text" />
 				</html:submit></td>
 			</html:form>
 		</c:if>
-	</tr>
-	<br>
-	<tr>
 		<html:form target="fenster"
 			onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 			action="/ShowMatrix?task=print">
 			<td class="noBborderStyle" align="left"><html:submit
-				styleId="button">
+				styleId="button" titleKey="main.general.button.printpreview.alttext.text">
 				<bean:message key="main.general.button.printpreview.text" />
 			</html:submit></td>
 		</html:form>

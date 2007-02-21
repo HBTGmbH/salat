@@ -51,7 +51,7 @@
 		<tr>
 			<html:form action="/CreateEmployee">
 				<td class="noBborderStyle" colspan="4"><html:submit
-					styleId="button">
+					styleId="button" titleKey="main.general.button.createemployee.alttext.text">
 					<bean:message key="main.general.button.createemployee.text" />
 				</html:submit></td>
 			</html:form>
@@ -120,12 +120,12 @@
 			<c:if test="${employeeAuthorized}">
 				<td align="center"><html:link
 					href="/tb/do/EditEmployee?emId=${employee.id}">
-					<img src="/tb/images/Edit.gif" alt="Edit Employee" />
+					<img src="/tb/images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
 				</html:link></td>
 				<html:form action="/DeleteEmployee">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employee.id})"
-						src="/tb/images/Delete.gif" alt="Delete Employee" /></td>
+						src="/tb/images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
 				</html:form>
 			</c:if>
 			</tr>
@@ -135,7 +135,7 @@
 		<tr>
 			<html:form action="/CreateEmployee">
 				<td class="noBborderStyle" colspan="4"><html:submit
-					styleId="button">
+					styleId="button" titleKey="main.general.button.createemployee.alttext.text">
 					<bean:message key="main.general.button.createemployee.text" />
 				</html:submit></td>
 			</html:form>

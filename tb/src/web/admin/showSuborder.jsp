@@ -45,7 +45,7 @@
 </span>
 <html:form action="/ShowSuborder">
 	<html:text property="filter" size="40"/>
-	<html:submit styleId="button">
+	<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
 		<bean:message key="main.general.button.filter.text" />
 	</html:submit>
 </html:form>
@@ -57,7 +57,7 @@
 	<c:if test="${employeeAuthorized || employeeIsResponsible}">
 		<tr>
 			<html:form action="/CreateSuborder">
-				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+				<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">
 					<bean:message key="main.general.button.createsuborder.text" />
 				</html:submit></td>
 			</html:form>
@@ -123,19 +123,19 @@
 			<c:when test="${employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
 				<td align="center">
 					<html:link href="/tb/do/EditSuborder?soId=${suborder.id}">
-						<img src="/tb/images/Edit.gif" alt="Edit Suborder" />
+						<img src="/tb/images/Edit.gif" alt="Edit Suborder" title="<bean:message key="main.headlinedescription.suborders.edit.text"/>"/>
 					</html:link></td>
 					<html:form action="/DeleteSuborder">
 				<td align="center"><html:image
 					onclick="confirmDelete(this.form, ${suborder.id})"
-					src="/tb/images/Delete.gif" alt="Delete Suborder" /></td>
+					src="/tb/images/Delete.gif" alt="Delete Suborder" titleKey="main.headlinedescription.suborders.delete.text"/></td>
 					</html:form>
 			</c:when>
 			<c:otherwise>
 				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
-					alt="Edit Suborder" /></td>
+					alt="Edit Suborder" title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>"/></td>
 				<td align="center"><img height="12px" width="12px" src="/tb/images/verbot.gif"
-					alt="Delete Suborder" /></td>
+					alt="Delete Suborder" title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>"/></td>
 			</c:otherwise>
 		</c:choose>
 		</tr>
@@ -143,7 +143,7 @@
 	<c:if test="${employeeAuthorized || employeeIsResponsible}">
 		<tr>
 			<html:form action="/CreateSuborder">
-				<td class="noBborderStyle" colspan="4"><html:submit styleId="button">
+				<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">
 					<bean:message key="main.general.button.createsuborder.text" />
 				</html:submit></td>
 			</html:form>

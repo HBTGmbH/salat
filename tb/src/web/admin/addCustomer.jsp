@@ -64,15 +64,15 @@
 	<table class="center">
 		<tr>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'false'); return false" styleId="button">
+				onclick="setStoreAction(this.form, 'save', 'false'); return false" styleId="button"  titleKey="main.general.button.save.alttext.text">
 				<bean:message key="main.general.button.save.text" />
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'true'); return false" styleId="button">
+				onclick="setStoreAction(this.form, 'save', 'true'); return false" styleId="button" titleKey="main.general.button.saveandcontinue.alttext.text">
 				<bean:message key="main.general.button.saveandcontinue.text" />
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button">
+				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button" titleKey="main.general.button.reset.alttext.text">
 				<bean:message key="main.general.button.reset.text" />
 			</html:submit></td>
 		</tr>

@@ -51,7 +51,7 @@
 		<tr>
 			<html:form action="/CreateCustomerorder">
 				<td class="noBborderStyle" colspan="4"><html:submit
-					styleId="button">
+					styleId="button" titleKey="main.general.button.createcustomerorder.alttext.text">
 					<bean:message key="main.general.button.createcustomerorder.text" />
 				</html:submit></td>
 			</html:form>
@@ -143,12 +143,12 @@
 		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
 				href="/tb/do/EditCustomerorder?coId=${customerorder.id}">
-				<img src="/tb/images/Edit.gif" alt="Edit Customerorder" />
+				<img src="/tb/images/Edit.gif" alt="Edit Customerorder" title="<bean:message key="main.headlinedescription.orders.edit.text"/>"/>
 			</html:link></td>
 			<html:form action="/DeleteCustomerorder">
 				<td align="center"><html:image
 					onclick="confirmDelete(this.form, ${customerorder.id})"
-					src="/tb/images/Delete.gif" alt="Delete Customerorder" /></td>
+					src="/tb/images/Delete.gif" alt="Delete Customerorder" titleKey="main.headlinedescription.orders.edit.text"/></td>
 			</html:form>
 		</c:if>
 		</tr>
@@ -157,7 +157,7 @@
 		<tr>
 			<html:form action="/CreateCustomerorder">
 				<td class="noBborderStyle" colspan="4"><html:submit
-					styleId="button">
+					styleId="button" titleKey="main.general.button.createcustomerorder.alttext.text">
 					<bean:message key="main.general.button.createcustomerorder.text" />
 				</html:submit></td>
 			</html:form>
