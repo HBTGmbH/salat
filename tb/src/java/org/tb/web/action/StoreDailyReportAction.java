@@ -573,6 +573,15 @@ public class StoreDailyReportAction extends DailyReportAction {
 				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
 				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
 				
+				request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
+				request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
+				request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());
+				request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
+				request.getSession().setAttribute("breakhours", DateUtils.getCompleteHoursToDisplay());
+				request.getSession().setAttribute("breakminutes", DateUtils.getMinutesToDisplay());
+				request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
+				request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
+				
 				if (!addMoreReprts) {
 					// refresh overtime and vacation
 					refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);					

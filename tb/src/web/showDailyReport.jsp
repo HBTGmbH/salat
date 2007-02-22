@@ -142,33 +142,6 @@
 			</html:select> </td>
 		</tr>
 
-		<!-- select employee -->
-		<!--  
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="employeeId" value="${currentEmployeeId}"
-				onchange="setUpdateTimereportsAction(this.form)">
-
-				<html:option value="-1">
-					<bean:message key="main.general.allemployees.text" />
-				</html:option>
-
-				<html:options collection="employeeswithcontract"
-					labelProperty="name" property="id" />
-			</html:select> 
-			-->
-			<!--  
-			<logic:equal name="currentEmployeeId" value="-1"
-				scope="session">
-				<span style="color:red"> <b><bean:message
-					key="main.general.selectemployee.editable.text" />.</b> </span>
-			</logic:equal>
-			--><!--  </td>
-		</tr>
-		-->
-
 		<!-- select order -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

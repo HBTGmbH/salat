@@ -271,7 +271,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		//selected view and selected dates
 		String selectedView = reportForm.getView();
 		if (selectedView == null) {
-			throw new RuntimeException("view = null");
+			selectedView = GlobalConstants.VIEW_DAILY;
 		}
 		Date beginDate;
 		Date endDate;
