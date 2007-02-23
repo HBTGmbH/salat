@@ -83,8 +83,8 @@
 </jsp:include>
 <br>
 <html:form action="/StoreDailyReport">	
-	<h2><bean:message
-		key="main.general.entertimereportproperties.text" />:</h2>
+	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
+		key="main.general.entertimereportproperties.text" />:<br></span>
 	<br>
 	<table width="800" border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">

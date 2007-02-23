@@ -33,8 +33,8 @@
 	</jsp:include>
 	<br>
 	<p>
-	<h2><bean:message
-		key="main.general.entercustomerorderproperties.text" />:</h2>
+	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
+		key="main.general.entercustomerorderproperties.text" />:<br></span>
 	</p>
 	<br>
 

@@ -35,8 +35,8 @@
 	</jsp:include>
 	<br>
 	<p>
-	<h2><bean:message
-		key="main.general.enteremployeecontractproperties.text" />:</h2>
+	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
+		key="main.general.enteremployeecontractproperties.text" />:<br></span>
 	<br>
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">

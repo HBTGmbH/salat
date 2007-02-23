@@ -15,7 +15,7 @@
 </head>
 <body>
 <p>
-<h2>in Bearbeitung...  =P</h2>
+<span style="font-size:14pt;font-weight:bold;"><br>in Bearbeitung...  =P<br></span>
 </p>
 <p></p>
 <br>

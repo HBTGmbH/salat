@@ -27,7 +27,7 @@
 </jsp:include>
 <br>
 <p>
-<h2><bean:message key="main.general.mainmenu.matrix.text" /></h2>
+<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.matrix.text" /><br></span>
 </p>
 <br>
 <html:form action="/ShowMatrix">
@@ -266,7 +266,7 @@
 		<table width="60%">
 			<tr>
 				<th class="matrix noBborderStyle" colspan="3">
-				<h2><bean:message key="main.matrixoverview.headline.tb.text" /></h2>
+				<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.matrixoverview.headline.tb.text" /><br></span>
 				</th>
 			</tr>
 			<tr>

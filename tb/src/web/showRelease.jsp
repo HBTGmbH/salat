@@ -68,7 +68,7 @@
 </jsp:include>
 <br>
 	<p>
-	<h2><bean:message key="main.general.mainmenu.release.title.text" />:</h2>
+	<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.release.title.text" />:<br></span>
 	</p>
 	<br>
 	<html:form action="/ShowRelease">

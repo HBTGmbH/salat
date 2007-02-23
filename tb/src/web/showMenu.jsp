@@ -25,7 +25,7 @@
 </head>
 <body>
 <center>
-<h2 style="color: black"><bean:message key="main.general.mainmenu.welcome.text" /></h2>
+<h2 style="color: black"><bean:message key="main.general.mainmenu.welcome.text" /><br></span>
 </center>
 <br>
 <p><bean:message key="main.general.mainmenu.logininfo.text" /> <b>'<%=loginEmployee.getFirstname()%> <%=loginEmployee.getLastname()%>'</b> (<%=loginEmployee.getLoginname()%>) [<%=loginEmployee.getStatus()%>]</p>

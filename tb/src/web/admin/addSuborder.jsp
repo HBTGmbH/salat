@@ -42,7 +42,7 @@
 	</jsp:include>
 	<br>
 	<p>
-	<h2><bean:message key="main.general.entersuborderproperties.text" />:</h2>
+	<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.entersuborderproperties.text" />:<br></span>
 	</p>
 	<br>
 	<table class="center backgroundcolor">

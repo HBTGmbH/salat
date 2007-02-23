@@ -24,7 +24,7 @@
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
-<br><h2><bean:message key="main.general.mainmenu.overview.text" /></h2>
+<br><span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.overview.text" /><br></span>
 <br>
 <html:form action="/ShowWelcome">
 &nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)"

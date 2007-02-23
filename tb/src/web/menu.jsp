@@ -30,13 +30,13 @@ window.onload=startList;
 </jsp:include>
 
 <center>
-<h2><bean:message key="main.general.mainmenu.menu.text" /></h2>
+<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.menu.text" /><br></span>
 </center>
 -->
 <table width="100%">
   <tr>
     <td class="noBborderStyle" align="center" width="33%"></td>
-    <td class="noBborderStyle" align="center" valign="top" width="33%"><h2><bean:message key="main.general.mainmenu.menu.text" /></h2></td>
+    <td class="noBborderStyle" align="center" valign="top" width="33%"><span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.menu.text" /></span></td>
     <td class="noBborderStyle" align="right" valign="top" width="33%">
     	<jsp:include flush="true" page="/version.jsp">
 			<jsp:param name="version" value="Version" />

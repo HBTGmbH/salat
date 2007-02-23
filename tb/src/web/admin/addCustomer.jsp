@@ -31,7 +31,7 @@
 	</jsp:include>
 	<br>
 	<p>
-	<h2><bean:message key="main.general.entercustomerproperties.text" />:</h2>
+	<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.entercustomerproperties.text" />:<br></span>
 	</p>
 	<br>
 	<table border="0" cellspacing="0" cellpadding="2"

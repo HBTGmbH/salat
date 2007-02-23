@@ -70,7 +70,7 @@
 </jsp:include>
 <br>
 <p>
-<h2><bean:message key="main.general.mainmenu.monthly.text" /></h2>
+<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.monthly.text" /><br></span>
 </p>
 <br>
 <html:form action="/ShowMonthlyReport">

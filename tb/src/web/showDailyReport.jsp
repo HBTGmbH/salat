@@ -116,7 +116,7 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<h2><bean:message key="main.general.mainmenu.daily.text" /></h2>
+<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.daily.text" /><br></span>
 <br>
 <html:form action="/ShowDailyReport">
 	<table class="center backgroundcolor">

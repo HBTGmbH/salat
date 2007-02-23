@@ -36,8 +36,8 @@
 	</jsp:include>
 	<br>
 	<p>
-	<h2><bean:message
-		key="main.general.enteremployeeorderproperties.text" />:</h2></p>
+	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
+		key="main.general.enteremployeeorderproperties.text" />:<br></span></p>
 	<br>
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
