@@ -35,21 +35,23 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	<p>
 	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
-		key="main.general.enteremployeeorderproperties.text" />:<br></span></p>
+		key="main.general.enteremployeeorderproperties.text" />:<br></span>
 	<br>
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
 		<tr>
+			<td align="left" colspan="2" class="noBborderStyle">
+				<span style="color:red"><html:errors property="overleap" /></span>
+			</td>
+		</tr>
+		<tr>
 			<td align="left" colspan="2" class="noBborderStyle"><c:choose>
-				<c:when test="${employeeorderalreadyexists}">
-					<i><bean:message
-						key="form.employeeorder.error.employeesuborder.alreadyexist" /></i>
+				<c:when test="${newemployeeorder}">
+					<i><bean:message key="main.employeeorder.new.text" /></i>
 				</c:when>
 				<c:otherwise>
-					<i><bean:message
-						key="form.employeeorder.error.employeesuborder.isnew" /></i>
+					<i><bean:message key="main.employeeorder.modify.text" /></i>
 				</c:otherwise>
 			</c:choose></td>
 		</tr>
@@ -59,8 +61,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.employee.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="employeeContractId"
-				onchange="setStoreAction(this.form, 'refreshEmployees')">
+				property="employeeContractId">
 				<c:forEach var="employeecontract" items="${employeecontracts}" >
 					<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 						<html:option value="${employeecontract.id}">
@@ -71,6 +72,7 @@
 			</html:select> </td>
 		</tr>
 
+		<!-- Auftrag -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.customerorder.text" /></b></td>
@@ -83,6 +85,8 @@
 			</html:select> <c:out value="${selectedcustomerorder.description}"></c:out> <span
 				style="color:red"><html:errors property="orderId" /></span></td>
 		</tr>
+		
+		<!-- Unterauftrag -->
 		<tr>
 		<td align="left" class="noBborderStyle"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></td>
@@ -96,6 +100,7 @@
 		</c:if> <html:hidden property="suborderId" /> <span style="color:red"><html:errors
 			property="suborderId" /></span></td>
 		</tr>
+		
 		<!-- 
 		<tr>
             <td align="left" class="noBborderStyle">
@@ -108,6 +113,7 @@
         </tr>  
         -->
 
+		<!-- Gültig ab -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.validfrom.text" /></b></td>
@@ -145,6 +151,7 @@
 				property="validFrom" /></span></td>
 		</tr>
 
+		<!-- Gültig bis -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.validuntil.text" /></b></td>
@@ -158,6 +165,7 @@
 				property="validUntil" /></span></td>
 		</tr>
 
+		<!-- Dauerauftrag -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.standingorder.text" /></b></td>
@@ -201,10 +209,12 @@
 				onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button" titleKey="main.general.button.save.alttext.text">
 				<bean:message key="main.general.button.save.text" />
 			</html:submit></td>
-			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button" titleKey="main.general.button.saveandcontinue.alttext.text">
-				<bean:message key="main.general.button.saveandcontinue.text" />
-			</html:submit></td>
+			<c:if test="${newemployeeorder}">
+				<td class="noBborderStyle"><html:submit
+					onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button" titleKey="main.general.button.saveandcontinue.alttext.text">
+					<bean:message key="main.general.button.saveandcontinue.text" />
+				</html:submit></td>
+			</c:if>
 			<td class="noBborderStyle"><html:submit
 				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button" titleKey="main.general.button.reset.alttext.text">
 				<bean:message key="main.general.button.reset.text" />

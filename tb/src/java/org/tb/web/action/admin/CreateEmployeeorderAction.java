@@ -141,7 +141,9 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		request.getSession().removeAttribute("eoId");
 		
 		// forward to form jsp
-		checkDatabaseForEmployeeOrder(request, employeeOrderForm, employeecontractDAO, employeeorderDAO);
+//		checkDatabaseForEmployeeOrder(request, employeeOrderForm, employeecontractDAO, employeeorderDAO);
+		
+		request.getSession().setAttribute("newemployeeorder", true);
 		return mapping.findForward("success");
 	}
 	

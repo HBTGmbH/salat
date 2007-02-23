@@ -174,7 +174,16 @@
       	<td><bean:write name="employeeorder" property="sign"/></td>
       	 -->
 		<td><c:out value="${employeeorder.fromDate}" /></td>
-		<td><c:out value="${employeeorder.untilDate}" /></td>
+		<td>
+			<c:choose>
+				<c:when test="${employeeorder.untilDate == null}">
+					<bean:message key="main.employeeorder.openend.text" />
+				</c:when>
+				<c:otherwise>
+					<c:out value="${employeeorder.untilDate}" />
+				</c:otherwise>
+			</c:choose>
+		</td>
 		<td align="center"><html:checkbox name="employeeorder"
 			property="standingorder" disabled="true" /></td>
 		<td><c:out value="${employeeorder.debithours}" /></td>

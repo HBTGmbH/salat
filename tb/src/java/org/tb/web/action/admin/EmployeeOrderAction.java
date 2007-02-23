@@ -16,31 +16,31 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 	
 		
 	
-	/**
-	 * Checks, if the employeeorder exists in the database. If it exists, the form is filled with the data and the session attribute "employeeorderalreadyexists" is set to true.
-	 * @param request
-	 * @param eoForm
-	 */
-	protected void checkDatabaseForEmployeeOrder(HttpServletRequest request, AddEmployeeOrderForm eoForm, EmployeecontractDAO employeecontractDAO, EmployeeorderDAO employeeorderDAO) {
-		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
-		long employeecontractId = employeecontract.getId();
-		long suborderId = eoForm.getSuborderId();
-		
-		Employeeorder employeeorder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderId(employeecontractId, suborderId);
-		if (employeeorder != null) {
-			request.getSession().setAttribute("employeeorderalreadyexists", true);
-			//fill form with data from existing employeeorder
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-			eoForm.setValidFrom(simpleDateFormat.format(employeeorder.getFromDate()));
-			eoForm.setValidUntil(simpleDateFormat.format(employeeorder.getUntilDate()));
-			eoForm.setStandingorder(employeeorder.getStandingorder());
-			eoForm.setDebithours(employeeorder.getDebithours());
-			eoForm.setStatus(employeeorder.getStatus());
-			eoForm.setStatusreport(employeeorder.getStatusreport());
-		} else {
-			request.getSession().setAttribute("employeeorderalreadyexists", false);
-		}
-	}
+//	/**
+//	 * Checks, if the employeeorder exists in the database. If it exists, the form is filled with the data and the session attribute "employeeorderalreadyexists" is set to true.
+//	 * @param request
+//	 * @param eoForm
+//	 */
+//	protected void checkDatabaseForEmployeeOrder(HttpServletRequest request, AddEmployeeOrderForm eoForm, EmployeecontractDAO employeecontractDAO, EmployeeorderDAO employeeorderDAO) {
+//		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
+//		long employeecontractId = employeecontract.getId();
+//		long suborderId = eoForm.getSuborderId();
+//		
+//		Employeeorder employeeorder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderId(employeecontractId, suborderId);
+//		if (employeeorder != null) {
+//			request.getSession().setAttribute("employeeorderalreadyexists", true);
+//			//fill form with data from existing employeeorder
+//			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//			eoForm.setValidFrom(simpleDateFormat.format(employeeorder.getFromDate()));
+//			eoForm.setValidUntil(simpleDateFormat.format(employeeorder.getUntilDate()));
+//			eoForm.setStandingorder(employeeorder.getStandingorder());
+//			eoForm.setDebithours(employeeorder.getDebithours());
+//			eoForm.setStatus(employeeorder.getStatus());
+//			eoForm.setStatusreport(employeeorder.getStatusreport());
+//		} else {
+//			request.getSession().setAttribute("employeeorderalreadyexists", false);
+//		}
+//	}
 	
 	
 	/**

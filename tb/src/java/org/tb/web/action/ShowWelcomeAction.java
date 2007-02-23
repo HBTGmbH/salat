@@ -105,6 +105,9 @@ public class ShowWelcomeAction extends DailyReportAction {
 			warning.setText(timereport.getTimeReportAsString());
 			warnings.add(warning);
 		}
+		
+		
+		
 		if (warnings != null && !warnings.isEmpty()) {
 			request.getSession().setAttribute("warnings", warnings);
 			request.getSession().setAttribute("warningsPresent", true);

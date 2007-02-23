@@ -47,15 +47,15 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	}
 	
 	
-	/**
-	 * 
-	 * @param employeecontractId
-	 * @param suborderId
-	 * @return
-	 */
-	public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
-		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ?").setLong(0, employeecontractId).setLong(1, suborderId).uniqueResult();
-	}
+//	/**
+//	 * 
+//	 * @param employeecontractId
+//	 * @param suborderId
+//	 * @return
+//	 */
+//	public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
+//		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ?").setLong(0, employeecontractId).setLong(1, suborderId).uniqueResult();
+//	}
 	
 	/**
 	 * 
@@ -81,18 +81,18 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ? and fromdate <= ? and untildate >= ?").setLong(0, employeecontractId).setLong(1, suborderId).setDate(2, date).setDate(3, date).uniqueResult();
 	}
 	
-	/**
-	 * Gets the employeeorder for the given sign.
-	 * 
-	 * @param String sign
-	 * 
-	 * @return Employeeorder
-	 */
-	public Employeeorder getEmployeeorderBySign(String sign) {
-		Employeeorder co = (Employeeorder) getSession().createQuery("from Employeeorder c where c.sign = ?").setString(0, sign).uniqueResult();
-		return co;
-	}
-	
+//	/**
+//	 * Gets the employeeorder for the given sign.
+//	 * 
+//	 * @param String sign
+//	 * 
+//	 * @return Employeeorder
+//	 */
+//	public Employeeorder getEmployeeorderBySign(String sign) {
+//		Employeeorder co = (Employeeorder) getSession().createQuery("from Employeeorder c where c.sign = ?").setString(0, sign).uniqueResult();
+//		return co;
+//	}
+//	
 	
 	/**
 	 * Gets the list of employeeorders for the given employee contract id.
@@ -105,11 +105,21 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	}
 	
 	/**
-	 * Gets the list of employeeorders for the given employee id.
+	 * Gets the list of employeeorders for the given employee contract id.
 	 * 
-	 * @param employeeId
+	 * @param employeeContractId
 	 * @return
 	 */
+	public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId, long suborderId) {
+		return getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = ? and SUBORDER_ID = ? order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, employeeContractId).setLong(1, suborderId).list();
+	}
+	
+//	/**
+//	 * Gets the list of employeeorders for the given employee id.
+//	 * 
+//	 * @param employeeId
+//	 * @return
+//	 */
 //	public List<Employeeorder> getEmployeeOrdersByEmployeeId(long employeeId) {
 //		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);
 //		long employeeContractId = employeecontract.getId();
@@ -136,15 +146,15 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).list();
 	}
 	
-	/**
-	 * 
-	 * @param orderId
-	 * @param employeeId
-	 * @return Returns a list of all {@link Employeeorder}s associated to the given orderId and employeeId.
-	 */
-	public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeId(long orderId, long employeeId) {
-		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? and employeecontract.employee.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).setLong(1, employeeId).list();
-	}
+//	/**
+//	 * 
+//	 * @param orderId
+//	 * @param employeeId
+//	 * @return Returns a list of all {@link Employeeorder}s associated to the given orderId and employeeId.
+//	 */
+//	public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeId(long orderId, long employeeId) {
+//		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? and employeecontract.employee.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).setLong(1, employeeId).list();
+//	}
 	
 	/**
 	 * 

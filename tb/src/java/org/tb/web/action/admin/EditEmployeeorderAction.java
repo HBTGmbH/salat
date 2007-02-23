@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -73,7 +74,9 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		setFormEntries(mapping, request, eoForm, eo);
 		
 		// check if the employeeorder already exists and fill the form with the existing data
-		checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
+//		checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
+		
+		request.getSession().setAttribute("newemployeeorder", false);
 		
 		// forward to employee order add/edit form
 		return mapping.findForward("success");	
@@ -144,8 +147,8 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 //			request.getSession().setAttribute("selectedcustomerorder", firstCustomerorder);
 //		}
 		
-		//List<Suborder> suborders = suborderDAO.getSuborders();
-		//request.getSession().setAttribute("suborders", suborders);		
+		// List<Suborder> suborders = suborderDAO.getSuborders();
+		// request.getSession().setAttribute("suborders", suborders);		
 		request.getSession().setAttribute("suborders", eo.getSuborder().getCustomerorder().getSuborders());
 		
 		eoForm.setEmployeeContractId(ec.getId());
@@ -157,10 +160,14 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		eoForm.setStandingorder(eo.getStandingorder());
 		eoForm.setStatusreport(eo.getStatusreport());
 		
-		Date fromDate = new Date(eo.getFromDate().getTime()); // convert to java.util.Date
-		eoForm.setValidFrom(DateUtils.getSqlDateString(fromDate));
-		Date untilDate = new Date(eo.getUntilDate().getTime()); // convert to java.util.Date
-		eoForm.setValidUntil(DateUtils.getSqlDateString(untilDate));
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		eoForm.setValidFrom(simpleDateFormat.format(eo.getFromDate()));
+		if (eo.getUntilDate() != null) {
+			eoForm.setValidUntil(simpleDateFormat.format(eo.getUntilDate()));
+		} else {
+			eoForm.setValidUntil("");
+		}
+		
 	}
 	
 	

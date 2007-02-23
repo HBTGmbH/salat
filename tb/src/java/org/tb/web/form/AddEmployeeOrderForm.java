@@ -201,7 +201,12 @@ public class AddEmployeeOrderForm extends ActionForm {
 		Date coUntilDate = customerorder.getUntilDate();
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		String coFromDateString = simpleDateFormat.format(coFromDate);
-		String coUntilDateString = simpleDateFormat.format(coUntilDate);
+		String coUntilDateString;
+		if (coUntilDate != null) {
+			coUntilDateString = simpleDateFormat.format(coUntilDate);
+		} else {
+			coUntilDateString = "";
+		}
 		setValidFrom(coFromDateString);
 		setValidUntil(coUntilDateString);
 	}

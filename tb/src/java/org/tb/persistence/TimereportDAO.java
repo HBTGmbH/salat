@@ -236,6 +236,10 @@ public class TimereportDAO extends HibernateDaoSupport {
 		return allTimereports;
 	}
 	
+//	public List<Timereport> getTimereportsUnassignedToAnEmployeeorder() {
+//		
+//	}
+	
 	/**
 	 * Gets a list of all {@link Timereport}s that fulfill following criteria: 
 	 * 1) associated to the given employee contract id
@@ -342,11 +346,25 @@ public class TimereportDAO extends HibernateDaoSupport {
 	 */
 	public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long contractId, java.sql.Date begin, java.sql.Date end, long suborderId) {	
 		List<Timereport> allTimereports;
-		if (begin.compareTo(end) == 0) {
-			allTimereports = getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate asc, sequencenumber asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).setLong(3, suborderId).list();
+		if (end == null) {
+			allTimereports = getSession().createQuery(
+					"from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate asc, sequencenumber asc")
+			.setLong(0, contractId).setDate(1, begin).setLong(3, suborderId).list();
 		} else {
-			allTimereports = getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate asc, suborder.customerorder.sign asc, suborder.sign asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).setLong(3, suborderId).list();
-		}
+			if (begin.compareTo(end) == 0) {
+				allTimereports = getSession()
+						.createQuery(
+								"from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate asc, sequencenumber asc")
+						.setLong(0, contractId).setDate(1, begin).setDate(2,
+								end).setLong(3, suborderId).list();
+			} else {
+				allTimereports = getSession()
+						.createQuery(
+								"from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate asc, suborder.customerorder.sign asc, suborder.sign asc")
+						.setLong(0, contractId).setDate(1, begin).setDate(2,
+								end).setLong(3, suborderId).list();
+			}
+		}		
 		return allTimereports;
 	}
 	
