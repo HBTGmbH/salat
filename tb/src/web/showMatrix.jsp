@@ -26,9 +26,7 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<p>
 <span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.matrix.text" /><br></span>
-</p>
 <br>
 <html:form action="/ShowMatrix">
 	<table class="center backgroundcolor">

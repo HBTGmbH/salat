@@ -24,9 +24,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<p><span style="font-size:14pt;font-weight:bold;"><br>
+<span style="font-size:14pt;font-weight:bold;"><br>
 <bean:message key="main.general.mainmenu.settings.title.text" />:<br>
-</span></p>
+</span>
 <br>
 <html:form action="/ShowSettings">
 	<table border="0" cellspacing="0" cellpadding="2"
@@ -54,7 +54,7 @@
 			<td class="noBborderStyle"></td>
 		</tr>
 		<tr>
-		<td colspan="2" align="left" class="noBborderStyle">&nbsp;</td>
+			<td colspan="2" align="left" class="noBborderStyle">&nbsp;</td>
 		</tr>
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

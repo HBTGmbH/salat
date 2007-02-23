@@ -38,10 +38,8 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<p>
 <span style="font-size:14pt;font-weight:bold;"><br><bean:message
 	key="main.general.mainmenu.employeecontracts.text" /><br></span>
-</p>
 <br>
 <span style="color:red"><html:errors footer="<br>" /> </span>
 

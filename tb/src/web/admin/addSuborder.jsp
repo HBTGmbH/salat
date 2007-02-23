@@ -9,18 +9,23 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <%
-            Long coId = (Long)request.getSession().getAttribute("currentOrderId");
-            String coIdString = coId.toString();
-            String invoiceString = (String)request.getSession().getAttribute("invoice");
-            Double hr = (Double)request.getSession().getAttribute("hourlyRate");
-            String hrString = hr.toString();
-            String currency = (String)request.getSession().getAttribute("currency");
+			Long coId = (Long) request.getSession().getAttribute(
+			"currentOrderId");
+	String coIdString = coId.toString();
+	String invoiceString = (String) request.getSession().getAttribute(
+			"invoice");
+	Double hr = (Double) request.getSession()
+			.getAttribute("hourlyRate");
+	String hrString = hr.toString();
+	String currency = (String) request.getSession().getAttribute(
+			"currency");
 %>
 
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addsuborder.text" /></title>
+<title><bean:message key="main.general.application.title" /> -
+<bean:message key="main.general.addsuborder.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
 <script type="text/javascript" language="JavaScript">
@@ -41,9 +46,9 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	<p>
-	<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.entersuborderproperties.text" />:<br></span>
-	</p>
+	<span style="font-size:14pt;font-weight:bold;"><br>
+	<bean:message key="main.general.entersuborderproperties.text" />:<br>
+	</span>
 	<br>
 	<table class="center backgroundcolor">
 		<tr>
@@ -52,8 +57,8 @@
 			<td align="left" class="noBborderStyle"><html:select
 				property="customerorderId" value="<%=coIdString%>"
 				onchange="setStoreAction(this.form,'refreshHourlyRate')">
-				<html:options collection="customerorders" labelProperty="signAndDescription"
-					property="id" />
+				<html:options collection="customerorders"
+					labelProperty="signAndDescription" property="id" />
 			</html:select></td>
 		</tr>
 
@@ -79,9 +84,8 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.shortdescription.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="shortdescription" size="20"
-				maxlength="20" /> <span style="color:red"><html:errors
-				property="shortdescription" /></span></td>
+				property="shortdescription" size="20" maxlength="20" /> <span
+				style="color:red"><html:errors property="shortdescription" /></span></td>
 		</tr>
 
 		<tr>
@@ -117,7 +121,7 @@
 				property="hourlyRate" size="20" value="<%=hrString%>" /> <span
 				style="color:red"><html:errors property="hourlyRate" /></span></td>
 		</tr>
-		
+
 		<!-- is it a standard suborder? -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
@@ -125,7 +129,7 @@
 			<td align="left" class="noBborderStyle"><html:checkbox
 				property="standard" /></td>
 		</tr>
-		
+
 		<!-- comment necessary? -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
@@ -133,22 +137,26 @@
 			<td align="left" class="noBborderStyle"><html:checkbox
 				property="commentnecessary" /></td>
 		</tr>
-		
+
 
 	</table>
 	<br>
 	<table class="center">
 		<tr>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button" titleKey="main.general.button.save.alttext.text">
+				onclick="setStoreAction(this.form, 'save', 'false');return false"
+				styleId="button" titleKey="main.general.button.save.alttext.text">
 				<bean:message key="main.general.button.save.text" />
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button" titleKey="main.general.button.saveandcontinue.alttext.text">
+				onclick="setStoreAction(this.form, 'save', 'true');return false"
+				styleId="button"
+				titleKey="main.general.button.saveandcontinue.alttext.text">
 				<bean:message key="main.general.button.saveandcontinue.text" />
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button" titleKey="main.general.button.reset.alttext.text">
+				onclick="setStoreAction(this.form, 'reset', 'false')"
+				styleId="button" titleKey="main.general.button.reset.alttext.text">
 				<bean:message key="main.general.button.reset.text" />
 			</html:submit></td>
 		</tr>
