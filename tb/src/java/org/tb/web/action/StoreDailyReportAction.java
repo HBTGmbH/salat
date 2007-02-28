@@ -22,6 +22,7 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
@@ -442,6 +443,13 @@ public class StoreDailyReportAction extends DailyReportAction {
 					tr.setCosts(reportForm.getCosts());
 					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
 //					tr.setStatus(reportForm.getStatus());
+					
+					// set employee order
+					Employeeorder employeeorder = (Employeeorder) request.getSession().getAttribute("saveEmployeeOrder");
+					tr.setEmployeeorder(employeeorder);
+					request.getSession().removeAttribute("saveEmployeeOrder");
+					
+					
 				} else {
 					// 'special' reports: set suborder in timereport to null.				
 					tr.setSuborder(null);				
@@ -872,17 +880,32 @@ public class StoreDailyReportAction extends DailyReportAction {
 		} catch (Exception e) {
 			throw new RuntimeException("date cannot be parsed (yyyy-MM-dd)");
 		}		
-		if (authorized && loginEmployeecontract.getId() != ecId) {
-			if (releaseDate.before(refDate)) {
-				errors.add("release", new ActionMessage("form.timereport.error.not.released"));
+		if (!loginEmployeecontract.getEmployee().getSign().equals("adm")) {
+			if (authorized && loginEmployeecontract.getId() != ecId) {
+				if (releaseDate.before(refDate)) {
+					errors.add("release", new ActionMessage(
+							"form.timereport.error.not.released"));
+				}
+			} else {
+				if (!releaseDate.before(refDate)) {
+					errors.add("release", new ActionMessage(
+							"form.timereport.error.released"));
+				}
 			}
+			if (!refDate.after(acceptanceDate)) {
+				errors.add("release", new ActionMessage(
+						"form.timereport.error.accepted"));
+			}
+		}		
+		// check for adequate employee order
+		List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(reportForm.getEmployeeContractId(),
+				reportForm.getSuborderSignId(), theDate);
+		if (employeeorders == null || employeeorders.isEmpty()) {
+			errors.add("employeeorder", new ActionMessage("form.timereport.error.employeeorder.notfound"));
+		} else if (employeeorders.size() > 1) {
+			errors.add("employeeorder", new ActionMessage("form.timereport.error.employeeorder.multiplefound"));
 		} else {
-			if (!releaseDate.before(refDate)) {
-				errors.add("release", new ActionMessage("form.timereport.error.released"));
-			}
-		}
-		if (!refDate.after(acceptanceDate)) {
-			errors.add("release", new ActionMessage("form.timereport.error.accepted"));
+			request.getSession().setAttribute("saveEmployeeOrder", employeeorders.get(0));
 		}
 		
 		

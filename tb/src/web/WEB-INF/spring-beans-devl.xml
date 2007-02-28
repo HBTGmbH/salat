@@ -11,14 +11,12 @@
 	<bean name="/LoginEmployee" class="org.tb.web.action.LoginEmployeeAction" />
 	<bean name="/LogoutEmployee" class="org.tb.web.action.LogoutEmployeeAction" />
 	<bean name="/CreateDailyReport" class="org.tb.web.action.CreateDailyReportAction" />
-	<bean name="/ShowMonthlyReport" class="org.tb.web.action.ShowMonthlyReportAction" />
 	<bean name="/ShowMatrix" class="org.tb.web.action.ShowMatrixAction" />
 	<bean name="/ShowDailyReport" class="org.tb.web.action.ShowDailyReportAction" />
 	<bean name="/UpdateDailyReport" class="org.tb.web.action.UpdateDailyReportAction" />
 	<bean name="/StoreDailyReport" class="org.tb.web.action.StoreDailyReportAction" />
 	<bean name="/EditDailyReport" class="org.tb.web.action.EditDailyReportAction" />
 	<bean name="/DeleteTimereportFromDailyDisplay" class="org.tb.web.action.DeleteTimereportFromDailyDisplayAction" />
-	<bean name="/DeleteTimereportFromMonthlyDisplay" class="org.tb.web.action.DeleteTimereportFromMonthlyDisplayAction" />
 	<bean name="/ShowSettings" class="org.tb.web.action.ShowSettingsAction" />
 	<bean name="/ShowWelcome" class="org.tb.web.action.ShowWelcomeAction" />
 	<bean name="/ShowRelease" class="org.tb.web.action.ShowReleaseAction" />
@@ -61,6 +59,7 @@
 	<bean name="/StoreEmployee" class="org.tb.web.action.admin.StoreEmployeeAction" /> 
 	 
 	<bean name="/CreateAdminList" class="org.tb.web.action.admin.CreateAdminListAction" />
+	<bean name="/ShowAdminOptions" class="org.tb.web.action.admin.ShowAdminOptionsAction" />
 
 	<!-- Data Access Objects -->
 	<bean name="employeeDAO" class="org.tb.persistence.EmployeeDAO">
@@ -88,8 +87,6 @@
 	<bean name="publicholidayDAO" class="org.tb.persistence.PublicholidayDAO">
 	</bean>
 	<bean name="referencedayDAO" class="org.tb.persistence.ReferencedayDAO">
-	</bean>
-	<bean name="monthlyreportDAO" class="org.tb.persistence.MonthlyreportDAO">
 	</bean>
 	<bean name="vacationDAO" class="org.tb.persistence.VacationDAO">
 	</bean>

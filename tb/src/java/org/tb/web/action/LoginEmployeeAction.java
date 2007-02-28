@@ -142,13 +142,13 @@ public class LoginEmployeeAction extends Action {
 						.getStandardSuborders();
 				if (standardSuborders != null && standardSuborders.size() > 0) {
 					// test if employeeorder exists
-					Employeeorder employeeorder;
+					List<Employeeorder> employeeorders;
 					for (Suborder suborder : standardSuborders) {
-						employeeorder = employeeorderDAO
-								.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+						employeeorders = employeeorderDAO
+								.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(
 										employeecontract.getId(), suborder
 												.getId(), date);
-						if (employeeorder == null) {
+						if (employeeorders == null || employeeorders.isEmpty()) {
 							// create employeeorder
 							SimpleDateFormat yearFormat = new SimpleDateFormat(
 									"yyyy");
@@ -162,7 +162,7 @@ public class LoginEmployeeAction extends Action {
 							java.sql.Date sqlUntilDate = new java.sql.Date(
 									untilDate.getTime());
 
-							employeeorder = new Employeeorder();
+							Employeeorder employeeorder = new Employeeorder();
 							if (suborder
 									.getCustomerorder()
 									.getSign()
@@ -189,7 +189,7 @@ public class LoginEmployeeAction extends Action {
 							Employee tmp = new Employee();
 							tmp.setSign("system");
 
-							employeeorderDAO.save(employeeorder, tmp);
+//							employeeorderDAO.save(employeeorder, tmp);
 
 						}
 					}

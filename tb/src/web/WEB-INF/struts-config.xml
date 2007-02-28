@@ -34,8 +34,6 @@
 			type="org.tb.web.form.LogoutEmployeeForm" />
 		<form-bean name="addDailyReportForm"
 			type="org.tb.web.form.AddDailyReportForm" />
-		<form-bean name="showMonthlyReportForm"
-			type="org.tb.web.form.ShowMonthlyReportForm" />
 		<form-bean name="showMatrixForm"
 			type="org.tb.web.form.ShowMatrixForm" />
 		<form-bean name="showDailyReportForm"
@@ -72,6 +70,8 @@
 			type="org.tb.web.form.ShowWelcomeForm" />
 		<form-bean name="showReleaseForm"
 			type="org.tb.web.form.ShowReleaseForm" />
+		<form-bean name="showAdminOptionsForm"
+			type="org.tb.web.form.ShowAdminOptionsForm" />	
 	</form-beans>
 
 
@@ -145,24 +145,10 @@
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 
-		<action path="/DeleteTimereportFromMonthlyDisplay"
-			input="/showMonthlyReport.jsp" name="addDailyReportForm">
-			<forward name="success" path="/showMonthlyReport.jsp" />
-			<forward name="error" path="/admin/error.jsp" />
-		</action>
-
 		<action path="/DeleteTimereportFromDailyDisplay"
 			input="/showDailyReport.jsp" name="addDailyReportForm">
 			<forward name="success" path="/showDailyReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
-		</action>
-
-		<action path="/ShowMonthlyReport" validate="true"
-			name="showMonthlyReportForm">
-			<forward name="success" path="/showMonthlyReport.jsp" />
-			<forward name="error" path="/admin/error.jsp" />
-			<forward name="newreport" path="/addDailyReport.jsp" />
-			<forward name="backtomenu" path="/showWelcome.jsp" />
 		</action>
 
 		<action path="/ShowDailyReport" input="/showDailyReport.jsp"
@@ -409,6 +395,12 @@
 
 		<action path="/CreateAdminList">
 			<forward name="success" path="/admin/list.jsp" />
+		</action>
+		
+		<action path="/ShowAdminOptions" input="/adminoptions.jsp"
+			validate="false" name="showAdminOptionsForm">
+			<forward name="success" path="/admin/adminoptions.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
 		</action>
 
 	</action-mappings>

@@ -48,6 +48,13 @@ public class Timereport implements Serializable {
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Suborder suborder;
 	
+	
+	/** Employeeorder */
+	@ManyToOne
+	@JoinColumn(name="EMPLOYEEORDER_ID")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	private Employeeorder employeeorder;
+	
 	/** Duration */
 	private Integer durationhours;
 	private Integer durationminutes;
@@ -109,6 +116,14 @@ public class Timereport implements Serializable {
 
 	public void setEmployeecontract(Employeecontract employeecontract) {
 		this.employeecontract = employeecontract;
+	}
+
+	public Employeeorder getEmployeeorder() {
+		return employeeorder;
+	}
+
+	public void setEmployeeorder(Employeeorder employeeorder) {
+		this.employeeorder = employeeorder;
 	}
 
 	public Integer getDurationhours() {

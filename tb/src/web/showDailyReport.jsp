@@ -637,7 +637,7 @@
 
 			<c:choose>
 				<c:when
-					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf') && (timereport.status eq 'commited')) || loginEmplyee.status eq 'adm'}">
+					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf') && (timereport.status eq 'commited')) || loginEmployee.status eq 'adm'}">
 
 					<!-- Kommentar -->
 					<td><html:textarea property="comment" cols="30" rows="1"

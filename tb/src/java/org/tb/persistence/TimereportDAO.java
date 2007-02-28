@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -48,6 +49,24 @@ public class TimereportDAO extends HibernateDaoSupport {
 	 */
 	public List<Timereport> getTimereports() {
 		return getSession().createQuery("from Timereport order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").list();
+	}
+	
+	/**
+	 * Get a list of all Timereports ordered by employee sign, customer order sign, suborder sign and refdate.
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getOrderedTimereports() {
+		return getSession().createQuery("from Timereport order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, referenceday.refdate asc").list();
+	}
+	
+	/**
+	 * Get a list of all Timereports where the employeeorder_id is null.
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsWithoutEmployeeOrderKey() {
+		return getSession().createQuery("from Timereport where employeeorder_id <= ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").setBigInteger(0, new BigInteger("0")).list();
 	}
 	
 	/**
@@ -368,6 +387,20 @@ public class TimereportDAO extends HibernateDaoSupport {
 		return allTimereports;
 	}
 	
+	/**
+	 * Gets a list of Timereports by employee order id.
+	 * 
+	 * @param employeeOrderId
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsByEmployeeOrderId(long employeeOrderId) {
+		
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeeorder.id = ? order by employeecontract.employee.sign asc, sequencenumber asc").setLong(0, employeeOrderId).list();
+
+		return allTimereports;
+	}
 	
 	/**
 	 * Gets a list of Timereports by date.

@@ -114,6 +114,20 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = ? and SUBORDER_ID = ? order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, employeeContractId).setLong(1, suborderId).list();
 	}
 	
+	/**
+	 * Gets the list of employeeorders for the given employee contract id.
+	 * 
+	 * @param employeeContractId
+	 * @return
+	 */
+	public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, Date date) {
+		return (List<Employeeorder>) getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = ? and " +
+				"SUBORDER_ID = ? and  " +
+				"fromdate <= ? and (untildate >= ? or untildate = null or untildate = '') " +
+				"order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+				.setLong(0, employeeContractId).setLong(1, suborderId).setDate(2, date).setDate(3, date).list();
+	}
+	
 //	/**
 //	 * Gets the list of employeeorders for the given employee id.
 //	 * 
@@ -134,7 +148,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	 * @return List<Employeeorder> 
 	 */
 	public List<Employeeorder> getEmployeeorders() {
-		return getSession().createQuery("from Employeeorder order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").list();
+		return getSession().createQuery("from Employeeorder order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").list();
 	}
 
 	/**
@@ -143,7 +157,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	 * @return Returns a list of all {@link Employeeorder}s associated to the given orderId.
 	 */
 	public List<Employeeorder> getEmployeeordersByOrderId(long orderId) {
-		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).list();
+		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).list();
 	}
 	
 //	/**
@@ -163,7 +177,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	 * @return Returns a list of all {@link Employeeorder}s associated to the given orderId and employeeContractId.
 	 */
 	public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeContractId(long orderId, long employeeContractId) {
-		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? and employeecontract.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).setLong(1, employeeContractId).list();
+		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? and employeecontract.id = ? order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).setLong(1, employeeContractId).list();
 	}
 	
 	/**
@@ -231,7 +245,8 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 				// TODO as soon as table STATUSREPORT is available...
 				
 				// check if related timereports exist
-				List<Timereport> timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(eo.getEmployeecontract().getId(), eo.getFromDate(), eo.getUntilDate(), eo.getSuborder().getId());
+//				List<Timereport> timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(eo.getEmployeecontract().getId(), eo.getFromDate(), eo.getUntilDate(), eo.getSuborder().getId());
+				List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeOrderId(eo.getId());
 				if (timereports == null || timereports.isEmpty()) {
 					deleteOk = true;
 				}

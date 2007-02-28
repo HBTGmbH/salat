@@ -108,6 +108,11 @@ window.onload=startList;
 		<li><html:link styleClass="menu" target="_blank" href="https://wiki.hbt.de/mediawiki/index.php/Benutzerhandbuch_SALAT">
 			<bean:message key="main.general.mainmenu.bhbextern.text" />
 		</html:link></li>
+		<c:if test="${loginEmployee.sign == 'adm'}">
+			<li><html:link styleClass="menu" action="/ShowAdminOptions">
+				Admin
+			</html:link></li>
+		</c:if>
 	</ul>
 	</li>
 	<li id="last"><html:link action="/LogoutEmployee">

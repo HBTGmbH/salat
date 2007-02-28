@@ -46,10 +46,10 @@
 			<bean:message key="main.settings.rule2.text" /><br>
 			<bean:message key="main.settings.rule3.text" /><br>
 			<bean:message key="main.settings.rule4.text" /><br>
-			<bean:message key="main.settings.rule41.text" /><br>
-			<bean:message key="main.settings.rule42.text" /><br>
-			<bean:message key="main.settings.rule43.text" /><br>
-			<bean:message key="main.settings.rule44.text" /><br>
+			&nbsp;&nbsp;<bean:message key="main.settings.rule41.text" /><br>
+			&nbsp;&nbsp;<bean:message key="main.settings.rule42.text" /><br>
+			&nbsp;&nbsp;<bean:message key="main.settings.rule43.text" /><br>
+			&nbsp;&nbsp;<bean:message key="main.settings.rule44.text" /><br>
 			</td>
 			<td class="noBborderStyle"></td>
 		</tr>
