@@ -330,10 +330,11 @@ public class Timereport implements Serializable {
 	
 	public String getTimeReportAsString() {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		return "("+simpleDateFormat.format(getReferenceday().getRefdate()) + ") (" 
-		+ getSuborder().getCustomerorder().getSign() + " / " 
-		+ getSuborder().getSign() + ") (" + getDurationhours() + ":" 
-		+ getDurationminutes() + ") (" + getTaskdescription() + ")";
+		return "TR["+getEmployeecontract().getEmployee().getSign()+" | "
+			+simpleDateFormat.format(getReferenceday().getRefdate()) + " | " 
+			+ getSuborder().getCustomerorder().getSign() + " / " 
+			+ getSuborder().getSign() + " | " + getDurationhours() + ":" 
+			+ getDurationminutes() + " | " + getTaskdescription() + "]";
 	}
 	
 }

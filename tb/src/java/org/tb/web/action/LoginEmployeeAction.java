@@ -149,20 +149,54 @@ public class LoginEmployeeAction extends Action {
 										employeecontract.getId(), suborder
 												.getId(), date);
 						if (employeeorders == null || employeeorders.isEmpty()) {
+							
+							// calculate time period
+							Date ecFromDate = employeecontract.getValidFrom();
+							Date ecUntilDate = employeecontract.getValidUntil();
+							Date soFromDate = suborder.getCustomerorder().getFromDate();
+							Date soUntilDate = suborder.getCustomerorder().getUntilDate();
+							Date fromDate = null;
+							Date untilDate = null;
+							
+							if (ecFromDate.before(soFromDate)) {
+								fromDate = soFromDate;
+							} else {
+								fromDate = ecFromDate;
+							}
+							
+							if (ecUntilDate == null && soUntilDate == null) {
+								//untildate remains null
+							} else if (ecUntilDate == null) {
+								untilDate = soUntilDate;
+							} else if (soUntilDate == null) {
+								untilDate = ecUntilDate;
+							} else if (ecUntilDate.before(soUntilDate)) {
+								untilDate = ecUntilDate;
+							} else {
+								untilDate = soUntilDate;
+							}
+							
+							
 							// create employeeorder
-							SimpleDateFormat yearFormat = new SimpleDateFormat(
-									"yyyy");
-							String year = yearFormat.format(date);
-							Date fromDate = simpleDateFormat.parse(year
-									+ "0101");
-							Date untilDate = simpleDateFormat.parse(year
-									+ "1231");
+//							SimpleDateFormat yearFormat = new SimpleDateFormat(
+//									"yyyy");
+//							String year = yearFormat.format(date);
+//							fromDate = simpleDateFormat.parse(year
+//									+ "0101");
+//							untilDate = simpleDateFormat.parse(year
+//									+ "1231");
+							
+							Employeeorder employeeorder = new Employeeorder();
+							
 							java.sql.Date sqlFromDate = new java.sql.Date(
 									fromDate.getTime());
-							java.sql.Date sqlUntilDate = new java.sql.Date(
-									untilDate.getTime());
-
-							Employeeorder employeeorder = new Employeeorder();
+							employeeorder.setFromDate(sqlFromDate);
+							
+							if (untilDate != null) {
+								java.sql.Date sqlUntilDate = new java.sql.Date(
+										untilDate.getTime());
+								employeeorder.setUntilDate(sqlUntilDate);
+							}							
 							if (suborder
 									.getCustomerorder()
 									.getSign()
@@ -177,19 +211,19 @@ public class LoginEmployeeAction extends Action {
 										.getCustomerorder().getHourly_rate());
 							}
 							employeeorder.setEmployeecontract(employeecontract);
-							employeeorder.setFromDate(sqlFromDate);
 							employeeorder.setSign(" ");
 							employeeorder.setStandingorder(true);
 							employeeorder.setStatus(" ");
 							employeeorder.setStatusreport(false);
 							employeeorder.setSuborder(suborder);
-							employeeorder.setUntilDate(sqlUntilDate);
 
 							// create tmp employee
 							Employee tmp = new Employee();
 							tmp.setSign("system");
 
-//							employeeorderDAO.save(employeeorder, tmp);
+							if (untilDate == null || (untilDate != null && !fromDate.after(untilDate))) {
+								employeeorderDAO.save(employeeorder, tmp);
+							}							
 
 						}
 					}
@@ -352,8 +386,15 @@ public class LoginEmployeeAction extends Action {
 			List<Warning> warnings = new ArrayList<Warning>();
 			for (Timereport timereport : timereports) {
 				Warning warning = new Warning();
-				warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE);
+				warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EC);
 				warning.setText(timereport.getTimeReportAsString());
+				warnings.add(warning);
+			}
+			timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontract);
+			for (Timereport timereport : timereports) {
+				Warning warning = new Warning();
+				warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EO);
+				warning.setText(timereport.getTimeReportAsString()+" "+timereport.getEmployeeorder().getEmployeeOrderAsString());
 				warnings.add(warning);
 			}
 			if (warnings != null && !warnings.isEmpty()) {

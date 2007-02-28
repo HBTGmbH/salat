@@ -478,9 +478,13 @@ public class StoreDailyReportAction extends DailyReportAction {
 				}
 				
 				java.util.Date releaseDate = ec.getReportReleaseDate();
+				java.util.Date acceptanceDate = ec.getReportAcceptanceDate();
 				java.util.Date refDate = tr.getReferenceday().getRefdate();
 				if (!refDate.after(releaseDate)) {
 					tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+				}
+				if (!refDate.after(acceptanceDate)) {
+					tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
 				}
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");

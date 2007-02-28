@@ -255,6 +255,23 @@ public class TimereportDAO extends HibernateDaoSupport {
 		return allTimereports;
 	}
 	
+	/**
+	 * Gets a list of all {@link Timereport}s that fulfill following criteria: 
+	 * 1) associated to the given employee contract
+	 * 2) refdate out of range of the associated employee order
+	 * 
+	 * @param employeecontract
+	 * @return Returns a {@link List} with all {@link Timereport}s, that fulfill the criteria.
+	 */
+	public List<Timereport> getTimereportsOutOfRangeForEmployeeOrder(Employeecontract employeecontract) {
+		Long employeeContractId = employeecontract.getId();
+		List<Timereport> allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and (t.referenceday.refdate < t.employeeorder.fromDate  or  t.referenceday.refdate > t.employeeorder.untilDate) order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc").setLong(0, employeeContractId).list();
+
+		return allTimereports;
+	}
+	
+	
 //	public List<Timereport> getTimereportsUnassignedToAnEmployeeorder() {
 //		
 //	}

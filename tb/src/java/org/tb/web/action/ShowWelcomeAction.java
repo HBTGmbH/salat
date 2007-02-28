@@ -101,12 +101,18 @@ public class ShowWelcomeAction extends DailyReportAction {
 		List<Warning> warnings = new ArrayList<Warning>();
 		for (Timereport timereport : timereports) {
 			Warning warning = new Warning();
-			warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE);
+			warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EC);
 			warning.setText(timereport.getTimeReportAsString());
 			warnings.add(warning);
 		}
 		
-		
+		timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontract);
+		for (Timereport timereport : timereports) {
+			Warning warning = new Warning();
+			warning.setSort(GlobalConstants.WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EO);
+			warning.setText(timereport.getTimeReportAsString()+" "+timereport.getEmployeeorder().getEmployeeOrderAsString());
+			warnings.add(warning);
+		}
 		
 		if (warnings != null && !warnings.isEmpty()) {
 			request.getSession().setAttribute("warnings", warnings);

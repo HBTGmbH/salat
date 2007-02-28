@@ -56,6 +56,9 @@
 				<td class="noBborderStyle" align="left">
 					<c:if test="${warning.sort eq 'timereportnotinrange'}">
 						<bean:message key="main.info.warning.timereportnotinrange" />:
+					</c:if>
+					<c:if test="${warning.sort eq 'timereportnotinrangeforeo'}">
+						<bean:message key="main.info.warning.timereportnotinrangeforeo" />:
 					</c:if>			
 				</td>
 				<td class="noBborderStyle" align="left">
