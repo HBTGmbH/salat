@@ -480,10 +480,18 @@ public class StoreDailyReportAction extends DailyReportAction {
 				java.util.Date releaseDate = ec.getReportReleaseDate();
 				java.util.Date acceptanceDate = ec.getReportAcceptanceDate();
 				java.util.Date refDate = tr.getReferenceday().getRefdate();
-				if (!refDate.after(releaseDate)) {
+				
+				boolean firstday = false;
+				if (!releaseDate.after(ec.getValidFrom()) &&  
+						!refDate.after(ec.getValidFrom())) {
+					firstday = true;
+				}
+				
+				
+				if (!refDate.after(releaseDate) && !firstday) {
 					tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
 				}
-				if (!refDate.after(acceptanceDate)) {
+				if (!refDate.after(acceptanceDate) && !firstday) {
 					tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
 				}
 				
@@ -883,20 +891,28 @@ public class StoreDailyReportAction extends DailyReportAction {
 					.getReferenceday());
 		} catch (Exception e) {
 			throw new RuntimeException("date cannot be parsed (yyyy-MM-dd)");
-		}		
+		}	
+		
+		// check, if refDate is first day
+		boolean firstday = false;
+		if (!employeecontract.getReportReleaseDate().after(employeecontract.getValidFrom()) &&  
+				!refDate.after(employeecontract.getValidFrom())) {
+			firstday = true;
+		}
+		
 		if (!loginEmployeecontract.getEmployee().getSign().equals("adm")) {
 			if (authorized && loginEmployeecontract.getId() != ecId) {
-				if (releaseDate.before(refDate)) {
+				if (releaseDate.before(refDate) || firstday) {
 					errors.add("release", new ActionMessage(
 							"form.timereport.error.not.released"));
 				}
 			} else {
-				if (!releaseDate.before(refDate)) {
+				if (!releaseDate.before(refDate)  && !firstday) {
 					errors.add("release", new ActionMessage(
 							"form.timereport.error.released"));
 				}
 			}
-			if (!refDate.after(acceptanceDate)) {
+			if (!refDate.after(acceptanceDate) && !firstday) {
 				errors.add("release", new ActionMessage(
 						"form.timereport.error.accepted"));
 			}

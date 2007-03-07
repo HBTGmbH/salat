@@ -123,6 +123,9 @@ public class Employeecontract implements Serializable {
 	}
 	
 	public Boolean getFreelancer() {
+		if (freelancer == null) {
+			freelancer = false;
+		}
 		return freelancer;
 	}
 
@@ -321,6 +324,9 @@ public class Employeecontract implements Serializable {
 	}
 
 	public String getTimeString() {
+		if (validUntil == null) {
+			return "";
+		}
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		return simpleDateFormat.format(validFrom) + " - " + simpleDateFormat.format(validUntil);
 	}

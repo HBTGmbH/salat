@@ -207,7 +207,7 @@
 					styleClass="mandatory" value="${currentSuborderId}"
 					onchange="adjustSuborderDescriptionChangedAction(this.form)">
 					<html:options collection="subordersByDescription"
-						labelProperty="description" property="id" />
+						labelProperty="shortdescription" property="id" />
 				</html:select> <span style="color:red"><html:errors property="orderId" /></span> <span
 					style="color:red"><html:errors property="suborderId" /></span></td>
 			</tr>

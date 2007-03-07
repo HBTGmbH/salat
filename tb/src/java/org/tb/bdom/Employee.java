@@ -203,7 +203,7 @@ public class Employee implements Serializable {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof Employee) {
+		if (obj != null && obj instanceof Employee) {
 			Employee other = (Employee) obj;
 			return other.sign.equals(sign);
 		}

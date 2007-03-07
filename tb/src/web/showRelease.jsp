@@ -55,7 +55,7 @@
 	}
 	
 	function setUpdateEmployeeContract(form) {
-		form.action = "/tb/do/ShowRelease";
+		form.action = "/tb/do/ShowRelease?task=updateEmployee";
 		form.submit();
 	}
 		

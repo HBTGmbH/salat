@@ -137,7 +137,10 @@ public class LoginEmployeeAction extends Action {
 		if (employeecontract != null) {
 			request.getSession().setAttribute("employeeHasValidContract", true);
 			
-			if (!(loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
+			
+			// auto generate employee orders
+			if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) && 
+					!employeecontract.getFreelancer()) {
 				List<Suborder> standardSuborders = suborderDAO
 						.getStandardSuborders();
 				if (standardSuborders != null && standardSuborders.size() > 0) {

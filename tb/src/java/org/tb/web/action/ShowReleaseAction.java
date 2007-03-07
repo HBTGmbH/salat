@@ -45,6 +45,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			HttpServletResponse response) throws Exception {
 		
 		ShowReleaseForm releaseForm = (ShowReleaseForm) form;
+		boolean updateEmployee = false;
 		
 		request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 		request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
@@ -58,8 +59,14 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			
 		}		
 		
-		if ((Boolean) request.getSession().getAttribute("employeeAuthorized") && releaseForm.getEmployeeContractId() == null) {
-			Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		if ((Boolean) request.getSession().getAttribute("employeeAuthorized")) {
+			Employeecontract currentEmployeeContract = null;
+			if ((request.getParameter("task") != null)
+					&& ((request.getParameter("task").equals("updateEmployee")))) {
+				updateEmployee = true;
+			} else {
+				currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+			}
 			if (currentEmployeeContract != null) {
 				employeecontract = currentEmployeeContract;
 				releaseForm.setEmployeeContractId(employeecontract.getId());
@@ -82,6 +89,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 		
 		request.getSession().setAttribute("employeeContractId", employeecontract.getId());
 		request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+		request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 		
 		// date from contract
 		Date releaseDateFromContract = employeecontract.getReportReleaseDate();
@@ -262,7 +270,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 						
 		}
 		
-		if (request.getParameter("task") == null) {
+		if (request.getParameter("task") == null || updateEmployee) {
 			String[] releaseDateArray = th.getDateAsStringArray(releaseDateFromContract);
 			String[] acceptanceDateArray = th.getDateAsStringArray(acceptanceDateFromContract);
 			
@@ -386,6 +394,11 @@ public class ShowReleaseAction extends LoginRequiredAction {
 		
 		if (date.before(selectedEmployeecontract.getReportAcceptanceDate())) {
 			errors.add("acceptancedate", new ActionMessage("form.release.error.date.before.stored"));
+		}
+		
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		if (selectedEmployeecontract.getEmployee().equals(loginEmployee)) {
+			errors.add("acceptancedate", new ActionMessage("form.release.error.foureyesprinciple"));
 		}
 		
 		saveErrors(request, errors);

@@ -9,6 +9,8 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
@@ -53,8 +55,20 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 		}
 		
 		saveErrors(request, errors);
-
-		refreshEmployeeOrders(request, null, employeeorderDAO, employeecontractDAO);	
+		
+		// create form with necessary values
+		ShowEmployeeOrderForm employeeOrderForm = new ShowEmployeeOrderForm();
+		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		if (employeecontract == null) {
+			employeeOrderForm.setEmployeeContractId(-1);
+		} else {
+			employeeOrderForm.setEmployeeContractId(employeecontract.getId());
+		}
+		Long orderId = (Long)request.getSession().getAttribute("currentOrderId");
+		employeeOrderForm.setOrderId(orderId);
+		
+		
+		refreshEmployeeOrders(request, employeeOrderForm, employeeorderDAO, employeecontractDAO);	
 				
 		// back to employee order display jsp
 		return mapping.getInputForward();
