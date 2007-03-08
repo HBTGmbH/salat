@@ -69,7 +69,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	 */
 	public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
 		return (Employeecontract) getSession().createQuery
-				("from Employeecontract e where e.employee.id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeId).setDate(1, date).setDate(2, date).uniqueResult();
+				("from Employeecontract e where e.employee.id = ? and validfrom <= ? and (validuntil >= ? or validuntil = null)").setLong(0, employeeId).setDate(1, date).setDate(2, date).uniqueResult();
 	}
 	
 	

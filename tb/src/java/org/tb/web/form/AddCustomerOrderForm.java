@@ -29,6 +29,9 @@ public class AddCustomerOrderForm extends ActionForm {
 	private String currency;
 	private Double hourlyRate;
 	
+	private Double debithours;
+	private Byte debithoursunit;
+	
 	private long customerId;
 	private long employeeId;
 	
@@ -170,6 +173,34 @@ public class AddCustomerOrderForm extends ActionForm {
 	public void setShortdescription(String shortdescription) {
 		this.shortdescription = shortdescription;
 	}
+	
+	/**
+	 * @return the debithours
+	 */
+	public Double getDebithours() {
+		return debithours;
+	}
+
+	/**
+	 * @param debithours the debithours to set
+	 */
+	public void setDebithours(Double debithours) {
+		this.debithours = debithours;
+	}
+
+	/**
+	 * @return the debithoursunit
+	 */
+	public Byte getDebithoursunit() {
+		return debithoursunit;
+	}
+
+	/**
+	 * @param debithoursunit the debithoursunit to set
+	 */
+	public void setDebithoursunit(Byte debithoursunit) {
+		this.debithoursunit = debithoursunit;
+	}
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
@@ -189,6 +220,8 @@ public class AddCustomerOrderForm extends ActionForm {
 		orderCustomer = "";
 		currency = GlobalConstants.DEFAULT_CURRENCY;
 		hourlyRate = 0.0;
+		debithours = null;
+		debithoursunit = null;
 	}
 
 	@Override

@@ -8,8 +8,8 @@ public class CustomerOrderComparator implements Comparator<Customerorder> {
 
 	
 	/**
-	 * Compares  {@link Customerorder}s by {@link Customerorder#getSign()}, {@link Customerorder#getDescription()}, 
-	 * {@link Customerorder#getFromDate()} and {@link Customerorder#getUntilDate()}.
+	 * Compares  {@link Customerorder}s by {@link Customerorder#getSign()}, {@link Customerorder#getDescription()} and 
+	 * {@link Customerorder#getFromDate()}.
 	 * 
 	 * @param co1 {@link Customerorder} No1
 	 * @param co2 {@link Customerorder} No2
@@ -30,13 +30,7 @@ public class CustomerOrderComparator implements Comparator<Customerorder> {
 					return -1;
 				} else if (co1.getFromDate().compareTo(co2.getFromDate()) > 0) {
 					return 1;
-				} else {
-					if (co1.getUntilDate().compareTo(co2.getUntilDate()) < 0) {
-						return -1;
-					} else if (co1.getUntilDate().compareTo(co2.getUntilDate()) > 0) {
-						return 1;
-					}
-				}
+				} 
 			}
 		}
 		return 0;

@@ -1,5 +1,3 @@
-<%@ page import="org.tb.bdom.Employee"%>
-
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -104,6 +102,8 @@
 			title="<bean:message
 			key="main.headlinedescription.orders.hourlyrate.text" />"><b><bean:message
 			key="main.customerorder.hourlyrate.text" /></b></th>
+		<th align="left"><b><bean:message
+			key="main.general.debithours.text" /></b></th>	
 		<c:if test="${employeeAuthorized}">
 			<th align="left"
 				title="<bean:message
@@ -130,13 +130,46 @@
 		<td><c:out value="${customerorder.shortdescription}" /></td>
 		<td><c:out value="${customerorder.description}" /></td>
 		<td><c:out value="${customerorder.fromDate}" /></td>
-		<td><c:out value="${customerorder.untilDate}" /></td>
+		<td>
+			<c:choose>
+				<c:when test="${customerorder.untilDate == null}">
+					<bean:message key="main.general.open.text" />
+				</c:when>
+				<c:otherwise>
+					<c:out value="${customerorder.untilDate}" />
+				</c:otherwise>
+			</c:choose>
+		</td>
 		<td><c:out value="${customerorder.responsible_customer_contractually}" /></td>
 		<td><c:out value="${customerorder.responsible_customer_technical}" /></td>
 		<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
 		<td><c:out value="${customerorder.order_customer}" /></td>
 		<td><c:out value="${customerorder.currency}" /></td>
 		<td><c:out value="${customerorder.hourly_rate}" /></td>
+		<td>
+			<c:choose>
+				<c:when test="${customerorder.debithours == null}">
+					n/a
+				</c:when>
+				<c:otherwise>
+					<c:out value="${customerorder.debithours}" />
+					<c:choose>
+						<c:when test="${customerorder.debithoursunit == 0}">
+							/ <bean:message key="main.general.totaltime.text" />
+						</c:when>
+						<c:when test="${customerorder.debithoursunit == 1}">
+							/ <bean:message key="main.general.year.text" />
+						</c:when>
+						<c:when test="${customerorder.debithoursunit == 12}">
+							/ <bean:message key="main.general.month.text" />
+						</c:when>
+						<c:otherwise>
+							?
+						</c:otherwise>
+					</c:choose>
+				</c:otherwise>
+			</c:choose>
+		</td>
 
 		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link

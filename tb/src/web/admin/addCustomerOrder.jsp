@@ -43,7 +43,7 @@
 				key="main.customerorder.customer.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
 				property="customerId">
-				<html:options collection="customers" labelProperty="name"
+				<html:options collection="customers" labelProperty="shortname"
 					property="id" />
 			</html:select></td>
 		</tr>
@@ -169,7 +169,8 @@
 			<span style="color:red"><html:errors property="orderCustomer" /></span>
 			</td>
 		</tr>
-
+		
+		<!-- 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.currency.text" /></b></td>
@@ -178,13 +179,32 @@
 				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="currency" /></span></td>
 		</tr>
+		 -->
 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.hourlyrate.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="hourlyRate" size="20" /> <span style="color:red"><html:errors
-				property="hourlyRate" /></span></td>
+				property="hourlyRate" size="20" /> <html:select property="currency">
+					<html:option value="EUR">EUR</html:option>
+				</html:select> <span style="color:red"><html:errors
+				property="hourlyRate" /></span>
+			</td>
+		</tr>
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.general.debithours.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="debithours" size="20" />&nbsp;&nbsp;<bean:message
+				key="main.general.per.text" />&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio property="debithoursunit" value="12" disabled="false" /><bean:message
+				key="main.general.month.text" /> <html:radio 
+				property="debithoursunit" value="1" disabled="false" /><bean:message
+				key="main.general.year.text" /> <html:radio 
+				property="debithoursunit" value="0" disabled="false" /><bean:message
+				key="main.general.totaltime.text" /> <span 
+				style="color:red"><html:errors property="debithours" /></span>
+			</td>
 		</tr>
 
 	</table>

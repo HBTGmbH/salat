@@ -178,7 +178,7 @@
 		<td>
 			<c:choose>
 				<c:when test="${employeeorder.untilDate == null}">
-					<bean:message key="main.employeeorder.openend.text" />
+					<bean:message key="main.general.open.text" />
 				</c:when>
 				<c:otherwise>
 					<c:out value="${employeeorder.untilDate}" />

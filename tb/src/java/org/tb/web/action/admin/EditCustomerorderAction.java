@@ -105,9 +105,21 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 		Date fromDate = new Date(co.getFromDate().getTime()); // convert to java.util.Date
 		//coForm.setValidFrom(DateUtils.getDateString(fromDate));
 		coForm.setValidFrom(DateUtils.getSqlDateString(fromDate));
-		Date untilDate = new Date(co.getUntilDate().getTime()); // convert to java.util.Date
-		//coForm.setValidUntil(DateUtils.getDateString(untilDate));
-		coForm.setValidUntil(DateUtils.getSqlDateString(untilDate));
+		if (co.getUntilDate() != null) {
+			Date untilDate = new Date(co.getUntilDate().getTime()); // convert to java.util.Date
+			//coForm.setValidUntil(DateUtils.getDateString(untilDate));
+			coForm.setValidUntil(DateUtils.getSqlDateString(untilDate));
+		} else {
+			coForm.setValidUntil("");
+		}
+		
+		if (co.getDebithours() != null) {
+			coForm.setDebithours(co.getDebithours());
+			coForm.setDebithoursunit(co.getDebithoursunit());
+		} else {
+			coForm.setDebithours(null);
+			coForm.setDebithoursunit(null);
+		}
 	}
 	
 }

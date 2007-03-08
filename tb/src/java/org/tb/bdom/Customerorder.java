@@ -94,6 +94,12 @@ public class Customerorder implements Serializable {
 	/** Update Counter */
 	private Integer updatecounter;
 	
+	/** Debit hours */
+	private Double debithours;
+	
+	/** Unit of the debit hours */
+	private Byte debithoursunit;
+	
 	
 	public long getId() {
 		return id;
@@ -314,7 +320,34 @@ public class Customerorder implements Serializable {
 		return sign+" - "+getShortdescription();
 	}
 	
-	
+	/**
+	 * @return the debithours
+	 */
+	public Double getDebithours() {
+		return debithours;
+	}
+
+	/**
+	 * @param debithours the debithours to set
+	 */
+	public void setDebithours(Double debithours) {
+		this.debithours = debithours;
+	}
+
+	/**
+	 * @return the debithoursunit
+	 */
+	public Byte getDebithoursunit() {
+		return debithoursunit;
+	}
+
+	/**
+	 * @param debithoursunit the debithoursunit to set
+	 */
+	public void setDebithoursunit(Byte debithoursunit) {
+		this.debithoursunit = debithoursunit;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Customerorder) {

@@ -135,4 +135,9 @@ public class GlobalConstants {
     
     public static final String WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EC = "timereportnotinrange";
     public static final String WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EO = "timereportnotinrangeforeo";
+    
+    public static final byte DEBITHOURS_UNIT_MONTH = 12;
+    public static final byte DEBITHOURS_UNIT_YEAR = 1;
+    public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
+    
 }

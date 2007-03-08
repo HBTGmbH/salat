@@ -78,10 +78,16 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				co.setCurrency(coForm.getCurrency());
 				co.setCustomer(customerDAO.getCustomerById(coForm.getCustomerId()));
 				
+				
+				if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
+					Date untilDate = Date.valueOf(coForm.getValidUntil());
+					co.setUntilDate(untilDate);
+				} else {
+					co.setUntilDate(null);
+				}
 				Date fromDate = Date.valueOf(coForm.getValidFrom());
-				Date untilDate = Date.valueOf(coForm.getValidUntil());
 				co.setFromDate(fromDate);
-				co.setUntilDate(untilDate);
+				
 				co.setSign(coForm.getSign());
 				co.setDescription(coForm.getDescription());
 				co.setShortdescription(coForm.getShortdescription());
@@ -92,6 +98,13 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				co.setResponsible_customer_technical(coForm.getResponsibleCustomerTechnical());
 				co.setResponsible_hbt(employeeDAO.getEmployeeById(coForm.getEmployeeId()));
 				
+				if (coForm.getDebithours() == null || coForm.getDebithours() == 0.0) {
+					co.setDebithours(null);
+					co.setDebithoursunit(null);
+				} else {
+					co.setDebithours(coForm.getDebithours());
+					co.setDebithoursunit(coForm.getDebithoursunit());
+				}
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				customerorderDAO.save(co, loginEmployee);
@@ -155,11 +168,14 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 			errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
 		} 
 		
-		String dateUntilString = coForm.getValidUntil().trim();
-		dateError = DateUtils.validateDate(dateUntilString);
-		if (dateError) {
-			errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
-		} 
+		if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
+			String dateUntilString = coForm.getValidUntil().trim();
+			dateError = DateUtils.validateDate(dateUntilString);
+			if (dateError) {
+				errors.add("validUntil", new ActionMessage(
+						"form.timereport.error.date.wrongformat"));
+			}
+		}	
 		
 		// for a new customerorder, check if the sign already exists
 		if (request.getSession().getAttribute("coId") == null) {
@@ -186,12 +202,12 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 		if (coForm.getShortdescription().length() > GlobalConstants.CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
 			errors.add("shortdescription", new ActionMessage("form.customerorder.error.shortdescription.toolong"));
 		}
-		if (coForm.getCurrency().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
-			errors.add("currency", new ActionMessage("form.customerorder.error.currency.toolong"));
-		}
-		if (coForm.getCurrency().length() <= 0) {
-			errors.add("currency", new ActionMessage("form.customerorder.error.currency.required"));
-		}
+//		if (coForm.getCurrency().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
+//			errors.add("currency", new ActionMessage("form.customerorder.error.currency.toolong"));
+//		}
+//		if (coForm.getCurrency().length() <= 0) {
+//			errors.add("currency", new ActionMessage("form.customerorder.error.currency.required"));
+//		}
 		if (coForm.getOrderCustomer().length() > GlobalConstants.CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH) {
 			errors.add("orderCustomer", new ActionMessage("form.customerorder.error.ordercustomer.toolong"));
 		}
@@ -218,6 +234,31 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 						0.0, GlobalConstants.MAX_HOURLY_RATE))) {
 			errors.add("hourlyRate", new ActionMessage("form.customerorder.error.hourlyrate.wrongformat"));
 		}
+		
+		if (!GenericValidator.isDouble(coForm.getDebithours().toString()) ||
+				(!GenericValidator.isInRange(coForm.getDebithours(), 
+						0.0, GlobalConstants.MAX_DEBITHOURS))) {
+			errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat"));
+		} else if (coForm.getDebithours() != null && coForm.getDebithours() != 0.0) {
+			Double debithours = coForm.getDebithours() * 100000;
+			debithours += 0.5;
+			
+			int debithours2 = debithours.intValue();
+			int modulo = debithours2%5000;
+			coForm.setDebithours(debithours2/100000.0);
+			
+			if (modulo != 0) {
+				errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat2"));
+			}
+		} 
+		
+		if (coForm.getDebithours() != 0.0) {
+			if (coForm.getDebithoursunit() == null || !(coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH ||
+					coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
+				errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.nounit"));
+			}
+		}
+		
 		
 		saveErrors(request, errors);
 		
