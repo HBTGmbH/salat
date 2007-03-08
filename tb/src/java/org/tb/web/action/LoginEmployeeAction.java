@@ -304,11 +304,11 @@ public class LoginEmployeeAction extends Action {
 				if (employeecontract.getValidFrom().after(start) && !employeecontract.getValidFrom().after(currentDate)) {
 					start = employeecontract.getValidFrom();
 				}
-				if (employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
+				if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
 					currentDate = employeecontract.getValidUntil();
 				}	
 				int[] monthlyOvertime;
-				if (employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate)) {
+				if ((employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(start)) || employeecontract.getValidFrom().after(currentDate)) {
 					monthlyOvertime = new int[2];
 					monthlyOvertime[0] = 0;
 					monthlyOvertime[1] = 0;

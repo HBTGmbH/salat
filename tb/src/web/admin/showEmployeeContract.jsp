@@ -1,5 +1,3 @@
-<%@ page import="org.tb.bdom.Employee"%>
-
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -108,7 +106,16 @@
 					<td style="color:gray"><c:out value="${employeecontract.employee.name}" /></td>
 					<td style="color:gray"><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 					<td style="color:gray"><c:out value="${employeecontract.validFrom}" /></td>
-					<td style="color:gray"><c:out value="${employeecontract.validUntil}" /></td>
+					<td style="color:gray">
+						<c:choose>
+							<c:when test="${employeecontract.validUntil == null}">
+								<bean:message key="main.general.open.text" />
+							</c:when>
+							<c:otherwise>
+								<c:out value="${employeecontract.validUntil}" />
+							</c:otherwise>
+						</c:choose>
+					</td>
 					<td align="center"><html:checkbox name="employeecontract"
 						property="freelancer" disabled="true" /></td>
 					<td align="center" style="color:gray"><c:out
@@ -120,7 +127,16 @@
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 					<td><c:out value="${employeecontract.validFrom}" /></td>
-					<td><c:out value="${employeecontract.validUntil}" /></td>
+					<td>
+						<c:choose>
+							<c:when test="${employeecontract.validUntil == null}">
+								<bean:message key="main.general.open.text" />
+							</c:when>
+							<c:otherwise>
+								<c:out value="${employeecontract.validUntil}" />
+							</c:otherwise>
+						</c:choose>
+					</td>
 					<td align="center"><html:checkbox name="employeecontract"
 						property="freelancer" disabled="true" /></td>
 					<td align="center"><c:out

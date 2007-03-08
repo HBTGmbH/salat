@@ -249,9 +249,15 @@ public class TimereportDAO extends HibernateDaoSupport {
 		Long employeeContractId = employeecontract.getId();
 		Date contractBegin = employeecontract.getValidFrom();
 		Date contractEnd = employeecontract.getValidUntil();
-		List<Timereport> allTimereports = 
-				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and (t.referenceday.refdate < ? or  t.referenceday.refdate > ?) order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc").setLong(0, employeeContractId).setDate(1, contractBegin).setDate(2, contractEnd).list();
+		List<Timereport> allTimereports = new ArrayList<Timereport>();
+		if (contractEnd == null) {
+			allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate < ? order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc").setLong(0, employeeContractId).setDate(1, contractBegin).list();
 
+		} else {
+			allTimereports = 
+				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and (t.referenceday.refdate < ? or  t.referenceday.refdate > ?) order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc").setLong(0, employeeContractId).setDate(1, contractBegin).setDate(2, contractEnd).list();
+		}
 		return allTimereports;
 	}
 	

@@ -64,7 +64,9 @@
 					<c:forEach var="employeecontract" items="${employeecontracts}" >
 						<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 							<html:option value="${employeecontract.id}">
-								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if 
+									test="${employeecontract.openEnd}"><bean:message 
+									key="main.general.open.text" /></c:if>)
 							</html:option>
 						</c:if>							
 					</c:forEach>
@@ -162,7 +164,8 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
-		<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" />)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
+		<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
+				test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
 		<td
 			title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
 			value="${employeeorder.suborder.customerorder.sign}" /></td>

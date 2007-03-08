@@ -91,7 +91,9 @@
 							<c:forEach var="employeecontract" items="${employeecontracts}" >
 								<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 									<html:option value="${employeecontract.id}">
-										<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+										<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if 
+											test="${employeecontract.openEnd}"><bean:message 
+											key="main.general.open.text" /></c:if>)
 									</html:option>
 								</c:if>							
 							</c:forEach>
@@ -370,7 +372,9 @@
 				</c:choose>
 					<td><c:out value="${employeecontract.employee.sign}" /></td>
 					<td><c:out value="${employeecontract.employee.name}" /></td>
-					<td align="center"><c:out value="${employeecontract.timeString}" /></td>
+					<td align="left"><c:out value="${employeecontract.timeString}" /><c:if 
+						test="${employeecontract.openEnd}"><bean:message 
+						key="main.general.open.text" /></c:if></td>
 					<td align="center">
 						<c:choose>
 							<c:when test="${employeecontract.releaseWarning}">

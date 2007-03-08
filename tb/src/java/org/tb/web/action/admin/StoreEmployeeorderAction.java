@@ -466,6 +466,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				}
 			} 
 		}
+		// check if dates fit to employee contract
+		//TODO
+		
 
 		saveErrors(request, errors);
 

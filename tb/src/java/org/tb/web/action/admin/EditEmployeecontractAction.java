@@ -115,8 +115,10 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 			
 		Date fromDate = new Date(ec.getValidFrom().getTime()); // convert to java.util.Date
 		ecForm.setValidFrom(DateUtils.getSqlDateString(fromDate));
-		Date untilDate = new Date(ec.getValidUntil().getTime()); // convert to java.util.Date
-		ecForm.setValidUntil(DateUtils.getSqlDateString(untilDate));
+		if (ec.getValidUntil() != null) {
+			Date untilDate = new Date(ec.getValidUntil().getTime()); // convert to java.util.Date
+			ecForm.setValidUntil(DateUtils.getSqlDateString(untilDate));
+		}		
 	}
 	
 }

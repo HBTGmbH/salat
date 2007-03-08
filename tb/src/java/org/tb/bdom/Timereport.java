@@ -322,7 +322,7 @@ public class Timereport implements Serializable {
 	}
 	
 	public boolean getFitsToContract() {
-		if (referenceday.getRefdate().before(employeecontract.getValidFrom()) || referenceday.getRefdate().after(employeecontract.getValidUntil())) {
+		if (referenceday.getRefdate().before(employeecontract.getValidFrom()) || (employeecontract.getValidUntil() != null && referenceday.getRefdate().after(employeecontract.getValidUntil()))) {
 			return false;
 		}
 		return true;

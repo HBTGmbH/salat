@@ -135,7 +135,8 @@
 				<c:forEach var="employeecontract" items="${employeecontracts}" >
 					<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 						<html:option value="${employeecontract.id}">
-							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />)
+							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if 
+								test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)
 						</html:option>
 					</c:if>							
 				</c:forEach>
@@ -511,11 +512,18 @@
 			<div class="tooltip" id="info<c:out value='${timereport.id}' />">
 			<table>
 				<tr>
+					<td class="info">id:</td>
+					<td class="info" colspan="3"><c:out
+						value="${timereport.id}" /></td>
+				</tr>
+				<tr>
 					<td class="info"><bean:message
 						key="main.timereport.tooltip.employee" />:</td>
 					<td class="info" colspan="3"><c:out
 						value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out
-						value="${timereport.employeecontract.timeString}" />)</td>
+						value="${timereport.employeecontract.timeString}" /><c:if 
+						test="${employeecontract.openEnd}"><bean:message 
+						key="main.general.open.text" /></c:if>)</td>
 				</tr>
 				<tr>
 					<td class="info"><bean:message
@@ -594,7 +602,11 @@
 			</td>
 
 			<!-- Mitarbeiter -->
-			<td title="<c:out value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${timereport.employeecontract.timeString}" />)"><c:out value="${timereport.employeecontract.employee.sign}" /></td>
+			<td title="<c:out value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out 
+				value="${timereport.employeecontract.timeString}" /><c:if 
+				test="${employeecontract.openEnd}"><bean:message 
+				key="main.general.open.text" /></c:if>)"><c:out 
+				value="${timereport.employeecontract.employee.sign}" /></td>
 
 			<!-- Datum -->
 			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal

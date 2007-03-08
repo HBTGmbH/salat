@@ -166,7 +166,9 @@ public class EmployeeDAO extends HibernateDaoSupport {
 		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
 		List<Employee> employees = new ArrayList<Employee>();
 		for (Employeecontract employeecontract : employeeContracts) {
-			employees.add(employeecontract.getEmployee());
+			if (!employees.contains(employeecontract.getEmployee())) {
+				employees.add(employeecontract.getEmployee());
+			}			
 		}
 		// remove admin 
 		Employee admin = getEmployeeBySign("adm");

@@ -324,11 +324,18 @@ public class Employeecontract implements Serializable {
 	}
 
 	public String getTimeString() {
-		if (validUntil == null) {
-			return "";
-		}
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		if (validUntil == null) {
+			return simpleDateFormat.format(validFrom) + " - ";
+		}
 		return simpleDateFormat.format(validFrom) + " - " + simpleDateFormat.format(validUntil);
+	}
+	
+	public Boolean getOpenEnd() {
+		if (validUntil == null) {
+			return true;
+		}
+		return false;
 	}
 
 	public Integer getVacationEntitlement() {

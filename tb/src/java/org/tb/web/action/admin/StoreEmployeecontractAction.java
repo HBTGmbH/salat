@@ -183,10 +183,15 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					return mapping.getInputForward();
 				}
 
+				if (ecForm.getValidUntil() != null && !ecForm.getValidUntil().trim().equals("")) {
+					Date untilDate = Date.valueOf(ecForm.getValidUntil());
+					ec.setValidUntil(untilDate);
+				} else {
+					ec.setValidUntil(null);
+				}
+				
 				Date fromDate = Date.valueOf(ecForm.getValidFrom());
-				Date untilDate = Date.valueOf(ecForm.getValidUntil());
 				ec.setValidFrom(fromDate);
-				ec.setValidUntil(untilDate);
 				ec.setTaskDescription(ecForm.getTaskdescription());
 				ec.setFreelancer(ecForm.getFreelancer());
 				ec.setHide(ecForm.getHide());
@@ -304,26 +309,29 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 		} 
 		
 		String dateUntilString = ecForm.getValidUntil().trim();
-		dateError = DateUtils.validateDate(dateUntilString);
-		if (dateError) {
-			errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
-		} 
-		
-		String validFrom = ecForm.getValidFrom();
-		String validUntil = ecForm.getValidUntil();
+		if (dateUntilString != null && !dateUntilString.equals("")) {
+			dateError = DateUtils.validateDate(dateUntilString);
+			if (dateError) {
+				errors.add("validUntil", new ActionMessage(
+						"form.timereport.error.date.wrongformat"));
+			}
+		}		
+		//		String validFrom = ecForm.getValidFrom();
+//		String validUntil = ecForm.getValidUntil();
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		java.util.Date newContractValidFrom;
-		java.util.Date newContractValidUntil;
+		java.util.Date newContractValidUntil = null;
 		try {
-			newContractValidFrom = simpleDateFormat.parse(validFrom);
-			newContractValidUntil = simpleDateFormat.parse(validUntil);							
-			
+			newContractValidFrom = simpleDateFormat.parse(dateFromString);
+			if (dateUntilString != null && !dateUntilString.equals("")) {
+				newContractValidUntil = simpleDateFormat.parse(dateUntilString);							
+			}
 		} catch (ParseException e) {
 			// this is not expected...
 			throw new RuntimeException("Date cannot be parsed - fatal error!");
 		}
 		
-		if (newContractValidFrom.after(newContractValidUntil)){
+		if (newContractValidUntil != null && newContractValidFrom.after(newContractValidUntil)){
 			errors.add("validFrom", new ActionMessage("form.employeecontract.error.endbeforebegin"));		
 		}
 		
@@ -337,23 +345,41 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					java.util.Date existingContractValidFrom = ec.getValidFrom();
 					java.util.Date existingContractValidUntil = ec.getValidUntil();
 					
-					if (!newContractValidFrom.before(existingContractValidFrom) && !newContractValidUntil.after(existingContractValidUntil)) {
-						errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));		
+										
+					if (newContractValidUntil != null && existingContractValidUntil != null) {
+						if (!newContractValidFrom.before(existingContractValidFrom)
+								&& !newContractValidFrom.after(existingContractValidUntil)) {
+							// validFrom overleaps!
+							errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
+							break;
+						}
+						if (!newContractValidUntil.before(existingContractValidFrom)
+								&& !newContractValidUntil.after(existingContractValidUntil)) {
+							// validUntil overleaps!
+							errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
+							break;
+						}
+						if (newContractValidFrom.before(existingContractValidFrom)
+								&& newContractValidUntil.after(existingContractValidUntil)) {
+							// new Employee contract enclosures an existing one
+							errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
+							break;
+						}
+					} else if (newContractValidUntil == null && existingContractValidUntil != null) {
+						if (!newContractValidFrom.after(existingContractValidUntil)) {
+							errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
+							break;
+						}	
+					} else if (newContractValidUntil != null && existingContractValidUntil == null) {
+						if (!newContractValidUntil.before(existingContractValidFrom)) {
+							errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
+							break;
+						}
+					} else {
+						// two employee contracts with open end MUST overleap
+						errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
 						break;
 					}
-					
-					if (!newContractValidFrom.after(existingContractValidUntil) && newContractValidUntil.after(existingContractValidUntil)){
-						errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));		
-						break;
-					}
-					
-					if (!newContractValidUntil.before(existingContractValidFrom) && newContractValidFrom.before(existingContractValidFrom)){
-						errors.add("validUntil", new ActionMessage("form.employeecontract.error.overleap"));		
-						break;
-					}
-					
-//					errors.add("employeename", new ActionMessage("form.employeecontract.error.employee.alreadyexists"));		
-//					break;
 				}
 			}
 		}

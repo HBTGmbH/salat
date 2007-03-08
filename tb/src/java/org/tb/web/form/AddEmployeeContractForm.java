@@ -176,7 +176,7 @@ public class AddEmployeeContractForm extends ActionForm {
 		employee = loginEmployee.getId();
 		taskdescription = "";
 		validFrom = DateUtils.getCurrentYearString() + "-01-01";
-		validUntil = DateUtils.getCurrentYearString() + "-12-31";
+		validUntil = "";
 		freelancer = new Boolean(Boolean.FALSE);
 		hide = new Boolean(Boolean.FALSE);
 		dailyworkingtime = 8.0;

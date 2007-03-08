@@ -334,7 +334,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 //		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 //		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), new Date());
 		
-		if(date.before(selectedEmployeecontract.getValidFrom()) || date.after(selectedEmployeecontract.getValidUntil())) {
+		if(date.before(selectedEmployeecontract.getValidFrom()) || (selectedEmployeecontract.getValidUntil() != null && date.after(selectedEmployeecontract.getValidUntil()))) {
 			errors.add("releasedate", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
 		}
 		
@@ -379,7 +379,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 //		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 //		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), new Date());
 		
-		if(date.before(selectedEmployeecontract.getValidFrom()) || date.after(selectedEmployeecontract.getValidUntil())) {
+		if(date.before(selectedEmployeecontract.getValidFrom()) || (selectedEmployeecontract.getValidUntil() != null && date.after(selectedEmployeecontract.getValidUntil()))) {
 			errors.add("acceptancedate", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
 		}
 		
