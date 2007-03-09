@@ -161,7 +161,7 @@
 		<!-- hide -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.hide.text" /></b></td>
+				key="main.general.hideinselectboxes.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:checkbox
 				property="hide" /> </td>
 		</tr>

@@ -105,6 +105,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 					co.setDebithours(coForm.getDebithours());
 					co.setDebithoursunit(coForm.getDebithoursunit());
 				}
+				co.setHide(coForm.getHide());
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				customerorderDAO.save(co, loginEmployee);
@@ -114,6 +115,22 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				
 				boolean addMoreOrders = Boolean.parseBoolean((String)request.getParameter("continue"));
 				if (!addMoreOrders) {
+					
+					String filter = null;
+					Boolean show = null;
+					Long customerId = null;
+					if (request.getSession().getAttribute("customerorderFilter") != null) {
+						filter = (String) request.getSession().getAttribute("customerorderFilter");
+					}
+					if (request.getSession().getAttribute("customerorderShow") != null) {
+						show = (Boolean) request.getSession().getAttribute("customerorderShow");
+					}
+					if (request.getSession().getAttribute("customerorderCustomerId") != null) {
+						customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
+					}
+					request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
+
+					
 					return mapping.findForward("success");
 				} else {
 					// reuse form entries and show add-page

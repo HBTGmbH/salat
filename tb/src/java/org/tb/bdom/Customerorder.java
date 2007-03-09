@@ -100,6 +100,8 @@ public class Customerorder implements Serializable {
 	/** Unit of the debit hours */
 	private Byte debithoursunit;
 	
+	/** Hide in select boxes */
+	private Boolean hide;
 	
 	public long getId() {
 		return id;
@@ -346,6 +348,35 @@ public class Customerorder implements Serializable {
 	 */
 	public void setDebithoursunit(Byte debithoursunit) {
 		this.debithoursunit = debithoursunit;
+	}
+
+	/**
+	 * @return the hide
+	 */
+	public Boolean getHide() {
+		if (hide == null) {
+			return false;
+		}
+		return hide;
+	}
+
+	/**
+	 * @param hide the hide to set
+	 */
+	public void setHide(Boolean hide) {
+		this.hide = hide;
+	}
+	
+	/**
+	 * 
+	 * @return Returns true, if the {@link Customerorder} is currently valid, false otherwise.
+	 */
+	public boolean getCurrentlyValid() {
+		java.util.Date now = new java.util.Date();
+		if (!now.before(getFromDate()) && (getUntilDate() == null || !now.after(getUntilDate()))){
+			return true;
+		}
+		return false;
 	}
 
 	@Override

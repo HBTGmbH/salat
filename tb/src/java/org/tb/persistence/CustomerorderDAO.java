@@ -2,6 +2,7 @@ package org.tb.persistence;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -60,6 +61,123 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 		return getSession().createQuery("from Customerorder order by sign").list();
 	}
 
+	/**
+	 * Get a list of all Customerorders fitting to the given filters ordered by their sign.
+	 * 
+	 * 
+	 * @return
+	 */
+	public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
+		List<Customerorder> customerorders = new ArrayList<Customerorder>();
+		Date now = new Date();
+		
+		if (showInvalid == null || !showInvalid) {
+			if (filter == null || filter.trim().equals("")) {
+				if (customerId == null || customerId == -1) {
+					// case 1
+					customerorders = getSession().createQuery(
+							"from Customerorder where fromdate <= ? " +
+							"and (untildate = null or untildate >= ?) " +
+							"order by sign").setDate(0, now).setDate(1, now).list();
+				} else {
+					// case 2
+					customerorders = getSession().createQuery(
+							"from Customerorder co where co.customer.id = ? " +
+							"and fromdate <= ? " +
+							"and (untildate = null or untildate >= ?) " +
+							"order by sign").setLong(0, customerId).setDate(1, now).setDate(2, now).list();
+				}
+			} else {
+				if (customerId == null || customerId == -1) {
+					// case 3
+					customerorders = getSession().createQuery(
+							"from Customerorder where fromdate <= ? " +
+							"and (untildate = null or untildate >= ?) " +
+							"and (upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(responsible_customer_contractually) like ? " +
+							"or upper(responsible_customer_technical) like ? " +
+							"or upper(order_customer) like ? " +
+							"or upper(customer.name) like ? " +
+							"or upper(customer.shortname) like ? " +
+							"or upper(responsible_hbt.firstname) like ? " +
+							"or upper(responsible_hbt.lastname) like ?)" +
+							"order by sign").setDate(0, now).setDate(1, now).setString(2, filter).setString(3, filter)
+							.setString(4, filter).setString(5, filter).setString(6, filter).setString(7, filter)
+							.setString(8, filter).setString(9, filter).setString(10, filter).list();
+				} else {
+					// case 4
+					customerorders = getSession().createQuery(
+							"from Customerorder co where co.customer.id = ? " +
+							"and fromdate <= ? " +
+							"and (untildate = null or untildate >= ?) " +
+							"and (upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(responsible_customer_contractually) like ? " +
+							"or upper(responsible_customer_technical) like ? " +
+							"or upper(order_customer) like ? " +
+							"or upper(customer.name) like ? " +
+							"or upper(customer.shortname) like ? " +
+							"or upper(responsible_hbt.firstname) like ? " +
+							"or upper(responsible_hbt.lastname) like ?)" +
+							"order by sign").setLong(0, customerId).setDate(1, now).setDate(2, now).setString(3, filter)
+							.setString(4, filter).setString(5, filter).setString(6, filter).setString(7, filter)
+							.setString(8, filter).setString(9, filter).setString(10, filter).setString(11, filter).list();
+				}
+			}
+		} else {
+			if (filter == null || filter.trim().equals("")) {
+				if (customerId == null || customerId == -1) {
+					// case 5
+					customerorders = getSession().createQuery(
+							"from Customerorder " +
+							"order by sign").list();
+				} else {
+					// case 6
+					customerorders = getSession().createQuery(
+							"from Customerorder co where co.customer.id = ? " +
+							"order by sign").setLong(0, customerId).list();
+				}
+			} else {
+				if (customerId == null || customerId == -1) {
+					// case 7
+					customerorders = getSession().createQuery(
+							"from Customerorder where " +						
+							"upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(responsible_customer_contractually) like ? " +
+							"or upper(responsible_customer_technical) like ? " +
+							"or upper(order_customer) like ? " +
+							"or upper(customer.name) like ? " +
+							"or upper(customer.shortname) like ? " +
+							"or upper(responsible_hbt.firstname) like ? " +
+							"or upper(responsible_hbt.lastname) like ?" +
+							"order by sign").setString(0, filter).setString(1, filter)
+							.setString(2, filter).setString(3, filter).setString(4, filter).setString(5, filter)
+							.setString(6, filter).setString(7, filter).setString(8, filter).list();
+				} else {
+					// case 8
+					customerorders = getSession().createQuery(
+							"from Customerorder co where co.customer.id = ? " +
+							"and (upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(responsible_customer_contractually) like ? " +
+							"or upper(responsible_customer_technical) like ? " +
+							"or upper(order_customer) like ? " +
+							"or upper(customer.name) like ? " +
+							"or upper(customer.shortname) like ? " +
+							"or upper(responsible_hbt.firstname) like ? " +
+							"or upper(responsible_hbt.lastname) like ?)" +
+							"order by sign").setLong(0, customerId).setString(1, filter)
+							.setString(2, filter).setString(3, filter).setString(4, filter).setString(5, filter)
+							.setString(6, filter).setString(7, filter).setString(8, filter).setString(9, filter).list();
+				}
+			}
+		}
+		
+		return customerorders;
+	}
+	
 	/**
 	 * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
 	 * 

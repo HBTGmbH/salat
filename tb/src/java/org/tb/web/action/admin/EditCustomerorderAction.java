@@ -120,6 +120,8 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 			coForm.setDebithours(null);
 			coForm.setDebithoursunit(null);
 		}
+		coForm.setHide(co.getHide());
+		
 	}
 	
 }

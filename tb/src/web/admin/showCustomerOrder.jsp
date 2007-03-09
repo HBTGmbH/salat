@@ -7,10 +7,6 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<%
-
-%>
-
 <html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -26,7 +22,13 @@
 			form.action = "/tb/do/DeleteCustomerorder?coId=" + id;
 			form.submit();
 		}
-	}					
+	}	
+	
+	function refresh(form) {	
+		form.action = "/tb/do/ShowCustomerorder?task=refresh";
+		form.submit();
+
+	}				
  
 </script>
 
@@ -41,6 +43,34 @@
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
+	<html:form action="/ShowCustomerorder?task=refresh">
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message
+				key="main.customerorder.customer.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left">
+				<html:select property="customerId" onchange="refresh(this.form)">
+					<html:option value="-1"><bean:message key="main.general.allcustomers.text" /></html:option>
+					<html:options collection="customers" labelProperty="shortname"
+						property="id" />
+			</html:select>
+			</td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left">
+				<html:text property="filter" size="40" />
+				<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+					<bean:message key="main.general.button.filter.text" />
+				</html:submit>
+			</td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showinvalid.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+					property="show" onclick="refresh(this.form)" /> </td>
+		</tr>
+	</html:form>
+	
 <bean:size id="customerordersSize" name="customerorders" />
 <c:if test="${customerordersSize>10}">
 	<c:if test="${employeeAuthorized}">
@@ -49,8 +79,8 @@
 				<td class="noBborderStyle" colspan="4"><html:submit
 					styleId="button" titleKey="main.general.button.createcustomerorder.alttext.text">
 					<bean:message key="main.general.button.createcustomerorder.text" />
-				</html:submit></td>
-			</html:form>
+				</html:submit></td>	
+			</html:form>		
 		</tr>
 	</c:if></c:if>
 	<tr>
@@ -117,6 +147,7 @@
 	</tr>
 	<c:forEach var="customerorder" items="${customerorders}"
 		varStatus="statusID">
+				
 		<c:choose>
 			<c:when test="${statusID.count%2==0}">
 				<tr class="primarycolor">
@@ -125,51 +156,106 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
-		<td><c:out value="${customerorder.customer.shortname}" /></td>
-		<td><c:out value="${customerorder.sign}" /></td>
-		<td><c:out value="${customerorder.shortdescription}" /></td>
-		<td><c:out value="${customerorder.description}" /></td>
-		<td><c:out value="${customerorder.fromDate}" /></td>
-		<td>
-			<c:choose>
-				<c:when test="${customerorder.untilDate == null}">
-					<bean:message key="main.general.open.text" />
-				</c:when>
-				<c:otherwise>
-					<c:out value="${customerorder.untilDate}" />
-				</c:otherwise>
-			</c:choose>
-		</td>
-		<td><c:out value="${customerorder.responsible_customer_contractually}" /></td>
-		<td><c:out value="${customerorder.responsible_customer_technical}" /></td>
-		<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
-		<td><c:out value="${customerorder.order_customer}" /></td>
-		<td><c:out value="${customerorder.currency}" /></td>
-		<td><c:out value="${customerorder.hourly_rate}" /></td>
-		<td>
-			<c:choose>
-				<c:when test="${customerorder.debithours == null}">
-					n/a
-				</c:when>
-				<c:otherwise>
-					<c:out value="${customerorder.debithours}" />
+		
+		<!-- invalid orders should be gray -->
+		<c:choose>
+			<c:when test="${customerorder.currentlyValid}">
+				<td><c:out value="${customerorder.customer.shortname}" /></td>
+				<td><c:out value="${customerorder.sign}" /></td>
+				<td><c:out value="${customerorder.shortdescription}" /></td>
+				<td><c:out value="${customerorder.description}" /></td>
+				<td><c:out value="${customerorder.fromDate}" /></td>
+				<td>
 					<c:choose>
-						<c:when test="${customerorder.debithoursunit == 0}">
-							/ <bean:message key="main.general.totaltime.text" />
-						</c:when>
-						<c:when test="${customerorder.debithoursunit == 1}">
-							/ <bean:message key="main.general.year.text" />
-						</c:when>
-						<c:when test="${customerorder.debithoursunit == 12}">
-							/ <bean:message key="main.general.month.text" />
+						<c:when test="${customerorder.untilDate == null}">
+							<bean:message key="main.general.open.text" />
 						</c:when>
 						<c:otherwise>
-							?
+							<c:out value="${customerorder.untilDate}" />
 						</c:otherwise>
 					</c:choose>
-				</c:otherwise>
-			</c:choose>
-		</td>
+				</td>
+				<td><c:out value="${customerorder.responsible_customer_contractually}" /></td>
+				<td><c:out value="${customerorder.responsible_customer_technical}" /></td>
+				<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
+				<td><c:out value="${customerorder.order_customer}" /></td>
+				<td><c:out value="${customerorder.currency}" /></td>
+				<td><c:out value="${customerorder.hourly_rate}" /></td>
+				<td>
+					<c:choose>
+						<c:when test="${customerorder.debithours == null}">
+							n/a
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.debithours}" />
+							<c:choose>
+								<c:when test="${customerorder.debithoursunit == 0}">
+									/ <bean:message key="main.general.totaltime.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 1}">
+									/ <bean:message key="main.general.year.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 12}">
+									/ <bean:message key="main.general.month.text" />
+								</c:when>
+								<c:otherwise>
+									?
+								</c:otherwise>
+							</c:choose>
+						</c:otherwise>
+					</c:choose>
+				</td>
+			</c:when>
+			<c:otherwise>
+			<!-- customerorder is invalid -->
+				<td style="color:gray"><c:out value="${customerorder.customer.shortname}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.sign}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.shortdescription}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.description}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.fromDate}" /></td>
+				<td style="color:gray">
+					<c:choose>
+						<c:when test="${customerorder.untilDate == null}">
+							<bean:message key="main.general.open.text" />
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.untilDate}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
+				<td style="color:gray"><c:out value="${customerorder.responsible_customer_contractually}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.responsible_customer_technical}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.responsible_hbt.name}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.order_customer}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.currency}" /></td>
+				<td style="color:gray"><c:out value="${customerorder.hourly_rate}" /></td>
+				<td style="color:gray">
+					<c:choose>
+						<c:when test="${customerorder.debithours == null}">
+							n/a
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.debithours}" />
+							<c:choose>
+								<c:when test="${customerorder.debithoursunit == 0}">
+									/ <bean:message key="main.general.totaltime.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 1}">
+									/ <bean:message key="main.general.year.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 12}">
+									/ <bean:message key="main.general.month.text" />
+								</c:when>
+								<c:otherwise>
+									?
+								</c:otherwise>
+							</c:choose>
+						</c:otherwise>
+					</c:choose>
+				</td>
+			</c:otherwise>
+		</c:choose>
+		
 
 		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
@@ -183,6 +269,7 @@
 			</html:form>
 		</c:if>
 		</tr>
+		
 	</c:forEach>
 	<c:if test="${employeeAuthorized}">
 		<tr>

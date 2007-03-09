@@ -180,7 +180,7 @@
 			<span style="color:red"><html:errors property="currency" /></span></td>
 		</tr>
 		 -->
-
+		<!-- hourly rate & currency -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.hourlyrate.text" /></b></td>
@@ -191,6 +191,8 @@
 				property="hourlyRate" /></span>
 			</td>
 		</tr>
+		
+		<!-- debithours -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.general.debithours.text" /></b></td>
@@ -205,6 +207,14 @@
 				key="main.general.totaltime.text" /> <span 
 				style="color:red"><html:errors property="debithours" /></span>
 			</td>
+		</tr>
+		
+		<!-- hide -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.general.hideinselectboxes.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:checkbox
+				property="hide" /> </td>
 		</tr>
 
 	</table>

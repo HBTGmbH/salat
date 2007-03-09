@@ -32,6 +32,8 @@ public class AddCustomerOrderForm extends ActionForm {
 	private Double debithours;
 	private Byte debithoursunit;
 	
+	private Boolean hide;
+	
 	private long customerId;
 	private long employeeId;
 	
@@ -202,6 +204,20 @@ public class AddCustomerOrderForm extends ActionForm {
 		this.debithoursunit = debithoursunit;
 	}
 
+	/**
+	 * @return the hide
+	 */
+	public Boolean getHide() {
+		return hide;
+	}
+
+	/**
+	 * @param hide the hide to set
+	 */
+	public void setHide(Boolean hide) {
+		this.hide = hide;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		sign = "";
@@ -222,6 +238,7 @@ public class AddCustomerOrderForm extends ActionForm {
 		hourlyRate = 0.0;
 		debithours = null;
 		debithoursunit = null;
+		hide=false;
 	}
 
 	@Override

@@ -33,6 +33,15 @@ public class CustomerDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * Get a list of all Customers ordered by short name.
+	 * 
+	 * @return List<Customer>
+	 */
+	public List<Customer> getCustomersOrderedByShortName() {
+		return getSession().createQuery("from Customer order by shortname asc").list();
+	}
+	
+	/**
 	 * Gets the customer for the given id.
 	 * 
 	 * @param long id
