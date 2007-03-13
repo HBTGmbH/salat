@@ -424,4 +424,39 @@ public class Employeecontract implements Serializable {
 		return acceptanceWarning;
 	}
 	
+	/**
+	 * Checks, if the employeecontract is accepted until the last day of the preceding month.
+	 * @return Returns true, if the contract is not accepted until the last day of the preceding month, false otherwise.
+	 */
+	public boolean getAcceptanceWarningByDate(java.util.Date now) {
+		boolean acceptanceWarning = false;
+		GregorianCalendar calendar = new GregorianCalendar();
+		Date acceptance = getReportAcceptanceDate();
+		
+		if (acceptance == null) {
+			// new contract without initial login
+			return false;
+		}
+		calendar.setTime(now);
+		int month = calendar.get(Calendar.MONTH);
+		int year = calendar.get(Calendar.YEAR);
+
+		if (month == 0) {
+			year--;
+			month = 11;
+		} else {
+			month--;
+		}
+		calendar.clear();
+		calendar.set(Calendar.MONTH, month);
+		calendar.set(Calendar.YEAR, year);
+		int date = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+		calendar.set(Calendar.DATE, date);
+		now = calendar.getTime();
+		
+		if (acceptance.before(now)) {
+			acceptanceWarning = true;
+		}
+		return acceptanceWarning;
+	}
 }

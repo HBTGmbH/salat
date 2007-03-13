@@ -1,8 +1,12 @@
 package org.tb.persistence;
 
 import java.math.BigInteger;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -576,6 +580,28 @@ public class TimereportDAO extends HibernateDaoSupport {
 	 */
 	public List<Timereport> getTimereportsByDatesAndCustomerOrderSign(java.sql.Date begin, java.sql.Date end, String customerOrderSign) {
 		return getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.customerorder.sign = ? ").setDate(0, begin).setDate(1, end).setString(2, customerOrderSign).list();
+	}
+
+	/**
+	 * @param end
+	 * @param coId
+	 * @return Returns a timreport thats valiv between the first and the last day of the given date and belonging to employeecontractid 
+	 */
+	public Timereport getLastAcceptedTimereportByDateAndEmployeeContractId(java.sql.Date end, long ecId){
+		
+		GregorianCalendar calendar = new GregorianCalendar();
+		calendar.setTime(end);
+		calendar.set(Calendar.DAY_OF_MONTH, 1);
+		Date firstDay = calendar.getTime();
+		calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+		Date lastDay = calendar.getTime();
+		
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		System.out.println(simpleDateFormat.format(firstDay));
+		System.out.println(simpleDateFormat.format(lastDay));
+//		List<Timereport> timereportList = getSession().createQuery("from Timereport t where t.accepted is not null and ? <= t.accepted and ? >= t.accepted and t.acceptedby is not null and t.employeecontract.id = ? order by t.accepted desc").setDate(0, firstDay).setDate(1, lastDay).setLong(2, ecId).list();
+		List<Timereport> timereportList = getSession().createQuery("from Timereport t where t.accepted is not null and t.employeeorder.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by t.referenceday.refdate desc").setLong(0, ecId).setDate(1, firstDay).setDate(2, lastDay).list();
+		return timereportList.get(0);
 	}
 	
 	/**
