@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -53,9 +54,9 @@ public class EditSuborderAction extends LoginRequiredAction {
 		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
 				loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) ||
 				loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-			customerorders = customerorderDAO.getCustomerorders();
+			customerorders = customerorderDAO.getVisibleCustomerorders();
 		} else {
-			customerorders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+			customerorders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 		}
 		request.getSession().setAttribute("customerorders", customerorders);
 		
@@ -83,7 +84,26 @@ public class EditSuborderAction extends LoginRequiredAction {
 		soForm.setStandard(so.getStandard());
 		soForm.setCommentnecessary(so.getCommentnecessary());
 		
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); 
+		soForm.setValidFrom(simpleDateFormat.format(so.getFromDate()));
+		if (so.getUntilDate() != null) {
+			soForm.setValidUntil(simpleDateFormat.format(so.getUntilDate()));
+		} else {
+			soForm.setValidUntil("");
+		}
+		
+		if (so.getDebithours() != null) {
+			soForm.setDebithours(so.getDebithours());
+			soForm.setDebithoursunit(so.getDebithoursunit());
+		} else {
+			soForm.setDebithours(null);
+			soForm.setDebithoursunit(null);
+		}
+		soForm.setHide(so.getHide());
+		
+		
 		request.getSession().setAttribute("currentOrderId", new Long(so.getCustomerorder().getId()));
+		request.getSession().setAttribute("currentOrder", so.getCustomerorder());
 		request.getSession().setAttribute("invoice", Character.toString(so.getInvoice()));
 		request.getSession().setAttribute("currency", so.getCurrency());
 		request.getSession().setAttribute("hourlyRate", so.getHourly_rate());

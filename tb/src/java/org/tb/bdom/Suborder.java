@@ -1,6 +1,7 @@
 package org.tb.bdom;
 
 import java.io.Serializable;
+import java.sql.Date;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -88,7 +89,21 @@ public class Suborder implements Serializable {
 	/** Comment necessary */
 	private Boolean commentnecessary;
 	
-
+	/** from date */
+	private Date fromDate;
+	
+	/** until date */
+	private Date untilDate;
+	
+	/** Debit hours */
+	private Double debithours;
+	
+	/** Unit of the debit hours */
+	private Byte debithoursunit;
+	
+	/** Hide in select boxes */
+	private Boolean hide;
+	
 	
 	public long getId() {
 		return id;
@@ -277,9 +292,111 @@ public class Suborder implements Serializable {
 		this.shortdescription = shortdescription;
 	}
 
+	/**
+	 * @return the debithours
+	 */
+	public Double getDebithours() {
+		return debithours;
+	}
+
+	/**
+	 * @param debithours the debithours to set
+	 */
+	public void setDebithours(Double debithours) {
+		this.debithours = debithours;
+	}
+
+	/**
+	 * @return the debithoursunit
+	 */
+	public Byte getDebithoursunit() {
+		return debithoursunit;
+	}
+
+	/**
+	 * @param debithoursunit the debithoursunit to set
+	 */
+	public void setDebithoursunit(Byte debithoursunit) {
+		this.debithoursunit = debithoursunit;
+	}
+
+	/**
+	 * @return the fromDate
+	 */
+	public Date getFromDate() {
+		if (fromDate == null) {
+			return getCustomerorder().getFromDate();
+		}
+		return fromDate;
+	}
+
+	/**
+	 * @param fromDate the fromDate to set
+	 */
+	public void setFromDate(Date fromDate) {
+		this.fromDate = fromDate;
+	}
+
+	/**
+	 * @return the hide
+	 */
+	public Boolean getHide() {
+		return (hide == null ? false : hide);
+	}
+
+	/**
+	 * @param hide the hide to set
+	 */
+	public void setHide(Boolean hide) {
+		this.hide = hide;
+	}
+
+	/**
+	 * @return the untilDate
+	 */
+	public Date getUntilDate() {
+		if (untilDate == null) {
+			return getCustomerorder().getUntilDate();
+		}
+		return untilDate;
+	}
+
+	/**
+	 * @param untilDate the untilDate to set
+	 */
+	public void setUntilDate(Date untilDate) {
+		this.untilDate = untilDate;
+	}
+
 	public String getSignAndDescription() {
 		return sign+" - "+getShortdescription();
 	}
+	
+	/**
+	 * 
+	 * @return Returns true, if the {@link Suborder} is currently valid, false otherwise.
+	 */
+	public boolean getCurrentlyValid() {
+		java.util.Date now = new java.util.Date();
+		if (!now.before(getFromDate()) && (getUntilDate() == null || !now.after(getUntilDate()))){
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @return Returns true, if the valitidy period fits to the validity period of the customer order
+	 */
+	public boolean validityPeriodFitsToCustomerOrder() {
+		if (!getFromDate().before(getCustomerorder().getFromDate()) &&
+				((getCustomerorder().getUntilDate() == null) ||
+				 (getUntilDate() != null && !getUntilDate().after(getCustomerorder().getUntilDate())))) {
+					return true;	
+		}
+		return false;
+	}
+	
 	
 	@Override
 	public boolean equals(Object obj) {

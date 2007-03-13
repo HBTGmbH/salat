@@ -1,5 +1,8 @@
 package org.tb.web.form;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -29,6 +32,12 @@ public class AddSuborderForm extends ActionForm {
 	private String action;
 	private Boolean standard;
 	private Boolean commentnecessary;
+	
+	private String validFrom;
+	private String validUntil;
+	private Double debithours;
+	private Byte debithoursunit;
+	private Boolean hide;
 
 	
 	public long getId() {
@@ -129,6 +138,76 @@ public class AddSuborderForm extends ActionForm {
 
 	
 	
+	/**
+	 * @return the debithours
+	 */
+	public Double getDebithours() {
+		return debithours;
+	}
+
+	/**
+	 * @param debithours the debithours to set
+	 */
+	public void setDebithours(Double debithours) {
+		this.debithours = debithours;
+	}
+
+	/**
+	 * @return the debithoursunit
+	 */
+	public Byte getDebithoursunit() {
+		return debithoursunit;
+	}
+
+	/**
+	 * @param debithoursunit the debithoursunit to set
+	 */
+	public void setDebithoursunit(Byte debithoursunit) {
+		this.debithoursunit = debithoursunit;
+	}
+
+	/**
+	 * @return the hide
+	 */
+	public Boolean getHide() {
+		return hide;
+	}
+
+	/**
+	 * @param hide the hide to set
+	 */
+	public void setHide(Boolean hide) {
+		this.hide = hide;
+	}
+
+	/**
+	 * @return the validFrom
+	 */
+	public String getValidFrom() {
+		return validFrom;
+	}
+
+	/**
+	 * @param validFrom the validFrom to set
+	 */
+	public void setValidFrom(String validFrom) {
+		this.validFrom = validFrom;
+	}
+
+	/**
+	 * @return the validUntil
+	 */
+	public String getValidUntil() {
+		return validUntil;
+	}
+
+	/**
+	 * @param validUntil the validUntil to set
+	 */
+	public void setValidUntil(String validUntil) {
+		this.validUntil = validUntil;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		sign = "";
@@ -138,6 +217,15 @@ public class AddSuborderForm extends ActionForm {
 		currency = GlobalConstants.DEFAULT_CURRENCY;
 		standard = false;
 		commentnecessary = false;
+		
+		Date now = new Date();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		validFrom = simpleDateFormat.format(now);
+		validUntil = simpleDateFormat.format(now);
+		debithours = null;
+		debithoursunit = null;
+		hide=false;
+		
 //		hourlyRate = 0.0;
 //		request.getSession().setAttribute("hourlyRate", new Double(0.0));
 	}

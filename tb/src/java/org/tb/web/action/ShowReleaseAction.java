@@ -68,7 +68,9 @@ public class ShowReleaseAction extends LoginRequiredAction {
 				currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 			}
 			if (currentEmployeeContract != null) {
-				employeecontract = currentEmployeeContract;
+				if (!currentEmployeeContract.equals(employeecontract)) {
+					employeecontract = currentEmployeeContract;
+				}				
 				releaseForm.setEmployeeContractId(employeecontract.getId());
 			}			
 			

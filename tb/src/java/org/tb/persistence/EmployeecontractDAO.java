@@ -161,6 +161,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 		}
 		session.saveOrUpdate(ec);
 		session.flush();
+//		session.clear();
 	}
 
 	/**

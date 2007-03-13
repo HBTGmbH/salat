@@ -423,6 +423,34 @@ public class Employeecontract implements Serializable {
 		}
 		return acceptanceWarning;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + (int) (id ^ (id >>> 32));
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final Employeecontract other = (Employeecontract) obj;
+		if (id != other.id)
+			return false;
+		return true;
+	}
 	
 	/**
 	 * Checks, if the employeecontract is accepted until the last day of the preceding month.

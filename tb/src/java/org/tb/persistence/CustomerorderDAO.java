@@ -60,6 +60,17 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 	public List<Customerorder> getCustomerorders() {
 		return getSession().createQuery("from Customerorder order by sign").list();
 	}
+	
+	/**
+	 * Get a list of all vivible Customerorders ordered by their sign.
+	 * 
+	 * 
+	 * @return
+	 */
+	public List<Customerorder> getVisibleCustomerorders() {
+		Date now = new Date();
+		return getSession().createQuery("from Customerorder where (hide = null or hide = false) or (fromDate <= ? and (untilDate = null or untilDate >= ? )) order by sign").setDate(0, now).setDate(1, now).list();
+	}
 
 	/**
 	 * Get a list of all Customerorders fitting to the given filters ordered by their sign.
@@ -188,6 +199,19 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 		return getSession().createQuery("from Customerorder where RESPONSIBLE_HBT_ID = ? order by sign").setLong(0, responsibleHbtId).list();
 	}
 	
+	/**
+	 * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
+	 * 
+	 * @param responsibleHbtId
+	 * @return
+	 */
+	public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
+		Date now = new Date();
+		return getSession().createQuery("from Customerorder where RESPONSIBLE_HBT_ID = ? " +
+				"and ((hide = null or hide = false) " +
+				"or (fromDate <= ? and (untilDate = null or untilDate >= ? ))) " +
+				"order by sign").setLong(0, responsibleHbtId).setDate(1, now).setDate(2, now).list();
+	}
 	
 	/**
 	 * Gets a list of all Customerorders by employee contract id.

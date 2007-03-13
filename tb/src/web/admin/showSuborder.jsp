@@ -52,7 +52,7 @@
 <bean:size id="subordersSize" name="suborders" />
 <c:if test="${subordersSize>10}">
 
-	<c:if test="${employeeAuthorized || employeeIsResponsible}">
+	<c:if test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
 		<tr>
 			<html:form action="/CreateSuborder">
 				<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">
@@ -118,7 +118,7 @@
 		<td><c:out value="${suborder.hourly_rate}" /></td>
 
 		<c:choose>
-			<c:when test="${employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
+			<c:when test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 				<td align="center">
 					<html:link href="/tb/do/EditSuborder?soId=${suborder.id}">
 						<img src="/tb/images/Edit.gif" alt="Edit Suborder" title="<bean:message key="main.headlinedescription.suborders.edit.text"/>"/>
@@ -138,7 +138,7 @@
 		</c:choose>
 		</tr>
 	</c:forEach>
-	<c:if test="${employeeAuthorized || employeeIsResponsible}">
+	<c:if test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
 		<tr>
 			<html:form action="/CreateSuborder">
 				<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">

@@ -8,20 +8,6 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
-<%
-			Long coId = (Long) request.getSession().getAttribute(
-			"currentOrderId");
-	String coIdString = coId.toString();
-	String invoiceString = (String) request.getSession().getAttribute(
-			"invoice");
-	Double hr = (Double) request.getSession()
-			.getAttribute("hourlyRate");
-	String hrString = hr.toString();
-	String currency = (String) request.getSession().getAttribute(
-			"currency");
-%>
-
-
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
@@ -35,6 +21,9 @@
 		form.submit();
 	}	
 			
+	function afterCalenderClick() {
+	}
+	
 </script>
 
 </head>
@@ -51,17 +40,20 @@
 	</span>
 	<br>
 	<table class="center backgroundcolor">
+		
+		<!-- select customerorder -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.customerorder.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="customerorderId" value="<%=coIdString%>"
+				property="customerorderId" value="${currentOrderId}"
 				onchange="setStoreAction(this.form,'refreshHourlyRate')">
 				<html:options collection="customerorders"
 					labelProperty="signAndDescription" property="id" />
-			</html:select></td>
+			</html:select><span style="color:red"><html:errors property="customerorder" /></span></td>
 		</tr>
 
+		<!-- enter suborder sign -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.sign.text" /></b></td>
@@ -70,7 +62,70 @@
 				maxlength="<%="" + org.tb.GlobalConstants.SUBORDER_SIGN_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="sign" /></span></td>
 		</tr>
-
+		
+		<!-- from date -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.validfrom.text" /></b></td>
+			<td align="left" class="noBborderStyle"><!-- JavaScript Stuff for popup calender -->
+			<script type="text/javascript" language="JavaScript"
+				src="/tb/CalendarPopup.js"></script> <script type="text/javascript"
+				language="JavaScript">
+                    document.write(getCalendarStyles());
+                </script> <script type="text/javascript" language="JavaScript">
+                    function calenderPopup(cal) {
+                        cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
+                        cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
+                        cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
+                        cal.setTodayText("<bean:message key="main.date.popup.today" />");
+                    }
+                    function calenderPopupFrom() {
+                        var cal = new CalendarPopup();
+                        calenderPopup(cal);
+                        //cal.select(document.forms[0].validFrom,'from','E yyyy-MM-dd');
+                        cal.select(document.forms[0].validFrom,'from','yyyy-MM-dd');
+                    }
+                    function calenderPopupUntil() {
+                        var cal = new CalendarPopup();
+                        calenderPopup(cal);
+                        //cal.select(document.forms[0].validUntil,'until','E yyyy-MM-dd');
+                        cal.select(document.forms[0].validUntil,'until','yyyy-MM-dd');
+                    }
+                </script> <html:text property="validFrom" readonly="false"
+				size="12" maxlength="10" /> <a
+				href="javascript:calenderPopupFrom()" name="from" ID="from"
+				style="text-decoration:none;"> <img
+				src="/tb/images/popupcalendar.gif" width="22" height="22"
+				alt="<bean:message key="main.date.popup.alt.text" />"
+				style="border:0;vertical-align:top"> </a> (<bean:message
+				key="main.suborder.customerorder.text" />: <c:out value="${currentOrder.fromDate}" />) <span 
+				style="color:red"><html:errors
+				property="validFrom" /></span></td>
+		</tr>
+		
+		<!-- until date -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.validuntil.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="validUntil" readonly="false" size="12" maxlength="10" />
+			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
+				style="text-decoration:none;"> <img
+				src="/tb/images/popupcalendar.gif" width="22" height="22"
+				alt="<bean:message key="main.date.popup.alt.text" />"
+				style="border:0;vertical-align:top"> </a> (<bean:message
+				key="main.suborder.customerorder.text" />: <c:choose>
+						<c:when test="${currentOrder.untilDate == null}">
+							<bean:message key="main.general.open.text" />)
+						</c:when>
+						<c:otherwise>
+							<c:out value="${currentOrder.untilDate}" />)
+						</c:otherwise>
+					</c:choose> <span style="color:red"><html:errors
+				property="validUntil" /></span></td>
+		</tr>
+		
+		<!-- description -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.description.text" /></b></td>
@@ -79,7 +134,7 @@
 				style="color:red"><html:errors property="description" /></span></td>
 		</tr>
 
-		<!-- Kurzbezeichnung -->
+		<!-- short description -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.shortdescription.text" /></b></td>
@@ -87,12 +142,13 @@
 				property="shortdescription" size="20" maxlength="20" /> <span
 				style="color:red"><html:errors property="shortdescription" /></span></td>
 		</tr>
-
+		
+		<!-- invoice -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.invoice.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:select
-				property="invoice" value="<%=invoiceString%>">
+				property="invoice" value="${invoice}">
 				<html:option value="Y">
 					<bean:message key="main.general.suborder.invoice.yes" />
 				</html:option>
@@ -106,20 +162,31 @@
 
 		</tr>
 
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.currency.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="currency" size="20" value="<%=currency%>" /> <span
-				style="color:red"><html:errors property="currency" /></span></td>
-		</tr>
-
+		<!-- hourly rate & currency -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.hourlyrate.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="hourlyRate" size="20" value="<%=hrString%>" /> <span
-				style="color:red"><html:errors property="hourlyRate" /></span></td>
+				property="hourlyRate" size="20" value="${hourlyRate}" /> <html:select property="currency">
+					<html:option value="EUR">EUR</html:option>
+				</html:select> <span style="color:red"><html:errors property="hourlyRate" /></span></td>
+		</tr>
+		
+		<!-- debithours -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.general.debithours.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="debithours" size="20" />&nbsp;&nbsp;<bean:message
+				key="main.general.per.text" />&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio property="debithoursunit" value="12" disabled="false" /><bean:message
+				key="main.general.month.text" /> <html:radio 
+				property="debithoursunit" value="1" disabled="false" /><bean:message
+				key="main.general.year.text" /> <html:radio 
+				property="debithoursunit" value="0" disabled="false" /><bean:message
+				key="main.general.totaltime.text" /> <span 
+				style="color:red"><html:errors property="debithours" /></span>
+			</td>
 		</tr>
 
 		<!-- is it a standard suborder? -->
@@ -136,6 +203,14 @@
 				key="main.suborder.commentnecessary.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:checkbox
 				property="commentnecessary" /></td>
+		</tr>
+		
+		<!-- hide -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.general.hideinselectboxes.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:checkbox
+				property="hide" /> </td>
 		</tr>
 
 

@@ -64,13 +64,21 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		
 		// check if loginEmployee has responsibility for some orders
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		List<Customerorder> orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+		List<Customerorder> orders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 		boolean employeeIsResponsible = false;
 		
 		if (orders != null && orders.size() > 0) {
 			employeeIsResponsible =  true;
 		}
 		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
+		
+		// check if there are visible customer orders
+		orders = customerorderDAO.getVisibleCustomerorders();
+		boolean visibleOrdersPresent = false;
+		if (orders != null && !orders.isEmpty()) {
+			visibleOrdersPresent = true;
+		} 
+		request.getSession().setAttribute("visibleOrdersPresent", visibleOrdersPresent);
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {
