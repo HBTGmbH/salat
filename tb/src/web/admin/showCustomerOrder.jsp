@@ -116,10 +116,10 @@
 			title="<bean:message
 			key="main.headlinedescription.orders.description.text" />"><b><bean:message
 			key="main.customerorder.shortdescription.short.text" /></b></th>
-		<th align="left"
+		<!-- <th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.description.text" />"><b><bean:message
-			key="main.customerorder.description.text" /></b></th>
+			key="main.customerorder.description.text" /></b></th> -->
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.validfrom.text" />"><b><bean:message
@@ -225,7 +225,7 @@
 				<td><c:out value="${customerorder.customer.shortname}" /></td>
 				<td><c:out value="${customerorder.sign}" /></td>
 				<td><c:out value="${customerorder.shortdescription}" /></td>
-				<td><c:out value="${customerorder.description}" /></td>
+				<!-- <td><c:out value="${customerorder.description}" /></td> -->
 				<td><c:out value="${customerorder.fromDate}" /></td>
 				<td><c:choose>
 					<c:when test="${customerorder.untilDate == null}">
