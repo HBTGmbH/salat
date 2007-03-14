@@ -137,21 +137,32 @@ public class SuborderDAO extends HibernateDaoSupport {
 							"(fromDate <= ? " +
 							"or (fromDate = null " +
 							"and s.customerorder.fromDate <= ? ))" +
-							"and (untilDate = null or untilDate >= ?) " +	
+							"and (untilDate >= ? " +
+							"or (untilDate = null " +
+							"and (s.customerorder.untilDate = null " +
+							"or s.customerorder.untilDate >= ?))) " +	
 							"order by s.customerorder.sign ,sign")
 							.setDate(0, now)
 							.setDate(1, now)
-							.setDate(2, now).list();
+							.setDate(2, now)
+							.setDate(3, now).list();
 				} else {
 					// case 2
 					suborders = getSession().createQuery("from Suborder s where " +
 							"s.customerorder.id = ? " +
-							"and fromDate <= ? " +
-							"and (untilDate = null or untilDate >= ?) " +	
+							"and (fromDate <= ? " +
+							"or (fromDate = null " +
+							"and s.customerorder.fromDate <= ? ))" +
+							"and (untilDate >= ? " +
+							"or (untilDate = null " +
+							"and (s.customerorder.untilDate = null " +
+							"or s.customerorder.untilDate >= ?))) " +	
 							"order by s.customerorder.sign ,sign")
 							.setLong(0, customerOrderId)
 							.setDate(1, now)
-							.setDate(2, now).list();
+							.setDate(2, now)
+							.setDate(3, now)
+							.setDate(4, now).list();
 				}
 			} else {
 				if (customerOrderId == null || customerOrderId == -1) {
@@ -164,8 +175,13 @@ public class SuborderDAO extends HibernateDaoSupport {
 							"or upper(shortdescription) like ?  " +
 							"or upper(s.customerorder.shortdescription) like ? " +
 							"or upper(hourly_rate) like ?) " +
-							"and fromDate <= ? " +
-							"and (untilDate = null or untilDate >= ?) " +	
+							"and (fromDate <= ? " +
+							"or (fromDate = null " +
+							"and s.customerorder.fromDate <= ? ))" +
+							"and (untilDate >= ? " +
+							"or (untilDate = null " +
+							"and (s.customerorder.untilDate = null " +
+							"or s.customerorder.untilDate >= ?))) " +	
 							"order by s.customerorder.sign ,sign")
 							.setString(0, filter)
 							.setString(1, filter)
@@ -175,7 +191,9 @@ public class SuborderDAO extends HibernateDaoSupport {
 							.setString(5, filter)
 							.setString(6, filter)
 							.setDate(7, now)
-							.setDate(8, now).list();
+							.setDate(8, now)
+							.setDate(9, now)
+							.setDate(10, now).list();
 				} else {
 					// case 4
 					suborders = getSession().createQuery("from Suborder s where " +
@@ -187,8 +205,13 @@ public class SuborderDAO extends HibernateDaoSupport {
 							"or upper(shortdescription) like ?  " +
 							"or upper(s.customerorder.shortdescription) like ? " +
 							"or upper(hourly_rate) like ?) " +
-							"and fromDate <= ? " +
-							"and (untilDate = null or untilDate >= ?) " +	
+							"and (fromDate <= ? " +
+							"or (fromDate = null " +
+							"and s.customerorder.fromDate <= ? ))" +
+							"and (untilDate >= ? " +
+							"or (untilDate = null " +
+							"and (s.customerorder.untilDate = null " +
+							"or s.customerorder.untilDate >= ?))) " +	
 							"order by s.customerorder.sign ,sign")
 							.setLong(0, customerOrderId)
 							.setString(1, filter)
@@ -199,7 +222,9 @@ public class SuborderDAO extends HibernateDaoSupport {
 							.setString(6, filter)
 							.setString(7, filter)
 							.setDate(8, now)
-							.setDate(9, now).list();
+							.setDate(9, now)
+							.setDate(10, now)
+							.setDate(11, now).list();
 				}
 			}	
 		} else {

@@ -47,7 +47,7 @@ import org.tb.web.form.ShowDailyReportForm;
 /**
  * Action class for a timereport to be shown in the daily display
  * 
- * @author oda
+ * @author oda, th
  *
  */
 public class ShowDailyReportAction extends DailyReportAction {
@@ -116,11 +116,13 @@ public class ShowDailyReportAction extends DailyReportAction {
 		
 		String sortModus = (String) request.getSession().getAttribute("timereportSortModus");
 		if (sortModus == null || !sortModus.equals("+") || !sortModus.equals("-")) {
-			request.getSession().setAttribute("timereportSortModus", "+");
+			sortModus = "+";
+			request.getSession().setAttribute("timereportSortModus", sortModus);
 		}
 		String sortColumn = (String) request.getSession().getAttribute("timereportSortColumn");
 		if (sortColumn == null || sortColumn.trim().equals("")) {
-			request.getSession().setAttribute("timereportSortColumn", "employee");
+			sortColumn = "employee";
+			request.getSession().setAttribute("timereportSortColumn", sortColumn);
 		}
 		
 		if ((request.getParameter("task") != null)

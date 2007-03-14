@@ -86,7 +86,7 @@
 	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
 		key="main.general.entertimereportproperties.text" />:<br></span>
 	<br>
-	<table width="800" border="0" cellspacing="0" cellpadding="2"
+	<table width="100%" border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
 		<tr>
 			<td align="left" class="noBborderStyle" colspan="2">
@@ -195,10 +195,10 @@
 
 		<logic:equal name="report" value="W" scope="session">
 			<tr>
-				<td align="left" class="noBborderStyle"><b><bean:message
+				<td align="left" class="noBborderStyle" nowrap="nowrap"><b><bean:message
 					key="main.timereport.customerorder.text" /></b></td>
 
-				<td align="left" class="noBborderStyle"><html:select
+				<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" ><html:select
 					property="orderId" onchange="setUpdateSubordersAction(this.form)">
 					<html:options collection="orders" labelProperty="signAndDescription"
 						property="id" />
