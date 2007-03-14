@@ -197,6 +197,17 @@
 							value="${customerorder.customer.name}" /></td>
 					</tr>
 					<tr>
+						<td class="info"><bean:message
+							key="main.timereport.tooltip.order" />:</td>
+						<td class="info" colspan="3"><c:out
+							value="${customerorder.sign}" /></td>
+					</tr>
+					<tr>
+						<td class="info">&nbsp;</td>
+						<td class="info" colspan="3"><c:out
+							value="${customerorder.description}" /></td>
+					</tr>
+					<tr>
 						<td class="info" valign="top"><bean:message
 							key="main.timereport.tooltip.created" />:</td>
 						<td class="info"><c:out value="${customerorder.created}" /></td>
