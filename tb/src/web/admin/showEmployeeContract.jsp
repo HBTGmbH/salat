@@ -27,7 +27,19 @@
 			form.submit();
 		}
 	}					
- 
+ 	function showWMTT(Trigger,id) {
+  	  wmtt = document.getElementById(id);
+    	var hint;
+   	 hint = Trigger.getAttribute("hint");
+   	 //if((hint != null) && (hint != "")){
+   	 	//wmtt.innerHTML = hint;
+    	wmtt.style.display = "block";
+   	 //}
+	}
+
+	function hideWMTT() {
+		wmtt.style.display = "none";
+	}
 </script>
 
 </head>
@@ -58,6 +70,8 @@
 		</c:if>
 	</c:if>
 	<tr>
+			<th align="left"
+			title="Info"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message key="main.headlinedescription.employeecontracts.employeename.text" />"><b><bean:message
 			key="main.employeecontract.employee.text" /></b></th>
@@ -103,6 +117,41 @@
 			</c:choose>
 			<c:choose>
 				<c:when test="${employeecontract.hide}">
+										<!-- Info -->
+			<td align="center">
+			<div class="tooltip" id="info<c:out value='${employeecontract.id}' />">
+			<table>
+				<tr>
+					<td class="info">id:</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeecontract.id}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.created" />:</td>
+					<td class="info"><c:out value="${employeecontract.created}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employeecontract.createdby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.edited" />:</td>
+					<td class="info"><c:out value="${employeecontract.lastupdate}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employeecontract.lastupdatedby}" /></td>
+				</tr>
+			</table>
+
+			</div>
+			<img
+				onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
+				onMouseOut="hideWMTT()" width="12px" height="12px"
+				src="/tb/images/info_button.gif" />
+			</td>
 					<td style="color:gray"><c:out value="${employeecontract.employee.name}" /></td>
 					<td style="color:gray"><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 					<td style="color:gray"><c:out value="${employeecontract.validFrom}" /></td>
@@ -124,6 +173,41 @@
 						value="${employeecontract.vacationEntitlement}" /></td>
 				</c:when>
 				<c:otherwise>
+														<!-- Info -->
+			<td align="center">
+			<div class="tooltip" id="info<c:out value='${employeecontract.id}' />">
+			<table>
+				<tr>
+					<td class="info">id:</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeecontract.id}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.created" />:</td>
+					<td class="info"><c:out value="${employeecontract.created}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employeecontract.createdby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.edited" />:</td>
+					<td class="info"><c:out value="${employeecontract.lastupdate}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employeecontract.lastupdatedby}" /></td>
+				</tr>
+			</table>
+
+			</div>
+			<img
+				onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
+				onMouseOut="hideWMTT()" width="12px" height="12px"
+				src="/tb/images/info_button.gif" />
+			</td>
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 					<td><c:out value="${employeecontract.validFrom}" /></td>

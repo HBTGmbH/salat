@@ -35,7 +35,19 @@
 		form.submit();
 	
 	}				
- 
+ 	function showWMTT(Trigger,id) {
+  	  wmtt = document.getElementById(id);
+    	var hint;
+   	 hint = Trigger.getAttribute("hint");
+   	 //if((hint != null) && (hint != "")){
+   	 	//wmtt.innerHTML = hint;
+    	wmtt.style.display = "block";
+   	 //}
+	}
+
+	function hideWMTT() {
+		wmtt.style.display = "none";
+	}
 </script>
 
 </head>
@@ -106,6 +118,8 @@
 	</c:if>
 	<tr>
 		<th align="left"
+			title="Info"><b>Info</b></th>
+		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.employeename.text" />"><b><bean:message
 			key="main.employeeorder.employee.text" /></b></th>
@@ -164,6 +178,74 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
+			
+			<!-- Info -->
+			<td align="center">
+			<div class="tooltip" id="info<c:out value='${employeeorder.id}' />">
+			<table>
+				<tr>
+					<td class="info">id:</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeeorder.id}" /></td>
+				</tr>
+				<tr>
+					<td class="info"><bean:message
+						key="main.timereport.tooltip.employee" />:</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out
+						value="${employeeorder.employeecontract.timeString}" /><c:if 
+						test="${employeeorder.employeecontract.openEnd}"><bean:message 
+						key="main.general.open.text" /></c:if>)</td>
+				</tr>
+				<tr>
+					<td class="info"><bean:message
+						key="main.timereport.tooltip.order" />:</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeeorder.suborder.customerorder.sign}" /></td>
+				</tr>
+				<tr>
+					<td class="info">&nbsp;</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeeorder.suborder.customerorder.description}" /></td>
+				</tr>
+				<tr>
+					<td class="info"><bean:message
+						key="main.timereport.tooltip.suborder" />:</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeeorder.suborder.sign}" /></td>
+				</tr>
+				<tr>
+					<td class="info">&nbsp;</td>
+					<td class="info" colspan="3"><c:out
+						value="${employeeorder.suborder.description}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.created" />:</td>
+					<td class="info"><c:out value="${employeeorder.created}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employeeorder.createdby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.edited" />:</td>
+					<td class="info"><c:out value="${employeeorder.lastupdate}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employeeorder.lastupdatedby}" /></td>
+				</tr>
+			</table>
+
+			</div>
+			<img
+				onMouseOver="showWMTT(this,'info<c:out value="${employeeorder.id}" />')"
+				onMouseOut="hideWMTT()" width="12px" height="12px"
+				src="/tb/images/info_button.gif" />
+			</td>
+		
 		<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
 				test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
 		<td

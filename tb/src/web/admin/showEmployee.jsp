@@ -28,7 +28,19 @@
 			form.submit();
 		}
 	}					
- 
+ 	function showWMTT(Trigger,id) {
+  	  wmtt = document.getElementById(id);
+    	var hint;
+   	 hint = Trigger.getAttribute("hint");
+   	 //if((hint != null) && (hint != "")){
+   	 	//wmtt.innerHTML = hint;
+    	wmtt.style.display = "block";
+   	 //}
+	}
+
+	function hideWMTT() {
+		wmtt.style.display = "none";
+	}
 </script>
 
 
@@ -57,6 +69,8 @@
 	</c:if>
 	</c:if>
 	<tr>
+		<th align="left"
+			title="Info"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employees.fristname.text" />"><b><bean:message
@@ -106,6 +120,43 @@
 					<tr class="secondarycolor">
 				</c:otherwise>
 			</c:choose>
+						<!-- Info -->
+			<td align="center">
+			<div class="tooltip" id="info<c:out value='${employee.id}' />">
+			<table>
+				<tr>
+					<td class="info">id:</td>
+					<td class="info" colspan="3"><c:out
+						value="${employee.id}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.created" />:</td>
+					<td class="info"><c:out value="${employee.created}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employee.createdby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.edited" />:</td>
+					<td class="info"><c:out value="${employee.lastupdate}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${employee.lastupdatedby}" /></td>
+				</tr>
+			</table>
+
+			</div>
+			<img
+				onMouseOver="showWMTT(this,'info<c:out value="${employee.id}" />')"
+				onMouseOut="hideWMTT()" width="12px" height="12px"
+				src="/tb/images/info_button.gif" />
+			</td>
+			
+			
 			<td><c:out value="${employee.firstname}" /></td>
 			<td><c:out value="${employee.lastname}" /></td>
 			<td><c:out value="${employee.sign}" /></td>

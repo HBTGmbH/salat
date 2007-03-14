@@ -28,7 +28,19 @@
 			form.submit();
 		}
 	}					
- 
+  	function showWMTT(Trigger,id) {
+  	  wmtt = document.getElementById(id);
+    	var hint;
+   	 hint = Trigger.getAttribute("hint");
+   	 //if((hint != null) && (hint != "")){
+   	 	//wmtt.innerHTML = hint;
+    	wmtt.style.display = "block";
+   	 //}
+	}
+
+	function hideWMTT() {
+		wmtt.style.display = "none";
+	}
 </script>
 
 </head>
@@ -56,6 +68,8 @@
 		</c:if>
 	</c:if>
 	<tr>
+		<th align="left"
+			title="Info"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.customers.customername.text" />"><b><bean:message
@@ -88,6 +102,41 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
+			<!-- Info -->
+			<td align="center">
+			<div class="tooltip" id="info<c:out value='${customer.id}' />">
+			<table>
+				<tr>
+					<td class="info">id:</td>
+					<td class="info" colspan="3"><c:out
+						value="${customer.id}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.created" />:</td>
+					<td class="info"><c:out value="${customer.created}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${customer.createdby}" /></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.edited" />:</td>
+					<td class="info"><c:out value="${customer.lastupdate}" /></td>
+					<td class="info" valign="top"><bean:message
+						key="main.timereport.tooltip.by" /></td>
+					<td class="info" valign="top"><c:out
+						value="${customer.lastupdatedby}" /></td>
+				</tr>
+			</table>
+
+			</div>
+			<img
+				onMouseOver="showWMTT(this,'info<c:out value="${customer.id}" />')"
+				onMouseOut="hideWMTT()" width="12px" height="12px"
+				src="/tb/images/info_button.gif" />
+			</td>
 		<td><c:out value="${customer.shortname}" /></td>
 		<td><c:out value="${customer.name}" /></td>
 		<td><c:out value="${customer.address}" /></td>
