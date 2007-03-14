@@ -122,15 +122,15 @@ public class StoreSuborderAction extends LoginRequiredAction {
 					.getAttribute("loginEmployee");
 			suborderDAO.save(so, loginEmployee);
 
-			String filter = (String) request.getSession().getAttribute(
-					"suborderFilter");
-			if (filter != null && !filter.equalsIgnoreCase("")) {
-				request.getSession().setAttribute("suborders",
-						suborderDAO.getSubordersByFilter(filter));
-			} else {
-				request.getSession().setAttribute("suborders",
-						suborderDAO.getSubordersOrderedByCustomerorder());
-			}
+//			String filter = (String) request.getSession().getAttribute(
+//					"suborderFilter");
+//			if (filter != null && !filter.equalsIgnoreCase("")) {
+//				request.getSession().setAttribute("suborders",
+//						suborderDAO.getSubordersByFilter(filter));
+//			} else {
+//				request.getSession().setAttribute("suborders",
+//						suborderDAO.getSubordersOrderedByCustomerorder());
+//			}
 			request.getSession().removeAttribute("soId");
 
 			// store used customer order id for the next creation of a suborder
@@ -140,6 +140,20 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			boolean addMoreSuborders = Boolean.parseBoolean((String) request
 					.getParameter("continue"));
 			if (!addMoreSuborders) {
+				String filter = null;
+				Boolean show = null;
+				Long customerOrderId = null; 
+				if (request.getSession().getAttribute("suborderFilter") != null) {
+					filter = (String) request.getSession().getAttribute("suborderFilter");
+				}
+				if (request.getSession().getAttribute("suborderShow") != null) {
+					show = (Boolean) request.getSession().getAttribute("suborderShow");
+				}
+				if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
+					customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
+				}
+				request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+				
 				return mapping.findForward("success");
 			} else {
 				// reuse form entries and show add-page
@@ -397,6 +411,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
 //		if ("Y".equals(soForm.getInvoice()) && (soForm.getDebithours() == null || soForm.getDebithours() == 0.0)) {
 //			errors.add("debithours", new ActionMessage("form.suborder.error.debithours.necessary"));
 //		}
+		
+		// check if billable suborder has assigned hourly rate
+		if ("Y".equals(soForm.getInvoice()) && (soForm.getHourlyRate() == null || soForm.getHourlyRate() == 0.0)) {
+			errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.unavailable"));
+		}
 		
 		saveErrors(request, errors);
 

@@ -43,22 +43,54 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		
 		ShowSuborderForm suborderForm = (ShowSuborderForm) form;
 		
-		String filter = suborderForm.getFilter();
-		request.getSession().setAttribute("suborderFilter", filter);
-		filter = filter.toUpperCase();
-		filter = "%"+filter+"%";
+		List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
+		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
 		
-		if (filter != null && !filter.equalsIgnoreCase("")) {
-			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
-//			request.getSession().setAttribute("suborderFilter", filter);
+//		String filter = suborderForm.getFilter();
+//		request.getSession().setAttribute("suborderFilter", filter);
+//		filter = filter.toUpperCase();
+//		filter = "%"+filter+"%";
+//		
+//		if (filter != null && !filter.equalsIgnoreCase("")) {
+//			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
+//		} else {
+//			request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+//		}
+		
+		String filter = null;
+		Boolean show = null;
+		Long customerOrderId = null; 
+		
+		if ((request.getParameter("task") != null) && 
+				(request.getParameter("task").equals("refresh"))) {
+			filter = suborderForm.getFilter();
+
+			if (filter != null && !filter.trim().equals("")) {
+				filter = filter.toUpperCase();
+				filter = "%" + filter + "%";
+			}			
+			request.getSession().setAttribute("suborderFilter", filter);
+			
+			show = suborderForm.getShow();
+			request.getSession().setAttribute("suborderShow", show);
+			
+			customerOrderId = suborderForm.getCustomerOrderId();
+			request.getSession().setAttribute("suborderCustomerOrderId", customerOrderId);
 		} else {
-//			filter = (String) request.getSession().getAttribute("suborderFilter");
-//			if (filter != null && !filter.equalsIgnoreCase("")) {
-//				request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
-//			} else {
-				request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
-//			}
+			if (request.getSession().getAttribute("suborderFilter") != null) {
+				filter = (String) request.getSession().getAttribute("suborderFilter");
+			}
+			if (request.getSession().getAttribute("suborderShow") != null) {
+				show = (Boolean) request.getSession().getAttribute("suborderShow");
+			}
+			if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
+				customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
+			}
 		}
+		
+		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));			
+
+		
 		
 		
 		

@@ -76,16 +76,6 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 			}
 		}
 		
-		
-//		if (filter != null && !filter.equalsIgnoreCase("")) {
-//			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
-//
-//		} else {
-//				request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
-//		}
-		
-		
-		
 		request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
 		
 		if (request.getParameter("task") != null) {

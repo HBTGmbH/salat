@@ -1,5 +1,3 @@
-<%@ page import="org.tb.bdom.Employee"%>
-
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -27,6 +25,11 @@
 			form.action = "/tb/do/DeleteSuborder?soId=" + id;
 			form.submit();
 		}
+	}	
+	
+	function refresh(form) {	
+		form.action = "/tb/do/ShowSuborder?task=refresh";
+		form.submit();
 	}					
  
 </script>
@@ -41,14 +44,37 @@
 <br>
 <span style="color:red"><html:errors footer="<br>"/>
 </span>
-<html:form action="/ShowSuborder">
-	<html:text property="filter" size="40"/>
-	<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
-		<bean:message key="main.general.button.filter.text" />
-	</html:submit>
-</html:form>
 
 <table class="center backgroundcolor">
+<html:form action="/ShowSuborder?task=refresh">
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message
+				key="main.suborder.customerorder.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left">
+				<html:select property="customerOrderId" onchange="refresh(this.form)">
+					<html:option value="-1">
+						<bean:message key="main.general.allorders.text" />
+					</html:option>
+					<html:options collection="visibleCustomerOrders" labelProperty="signAndDescription"
+						property="id" />
+			</html:select>
+			</td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left">
+				<html:text property="filter" size="40" />
+				<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+					<bean:message key="main.general.button.filter.text" />
+				</html:submit>
+			</td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showinvalid.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+					property="show" onclick="refresh(this.form)" /> </td>
+		</tr>
+	</html:form>
 <bean:size id="subordersSize" name="suborders" />
 <c:if test="${subordersSize>10}">
 
@@ -76,15 +102,27 @@
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.description.text" />"><b><bean:message
 			key="main.suborder.description.text" /></b></th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.validfrom.text" />"><b><bean:message
+			key="main.customerorder.validfrom.text" /></b></th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.orders.validuntil.text" />"><b><bean:message
+			key="main.customerorder.validuntil.text" /></b></th>
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.invoice.text" />"><b><bean:message
 			key="main.suborder.invoice.text" /></b></th>
+		<!--  
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.currency.text" />"><b><bean:message
 			key="main.suborder.currency.text" /></b></th>
+		-->
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.hourlyrate.text" />"><b><bean:message
 			key="main.suborder.hourlyrate.text" /></b></th>
+		<th align="left"><b><bean:message
+			key="main.general.debithours.text" /></b></th>
 		<th align="left" title="<bean:message
 			key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
 			key="main.suborder.edit.text" /></b></th>
@@ -102,20 +140,166 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
-		<td title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
-		<td><c:out value="${suborder.sign}" /></td>
-		<td><c:out value="${suborder.shortdescription}" /></td>
-		<td><c:out value="${suborder.description}" /></td>
-		<td align="center"><logic:equal name="suborder"
-			property="invoice" value="Y">
-			<bean:message key="main.suborder.invoice.yes.text" />
-		</logic:equal> <logic:equal name="suborder" property="invoice" value="N">
-			<bean:message key="main.suborder.invoice.no.text" />
-		</logic:equal> <logic:equal name="suborder" property="invoice" value="U">
-			<bean:message key="main.suborder.invoice.undefined.text" />
-		</logic:equal></td>
-		<td><c:out value="${suborder.currency}" /></td>
-		<td><c:out value="${suborder.hourly_rate}" /></td>
+		<!-- invalid suborders should be gray -->
+		<c:choose>
+			<c:when test="${suborder.currentlyValid}">
+				<td title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
+				<td><c:out value="${suborder.sign}" /></td>
+				<td><c:out value="${suborder.shortdescription}" /></td>
+				<td><c:out value="${suborder.description}" /></td>
+				<td><c:out value="${suborder.fromDate}" /></td>
+				<td>
+					<c:choose>
+						<c:when test="${suborder.untilDate == null}">
+							<bean:message key="main.general.open.text" />
+						</c:when>
+						<c:otherwise>
+							<c:out value="${suborder.untilDate}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
+				
+				<!-- is hourly rate for billable suborders set? -->
+				<c:choose>
+					<c:when test="${suborder.invoiceString == 'Y' && suborder.hourly_rate == 0.0}">
+						<td align="center" style="color:red">
+							<c:choose>
+								<c:when test="${suborder.invoiceString == 'Y'}">
+									<bean:message key="main.suborder.invoice.yes.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'N'}">
+									<bean:message key="main.suborder.invoice.no.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'U'}">
+									<bean:message key="main.suborder.invoice.undefined.text" />
+								</c:when>
+							</c:choose>
+						</td>
+						<td style="color:red"><c:out value="${suborder.hourly_rate}" /> <c:out value="${suborder.currency}" /></td>
+					</c:when>
+					<c:otherwise>
+						<td align="center">
+							<c:choose>
+								<c:when test="${suborder.invoiceString == 'Y'}">
+									<bean:message key="main.suborder.invoice.yes.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'N'}">
+									<bean:message key="main.suborder.invoice.no.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'U'}">
+									<bean:message key="main.suborder.invoice.undefined.text" />
+								</c:when>
+							</c:choose>
+						</td>
+						<td><c:out value="${suborder.hourly_rate}" /> <c:out value="${suborder.currency}" /></td>
+					</c:otherwise>
+				</c:choose>
+				
+				<td>
+					<c:choose>
+						<c:when test="${customerorder.debithours == null}">
+							n/a
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.debithours}" />
+							<c:choose>
+								<c:when test="${customerorder.debithoursunit == 0}">
+									/ <bean:message key="main.general.totaltime.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 1}">
+									/ <bean:message key="main.general.year.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 12}">
+									/ <bean:message key="main.general.month.text" />
+								</c:when>
+								<c:otherwise>
+									?
+								</c:otherwise>
+							</c:choose>
+						</c:otherwise>
+					</c:choose>
+				</td>
+			</c:when>
+			<c:otherwise>
+			<!-- suborder is invalid -->
+				<td style="color:gray" title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
+				<td style="color:gray"><c:out value="${suborder.sign}" /></td>
+				<td style="color:gray"><c:out value="${suborder.shortdescription}" /></td>
+				<td style="color:gray"><c:out value="${suborder.description}" /></td>
+				<td style="color:gray"><c:out value="${suborder.fromDate}" /></td>
+				<td style="color:gray">
+					<c:choose>
+						<c:when test="${suborder.untilDate == null}">
+							<bean:message key="main.general.open.text" />
+						</c:when>
+						<c:otherwise>
+							<c:out value="${suborder.untilDate}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
+				
+				<!-- is hourly rate for billable suborders set? -->
+				<c:choose>
+					<c:when test="${suborder.invoiceString == 'Y' && suborder.hourly_rate == 0.0}">
+						<td align="center" style="color:red">
+							<c:choose>
+								<c:when test="${suborder.invoiceString == 'Y'}">
+									<bean:message key="main.suborder.invoice.yes.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'N'}">
+									<bean:message key="main.suborder.invoice.no.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'U'}">
+									<bean:message key="main.suborder.invoice.undefined.text" />
+								</c:when>
+							</c:choose>
+						</td>
+						<td style="color:red"><c:out value="${suborder.hourly_rate}" /> <c:out value="${suborder.currency}" /></td>
+					</c:when>
+					<c:otherwise>
+						<td align="center" style="color:gray">
+							<c:choose>
+								<c:when test="${suborder.invoiceString == 'Y'}">
+									<bean:message key="main.suborder.invoice.yes.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'N'}">
+									<bean:message key="main.suborder.invoice.no.text" />
+								</c:when>
+								<c:when test="${suborder.invoiceString == 'U'}">
+									<bean:message key="main.suborder.invoice.undefined.text" />
+								</c:when>
+							</c:choose>
+						</td>
+						<td style="color:gray"><c:out value="${suborder.hourly_rate}" /> <c:out value="${suborder.currency}" /></td>
+					</c:otherwise>
+				</c:choose>
+				
+				<td style="color:gray">
+					<c:choose>
+						<c:when test="${customerorder.debithours == null}">
+							n/a
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.debithours}" />
+							<c:choose>
+								<c:when test="${customerorder.debithoursunit == 0}">
+									/ <bean:message key="main.general.totaltime.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 1}">
+									/ <bean:message key="main.general.year.text" />
+								</c:when>
+								<c:when test="${customerorder.debithoursunit == 12}">
+									/ <bean:message key="main.general.month.text" />
+								</c:when>
+								<c:otherwise>
+									?
+								</c:otherwise>
+							</c:choose>
+						</c:otherwise>
+					</c:choose>
+				</td>
+			</c:otherwise>
+		</c:choose>
 
 		<c:choose>
 			<c:when test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">

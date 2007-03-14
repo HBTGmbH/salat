@@ -16,7 +16,9 @@ import org.apache.struts.action.ActionMapping;
  */
 public class ShowSuborderForm extends ActionForm {
 
+	private Boolean show;
 	private String filter;
+	private Long customerOrderId;
 	
 	
 	
@@ -29,9 +31,39 @@ public class ShowSuborderForm extends ActionForm {
 		this.filter = filter;
 	}
 
+	/**
+	 * @return the customerOrderId
+	 */
+	public Long getCustomerOrderId() {
+		return customerOrderId;
+	}
+
+	/**
+	 * @param customerOrderId the customerOrderId to set
+	 */
+	public void setCustomerOrderId(Long customerOrderId) {
+		this.customerOrderId = customerOrderId;
+	}
+
+	/**
+	 * @return the show
+	 */
+	public Boolean getShow() {
+		return show;
+	}
+
+	/**
+	 * @param show the show to set
+	 */
+	public void setShow(Boolean show) {
+		this.show = show;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		filter = "";
+		show = false;
+		customerOrderId = -1L;
 	}
 
 	@Override

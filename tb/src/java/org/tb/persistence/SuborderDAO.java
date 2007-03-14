@@ -2,6 +2,7 @@ package org.tb.persistence;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -118,6 +119,149 @@ public class SuborderDAO extends HibernateDaoSupport {
 		return getSession().createQuery("from Suborder order by sign").list();
 	}
 
+	
+	/**
+	 * Get a list of all suborders fitting to the given filters ordered by their sign.
+	 * 
+	 * 
+	 * @return
+	 */
+	public List<Suborder> getSubordersByFilters(Boolean showInvalid,String filter,Long customerOrderId) {
+		List<Suborder> suborders = new ArrayList<Suborder>();
+		if (showInvalid == null || !showInvalid) {
+			Date now = new Date();
+			if (filter == null || filter.trim().equals("")) {
+				if (customerOrderId == null || customerOrderId == -1) {
+					// case 1
+					suborders = getSession().createQuery("from Suborder s where " +
+							"(fromDate <= ? " +
+							"or (fromDate = null " +
+							"and s.customerorder.fromDate <= ? ))" +
+							"and (untilDate = null or untilDate >= ?) " +	
+							"order by s.customerorder.sign ,sign")
+							.setDate(0, now)
+							.setDate(1, now)
+							.setDate(2, now).list();
+				} else {
+					// case 2
+					suborders = getSession().createQuery("from Suborder s where " +
+							"s.customerorder.id = ? " +
+							"and fromDate <= ? " +
+							"and (untilDate = null or untilDate >= ?) " +	
+							"order by s.customerorder.sign ,sign")
+							.setLong(0, customerOrderId)
+							.setDate(1, now)
+							.setDate(2, now).list();
+				}
+			} else {
+				if (customerOrderId == null || customerOrderId == -1) {
+					// case 3
+					suborders = getSession().createQuery("from Suborder s where (" +
+							"upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(s.customerorder.sign) like ? " +
+							"or upper(s.customerorder.description) like ? " +
+							"or upper(shortdescription) like ?  " +
+							"or upper(s.customerorder.shortdescription) like ? " +
+							"or upper(hourly_rate) like ?) " +
+							"and fromDate <= ? " +
+							"and (untilDate = null or untilDate >= ?) " +	
+							"order by s.customerorder.sign ,sign")
+							.setString(0, filter)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.setString(4, filter)
+							.setString(5, filter)
+							.setString(6, filter)
+							.setDate(7, now)
+							.setDate(8, now).list();
+				} else {
+					// case 4
+					suborders = getSession().createQuery("from Suborder s where " +
+							"s.customerorder.id = ? " +
+							"and (upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(s.customerorder.sign) like ? " +
+							"or upper(s.customerorder.description) like ? " +
+							"or upper(shortdescription) like ?  " +
+							"or upper(s.customerorder.shortdescription) like ? " +
+							"or upper(hourly_rate) like ?) " +
+							"and fromDate <= ? " +
+							"and (untilDate = null or untilDate >= ?) " +	
+							"order by s.customerorder.sign ,sign")
+							.setLong(0, customerOrderId)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.setString(4, filter)
+							.setString(5, filter)
+							.setString(6, filter)
+							.setString(7, filter)
+							.setDate(8, now)
+							.setDate(9, now).list();
+				}
+			}	
+		} else {
+			if (filter == null || filter.trim().equals("")) {
+				if (customerOrderId == null || customerOrderId == -1) {
+					// case 5
+					suborders = getSession().createQuery("from Suborder s " +
+							"order by s.customerorder.sign ,sign")
+							.list();
+				} else {
+					// case 6
+					suborders = getSession().createQuery("from Suborder s where " +
+							"s.customerorder.id = ? " +
+							"order by s.customerorder.sign ,sign")
+							.setLong(0, customerOrderId).list();
+				}
+			} else {
+				if (customerOrderId == null || customerOrderId == -1) {
+					// case 7
+					suborders = getSession().createQuery("from Suborder s where " +
+							"upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(s.customerorder.sign) like ? " +
+							"or upper(s.customerorder.description) like ? " +
+							"or upper(shortdescription) like ?  " +
+							"or upper(s.customerorder.shortdescription) like ? " +
+							"or upper(hourly_rate) like ? " +
+							"order by s.customerorder.sign ,sign")
+							.setString(0, filter)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.setString(4, filter)
+							.setString(5, filter)
+							.setString(6, filter).list();
+				} else {
+					// case 8
+					suborders = getSession().createQuery("from Suborder s where " +
+							"s.customerorder.id = ? " +
+							"and (upper(sign) like ? " +
+							"or upper(description) like ? " +
+							"or upper(s.customerorder.sign) like ? " +
+							"or upper(s.customerorder.description) like ? " +
+							"or upper(shortdescription) like ?  " +
+							"or upper(s.customerorder.shortdescription) like ? " +
+							"or upper(hourly_rate) like ?) " +
+							"order by s.customerorder.sign ,sign")
+							.setLong(0, customerOrderId)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.setString(4, filter)
+							.setString(5, filter)
+							.setString(6, filter)
+							.setString(7, filter).list();
+				}
+			}
+		}
+		return suborders;
+	}
+	
+	
 	
 	/**
 	 * Get a list of all Suborders ordered by the sign of {@link Customerorder} they are associated to.

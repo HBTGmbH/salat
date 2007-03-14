@@ -397,6 +397,16 @@ public class Suborder implements Serializable {
 		return false;
 	}
 	
+	public String getInvoiceString() {
+		String invoiceString = ((Character)invoice).toString();
+		return (invoiceString == null || invoiceString == "") ? "U" : invoiceString;
+	}
+	
+	public Character getInvoiceChar() {
+		Character invoiceCharacter = (Character)invoice;
+		return (invoiceCharacter == null) ? 'U' : invoiceCharacter;
+	}
+	
 	
 	@Override
 	public boolean equals(Object obj) {
