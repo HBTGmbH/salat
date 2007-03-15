@@ -20,7 +20,6 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddSuborderForm;
 
@@ -236,6 +235,9 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			errors.add("description", new ActionMessage(
 					"form.suborder.error.description.toolong"));
 		}
+		if ("".equals(soForm.getDescription().trim())) {
+			errors.add("description", new ActionMessage("form.error.description.necessary"));
+		}
 		if (soForm.getShortdescription().length() > GlobalConstants.CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
 			errors.add("shortdescription", new ActionMessage(
 					"form.suborder.error.shortdescription.toolong"));
@@ -416,6 +418,8 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		if ("Y".equals(soForm.getInvoice()) && (soForm.getHourlyRate() == null || soForm.getHourlyRate() == 0.0)) {
 			errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.unavailable"));
 		}
+		
+		
 		
 		saveErrors(request, errors);
 

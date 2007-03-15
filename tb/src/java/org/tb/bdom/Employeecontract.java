@@ -424,6 +424,20 @@ public class Employeecontract implements Serializable {
 		return acceptanceWarning;
 	}
 
+	/**
+	 * 
+	 * @return Returns true, if the {@link Employeecontract} is currently valid, false otherwise.
+	 */
+	public boolean getCurrentlyValid() {
+		java.util.Date now = new java.util.Date();
+		if (!now.before(getValidFrom()) && (getValidUntil() == null || !now.after(getValidUntil()))){
+			return true;
+		}
+		return false;
+	}
+	
+	
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */

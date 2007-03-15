@@ -27,7 +27,13 @@
 			form.action = "/tb/do/DeleteCustomer?cuId=" + id;
 			form.submit();
 		}
-	}					
+	}
+	
+	function refresh(form) {	
+		form.action = "/tb/do/ShowCustomer?task=refresh";
+		form.submit();
+	}
+						
   	function showWMTT(Trigger,id) {
   	  wmtt = document.getElementById(id);
     	var hint;
@@ -54,6 +60,17 @@
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="backgroundcolor">
+<html:form action="/ShowCustomer?task=refresh">
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left">
+			<html:text property="filter" size="40" />
+			<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+				<bean:message key="main.general.button.filter.text" />
+			</html:submit>
+		</td>
+	</tr>
+</html:form>
 	<bean:size id="customersSize" name="customers" />
 	<c:if test="${customersSize>10}">
 		<c:if test="${employeeAuthorized}">

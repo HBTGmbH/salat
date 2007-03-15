@@ -8,6 +8,8 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.persistence.CustomerDAO;
 import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.ShowCustomerForm;
+import org.tb.web.form.ShowCustomerOrderForm;
 
 /**
  * action class for showing all customers
@@ -28,8 +30,31 @@ public class ShowCustomerAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
+		
+		ShowCustomerForm customerForm = (ShowCustomerForm) form;
+		
+		String filter = null;
+				
+		if ((request.getParameter("task") != null) && 
+				(request.getParameter("task").equals("refresh"))) {
+			filter = customerForm.getFilter();
 
-		request.getSession().setAttribute("customers", customerDAO.getCustomers());			
+			if (filter != null && !filter.trim().equals("")) {
+				filter = filter.toUpperCase();
+				filter = "%" + filter + "%";
+			}			
+			request.getSession().setAttribute("customerFilter", filter);
+			
+		} else {
+			if (request.getSession().getAttribute("customerFilter") != null) {
+				filter = (String) request.getSession().getAttribute("customerFilter");
+				customerForm.setFilter(filter);
+			}
+		}	
+		
+		request.getSession().setAttribute("customers", customerDAO.getCustomersByFilter(filter));			
+		
+		
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {

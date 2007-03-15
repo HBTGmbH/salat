@@ -8,6 +8,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.ShowEmployeeForm;
 
 /**
  * action class for showing all employees
@@ -28,8 +29,30 @@ public class ShowEmployeeAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
+		
+		ShowEmployeeForm employeeForm = (ShowEmployeeForm) form;
+		
+		String filter = null;
+		
+		if ((request.getParameter("task") != null) && 
+				(request.getParameter("task").equals("refresh"))) {
+			filter = employeeForm.getFilter();
 
-		request.getSession().setAttribute("employees", employeeDAO.getEmployees());			
+			if (filter != null && !filter.trim().equals("")) {
+				filter = filter.toUpperCase();
+				filter = "%" + filter + "%";
+			}			
+			request.getSession().setAttribute("employeeFilter", filter);
+			
+		} else {
+			if (request.getSession().getAttribute("employeeFilter") != null) {
+				filter = (String) request.getSession().getAttribute("employeeFilter");
+				employeeForm.setFilter(filter);
+			}
+		}	
+		
+		request.getSession().setAttribute("employees", employeeDAO.getEmployeesByFilter(filter));			
+		
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {

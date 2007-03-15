@@ -6,8 +6,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.ShowEmployeeContractForm;
 
 /**
  * action class for showing all employee contracts
@@ -19,6 +21,11 @@ public class ShowEmployeecontractAction extends LoginRequiredAction {
 
 	
 	private EmployeecontractDAO employeecontractDAO;
+	private EmployeeDAO employeeDAO;
+	
+	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
+		this.employeeDAO = employeeDAO;
+	}
 
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
 		this.employeecontractDAO = employeecontractDAO;
@@ -30,8 +37,47 @@ public class ShowEmployeecontractAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
+		
+		ShowEmployeeContractForm contractForm = (ShowEmployeeContractForm) form;
+		request.getSession().setAttribute("employees", employeeDAO.getEmployees());
+		
+		
+		String filter = null;
+		Boolean show = null;
+		Long employeeId = null; 
+		
+		if ((request.getParameter("task") != null) && 
+				(request.getParameter("task").equals("refresh"))) {
+			filter = contractForm.getFilter();
 
-		request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContracts());			
+			if (filter != null && !filter.trim().equals("")) {
+				filter = filter.toUpperCase();
+				filter = "%" + filter + "%";
+			}			
+			request.getSession().setAttribute("employeeContractFilter", filter);
+			
+			show = contractForm.getShow();
+			request.getSession().setAttribute("employeeContractShow", show);
+			
+			employeeId = contractForm.getEmployeeId();
+			request.getSession().setAttribute("employeeContractEmployeeId", employeeId);
+		} else {
+			if (request.getSession().getAttribute("employeeContractFilter") != null) {
+				filter = (String) request.getSession().getAttribute("employeeContractFilter");
+				contractForm.setFilter(filter);
+			}
+			if (request.getSession().getAttribute("employeeContractShow") != null) {
+				show = (Boolean) request.getSession().getAttribute("employeeContractShow");
+				contractForm.setShow(show);
+			}
+			if (request.getSession().getAttribute("employeeContractEmployeeId") != null) {
+				employeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
+				contractForm.setEmployeeId(employeeId);
+			}
+		}
+		
+		request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContractsByFilters(show, filter, employeeId));			
+		
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {

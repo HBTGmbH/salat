@@ -7,9 +7,6 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<%
-
-%>
 
 <html:html>
 <head>
@@ -26,7 +23,13 @@
 			form.action = "/tb/do/DeleteEmployeecontract?ecId=" + id;
 			form.submit();
 		}
-	}					
+	}
+	
+	function refresh(form) {	
+		form.action = "/tb/do/ShowEmployeecontract?task=refresh";
+		form.submit();
+	}
+						
  	function showWMTT(Trigger,id) {
   	  wmtt = document.getElementById(id);
     	var hint;
@@ -54,6 +57,40 @@
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
+<html:form action="/ShowEmployeecontract?task=refresh">
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message
+			key="main.employeecontract.employee.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left">
+			<html:select property="employeeId" onchange="refresh(this.form)">
+				<html:option value="-1">
+					<bean:message key="main.general.allemployees.text" />
+				</html:option>
+				<c:forEach var="employee" items="${employees}">
+					<c:if test="${employee.sign != 'adm'}">
+						<html:option value="${employee.id}">
+							<c:out value="${employee.name}" />
+						</html:option>
+					</c:if>
+				</c:forEach>				
+			</html:select>
+		</td>
+	</tr>
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left">
+			<html:text property="filter" size="40" />
+			<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+				<bean:message key="main.general.button.filter.text" />
+			</html:submit>
+		</td>
+	</tr>
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showinvalid.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+				property="show" onclick="refresh(this.form)" /> </td>
+	</tr>
+</html:form>
 	<bean:size id="employeecontractsSize" name="employeecontracts" />
 	<c:if test="${employeecontractsSize>10}">
 		<c:if test="${employeeAuthorized}">
@@ -70,7 +107,7 @@
 		</c:if>
 	</c:if>
 	<tr>
-			<th align="left"
+		<th align="left"
 			title="Info"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message key="main.headlinedescription.employeecontracts.employeename.text" />"><b><bean:message
@@ -115,43 +152,43 @@
 					<tr class="secondarycolor">
 				</c:otherwise>
 			</c:choose>
-			<c:choose>
-				<c:when test="${employeecontract.hide}">
-										<!-- Info -->
+			
+			<!-- Info -->
 			<td align="center">
-			<div class="tooltip" id="info<c:out value='${employeecontract.id}' />">
-			<table>
-				<tr>
-					<td class="info">id:</td>
-					<td class="info" colspan="3"><c:out
-						value="${employeecontract.id}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.created" />:</td>
-					<td class="info"><c:out value="${employeecontract.created}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${employeecontract.createdby}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.edited" />:</td>
-					<td class="info"><c:out value="${employeecontract.lastupdate}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${employeecontract.lastupdatedby}" /></td>
-				</tr>
-			</table>
-
-			</div>
-			<img
-				onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
-				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/tb/images/info_button.gif" />
+				<div class="tooltip" id="info<c:out value='${employeecontract.id}' />">
+					<table>
+						<tr>
+							<td class="info">id:</td>
+							<td class="info" colspan="3"><c:out
+								value="${employeecontract.id}" /></td>
+						</tr>
+						<tr>
+						<td class="info" valign="top"><bean:message
+								key="main.timereport.tooltip.created" />:</td>
+							<td class="info"><c:out value="${employeecontract.created}" /></td>
+							<td class="info" valign="top"><bean:message
+								key="main.timereport.tooltip.by" /></td>
+							<td class="info" valign="top"><c:out
+								value="${employeecontract.createdby}" /></td>
+						</tr>
+						<tr>
+							<td class="info" valign="top"><bean:message
+								key="main.timereport.tooltip.edited" />:</td>
+							<td class="info"><c:out value="${employeecontract.lastupdate}" /></td>
+							<td class="info" valign="top"><bean:message
+								key="main.timereport.tooltip.by" /></td>
+							<td class="info" valign="top"><c:out
+								value="${employeecontract.lastupdatedby}" /></td>
+						</tr>
+					</table>
+				</div>
+				<img onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
+					onMouseOut="hideWMTT()" width="12px" height="12px"
+					src="/tb/images/info_button.gif" />
 			</td>
+			
+			<c:choose>
+				<c:when test="${!employeecontract.currentlyValid}">
 					<td style="color:gray"><c:out value="${employeecontract.employee.name}" /></td>
 					<td style="color:gray"><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 					<td style="color:gray"><c:out value="${employeecontract.validFrom}" /></td>
@@ -173,41 +210,6 @@
 						value="${employeecontract.vacationEntitlement}" /></td>
 				</c:when>
 				<c:otherwise>
-														<!-- Info -->
-			<td align="center">
-			<div class="tooltip" id="info<c:out value='${employeecontract.id}' />">
-			<table>
-				<tr>
-					<td class="info">id:</td>
-					<td class="info" colspan="3"><c:out
-						value="${employeecontract.id}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.created" />:</td>
-					<td class="info"><c:out value="${employeecontract.created}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${employeecontract.createdby}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.edited" />:</td>
-					<td class="info"><c:out value="${employeecontract.lastupdate}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${employeecontract.lastupdatedby}" /></td>
-				</tr>
-			</table>
-
-			</div>
-			<img
-				onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
-				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/tb/images/info_button.gif" />
-			</td>
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 					<td><c:out value="${employeecontract.validFrom}" /></td>

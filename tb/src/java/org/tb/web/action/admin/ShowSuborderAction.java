@@ -45,18 +45,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		
 		List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
 		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
-		
-//		String filter = suborderForm.getFilter();
-//		request.getSession().setAttribute("suborderFilter", filter);
-//		filter = filter.toUpperCase();
-//		filter = "%"+filter+"%";
-//		
-//		if (filter != null && !filter.equalsIgnoreCase("")) {
-//			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilter(filter));
-//		} else {
-//			request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
-//		}
-		
+				
 		String filter = null;
 		Boolean show = null;
 		Long customerOrderId = null; 
@@ -79,12 +68,15 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		} else {
 			if (request.getSession().getAttribute("suborderFilter") != null) {
 				filter = (String) request.getSession().getAttribute("suborderFilter");
+				suborderForm.setFilter(filter);
 			}
 			if (request.getSession().getAttribute("suborderShow") != null) {
 				show = (Boolean) request.getSession().getAttribute("suborderShow");
+				suborderForm.setShow(show);
 			}
 			if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
 				customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
+				suborderForm.setCustomerOrderId(customerOrderId);
 			}
 		}
 		

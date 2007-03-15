@@ -186,6 +186,38 @@ public class EmployeeDAO extends HibernateDaoSupport {
 		return getSession().createQuery(
 				"from Employee p order by upper(p.lastname)").list();
 	}
+	
+	
+	/**
+	 * Get a list of all Employees fitting to the given filter ordered by lastname.
+	 * 
+	 * @return List<Employee>
+	 */
+	public List<Employee> getEmployeesByFilter(String filter) {
+		List<Employee> employees = null;
+		if (filter == null || filter.trim().equals("")) {
+			employees = getSession().createQuery("from Employee p " +
+					"order by upper(p.lastname)")
+					.list();
+		} else {
+			employees = getSession().createQuery("from Employee p where " +
+					"upper(id) like ? " +
+					"or upper(loginname) like ? " +
+					"or upper(firstname) like ? " +
+					"or upper(lastname) like ? " +
+					"or upper(sign) like ? " +
+					"or upper(status) like ? " +
+					"order by upper(p.lastname)")
+					.setString(0, filter)
+					.setString(1, filter)
+					.setString(2, filter)
+					.setString(3, filter)
+					.setString(4, filter)
+					.setString(5, filter).list();
+		}		
+		return employees;
+	}
+	
 
 	/**
 	 * Calls {@link EmployeeDAO#save(Employee, Employee)} with null for the loginEmployee.

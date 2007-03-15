@@ -30,7 +30,8 @@
 	function refresh(form) {	
 		form.action = "/tb/do/ShowSuborder?task=refresh";
 		form.submit();
-	}					
+	}
+						
    	function showWMTT(Trigger,id) {
   	  wmtt = document.getElementById(id);
     	var hint;
@@ -59,34 +60,34 @@
 
 <table class="center backgroundcolor">
 <html:form action="/ShowSuborder?task=refresh">
-		<tr>
-			<td class="noBborderStyle" colspan="2"><b><bean:message
-				key="main.suborder.customerorder.text" /></b></td>
-			<td class="noBborderStyle" colspan="9" align="left">
-				<html:select property="customerOrderId" onchange="refresh(this.form)">
-					<html:option value="-1">
-						<bean:message key="main.general.allorders.text" />
-					</html:option>
-					<html:options collection="visibleCustomerOrders" labelProperty="signAndDescription"
-						property="id" />
-			</html:select>
-			</td>
-		</tr>
-		<tr>
-			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
-			<td class="noBborderStyle" colspan="9" align="left">
-				<html:text property="filter" size="40" />
-				<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
-					<bean:message key="main.general.button.filter.text" />
-				</html:submit>
-			</td>
-		</tr>
-		<tr>
-			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showinvalid.text" /></b></td>
-			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
-					property="show" onclick="refresh(this.form)" /> </td>
-		</tr>
-	</html:form>
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message
+			key="main.suborder.customerorder.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left">
+			<html:select property="customerOrderId" onchange="refresh(this.form)">
+				<html:option value="-1">
+					<bean:message key="main.general.allorders.text" />
+				</html:option>
+				<html:options collection="visibleCustomerOrders" labelProperty="signAndDescription"
+					property="id" />
+		</html:select>
+		</td>
+	</tr>
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left">
+			<html:text property="filter" size="40" />
+			<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+				<bean:message key="main.general.button.filter.text" />
+			</html:submit>
+		</td>
+	</tr>
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showinvalid.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+				property="show" onclick="refresh(this.form)" /> </td>
+	</tr>
+</html:form>
 <bean:size id="subordersSize" name="suborders" />
 <c:if test="${subordersSize>10}">
 

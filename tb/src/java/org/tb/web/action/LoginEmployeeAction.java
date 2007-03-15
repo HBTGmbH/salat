@@ -156,8 +156,8 @@ public class LoginEmployeeAction extends Action {
 							// calculate time period
 							Date ecFromDate = employeecontract.getValidFrom();
 							Date ecUntilDate = employeecontract.getValidUntil();
-							Date soFromDate = suborder.getCustomerorder().getFromDate();
-							Date soUntilDate = suborder.getCustomerorder().getUntilDate();
+							Date soFromDate = suborder.getFromDate();
+							Date soUntilDate = suborder.getUntilDate();
 							Date fromDate = null;
 							Date untilDate = null;
 							
@@ -210,8 +210,7 @@ public class LoginEmployeeAction extends Action {
 										* employeecontract
 												.getVacationEntitlement());
 							} else {
-								employeeorder.setDebithours(suborder
-										.getCustomerorder().getHourly_rate());
+								// not decided yet
 							}
 							employeeorder.setEmployeecontract(employeecontract);
 							employeeorder.setSign(" ");

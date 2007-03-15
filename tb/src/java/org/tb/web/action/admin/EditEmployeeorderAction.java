@@ -17,6 +17,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -149,7 +150,16 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		
 		// List<Suborder> suborders = suborderDAO.getSuborders();
 		// request.getSession().setAttribute("suborders", suborders);		
-		request.getSession().setAttribute("suborders", eo.getSuborder().getCustomerorder().getSuborders());
+		List<Suborder> suborders = eo.getSuborder().getCustomerorder().getSuborders();
+//			 remove hidden suborders
+		Iterator<Suborder> suborderIterator = suborders.iterator();
+		while (suborderIterator.hasNext()) {
+			Suborder suborder = suborderIterator.next();
+			if (suborder.getHide() != null && suborder.getHide()) {
+				suborderIterator.remove();
+			}
+		}
+		request.getSession().setAttribute("suborders", suborders);
 		
 		eoForm.setEmployeeContractId(ec.getId());
 		eoForm.setOrderId(eo.getSuborder().getCustomerorder().getId());

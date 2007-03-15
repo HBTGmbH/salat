@@ -33,6 +33,30 @@ public class CustomerDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * Get a list of all Customers ordered by name.
+	 * 
+	 * @return List<Customer>
+	 */
+	public List<Customer> getCustomersByFilter(String filter) {
+		List<Customer> customers = null;
+		if (filter == null || filter.trim().equals("")) {
+			customers = getSession().createQuery("from Customer order by name asc").list();
+		} else {
+			customers = getSession().createQuery("from Customer where " +
+					"upper(id) like ? " +
+					"or upper(name) like ? " +
+					"or upper(address) like ? " +
+					"or upper(shortname) like ? " +
+					"order by name asc")
+					.setString(0, filter)
+					.setString(1, filter)
+					.setString(2, filter)
+					.setString(3, filter).list();
+		}
+		return customers;
+	}
+	
+	/**
 	 * Get a list of all Customers ordered by short name.
 	 * 
 	 * @return List<Customer>

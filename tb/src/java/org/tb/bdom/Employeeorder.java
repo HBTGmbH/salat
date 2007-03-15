@@ -239,4 +239,16 @@ public class Employeeorder implements Serializable {
 			+ simpleDateFormat.format(getUntilDate()) +  "]";
 	}
 	
+	/**
+	 * 
+	 * @return Returns true, if the {@link Employeeorder} is currently valid, false otherwise.
+	 */
+	public boolean getCurrentlyValid() {
+		java.util.Date now = new java.util.Date();
+		if (!now.before(getFromDate()) && (getUntilDate() == null || !now.after(getUntilDate()))){
+			return true;
+		}
+		return false;
+	}
+	
 }

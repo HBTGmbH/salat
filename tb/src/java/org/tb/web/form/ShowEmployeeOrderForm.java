@@ -20,6 +20,8 @@ public class ShowEmployeeOrderForm extends ActionForm {
 
 	private long employeeContractId;
 	private long orderId;
+	private String filter;
+	private Boolean show;
 	
 	
 	/**
@@ -52,6 +54,34 @@ public class ShowEmployeeOrderForm extends ActionForm {
 		this.orderId = orderId;
 	}
 
+	/**
+	 * @return the filter
+	 */
+	public String getFilter() {
+		return filter;
+	}
+
+	/**
+	 * @param filter the filter to set
+	 */
+	public void setFilter(String filter) {
+		this.filter = filter;
+	}
+
+	/**
+	 * @return the show
+	 */
+	public Boolean getShow() {
+		return show;
+	}
+
+	/**
+	 * @param show the show to set
+	 */
+	public void setShow(Boolean show) {
+		this.show = show;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
@@ -61,6 +91,11 @@ public class ShowEmployeeOrderForm extends ActionForm {
 			Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 			employeeContractId = loginEmployeeContract.getId();
 		}
+		
+		filter = "";
+		show = false;
+		
+		
 	}
 
 	@Override

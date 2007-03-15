@@ -34,7 +34,13 @@
 		form.action = "/tb/do/ShowEmployeeorder";
 		form.submit();
 	
-	}				
+	}
+	
+	function refresh(form) {	
+		form.action = "/tb/do/ShowEmployeeorder?task=refresh";
+		form.submit();
+	}
+					
  	function showWMTT(Trigger,id) {
   	  wmtt = document.getElementById(id);
     	var hint;
@@ -60,16 +66,16 @@
 <br>
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
-<html:form action="/ShowEmployeeorder">
+<html:form action="/ShowEmployeeorder?task=refresh">
 	<table class="center backgroundcolor">
 		<!-- select employeecontract -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
+			<td align="left" class="noBborderStyle" colspan="2"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle">
+			<td align="left" class="noBborderStyle" colspan="9">
 				<html:select
 					property="employeeContractId"		
-					onchange="setUpdateEmployeeOrders(this.form)" >
+					onchange="refresh(this.form)" >
 					<html:option value="-1">
 						<bean:message key="main.general.allemployees.text" />
 					</html:option>
@@ -87,10 +93,10 @@
 		</tr>
 		<!-- select order -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
+			<td align="left" class="noBborderStyle" colspan="2"><b><bean:message
 				key="main.employeeorder.customerorder.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="orderId" onchange="setUpdateEmployeeOrders(this.form)"
+			<td align="left" class="noBborderStyle" colspan="9"><html:select
+				property="orderId" onchange="refresh(this.form)"
 				value="${currentOrderId}">
 				<html:option value="-1">
 					<bean:message key="main.general.allorders.text" />
@@ -98,6 +104,20 @@
 				<html:options collection="orders" labelProperty="signAndDescription"
 					property="id" />
 			</html:select></td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left">
+				<html:text property="filter" size="40" />
+				<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+					<bean:message key="main.general.button.filter.text" />
+				</html:submit>
+			</td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showinvalid.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+					property="show" onclick="refresh(this.form)" /> </td>
 		</tr>
 	</table>
 </html:form>
@@ -246,42 +266,57 @@
 				src="/tb/images/info_button.gif" />
 			</td>
 		
-		<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
-				test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
-		<td
-			title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
-			value="${employeeorder.suborder.customerorder.sign}" /></td>
-		<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out
-			value="${employeeorder.suborder.sign}" /></td>
-		<!-- 
-      	<td><bean:write name="employeeorder" property="sign"/></td>
-      	 -->
-		<td><c:out value="${employeeorder.fromDate}" /></td>
-		<td>
-			<c:choose>
-				<c:when test="${employeeorder.untilDate == null}">
-					<bean:message key="main.general.open.text" />
-				</c:when>
-				<c:otherwise>
-					<c:out value="${employeeorder.untilDate}" />
-				</c:otherwise>
-			</c:choose>
-		</td>
-		<td align="center"><html:checkbox name="employeeorder"
-			property="standingorder" disabled="true" /></td>
-		<td><c:out value="${employeeorder.debithours}" /></td>
-		<!--  
 		<c:choose>
-			<c:when test="${employeeorder.status==''}">
-				<td>&nbsp;</td>
+			<c:when test="${employeeorder.currentlyValid}">
+				<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
+					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
+				<td
+					title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
+					value="${employeeorder.suborder.customerorder.sign}" /></td>
+				<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out
+					value="${employeeorder.suborder.sign}" /></td>
+				<td><c:out value="${employeeorder.fromDate}" /></td>
+				<td>
+					<c:choose>
+						<c:when test="${employeeorder.untilDate == null}">
+							<bean:message key="main.general.open.text" />
+						</c:when>
+						<c:otherwise>
+							<c:out value="${employeeorder.untilDate}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
+				<td align="center"><html:checkbox name="employeeorder"
+					property="standingorder" disabled="true" /></td>
+				<td><c:out value="${employeeorder.debithours}" /></td>
+				<td align="center"><html:checkbox name="employeeorder"
+					property="statusreport" disabled="true" /></td>
 			</c:when>
 			<c:otherwise>
-				<td><c:out value="${employeeorder.status}" /></td>
+				<td style="color:gray" title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
+					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
+				<td style="color:gray" title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
+					value="${employeeorder.suborder.customerorder.sign}" /></td>
+				<td style="color:gray" title="<c:out value="${employeeorder.suborder.description}" />"><c:out
+					value="${employeeorder.suborder.sign}" /></td>
+				<td style="color:gray"><c:out value="${employeeorder.fromDate}" /></td>
+				<td style="color:gray">
+					<c:choose>
+					<c:when test="${employeeorder.untilDate == null}">
+						<bean:message key="main.general.open.text" />
+					</c:when>
+					<c:otherwise>
+						<c:out value="${employeeorder.untilDate}" />
+					</c:otherwise>
+				</c:choose>
+				</td>
+				<td align="center"><html:checkbox name="employeeorder"
+					property="standingorder" disabled="true" /></td>
+				<td style="color:gray"><c:out value="${employeeorder.debithours}" /></td>
+				<td align="center"><html:checkbox name="employeeorder"
+					property="statusreport" disabled="true" /></td>
 			</c:otherwise>
 		</c:choose>
-		-->
-		<td align="center"><html:checkbox name="employeeorder"
-			property="statusreport" disabled="true" /></td>
 
 		<c:choose>
 			<c:when

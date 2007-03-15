@@ -1,15 +1,11 @@
 package org.tb.web.action.admin;
 
-import java.text.SimpleDateFormat;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.web.action.LoginRequiredAction;
-import org.tb.web.form.AddEmployeeOrderForm;
 import org.tb.web.form.ShowEmployeeOrderForm;
 
 public abstract class EmployeeOrderAction extends LoginRequiredAction {
@@ -84,22 +80,40 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 		}
 		
 		request.getSession().setAttribute("currentOrderId", orderId);
-				
-		if (employeeContractId == -1) {
-			if (orderId == -1) {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getSortedEmployeeorders());
-			} else {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderId(orderId));
+	
+		String filter = null;
+		Boolean show = null;
+		
+		if ((request.getParameter("task") != null) && 
+				(request.getParameter("task").equals("refresh"))) {
+			filter = orderForm.getFilter();
+
+			if (filter != null && !filter.trim().equals("")) {
+				filter = filter.toUpperCase();
+				filter = "%" + filter + "%";
+			}			
+			request.getSession().setAttribute("employeeOrderFilter", filter);
+			
+			show = orderForm.getShow();
+			request.getSession().setAttribute("employeeOrderShow", show);
+			
+		} else {
+			if (request.getSession().getAttribute("employeeOrderFilter") != null) {
+				filter = (String) request.getSession().getAttribute("employeeOrderFilter");
+				orderForm.setFilter(filter);
 			}
+			if (request.getSession().getAttribute("employeeOrderShow") != null) {
+				show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
+				orderForm.setShow(show);
+			}
+		}
+		request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+		
+		if (employeeContractId == -1) {
 			request.getSession().setAttribute("currentEmployeeId", loginEmployeeContract.getEmployee().getId());
 			request.getSession().setAttribute("currentEmployeeContract", null);
 		} else {
 			currentEmployeeContract = employeecontractDAO.getEmployeeContractById(employeeContractId);
-			if (orderId == -1) {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeeContractId));
-			} else {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(orderId, employeeContractId));
-			}
 			request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
 			request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
 		}

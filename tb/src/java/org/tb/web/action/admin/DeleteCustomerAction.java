@@ -48,8 +48,15 @@ public class DeleteCustomerAction extends LoginRequiredAction {
 		}
 		
 		saveErrors(request, errors);
-		request.getSession().setAttribute("customers", customerDAO.getCustomers());
 		
+		String filter = null;
+
+		if (request.getSession().getAttribute("customerFilter") != null) {
+			filter = (String) request.getSession().getAttribute("customerFilter");
+		}
+			
+		request.getSession().setAttribute("customers", customerDAO.getCustomersByFilter(filter));
+
 		// back to customer display jsp
 		return mapping.getInputForward();
 	}

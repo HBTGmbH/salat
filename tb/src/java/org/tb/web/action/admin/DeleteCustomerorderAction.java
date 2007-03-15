@@ -49,8 +49,20 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
 		
 		saveErrors(request, errors);
 		
-		request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
-		
+		String filter = null;
+		Boolean show = null;
+		Long customerId = null;
+		if (request.getSession().getAttribute("customerorderFilter") != null) {
+			filter = (String) request.getSession().getAttribute("customerorderFilter");
+		}
+		if (request.getSession().getAttribute("customerorderShow") != null) {
+			show = (Boolean) request.getSession().getAttribute("customerorderShow");
+		}
+		if (request.getSession().getAttribute("customerorderCustomerId") != null) {
+			customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
+		}
+		request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
+
 		// back to customer order display jsp
 		return mapping.getInputForward();
 	}

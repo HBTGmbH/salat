@@ -67,12 +67,15 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 		} else {
 			if (request.getSession().getAttribute("customerorderFilter") != null) {
 				filter = (String) request.getSession().getAttribute("customerorderFilter");
+				orderForm.setFilter(filter);
 			}
 			if (request.getSession().getAttribute("customerorderShow") != null) {
 				show = (Boolean) request.getSession().getAttribute("customerorderShow");
+				orderForm.setShow(show);
 			}
 			if (request.getSession().getAttribute("customerorderCustomerId") != null) {
 				customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
+				orderForm.setCustomerId(customerId);
 			}
 		}
 		

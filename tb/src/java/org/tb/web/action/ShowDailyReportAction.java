@@ -115,7 +115,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 		ShowDailyReportForm reportForm = (ShowDailyReportForm) form;
 		
 		String sortModus = (String) request.getSession().getAttribute("timereportSortModus");
-		if (sortModus == null || !sortModus.equals("+") || !sortModus.equals("-")) {
+		if (sortModus == null || !(sortModus.equals("+") || sortModus.equals("-"))) {
 			sortModus = "+";
 			request.getSession().setAttribute("timereportSortModus", sortModus);
 		}

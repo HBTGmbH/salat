@@ -1,5 +1,3 @@
-<%@ page import="org.tb.bdom.Employee"%>
-
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -27,7 +25,13 @@
 			form.action = "/tb/do/DeleteEmployee?emId=" + id;
 			form.submit();
 		}
-	}					
+	}	
+	
+	function refresh(form) {	
+		form.action = "/tb/do/ShowEmployee?task=refresh";
+		form.submit();
+	}
+					
  	function showWMTT(Trigger,id) {
   	  wmtt = document.getElementById(id);
     	var hint;
@@ -55,6 +59,17 @@
 <span style="color:red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
+<html:form action="/ShowEmployee?task=refresh">
+	<tr>
+		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.filter.text" /></b></td>
+		<td class="noBborderStyle" colspan="9" align="left">
+			<html:text property="filter" size="40" />
+			<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+				<bean:message key="main.general.button.filter.text" />
+			</html:submit>
+		</td>
+	</tr>
+</html:form>
 <bean:size id="employeesSize" name="employees" />
 <c:if test="${employeesSize>10}">
 	<c:if test="${employeeAuthorized}">

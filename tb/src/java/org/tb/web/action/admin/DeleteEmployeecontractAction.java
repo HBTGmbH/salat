@@ -56,8 +56,22 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction {
 		
 		saveErrors(request, errors);
 		
-		request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContracts());
+		String filter = null;
+		Boolean show = null;
+		Long filterEmployeeId = null; 
 		
+		if (request.getSession().getAttribute("employeeContractFilter") != null) {
+			filter = (String) request.getSession().getAttribute("employeeContractFilter");
+		}
+		if (request.getSession().getAttribute("employeeContractShow") != null) {
+			show = (Boolean) request.getSession().getAttribute("employeeContractShow");
+		}
+		if (request.getSession().getAttribute("employeeContractEmployeeId") != null) {
+			filterEmployeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
+		}
+		
+		request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContractsByFilters(show, filter, filterEmployeeId));			
+				
 		// set current employee back to loginEmployee to make sure that current employee is not the
 		// one whose contract was just deleted...		 
 		request.getSession().setAttribute("currentEmployee", loginEmployee.getName());

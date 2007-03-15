@@ -55,7 +55,14 @@ public class DeleteEmployeeAction extends LoginRequiredAction {
 		}
 		
 		saveErrors(request, errors);
-		request.getSession().setAttribute("employees", employeeDAO.getEmployees());
+		
+		String filter = null;
+		
+		if (request.getSession().getAttribute("employeeFilter") != null) {
+			filter = (String) request.getSession().getAttribute("employeeFilter");
+		}
+
+		request.getSession().setAttribute("employees", employeeDAO.getEmployeesByFilter(filter));	
 		
 		// set current employee back to loginEmployee to make sure that current employee is not the
 		// one just deleted...

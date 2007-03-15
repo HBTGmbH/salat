@@ -15,10 +15,58 @@ import org.apache.struts.action.ActionMapping;
  *
  */
 public class ShowEmployeeContractForm extends ActionForm {
+	
+	private String filter;
+	private Boolean show;
+	private Long employeeId;
+
+	/**
+	 * @return the employeeId
+	 */
+	public Long getEmployeeId() {
+		return employeeId;
+	}
+
+	/**
+	 * @param employeeId the employeeId to set
+	 */
+	public void setEmployeeId(Long employeeId) {
+		this.employeeId = employeeId;
+	}
+
+	/**
+	 * @return the filter
+	 */
+	public String getFilter() {
+		return filter;
+	}
+
+	/**
+	 * @param filter the filter to set
+	 */
+	public void setFilter(String filter) {
+		this.filter = filter;
+	}
+
+	/**
+	 * @return the show
+	 */
+	public Boolean getShow() {
+		return show;
+	}
+
+	/**
+	 * @param show the show to set
+	 */
+	public void setShow(Boolean show) {
+		this.show = show;
+	}
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		// actually, nothing to reset
+		filter = "";
+		show = false;
+		employeeId = -1L;
 	}
 
 	@Override

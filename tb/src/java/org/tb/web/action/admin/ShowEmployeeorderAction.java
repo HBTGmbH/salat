@@ -12,7 +12,6 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.web.form.ShowEmployeeOrderForm;
@@ -27,7 +26,6 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeecontractDAO employeecontractDAO;
-	private EmployeeDAO employeeDAO;
 	private CustomerorderDAO customerorderDAO;
 	
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
@@ -42,52 +40,30 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		this.employeecontractDAO = employeecontractDAO;
 	}
 		
-	public void setEmployeeDAO (EmployeeDAO employeeDAO) {
-		this.employeeDAO = employeeDAO;
-	}
-	
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
 		
 		ShowEmployeeOrderForm orderForm = (ShowEmployeeOrderForm) form;
-		
-//		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
-		
+				
 		// get valid employeecontracts
 		List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeeContracts);
 		
-//		Date now = new Date();
-//		List<Employee> employees = employeeDAO.getEmployeesWithContractsValidForDate(now);
-//		
-//		// make sure, that admin is in list
+
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-//		if (loginEmployee.getSign().equalsIgnoreCase("adm") && 
-//				loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-//			if (!employees.contains(loginEmployee)) {
-//				employees.add(loginEmployee);
-//			}
-//		}
-//		
-//		request.getSession().setAttribute("employees", employees);
+
 		
 		List<Customerorder> orders = customerorderDAO.getCustomerorders();
 		request.getSession().setAttribute("orders", orders);
 		
-		if (request.getParameter("task") != null) {
-			if (request.getParameter("task").equalsIgnoreCase("back")) {
-				// back to main menu
-				return mapping.findForward("backtomenu");
-			} else {
-				// forward to show employee orders jsp
-				return mapping.findForward("success");
-			}
-		}
+		if (request.getParameter("task") != null && request.getParameter("task").equalsIgnoreCase("back")) {
+			// back to main menu
+			return mapping.findForward("backtomenu");
+		} 
 		
- 		// check if loginEmployee has responsibility for some orders
-//		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+
 		orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 		boolean employeeIsResponsible = false;
 		
@@ -96,17 +72,10 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		}
 		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
 		
+		refreshEmployeeOrders(request, orderForm, employeeorderDAO, employeecontractDAO);		
 			
-//		if (request.getParameter("task") == null) {
+		return mapping.findForward("success");
 			
-			refreshEmployeeOrders(request, orderForm, employeeorderDAO, employeecontractDAO);		
-			
-			return mapping.findForward("success");
-			
-//		} else {	
-			// forward to show employee orders jsp
-//			return mapping.findForward("success");
-//		}
 	}
 	
 }

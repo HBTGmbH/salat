@@ -76,6 +76,15 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				
 				boolean addMoreEmployees = Boolean.parseBoolean((String)request.getParameter("continue"));
 				if (!addMoreEmployees) {
+					
+					String filter = null;
+					
+					if (request.getSession().getAttribute("employeeFilter") != null) {
+						filter = (String) request.getSession().getAttribute("employeeFilter");
+					}
+
+					request.getSession().setAttribute("employees", employeeDAO.getEmployeesByFilter(filter));	
+					
 					return mapping.findForward("success");
 				} else {
 					emForm.reset(mapping, request);

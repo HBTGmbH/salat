@@ -216,6 +216,9 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 		if (coForm.getDescription().length() > GlobalConstants.CUSTOMERORDER_DESCRIPTION_MAX_LENGTH) {
 			errors.add("description", new ActionMessage("form.customerorder.error.description.toolong"));
 		}
+		if ("".equals(coForm.getDescription().trim())) {
+			errors.add("description", new ActionMessage("form.error.description.necessary"));
+		}
 		if (coForm.getShortdescription().length() > GlobalConstants.CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
 			errors.add("shortdescription", new ActionMessage("form.customerorder.error.shortdescription.toolong"));
 		}

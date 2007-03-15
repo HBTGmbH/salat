@@ -16,10 +16,27 @@ import org.apache.struts.action.ActionMapping;
  */
 public class ShowCustomerForm extends ActionForm {
 
+	private String filter;
 	
+	
+	
+	/**
+	 * @return the filter
+	 */
+	public String getFilter() {
+		return filter;
+	}
+
+	/**
+	 * @param filter the filter to set
+	 */
+	public void setFilter(String filter) {
+		this.filter = filter;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		// actually, nothing to reset
+		filter = "";
 	}
 
 	@Override

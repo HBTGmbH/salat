@@ -3,6 +3,7 @@ package org.tb.web.action.admin;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -90,8 +91,17 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					eoForm.setSuborderId(so.getId());
 					request.getSession().setAttribute("selectedsuborder", so);
 				}
-				request.getSession().setAttribute("suborders",
-						co.getSuborders());
+				List<Suborder> suborders = co.getSuborders();
+				// remove hidden suborders
+				Iterator<Suborder> suborderIterator = suborders.iterator();
+				while (suborderIterator.hasNext()) {
+					Suborder suborder = suborderIterator.next();
+					if (suborder.getHide() != null && suborder.getHide()) {
+						suborderIterator.remove();
+					}
+				}
+				request.getSession().setAttribute("suborders", suborders);
+				
 				request.getSession().setAttribute("selectedcustomerorder", co);
 				eoForm.useDatesFromCustomerOrder(co);
 				eoForm.setOrderId(co.getId());
@@ -147,7 +157,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
 			Employeecontract employeecontract = employeecontractDAO
 					.getEmployeeContractById(eoForm.getEmployeeContractId());
-			long employeecontractId = employeecontract.getId();
+			long employeeContractId = employeecontract.getId();
 			long suborderId = eoForm.getSuborderId();
 
 			// Employeeorder employeeorderFromForm =
@@ -176,7 +186,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			}
 
 			ActionMessages errorMessages = validateFormData(request, eoForm,
-					employeeorderDAO, eo.getId());
+					employeeorderDAO, employeecontractDAO, suborderDAO, eo.getId());
 			if (errorMessages.size() > 0) {
 				return mapping.getInputForward();
 			}
@@ -230,35 +240,23 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			long orderId = (Long) request.getSession().getAttribute(
 					"currentOrderId");
 			if (employeecontract == null) {
-				if (orderId == -1) {
-					request.getSession().setAttribute("employeeorders",
-							employeeorderDAO.getSortedEmployeeorders());
-				} else {
-					request.getSession().setAttribute(
-							"employeeorders",
-							employeeorderDAO
-									.getEmployeeordersByOrderId(orderId));
-				}
+				employeeContractId = -1;
 			} else {
-				if (orderId == -1) {
-					request
-							.getSession()
-							.setAttribute(
-									"employeeorders",
-									employeeorderDAO
-											.getEmployeeOrdersByEmployeeContractId(employeecontract
-													.getId()));
-				} else {
-					request
-							.getSession()
-							.setAttribute(
-									"employeeorders",
-									employeeorderDAO
-											.getEmployeeordersByOrderIdAndEmployeeContractId(
-													orderId, employeecontract
-															.getId()));
-				}
+				employeeContractId = employeecontract.getId();
 			}
+				
+			String filter = null;
+			Boolean show = null;
+			
+			if (request.getSession().getAttribute("employeeOrderFilter") != null) {
+				filter = (String) request.getSession().getAttribute("employeeOrderFilter");
+			}
+			if (request.getSession().getAttribute("employeeOrderShow") != null) {
+				show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
+			}
+		
+			request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+
 
 			// request.getSession().setAttribute("employeeorders",
 			// employeeorderDAO.getSortedEmployeeorders());
@@ -315,8 +313,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 	 * @return
 	 */
 	private ActionMessages validateFormData(HttpServletRequest request,
-			AddEmployeeOrderForm eoForm, EmployeeorderDAO employeeorderDAO,
-			long eoId) {
+			AddEmployeeOrderForm eoForm, EmployeeorderDAO employeeorderDAO, EmployeecontractDAO employeecontractDAO, 
+			SuborderDAO suborderDAO, long eoId) {
 
 		ActionMessages errors = getErrors(request);
 		if (errors == null)
@@ -466,9 +464,26 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				}
 			} 
 		}
-		// check if dates fit to employee contract
+		// check if dates fit to employee contract and suborder
 		//TODO
-		
+		if (validFromDate != null) {
+			Employeecontract ec = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
+			Suborder suborder = suborderDAO.getSuborderById(eoForm.getSuborderId());
+			if (validFromDate.before(ec.getValidFrom())) {
+				errors.add("validFrom", new ActionMessage("form.employeeorder.error.date.outofrange.employeecontract"));
+			}
+			if (validFromDate.before(suborder.getFromDate())) {
+				errors.add("validFrom", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
+			}
+			if ((validUntilDate == null && ec.getValidUntil() != null) || 
+					(validUntilDate != null && ec.getValidUntil() != null &&  validUntilDate.after(ec.getValidUntil()))) {
+				errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.employeecontract"));
+			}
+			if ((validUntilDate == null && suborder.getUntilDate() != null) || 
+					(validUntilDate != null && suborder.getUntilDate() != null &&  validUntilDate.after(suborder.getUntilDate()))) {
+				errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
+			}
+		}
 
 		saveErrors(request, errors);
 

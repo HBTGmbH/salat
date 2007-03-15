@@ -174,6 +174,131 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * Get a list of all Employeecontracts fitting to the given filters ordered by lastname.
+	 * 
+	 * @return List<Employeecontract>
+	 */
+	public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId) {
+		List<Employeecontract> employeeContracts = null;
+		if (showInvalid == null || !showInvalid) {
+			Date now = new Date();
+			if (filter == null || filter.trim().equals("")) {
+				if (employeeId == null || employeeId == -1) {
+					// case 1
+					employeeContracts = getSession().createQuery("from Employeecontract e where " +
+							"validFrom <= ? " +
+							"and (validUntil = null " +
+								"or validUntil >= ?) " +
+							"order by employee.lastname asc, validFrom asc")
+							.setDate(0, now)
+							.setDate(1, now)
+							.list();
+				} else {
+					// case 2
+					employeeContracts = getSession().createQuery("from Employeecontract e where " +
+							"e.employee.id = ? " +
+							"and validFrom <= ? " +
+							"and (validUntil = null " +
+								"or validUntil >= ?) " +
+							"order by employee.lastname asc, validFrom asc")
+							.setLong(0, employeeId)
+							.setDate(1, now)
+							.setDate(2, now)
+							.list();
+				}
+			} else {
+				if (employeeId == null || employeeId == -1) {
+					// case 3
+					employeeContracts = getSession().createQuery("from Employeecontract e where " +
+							"(upper(e.employee.firstname) like ? " +
+								"or upper(e.employee.lastname) like ? " +
+								"or upper(taskdescription) like ? " +
+								"or upper(id) like ?) " +
+							"and validFrom <= ? " +
+							"and (validUntil = null " +
+								"or validUntil >= ?) " +
+							"order by employee.lastname asc, validFrom asc")
+							.setString(0, filter)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.setDate(4, now)
+							.setDate(5, now)
+							.list();
+				} else {
+					// case 4
+					employeeContracts = getSession().createQuery("from Employeecontract e where " +
+							"(upper(e.employee.firstname) like ? " +
+								"or upper(e.employee.lastname) like ? " +
+								"or upper(taskdescription) like ? " +
+								"or upper(id) like ?) " +
+							"and e.employee.id = ? " +
+							"and validFrom <= ? " +
+							"and (validUntil = null " +
+								"or validUntil >= ?) " +
+							"order by employee.lastname asc, validFrom asc")
+							.setString(0, filter)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.setLong(4, employeeId)
+							.setDate(5, now)
+							.setDate(6, now)
+							.list();
+				}
+			}
+		} else {
+			if (filter == null || filter.trim().equals("")) {
+				if (employeeId == null || employeeId == -1) {
+					// case 5
+					employeeContracts = getSession().createQuery("from Employeecontract e " +
+							"order by employee.lastname asc, validFrom asc")
+							.list();
+				} else {
+					// case 6
+					employeeContracts = getSession().createQuery("from Employeecontract e where " +
+							"e.employee.id = ? " +
+							"order by employee.lastname asc, validFrom asc")
+							.setLong(0, employeeId)
+							.list();
+				}
+			} else {
+				if (employeeId == null || employeeId == -1) {
+					// case 7
+					employeeContracts = getSession().createQuery("from Employeecontract e where " +
+							"upper(e.employee.firstname) like ? " +
+							"or upper(e.employee.lastname) like ? " +
+							"or upper(taskdescription) like ? " +
+							"or upper(id) like ? " +
+							"order by employee.lastname asc, validFrom asc")
+							.setString(0, filter)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.list();
+				} else {
+					// case 8
+					employeeContracts = getSession().createQuery("from Employeecontract e where " +
+							"(upper(e.employee.firstname) like ? " +
+								"or upper(e.employee.lastname) like ? " +
+								"or upper(taskdescription) like ? " +
+								"or upper(id) like ?) " +
+							"and e.employee.id = ? " +
+							"order by employee.lastname asc, validFrom asc")
+							.setString(0, filter)
+							.setString(1, filter)
+							.setString(2, filter)
+							.setString(3, filter)
+							.setLong(4, employeeId)
+							.list();
+				}
+			}
+		}
+		return employeeContracts;
+	}
+	
+	
+	/**
 	 * Get a list of all Employeecontracts where the hide flag is unset or that is currently valid ordered by employee sign.
 	 * 
 	 * @return List<Employeecontract>

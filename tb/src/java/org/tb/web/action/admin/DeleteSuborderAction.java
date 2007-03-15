@@ -49,7 +49,19 @@ public class DeleteSuborderAction extends LoginRequiredAction {
 		
 		saveErrors(request, errors);
 		
-		request.getSession().setAttribute("suborders", suborderDAO.getSubordersOrderedByCustomerorder());
+		String filter = null;
+		Boolean show = null;
+		Long customerOrderId = null; 
+		if (request.getSession().getAttribute("suborderFilter") != null) {
+			filter = (String) request.getSession().getAttribute("suborderFilter");
+		}
+		if (request.getSession().getAttribute("suborderShow") != null) {
+			show = (Boolean) request.getSession().getAttribute("suborderShow");
+		}
+		if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
+			customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
+		}
+		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
 		
 		// back to suborder display jsp
 		return mapping.getInputForward();

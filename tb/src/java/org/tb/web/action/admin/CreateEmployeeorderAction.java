@@ -127,6 +127,15 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			employeeOrderForm.setOrder(orders.get(0).getSign());
 			employeeOrderForm.setOrderId(orders.get(0).getId());
 			List<Suborder> suborders = orders.get(0).getSuborders();
+			// remove hidden suborders
+			Iterator<Suborder> suborderIterator = suborders.iterator();
+			while (suborderIterator.hasNext()) {
+				Suborder suborder = suborderIterator.next();
+				if (suborder.getHide() != null && suborder.getHide()) {
+					suborderIterator.remove();
+				}
+			}
+			
 			request.getSession().setAttribute("suborders", suborders);
 			if (suborders != null && !suborders.isEmpty()) {
 				request.getSession().setAttribute("selectedsuborder", suborders.get(0));

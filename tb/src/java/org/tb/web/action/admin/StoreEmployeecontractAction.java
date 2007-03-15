@@ -251,6 +251,23 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				boolean addMoreContracts = Boolean.parseBoolean((String)request.getParameter("continue"));
 				if (!addMoreContracts) {
+					
+					String filter = null;
+					Boolean show = null;
+					Long filterEmployeeId = null; 
+					
+					if (request.getSession().getAttribute("employeeContractFilter") != null) {
+						filter = (String) request.getSession().getAttribute("employeeContractFilter");
+					}
+					if (request.getSession().getAttribute("employeeContractShow") != null) {
+						show = (Boolean) request.getSession().getAttribute("employeeContractShow");
+					}
+					if (request.getSession().getAttribute("employeeContractEmployeeId") != null) {
+						filterEmployeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
+					}
+					
+					request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContractsByFilters(show, filter, filterEmployeeId));			
+
 					return mapping.findForward("success");
 				} else {
 					// set context

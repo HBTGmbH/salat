@@ -68,11 +68,19 @@ public class StoreCustomerAction extends LoginRequiredAction {
 				
 				customerDAO.save(cu, loginEmployee);
 				
-				request.getSession().setAttribute("customers", customerDAO.getCustomers());
+//				request.getSession().setAttribute("customers", customerDAO.getCustomers());
 				request.getSession().removeAttribute("cuId");
 				
 				boolean addMoreCustomers = Boolean.parseBoolean((String)request.getParameter("continue"));
 				if (!addMoreCustomers) {
+					String filter = null;
+
+					if (request.getSession().getAttribute("customerFilter") != null) {
+						filter = (String) request.getSession().getAttribute("customerFilter");
+					}
+						
+					request.getSession().setAttribute("customers", customerDAO.getCustomersByFilter(filter));
+				
 					return mapping.findForward("success");
 				} else {
 					// reset form and show add-page
