@@ -179,9 +179,6 @@
 			</c:otherwise>
 		</c:choose>
 
-		<!-- invalid orders should be gray -->
-		<c:choose>
-			<c:when test="${customerorder.currentlyValid}">
 				<!-- Info -->
 				<td align="center">
 				<div class="tooltip" id="info<c:out value='${customerorder.id}' />">
@@ -232,7 +229,10 @@
 					onMouseOver="showWMTT(this,'info<c:out value="${customerorder.id}" />')"
 					onMouseOut="hideWMTT()" width="12px" height="12px"
 					src="/tb/images/info_button.gif" /></td>
-					
+
+		<!-- invalid orders should be gray -->
+		<c:choose>
+			<c:when test="${customerorder.currentlyValid}">
 				<td><c:out value="${customerorder.customer.shortname}" /></td>
 				<td><c:out value="${customerorder.sign}" /></td>
 				<td><c:out value="${customerorder.shortdescription}" /></td>
@@ -278,39 +278,6 @@
 			</c:when>
 			<c:otherwise>
 				<!-- customerorder is invalid -->
-				<!-- Info -->
-				<td align="center">
-				<div class="tooltip" id="info<c:out value='${employee.id}' />">
-				<table>
-					<tr>
-						<td class="info">id:</td>
-						<td class="info" colspan="3"><c:out value="${employee.id}" /></td>
-					</tr>
-					<tr>
-						<td class="info" valign="top"><bean:message
-							key="main.timereport.tooltip.created" />:</td>
-						<td class="info"><c:out value="${employee.created}" /></td>
-						<td class="info" valign="top"><bean:message
-							key="main.timereport.tooltip.by" /></td>
-						<td class="info" valign="top"><c:out
-							value="${employee.createdby}" /></td>
-					</tr>
-					<tr>
-						<td class="info" valign="top"><bean:message
-							key="main.timereport.tooltip.edited" />:</td>
-						<td class="info"><c:out value="${employee.lastupdate}" /></td>
-						<td class="info" valign="top"><bean:message
-							key="main.timereport.tooltip.by" /></td>
-						<td class="info" valign="top"><c:out
-							value="${employee.lastupdatedby}" /></td>
-					</tr>
-				</table>
-
-				</div>
-				<img
-					onMouseOver="showWMTT(this,'info<c:out value="${employee.id}" />')"
-					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="/tb/images/info_button.gif" /></td>
 				<td style="color:gray"><c:out
 					value="${customerorder.customer.shortname}" /></td>
 				<td style="color:gray"><c:out value="${customerorder.sign}" /></td>

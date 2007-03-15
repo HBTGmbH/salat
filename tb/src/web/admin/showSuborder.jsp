@@ -154,11 +154,7 @@
 				<tr class="secondarycolor">
 			</c:otherwise>
 		</c:choose>
-		<!-- invalid suborders should be gray -->
-		<c:choose>
-			<c:when test="${suborder.currentlyValid}">
-			
-				
+
 			<!-- Info -->
 			<td align="center">
 			<div class="tooltip" id="info<c:out value='${suborder.id}' />">
@@ -216,7 +212,10 @@
 				onMouseOut="hideWMTT()" width="12px" height="12px"
 				src="/tb/images/info_button.gif" />
 			</td>
-			
+
+		<!-- invalid suborders should be gray -->
+		<c:choose>
+			<c:when test="${suborder.currentlyValid}">
 				<td title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
 				<td><c:out value="${suborder.sign}" /></td>
 				<td><c:out value="${suborder.shortdescription}" /></td>
@@ -296,66 +295,6 @@
 			</c:when>
 			<c:otherwise>
 			<!-- suborder is invalid -->
-			
-				
-			<!-- Info -->
-			<td align="center">
-			<div class="tooltip" id="info<c:out value='${suborder.id}' />">
-			<table>
-				<tr>
-					<td class="info">id:</td>
-					<td class="info" colspan="3"><c:out
-						value="${suborder.id}" /></td>
-				</tr>
-				<tr>
-					<td class="info"><bean:message
-						key="main.timereport.tooltip.order" />:</td>
-					<td class="info" colspan="3"><c:out
-						value="${suborder.customerorder.sign}" /></td>
-				</tr>
-				<tr>
-					<td class="info">&nbsp;</td>
-					<td class="info" colspan="3"><c:out
-						value="${suborder.customerorder.description}" /></td>
-				</tr>
-				<tr>
-					<td class="info"><bean:message
-						key="main.timereport.tooltip.suborder" />:</td>
-					<td class="info" colspan="3"><c:out
-						value="${suborder.sign}" /></td>
-				</tr>
-				<tr>
-					<td class="info">&nbsp;</td>
-					<td class="info" colspan="3"><c:out
-						value="${suborder.description}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.created" />:</td>
-					<td class="info"><c:out value="${suborder.created}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${suborder.createdby}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.edited" />:</td>
-					<td class="info"><c:out value="${suborder.lastupdate}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${suborder.lastupdatedby}" /></td>
-				</tr>
-			</table>
-
-			</div>
-			<img
-				onMouseOver="showWMTT(this,'info<c:out value="${suborder.id}" />')"
-				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/tb/images/info_button.gif" />
-			</td>
-			
 				<td style="color:gray" title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
 				<td style="color:gray"><c:out value="${suborder.sign}" /></td>
 				<td style="color:gray"><c:out value="${suborder.shortdescription}" /></td>
