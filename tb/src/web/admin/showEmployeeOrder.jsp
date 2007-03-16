@@ -229,6 +229,13 @@
 						value="${employeeorder.suborder.customerorder.description}" /></td>
 				</tr>
 				<tr>
+					<td class="info">&nbsp;</td>
+					<td class="info" colspan="3">(<c:out
+						value="${employeeorder.fromDate}" /> - <c:if test="${employeeorder.untilDate!=null}"><c:out
+						value="${employeeorder.untilDate}" /></c:if><c:if test="${employeeorder.untilDate==null}"><bean:message 
+						key="main.general.open.text" /></c:if>)</td>
+				</tr>
+				<tr>
 					<td class="info"><bean:message
 						key="main.timereport.tooltip.suborder" />:</td>
 					<td class="info" colspan="3"><c:out
@@ -238,6 +245,13 @@
 					<td class="info">&nbsp;</td>
 					<td class="info" colspan="3"><c:out
 						value="${employeeorder.suborder.description}" /></td>
+				</tr>
+				<tr>
+					<td class="info">&nbsp;</td>
+					<td class="info" colspan="3">(<c:out
+						value="${employeeorder.suborder.fromDate}" /> - <c:if test="${employeeorder.suborder.untilDate!=null}"><c:out
+						value="${employeeorder.suborder.untilDate}" /></c:if><c:if test="${employeeorder.suborder.untilDate==null}"><bean:message 
+						key="main.general.open.text" /></c:if>)</td>
 				</tr>
 				<tr>
 					<td class="info" valign="top"><bean:message

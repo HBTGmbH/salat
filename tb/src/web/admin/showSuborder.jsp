@@ -205,6 +205,27 @@
 					<td class="info" valign="top"><c:out
 						value="${suborder.lastupdatedby}" /></td>
 				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.general.standard" />:</td>
+					<td class="info"><c:choose><c:when test="${suborder.standard == true}"><bean:message
+						key="main.general.yes" /></c:when><c:otherwise><bean:message
+						key="main.general.no" /></c:otherwise></c:choose></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.general.commentnecessary" />:</td>
+					<td class="info"><c:choose><c:when test="${suborder.commentnecessary == true}"><bean:message
+						key="main.general.yes" /></c:when><c:otherwise><bean:message
+						key="main.general.no" /></c:otherwise></c:choose></td>
+				</tr>
+				<tr>
+					<td class="info" valign="top"><bean:message
+						key="main.general.hide" />:</td>
+					<td class="info"><c:choose><c:when test="${suborder.hide == true}"><bean:message
+						key="main.general.yes" /></c:when><c:otherwise><bean:message
+						key="main.general.no" /></c:otherwise></c:choose></td>
+				</tr>
 			</table>
 
 			</div>

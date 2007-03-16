@@ -372,13 +372,19 @@ public class ShowMatrixAction extends DailyReportAction {
 						if (!tempEmployeeContract
 								.getAcceptanceWarningByDate(dateLast)) {
 							acceptanceDate = tempEmployeeContract
-									.getReportAcceptanceDate();
-							if (!dateLast.after(acceptanceDate)) {
-								isAcceptanceWarning = true;
-							} else {
+								.getReportAcceptanceDate();
+							if(acceptanceDate == null){
 								isAcceptanceWarning = false;
 								break;
+							}else{
+								if (!dateLast.after(acceptanceDate)) {
+									isAcceptanceWarning = true;
+								} else {
+									isAcceptanceWarning = false;
+									break;
+								}							
 							}
+							
 						} else {
 							isAcceptanceWarning = false;
 							break;

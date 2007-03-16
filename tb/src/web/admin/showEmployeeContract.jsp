@@ -180,6 +180,13 @@
 							<td class="info" valign="top"><c:out
 								value="${employeecontract.lastupdatedby}" /></td>
 						</tr>
+						<tr>
+							<td class="info" valign="top"><bean:message
+								key="main.general.hide" />:</td>
+							<td class="info"><c:choose><c:when test="${employeecontract.hide == true}"><bean:message
+								key="main.general.yes" /></c:when><c:otherwise><bean:message
+								key="main.general.no" /></c:otherwise></c:choose></td>
+						</tr>
 					</table>
 				</div>
 				<img onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
