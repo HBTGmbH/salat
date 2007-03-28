@@ -410,7 +410,7 @@
 	</tr>
 
 	<tr class="matrix">
-		<td class="matrix" colspan="34">
+		<td class="matrix" colspan="${daysofmonth+3}">
 		<table>
 			<tr class="matrix">
 				<td class="matrix" style="border-style:none;"><bean:message
