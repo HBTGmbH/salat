@@ -182,5 +182,6 @@
 		</tr>
 	</c:if>
 </table>
+<br><br>
 </body>
 </html:html>
