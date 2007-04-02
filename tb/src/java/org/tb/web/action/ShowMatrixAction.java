@@ -368,23 +368,24 @@ public class ShowMatrixAction extends DailyReportAction {
 				boolean isAcceptanceWarning = false;
 				for (Iterator iter = ecList.iterator(); iter.hasNext();) {
 					tempEmployeeContract = (Employeecontract) iter.next();
-					if (!tempEmployeeContract.getEmployee().getSign().equals("adm")) {
+					if (!tempEmployeeContract.getEmployee().getSign().equals(
+							"adm")) {
 						if (!tempEmployeeContract
 								.getAcceptanceWarningByDate(dateLast)) {
 							acceptanceDate = tempEmployeeContract
-								.getReportAcceptanceDate();
-							if(acceptanceDate == null){
+									.getReportAcceptanceDate();
+							if (acceptanceDate == null) {
 								isAcceptanceWarning = false;
 								break;
-							}else{
+							} else {
 								if (!dateLast.after(acceptanceDate)) {
 									isAcceptanceWarning = true;
 								} else {
 									isAcceptanceWarning = false;
 									break;
-								}							
+								}
 							}
-							
+
 						} else {
 							isAcceptanceWarning = false;
 							break;
@@ -394,7 +395,7 @@ public class ShowMatrixAction extends DailyReportAction {
 				}
 				request.getSession().setAttribute("acceptance",
 						isAcceptanceWarning);
-				if(isAcceptanceWarning){
+				if (isAcceptanceWarning) {
 					request.getSession().setAttribute("acceptedby", "");
 				}
 			} else {
@@ -412,8 +413,18 @@ public class ShowMatrixAction extends DailyReportAction {
 							.getReportAcceptanceDate();
 					if (!dateLast.after(acceptanceDate)) {
 						request.getSession().setAttribute("acceptance", true);
-						Employee tempEmployee = employeeDAO.getEmployeeBySign(timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), employeecontract.getId()).getAcceptedby());
-						request.getSession().setAttribute("acceptedby", tempEmployee.getFirstname() + " " + tempEmployee.getLastname() + " (" + tempEmployee.getStatus() + ")");
+						Employee tempEmployee = employeeDAO
+								.getEmployeeBySign(timereportDAO
+										.getLastAcceptedTimereportByDateAndEmployeeContractId(
+												new java.sql.Date(dateLast
+														.getTime()),
+												employeecontract.getId())
+										.getAcceptedby());
+						request.getSession().setAttribute(
+								"acceptedby",
+								tempEmployee.getFirstname() + " "
+										+ tempEmployee.getLastname() + " ("
+										+ tempEmployee.getStatus() + ")");
 					} else {
 						request.getSession().setAttribute("acceptance", false);
 					}
@@ -518,6 +529,7 @@ public class ShowMatrixAction extends DailyReportAction {
 					DateUtils.getDaysToDisplay());
 			request.getSession().setAttribute("years",
 					DateUtils.getYearsToDisplay());
+
 			if (reportForm.getFromMonth() != null) {
 				// call from list select change
 				request.getSession().setAttribute("currentDay",
@@ -578,7 +590,8 @@ public class ShowMatrixAction extends DailyReportAction {
 					Date acceptanceDate;
 					for (Iterator iter = ecList.iterator(); iter.hasNext();) {
 						tempEmployeeContract = (Employeecontract) iter.next();
-						if (!tempEmployeeContract.getEmployee().getSign().equals("adm")) {
+						if (!tempEmployeeContract.getEmployee().getSign()
+								.equals("adm")) {
 							if (!tempEmployeeContract
 									.getAcceptanceWarningByDate(dateLast)) {
 								acceptanceDate = tempEmployeeContract
@@ -598,11 +611,21 @@ public class ShowMatrixAction extends DailyReportAction {
 				}
 				request.getSession().setAttribute("acceptance",
 						isAcceptanceWarning);
-				if(isAcceptanceWarning){
-					Employee tempEmployee = employeeDAO.getEmployeeBySign(timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), employeecontract.getId()).getAcceptedby());
-					request.getSession().setAttribute("acceptedby", tempEmployee.getFirstname() + " " + tempEmployee.getLastname() +  " (" + tempEmployee.getStatus() + ")");
+				if (isAcceptanceWarning) {
+					Employee tempEmployee = employeeDAO
+							.getEmployeeBySign(timereportDAO
+									.getLastAcceptedTimereportByDateAndEmployeeContractId(
+											new java.sql.Date(dateLast
+													.getTime()),
+											employeecontract.getId())
+									.getAcceptedby());
+					request.getSession().setAttribute(
+							"acceptedby",
+							tempEmployee.getFirstname() + " "
+									+ tempEmployee.getLastname() + " ("
+									+ tempEmployee.getStatus() + ")");
 				}
-				
+
 				ReportWrapper tempReportWrapper = mh
 						.getEmployeeMatrix(
 								dateFirst,
@@ -679,12 +702,25 @@ public class ShowMatrixAction extends DailyReportAction {
 				// test
 				Date dateFirst = new Date();
 				Date dateLast = new Date();
-				try {
-					dateFirst = th.getDateFormStrings("01", monthString,
-							yearString, false);
-				} catch (Exception e) {
-					System.out.println("this should not happen");
+				if (request.getSession().getAttribute("currentMonth")
+						.toString() != null) {
+					try {
+						dateFirst = th.getDateFormStrings("01", request
+								.getSession().getAttribute("currentMonth")
+								.toString(), request.getSession().getAttribute(
+								"currentYear").toString(), false);
+					} catch (Exception e) {
+						System.out.println("this should not happen");
+					}
+				} else {
+					try {
+						dateFirst = th.getDateFormStrings("01", monthString,
+								yearString, false);
+					} catch (Exception e) {
+						System.out.println("this should not happen");
+					}
 				}
+
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.setTime(dateFirst);
 				int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -694,13 +730,24 @@ public class ShowMatrixAction extends DailyReportAction {
 				}
 				maxDayString += maxday;
 
-				try {
-					dateLast = th.getDateFormStrings(maxDayString, monthString,
-							yearString, false);
-				} catch (Exception e) {
-					System.out.println("this should not happen");
+				if (request.getSession().getAttribute("currentMonth")
+						.toString() != null) {
+					try {
+						dateLast = th.getDateFormStrings(maxDayString,
+								request.getSession().getAttribute("currentMonth")
+								.toString(), request.getSession().getAttribute("currentYear")
+								.toString(), false);
+					} catch (Exception e) {
+						System.out.println("this should not happen");
+					}
+				} else {
+					try {
+						dateLast = th.getDateFormStrings(maxDayString,
+								monthString, yearString, false);
+					} catch (Exception e) {
+						System.out.println("this should not happen");
+					}
 				}
-
 				MatrixHelper mh = new MatrixHelper();
 
 				Employeecontract employeecontract = getEmployeeContractFromRequest(request);
@@ -712,8 +759,18 @@ public class ShowMatrixAction extends DailyReportAction {
 					if (!dateLast.after(employeecontract
 							.getReportAcceptanceDate())) {
 						request.getSession().setAttribute("acceptance", true);
-						Employee tempEmployee = employeeDAO.getEmployeeBySign(timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), employeecontract.getId()).getAcceptedby());
-						request.getSession().setAttribute("acceptedby", tempEmployee.getFirstname() + " " + tempEmployee.getLastname() +  " (" + tempEmployee.getStatus() + ")");
+						Employee tempEmployee = employeeDAO
+								.getEmployeeBySign(timereportDAO
+										.getLastAcceptedTimereportByDateAndEmployeeContractId(
+												new java.sql.Date(dateLast
+														.getTime()),
+												employeecontract.getId())
+										.getAcceptedby());
+						request.getSession().setAttribute(
+								"acceptedby",
+								tempEmployee.getFirstname() + " "
+										+ tempEmployee.getLastname() + " ("
+										+ tempEmployee.getStatus() + ")");
 					} else {
 						request.getSession().setAttribute("acceptance", false);
 					}
@@ -730,7 +787,7 @@ public class ShowMatrixAction extends DailyReportAction {
 								employeecontractDAO,
 								publicholidayDAO,
 								GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES,
-								0, reportForm.isInvoice());
+								-1, reportForm.isInvoice());
 				request.getSession().setAttribute("mergedreports",
 						tempReportWrapper.getMergedReportList());
 				request.getSession().setAttribute("dayhourcounts",
