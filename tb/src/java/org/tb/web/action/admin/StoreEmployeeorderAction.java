@@ -74,6 +74,21 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 		AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
 
 		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("refreshEmployee"))) {
+			Employeecontract employeecontract = employeecontractDAO
+				.getEmployeeContractById(eoForm.getEmployeeContractId());
+			if (employeecontract == null) {
+				return mapping.findForward("error");
+			} else {
+				request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+				
+				setFormDates(request, eoForm);
+				return mapping.getInputForward();
+			}
+		}
+		
+		
+		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshSuborders"))) {
 			// refresh suborders to be displayed in the select menu:
 			// get suborders related to selected customer order...
@@ -108,6 +123,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				// checkDatabaseForEmployeeOrder(request, eoForm,
 				// employeecontractDAO, employeeorderDAO);
 				request.getSession().setAttribute("currentOrderId", co.getId());
+				setFormDates(request, eoForm);
 				return mapping.getInputForward();
 			}
 		}
@@ -126,6 +142,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			}
 			// checkDatabaseForEmployeeOrder(request, eoForm,
 			// employeecontractDAO, employeeorderDAO);
+			setFormDates(request, eoForm);
 			return mapping.getInputForward();
 		}
 
@@ -191,9 +208,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				return mapping.getInputForward();
 			}
 
-			Employeecontract ec = employeecontractDAO
-					.getEmployeeContractById(eoForm.getEmployeeContractId());
-			eo.setEmployeecontract(ec);
+			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+			
+			eo.setEmployeecontract(employeecontract);
 			eo.setSuborder(suborderDAO.getSuborderById(eoForm.getSuborderId()));
 
 			Date fromDate = Date.valueOf(eoForm.getValidFrom());
@@ -489,5 +506,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
 		return errors;
 	}
+	
+	
 
 }

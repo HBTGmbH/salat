@@ -292,19 +292,19 @@
 				
 				<td>
 					<c:choose>
-						<c:when test="${customerorder.debithours == null}">
+						<c:when test="${suborder.debithours == null}">
 							n/a
 						</c:when>
 						<c:otherwise>
-							<c:out value="${customerorder.debithours}" />
+							<c:out value="${suborder.debithours}" />
 							<c:choose>
-								<c:when test="${customerorder.debithoursunit == 0}">
+								<c:when test="${suborder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
 								</c:when>
-								<c:when test="${customerorder.debithoursunit == 1}">
+								<c:when test="${suborder.debithoursunit == 1}">
 									/ <bean:message key="main.general.year.text" />
 								</c:when>
-								<c:when test="${customerorder.debithoursunit == 12}">
+								<c:when test="${suborder.debithoursunit == 12}">
 									/ <bean:message key="main.general.month.text" />
 								</c:when>
 								<c:otherwise>
@@ -371,19 +371,19 @@
 				
 				<td style="color:gray">
 					<c:choose>
-						<c:when test="${customerorder.debithours == null}">
+						<c:when test="${suborder.debithours == null}">
 							n/a
 						</c:when>
 						<c:otherwise>
-							<c:out value="${customerorder.debithours}" />
+							<c:out value="${suborder.debithours}" />
 							<c:choose>
-								<c:when test="${customerorder.debithoursunit == 0}">
+								<c:when test="${suborder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
 								</c:when>
-								<c:when test="${customerorder.debithoursunit == 1}">
+								<c:when test="${suborder.debithoursunit == 1}">
 									/ <bean:message key="main.general.year.text" />
 								</c:when>
-								<c:when test="${customerorder.debithoursunit == 12}">
+								<c:when test="${suborder.debithoursunit == 12}">
 									/ <bean:message key="main.general.month.text" />
 								</c:when>
 								<c:otherwise>

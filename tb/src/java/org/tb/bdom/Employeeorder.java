@@ -251,4 +251,31 @@ public class Employeeorder implements Serializable {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @return Returns true, if {@link Employeeorder} fits to its superior objects, false otherwise
+	 */
+	public boolean getFitsToSuperiorObjects() {
+		// check from date
+		if (getFromDate().before(employeecontract.getValidFrom()) || getFromDate().before(suborder.getFromDate())) {
+			return false;
+		}
+		
+		// check until date
+		if (getUntilDate() == null && (employeecontract.getValidUntil() != null || suborder.getUntilDate() != null)) {
+			return false;
+		}
+		if (getUntilDate() != null && 
+				((employeecontract.getValidUntil() != null && 
+						getUntilDate().after(employeecontract.getValidUntil())) ||
+				 (suborder.getUntilDate() != null &&
+						getUntilDate().after(suborder.getUntilDate()))
+				)) {
+			return false;
+		}
+		
+		
+		return true;
+	}
+	
 }

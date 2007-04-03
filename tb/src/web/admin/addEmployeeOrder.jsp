@@ -60,8 +60,9 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.employee.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="employeeContractId">
+			<td align="left" class="noBborderStyle" colspan="5"><html:select
+				property="employeeContractId"
+				onchange="setStoreAction(this.form, 'refreshEmployee')">
 				<c:forEach var="employeecontract" items="${employeecontracts}" >
 					<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 						<html:option value="${employeecontract.id}">
@@ -78,7 +79,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.customerorder.text" /></b></td>
 
-			<td align="left" class="noBborderStyle"><html:select
+			<td align="left" class="noBborderStyle" colspan="5"><html:select
 				property="orderId"
 				onchange="setStoreAction(this.form, 'refreshSuborders')">
 				<html:options collection="orderswithsuborders" labelProperty="signAndDescription"
@@ -91,7 +92,7 @@
 		<tr>
 		<td align="left" class="noBborderStyle"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></td>
-		<td align="left" class="noBborderStyle"><html:select
+		<td align="left" class="noBborderStyle" colspan="5"><html:select
 			property="suborderId" styleClass="mandatory"
 			onchange="setStoreAction(this.form, 'refreshSuborderDescription')">
 			<html:options collection="suborders" labelProperty="signAndDescription"
@@ -148,7 +149,13 @@
 				style="text-decoration:none;"> <img
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
 				alt="<bean:message key="main.date.popup.alt.text" />"
-				style="border:0;vertical-align:top"> </a> <span style="color:red"><html:errors
+				style="border:0;vertical-align:top"> </a></td> 
+			<td align="left" class="noBborderStyle"><bean:message
+				key="main.employeeorder.suborder.text" />:</td>
+			<td align="left" class="noBborderStyle"><c:out value="${selectedsuborder.fromDate}" /> </td>
+			<td align="left" class="noBborderStyle"><bean:message
+				key="main.employeeorder.employee.text" />:</td>
+			<td align="left" class="noBborderStyle"><c:out value="${currentEmployeeContract.validFrom}" /> <span style="color:red"><html:errors
 				property="validFrom" /></span></td>
 		</tr>
 
@@ -162,25 +169,37 @@
 				style="text-decoration:none;"> <img
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
 				alt="<bean:message key="main.date.popup.alt.text" />"
-				style="border:0;vertical-align:top"> </a> <span style="color:red"><html:errors
+				style="border:0;vertical-align:top"> </a> </td>
+			<td align="left" class="noBborderStyle"><bean:message
+				key="main.employeeorder.suborder.text" />:</td>
+			<td align="left" class="noBborderStyle"><c:out value="${selectedsuborder.untilDate}" /><c:if 
+				test="${selectedsuborder.untilDate == null}"><bean:message
+				key="main.general.open.text" /></c:if> </td>
+			<td align="left" class="noBborderStyle"><bean:message
+				key="main.employeeorder.employee.text" />:</td>
+			<td align="left" class="noBborderStyle"><c:out value="${currentEmployeeContract.validUntil}" /><c:if 
+				test="${currentEmployeeContract.validUntil == null}"><bean:message
+				key="main.general.open.text" /></c:if> <span style="color:red"><html:errors
 				property="validUntil" /></span></td>
 		</tr>
 
 		<!-- Dauerauftrag -->
+		<!--  
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.standingorder.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:checkbox
+			<td align="left" class="noBborderStyle" colspan="5"><html:checkbox
 				property="standingorder" /> <span style="color:red"><html:errors
 				property="standingorder" /></span></td>
 		</tr>
+		-->
 
 		<!-- Sollstunden -->
 		<c:if test="${loginEmployee.status == 'adm' || (!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK'))}">
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
 					key="main.employeeorder.debithours.text" /></b></td>
-				<td align="left" class="noBborderStyle"><html:text
+				<td align="left" class="noBborderStyle" colspan="5"><html:text
 					property="debithours" size="20" /> <span style="color:red"><html:errors
 					property="debithours" /></span></td>
 			</tr>
@@ -197,7 +216,7 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeeorder.statusreport.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:checkbox
+			<td align="left" class="noBborderStyle" colspan="5"><html:checkbox
 				property="statusreport" /> <span style="color:red"><html:errors
 				property="statusreport" /></span></td>
 		</tr>

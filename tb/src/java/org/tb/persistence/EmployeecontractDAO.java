@@ -306,7 +306,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
 		java.util.Date date = new Date();
 		Boolean hide = false;
-		return getSession().createQuery("from Employeecontract e where hide = ? or (validFrom <= ? and validUntil >= ?) order by employee.sign asc, validFrom asc").setBoolean(0, hide).setDate(1, date).setDate(2, date).list();
+		return getSession().createQuery("from Employeecontract e where hide = ? or hide = null or (validFrom <= ? and (validUntil >= ? or validUntil = null)) order by employee.sign asc, validFrom asc").setBoolean(0, hide).setDate(1, date).setDate(2, date).list();
 	}
 
 //	/**

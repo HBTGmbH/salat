@@ -119,6 +119,11 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		// reset/init form entries
 		employeeOrderForm.reset(mapping, request);
 		employeeOrderForm.useDatesFromCustomerOrder(firstCustomerorder);
+		
+		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		if (employeecontract != null) {
+			employeeOrderForm.setEmployeeContractId(employeecontract.getId());
+		}
 				
 		//	init form with first order and corresponding suborders
 		List<Suborder> theSuborders = new ArrayList<Suborder>();
@@ -145,6 +150,8 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 				employeeOrderForm.setSuborderId(orders.get(0).getSuborders().get(0).getId());
 			}			
 		}
+		
+		setFormDates(request, employeeOrderForm);
 		
 		// make sure, no eoId still exists in session
 		request.getSession().removeAttribute("eoId");

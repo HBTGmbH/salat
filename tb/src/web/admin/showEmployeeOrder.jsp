@@ -75,7 +75,8 @@
 			<td align="left" class="noBborderStyle" colspan="9">
 				<html:select
 					property="employeeContractId"		
-					onchange="refresh(this.form)" >
+					onchange="refresh(this.form)"
+					value="${currentEmployeeContract.id}" >
 					<html:option value="-1">
 						<bean:message key="main.general.allemployees.text" />
 					</html:option>
@@ -162,10 +163,12 @@
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.validuntil.text" />"><b><bean:message
 			key="main.employeeorder.validuntil.text" /></b></th>
+		<!--  
 		<th align="center"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.standingorder.text" />"><b><bean:message
 			key="main.employeeorder.standingorder.text" /></b></th>
+		-->
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
@@ -281,52 +284,92 @@
 			</td>
 		
 		<c:choose>
-			<c:when test="${employeeorder.currentlyValid}">
-				<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
-					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
-				<td
-					title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
-					value="${employeeorder.suborder.customerorder.sign}" /></td>
-				<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out
-					value="${employeeorder.suborder.sign}" /></td>
-				<td><c:out value="${employeeorder.fromDate}" /></td>
-				<td>
-					<c:choose>
-						<c:when test="${employeeorder.untilDate == null}">
-							<bean:message key="main.general.open.text" />
-						</c:when>
-						<c:otherwise>
-							<c:out value="${employeeorder.untilDate}" />
-						</c:otherwise>
-					</c:choose>
-				</td>
-				<td align="center"><html:checkbox name="employeeorder"
-					property="standingorder" disabled="true" /></td>
-				<td><c:out value="${employeeorder.debithours}" /></td>
-				<td align="center"><html:checkbox name="employeeorder"
-					property="statusreport" disabled="true" /></td>
-			</c:when>
-			<c:otherwise>
-				<td style="color:gray" title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
+			<c:when test="${!employeeorder.currentlyValid}">
+				<td style="color:gray"  title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
 					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
 				<td style="color:gray" title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
 					value="${employeeorder.suborder.customerorder.sign}" /></td>
 				<td style="color:gray" title="<c:out value="${employeeorder.suborder.description}" />"><c:out
 					value="${employeeorder.suborder.sign}" /></td>
-				<td style="color:gray"><c:out value="${employeeorder.fromDate}" /></td>
-				<td style="color:gray">
-					<c:choose>
-					<c:when test="${employeeorder.untilDate == null}">
-						<bean:message key="main.general.open.text" />
+				
+				<c:choose>
+					<c:when test="${!employeeorder.fitsToSuperiorObjects}">
+						<td style="color:red" ><c:out value="${employeeorder.fromDate}" /></td>
+						<td style="color:red" >
+							<c:choose>
+								<c:when test="${employeeorder.untilDate == null}">
+									<bean:message key="main.general.open.text" />
+								</c:when>
+								<c:otherwise>
+									<c:out value="${employeeorder.untilDate}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
 					</c:when>
 					<c:otherwise>
-						<c:out value="${employeeorder.untilDate}" />
+						<td style="color:gray" ><c:out value="${employeeorder.fromDate}" /></td>
+						<td style="color:gray" >
+							<c:choose>
+								<c:when test="${employeeorder.untilDate == null}">
+									<bean:message key="main.general.open.text" />
+								</c:when>
+								<c:otherwise>
+									<c:out value="${employeeorder.untilDate}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
 					</c:otherwise>
 				</c:choose>
-				</td>
+				<!-- 
 				<td align="center"><html:checkbox name="employeeorder"
 					property="standingorder" disabled="true" /></td>
-				<td style="color:gray"><c:out value="${employeeorder.debithours}" /></td>
+				-->
+				<td style="color:gray" ><c:out value="${employeeorder.debithours}" /></td>
+				<td align="center"><html:checkbox name="employeeorder"
+					property="statusreport" disabled="true" /></td>
+			</c:when>
+			<c:otherwise>
+				<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
+					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
+				<td title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
+					value="${employeeorder.suborder.customerorder.sign}" /></td>
+				<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out
+					value="${employeeorder.suborder.sign}" /></td>
+				 
+				 <c:choose>
+					<c:when test="${!employeeorder.fitsToSuperiorObjects}">
+						<td style="color:red"><c:out value="${employeeorder.fromDate}" /></td>
+						<td style="color:red">
+							<c:choose>
+								<c:when test="${employeeorder.untilDate == null}">
+									<bean:message key="main.general.open.text" />
+								</c:when>
+								<c:otherwise>
+									<c:out value="${employeeorder.untilDate}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
+					</c:when>
+					<c:otherwise>
+						<td><c:out value="${employeeorder.fromDate}" /></td>
+						<td>
+							<c:choose>
+								<c:when test="${employeeorder.untilDate == null}">
+									<bean:message key="main.general.open.text" />
+								</c:when>
+								<c:otherwise>
+									<c:out value="${employeeorder.untilDate}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
+					</c:otherwise>
+				</c:choose>
+				 
+				<!--  
+				<td align="center"><html:checkbox name="employeeorder"
+					property="standingorder" disabled="true" /></td>
+				-->
+				<td><c:out value="${employeeorder.debithours}" /></td>
 				<td align="center"><html:checkbox name="employeeorder"
 					property="statusreport" disabled="true" /></td>
 			</c:otherwise>

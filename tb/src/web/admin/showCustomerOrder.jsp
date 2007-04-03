@@ -290,8 +290,6 @@
 				<td style="color:gray"><c:out value="${customerorder.sign}" /></td>
 				<td style="color:gray"><c:out
 					value="${customerorder.shortdescription}" /></td>
-				<td style="color:gray"><c:out
-					value="${customerorder.description}" /></td>
 				<td style="color:gray"><c:out value="${customerorder.fromDate}" /></td>
 				<td style="color:gray"><c:choose>
 					<c:when test="${customerorder.untilDate == null}">

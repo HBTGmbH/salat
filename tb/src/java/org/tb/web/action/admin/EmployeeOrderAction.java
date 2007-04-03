@@ -1,11 +1,15 @@
 package org.tb.web.action.admin;
 
+import java.text.SimpleDateFormat;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.AddEmployeeOrderForm;
 import org.tb.web.form.ShowEmployeeOrderForm;
 
 public abstract class EmployeeOrderAction extends LoginRequiredAction {
@@ -117,6 +121,63 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 			request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
 			request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
 		}
+	}
+	
+	/**
+	 * Sets the from and until date in the form
+	 * 
+	 * @param request
+	 * @param employeeOrderForm
+	 */
+	protected void setFormDates(HttpServletRequest request, AddEmployeeOrderForm employeeOrderForm) {
+		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+		Suborder suborder = (Suborder) request.getSession().getAttribute("selectedsuborder");
+		
+		java.util.Date ecFromDate = null;
+		java.util.Date ecUntilDate = null;
+		java.util.Date soFromDate = null;
+		java.util.Date soUntilDate = null;
+		
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		
+		if (employeecontract != null) {
+			ecFromDate = employeecontract.getValidFrom();
+			ecUntilDate = employeecontract.getValidUntil();
+		}
+		if (suborder != null) {
+			soFromDate = suborder.getFromDate();
+			soUntilDate = suborder.getUntilDate();
+		}
+		
+		// set from date
+		if (ecFromDate != null && soFromDate != null) {
+			if (ecFromDate.before(soFromDate)) {
+				employeeOrderForm.setValidFrom(simpleDateFormat.format(soFromDate));
+			} else {
+				employeeOrderForm.setValidFrom(simpleDateFormat.format(ecFromDate));
+			}
+		} else if (ecFromDate != null && soFromDate == null) {
+			employeeOrderForm.setValidFrom(simpleDateFormat.format(ecFromDate));
+		} else if (ecFromDate == null && soFromDate != null) {
+			employeeOrderForm.setValidFrom(simpleDateFormat.format(soFromDate));
+		}
+		
+		
+		// set until date
+		if (ecUntilDate != null && soUntilDate != null) {
+			if (ecUntilDate.after(soUntilDate)) {
+				employeeOrderForm.setValidUntil(simpleDateFormat.format(soUntilDate));
+			} else {
+				employeeOrderForm.setValidUntil(simpleDateFormat.format(ecUntilDate));
+			}
+		} else if (ecUntilDate != null && soUntilDate == null) {
+			employeeOrderForm.setValidUntil(simpleDateFormat.format(ecUntilDate));
+		} else if (ecUntilDate == null && soUntilDate != null) {
+			employeeOrderForm.setValidUntil(simpleDateFormat.format(soUntilDate));
+		} else {
+			employeeOrderForm.setValidUntil("");
+		}
+		
 	}
 
 }
