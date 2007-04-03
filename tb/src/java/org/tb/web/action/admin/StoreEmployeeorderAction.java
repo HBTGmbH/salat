@@ -120,6 +120,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				request.getSession().setAttribute("selectedcustomerorder", co);
 				eoForm.useDatesFromCustomerOrder(co);
 				eoForm.setOrderId(co.getId());
+				if (suborders != null && !suborders.isEmpty()) {
+					eoForm.setHourlyRate(suborders.get(0).getHourly_rate());
+					eoForm.setCurrency(suborders.get(0).getCurrency());
+				} else {
+					eoForm.setHourlyRate(co.getHourly_rate());
+					eoForm.setCurrency(co.getCurrency());
+				}
 				// checkDatabaseForEmployeeOrder(request, eoForm,
 				// employeecontractDAO, employeeorderDAO);
 				request.getSession().setAttribute("currentOrderId", co.getId());
@@ -139,6 +146,11 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			if (so != null) {
 				request.getSession().setAttribute("selectedsuborder", so);
 				eoForm.setSuborderId(so.getId());
+				eoForm.setHourlyRate(so.getHourly_rate());
+				eoForm.setCurrency(so.getCurrency());
+			} else {
+				eoForm.setHourlyRate(null);
+				eoForm.setCurrency(GlobalConstants.DEFAULT_CURRENCY);
 			}
 			// checkDatabaseForEmployeeOrder(request, eoForm,
 			// employeecontractDAO, employeeorderDAO);
@@ -232,13 +244,29 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				eo.setDebithours(eo.getEmployeecontract()
 						.getVacationEntitlement()
 						* eo.getEmployeecontract().getDailyWorkingTime());
+				eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
 			} else if (eo.getSuborder().getCustomerorder().getSign().equals(
 					GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
 				eo.setDebithours(0.0);
-			} else {
-				eo.setDebithours(eoForm.getDebithours());
+				eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
+			} else {				
+				if (eoForm.getDebithours() == null || eoForm.getDebithours() == 0.0) {
+					eo.setDebithours(null);
+					eo.setDebithoursunit(null);
+				} else {
+					eo.setDebithours(eoForm.getDebithours());
+					eo.setDebithoursunit(eoForm.getDebithoursunit());
+				}
 			}
 			eo.setStatusreport(eoForm.getStatusreport());
+			
+			if (eoForm.getHourlyRate() != null) {
+				eo.setHourly_rate(eoForm.getHourlyRate());
+				eo.setCurrency(eoForm.getCurrency());
+			} else {
+				eo.setHourly_rate(null);
+				eo.setCurrency(null);
+			}
 
 			Employee loginEmployee = (Employee) request.getSession()
 					.getAttribute("loginEmployee");
@@ -414,9 +442,28 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 		if (!GenericValidator.isDouble(eoForm.getDebithours().toString())
 				|| (!GenericValidator.isInRange(eoForm.getDebithours(), 0.0,
 						GlobalConstants.MAX_DEBITHOURS))) {
-			errors.add("debithours", new ActionMessage(
-					"form.employeeorder.error.debithours.wrongformat"));
+			errors.add("debithours", new ActionMessage("form.employeeorder.error.debithours.wrongformat"));
+		} else if (eoForm.getDebithours() != null && eoForm.getDebithours() != 0.0) {
+			Double debithours = eoForm.getDebithours() * 100000;
+			debithours += 0.5;
+			
+			int debithours2 = debithours.intValue();
+			int modulo = debithours2%5000;
+			eoForm.setDebithours(debithours2/100000.0);
+			
+			if (modulo != 0) {
+				errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat2"));
+			}
+		} 
+		
+		if (eoForm.getDebithours() != 0.0) {
+			if (eoForm.getDebithoursunit() == null || !(eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH ||
+					eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
+				errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.nounit"));
+			}
 		}
+		
+		
 
 		// check for overleap with another employee order for the same employee
 		// contract and suborder
@@ -502,6 +549,14 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			}
 		}
 
+		// check hourly rate format
+		if (!GenericValidator.isDouble(eoForm.getHourlyRate().toString())
+				|| (!GenericValidator.isInRange(eoForm.getHourlyRate(), 0.0,
+						GlobalConstants.MAX_HOURLY_RATE))) {
+			errors.add("hourlyRate", new ActionMessage(
+					"form.suborder.error.hourlyrate.wrongformat"));
+		}
+		
 		saveErrors(request, errors);
 
 		return errors;

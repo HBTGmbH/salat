@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
@@ -26,6 +27,9 @@ public class AddEmployeeOrderForm extends ActionForm {
 	private String validUntil;
 	private Boolean standingorder;
 	private Double debithours;
+	private Byte debithoursunit;
+	private String currency;
+	private Double hourlyRate;
 	private String status;
 	private Boolean statusreport;
 //	private String employeename;
@@ -88,6 +92,48 @@ public class AddEmployeeOrderForm extends ActionForm {
 
 	public void setDebithours(Double debithours) {
 		this.debithours = debithours;
+	}
+
+	/**
+	 * @return the debithoursunit
+	 */
+	public Byte getDebithoursunit() {
+		return debithoursunit;
+	}
+
+	/**
+	 * @param debithoursunit the debithoursunit to set
+	 */
+	public void setDebithoursunit(Byte debithoursunit) {
+		this.debithoursunit = debithoursunit;
+	}
+
+	/**
+	 * @return the currency
+	 */
+	public String getCurrency() {
+		return currency;
+	}
+
+	/**
+	 * @param currency the currency to set
+	 */
+	public void setCurrency(String currency) {
+		this.currency = currency;
+	}
+
+	/**
+	 * @return the hourlyRate
+	 */
+	public Double getHourlyRate() {
+		return hourlyRate;
+	}
+
+	/**
+	 * @param hourlyRate the hourlyRate to set
+	 */
+	public void setHourlyRate(Double hourlyRate) {
+		this.hourlyRate = hourlyRate;
 	}
 
 	public String getSign() {
@@ -185,7 +231,10 @@ public class AddEmployeeOrderForm extends ActionForm {
 		validUntil = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		standingorder = new Boolean(Boolean.FALSE);
 		statusreport = new Boolean(Boolean.FALSE);
-		debithours = 0.0;
+		debithours = null;
+		debithoursunit = null;
+		currency = GlobalConstants.DEFAULT_CURRENCY;
+		hourlyRate = 0.0;
 	}
 
 	

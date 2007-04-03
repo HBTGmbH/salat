@@ -52,6 +52,15 @@ public class Employeeorder implements Serializable {
 	/** Debit Hours */
 	private Double debithours;
 	
+	/** Unit of the debit hours */
+	private Byte debithoursunit;
+	
+	/** Currency */
+	private String currency;
+
+	/** Hourly Rate */
+	private Double hourly_rate;
+	
 	/** valid from date */
 	private Date fromDate;
 	
@@ -94,6 +103,54 @@ public class Employeeorder implements Serializable {
 
 	public void setDebithours(Double hours) {
 		this.debithours = hours;
+	}
+
+	/**
+	 * @return the debithoursunit
+	 */
+	public Byte getDebithoursunit() {
+		return debithoursunit;
+	}
+
+	/**
+	 * @param debithoursunit the debithoursunit to set
+	 */
+	public void setDebithoursunit(Byte debithoursunit) {
+		this.debithoursunit = debithoursunit;
+	}
+
+	/**
+	 * @return the currency
+	 */
+	public String getCurrency() {
+		if (currency == null) {
+			return suborder.getCurrency();
+		}
+		return currency;
+	}
+
+	/**
+	 * @param currency the currency to set
+	 */
+	public void setCurrency(String currency) {
+		this.currency = currency;
+	}
+
+	/**
+	 * @return the hourly_rate
+	 */
+	public Double getHourly_rate() {
+		if (hourly_rate == null) {
+			return suborder.getHourly_rate();
+		}
+		return hourly_rate;
+	}
+
+	/**
+	 * @param hourly_rate the hourly_rate to set
+	 */
+	public void setHourly_rate(Double hourly_rate) {
+		this.hourly_rate = hourly_rate;
 	}
 
 	public String getSign() {

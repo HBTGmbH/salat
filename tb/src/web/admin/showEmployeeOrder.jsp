@@ -169,6 +169,9 @@
 			key="main.headlinedescription.employeeorders.standingorder.text" />"><b><bean:message
 			key="main.employeeorder.standingorder.text" /></b></th>
 		-->
+		<th align="left" title="<bean:message
+			key="main.headlinedescription.suborders.hourlyrate.text" />"><b><bean:message
+			key="main.suborder.hourlyrate.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
@@ -324,7 +327,33 @@
 				<td align="center"><html:checkbox name="employeeorder"
 					property="standingorder" disabled="true" /></td>
 				-->
-				<td style="color:gray" ><c:out value="${employeeorder.debithours}" /></td>
+				
+				<td style="color:gray"><c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" /></td>
+				
+				<td style="color:gray" >
+					<c:choose>
+						<c:when test="${employeeorder.debithours == null}">
+							n/a
+						</c:when>
+						<c:otherwise>
+							<c:out value="${employeeorder.debithours}" />
+							<c:choose>
+								<c:when test="${employeeorder.debithoursunit == 0}">
+									/ <bean:message key="main.general.totaltime.text" />
+								</c:when>
+								<c:when test="${employeeorder.debithoursunit == 1}">
+									/ <bean:message key="main.general.year.text" />
+								</c:when>
+								<c:when test="${employeeorder.debithoursunit == 12}">
+									/ <bean:message key="main.general.month.text" />
+								</c:when>
+								<c:otherwise>
+									?
+								</c:otherwise>
+							</c:choose>
+						</c:otherwise>
+					</c:choose>
+				</td>
 				<td align="center"><html:checkbox name="employeeorder"
 					property="statusreport" disabled="true" /></td>
 			</c:when>
@@ -369,7 +398,35 @@
 				<td align="center"><html:checkbox name="employeeorder"
 					property="standingorder" disabled="true" /></td>
 				-->
-				<td><c:out value="${employeeorder.debithours}" /></td>
+				
+				
+				<td><c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" /></td>
+	
+				
+				<td>
+					<c:choose>
+						<c:when test="${employeeorder.debithours == null}">
+							n/a
+						</c:when>
+						<c:otherwise>
+							<c:out value="${employeeorder.debithours}" />
+							<c:choose>
+								<c:when test="${employeeorder.debithoursunit == 0}">
+									/ <bean:message key="main.general.totaltime.text" />
+								</c:when>
+								<c:when test="${employeeorder.debithoursunit == 1}">
+									/ <bean:message key="main.general.year.text" />
+								</c:when>
+								<c:when test="${employeeorder.debithoursunit == 12}">
+									/ <bean:message key="main.general.month.text" />
+								</c:when>
+								<c:otherwise>
+									?
+								</c:otherwise>
+							</c:choose>
+						</c:otherwise>
+					</c:choose>
+				</td>
 				<td align="center"><html:checkbox name="employeeorder"
 					property="statusreport" disabled="true" /></td>
 			</c:otherwise>

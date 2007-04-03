@@ -193,16 +193,36 @@
 				property="standingorder" /></span></td>
 		</tr>
 		-->
+		
+		<!-- hourly rate & currency -->
+		<tr>
+			<td align="left" class="noBborderStyle" colspan="5"><b><bean:message
+				key="main.suborder.hourlyrate.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="hourlyRate" size="20" value="${hourlyRate}" /> <html:select property="currency">
+					<html:option value="EUR">EUR</html:option>
+				</html:select> <span style="color:red"><html:errors property="hourlyRate" /></span></td>
+		</tr>
+		
 
 		<!-- Sollstunden -->
 		<c:if test="${loginEmployee.status == 'adm' || (!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK'))}">
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.employeeorder.debithours.text" /></b></td>
+					key="main.general.debithours.text" /></b></td>
 				<td align="left" class="noBborderStyle" colspan="5"><html:text
-					property="debithours" size="20" /> <span style="color:red"><html:errors
-					property="debithours" /></span></td>
+					property="debithours" size="20" />&nbsp;&nbsp;<bean:message
+					key="main.general.per.text" />&nbsp;&nbsp;&nbsp;&nbsp;
+					<html:radio property="debithoursunit" value="12" disabled="false" /><bean:message
+					key="main.general.month.text" /> <html:radio 
+					property="debithoursunit" value="1" disabled="false" /><bean:message
+					key="main.general.year.text" /> <html:radio 
+					property="debithoursunit" value="0" disabled="false" /><bean:message
+					key="main.general.totaltime.text" /> <span 
+					style="color:red"><html:errors property="debithours" /></span>
+				</td>
 			</tr>
+			
 		</c:if>
 		<!--  
 		<tr>

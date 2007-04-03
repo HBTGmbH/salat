@@ -131,6 +131,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		if ((orders != null) && (orders.size() > 0)) {
 			employeeOrderForm.setOrder(orders.get(0).getSign());
 			employeeOrderForm.setOrderId(orders.get(0).getId());
+		
 			List<Suborder> suborders = orders.get(0).getSuborders();
 			// remove hidden suborders
 			Iterator<Suborder> suborderIterator = suborders.iterator();
@@ -148,6 +149,9 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			if ((orders.get(0).getSuborders() != null) && (orders.get(0).getSuborders().size() > 0)) {
 				employeeOrderForm.setSuborder(orders.get(0).getSuborders().get(0).getSign());
 				employeeOrderForm.setSuborderId(orders.get(0).getSuborders().get(0).getId());
+				
+				employeeOrderForm.setHourlyRate(orders.get(0).getSuborders().get(0).getHourly_rate());
+				employeeOrderForm.setCurrency(orders.get(0).getSuborders().get(0).getCurrency());
 			}			
 		}
 		

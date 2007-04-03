@@ -164,11 +164,24 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		eoForm.setEmployeeContractId(ec.getId());
 		eoForm.setOrderId(eo.getSuborder().getCustomerorder().getId());
 		eoForm.setSuborderId(eo.getSuborder().getId());
+		
 		eoForm.setDebithours(eo.getDebithours());
+		if (eo.getDebithours() != null) {
+			eoForm.setDebithours(eo.getDebithours());
+			eoForm.setDebithoursunit(eo.getDebithoursunit());
+		} else {
+			eoForm.setDebithours(null);
+			eoForm.setDebithoursunit(null);
+		}
+		
 		eoForm.setSign(eo.getSign());
 //		eoForm.setStatus(eo.getStatus());
 		eoForm.setStandingorder(eo.getStandingorder());
 		eoForm.setStatusreport(eo.getStatusreport());
+		
+		eoForm.setHourlyRate(eo.getHourly_rate());
+		eoForm.setCurrency(eo.getCurrency());
+		
 		
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		eoForm.setValidFrom(simpleDateFormat.format(eo.getFromDate()));

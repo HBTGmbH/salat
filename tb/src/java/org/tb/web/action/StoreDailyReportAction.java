@@ -5,7 +5,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -573,7 +572,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setEmployeeContractId(ec.getId());
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
 				showDailyReportForm.setOrder((String)request.getSession().getAttribute("lastOrder"));
-				showDailyReportForm.setSuborderId(-1l);
+				showDailyReportForm.setSuborderId((Long)request.getSession().getAttribute("currentSuborderId"));
 				
 				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
 				reports = (List<Timereport>) request.getSession().getAttribute("timereports");
