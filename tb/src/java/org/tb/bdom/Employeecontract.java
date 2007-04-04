@@ -477,7 +477,7 @@ public class Employeecontract implements Serializable {
 		
 		if (acceptance == null) {
 			// new contract without initial login
-			return false;
+			acceptance = validFrom;
 		}
 		calendar.setTime(now);
 		int month = calendar.get(Calendar.MONTH);

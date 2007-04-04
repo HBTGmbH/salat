@@ -43,10 +43,12 @@
 					key="main.matrixoverview.headline.tb.text" /></span></th>
 			</tr>
 			<tr>
-				<th width="33%" class="matrix noBborderStyle"><c:if test="${currentEmployee eq 'ALL EMPLOYEES'}"><bean:message
-					key="main.matrixoverview.headline.allemployees.text" /></c:if>
-				<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}"><c:out
-					value="${currentEmployee}" /></c:if></th>
+				<th width="33%" class="matrix noBborderStyle"><c:if
+					test="${currentEmployee eq 'ALL EMPLOYEES'}">
+					<bean:message key="main.matrixoverview.headline.allemployees.text" />
+				</c:if> <c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">
+					<c:out value="${currentEmployee}" />
+				</c:if></th>
 				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
 					key="main.matrixoverview.headline.month.text" />:--> <bean:message
 					key="${MonthKey}" /></th>
@@ -188,8 +190,10 @@
 			class="bold matrix" width="250px">&nbsp;</td>
 		<td
 			style="border:1px black solid;border-style:none none none none;text-align:right;"
-			class="bold matrix" width="500px"><c:if test="${acceptance}"><bean:message
-			key="main.matrixoverview.table.accepted" /><c:out value="${acceptedby}"/></c:if></td>
+			class="bold matrix" width="500px"><c:if test="${acceptance}">
+			<bean:message key="main.matrixoverview.table.accepted" />
+			<c:out value="${acceptedby}" />
+		</c:if></td>
 	</tr>
 </table>
 </body>

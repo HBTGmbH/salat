@@ -26,7 +26,9 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.matrix.text" /><br></span>
+<span style="font-size:14pt;font-weight:bold;"><br>
+<bean:message key="main.general.mainmenu.matrix.text" /><br>
+</span>
 <br>
 <html:form action="/ShowMatrix">
 	<table class="center backgroundcolor">
@@ -43,13 +45,17 @@
 					<bean:message key="main.general.allemployees.text" />
 				</html:option>
 
-				<c:forEach var="employeecontract" items="${employeecontracts}" >
-					<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+				<c:forEach var="employeecontract" items="${employeecontracts}">
+					<c:if
+						test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 						<html:option value="${employeecontract.id}">
-							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if 
-								test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)
+							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+								value="${employeecontract.timeString}" />
+							<c:if test="${employeecontract.openEnd}">
+								<bean:message key="main.general.open.text" />
+							</c:if>)
 						</html:option>
-					</c:if>							
+					</c:if>
 				</c:forEach>
 			</html:select> <!--  
 			<logic:equal name="currentEmployeeId" value="-1"
@@ -221,8 +227,7 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.invoice.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:checkbox
-				property="invoice"
-				onclick="setUpdateMergedreportsAction(this.form)" /></td>
+				property="invoice" onclick="setUpdateMergedreportsAction(this.form)" /></td>
 		</tr>
 	</table>
 </html:form>
@@ -235,7 +240,8 @@
 				test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
 				<html:form action="/CreateDailyReport?task=matrix">
 					<td class="noBborderStyle" align="left"><html:submit
-						styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
+						styleId="button"
+						titleKey="main.general.button.createnewreport.alttext.text">
 						<bean:message key="main.general.button.createnewreport.text" />
 					</html:submit></td>
 				</html:form>
@@ -244,7 +250,8 @@
 				onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 				action="/ShowMatrix?task=print">
 				<td class="noBborderStyle" align="left"><html:submit
-					styleId="button" titleKey="main.general.button.printpreview.alttext.text">
+					styleId="button"
+					titleKey="main.general.button.printpreview.alttext.text">
 					<bean:message key="main.general.button.printpreview.text" />
 				</html:submit></td>
 			</html:form>
@@ -264,9 +271,10 @@
 		<center>
 		<table width="60%">
 			<tr>
-				<th class="matrix noBborderStyle" colspan="3">
-				<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.matrixoverview.headline.tb.text" /><br></span>
-				</th>
+				<th class="matrix noBborderStyle" colspan="3"><span
+					style="font-size:14pt;font-weight:bold;"><br>
+				<bean:message key="main.matrixoverview.headline.tb.text" /><br>
+				</span></th>
 			</tr>
 			<tr>
 				<th width="33%" class="matrix noBborderStyle"><c:if
@@ -441,7 +449,8 @@
 			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
 			<html:form action="/CreateDailyReport?task=matrix">
 				<td class="noBborderStyle" align="left"><html:submit
-					styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
+					styleId="button"
+					titleKey="main.general.button.createnewreport.alttext.text">
 					<bean:message key="main.general.button.createnewreport.text" />
 				</html:submit></td>
 			</html:form>
@@ -450,9 +459,14 @@
 			onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
 			action="/ShowMatrix?task=print">
 			<td class="noBborderStyle" align="left"><html:submit
-				styleId="button" titleKey="main.general.button.printpreview.alttext.text">
+				styleId="button"
+				titleKey="main.general.button.printpreview.alttext.text">
 				<bean:message key="main.general.button.printpreview.text" />
 			</html:submit></td>
+			<td
+				style="border:1px black solid;border-style:none none none none;text-align:right;color:red"
+				class="bold matrix" colspan="2"><c:if test="${invalid}"><bean:message key="main.matrixoverview.table.invalid" />.
+		</c:if></td>
 		</html:form>
 	</tr>
 </table>

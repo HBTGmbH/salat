@@ -28,6 +28,7 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Timereport;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.matrix.MatrixHelper;
@@ -412,24 +413,35 @@ public class ShowMatrixAction extends DailyReportAction {
 					Date acceptanceDate = employeecontract
 							.getReportAcceptanceDate();
 					if (!dateLast.after(acceptanceDate)) {
-						request.getSession().setAttribute("acceptance", true);
-						Employee tempEmployee = employeeDAO
-								.getEmployeeBySign(timereportDAO
-										.getLastAcceptedTimereportByDateAndEmployeeContractId(
-												new java.sql.Date(dateLast
-														.getTime()),
-												employeecontract.getId())
-										.getAcceptedby());
-						request.getSession().setAttribute(
-								"acceptedby",
-								tempEmployee.getFirstname() + " "
-										+ tempEmployee.getLastname() + " ("
-										+ tempEmployee.getStatus() + ")");
+						Timereport tempTimereport = timereportDAO
+								.getLastAcceptedTimereportByDateAndEmployeeContractId(
+										new java.sql.Date(dateLast.getTime()),
+										employeecontract.getId());
+						if (tempTimereport != null) {
+							request.getSession().setAttribute("acceptance",
+									true);
+							request.getSession().setAttribute("invalid",
+									false);
+							Employee tempEmployee = employeeDAO
+									.getEmployeeBySign(tempTimereport
+											.getAcceptedby());
+							request.getSession().setAttribute(
+									"acceptedby",
+									tempEmployee.getFirstname() + " "
+											+ tempEmployee.getLastname() + " ("
+											+ tempEmployee.getStatus() + ")");
+						} else {
+							request.getSession().setAttribute("acceptance",
+									false);
+							request.getSession().setAttribute("invalid", true);
+						}
 					} else {
 						request.getSession().setAttribute("acceptance", false);
+						request.getSession().setAttribute("invalid", false);
 					}
 				} else {
 					request.getSession().setAttribute("acceptance", false);
+					request.getSession().setAttribute("invalid", false);
 				}
 			}
 			// request.getSession().setAttribute("currentEmployeeId",
@@ -733,10 +745,10 @@ public class ShowMatrixAction extends DailyReportAction {
 				if (request.getSession().getAttribute("currentMonth")
 						.toString() != null) {
 					try {
-						dateLast = th.getDateFormStrings(maxDayString,
-								request.getSession().getAttribute("currentMonth")
-								.toString(), request.getSession().getAttribute("currentYear")
-								.toString(), false);
+						dateLast = th.getDateFormStrings(maxDayString, request
+								.getSession().getAttribute("currentMonth")
+								.toString(), request.getSession().getAttribute(
+								"currentYear").toString(), false);
 					} catch (Exception e) {
 						System.out.println("this should not happen");
 					}

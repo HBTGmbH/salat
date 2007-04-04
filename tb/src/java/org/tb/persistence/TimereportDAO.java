@@ -601,7 +601,13 @@ public class TimereportDAO extends HibernateDaoSupport {
 		System.out.println(simpleDateFormat.format(lastDay));
 //		List<Timereport> timereportList = getSession().createQuery("from Timereport t where t.accepted is not null and ? <= t.accepted and ? >= t.accepted and t.acceptedby is not null and t.employeecontract.id = ? order by t.accepted desc").setDate(0, firstDay).setDate(1, lastDay).setLong(2, ecId).list();
 		List<Timereport> timereportList = getSession().createQuery("from Timereport t where t.accepted is not null and t.employeeorder.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by t.referenceday.refdate desc").setLong(0, ecId).setDate(1, firstDay).setDate(2, lastDay).list();
-		return timereportList.get(0);
+		Timereport tempTimereport;
+		if(timereportList.isEmpty()){
+			tempTimereport = null;
+		}else{
+			tempTimereport = timereportList.get(0);
+		}
+		return tempTimereport;
 	}
 	
 	/**
