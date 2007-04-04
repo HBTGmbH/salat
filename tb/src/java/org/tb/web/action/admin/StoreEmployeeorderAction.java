@@ -21,11 +21,13 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.AddEmployeeOrderForm;
 
@@ -46,6 +48,12 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 	private CustomerorderDAO customerorderDAO;
 
 	private SuborderDAO suborderDAO;
+	
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -73,6 +81,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			HttpServletResponse response) {
 		AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
 
+		// remove list with timereports out of range
+		request.getSession().removeAttribute("timereportsOutOfRange");
+		
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshEmployee"))) {
 			Employeecontract employeecontract = employeecontractDAO
@@ -555,6 +566,15 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 						GlobalConstants.MAX_HOURLY_RATE))) {
 			errors.add("hourlyRate", new ActionMessage(
 					"form.suborder.error.hourlyrate.wrongformat"));
+		}
+		
+		// check, if dates fit to existing timereports
+		List<Timereport> timereportsInvalidForDates = timereportDAO.
+			getTimereportsByEmployeeorderIdInvalidForDates(new java.sql.Date(validFromDate.getTime()), new java.sql.Date(validUntilDate.getTime()), eoId);
+		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
+			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
+			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
+			
 		}
 		
 		saveErrors(request, errors);

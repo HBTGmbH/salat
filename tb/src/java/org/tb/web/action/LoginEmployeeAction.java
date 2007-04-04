@@ -209,6 +209,7 @@ public class LoginEmployeeAction extends Action {
 										.getDailyWorkingTime()
 										* employeecontract
 												.getVacationEntitlement());
+								employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
 							} else {
 								// not decided yet
 							}

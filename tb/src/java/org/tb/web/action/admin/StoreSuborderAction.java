@@ -18,8 +18,10 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddSuborderForm;
 
@@ -34,6 +36,12 @@ public class StoreSuborderAction extends LoginRequiredAction {
 	private CustomerorderDAO customerorderDAO;
 
 	private SuborderDAO suborderDAO;
+	
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
@@ -48,6 +56,9 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
 		AddSuborderForm soForm = (AddSuborderForm) form;
+		
+//		 remove list with timereports out of range
+		request.getSession().removeAttribute("timereportsOutOfRange");
 
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshHourlyRate"))) {
@@ -207,8 +218,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		if (errors == null)
 			errors = new ActionMessages();
 
+		Long soId = (Long) request.getSession().getAttribute("soId");
+		
 		// for a new suborder, check if the sign already exists
-		if (request.getSession().getAttribute("soId") == null) {
+		if (soId == null) {
+			soId = 0L;
 			List<Suborder> allSuborders = suborderDAO.getSuborders();
 			for (Iterator iter = allSuborders.iterator(); iter.hasNext();) {
 				Suborder so = (Suborder) iter.next();
@@ -419,6 +433,14 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.unavailable"));
 		}
 		
+//		 check, if dates fit to existing timereports
+		List<Timereport> timereportsInvalidForDates = timereportDAO.
+			getTimereportsBySuborderIdInvalidForDates(soFromDate, soUntilDate, soId);
+		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
+			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
+			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
+			
+		}
 		
 		
 		saveErrors(request, errors);

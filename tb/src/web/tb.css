@@ -31,7 +31,7 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 
 .tooltip {
 	position:absolute;
-	left:3em;
+	left:4em;
 	background-color:#f1f7ff;
 	border:1px solid #94b0d0;
 	width:350px; padding:6px;

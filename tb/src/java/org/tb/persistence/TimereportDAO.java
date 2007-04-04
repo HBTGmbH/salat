@@ -1,7 +1,6 @@
 package org.tb.persistence;
 
 import java.math.BigInteger;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -609,6 +608,44 @@ public class TimereportDAO extends HibernateDaoSupport {
 		}
 		return tempTimereport;
 	}
+	
+	
+	public List<Timereport> getTimereportsByEmployeeorderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long employeeOrderId) {
+		return getSession().createQuery("from Timereport t where " +
+				"t.employeeorder.id = ? " +
+				"and (t.referenceday.refdate < ? " +
+					"or t.referenceday.refdate > ?) " +		
+				"order by t.referenceday.refdate asc, " +
+				"t.employeeorder.employeecontract.employee.sign asc, " +
+				"t.employeeorder.suborder.customerorder.sign asc, " +
+				"t.employeeorder.suborder.sign asc"
+				).setLong(0, employeeOrderId).setDate(1, begin).setDate(2, end).list();
+	}
+	
+	public List<Timereport> getTimereportsBySuborderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long suborderId) {
+		return getSession().createQuery("from Timereport t where " +
+				"t.employeeorder.suborder.id = ? " +
+				"and (t.referenceday.refdate < ? " +
+					"or t.referenceday.refdate > ?) " +		
+				"order by t.employeeorder.employeecontract.employee.sign asc, " +
+				"t.referenceday.refdate asc, " +
+				"t.employeeorder.suborder.customerorder.sign asc, " +
+				"t.employeeorder.suborder.sign asc"
+				).setLong(0, suborderId).setDate(1, begin).setDate(2, end).list();
+	}
+	
+	public List<Timereport> getTimereportsByCustomerOrderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long customerOrderId) {
+		return getSession().createQuery("from Timereport t where " +
+				"t.employeeorder.suborder.customerorder.id = ? " +
+				"and (t.referenceday.refdate < ? " +
+					"or t.referenceday.refdate > ?) " +		
+				"order by t.employeeorder.employeecontract.employee.sign asc, " +
+				"t.referenceday.refdate asc, " +
+				"t.employeeorder.suborder.customerorder.sign asc, " +
+				"t.employeeorder.suborder.sign asc"
+				).setLong(0, customerOrderId).setDate(1, begin).setDate(2, end).list();
+	}
+	
 	
 	/**
 	 * Calls {@link TimereportDAO#save(Timereport, Employee)} with {@link Employee} = null.

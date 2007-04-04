@@ -42,6 +42,9 @@ public class CreateSuborderAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
+//		 remove list with timereports out of range
+		request.getSession().removeAttribute("timereportsOutOfRange");
+		
 		AddSuborderForm suborderForm = (AddSuborderForm) form;
 		
 		// get login employee

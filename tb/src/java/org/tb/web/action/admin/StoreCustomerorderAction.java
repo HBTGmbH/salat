@@ -1,6 +1,7 @@
 package org.tb.web.action.admin;
 
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,9 +17,11 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Timereport;
 import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddCustomerOrderForm;
@@ -35,6 +38,11 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 	private CustomerDAO customerDAO;
 	private CustomerorderDAO customerorderDAO;
 	private EmployeeDAO employeeDAO;
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 	
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
@@ -53,6 +61,9 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddCustomerOrderForm coForm = (AddCustomerOrderForm) form;
 	
+//			 remove list with timereports out of range
+			request.getSession().removeAttribute("timereportsOutOfRange");
+			
 			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("save")) ||
 					(request.getParameter("coId") != null)) {
@@ -194,8 +205,10 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 			}
 		}	
 		
+		Long coId = (Long) request.getSession().getAttribute("coId");
 		// for a new customerorder, check if the sign already exists
-		if (request.getSession().getAttribute("coId") == null) {
+		if (coId == null) {
+			coId = 0L;
 			List<Customerorder> allCustomerorders = customerorderDAO.getCustomerorders();
 			for (Iterator iter = allCustomerorders.iterator(); iter.hasNext();) {
 				Customerorder co = (Customerorder) iter.next();
@@ -279,6 +292,23 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 			}
 		}
 		
+//		 check, if dates fit to existing timereports
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date fromDate = null;
+		Date untilDate = null;
+		try {
+			fromDate = new Date(simpleDateFormat.parse(coForm.getValidFrom().trim()).getTime());
+			untilDate = new Date(simpleDateFormat.parse(coForm.getValidUntil().trim()).getTime());
+		} catch (Exception e) {
+			// do nothing
+		}
+		List<Timereport> timereportsInvalidForDates = timereportDAO.
+			getTimereportsByCustomerOrderIdInvalidForDates(fromDate, untilDate, coId);
+		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
+			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
+			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
+			
+		}
 		
 		saveErrors(request, errors);
 		

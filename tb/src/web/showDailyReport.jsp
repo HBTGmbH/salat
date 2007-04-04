@@ -793,15 +793,17 @@
 <html:errors property="comment" footer="<br>" /></b></span>
 
 <!-- Überstunden und Urlaubstage -->
-
-<logic:notEqual name="currentEmployee" value="ALL EMPLOYEES"
-	scope="session">
-
-	<jsp:include flush="true" page="/info2.jsp">
-		<jsp:param name="info" value="Info" />
-	</jsp:include>
-
-</logic:notEqual>
+<c:choose>
+	<c:when test="${currentEmployee != 'ALL EMPLOYEES'}">
+		<br><br><br>
+		<jsp:include flush="true" page="/info2.jsp">
+			<jsp:param name="info" value="Info" />
+		</jsp:include>
+	</c:when>
+	<c:otherwise>
+		<br><br><br><br><br><br><br><br><br><br><br>
+	</c:otherwise>
+</c:choose>
 
 
 </body>

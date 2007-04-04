@@ -332,8 +332,8 @@
 				
 				<td style="color:gray" >
 					<c:choose>
-						<c:when test="${employeeorder.debithours == null}">
-							n/a
+						<c:when test="${employeeorder.debithours == null || employeeorder.debithours == 0.0}">
+							&nbsp;
 						</c:when>
 						<c:otherwise>
 							<c:out value="${employeeorder.debithours}" />
@@ -405,8 +405,8 @@
 				
 				<td>
 					<c:choose>
-						<c:when test="${employeeorder.debithours == null}">
-							n/a
+						<c:when test="${employeeorder.debithours == null || employeeorder.debithours == 0.0}">
+							&nbsp;
 						</c:when>
 						<c:otherwise>
 							<c:out value="${employeeorder.debithours}" />

@@ -262,7 +262,7 @@
 				<td><c:out value="${customerorder.hourly_rate}" /> <c:out value="${customerorder.currency}" /></td>
 				<td><c:choose>
 					<c:when test="${customerorder.debithours == null}">
-							n/a
+							&nbsp;
 						</c:when>
 					<c:otherwise>
 						<c:out value="${customerorder.debithours}" />
@@ -311,7 +311,7 @@
 				<td style="color:gray">
 					<c:choose>
 						<c:when test="${customerorder.debithours == null}">
-							n/a
+							&nbsp;
 						</c:when>
 					<c:otherwise>
 						<c:out value="${customerorder.debithours}" />

@@ -61,6 +61,9 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
+//		 remove list with timereports out of range
+		request.getSession().removeAttribute("timereportsOutOfRange");
+		
 		AddEmployeeOrderForm employeeOrderForm = (AddEmployeeOrderForm) form;
 		
 		// get lists of existing employee contracts and suborders

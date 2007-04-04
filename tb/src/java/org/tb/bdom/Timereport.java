@@ -317,6 +317,7 @@ public class Timereport implements Serializable {
 		timereport.setSuborder(suborder);
 		timereport.setTaskdescription(taskdescription);
 		timereport.setSequencenumber(0);
+		timereport.setEmployeeorder(employeeorder);
 		
 		return timereport;
 	}
@@ -336,5 +337,6 @@ public class Timereport implements Serializable {
 			+ getSuborder().getSign() + " | " + getDurationhours() + ":" 
 			+ getDurationminutes() + " | " + getTaskdescription() + "]";
 	}
+	
 	
 }

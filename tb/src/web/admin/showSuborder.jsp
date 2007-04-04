@@ -293,7 +293,7 @@
 				<td>
 					<c:choose>
 						<c:when test="${suborder.debithours == null}">
-							n/a
+							&nbsp;
 						</c:when>
 						<c:otherwise>
 							<c:out value="${suborder.debithours}" />
@@ -372,7 +372,7 @@
 				<td style="color:gray">
 					<c:choose>
 						<c:when test="${suborder.debithours == null}">
-							n/a
+							&nbsp;
 						</c:when>
 						<c:otherwise>
 							<c:out value="${suborder.debithours}" />

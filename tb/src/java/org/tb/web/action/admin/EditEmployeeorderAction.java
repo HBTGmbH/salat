@@ -63,6 +63,9 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
+//		 remove list with timereports out of range
+		request.getSession().removeAttribute("timereportsOutOfRange");
+		
 		AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
 		long eoId = Long.parseLong(request.getParameter("eoId"));
 		Employeeorder eo = employeeorderDAO.getEmployeeorderById(eoId);
