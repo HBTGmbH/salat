@@ -328,7 +328,17 @@
 					property="standingorder" disabled="true" /></td>
 				-->
 				
-				<td style="color:gray"><c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" /></td>
+				
+				<td style="color:gray">
+					<c:choose>
+						<c:when test="${employeeorder.hourly_rate == 0.0}">
+							&nbsp;
+						</c:when>
+						<c:otherwise>
+							<c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
 				
 				<td style="color:gray" >
 					<c:choose>
@@ -400,7 +410,16 @@
 				-->
 				
 				
-				<td><c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" /></td>
+				<td>
+					<c:choose>
+						<c:when test="${employeeorder.hourly_rate == 0.0}">
+							&nbsp;
+						</c:when>
+						<c:otherwise>
+							<c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
 	
 				
 				<td>

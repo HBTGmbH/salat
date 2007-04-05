@@ -181,6 +181,8 @@ public class ShowDailyReportAction extends DailyReportAction {
 			try {
 				workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec, workingdayDAO);
 			} catch (Exception e) {
+				request.setAttribute("errorMessage",
+					"More than one working day found");
 				return mapping.findForward("error");
 			}
 			
@@ -190,6 +192,10 @@ public class ShowDailyReportAction extends DailyReportAction {
 			} else if (request.getParameter("task").equals("saveBreak")) {
 				workingday.setBreakhours(reportForm.getSelectedBreakHour());
 				workingday.setBreakminutes(reportForm.getSelectedBreakMinute());
+			}
+			Workingday duplicate = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(workingday.getRefday(), workingday.getEmployeecontract().getId());
+			if (duplicate != null) {
+				workingday.setId(duplicate.getId());
 			}
 			workingdayDAO.save(workingday);
 			

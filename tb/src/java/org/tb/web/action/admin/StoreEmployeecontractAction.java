@@ -19,11 +19,15 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Overtime;
+import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
@@ -42,6 +46,16 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	private EmployeecontractDAO employeecontractDAO;
 	private VacationDAO vacationDAO;
 	private OvertimeDAO overtimeDAO;
+	private TimereportDAO timereportDAO;
+	private EmployeeorderDAO employeeorderDAO;
+	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
+	}
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 	
 	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
 		this.overtimeDAO = overtimeDAO;
@@ -63,6 +77,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddEmployeeContractForm ecForm = (AddEmployeeContractForm) form;
 			
+//			 remove list with timereports out of range
+			request.getSession().removeAttribute("timereportsOutOfRange");
 			
 			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("storeOvertime")) ||
@@ -192,6 +208,41 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				Date fromDate = Date.valueOf(ecForm.getValidFrom());
 				ec.setValidFrom(fromDate);
+				
+				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				
+				
+				// adjust employeeorders
+				List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(ec.getId());
+				if (employeeorders != null && !employeeorders.isEmpty()) {
+					for (Employeeorder employeeorder : employeeorders) {
+						boolean changed = false;
+						 if (employeeorder.getFromDate().before(fromDate)) {
+							 employeeorder.setFromDate(fromDate);
+							 changed = true;
+						 }
+						 if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().before(fromDate)) {
+							 employeeorder.setUntilDate(fromDate);
+							 changed = true;
+						 }
+						 if (ec.getValidUntil() != null) {
+							 if (employeeorder.getFromDate().after(ec.getValidUntil())) {
+								 employeeorder.setFromDate(ec.getValidUntil());
+								 changed = true;
+							 }
+							 if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().after(ec.getValidUntil())) {
+								 employeeorder.setUntilDate(ec.getValidUntil());
+								 changed = true;
+							 }
+						 }
+						if (changed) {
+							employeeorderDAO.save(employeeorder, loginEmployee);
+						}						 
+					}
+				}
+				
+				
+				
 				ec.setTaskDescription(ecForm.getTaskdescription());
 				ec.setFreelancer(ecForm.getFreelancer());
 				ec.setHide(ecForm.getHide());
@@ -223,7 +274,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					}
 				}
 				
-				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+				
 				
 				employeecontractDAO.save(ec, loginEmployee);
 				
@@ -353,7 +404,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 		}
 		
 		// for a new employeecontract, check if other contract for this employee already exists
-		if (request.getSession().getAttribute("ecId") == null) {
+		Long ecId = (Long) request.getSession().getAttribute("ecId");
+		if (ecId == null) {
 			List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContracts();
 			for (Iterator iter = allEmployeecontracts.iterator(); iter.hasNext();) {
 				Employeecontract ec = (Employeecontract) iter.next();
@@ -458,6 +510,16 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 						0.0, GlobalConstants.MAX_VACATION_PER_YEAR))) {
 			errors.add("yearlyvacation", new ActionMessage("form.employeecontract.error.yearlyvacation.wrongformat"));
 		}
+		
+//		 check, if dates fit to existing timereports
+		List<Timereport> timereportsInvalidForDates = timereportDAO.
+			getTimereportsByEmployeeContractIdInvalidForDates(new java.sql.Date(newContractValidFrom.getTime()), new java.sql.Date(newContractValidUntil.getTime()), ecId);
+		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
+			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
+			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
+			
+		}
+		
 		
 		saveErrors(request, errors);
 		

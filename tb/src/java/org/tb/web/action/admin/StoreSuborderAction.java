@@ -17,9 +17,11 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
@@ -38,6 +40,12 @@ public class StoreSuborderAction extends LoginRequiredAction {
 	private SuborderDAO suborderDAO;
 	
 	private TimereportDAO timereportDAO;
+	
+	private EmployeeorderDAO employeeorderDAO;
+	
+	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+		this.employeeorderDAO = employeeorderDAO;
+	}
 	
 	public void setTimereportDAO(TimereportDAO timereportDAO) {
 		this.timereportDAO = timereportDAO;
@@ -119,6 +127,40 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			} else {
 				so.setUntilDate(null);
 			}
+			
+			Employee loginEmployee = (Employee) request.getSession()
+			.getAttribute("loginEmployee");
+			
+			// adjust employeeorders
+			List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
+			if (employeeorders != null && !employeeorders.isEmpty()) {
+				for (Employeeorder employeeorder : employeeorders) {
+					boolean changed = false;
+					 if (employeeorder.getFromDate().before(so.getFromDate())) {
+						 employeeorder.setFromDate(so.getFromDate());
+						 changed = true;
+					 }
+					 if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().before(so.getFromDate())) {
+						 employeeorder.setUntilDate(so.getFromDate());
+						 changed = true;
+					 }
+					 if (so.getUntilDate() != null) {
+						 if (employeeorder.getFromDate().after(so.getUntilDate())) {
+							 employeeorder.setFromDate(so.getUntilDate());
+							 changed = true;
+						 }
+						 if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().after(so.getUntilDate())) {
+							 employeeorder.setUntilDate(so.getUntilDate());
+							 changed = true;
+						 }
+					 }
+					if (changed) {
+						employeeorderDAO.save(employeeorder, loginEmployee);
+					}						 
+				}
+			}
+	
+			
 			if (soForm.getDebithours() == null || soForm.getDebithours() == 0.0) {
 				so.setDebithours(null);
 				so.setDebithoursunit(null);
@@ -128,8 +170,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			}
 			so.setHide(soForm.getHide());
 
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
+			
 			suborderDAO.save(so, loginEmployee);
 
 //			String filter = (String) request.getSession().getAttribute(

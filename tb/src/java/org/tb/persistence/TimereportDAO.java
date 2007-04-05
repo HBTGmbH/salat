@@ -646,6 +646,18 @@ public class TimereportDAO extends HibernateDaoSupport {
 				).setLong(0, customerOrderId).setDate(1, begin).setDate(2, end).list();
 	}
 	
+	public List<Timereport> getTimereportsByEmployeeContractIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long employeeContractId) {
+		return getSession().createQuery("from Timereport t where " +
+				"t.employeeorder.employeecontract.id = ? " +
+				"and (t.referenceday.refdate < ? " +
+					"or t.referenceday.refdate > ?) " +		
+				"order by t.employeeorder.employeecontract.employee.sign asc, " +
+				"t.referenceday.refdate asc, " +
+				"t.employeeorder.suborder.customerorder.sign asc, " +
+				"t.employeeorder.suborder.sign asc"
+				).setLong(0, employeeContractId).setDate(1, begin).setDate(2, end).list();
+	}
+	
 	
 	/**
 	 * Calls {@link TimereportDAO#save(Timereport, Employee)} with {@link Employee} = null.

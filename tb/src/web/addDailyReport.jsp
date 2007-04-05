@@ -169,7 +169,8 @@
 			<td align="left" class="noBborderStyle"><html:select property="numberOfSerialDays" >
 					<html:options collection="serialBookings" labelProperty="label"
 						property="value" /></html:select><b>&nbsp;<bean:message
-				key="main.timereport.labordays.text" /></b></td>
+				key="main.timereport.labordays.text" /></b> <span style="color:red"><html:errors
+				property="serialbooking" /></span></td>
 			
 		</tr>
 		<!-- 

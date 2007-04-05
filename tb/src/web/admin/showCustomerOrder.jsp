@@ -259,7 +259,17 @@
 					value="${customerorder.responsible_customer_technical}" /></td>
 				<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
 				<td><c:out value="${customerorder.order_customer}" /></td>
-				<td><c:out value="${customerorder.hourly_rate}" /> <c:out value="${customerorder.currency}" /></td>
+				<td>
+					<c:choose>
+						<c:when test="${customerorder.hourly_rate == 0.0}">
+							&nbsp;
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.hourly_rate}" />&nbsp;<c:out value="${customerorder.currency}" />
+						</c:otherwise>
+					</c:choose>
+				</td>				
+				
 				<td><c:choose>
 					<c:when test="${customerorder.debithours == null}">
 							&nbsp;
@@ -307,7 +317,16 @@
 					value="${customerorder.responsible_hbt.name}" /></td>
 				<td style="color:gray"><c:out
 					value="${customerorder.order_customer}" /></td>
-				<td style="color:gray"><c:out value="${customerorder.hourly_rate}" /> <c:out value="${customerorder.currency}" /></td>
+				<td style="color:gray">
+					<c:choose>
+						<c:when test="${customerorder.hourly_rate == 0.0}">
+							&nbsp;
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.hourly_rate}" />&nbsp;<c:out value="${customerorder.currency}" />
+						</c:otherwise>
+					</c:choose>
+				</td>	
 				<td style="color:gray">
 					<c:choose>
 						<c:when test="${customerorder.debithours == null}">

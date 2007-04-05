@@ -220,7 +220,13 @@ public class CreateDailyReportAction extends DailyReportAction {
 		}
 		
 		// store last selected order
-		String lastOrder = (String) request.getSession().getAttribute("currentOrder");
+		String lastOrder;
+		try {
+			lastOrder = (String) request.getSession().getAttribute("currentOrder");
+		} catch (ClassCastException e) {
+			Customerorder customerorder = (Customerorder) request.getSession().getAttribute("currentOrder");
+			lastOrder = customerorder.getSign();
+		}
 		request.getSession().setAttribute("lastOrder", lastOrder);
 		
 		return mapping.findForward("success");	

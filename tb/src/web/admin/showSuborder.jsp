@@ -286,7 +286,16 @@
 								</c:when>
 							</c:choose>
 						</td>
-						<td><c:out value="${suborder.hourly_rate}" /> <c:out value="${suborder.currency}" /></td>
+						<td>
+							<c:choose>
+								<c:when test="${suborder.hourly_rate == 0.0}">
+									&nbsp;
+								</c:when>
+								<c:otherwise>
+									<c:out value="${suborder.hourly_rate}" />&nbsp;<c:out value="${suborder.currency}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
 					</c:otherwise>
 				</c:choose>
 				
@@ -365,7 +374,16 @@
 								</c:when>
 							</c:choose>
 						</td>
-						<td style="color:gray"><c:out value="${suborder.hourly_rate}" /> <c:out value="${suborder.currency}" /></td>
+						<td style="color:gray">
+							<c:choose>
+								<c:when test="${suborder.hourly_rate == 0.0}">
+									&nbsp;
+								</c:when>
+								<c:otherwise>
+									<c:out value="${suborder.hourly_rate}" />&nbsp;<c:out value="${suborder.currency}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
 					</c:otherwise>
 				</c:choose>
 				
