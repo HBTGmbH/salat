@@ -768,7 +768,7 @@ public class ShowMatrixAction extends DailyReportAction {
 					ecId = employeecontract.getId();
 				}
 				if (!employeecontract.getAcceptanceWarningByDate(dateLast)) {
-					if (!dateLast.after(employeecontract
+					if (employeecontract.getReportAcceptanceDate() != null && !dateLast.after(employeecontract
 							.getReportAcceptanceDate())) {
 						request.getSession().setAttribute("acceptance", true);
 						Employee tempEmployee = employeeDAO
