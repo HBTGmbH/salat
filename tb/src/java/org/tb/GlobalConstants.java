@@ -140,4 +140,7 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
     
+    // pathstrings
+    public static final String ICONPATH = "/tb/images/TreeView/";
+    
 }
