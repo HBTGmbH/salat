@@ -133,7 +133,7 @@
 				<c:choose>
 					<c:when test="${(employeeAuthorized || currentOrder.responsible_hbt.id == loginEmployee.id) && (currentOrder.currentlyValid || !currentOrder.hide)}">
 						<myjsp:tree 
-						mainProject="${currentOrderShowPage}" 
+						mainProject="${currentOrder}" 
 						subProjects="${suborders}"
 						browser="<%=browser%>"  
 						changeFunctionString="callEdit(this.form, 'default')"
@@ -145,7 +145,7 @@
 					</c:when>
 					<c:otherwise>
 						<myjsp:tree 
-							mainProject="${currentOrderShowPage}" 
+							mainProject="${currentOrder}" 
 							subProjects="${suborders}"
 							browser="<%=browser%>"  
 							onlySuborders="true"
