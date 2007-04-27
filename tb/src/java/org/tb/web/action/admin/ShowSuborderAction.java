@@ -43,10 +43,6 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		
 		
 		ShowSuborderForm suborderForm = (ShowSuborderForm) form;
-		
-		
-	
-		
 		List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
 		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
 				
@@ -56,6 +52,12 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		
 		TbLogger.getLogger().debug("suborderForm.getShowStructure()"  + suborderForm.getShowstructure());
 		TbLogger.getLogger().debug("suborderForm.getShow();" + suborderForm.getShow());
+		TbLogger.getLogger().debug("suborderForm.getFilter-()"  + suborderForm.getFilter());
+		TbLogger.getLogger().debug("suborderForm.getCustomerOrderId-();" + suborderForm.getCustomerOrderId());
+		TbLogger.getLogger().debug("suborderFilter"  + request.getSession().getAttribute("suborderFilter"));
+		TbLogger.getLogger().debug("suborderShow;" + request.getSession().getAttribute("suborderShow"));
+		TbLogger.getLogger().debug("suborderCustomerOrderId"  + request.getSession().getAttribute("suborderCustomerOrderId"));
+		TbLogger.getLogger().debug("showStructure" + request.getSession().getAttribute("showStructure"));
 		
 		
 		if ((request.getParameter("task") != null) && 
@@ -80,7 +82,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
 			
 			Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
 			TbLogger.getLogger().debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
-			request.getSession().setAttribute("currentOrderShowPage", co);
+			request.getSession().setAttribute("currentOrder", co);
 			
 		} else {
 			if (request.getSession().getAttribute("suborderFilter") != null) {
@@ -96,7 +98,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
 				suborderForm.setCustomerOrderId(customerOrderId);
 				Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
 				TbLogger.getLogger().debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
-				request.getSession().setAttribute("currentOrderShowPage", co);
+				request.getSession().setAttribute("currentOrder", co);
 			} else{
 				request.getSession().setAttribute("suborderCustomerOrderId", new Long(-1));
 				suborderForm.setCustomerOrderId(customerOrderId);
