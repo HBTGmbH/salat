@@ -2,7 +2,6 @@ package org.tb.web.action.admin;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -23,7 +22,6 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.util.DateUtils;
 import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
@@ -178,13 +176,6 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		}
 		
 		eoForm.setSign(eo.getSign());
-//		eoForm.setStatus(eo.getStatus());
-		eoForm.setStandingorder(eo.getStandingorder());
-		eoForm.setStatusreport(eo.getStatusreport());
-		
-		eoForm.setHourlyRate(eo.getHourly_rate());
-		eoForm.setCurrency(eo.getCurrency());
-		
 		
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		eoForm.setValidFrom(simpleDateFormat.format(eo.getFromDate()));

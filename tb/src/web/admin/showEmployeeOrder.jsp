@@ -152,9 +152,6 @@
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.subordernumber.text" />"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></th>
-		<!--  
-		<td align="left"> <b><bean:message key="main.employeeorder.sign.text"/></b> </td>	
-		-->
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.validfrom.text" />"><b><bean:message
@@ -163,28 +160,10 @@
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.validuntil.text" />"><b><bean:message
 			key="main.employeeorder.validuntil.text" /></b></th>
-		<!--  
-		<th align="center"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.standingorder.text" />"><b><bean:message
-			key="main.employeeorder.standingorder.text" /></b></th>
-		-->
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.suborders.hourlyrate.text" />"><b><bean:message
-			key="main.suborder.hourlyrate.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
 			key="main.employeeorder.debithours.text" /></b></th>
-		<!--  
-		<th align="left" title="<bean:message
-			key="main.headlinedescription.employeeorders.status.text" />"><b><bean:message
-			key="main.employeeorder.status.text" /></b></th>
-		-->
-		<th align="center"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.statusreport.text" />"><b><bean:message
-			key="main.employeeorder.statusreport.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
@@ -322,23 +301,7 @@
 							</c:choose>
 						</td>
 					</c:otherwise>
-				</c:choose>
-				<!-- 
-				<td align="center"><html:checkbox name="employeeorder"
-					property="standingorder" disabled="true" /></td>
-				-->
-				
-				
-				<td style="color:gray">
-					<c:choose>
-						<c:when test="${employeeorder.hourly_rate == 0.0}">
-							&nbsp;
-						</c:when>
-						<c:otherwise>
-							<c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" />
-						</c:otherwise>
-					</c:choose>
-				</td>
+				</c:choose>				
 				
 				<td style="color:gray" >
 					<c:choose>
@@ -364,8 +327,6 @@
 						</c:otherwise>
 					</c:choose>
 				</td>
-				<td align="center"><html:checkbox name="employeeorder"
-					property="statusreport" disabled="true" /></td>
 			</c:when>
 			<c:otherwise>
 				<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
@@ -403,25 +364,7 @@
 						</td>
 					</c:otherwise>
 				</c:choose>
-				 
-				<!--  
-				<td align="center"><html:checkbox name="employeeorder"
-					property="standingorder" disabled="true" /></td>
-				-->
-				
-				
-				<td>
-					<c:choose>
-						<c:when test="${employeeorder.hourly_rate == 0.0}">
-							&nbsp;
-						</c:when>
-						<c:otherwise>
-							<c:out value="${employeeorder.hourly_rate}" />&nbsp;<c:out value="${employeeorder.currency}" />
-						</c:otherwise>
-					</c:choose>
-				</td>
-	
-				
+				 				
 				<td>
 					<c:choose>
 						<c:when test="${employeeorder.debithours == null || employeeorder.debithours == 0.0}">
@@ -446,8 +389,6 @@
 						</c:otherwise>
 					</c:choose>
 				</td>
-				<td align="center"><html:checkbox name="employeeorder"
-					property="statusreport" disabled="true" /></td>
 			</c:otherwise>
 		</c:choose>
 

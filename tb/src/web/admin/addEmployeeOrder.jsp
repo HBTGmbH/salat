@@ -197,28 +197,6 @@
 				property="validUntil" /></span></td>
 		</tr>
 
-		<!-- Dauerauftrag -->
-		<!--  
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeeorder.standingorder.text" /></b></td>
-			<td align="left" class="noBborderStyle" colspan="5"><html:checkbox
-				property="standingorder" /> <span style="color:red"><html:errors
-				property="standingorder" /></span></td>
-		</tr>
-		-->
-		
-		<!-- hourly rate & currency -->
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.hourlyrate.text" /></b></td>
-			<td align="left" class="noBborderStyle" colspan="5"><html:text
-				property="hourlyRate" size="20" value="${hourlyRate}" /> <html:select property="currency">
-					<html:option value="EUR">EUR</html:option>
-				</html:select> <span style="color:red"><html:errors property="hourlyRate" /></span></td>
-		</tr>
-		
-
 		<!-- Sollstunden -->
 		<c:if test="${loginEmployee.status == 'adm' || (!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK'))}">
 			<tr>
@@ -238,23 +216,6 @@
 			</tr>
 			
 		</c:if>
-		<!--  
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeeorder.status.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="status" size="30" />
-			<span style="color:red"><html:errors property="status" /></span></td>
-		</tr>
-		-->
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeeorder.statusreport.text" /></b></td>
-			<td align="left" class="noBborderStyle" colspan="5"><html:checkbox
-				property="statusreport" /> <span style="color:red"><html:errors
-				property="statusreport" /></span></td>
-		</tr>
-
 	</table>
 	<br>
 	<table class="center">

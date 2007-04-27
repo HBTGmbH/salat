@@ -215,9 +215,6 @@ public class LoginEmployeeAction extends Action {
 							}
 							employeeorder.setEmployeecontract(employeecontract);
 							employeeorder.setSign(" ");
-							employeeorder.setStandingorder(true);
-							employeeorder.setStatus(" ");
-							employeeorder.setStatusreport(false);
 							employeeorder.setSuborder(suborder);
 
 							// create tmp employee

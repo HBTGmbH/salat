@@ -32,10 +32,12 @@ public class AddCustomerOrderForm extends ActionForm {
 	private Double debithours;
 	private Byte debithoursunit;
 	
+	private int statusreport;
 	private Boolean hide;
 	
 	private long customerId;
 	private long employeeId;
+	private long respContrEmployeeId;
 	
 	
 	private String action;
@@ -138,6 +140,34 @@ public class AddCustomerOrderForm extends ActionForm {
 	}
 
 	/**
+	 * @return the respContrEmployeeId
+	 */
+	public long getRespContrEmployeeId() {
+		return respContrEmployeeId;
+	}
+
+	/**
+	 * @param respContrEmployeeId the respContrEmployeeId to set
+	 */
+	public void setRespContrEmployeeId(long respContrEmployeeId) {
+		this.respContrEmployeeId = respContrEmployeeId;
+	}
+
+	/**
+	 * @return the statusreport
+	 */
+	public int getStatusreport() {
+		return statusreport;
+	}
+
+	/**
+	 * @param statusreport the statusreport to set
+	 */
+	public void setStatusreport(int statusreport) {
+		this.statusreport = statusreport;
+	}
+
+	/**
 	 * @return the responsibleCustomerContractually
 	 */
 	public String getResponsibleCustomerContractually() {
@@ -232,12 +262,16 @@ public class AddCustomerOrderForm extends ActionForm {
 		} else {
 			Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 			employeeId = loginEmployee.getId();
+			
 		}
+		respContrEmployeeId = employeeId;
+		
 		orderCustomer = "";
 		currency = GlobalConstants.DEFAULT_CURRENCY;
 		hourlyRate = 0.0;
 		debithours = null;
 		debithoursunit = null;
+		statusreport = 0;
 		hide=false;
 	}
 

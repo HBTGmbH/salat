@@ -140,12 +140,24 @@
 				property="shortdescription" /></span></td>
 		</tr>
 		
-		<!-- Auftragverantwortlicher bei HBT -->
+		<!-- Durchführungsverantwortlicher bei HBT -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.responsiblehbt.text" /></b></td>
+				key="main.customerorder.responsiblehbt.execution.text" /></b></td>
 			<td align="left" class="noBborderStyle">
 				<html:select property="employeeId">
+					<html:options collection="employeeswithcontract" labelProperty="name"
+						property="id" />
+				</html:select>
+			</td>
+		</tr>
+		
+		<!-- Vertragsverantwortlicher bei HBT -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.responsiblehbt.contract.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="respContrEmployeeId">
 					<html:options collection="employeeswithcontract" labelProperty="name"
 						property="id" />
 				</html:select>
@@ -222,6 +234,24 @@
 				style="color:red"><html:errors property="debithours" /></span>
 			</td>
 		</tr>
+		
+		<!-- Statusbericht -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.statusreport.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="statusreport">
+					<html:option value="0"><bean:message
+				key="main.customerorder.statusreport.option.0.text" /></html:option>
+					<html:option value="12"><bean:message
+				key="main.customerorder.statusreport.option.12.text" /></html:option>
+					<html:option value="6"><bean:message
+				key="main.customerorder.statusreport.option.6.text" /></html:option>
+					<html:option value="4"><bean:message
+				key="main.customerorder.statusreport.option.4.text" /></html:option>
+				</html:select>
+			</td>
+		</tr>		
 		
 		<!-- hide -->
 		<tr>

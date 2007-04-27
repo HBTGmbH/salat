@@ -101,6 +101,9 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 		if (co.getResponsible_hbt() != null) {
 			coForm.setEmployeeId(co.getResponsible_hbt().getId());
 		}
+		if (co.getRespEmpHbtContract() != null) {
+			coForm.setRespContrEmployeeId(co.getRespEmpHbtContract().getId());
+		}
 		coForm.setSign(co.getSign());
 		coForm.setDescription(co.getDescription());
 		coForm.setShortdescription(co.getShortdescription());
@@ -123,6 +126,12 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 			coForm.setDebithours(null);
 			coForm.setDebithoursunit(null);
 		}
+		if (co.getStatusreport() == null) {
+			coForm.setStatusreport(0);
+		} else {
+			coForm.setStatusreport(co.getStatusreport());
+		}
+			
 		coForm.setHide(co.getHide());
 		
 	}

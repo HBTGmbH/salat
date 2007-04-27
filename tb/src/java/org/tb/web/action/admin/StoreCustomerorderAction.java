@@ -185,6 +185,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				co.setResponsible_customer_contractually(coForm.getResponsibleCustomerContractually());
 				co.setResponsible_customer_technical(coForm.getResponsibleCustomerTechnical());
 				co.setResponsible_hbt(employeeDAO.getEmployeeById(coForm.getEmployeeId()));
+				co.setRespEmpHbtContract(employeeDAO.getEmployeeById(coForm.getRespContrEmployeeId()));
 				
 				if (coForm.getDebithours() == null || coForm.getDebithours() == 0.0) {
 					co.setDebithours(null);
@@ -193,6 +194,8 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 					co.setDebithours(coForm.getDebithours());
 					co.setDebithoursunit(coForm.getDebithoursunit());
 				}
+
+				co.setStatusreport(coForm.getStatusreport());
 				co.setHide(coForm.getHide());
 				
 				

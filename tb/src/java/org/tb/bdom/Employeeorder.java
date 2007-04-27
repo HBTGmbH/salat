@@ -46,32 +46,17 @@ public class Employeeorder implements Serializable {
 	/** sign of the employee order */
 	private String sign;
 	
-	/** standing order y/n */
-	private Boolean standingorder;
-	
 	/** Debit Hours */
 	private Double debithours;
 	
 	/** Unit of the debit hours */
 	private Byte debithoursunit;
 	
-	/** Currency */
-	private String currency;
-
-	/** Hourly Rate */
-	private Double hourly_rate;
-	
 	/** valid from date */
 	private Date fromDate;
 	
 	/** valid until date */
 	private Date untilDate;
-	
-	/** Status */
-	private String status;
-	
-	/** Statusreport y/n */
-	private Boolean statusreport;
 	
 	/** Creation Date */
 	private java.util.Date created;
@@ -119,62 +104,12 @@ public class Employeeorder implements Serializable {
 		this.debithoursunit = debithoursunit;
 	}
 
-	/**
-	 * @return the currency
-	 */
-	public String getCurrency() {
-		if (currency == null) {
-			return suborder.getCurrency();
-		}
-		return currency;
-	}
-
-	/**
-	 * @param currency the currency to set
-	 */
-	public void setCurrency(String currency) {
-		this.currency = currency;
-	}
-
-	/**
-	 * @return the hourly_rate
-	 */
-	public Double getHourly_rate() {
-		if (hourly_rate == null) {
-			return suborder.getHourly_rate();
-		}
-		return hourly_rate;
-	}
-
-	/**
-	 * @param hourly_rate the hourly_rate to set
-	 */
-	public void setHourly_rate(Double hourly_rate) {
-		this.hourly_rate = hourly_rate;
-	}
-
 	public String getSign() {
 		return sign;
 	}
 
 	public void setSign(String sign) {
 		this.sign = sign;
-	}
-
-	public Boolean getStandingorder() {
-		return standingorder;
-	}
-
-	public void setStandingorder(Boolean standingorder) {
-		this.standingorder = standingorder;
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
 	}
 
 	public Date getFromDate() {
@@ -199,14 +134,6 @@ public class Employeeorder implements Serializable {
 
 	public void setEmployeecontract(Employeecontract employeecontract) {
 		this.employeecontract = employeecontract;
-	}
-
-	public Boolean getStatusreport() {
-		return statusreport;
-	}
-
-	public void setStatusreport(Boolean statusreport) {
-		this.statusreport = statusreport;
 	}
 
 	public Suborder getSuborder() {

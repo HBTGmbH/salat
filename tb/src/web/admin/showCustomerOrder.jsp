@@ -139,7 +139,11 @@
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.responsehbt.text" />"><b><bean:message
-			key="main.customerorder.responsiblehbt.text" /></b></th>
+			key="main.customerorder.responsiblehbt.execution.text" /></b></th>
+		<th align="left"><b><bean:message
+			key="main.customerorder.responsiblehbt.contract.text" /></b></th>
+		<th align="left"><b><bean:message
+			key="main.customerorder.statusreport.text" /></b></th>				
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.ordercustomer.text" />"><b><bean:message
@@ -258,6 +262,8 @@
 				<td><c:out
 					value="${customerorder.responsible_customer_technical}" /></td>
 				<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
+				<td><c:out value="${customerorder.respEmpHbtContract.name}" />&nbsp;</td>
+				<td align="center"><c:out value="${customerorder.statusreport}" /></td>
 				<td><c:out value="${customerorder.order_customer}" /></td>
 				<td>
 					<c:choose>
@@ -315,6 +321,10 @@
 					value="${customerorder.responsible_customer_technical}" /></td>
 				<td style="color:gray"><c:out
 					value="${customerorder.responsible_hbt.name}" /></td>
+				<td style="color:gray"><c:out 
+					value="${customerorder.respEmpHbtContract.name}" />&nbsp;</td>
+				<td style="color:gray" align="center"><c:out 
+					value="${customerorder.statusreport}" /></td>
 				<td style="color:gray"><c:out
 					value="${customerorder.order_customer}" /></td>
 				<td style="color:gray">

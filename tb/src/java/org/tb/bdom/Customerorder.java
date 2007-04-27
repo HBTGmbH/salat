@@ -2,7 +2,6 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,7 +15,6 @@ import javax.persistence.OneToMany;
 
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.tb.GlobalConstants;
 import org.tb.bdom.comparators.SubOrderComparator;
 
 /**
@@ -56,6 +54,13 @@ public class Customerorder implements Serializable {
 	@JoinColumn(name="RESPONSIBLE_HBT_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee responsible_hbt;
+	
+	/** contractually responsible employee of HBT */
+	@ManyToOne
+	@JoinColumn(name="RESPONSIBLE_HBT_CONTRACTUALLY_ID")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	private Employee respEmpHbtContract;
+	
 	
 	/** Orderer of Customer */
 	private String order_customer;
@@ -101,6 +106,9 @@ public class Customerorder implements Serializable {
 	
 	/** Unit of the debit hours */
 	private Byte debithoursunit;
+	
+	/** Statusreport */
+	private Integer statusreport;
 	
 	/** Hide in select boxes */
 	private Boolean hide;
@@ -171,6 +179,37 @@ public class Customerorder implements Serializable {
 	 */
 	public void setResponsible_hbt(Employee responsible_hbt) {
 		this.responsible_hbt = responsible_hbt;
+	}
+
+	/**
+	 * @return the respEmpHbtContract
+	 */
+	public Employee getRespEmpHbtContract() {
+		return respEmpHbtContract;
+	}
+
+	/**
+	 * @param respEmpHbtContract the respEmpHbtContract to set
+	 */
+	public void setRespEmpHbtContract(Employee respEmpHbtContract) {
+		this.respEmpHbtContract = respEmpHbtContract;
+	}
+
+	/**
+	 * @return the statusreport
+	 */
+	public Integer getStatusreport() {
+		if (statusreport == null) {
+			return 0;
+		}
+		return statusreport;
+	}
+
+	/**
+	 * @param statusreport the statusreport to set
+	 */
+	public void setStatusreport(Integer statusreport) {
+		this.statusreport = statusreport;
 	}
 
 	public Date getFromDate() {

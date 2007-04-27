@@ -131,16 +131,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				request.getSession().setAttribute("selectedcustomerorder", co);
 				eoForm.useDatesFromCustomerOrder(co);
 				eoForm.setOrderId(co.getId());
-				if (suborders != null && !suborders.isEmpty()) {
-					eoForm.setHourlyRate(suborders.get(0).getHourly_rate());
-					eoForm.setCurrency(suborders.get(0).getCurrency());
-				} else {
-					eoForm.setHourlyRate(co.getHourly_rate());
-					eoForm.setCurrency(co.getCurrency());
-				}
-				// checkDatabaseForEmployeeOrder(request, eoForm,
-				// employeecontractDAO, employeeorderDAO);
-				request.getSession().setAttribute("currentOrderId", co.getId());
+ 				request.getSession().setAttribute("currentOrderId", co.getId());
 				setFormDates(request, eoForm);
 				return mapping.getInputForward();
 			}
@@ -157,11 +148,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			if (so != null) {
 				request.getSession().setAttribute("selectedsuborder", so);
 				eoForm.setSuborderId(so.getId());
-				eoForm.setHourlyRate(so.getHourly_rate());
-				eoForm.setCurrency(so.getCurrency());
-			} else {
-				eoForm.setHourlyRate(null);
-				eoForm.setCurrency(GlobalConstants.DEFAULT_CURRENCY);
 			}
 			// checkDatabaseForEmployeeOrder(request, eoForm,
 			// employeecontractDAO, employeeorderDAO);
@@ -248,8 +234,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			eo.setFromDate(fromDate);
 
 			eo.setSign(eoForm.getSign());
-			// eo.setStatus(eoForm.getStatus());
-			eo.setStandingorder(eoForm.getStandingorder());
+
 			if (eo.getSuborder().getCustomerorder().getSign().equals(
 					GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
 				eo.setDebithours(eo.getEmployeecontract()
@@ -269,16 +254,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					eo.setDebithoursunit(eoForm.getDebithoursunit());
 				}
 			}
-			eo.setStatusreport(eoForm.getStatusreport());
-			
-			if (eoForm.getHourlyRate() != null) {
-				eo.setHourly_rate(eoForm.getHourlyRate());
-				eo.setCurrency(eoForm.getCurrency());
-			} else {
-				eo.setHourly_rate(null);
-				eo.setCurrency(null);
-			}
-
+ 
 			Employee loginEmployee = (Employee) request.getSession()
 					.getAttribute("loginEmployee");
 			employeeorderDAO.save(eo, loginEmployee);
@@ -559,18 +535,15 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
 			}
 		}
-
-		// check hourly rate format
-		if (!GenericValidator.isDouble(eoForm.getHourlyRate().toString())
-				|| (!GenericValidator.isInRange(eoForm.getHourlyRate(), 0.0,
-						GlobalConstants.MAX_HOURLY_RATE))) {
-			errors.add("hourlyRate", new ActionMessage(
-					"form.suborder.error.hourlyrate.wrongformat"));
-		}
 		
 		// check, if dates fit to existing timereports
+		Date validFromSqlDate = new java.sql.Date(validFromDate.getTime());
+		Date validUntilSqlDate = null;
+		if (validUntilDate != null) {
+			validUntilSqlDate = new java.sql.Date(validUntilDate.getTime());
+		}
 		List<Timereport> timereportsInvalidForDates = timereportDAO.
-			getTimereportsByEmployeeorderIdInvalidForDates(new java.sql.Date(validFromDate.getTime()), new java.sql.Date(validUntilDate.getTime()), eoId);
+			getTimereportsByEmployeeorderIdInvalidForDates(validFromSqlDate, validUntilSqlDate, eoId);
 		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
 			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
 			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));

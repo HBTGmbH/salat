@@ -611,15 +611,26 @@ public class TimereportDAO extends HibernateDaoSupport {
 	
 	
 	public List<Timereport> getTimereportsByEmployeeorderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long employeeOrderId) {
-		return getSession().createQuery("from Timereport t where " +
-				"t.employeeorder.id = ? " +
-				"and (t.referenceday.refdate < ? " +
+		if (end == null) {
+			return getSession().createQuery("from Timereport t where " +
+					"t.employeeorder.id = ? " +
+					"and t.referenceday.refdate < ? " +
+					"order by t.referenceday.refdate asc, " +
+					"t.employeeorder.employeecontract.employee.sign asc, " +
+					"t.employeeorder.suborder.customerorder.sign asc, " +
+					"t.employeeorder.suborder.sign asc"
+					).setLong(0, employeeOrderId).setDate(1, begin).list();
+		} else {
+			return getSession().createQuery("from Timereport t where " +
+					"t.employeeorder.id = ? " +
+					"and (t.referenceday.refdate < ? " +
 					"or t.referenceday.refdate > ?) " +		
-				"order by t.referenceday.refdate asc, " +
-				"t.employeeorder.employeecontract.employee.sign asc, " +
-				"t.employeeorder.suborder.customerorder.sign asc, " +
-				"t.employeeorder.suborder.sign asc"
-				).setLong(0, employeeOrderId).setDate(1, begin).setDate(2, end).list();
+					"order by t.referenceday.refdate asc, " +
+					"t.employeeorder.employeecontract.employee.sign asc, " +
+					"t.employeeorder.suborder.customerorder.sign asc, " +
+					"t.employeeorder.suborder.sign asc"
+					).setLong(0, employeeOrderId).setDate(1, begin).setDate(2, end).list();
+		}
 	}
 	
 	public List<Timereport> getTimereportsBySuborderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long suborderId) {
