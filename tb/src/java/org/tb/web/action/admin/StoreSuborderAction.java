@@ -289,6 +289,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				
 				return mapping.findForward("success");
 			} else {
+				request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
 				// reuse form entries and show add-page
 				soForm.setDescription("");
 				soForm.setSign("");
