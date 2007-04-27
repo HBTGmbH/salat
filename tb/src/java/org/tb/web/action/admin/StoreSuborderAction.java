@@ -20,6 +20,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
+import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
@@ -74,6 +75,8 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
 			Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
 			List<Suborder> suborders = suborderDAO.getSuborders();
+			TbLogger.getLogger().debug(" StoreSuborderAction.executeAuthenticated()  -  3 Values:  " 
+					+ tempSubOrder  + " / " +  tempOrder + " / " + suborders);
 			Long soId = new Long(-1);
 				try{
 					soId = new Long(request.getSession().getAttribute("soId").toString());
@@ -87,8 +90,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
 							if (suborders.get(i).getSign().equals( tempSubOrder.getSign() + "." + version)
 									&& !(soId==suborders.get(i).getId())) {
 								version++;
-							}else{
-								break;
 							}
 						}
 					}
@@ -103,9 +104,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 								if (suborders.get(i).getSign().equals(tempOrder.getSign() + "." + version)
 										&& !(soId==suborders.get(i).getId())) {
 									version++;
-								} else{
-									break;
-								}
+								} 
 							}
 						}
 						soForm.setSign(tempOrder.getSign() + "." + version );
