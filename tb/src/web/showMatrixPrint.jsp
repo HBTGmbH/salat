@@ -5,6 +5,7 @@
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
@@ -124,24 +125,24 @@
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">
-						<td title="${bookingday.taskdescription}" class="matrix"
+						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix"
 							align="right"
 							style="font-size: 6pt;border:1px black solid;background-color:c1c1c1;">
 					</c:if>
 					<c:if test="${bookingday.publicHoliday==false}">
-						<td title="${bookingday.taskdescription}" class="matrix"
+						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix"
 							align="right"
 							style="font-size: 6pt;border:1px black solid;background-color:lightgrey;">
 					</c:if>
 				</c:if>
 				<c:if test="${bookingday.satSun==false}">
 					<c:if test="${bookingday.publicHoliday==true}">
-						<td title="${bookingday.taskdescription}" class="matrix"
+						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix"
 							align="right"
 							style="font-size: 6pt;border:1px black solid;background-color:c1c1c1;">
 					</c:if>
 					<c:if test="${bookingday.publicHoliday==false}">
-						<td title="${bookingday.taskdescription}" class="matrix"
+						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix"
 							align="right" style="font-size: 6pt;border:1px black solid;">
 					</c:if>
 
@@ -166,11 +167,41 @@
 			key="main.matrixoverview.table.overall.text" /></td>
 		<c:forEach var="dayhourcount" items="${dayhourcounts}">
 
-			<td class="matrix" style="font-size: 6pt;border-top:2px black solid;"
-				align="right"><c:if
-				test="${!(dayhourcount.workingHour eq '0.0')}">
-				<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
-			</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+			<c:if test="${dayhourcount.satSun==true}">
+				<c:if test="${dayhourcount.publicHoliday==true}">
+					<td class="matrix"
+						style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;"
+						align="right"><c:if
+						test="${!(dayhourcount.workingHour eq '0.0')}">
+						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+				</c:if>
+				<c:if test="${dayhourcount.publicHoliday==false}">
+					<td class="matrix"
+						style="font-size: 6pt;border-top:2px black solid;background-color:lightgrey;"
+						align="right"><c:if
+						test="${!(dayhourcount.workingHour eq '0.0')}">
+						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+				</c:if>
+			</c:if>
+			<c:if test="${dayhourcount.satSun==false}">
+				<c:if test="${dayhourcount.publicHoliday==true}">
+					<td class="matrix"
+						style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;"
+						align="right"><c:if
+						test="${!(dayhourcount.workingHour eq '0.0')}">
+						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+				</c:if>
+				<c:if test="${dayhourcount.publicHoliday==false}">
+					<td class="matrix"
+						style="font-size: 6pt;border-top:2px black solid;" align="right"><c:if
+						test="${!(dayhourcount.workingHour eq '0.0')}">
+						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+				</c:if>
+			</c:if>
 
 		</c:forEach>
 		<td class="matrix bold" style="border-top:2px black solid;"

@@ -409,10 +409,28 @@ public class ShowMatrixAction extends DailyReportAction {
 						employeecontract);
 				request.getSession().setAttribute("currentEmployeeId",
 						employeecontract.getEmployee().getId());
+
+				//testing availability of the shown month
+				if ((dateFirst.after(employeecontract.getValidFrom()) || dateFirst
+						.equals(employeecontract.getValidFrom()))
+						&& (employeecontract.getValidUntil() == null || (dateLast
+								.equals(employeecontract.getValidUntil()) || dateLast
+								.before(employeecontract.getValidUntil())))) {
+					request.getSession().setAttribute("invalid", false);
+				} else {
+					request.getSession().setAttribute("invalid", true);
+				}
+
 				if (!employeecontract.getAcceptanceWarningByDate(dateLast)) {
 					Date acceptanceDate = employeecontract
 							.getReportAcceptanceDate();
-					if (!dateLast.after(acceptanceDate)) {
+					/*
+					 * If employee wasn't logged in before, there can't be an
+					 * acceptance date, hence there's no need for yet another
+					 * test.
+					 */
+					if (acceptanceDate != null
+							&& !dateLast.after(acceptanceDate)) {
 						Timereport tempTimereport = timereportDAO
 								.getLastAcceptedTimereportByDateAndEmployeeContractId(
 										new java.sql.Date(dateLast.getTime()),
@@ -420,8 +438,6 @@ public class ShowMatrixAction extends DailyReportAction {
 						if (tempTimereport != null) {
 							request.getSession().setAttribute("acceptance",
 									true);
-							request.getSession().setAttribute("invalid",
-									false);
 							Employee tempEmployee = employeeDAO
 									.getEmployeeBySign(tempTimereport
 											.getAcceptedby());
@@ -433,15 +449,12 @@ public class ShowMatrixAction extends DailyReportAction {
 						} else {
 							request.getSession().setAttribute("acceptance",
 									false);
-							request.getSession().setAttribute("invalid", true);
 						}
 					} else {
 						request.getSession().setAttribute("acceptance", false);
-						request.getSession().setAttribute("invalid", false);
 					}
 				} else {
 					request.getSession().setAttribute("acceptance", false);
-					request.getSession().setAttribute("invalid", false);
 				}
 			}
 			// request.getSession().setAttribute("currentEmployeeId",
@@ -768,8 +781,9 @@ public class ShowMatrixAction extends DailyReportAction {
 					ecId = employeecontract.getId();
 				}
 				if (!employeecontract.getAcceptanceWarningByDate(dateLast)) {
-					if (employeecontract.getReportAcceptanceDate() != null && !dateLast.after(employeecontract
-							.getReportAcceptanceDate())) {
+					if (employeecontract.getReportAcceptanceDate() != null
+							&& !dateLast.after(employeecontract
+									.getReportAcceptanceDate())) {
 						request.getSession().setAttribute("acceptance", true);
 						Employee tempEmployee = employeeDAO
 								.getEmployeeBySign(timereportDAO
