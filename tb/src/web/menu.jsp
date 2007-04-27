@@ -92,9 +92,9 @@ window.onload=startList;
 			<bean:message key="main.general.mainmenu.suborders.text" />
 		</html:link></li>
 		
-		<li><html:link styleClass="menu" action="/ShowBudget">
+		<!--  <li><html:link styleClass="menu" action="/ShowBudget">
 			<bean:message key="main.general.mainmenu.budget.text" />
-		</html:link></li>
+		</html:link></li>-->
 	</ul>
 	</li>
 	<li><bean:message key="main.general.mainmenu.management.text" />
