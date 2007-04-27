@@ -263,7 +263,22 @@
 					value="${customerorder.responsible_customer_technical}" /></td>
 				<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
 				<td><c:out value="${customerorder.respEmpHbtContract.name}" />&nbsp;</td>
-				<td align="center"><c:out value="${customerorder.statusreport}" /></td>
+				<td align="center">
+					<c:choose>
+						<c:when test="${customerorder.statusreport == 0}">
+							<bean:message key="main.customerorder.statusreport.option.0.text" />
+						</c:when>
+						<c:when test="${customerorder.statusreport == 12}">
+							<bean:message key="main.customerorder.statusreport.option.12.text" />
+						</c:when>
+						<c:when test="${customerorder.statusreport == 6}">
+							<bean:message key="main.customerorder.statusreport.option.6.text" />
+						</c:when>
+						<c:when test="${customerorder.statusreport == 4}">
+							<bean:message key="main.customerorder.statusreport.option.4.text" />
+						</c:when>
+					</c:choose>
+				</td>
 				<td><c:out value="${customerorder.order_customer}" /></td>
 				<td>
 					<c:choose>
@@ -323,8 +338,22 @@
 					value="${customerorder.responsible_hbt.name}" /></td>
 				<td style="color:gray"><c:out 
 					value="${customerorder.respEmpHbtContract.name}" />&nbsp;</td>
-				<td style="color:gray" align="center"><c:out 
-					value="${customerorder.statusreport}" /></td>
+				<td style="color:gray" align="center">
+					<c:choose>
+						<c:when test="${customerorder.statusreport == 0}">
+							<bean:message key="main.customerorder.statusreport.option.0.text" />
+						</c:when>
+						<c:when test="${customerorder.statusreport == 12}">
+							<bean:message key="main.customerorder.statusreport.option.12.text" />
+						</c:when>
+						<c:when test="${customerorder.statusreport == 6}">
+							<bean:message key="main.customerorder.statusreport.option.6.text" />
+						</c:when>
+						<c:when test="${customerorder.statusreport == 4}">
+							<bean:message key="main.customerorder.statusreport.option.4.text" />
+						</c:when>
+					</c:choose>
+				</td>
 				<td style="color:gray"><c:out
 					value="${customerorder.order_customer}" /></td>
 				<td style="color:gray">
