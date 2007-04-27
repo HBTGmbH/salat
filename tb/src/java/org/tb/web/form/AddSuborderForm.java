@@ -38,8 +38,26 @@ public class AddSuborderForm extends ActionForm {
 	private Double debithours;
 	private Byte debithoursunit;
 	private Boolean hide;
+	private Long parentId;
+	private String parentDescriptionAndSign;
 
 	
+	public String getParentDescriptionAndSign() {
+		return parentDescriptionAndSign;
+	}
+
+	public void setParentDescriptionAndSign(String parentDescriptionAndSign) {
+		this.parentDescriptionAndSign = parentDescriptionAndSign;
+	}
+
+	public Long getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(Long parentId) {
+		this.parentId = parentId;
+	}
+
 	public long getId() {
 		return id;
 	}

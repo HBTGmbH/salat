@@ -26,6 +26,8 @@
 <attribute> <name>subProjects</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 <attribute> <name>browser</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 <attribute> <name>changeFunctionString</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>deleteFunctionString</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>onlySuborders</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 <attribute> <name>defaultString</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 <attribute> <name>currentSuborderID</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 

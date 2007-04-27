@@ -52,6 +52,8 @@
 			type="org.tb.web.form.AddSuborderForm" />
 		<form-bean name="showSuborderForm"
 			type="org.tb.web.form.ShowSuborderForm" />
+		<form-bean name="showBudgetForm"
+			type="org.tb.web.form.ShowBudgetForm" />
 		<form-bean name="addEmployeeOrderForm"
 			type="org.tb.web.form.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm"
@@ -358,6 +360,12 @@
 				path="/admin/showEmployeeContract.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addEmployeeContract.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+		
+		<!-- Budget -->
+		<action path="/ShowBudget" name="showBudgetForm">
+			<forward name="success" path="/admin/showBudget.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 

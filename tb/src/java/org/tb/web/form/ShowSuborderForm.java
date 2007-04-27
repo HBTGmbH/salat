@@ -19,10 +19,16 @@ public class ShowSuborderForm extends ActionForm {
 	private Boolean show;
 	private String filter;
 	private Long customerOrderId;
-	
-	
-	
-	
+	private Boolean showstructure = false;
+
+	public Boolean getShowstructure() {
+		return showstructure;
+	}
+
+	public void setShowstructure(Boolean showstructure) {
+		this.showstructure = showstructure;
+	}
+
 	public String getFilter() {
 		return filter;
 	}
@@ -64,6 +70,7 @@ public class ShowSuborderForm extends ActionForm {
 		filter = "";
 		show = false;
 		customerOrderId = -1L;
+		showstructure =false;
 	}
 
 	@Override

@@ -10,6 +10,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.web.action.LoginRequiredAction;
@@ -43,6 +44,9 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		
 		ShowSuborderForm suborderForm = (ShowSuborderForm) form;
 		
+		
+	
+		
 		List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
 		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
 				
@@ -50,8 +54,16 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		Boolean show = null;
 		Long customerOrderId = null; 
 		
+		TbLogger.getLogger().debug("suborderForm.getShowStructure()"  + suborderForm.getShowstructure());
+		TbLogger.getLogger().debug("suborderForm.getShow();" + suborderForm.getShow());
+		
+		
 		if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("refresh"))) {
+			
+			Boolean showStructure = suborderForm.getShowstructure();
+			request.getSession().setAttribute("showStructure", showStructure);
+			
 			filter = suborderForm.getFilter();
 
 			if (filter != null && !filter.trim().equals("")) {
@@ -65,6 +77,11 @@ public class ShowSuborderAction extends LoginRequiredAction {
 			
 			customerOrderId = suborderForm.getCustomerOrderId();
 			request.getSession().setAttribute("suborderCustomerOrderId", customerOrderId);
+			
+			Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
+			TbLogger.getLogger().debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
+			request.getSession().setAttribute("currentOrderShowPage", co);
+			
 		} else {
 			if (request.getSession().getAttribute("suborderFilter") != null) {
 				filter = (String) request.getSession().getAttribute("suborderFilter");
@@ -77,15 +94,19 @@ public class ShowSuborderAction extends LoginRequiredAction {
 			if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
 				customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
 				suborderForm.setCustomerOrderId(customerOrderId);
+				Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
+				TbLogger.getLogger().debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
+				request.getSession().setAttribute("currentOrderShowPage", co);
 			}
+			if (request.getSession().getAttribute("showStructure") != null) {
+				Boolean showStructure = (Boolean) request.getSession().getAttribute("showStructure");
+				suborderForm.setShowstructure(showStructure);
+			}
+			
 		}
 		
 		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));			
 
-		
-		
-		
-		
 		// check if loginEmployee has responsibility for some orders
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		List<Customerorder> orders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());

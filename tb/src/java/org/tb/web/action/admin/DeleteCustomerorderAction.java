@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.validator.GenericValidator;
+import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -23,6 +24,7 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
 	
 	private CustomerorderDAO customerorderDAO;
 	
+	private static Logger logger = Logger.getRootLogger();
 	
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
@@ -45,10 +47,9 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
 		
 		if (!deleted) {
 			errors.add(null, new ActionMessage("form.customerorder.error.hassuborders"));	
+			
 		}
-		
 		saveErrors(request, errors);
-		
 		String filter = null;
 		Boolean show = null;
 		Long customerId = null;

@@ -69,7 +69,89 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		request.getSession().removeAttribute("timereportsOutOfRange");
 
 		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("generateSign"))) {
+			
+			Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
+			Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
+			List<Suborder> suborders = suborderDAO.getSuborders();
+			Long soId = new Long(-1);
+				try{
+					soId = new Long(request.getSession().getAttribute("soId").toString());
+				}catch(Throwable th){}
+			if (suborders != null){
+				if (tempSubOrder != null){
+					int version = 1;
+					for (int i =0; i<suborders.size();i++){
+						if (suborders.get(i).getParentorder()!=null 
+								&& suborders.get(i).getParentorder().getId() == tempSubOrder.getId()){
+							if (suborders.get(i).getSign().equals( tempSubOrder.getSign() + "." + version)
+									&& !(soId==suborders.get(i).getId())) {
+								version++;
+							}else{
+								break;
+							}
+						}
+					}
+					soForm.setSign(tempSubOrder.getSign() + "." + version );
+				}else{
+					
+					if (tempOrder != null){
+						int version = 1;
+						for (int i =0; i<suborders.size();i++){
+							if (suborders.get(i).getParentorder()==null
+									&& suborders.get(i).getCustomerorder().getId() == tempOrder.getId()){
+								if (suborders.get(i).getSign().equals(tempOrder.getSign() + "." + version)
+										&& !(soId==suborders.get(i).getId())) {
+									version++;
+								} else{
+									break;
+								}
+							}
+						}
+						soForm.setSign(tempOrder.getSign() + "." + version );
+					}
+				}
+			}
+			return mapping.getInputForward();
+		}		
+		
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("refreshParentProject"))) {
+			
+			soForm.setParentDescriptionAndSign(customerorderDAO.getCustomerorderById(soForm
+					.getCustomerorderId()).getSignAndDescription());
+			soForm.setParentId(soForm.getCustomerorderId());
+			request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
+			
+			if ((request.getParameter("continue") != null)) {
+				try{
+					soForm.setParentId(Long.parseLong(request.getParameter("continue")));
+					Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
+					if (tempSubOrder!=null){
+						soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+					}else{
+						Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
+						soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
+					}
+					request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
+				}catch(Throwable th){
+					return mapping.findForward("error");
+				}
+			}
+			//request.getSession().setAttribute("currentSuborderID", new Long(soForm.getId()));
+			
+			return mapping.getInputForward();	
+		}
+		
+
+		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshHourlyRate"))) {
+			//first refresh the treestructure-content
+			soForm.setParentDescriptionAndSign(customerorderDAO.getCustomerorderById(soForm
+					.getCustomerorderId()).getSignAndDescription());
+			soForm.setParentId(soForm.getCustomerorderId());
+			request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
+			
 			// refresh suborder default hourly rate after change of order
 			// (same rate as for order itself)
 			if (refreshHourlyRate(mapping, request, soForm) != true) {
@@ -169,7 +251,8 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				so.setDebithoursunit(soForm.getDebithoursunit());
 			}
 			so.setHide(soForm.getHide());
-
+			
+			so.setParentorder(suborderDAO.getSuborderById(soForm.getParentId()));
 			
 			suborderDAO.save(so, loginEmployee);
 

@@ -86,6 +86,22 @@ public class EditSuborderAction extends LoginRequiredAction {
 		soForm.setInvoice(Character.toString(so.getInvoice()));
 		soForm.setStandard(so.getStandard());
 		soForm.setCommentnecessary(so.getCommentnecessary());
+		if (so.getParentorder()!=null)
+			soForm.setParentId(so.getParentorder().getId());
+		else
+			soForm.setParentId(so.getCustomerorder().getId());
+		try{
+			Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
+			if (tempSubOrder!=null){
+				soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+			}else{
+				Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
+				soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
+			}
+			request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
+		}catch(Throwable th){
+		}
+		
 		
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); 
 		soForm.setValidFrom(simpleDateFormat.format(so.getFromDate()));
@@ -104,7 +120,7 @@ public class EditSuborderAction extends LoginRequiredAction {
 		}
 		soForm.setHide(so.getHide());
 		
-		
+		//request.getSession().setAttribute("currentSuborderID", new Long(so.getId()));
 		request.getSession().setAttribute("currentOrderId", new Long(so.getCustomerorder().getId()));
 		request.getSession().setAttribute("currentOrder", so.getCustomerorder());
 		request.getSession().setAttribute("invoice", Character.toString(so.getInvoice()));

@@ -31,7 +31,7 @@ public class Suborder implements Serializable {
 	 */
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	private long id;
+	private long id = -1;
 
 	/** Customerorder */
 	@ManyToOne
@@ -49,6 +49,16 @@ public class Suborder implements Serializable {
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private List<Employeeorder> employeeorders;
 
+/** list of children */
+	@OneToMany(mappedBy = "suborder")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	private List<Suborder> children;
+	
+	/** parentorder */
+	@ManyToOne
+	@JoinColumn(name="PARENTORDER_ID")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	private Suborder suborder;
 	
 	/** Invoice */
 	private char invoice;
@@ -104,7 +114,22 @@ public class Suborder implements Serializable {
 	/** Hide in select boxes */
 	private Boolean hide;
 	
-	
+	public Suborder getParentorder() {
+		return suborder;
+	}
+
+	public void setParentorder(Suborder parentorder) {
+		this.suborder = parentorder;
+	}
+
+	public List<Suborder> getSuborders() {
+		return children;
+	}
+
+	public void setSuborders(List<Suborder> suborders) {
+		this.children = suborders;
+	}
+
 	public long getId() {
 		return id;
 	}
@@ -112,6 +137,8 @@ public class Suborder implements Serializable {
 	public void setId(long id) {
 		this.id = id;
 	}
+
+
 
 	public char getInvoice() {
 		return invoice;
@@ -128,7 +155,7 @@ public class Suborder implements Serializable {
 	public void setCustomerorder(Customerorder order) {
 		this.customerorder = order;
 	}
-
+	
 	public String getDescription() {
 		return description;
 	}
@@ -367,7 +394,7 @@ public class Suborder implements Serializable {
 	public void setUntilDate(Date untilDate) {
 		this.untilDate = untilDate;
 	}
-
+	
 	public String getSignAndDescription() {
 		return sign+" - "+getShortdescription();
 	}
@@ -429,7 +456,7 @@ public class Suborder implements Serializable {
 	public String toString() {
 		return "Suborder_"+id+": ("+sign+" "+description+")";
 	}
-	
+
 	
 
 }

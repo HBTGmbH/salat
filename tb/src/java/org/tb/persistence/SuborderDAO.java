@@ -6,6 +6,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.SimpleLayout;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
@@ -14,6 +18,7 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
+import org.tb.logging.TbLogger;
 
 /**
  * DAO class for 'Suborder'
@@ -26,7 +31,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 	private EmployeeorderDAO employeeorderDAO;
 	private TimereportDAO timereportDAO;
 	private CustomerorderDAO customerorderDAO;
-		
+	private SuborderDAO suborderDAO;
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
 	}
@@ -361,6 +366,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 	 */
 	public boolean deleteSuborderById(long soId) {
 		List<Suborder> allSuborders = getSuborders();
+		List<Suborder> allSuborders2 = getSuborders();
 		Suborder soToDelete = getSuborderById(soId);
 		boolean soDeleted = false;
 		
@@ -371,7 +377,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 		for (Iterator iter = allSuborders.iterator(); iter.hasNext();) {
 			Suborder so = (Suborder) iter.next();
 			if(so.getId() == soToDelete.getId()) {
-				// check if related timereports or employee orders exist - if so, no deletion possible
+				// check if related timereports, employee orders or suborders exist - if so, no deletion possible
 				boolean deleteOk = true;
 				List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
 				for (Iterator iter2 = allEmployeeorders.iterator(); iter2.hasNext();) {
@@ -392,11 +398,24 @@ public class SuborderDAO extends HibernateDaoSupport {
 						}
 					}
 				}
+				if (deleteOk) {
+					for (Iterator iter3 = allSuborders2.iterator(); iter3.hasNext();) {
+						Suborder tr = (Suborder) iter3.next();
+						if ((tr.getParentorder() != null) && (tr.getParentorder().getId() == soToDelete.getId())) {
+							deleteOk = false;
+							break;
+						}
+					}
+				}
+				
 				
 				if (deleteOk) {
 					Session session = getSession();
 					session.delete(soToDelete);
-					session.flush();
+					try{
+						session.flush();
+					}catch(Throwable th){}
+					TbLogger.getLogger().debug("SuborderDAO.deleteSuborderById - deleted object " + soToDelete + " and flushed!");
 					soDeleted = true;
 				}
 				break;

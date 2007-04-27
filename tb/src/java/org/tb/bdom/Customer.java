@@ -28,7 +28,7 @@ public class Customer implements Serializable {
 	 */	
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	private long id;
+	private long id = -1;
 
 	/** Name */
 	private String name;

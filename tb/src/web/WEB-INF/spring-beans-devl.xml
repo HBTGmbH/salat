@@ -40,6 +40,8 @@
 	<bean name="/ShowSuborder" class="org.tb.web.action.admin.ShowSuborderAction" />
 	<bean name="/StoreSuborder" class="org.tb.web.action.admin.StoreSuborderAction" />
 	
+	<bean name="/ShowBudget" class="org.tb.web.action.admin.ShowBudgetAction" />
+	
 	<bean name="/CreateEmployeeorder" class="org.tb.web.action.admin.CreateEmployeeorderAction" />
 	<bean name="/DeleteEmployeeorder" class="org.tb.web.action.admin.DeleteEmployeeorderAction" />
 	<bean name="/EditEmployeeorder" class="org.tb.web.action.admin.EditEmployeeorderAction" />

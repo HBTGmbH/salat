@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -26,6 +25,8 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 	private CustomerorderDAO customerorderDAO;
 	private CustomerDAO customerDAO;
 	
+
+	
 	public void setCustomerDAO(CustomerDAO customerDAO) {
 		this.customerDAO = customerDAO;
 	}
@@ -44,7 +45,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 		
 		List<Customer> customers = customerDAO.getCustomersOrderedByShortName();
 		request.getSession().setAttribute("customers", customers);
-		
+
 		String filter = null;
 		Boolean show = null;
 		Long customerId = null; 

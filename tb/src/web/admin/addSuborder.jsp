@@ -7,6 +7,7 @@
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="/WEB-INF/treeTag.tld" prefix="myjsp" %>
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -19,7 +20,7 @@
 	function setStoreAction(form, actionVal, addMore) {	
  		form.action = "/tb/do/StoreSuborder?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
-	}	
+	}		
 			
 	function afterCalenderClick() {
 	}
@@ -66,7 +67,37 @@
 					labelProperty="signAndDescription" property="id" />
 			</html:select><span style="color:red"><html:errors property="customerorder" /></span></td>
 		</tr>
-
+	</table>
+	
+		<!-- show the order-structure -->
+		<HR>
+		<% String browser = request.getHeader("User-Agent");  %>
+		<myjsp:tree 
+			mainProject="${currentOrder}" 
+			subProjects="${suborders}"
+			browser="<%=browser%>"
+			changeFunctionString="setStoreAction(this.form,'refreshParentProject','default')"
+			defaultString="default"
+			currentSuborderID="${soId}"
+			/>
+		<HR>
+		<br>
+		<td class="noBborderStyle" nowrap align="left"> 
+			<img id="img1" src="/tb/images/Smily_Krone.gif" border="0"> 
+			<bean:message key="main.general.structureInstructionAsParent.text" />
+		</td>
+		<HR>
+	<table class="center backgroundcolor">
+	
+		<!-- show the parent of this suborder -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.suborder.parent.text" /></b></td>
+			<td align="left" class="noBborderStyle"> 
+				<b>${parentDescriptionAndSign}</b> 
+			</td>
+		</tr>
+	
 		<!-- enter suborder sign -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
@@ -74,7 +105,13 @@
 			<td align="left" class="noBborderStyle"><html:text
 				property="sign" size="40"
 				maxlength="<%="" + org.tb.GlobalConstants.SUBORDER_SIGN_MAX_LENGTH %>" />
-			<span style="color:red"><html:errors property="sign" /></span></td>
+				<span style="color:red"><html:errors property="sign" /></span>
+				<html:submit
+				onclick="setStoreAction(this.form, 'generateSign')"
+				styleId="button" titleKey="main.suborder.generatesign.text">
+				<bean:message key="main.suborder.generatesign.text" />
+			</html:submit></td>
+
 		</tr>
 		
 		<!-- from date -->

@@ -140,7 +140,15 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
     
-    // pathstrings
-    public static final String ICONPATH = "/tb/images/TreeView/";
+    // pathstrings and iconstrings
+    public static final String ICONPATH = "/tb/images/";
+    public static final String CLOSEICON = "plus_circle.gif";
+    public static final String OPENICON = "minus_circle.gif";
+    public static final String FOLDERICON = "folder_closed.gif";
+    public static final String DELETEICON = "Delete.gif";
+    public static final String EDITICON = "Edit.gif";
+    public static final String NOTALLOWED = "verbot.gif";
+    public static final String PARENTICON = "Smily_Krone.gif";
     
+   
 }

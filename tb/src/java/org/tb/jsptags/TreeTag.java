@@ -4,38 +4,45 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.TagSupport;
 
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;
+import org.tb.logging.TbLogger;
 
 	/**
 	 * This class generates a tree view for jsp-Pages.  
 	 * The sourcecode is based on the tree-Tag-implementation of Guy Davis.
 	 * See http://www.guydavis.ca/projects/oss/tags/ for more information.
-	 * 
 	 * Use this code with a matching "*.tld"-file.  
 	 * 
 	 * @author ts
-	 *
 	 */
 public class TreeTag extends TagSupport {
 	
-    private final String img_closed = "plus_circle.gif";
-    private final String img_active = "minus_circle.gif"; 
     private String browser = null;
     private String changeFunctionString = "";
+    private String deleteFunctionString = "";
     private Customerorder mainProject;
     private List<Suborder> subProjects;
     private String defaultString;
     private Long currentSuborderID;
-    private List<Long> boldIDs;
+    private List<Long> internalNodesIDs;
+    private static int painted = 0;
+    private Boolean onlySuborders = false;
     
     private static Random rand = null;
-    
 
+	public void setDeleteFunctionString(String deleteFunctionString) {
+		this.deleteFunctionString = deleteFunctionString;
+	}
+
+	public void setOnlySuborders(Boolean onlySuborders) {
+		this.onlySuborders = onlySuborders;
+	}
 
 	public void setCurrentSuborderID(Long currentSuborderID) {
 		this.currentSuborderID = currentSuborderID;
@@ -67,101 +74,160 @@ public class TreeTag extends TagSupport {
     }
 
 	/**
-	 *    This methode is called from the jsp to produce some output on it.
-	 *    In this case, the root and all children must be created for an order.
-	 *    First we build the root and then all children recursivly.
+	 * This methode is called from the jsp to produce some output on it.
+	 * In this case, the root and all children must be created for an order.
+	 * The methode does the steps in the following order:
+	 *  - prepaire the jsp and some values (randomizer and function name on jsp)
+	 * 	- prepare entries which should be printed bold
+	 * 	- prepaire entries which are no parents (leafs)
+	 *  - build the root of the tree view
+	 *  - build all children recursivly
+	 *  
 	 * @param out
 	 * @return
 	 */
     public int doStartTag(JspWriter out) {
         try {
+        	
+        	painted++;
             printScript(out);
             if (rand == null)
                 rand = new Random();
             String name = Integer.toString(rand.nextInt()); 
             String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, mainProject.getId() + "");
-            //prepaire entries which should be printed bold:
             
-            long toTestId = this.currentSuborderID.longValue();
-            this.boldIDs = new ArrayList<Long>();
-            if (this.currentSuborderID != null){
-            	this.boldIDs.add(new Long(this.mainProject.getId()));
-            	this.boldIDs.add(this.currentSuborderID);
-                int level = 0;
-                while (toTestId != this.mainProject.getId()
-                		&& level <= 20){  // breaking condition maximized by level 20 of the tree, to prevent endless loops
-                	  for (int i=0 ; i < this.subProjects.size() ; i++){
-                      	if (this.subProjects.get(i).getId() == toTestId){
-                      		this.boldIDs.add(new Long(toTestId));
-                      		toTestId = new Long(this.subProjects.get(i).getParentorderid());
-                      		break;
-                      	}
-                      }
-                	  level++;
-                }
+            //-----------------------------------------------
+            //		prepaire entries which are no parents (leafs)
+            //-----------------------------------------------
+            this.internalNodesIDs = new ArrayList<Long>();
+            for (int i=0; i<this.subProjects.size();i++){
+            	if (this.subProjects.get(i).getParentorder()!=null)
+            		this.internalNodesIDs.add(new Long(this.subProjects.get(i).getParentorder().getId()));
             }
-            	
-            
-            // 1. the root of the tree view:
+            //------------------------------------------------
+            // 		print the root of the tree view
+            //------------------------------------------------
             out.println("<TABLE BORDER=0 cellspacing=\"0\" cellpadding=\"0\"><tr>");
- 			out.println( "<td class=\"noBborderStyle\" nowrap width=\"25\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + img_closed + "\" border=\"0\" " );
-			out.println( " onClick=\"nodeClick(event, this, '" + name + "', '" + img_closed + "', '"+ img_active + "');\"></td>");  
-			out.print( "<td class=\"noBborderStyle\" nowrap ><b>" + mainProject.getSignAndDescription() + "</b></td>" 	 );
-			out.print( "<td class=\"noBborderStyle\" nowrap align=\"right\" width=\"25\">"
-					+ "<input type=\"submit\" value=\"-->\" onclick=\"" + tempChangeFunctionString + "\" id=\"button\">" );
+ 			out.println( "<td class=\"noBborderStyle\" nowrap width=\"30\" align=\"left\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" " );
+			out.println( " onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '"+ GlobalConstants.OPENICON + "');\"></td>");
+			//out.println("<td class=\"noBborderStyle\" nowrap width=\"30\" align=\"left\"><img src=\""+ GlobalConstants.ICONPATH + img_folder + "\"</img></td>");
+			if (onlySuborders != true 
+					&& this.changeFunctionString!=null 
+					&& !this.changeFunctionString.equals("")){
+				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"> <input id=\"treeViewStyle\" style=\"font-weight: bold\" type=\"submit\" value=\"" + mainProject.getSignAndDescription() + "\"");
+				out.print(" onclick=\"" + tempChangeFunctionString + "\" id=\"button\">" );
+			}else{
+				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"> " + mainProject.getSignAndDescription());
+			}
+				
+			out.print(" </td>");
 			out.print( "\n</tr>" );    
 			out.print( "</table>\n");
 			out.println( "<span id=\"span" + name + "\" class=\"clsHide\">\n");
-			// 2. the tree view with all the children:
+			//------------------------------------------------
+			// 		the tree view with all the children
+			//------------------------------------------------
 			if (this.subProjects != null){
-				out.println("<TABLE BORDER=0 cellspacing=\"0\" cellpadding=\"0\"><tr>");
-				generateTreeRecursivly(mainProject.getId(), 0, out); 
-				out.println("</TABLE>");
-			} else{
-				out.println("<input type=\"submit\" VALUE=\"subProjects==null\" >");	
-			}
+				generateTreeRecursivly(mainProject.getId(), 0, out, true); 
+			} 
 			out.print("</span>");
         } catch(Exception ioe) {
-            System.out.println("Error in TreeTag: " + ioe);
+        	TbLogger.getLogger().error("Error in Tree Tag!");
         }
         return(EVAL_BODY_INCLUDE);
     }
     
 	/**
 	 *  This methode generates the treestructure of the object recursivly.
+	 *  Normaly this methode should be called with a toplevel order ID for the parentID.
+	 *  Then the methode builds the rest of the tree recursivly by calling it self several times.
 	 *  
-	 * @param parentID   ID of the parent (noder before actual nodes)
-	 * @param lastLevel  level of the parent
-	 * @param outPut     chanel for output
+	 * @param parentID   ID of the parent (node before actual nodes)
+	 * @param lastLevel  level (in the tree) of the parent
+	 * @param outPut     chanel for output on jsp
+	 * @param enabled	 boolean which defines whether the actual node can be used as parent or not
+	 * 					 (This is to prevent cyclic dependencies, e.g. when a node is edited and his 
+	 * 					 position in the tree changes, the new parent must not be a child, else we have a deadlock)
 	 */
-    private void generateTreeRecursivly(long parentID, int lastLevel, JspWriter outPut) {
+    private void generateTreeRecursivly(long parentID, int lastLevel, JspWriter outPut, boolean enabled) {
 		int thisLevel = lastLevel + 1;  // thisLevel is the level for all children
+		
     	for (int i=0;i<subProjects.size();i++){
 			Suborder tempOrder = subProjects.get(i);
 			// testing, if there are any children for this node:
-			if (tempOrder.getParentorderid() == parentID){
+			if ((tempOrder.getParentorder() != null 
+					&& tempOrder.getParentorder().getId() == parentID)  // -->  This case is a leaf which has a suborder as parent
+					|| (tempOrder.getParentorder() == null
+							&& tempOrder.getCustomerorder().getId() == parentID  // -->  This case is leaf which has the main project as parent
+							&& thisLevel == 1)){
 				// some things must be prepaired
+				boolean tempBoolean = true;
+				if (enabled == false || this.currentSuborderID == tempOrder.getId())
+						tempBoolean = false; 
+				TbLogger.getLogger().debug("Logging for enabled:  " + enabled + " "+this.currentSuborderID +" " + " "+   tempOrder.getId());
 				String name = Integer.toString(rand.nextInt());  
 				String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");
+				String tempDeleteFunctionString = deleteFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");
+				
+				StringBuffer sb = new StringBuffer();
+				sb.append(tempOrder.getSignAndDescription() + "; [");
+				if (tempOrder.getFromDate()!=null)
+					sb.append(tempOrder.getFromDate() + ", ");
+				else
+					sb.append(" - , ");
+				if (tempOrder.getUntilDate()!=null)
+					sb.append(tempOrder.getUntilDate() + "]; ");
+				else
+					sb.append(" - ]; ");
+				sb.append(tempOrder.getHourly_rate() + " " + tempOrder.getCurrency()  + "; ");
+				if (tempOrder.getDebithours()!=null)
+					sb.append(tempOrder.getDebithours() );
+				else
+					sb.append("-" );
+				String buttonText = sb.toString();
+				
 				// prepaire all nodes for the way from root to actual subproject			
 				try{
 					outPut.println("<TABLE BORDER=0 cellspacing=\"0\" cellpadding=\"0\"><tr>");
-					outPut.println("<td class=\"noBborderStyle\" nowrap width=\"" + 50 * thisLevel + "\">&nbsp;</td>" );
-					outPut.println("<td class=\"noBborderStyle\" nowrap width=\"25\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + img_closed + "\" border=\"0\" " );
-					outPut.println("onClick=\"nodeClick(event, this, '" + name + "', '" + img_closed + "', '"+ img_active + "');\"></td>");  
-		  			if (this.boldIDs.contains(new Long(tempOrder.getId()))){ // print it bold, when its on the treepath:
-		  				outPut.println("<td class=\"noBborderStyle\"" + " nowrap " + "><b>" + tempOrder.getSignAndDescription() + "</b></td>" );	
-		  			}else{ // not bold
-		  				outPut.println("<td class=\"noBborderStyle\"" + " nowrap " + ">" + tempOrder.getSignAndDescription() + "</td>" );	
-		  			}
-					if (tempOrder.getId() != this.currentSuborderID.longValue())
-						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"right\" width=\"25\"><input type=\"submit\" value=\"-->\" onclick=\"" + tempChangeFunctionString + "\" id=\"button\">" );
+					outPut.println("<td class=\"noBborderStyle\" nowrap width=\"" + (30+ 37 * lastLevel) + "\">&nbsp;</td>" );
+					//check, if the (+/-)-Sign must be printed or if this node is a leaf node
+					if (this.internalNodesIDs.contains(new Long(tempOrder.getId()))){
+						outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" " );
+						outPut.println("onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '"+ GlobalConstants.OPENICON + "');\"></td>");
+						//outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"><img src=\""+ GlobalConstants.ICONPATH + img_folder + "\"</img></td>");  
+					} else {
+						outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\">&nbsp;</td>" );
+						//outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"><img src=\""+ GlobalConstants.ICONPATH + img_folder + "\"</img></td>");  
+					}
+
+		  			outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\">" +  buttonText + "</td>");
+					
+					if (tempChangeFunctionString.length() > 0
+							&& tempBoolean
+							&& tempDeleteFunctionString.length() >0 ){
+						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.EDITICON + "\" border=\"0\" " );
+						outPut.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
+					} else if (tempChangeFunctionString.length() > 0
+							&& tempBoolean
+							&& tempDeleteFunctionString.length() == 0 ){
+						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" " );
+						outPut.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
+					} else{
+						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <img id=\"img1\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.NOTALLOWED + "\" border=\"0\" </td>");
+					}
+					
+					if (tempDeleteFunctionString.length() >0 
+							&& tempBoolean){	
+						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.DELETEICON + "\" border=\"0\" " );
+						outPut.println(" onclick=\"" + tempDeleteFunctionString + "\";></td>");
+					}
+					
 		  			outPut.println("\n</tr></TABLE>\n" );  
 		  			outPut.println("<span id=\"span" + name + "\" class=\"clsHide\">\n");
-		  			generateTreeRecursivly(tempOrder.getId(), thisLevel, outPut);
+		  			generateTreeRecursivly(tempOrder.getId(), thisLevel, outPut, tempBoolean );
 		  			outPut.println("</span>");
-				}catch (IOException ioe){
-					System.out.println("Error in TreeTag: " + ioe);
+				}catch (IOException ioe){	
+		        	TbLogger.getLogger().error("Error in Tree Tag!");
 				} 
 			}
 		}
@@ -183,6 +249,7 @@ public class TreeTag extends TagSupport {
 
     /**
      *  Outputs the correct Javascript to generate dynamic tree views of listings.
+     *  The correct code depends on the browser used by the client.
      */
     private void printScript(JspWriter out) throws IOException {
         out.println("<script language='JavaScript'>");
@@ -205,7 +272,6 @@ public class TreeTag extends TagSupport {
         out.println("eImg.src = ('"+GlobalConstants.ICONPATH+"' + closed);");
         out.println("}");
         out.println("} </script>");
-        // Now output the required CSS for hiding stuff
         out.println("<style type='text/css'>");
         out.println("   .clsShow { }");
         out.println("   .clsHide { display: none; }");

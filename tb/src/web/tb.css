@@ -20,6 +20,8 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	border-spacing: 0px;
 }
 
+
+
 .info {
 	border: 0px;
 	border-collapse: collapse;
@@ -65,6 +67,8 @@ tr,td,th {
 	padding-left: 4px;
 	padding-right: 4px;
 }
+
+
 
 th { /*a3bddb*/
 	background-color: #94b0d0;
@@ -122,6 +126,16 @@ th.matrix #borderdouble {
 #button {
 	background-color: #7390b1;
 	color: #ffffff;
+}
+
+#treeViewStyle {
+	font-size: 14px; 
+	font-weight: normal ;
+	border: 0px;
+	background-color: transparent;
+	color: black;
+	text-align :left;
+	
 }
 
 img {
