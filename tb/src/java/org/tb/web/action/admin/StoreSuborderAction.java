@@ -87,13 +87,17 @@ public class StoreSuborderAction extends LoginRequiredAction {
 					for (int i =0; i<suborders.size();i++){
 						if (suborders.get(i).getParentorder()!=null 
 								&& suborders.get(i).getParentorder().getId() == tempSubOrder.getId()){
-							if (suborders.get(i).getSign().equals( tempSubOrder.getSign() + "." + version)
+							if (((version < 10 && suborders.get(i).getSign().equals( tempSubOrder.getSign() + ".0" + version))
+									||(version > 9 && suborders.get(i).getSign().equals( tempSubOrder.getSign() + "." + version)))
 									&& !(soId==suborders.get(i).getId())) {
 								version++;
 							}
 						}
 					}
-					soForm.setSign(tempSubOrder.getSign() + "." + version );
+					if (version<10)
+						soForm.setSign(tempSubOrder.getSign() + ".0" + version );
+					else
+						soForm.setSign(tempSubOrder.getSign() + "." + version );
 				}else{
 					
 					if (tempOrder != null){
@@ -101,13 +105,17 @@ public class StoreSuborderAction extends LoginRequiredAction {
 						for (int i =0; i<suborders.size();i++){
 							if (suborders.get(i).getParentorder()==null
 									&& suborders.get(i).getCustomerorder().getId() == tempOrder.getId()){
-								if (suborders.get(i).getSign().equals(tempOrder.getSign() + "." + version)
+								if (((version < 10 && suborders.get(i).getSign().equals( tempOrder.getSign() + ".0" + version))
+										||(version > 9 && suborders.get(i).getSign().equals( tempOrder.getSign() + "." + version)))
 										&& !(soId==suborders.get(i).getId())) {
 									version++;
 								} 
 							}
 						}
-						soForm.setSign(tempOrder.getSign() + "." + version );
+						if (version<10)
+							soForm.setSign(tempOrder.getSign() + ".0" + version );
+						else
+							soForm.setSign(tempOrder.getSign() + "." + version );
 					}
 				}
 			}
