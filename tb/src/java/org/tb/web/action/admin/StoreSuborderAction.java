@@ -111,6 +111,10 @@ public class StoreSuborderAction extends LoginRequiredAction {
 					}
 				}
 			}
+			request.getSession().setAttribute("hourlyRate", soForm.getHourlyRate());
+			request.getSession().setAttribute("currency", soForm.getCurrency());
+			request.getSession().setAttribute("invoice", soForm.getInvoice());
+			
 			return mapping.getInputForward();
 		}		
 		
