@@ -142,7 +142,7 @@ public class TreeTag extends TagSupport {
 			} 
 			out.print("</span>");
         } catch(Exception ioe) {
-        	TbLogger.getLogger().error("Error in Tree Tag!");
+        	TbLogger.debug(TreeTag.class.toString(), "Error in Tree Tag!");
         }
         return(EVAL_BODY_INCLUDE);
     }
@@ -189,7 +189,7 @@ public class TreeTag extends TagSupport {
 				boolean tempBoolean = true;
 				if (enabled == false || this.currentSuborderID == tempOrder.getId())
 						tempBoolean = false; 
-				TbLogger.getLogger().debug("Logging for enabled:  " + enabled + " "+this.currentSuborderID +" " + " "+   tempOrder.getId());
+				TbLogger.debug(TreeTag.class.toString(),"Logging for enabled:  " + enabled + " "+this.currentSuborderID +" " + " "+   tempOrder.getId());
 				String name = Integer.toString(rand.nextInt());  
 				String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");
 				String tempDeleteFunctionString = deleteFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");
@@ -246,7 +246,7 @@ public class TreeTag extends TagSupport {
 		  			generateTreeRecursivly(tempOrder.getId(), thisLevel, outPut, tempBoolean );
 		  			outPut.println("</span>");
 				}catch (IOException ioe){	
-		        	TbLogger.getLogger().error("Error in Tree Tag!");
+					TbLogger.debug(TreeTag.class.toString(),"Error in Tree Tag!");
 				} 
 			}
 		}

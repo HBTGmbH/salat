@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
+import org.tb.jsptags.TreeTag;
 import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
@@ -66,7 +67,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
 		request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
 		ShowBudgetForm budgetForm = (ShowBudgetForm) form;
-		TbLogger.getLogger().debug("ShowBudgetAction.executeAuthenticated -request.getParameter(task) : " +request.getParameter("task"));
+		TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated -request.getParameter(task) : " +request.getParameter("task"));
 		Long orderOrSuborderId = new Long(-1);
 		if (budgetForm.getCustomerOrderId() != null)
 			orderOrSuborderId = budgetForm.getCustomerOrderId();
@@ -74,11 +75,11 @@ public class ShowBudgetAction extends LoginRequiredAction{
 			if (request.getParameter("id").equals("-1")){
 				orderOrSuborderId = budgetForm.getCustomerOrderId();
 				request.getSession().setAttribute("orderOrSuborderId", orderOrSuborderId);
-				TbLogger.getLogger().debug("ShowBudgetAction.executeAuthenticated - orderOrSuborderId : " + orderOrSuborderId);
+				TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated - orderOrSuborderId : " + orderOrSuborderId);
 			} else{
 				orderOrSuborderId = Long.valueOf(request.getParameter("id"));
 				request.getSession().setAttribute("orderOrSuborderId", orderOrSuborderId);
-				TbLogger.getLogger().debug("ShowBudgetAction.executeAuthenticated - orderOrSuborderId : " + orderOrSuborderId);
+				TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated - orderOrSuborderId : " + orderOrSuborderId);
 			}
 			Suborder so = null; 
 			so = suborderDAO.getSuborderById(orderOrSuborderId);
@@ -144,7 +145,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 			request.getSession().setAttribute("toChange",null);
 			
 		}else{
-			TbLogger.getLogger().debug("ShowBudgetAction.executeAuthenticated - budgetForm.getCustomerOrderId():  " 
+			TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated - budgetForm.getCustomerOrderId():  " 
 					+ budgetForm.getCustomerOrderId());
 			request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
 			

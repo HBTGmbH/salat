@@ -50,14 +50,14 @@ public class ShowSuborderAction extends LoginRequiredAction {
 		Boolean show = null;
 		Long customerOrderId = null; 
 		
-		TbLogger.getLogger().debug("suborderForm.getShowStructure()"  + suborderForm.getShowstructure());
-		TbLogger.getLogger().debug("suborderForm.getShow();" + suborderForm.getShow());
-		TbLogger.getLogger().debug("suborderForm.getFilter-()"  + suborderForm.getFilter());
-		TbLogger.getLogger().debug("suborderForm.getCustomerOrderId-();" + suborderForm.getCustomerOrderId());
-		TbLogger.getLogger().debug("suborderFilter"  + request.getSession().getAttribute("suborderFilter"));
-		TbLogger.getLogger().debug("suborderShow;" + request.getSession().getAttribute("suborderShow"));
-		TbLogger.getLogger().debug("suborderCustomerOrderId"  + request.getSession().getAttribute("suborderCustomerOrderId"));
-		TbLogger.getLogger().debug("showStructure" + request.getSession().getAttribute("showStructure"));
+		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getShowStructure()"  + suborderForm.getShowstructure());
+		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getShow();" + suborderForm.getShow());
+		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getFilter-()"  + suborderForm.getFilter());
+		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getCustomerOrderId-();" + suborderForm.getCustomerOrderId());
+		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderFilter"  + request.getSession().getAttribute("suborderFilter"));
+		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderShow;" + request.getSession().getAttribute("suborderShow"));
+		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderCustomerOrderId"  + request.getSession().getAttribute("suborderCustomerOrderId"));
+		TbLogger.debug(ShowSuborderForm.class.toString(),"showStructure" + request.getSession().getAttribute("showStructure"));
 		
 		
 		if ((request.getParameter("task") != null) && 
@@ -81,7 +81,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
 			request.getSession().setAttribute("suborderCustomerOrderId", customerOrderId);
 			
 			Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
-			TbLogger.getLogger().debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
+			TbLogger.debug(ShowSuborderForm.class.toString(),"ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
 			request.getSession().setAttribute("currentOrder", co);
 			if (customerOrderId == -1){
 				request.getSession().setAttribute("showStructure", false);
@@ -101,7 +101,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
 				customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
 				suborderForm.setCustomerOrderId(customerOrderId);
 				Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
-				TbLogger.getLogger().debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
+				TbLogger.debug(ShowSuborderForm.class.toString(),"ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
 				request.getSession().setAttribute("currentOrder", co);
 			} else{
 				request.getSession().setAttribute("suborderCustomerOrderId", new Long(-1));

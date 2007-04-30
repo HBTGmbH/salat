@@ -27,6 +27,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddSuborderForm;
+import org.tb.web.form.ShowSuborderForm;
 
 /**
  * action class for storing a suborder permanently
@@ -75,7 +76,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
 			Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
 			List<Suborder> suborders = suborderDAO.getSuborders();
-			TbLogger.getLogger().debug(" StoreSuborderAction.executeAuthenticated()  -  3 Values:  " 
+			TbLogger.debug(StoreSuborderAction.class.toString()," StoreSuborderAction.executeAuthenticated()  -  3 Values:  " 
 					+ tempSubOrder  + " / " +  tempOrder + " / " + suborders);
 			Long soId = new Long(-1);
 				try{

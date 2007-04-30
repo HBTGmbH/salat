@@ -18,6 +18,7 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
+import org.tb.jsptags.TreeTag;
 import org.tb.logging.TbLogger;
 
 /**
@@ -415,7 +416,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 					try{
 						session.flush();
 					}catch(Throwable th){}
-					TbLogger.getLogger().debug("SuborderDAO.deleteSuborderById - deleted object " + soToDelete + " and flushed!");
+					TbLogger.debug(SuborderDAO.class.toString(),"SuborderDAO.deleteSuborderById - deleted object " + soToDelete + " and flushed!");
 					soDeleted = true;
 				}
 				break;

@@ -10,6 +10,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.bdom.Suborder;
+import org.tb.jsptags.TreeTag;
 import org.tb.logging.TbLogger;
 import org.tb.persistence.SuborderDAO;
 import org.tb.web.action.LoginRequiredAction;
@@ -64,7 +65,7 @@ public class DeleteSuborderAction extends LoginRequiredAction {
 		}
 		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
 		
-		TbLogger.getLogger().debug("DeleteSuborderAction.executeAuthenticated - after deletion");
+		TbLogger.debug(DeleteSuborderAction.class.toString(),"DeleteSuborderAction.executeAuthenticated - after deletion");
 		
 		// back to suborder display jsp
 		return mapping.getInputForward();
