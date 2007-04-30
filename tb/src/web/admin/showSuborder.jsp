@@ -128,6 +128,11 @@
 			<c:when test="${showStructure}" >
 				<br>
 				<% String browser = request.getHeader("User-Agent");  %>
+				<% org.apache.struts.util.PropertyMessageResources myMessages = (org.apache.struts.util.PropertyMessageResources)request.getAttribute("org.apache.struts.action.MESSAGE"); %>
+				<% String key = "main.employeeorder.openend.text"; %>
+				<% java.util.Locale myLocale = (java.util.Locale)session.getAttribute("org.apache.struts.action.LOCALE"); %>
+				<% String message = (String)myMessages.getMessage(myLocale, key); %>
+				
 				<tr>
 				
 				<c:choose>
@@ -141,6 +146,7 @@
 						onlySuborders="true"
 						defaultString="default"
 						currentSuborderID="0"
+						endlessDate="<%=message%>"
 						/>
 					</c:when>
 					<c:otherwise>
@@ -151,6 +157,7 @@
 							onlySuborders="true"
 							defaultString="default"
 							currentSuborderID="0"
+							endlessDate="<%=message%>"
 							/>
 					</c:otherwise>
 				</c:choose>

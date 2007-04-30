@@ -33,9 +33,14 @@ public class TreeTag extends TagSupport {
     private List<Long> internalNodesIDs;
     private static int painted = 0;
     private Boolean onlySuborders = false;
+    private String endlessDate = "-";
     
     private static Random rand = null;
 
+	public void setEndlessDate(String endlessDate) {
+		this.endlessDate = endlessDate;
+	}
+    
 	public void setDeleteFunctionString(String deleteFunctionString) {
 		this.deleteFunctionString = deleteFunctionString;
 	}
@@ -176,11 +181,11 @@ public class TreeTag extends TagSupport {
 				if (tempOrder.getFromDate()!=null)
 					sb.append(tempOrder.getFromDate() + ", ");
 				else
-					sb.append(" - , ");
+					sb.append(" " + endlessDate + ", ");
 				if (tempOrder.getUntilDate()!=null)
 					sb.append(tempOrder.getUntilDate() + "]; ");
 				else
-					sb.append(" - ]; ");
+					sb.append(" " + endlessDate + "]; ");
 				sb.append(tempOrder.getHourly_rate() + " " + tempOrder.getCurrency()  + "; ");
 				if (tempOrder.getDebithours()!=null)
 					sb.append(tempOrder.getDebithours() );

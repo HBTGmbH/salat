@@ -30,6 +30,7 @@
 <attribute> <name>onlySuborders</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 <attribute> <name>defaultString</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 <attribute> <name>currentSuborderID</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>endlessDate</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
 
 
 </tag>

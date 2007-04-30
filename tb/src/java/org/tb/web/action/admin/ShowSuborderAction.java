@@ -83,6 +83,10 @@ public class ShowSuborderAction extends LoginRequiredAction {
 			Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
 			TbLogger.getLogger().debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
 			request.getSession().setAttribute("currentOrder", co);
+			if (customerOrderId == -1){
+				request.getSession().setAttribute("showStructure", false);
+				suborderForm.setShowstructure(false);
+			}
 			
 		} else {
 			if (request.getSession().getAttribute("suborderFilter") != null) {
