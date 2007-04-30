@@ -18,65 +18,72 @@ import org.tb.logging.TbLogger;
 	 * The sourcecode is based on the tree-Tag-implementation of Guy Davis.
 	 * See http://www.guydavis.ca/projects/oss/tags/ for more information.
 	 * Use this code with a matching "*.tld"-file.  
+	 * Note that the generated JSP-Tag needs specific information as defined in the tld file.
 	 * 
 	 * @author ts
 	 */
 public class TreeTag extends TagSupport {
 	
+	// The name of the browser used by the client.
     private String browser = null;
+    // this is the function (java script) specified by a string, 
+    // which should be called when the EDIT-Button is clicked
     private String changeFunctionString = "";
+    // this is the function (java script) specified by a string, 
+    // which should be called when the DELETE-Button is clicked
     private String deleteFunctionString = "";
+    // The Root of the tree structure, represented by a customer entity
     private Customerorder mainProject;
+    // a list of all suborders that must be used for building the tree structure 
     private List<Suborder> subProjects;
+    // when the change- and/or the delete function string is used, this might contain
+    // a "default string" which can be replaced by other content.  The default String 
+    // is stored in this variable:
     private String defaultString;
+    // The ID of the current suborder chosen by the client
     private Long currentSuborderID;
+    // The internal nodes need an icon for tree browsing.  This variable will be filled 
+    // in the "doStartTag"-Methode by iterating all suborders checking, whether they are a parent node
+    // or not.
     private List<Long> internalNodesIDs;
-    private static int painted = 0;
+    // This boolean specifies whether the "changeFunctionString" should be called only by clicking 
+    // on an suborder icon or even by clicking on the order (root) icon
     private Boolean onlySuborders = false;
+    // The string represents the text for open dates.
     private String endlessDate = "-";
-    
+    // Random number needed for imag-label-generating.
     private static Random rand = null;
-
+    
+    // ------------------------------------------------
+    // All set-methods for communicating with the jsp!
+    // ------------------------------------------------
 	public void setEndlessDate(String endlessDate) {
 		this.endlessDate = endlessDate;
 	}
-    
 	public void setDeleteFunctionString(String deleteFunctionString) {
 		this.deleteFunctionString = deleteFunctionString;
 	}
-
 	public void setOnlySuborders(Boolean onlySuborders) {
 		this.onlySuborders = onlySuborders;
 	}
-
 	public void setCurrentSuborderID(Long currentSuborderID) {
 		this.currentSuborderID = currentSuborderID;
 	}
-
 	public void setDefaultString(String defaultString) {
 		this.defaultString = defaultString;
 	}
-
 	public void setMainProject(Customerorder mainProject) {
 		this.mainProject = mainProject;
 	}
-
 	public void setSubProjects(List<Suborder> subProjects) {
 		this.subProjects = subProjects;
 	}
-
 	public void setBrowser(String browser) {
         this.browser = browser;
     }
-    
     public void setChangeFunctionString(String changeFunctionString) {
 		this.changeFunctionString = changeFunctionString;
 	}
-
-	public int doStartTag() {
-        JspWriter out = pageContext.getOut();
-        return (doStartTag(out));
-    }
 
 	/**
 	 * This methode is called from the jsp to produce some output on it.
@@ -93,8 +100,6 @@ public class TreeTag extends TagSupport {
 	 */
     public int doStartTag(JspWriter out) {
         try {
-        	
-        	painted++;
             printScript(out);
             if (rand == null)
                 rand = new Random();
@@ -115,7 +120,6 @@ public class TreeTag extends TagSupport {
             out.println("<TABLE BORDER=0 cellspacing=\"0\" cellpadding=\"0\"><tr>");
  			out.println( "<td class=\"noBborderStyle\" nowrap width=\"30\" align=\"left\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" " );
 			out.println( " onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '"+ GlobalConstants.OPENICON + "');\"></td>");
-			//out.println("<td class=\"noBborderStyle\" nowrap width=\"30\" align=\"left\"><img src=\""+ GlobalConstants.ICONPATH + img_folder + "\"</img></td>");
 			if (onlySuborders != true 
 					&& this.changeFunctionString!=null 
 					&& !this.changeFunctionString.equals("")){
@@ -126,7 +130,6 @@ public class TreeTag extends TagSupport {
 			}else{
 				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"> <b>" + mainProject.getSignAndDescription() +"</b>");
 			}
-				
 			out.print(" </td>");
 			out.print( "\n</tr>" );    
 			out.print( "</table>\n");
@@ -143,7 +146,13 @@ public class TreeTag extends TagSupport {
         }
         return(EVAL_BODY_INCLUDE);
     }
-    
+    /**
+     * helping methode which references the one above
+     */
+    public int doStartTag() {
+        JspWriter out = pageContext.getOut();
+        return (doStartTag(out));
+    }
 	/**
 	 *  This methode generates the treestructure of the object recursivly.
 	 *  Normaly this methode should be called with a toplevel order ID for the parentID.
@@ -210,14 +219,10 @@ public class TreeTag extends TagSupport {
 					if (this.internalNodesIDs.contains(new Long(tempOrder.getId()))){
 						outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" " );
 						outPut.println("onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '"+ GlobalConstants.OPENICON + "');\"></td>");
-						//outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"><img src=\""+ GlobalConstants.ICONPATH + img_folder + "\"</img></td>");  
 					} else {
 						outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\">&nbsp;</td>" );
-						//outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"><img src=\""+ GlobalConstants.ICONPATH + img_folder + "\"</img></td>");  
 					}
-
 		  			outPut.println("<td class=\"noBborderStyle\"  " + colorForInvalidSubs + " nowrap align=\"left\"><b>" +  buttonText + "</b></td>");
-					
 					if (tempChangeFunctionString.length() > 0
 							&& tempBoolean
 							&& tempDeleteFunctionString.length() >0 ){
@@ -231,13 +236,11 @@ public class TreeTag extends TagSupport {
 					} else{
 						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <img id=\"img1\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.NOTALLOWED + "\" border=\"0\" </td>");
 					}
-					
 					if (tempDeleteFunctionString.length() >0 
 							&& tempBoolean){	
 						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.DELETEICON + "\" border=\"0\" " );
 						outPut.println(" onclick=\"" + tempDeleteFunctionString + "\";></td>");
 					}
-					
 		  			outPut.println("\n</tr></TABLE>\n" );  
 		  			outPut.println("<span id=\"span" + name + "\" class=\"clsHide\">\n");
 		  			generateTreeRecursivly(tempOrder.getId(), thisLevel, outPut, tempBoolean );
@@ -248,12 +251,12 @@ public class TreeTag extends TagSupport {
 			}
 		}
 	}
-
-	public int doEndTag() {
-        JspWriter out = pageContext.getOut();
-        return (doEndTag(out));
-    }
-    
+	
+    /**
+     * Methode which ends the tag
+     * @param out
+     * @return
+     */
     public int doEndTag(JspWriter out) {
         try {
         	out.print("");
@@ -261,6 +264,13 @@ public class TreeTag extends TagSupport {
             System.out.println("Error in TreeTag: " + ioe);
         }
         return(EVAL_PAGE); 
+    }
+    /**
+	 *  Methode which ends the tag, using the one above
+	 */
+	public int doEndTag() {
+        JspWriter out = pageContext.getOut();
+        return (doEndTag(out));
     }
 
     /**
