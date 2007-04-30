@@ -119,12 +119,12 @@ public class TreeTag extends TagSupport {
 			if (onlySuborders != true 
 					&& this.changeFunctionString!=null 
 					&& !this.changeFunctionString.equals("")){
-				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\">" + mainProject.getSignAndDescription() + "</td>");
+				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"><b>" + mainProject.getSignAndDescription() + "</b></td>");
 				out.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" " );
 				out.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
 			
 			}else{
-				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"> " + mainProject.getSignAndDescription());
+				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"> <b>" + mainProject.getSignAndDescription() +"</b>");
 			}
 				
 			out.print(" </td>");
@@ -168,6 +168,15 @@ public class TreeTag extends TagSupport {
 							&& tempOrder.getCustomerorder().getId() == parentID  // -->  This case is leaf which has the main project as parent
 							&& thisLevel == 1)){
 				// some things must be prepaired
+				String colorForInvalidSubs = "";
+				//--------------------------------------------------------------------------------
+				//
+				//     This is the part which must changed to realize different views for valid 
+				//     and deprecated suborders!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+				//
+				//--------------------------------------------------------------------------------
+				if (!(tempOrder.getCurrentlyValid()))
+					colorForInvalidSubs = " style=\"color:gray\" ";
 				boolean tempBoolean = true;
 				if (enabled == false || this.currentSuborderID == tempOrder.getId())
 						tempBoolean = false; 
@@ -207,7 +216,7 @@ public class TreeTag extends TagSupport {
 						//outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"><img src=\""+ GlobalConstants.ICONPATH + img_folder + "\"</img></td>");  
 					}
 
-		  			outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\">" +  buttonText + "</td>");
+		  			outPut.println("<td class=\"noBborderStyle\"  " + colorForInvalidSubs + " nowrap align=\"left\"><b>" +  buttonText + "</b></td>");
 					
 					if (tempChangeFunctionString.length() > 0
 							&& tempBoolean
