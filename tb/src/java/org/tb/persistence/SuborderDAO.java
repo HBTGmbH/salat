@@ -109,7 +109,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 				"and eo.employeecontract_id = ?" +
 				"and so.customerorder_id = ?" +
 				"and eo.fromdate < ? " +
-				"and (eo.untildate = null " +
+				"and (eo.untildate is null " +
 					"or eo.untildate > ?) " +
 				"order by so.sign asc, so.description")
 				.addEntity("so", Suborder.class)

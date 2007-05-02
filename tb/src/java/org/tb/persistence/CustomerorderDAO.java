@@ -258,9 +258,9 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 				"where so.id = eo.suborder_id " +
 				"and co.id = so.customerorder_id " +
 				"and eo.employeecontract_id = ?" +
-				"and eo.fromdate < ? " +
-				"and (eo.untildate = null " +
-					"or eo.untildate > ?) " +
+				"and eo.fromdate <= ? " +
+				"and (eo.untildate is null " +
+					"or eo.untildate >= ?) " +
 				"order by co.sign asc, co.description")
 				.addEntity("co", Customerorder.class)
 				.setLong(0, employeeContractId)

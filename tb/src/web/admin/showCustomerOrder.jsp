@@ -111,7 +111,7 @@
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.ordernumber.text" />"><b><bean:message
-			key="main.customerorder.sign.text" /></b></th>
+			key="main.customerorder.order.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.description.text" />"><b><bean:message

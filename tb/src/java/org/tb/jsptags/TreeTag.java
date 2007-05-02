@@ -89,9 +89,9 @@ public class TreeTag extends TagSupport {
 	 * This methode is called from the jsp to produce some output on it.
 	 * In this case, the root and all children must be created for an order.
 	 * The methode does the steps in the following order:
-	 *  - prepaire the jsp and some values (randomizer and function name on jsp)
+	 *  - prepare the jsp and some values (randomizer and function name on jsp)
 	 * 	- prepare entries which should be printed bold
-	 * 	- prepaire entries which are no parents (leafs)
+	 * 	- prepare entries which are no parents (leafs)
 	 *  - build the root of the tree view
 	 *  - build all children recursivly
 	 *  
@@ -234,7 +234,7 @@ public class TreeTag extends TagSupport {
 						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" " );
 						outPut.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
 					} else{
-						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <img id=\"img1\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.NOTALLOWED + "\" border=\"0\" </td>");
+						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <img id=\"img1\" height=\"12px\" width=\"12px\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.NOTALLOWED + "\" border=\"0\" </td>");
 					}
 					if (tempDeleteFunctionString.length() >0 
 							&& tempBoolean){	
