@@ -13,7 +13,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
@@ -101,16 +100,18 @@ public class EditDailyReportAction extends DailyReportAction {
 									AddDailyReportForm reportForm, Timereport tr) {
 		
 		Employeecontract ec = tr.getEmployeecontract();
-		Employee theEmployee = ec.getEmployee();
+//		Employee theEmployee = ec.getEmployee();
+		
+		Date utilDate = new Date(tr.getReferenceday().getRefdate().getTime()); // convert to java.util.Date
 		
 //		List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractId(ec.getId());
-		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+		List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
 		List<Suborder> theSuborders = new ArrayList<Suborder>();
 		if ((orders != null) && (!orders.isEmpty())) {
 			reportForm.setOrder(orders.get(0).getSign());
 			reportForm.setOrderId(orders.get(0).getId());
 			theSuborders = 
-				suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId());
+				suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getEmployeeorder().getSuborder().getCustomerorder().getId(),utilDate);
 			if ((theSuborders == null) || (theSuborders.isEmpty())) {
 				request.setAttribute("errorMessage", 
 						"Orders/suborders inconsistent for employee - please call system administrator.");
@@ -124,9 +125,9 @@ public class EditDailyReportAction extends DailyReportAction {
 		
 		
 //		 prepare second collection of suborders sorted by description
-		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
-		subordersByDescription.addAll(theSuborders);
-		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+//		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+//		subordersByDescription.addAll(theSuborders);
+//		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
 		
 //		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
 //		request.getSession().setAttribute("employees", employeeOptionList);
@@ -137,14 +138,15 @@ public class EditDailyReportAction extends DailyReportAction {
 		request.getSession().setAttribute("trId", tr.getId());
 		request.getSession().setAttribute("orders", orders);
 		request.getSession().setAttribute("suborders", theSuborders);
-		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+		request.getSession().setAttribute("currentSuborderId", tr.getEmployeeorder().getSuborder().getId());
+//		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 		request.getSession().setAttribute("serialBookings", getSerialDayList());
 		
 		
 		reportForm.reset(mapping, request);
 //		reportForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());
 		reportForm.setEmployeeContractId(ec.getId());
-		Date utilDate = new Date(tr.getReferenceday().getRefdate().getTime()); // convert to java.util.Date
+		
 		
 		reportForm.setReferenceday(DateUtils.getSqlDateString(utilDate));
 		java.sql.Date reportDate = tr.getReferenceday().getRefdate();
@@ -194,16 +196,16 @@ public class EditDailyReportAction extends DailyReportAction {
 				reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
 				reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());	
 
-				theSuborders = tr.getSuborder().getCustomerorder().getSuborders();
+//				theSuborders = tr.getSuborder().getCustomerorder().getSuborders();
 				
 //				 prepare second collection of suborders sorted by description
-				subordersByDescription.clear();
-				subordersByDescription.addAll(theSuborders);
-				Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+//				subordersByDescription.clear();
+//				subordersByDescription.addAll(theSuborders);
+//				Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
 				
-				request.getSession().setAttribute("currentSuborderId", tr.getSuborder().getId());
-				request.getSession().setAttribute("suborders", tr.getSuborder().getCustomerorder().getSuborders());
-				request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+//				request.getSession().setAttribute("currentSuborderId", tr.getSuborder().getId());
+//				request.getSession().setAttribute("suborders", tr.getSuborder().getCustomerorder().getSuborders());
+//				request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 			}
 			reportForm.setCosts(tr.getCosts());		
 			reportForm.setStatus(tr.getStatus());

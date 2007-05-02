@@ -125,18 +125,31 @@
 
 <table class="center backgroundcolor">
 	<bean:size id="employeeordersSize" name="employeeorders" />
+	<c:if test="${employeeAuthorized}">
+		<html:form action="/ShowEmployeeorder?task=adjustDates">
+			<tr>
+				<td class="noBborderStyle" colspan="4">
+					<html:submit styleId="button" 
+						titleKey="main.general.button.adjustemployeeorder.alttext.text">
+						<bean:message key="main.general.button.adjustemployeeorder.text" />
+					</html:submit>
+				</td>
+			</tr>
+		</html:form>	
+	</c:if>
 	<c:if test="${employeeordersSize>10}">
 		<c:if test="${employeeAuthorized || employeeIsResponsible}">
 			<tr>
 				<html:form action="/CreateEmployeeorder">
 					<td class="noBborderStyle" colspan="4"><html:submit
-						styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
-						<bean:message key="main.general.button.createemployeeorder.text" />
-					</html:submit></td>
+							styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
+							<bean:message key="main.general.button.createemployeeorder.text" />
+						</html:submit>						
+					</td>
 				</html:form>
 			</tr>
 		</c:if>
-	</c:if>
+	</c:if>	
 	<tr>
 		<th align="left"
 			title="Info"><b>Info</b></th>

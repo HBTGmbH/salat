@@ -98,7 +98,11 @@ public class CreateDailyReportAction extends DailyReportAction {
 		List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeecontracts);
 		
-		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+//		 get selcted date for new report
+		Date selectedDate = getSelectedDateFromRequest(request);
+		
+		
+		List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
 	
 		// set attributes to be analyzed by target jsp
 		request.getSession().setAttribute("orders", orders);		
@@ -112,10 +116,6 @@ public class CreateDailyReportAction extends DailyReportAction {
 		
 		
 		TimereportHelper th = new TimereportHelper();
-	
-		
-		// get selcted date for new report
-		Date selectedDate = getSelectedDateFromRequest(request);
 		
 		// search for adequate workingday and set status in session
 		java.sql.Date currentDate = DateUtils.getSqlDate(selectedDate);
@@ -189,7 +189,7 @@ public class CreateDailyReportAction extends DailyReportAction {
 			reportForm.setOrder(orders.get(0).getSign());
 			reportForm.setOrderId(orders.get(0).getId());
 			theSuborders = 
-				suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId());
+				suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(), selectedDate);
 			if ((theSuborders == null) || (theSuborders.isEmpty())) {
 				request.setAttribute("errorMessage", 
 						"Orders/suborders inconsistent for employee - please call system administrator.");

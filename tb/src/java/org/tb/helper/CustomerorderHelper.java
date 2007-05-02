@@ -44,14 +44,14 @@ public class CustomerorderHelper {
 	public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
 			CustomerorderDAO cd, EmployeeDAO ed, EmployeecontractDAO ecd, SuborderDAO sd) {
 		
-//		String dateString = reportForm.getReferenceday();
-//		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//		Date date;
-//		try {
-//			date = simpleDateFormat.parse(dateString);
-//		} catch (Exception e) {
-//			throw new RuntimeException("error wile parsing date");
-//		}		
+		String dateString = reportForm.getReferenceday();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date date;
+		try {
+			date = simpleDateFormat.parse(dateString);
+		} catch (Exception e) {
+			throw new RuntimeException("error while parsing date");
+		}		
 //		Employeecontract ec = ecd.getEmployeeContractByIdAndDate(reportForm.getEmployeeContractId(), date);		
 		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 //		Date ec1beginn = ec.getValidFrom();
@@ -79,14 +79,23 @@ public class CustomerorderHelper {
 //		ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 
 		// get orders related to employee
-		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());
+//		List<Customerorder> orders = cd.getCustomerordersByEmployeeContractId(ec.getId());
+		List<Customerorder> orders = cd.getCustomerordersWithValidEmployeeOrders(ec.getId(), date);
+
+		if ((orders == null) || (orders.size() <= 0)) {
+			request.setAttribute("errorMessage", 
+					"No orders found for employee - please call system administrator.");
+			return false;
+		}
+		
 		request.getSession().setAttribute("orders", orders);
 		
 		Customerorder customerorder = cd.getCustomerorderById(reportForm.getOrderId());
 		Long suborderId;
 		List<Suborder> theSuborders;
 		if (customerorder != null && orders.contains(customerorder)) {
-			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorder.getId());
+			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(),date);
+//			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorder.getId());
 			Suborder suborder = sd.getSuborderById(reportForm.getSuborderSignId());
 			if (suborder != null && theSuborders.contains(suborder)) {
 				suborderId = suborder.getId();
@@ -95,15 +104,12 @@ public class CustomerorderHelper {
 			}
 		} else {
 			customerorder = orders.get(0);
-			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorder.getId());
+			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(),date);
+//			theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorder.getId());
 			suborderId = theSuborders.get(0).getId();
 		}
 		
-		if ((orders == null) || (orders.size() <= 0)) {
-			request.setAttribute("errorMessage", 
-					"No orders found for employee - please call system administrator.");
-			return false;
-		}
+		
 		
 		// set form entries
 		reportForm.setOrderId(customerorder.getId());
@@ -119,11 +125,11 @@ public class CustomerorderHelper {
 //		List<Suborder> theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId);
 		
 //		 prepare second collection of suborders sorted by description
-		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
-		subordersByDescription.addAll(theSuborders);
-		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+//		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+//		subordersByDescription.addAll(theSuborders);
+//		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
 		request.getSession().setAttribute("suborders", theSuborders);
-		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+//		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 
 		return true;		
 	}

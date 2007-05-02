@@ -253,6 +253,22 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 		return allCustomerorders;
 	}
 	
+	public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, Date date) {
+		return getSession().createSQLQuery("select distinct {co.*} from customerorder co, employeeorder eo, suborder so " +
+				"where so.id = eo.suborder_id " +
+				"and co.id = so.customerorder_id " +
+				"and eo.employeecontract_id = ?" +
+				"and eo.fromdate < ? " +
+				"and (eo.untildate = null " +
+					"or eo.untildate > ?) " +
+				"order by co.sign asc, co.description")
+				.addEntity("co", Customerorder.class)
+				.setLong(0, employeeContractId)
+				.setDate(1, date)
+				.setDate(2, date)
+				.list();
+	}
+	
 	/**
 	 * Calls {@link CustomerorderDAO#save(Customerorder, Employee)} with {@link Employee} = null.
 	 * @param co

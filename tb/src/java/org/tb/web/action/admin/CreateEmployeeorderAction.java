@@ -132,10 +132,21 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		List<Suborder> theSuborders = new ArrayList<Suborder>();
 		request.getSession().setAttribute("suborders", theSuborders);
 		if ((orders != null) && (orders.size() > 0)) {
-			employeeOrderForm.setOrder(orders.get(0).getSign());
-			employeeOrderForm.setOrderId(orders.get(0).getId());
+			
+			Customerorder selectedCustomerorder = null;
+			
+			Long orderId = (Long) request.getSession().getAttribute("currentOrderId");
+			Customerorder customerOrderFromFilter = customerorderDAO.getCustomerorderById(orderId);
+			if (orders.contains(customerOrderFromFilter)) {
+				selectedCustomerorder = customerOrderFromFilter;
+			} else {
+				selectedCustomerorder = orders.get(0);
+			}
+			
+			employeeOrderForm.setOrder(selectedCustomerorder.getSign());
+			employeeOrderForm.setOrderId(selectedCustomerorder.getId());
 		
-			List<Suborder> suborders = orders.get(0).getSuborders();
+			List<Suborder> suborders = selectedCustomerorder.getSuborders();
 			// remove hidden suborders
 			Iterator<Suborder> suborderIterator = suborders.iterator();
 			while (suborderIterator.hasNext()) {
@@ -149,9 +160,9 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			if (suborders != null && !suborders.isEmpty()) {
 				request.getSession().setAttribute("selectedsuborder", suborders.get(0));
 			}
-			if ((orders.get(0).getSuborders() != null) && (orders.get(0).getSuborders().size() > 0)) {
-				employeeOrderForm.setSuborder(orders.get(0).getSuborders().get(0).getSign());
-				employeeOrderForm.setSuborderId(orders.get(0).getSuborders().get(0).getId());
+			if ((selectedCustomerorder.getSuborders() != null) && (selectedCustomerorder.getSuborders().size() > 0)) {
+				employeeOrderForm.setSuborder(selectedCustomerorder.getSuborders().get(0).getSign());
+				employeeOrderForm.setSuborderId(selectedCustomerorder.getSuborders().get(0).getId());
 			}			
 		}
 		

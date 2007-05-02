@@ -73,6 +73,10 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
 		// reset/init form entries
 		employeeContractForm.reset(mapping, request);
 		
+		// use employee from overview filter
+		Long filterEmployeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
+		employeeContractForm.setEmployee(filterEmployeeId);
+		
 		// make sure, no ecId still exists in session
 		request.getSession().removeAttribute("ecId");
 		

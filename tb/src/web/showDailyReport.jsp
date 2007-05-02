@@ -169,12 +169,12 @@
 							 / 
 							<html:select
 								property="suborderId"
-								onchange="setUpdateTimereportsAction(this.form)">
+								onchange="setUpdateTimereportsAction(this.form)" value="${suborderFilerId}">
 								<html:option value="-1">
 									<bean:message key="main.general.allsuborders.text" />
 								</html:option>
 								<html:options collection="suborders" labelProperty="signAndDescription"
-									property="id" />							
+									property="id"/>							
 							</html:select>						
 						</c:if>
 					</c:forEach>

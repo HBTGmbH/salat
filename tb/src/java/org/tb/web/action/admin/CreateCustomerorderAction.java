@@ -46,7 +46,12 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
-//		 remove list with timereports out of range
+		// form presettings
+		AddCustomerOrderForm addForm = (AddCustomerOrderForm) form;
+		Long customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
+		addForm.setCustomerId(customerId);
+		
+		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
 		
 		AddCustomerOrderForm customerOrderForm = (AddCustomerOrderForm) form;

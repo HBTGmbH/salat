@@ -3,8 +3,6 @@ package org.tb.web.action;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,16 +24,13 @@ import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
-import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
 import org.tb.helper.CustomerorderHelper;
-import org.tb.helper.EmployeeHelper;
 import org.tb.helper.SuborderHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.ReferencedayDAO;
@@ -165,6 +160,16 @@ public class StoreDailyReportAction extends DailyReportAction {
 			
 			if (((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("adjustBeginTime"))) || refreshTime) {
+				
+				// refresh orders to be displayed in the select menu
+				CustomerorderHelper ch = new CustomerorderHelper();
+				if (ch.refreshOrders(mapping, request, reportForm,
+						customerorderDAO, employeeDAO, employeecontractDAO, suborderDAO) != true) {
+					return mapping.findForward("error");
+				}
+				
+				
+				
 				// refresh begin time to be displayed
 				refreshTime = false;
 				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 
@@ -505,11 +510,12 @@ public class StoreDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setEmployeeContractId(ec.getId());
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
 				showDailyReportForm.setOrder((String)request.getSession().getAttribute("lastOrder"));
-				showDailyReportForm.setSuborderId((Long)request.getSession().getAttribute("currentSuborderId"));
+				showDailyReportForm.setSuborderId(tr.getEmployeeorder().getSuborder().getId());
 				
 				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
 				reports = (List<Timereport>) request.getSession().getAttribute("timereports");
 				
+				request.getSession().setAttribute("suborderFilerId", tr.getEmployeeorder().getSuborder().getId());
 				
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
@@ -619,8 +625,19 @@ public class StoreDailyReportAction extends DailyReportAction {
 		request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 		request.getSession().setAttribute("currentEmployeeContract", loginEmployeeContract);
 		
-		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
-		request.getSession().setAttribute("orders", customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId()));
+		String dateString = reportForm.getReferenceday();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		java.util.Date date;
+		try {
+			date = simpleDateFormat.parse(dateString);
+		} catch (Exception e) {
+			throw new RuntimeException("error while parsing date");
+		}
+		
+//		List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+		List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), date);
+		
+		request.getSession().setAttribute("orders", orders);
 		
 		request.getSession().setAttribute("report", "W");
 		
@@ -630,12 +647,17 @@ public class StoreDailyReportAction extends DailyReportAction {
 			reportForm.setOrderId(orders.get(0).getId());
 			
 			// prepare second collection of suborders sorted by description
-			List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId());
-			List<Suborder> subordersByDescription = new ArrayList<Suborder>();
-			subordersByDescription.addAll(theSuborders);
-			Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+//			List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orders.get(0).getId());
+			List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(),date);
+//			List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+//			subordersByDescription.addAll(theSuborders);
+//			Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
 			request.getSession().setAttribute("suborders", theSuborders);
-			request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+//			request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+		} else {
+			request.setAttribute("errorMessage", 
+				"No orders found for employee - please call system administrator.");
+			mapping.findForward("error");
 		}
 		request.getSession().removeAttribute("trId");
 	}

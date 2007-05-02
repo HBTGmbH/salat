@@ -21,7 +21,7 @@ import org.tb.web.form.AddSuborderForm;
 /**
  * action class for creating a new suborder
  * 
- * @author oda
+ * @author oda, th
  *
  */
 public class CreateSuborderAction extends LoginRequiredAction {
@@ -74,6 +74,10 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		request.getSession().setAttribute("suborders", suborders);
 		request.getSession().setAttribute("invoice", "J");
 		
+		// use customer order from filter
+		Long customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
+		suborderForm.setCustomerorderId(customerOrderId);
+		
 		// use last customer order als default if present
 		if (request.getSession().getAttribute("lastCoId") != null) {
 			long id = (Long) request.getSession().getAttribute("lastCoId");
@@ -91,7 +95,6 @@ public class CreateSuborderAction extends LoginRequiredAction {
 				request.getSession().setAttribute("currentOrderId", new Long(customerorders.get(0).getId()));
 				request.getSession().setAttribute("currentOrder", customerorders.get(0));
 			}
-			Long customerOrderId = suborderForm.getCustomerorderId();
 			
 			Customerorder customerorder;
 			
@@ -119,6 +122,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 				suborderForm.setValidUntil("");
 			}
 			suborderForm.setHide(customerorder.getHide());
+			
 			
 		}
 		

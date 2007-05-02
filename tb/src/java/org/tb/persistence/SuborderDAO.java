@@ -103,6 +103,23 @@ public class SuborderDAO extends HibernateDaoSupport {
 		return allSuborders;
 	}
 	
+	public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long ecId, long coId, Date date) {
+		return getSession().createSQLQuery("select distinct {so.*} from suborder so, employeeorder eo " +
+				"where so.id = eo.suborder_id " +
+				"and eo.employeecontract_id = ?" +
+				"and so.customerorder_id = ?" +
+				"and eo.fromdate < ? " +
+				"and (eo.untildate = null " +
+					"or eo.untildate > ?) " +
+				"order by so.sign asc, so.description")
+				.addEntity("so", Suborder.class)
+				.setLong(0, ecId)
+				.setLong(1, coId)
+				.setDate(2, date)
+				.setDate(3, date)
+				.list();
+	}
+	
 	
 	/**
 	 * Gets a list of Suborders by customer order id.

@@ -228,7 +228,9 @@ public class ShowDailyReportAction extends DailyReportAction {
 					request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
 					request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
 					request.getSession().setAttribute("currentEmployeeContract", employeecontract);
-				}	
+				}
+				
+				request.getSession().setAttribute("suborderFilerId", reportForm.getSuborderId());
 			
 				// refresh workingday				
 				Workingday workingday;

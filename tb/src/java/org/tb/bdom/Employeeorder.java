@@ -11,6 +11,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import org.apache.naming.java.javaURLContextFactory;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 
@@ -229,7 +230,8 @@ public class Employeeorder implements Serializable {
 	 */
 	public boolean getCurrentlyValid() {
 		java.util.Date now = new java.util.Date();
-		if (!now.before(getFromDate()) && (getUntilDate() == null || !now.after(getUntilDate()))){
+		java.sql.Date nowSqlDate = new java.sql.Date(now.getTime());
+		if (!nowSqlDate.before(getFromDate()) && (getUntilDate() == null || !nowSqlDate.after(getUntilDate()))){
 			return true;
 		}
 		return false;

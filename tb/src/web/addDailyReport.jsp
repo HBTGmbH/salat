@@ -173,26 +173,7 @@
 				property="serialbooking" /></span></td>
 			
 		</tr>
-		<!-- 
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.timereport.sortofreport.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="sortOfReport"
-				onchange="setUpdateSortofreportAction(this.form)">
-				<html:option value="W">
-					<bean:message key="main.timereport.select.work.text" />
-				</html:option>
-				<html:option value="V">
-					<bean:message key="main.timereport.select.vacation.text" />
-				</html:option>
-				<html:option value="S">
-					<bean:message key="main.timereport.select.sickness.text" />
-				</html:option>
-			</html:select> <span style="color:red"><html:errors property="sortOfReport" /></span>
-			</td>
-		</tr>
-		-->
+		
 
 		<logic:equal name="report" value="W" scope="session">
 			<tr>
@@ -206,14 +187,9 @@
 				</html:select> <b> / </b> <html:select property="suborderSignId"
 					styleClass="mandatory" value="${currentSuborderId}"
 					onchange="adjustSuborderSignChangedAction(this.form)">
-					<html:options collection="suborders" labelProperty="sign"
+					<html:options collection="suborders" labelProperty="signAndDescription"
 						property="id" />
-				</html:select> <html:select property="suborderDescriptionId"
-					styleClass="mandatory" value="${currentSuborderId}"
-					onchange="adjustSuborderDescriptionChangedAction(this.form)">
-					<html:options collection="subordersByDescription"
-						labelProperty="shortdescription" property="id" />
-				</html:select> <span style="color:red"><html:errors property="orderId" /></span> <span
+				</html:select><span style="color:red"><html:errors property="orderId" /></span> <span
 					style="color:red"><html:errors property="suborderId" /></span></td>
 			</tr>
 			<c:if test="${workingDayIsAvailable}">

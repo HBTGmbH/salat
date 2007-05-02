@@ -11,9 +11,12 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Timereport;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.form.ShowEmployeeOrderForm;
 
 /**
@@ -27,6 +30,11 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeecontractDAO employeecontractDAO;
 	private CustomerorderDAO customerorderDAO;
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 	
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
@@ -46,7 +54,53 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 			HttpServletResponse response) {
 		
 		ShowEmployeeOrderForm orderForm = (ShowEmployeeOrderForm) form;
-				
+		
+		if (request.getParameter("task") != null && request.getParameter("task").equalsIgnoreCase("adjustDates")) {
+			List<Employeeorder> employeeOrders = (List<Employeeorder>) request.getSession().getAttribute("employeeorders");			
+			for (Employeeorder employeeorder : employeeOrders) {
+				if (!employeeorder.getFitsToSuperiorObjects()) {
+					// adjust dates for employeeorders
+					boolean changed = false;
+					// 1) adjust to employeecontract
+					// 1.1) begin
+					if (employeeorder.getFromDate().before(employeeorder.getEmployeecontract().getValidFrom())) {
+						employeeorder.setFromDate(employeeorder.getEmployeecontract().getValidFrom());
+						changed = true;
+					}
+					// 1.2) end
+					if (employeeorder.getEmployeecontract().getValidUntil() != null && 
+						(employeeorder.getUntilDate() == null || 
+						 employeeorder.getUntilDate().after(employeeorder.getEmployeecontract().getValidUntil()))) {
+						employeeorder.setUntilDate(employeeorder.getEmployeecontract().getValidUntil());
+						changed = true;
+					}
+					// 2) adjust to suborder
+					// 2.1) begin
+					if (employeeorder.getFromDate().before(employeeorder.getSuborder().getFromDate())) {
+						employeeorder.setFromDate(employeeorder.getSuborder().getFromDate());
+						changed = true;
+					}
+					// 2.2) end
+					if (employeeorder.getSuborder().getUntilDate() != null && 
+						(employeeorder.getUntilDate() == null || 
+						 employeeorder.getUntilDate().after(employeeorder.getSuborder().getUntilDate()))) {
+						employeeorder.setUntilDate(employeeorder.getSuborder().getUntilDate());
+						changed = true;
+					}
+					// 3) begin after end now?
+					if (changed && !employeeorder.getFromDate().after(employeeorder.getUntilDate())) {
+						// 4) timereports out of range?
+						List<Timereport> timereportsInvalidForDates = timereportDAO.
+							getTimereportsByEmployeeorderIdInvalidForDates(employeeorder.getFromDate(), employeeorder.getUntilDate(), employeeorder.getId());
+						if (timereportsInvalidForDates == null || timereportsInvalidForDates.isEmpty()) {
+							Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+							employeeorderDAO.save(employeeorder, loginEmployee);
+						}
+					}					
+				}
+			}
+		}
+		
 		// get valid employeecontracts
 		List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeeContracts);

@@ -1,7 +1,9 @@
 package org.tb.helper;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,7 +39,7 @@ public class SuborderHelper {
 	public boolean refreshSuborders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
 			SuborderDAO sd, EmployeecontractDAO ecd) {
 
-		EmployeeHelper eh = new EmployeeHelper();
+//		EmployeeHelper eh = new EmployeeHelper();
 //		String[] firstAndLast = eh.splitEmployeename(reportForm.getEmployeename());
 //		Employeecontract ec = ecd.getEmployeeContractByEmployeeName(firstAndLast[0], firstAndLast[1]);
 		
@@ -49,16 +51,25 @@ public class SuborderHelper {
 			return false;
 		}
 		
+		String dateString = reportForm.getReferenceday();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date date;
+		try {
+			date = simpleDateFormat.parse(dateString);
+		} catch (Exception e) {
+			throw new RuntimeException("error while parsing date");
+		}
+		
 		// get suborders related to employee AND selected customer order...
 		long customerorderId = reportForm.getOrderId();
-		List<Suborder> theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId);
+		List<Suborder> theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorderId,date);
 		
 //		 prepare second collection of suborders sorted by description
-		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
-		subordersByDescription.addAll(theSuborders);
-		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+//		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
+//		subordersByDescription.addAll(theSuborders);
+//		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
 		request.getSession().setAttribute("suborders", theSuborders);
-		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
+//		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
 //		 get first Suborder to synchronize suborder lists
 		Suborder so = theSuborders.get(0);
 		request.getSession().setAttribute("currentSuborderId", so.getId());
