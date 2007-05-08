@@ -452,6 +452,11 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("lastMonth", monthString);
 				request.getSession().setAttribute("lastYear", yearString);
 				
+				// set in form
+				reportForm.setDay(dayString);
+				reportForm.setMonth(monthString);
+				reportForm.setYear(yearString);
+				
 				String sqlDateString = yearString + "-" + 
 					DateUtils.getMonthMMStringFromShortstring(monthString) + "-" + dayString;
 				java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);	
