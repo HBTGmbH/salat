@@ -352,9 +352,9 @@ public class TimereportDAO extends HibernateDaoSupport {
 	public List<Timereport> getTimereportsByDatesAndEmployeeContractId(long contractId, java.sql.Date begin, java.sql.Date end) {	
 		List<Timereport> allTimereports;
 		if (begin.compareTo(end) == 0) {
-			allTimereports = getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by employeecontract.employee.sign asc, referenceday.refdate asc, sequencenumber asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).list();
+			allTimereports = getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by t.employeecontract.employee.sign asc, t.referenceday.refdate asc, t.sequencenumber asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).list();
 		} else {
-			allTimereports = getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by employeecontract.employee.sign asc, referenceday.refdate asc, suborder.customerorder.sign asc, suborder.sign asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).list();
+			allTimereports = getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? order by t.employeecontract.employee.sign asc, t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc").setLong(0, contractId).setDate(1, begin).setDate(2, end).list();
 		}
 		return allTimereports;
 	}
@@ -711,20 +711,27 @@ public class TimereportDAO extends HibernateDaoSupport {
 	 * 
 	 */
 	public boolean deleteTimereportById(long trId) {
-		List<Timereport> allTimereports = getTimereports();
+//		List<Timereport> allTimereports = getTimereports();
 		Timereport trToDelete = getTimereportById(trId);
 		boolean trDeleted = false;
 		
-		for (Iterator iter = allTimereports.iterator(); iter.hasNext();) {
-			Timereport tr = (Timereport) iter.next();
-			if(tr.getId() == trToDelete.getId()) {
-				Session session = getSession();
-				session.delete(trToDelete);
-				session.flush();
-				trDeleted = true;
-				break;
-			}
+		if (trToDelete != null) {
+			Session session = getSession();
+			session.delete(trToDelete);
+			session.flush();
+			trDeleted = true;
 		}
+		
+//		for (Iterator iter = allTimereports.iterator(); iter.hasNext();) {
+//			Timereport tr = (Timereport) iter.next();
+//			if(tr.getId() == trToDelete.getId()) {
+//				Session session = getSession();
+//				session.delete(trToDelete);
+//				session.flush();
+//				trDeleted = true;
+//				break;
+//			}
+//		}
 		
 		return trDeleted;
 	}
