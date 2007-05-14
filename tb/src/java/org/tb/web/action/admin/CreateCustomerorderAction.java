@@ -49,6 +49,9 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 		// form presettings
 		AddCustomerOrderForm addForm = (AddCustomerOrderForm) form;
 		Long customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
+		if (customerId == null) {
+			customerId = 0l;
+		}
 		addForm.setCustomerId(customerId);
 		
 		// remove list with timereports out of range

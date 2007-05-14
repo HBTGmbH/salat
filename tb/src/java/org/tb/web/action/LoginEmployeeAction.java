@@ -93,6 +93,17 @@ public class LoginEmployeeAction extends Action {
 			//return mapping.findForward("error");
 		}
 		
+		// check if user is intern or extern
+		String clientIP = request.getRemoteHost();
+		Boolean intern = false;
+		if (clientIP.startsWith("10.") ||
+			clientIP.startsWith("192.168.") ||
+			clientIP.startsWith("172.16.") ||
+			clientIP.startsWith("127.0.0.")) {
+			intern = true;
+		}
+		request.getSession().setAttribute("clientIntern", intern);
+		
 		Date date = new Date();
 		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
 		if(employeecontract == null && !(loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {

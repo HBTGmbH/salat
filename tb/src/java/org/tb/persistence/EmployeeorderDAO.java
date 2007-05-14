@@ -1,6 +1,5 @@
 package org.tb.persistence;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -9,7 +8,6 @@ import java.util.List;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.EmployeeOrderComparator;
@@ -65,7 +63,17 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	 * @return
 	 */
 	public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(long employeecontractId, String customerOrderSign, java.sql.Date date) {
-		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.customerorder.sign = ? and fromdate <= ? and untildate >= ? ").setLong(0, employeecontractId).setString(1, customerOrderSign).setDate(2, date).setDate(3, date).list();
+		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo " +
+				"where eo.employeecontract.id = ? " +
+				"and eo.suborder.customerorder.sign = ? " +
+				"and fromdate <= ? " +
+				"and (untildate is null " +
+					"or untildate >= ? )")
+				.setLong(0, employeecontractId)
+				.setString(1, customerOrderSign)
+				.setDate(2, date)
+				.setDate(3, date)
+				.list();
 
 	}
 	
@@ -169,6 +177,15 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	 */
 	public List<Employeeorder> getEmployeeordersByOrderId(long orderId) {
 		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).list();
+	}
+	
+	/**
+	 * 
+	 * @param eocId The id of the associated {@link EmployeeOrderContent}
+	 * @return Returns the {@link Employeeorder} associated to the given eocId.
+	 */
+	public Employeeorder getEmployeeOrderByContentId(long eocId) {
+		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.employeeOrderContent.id = ? ").setLong(0, eocId).uniqueResult();
 	}
 	
 //	/**

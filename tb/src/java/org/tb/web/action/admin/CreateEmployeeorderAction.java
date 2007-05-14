@@ -105,23 +105,11 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 					"No customerorders with valid suborders found - please call system administrator.");
 			return mapping.findForward("error");
 		}
-		request.getSession().setAttribute("orders", orders);
+//		request.getSession().setAttribute("orders", orders);
 		request.getSession().setAttribute("orderswithsuborders", orderswithsuborders);
-		
-		Customerorder firstCustomerorder = orderswithsuborders.get(0);
-		if (firstCustomerorder != null) {
-			request.getSession().setAttribute("selectedcustomerorder", firstCustomerorder);
-		}
-		
-		//List<Suborder> suborders = suborderDAO.getSuborders();
-		//request.getSession().setAttribute("suborders", suborders);
-		
+				
 		List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeorders();
 		request.getSession().setAttribute("employeeorders", employeeorders);
-
-		// reset/init form entries
-		employeeOrderForm.reset(mapping, request);
-		employeeOrderForm.useDatesFromCustomerOrder(firstCustomerorder);
 		
 		Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 		if (employeecontract != null) {
@@ -131,21 +119,28 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		//	init form with first order and corresponding suborders
 		List<Suborder> theSuborders = new ArrayList<Suborder>();
 		request.getSession().setAttribute("suborders", theSuborders);
-		if ((orders != null) && (orders.size() > 0)) {
+		if ((orderswithsuborders != null) && (orderswithsuborders.size() > 0)) {
 			
 			Customerorder selectedCustomerorder = null;
 			
 			Long orderId = (Long) request.getSession().getAttribute("currentOrderId");
 			Customerorder customerOrderFromFilter = customerorderDAO.getCustomerorderById(orderId);
-			if (orders.contains(customerOrderFromFilter)) {
+			if (orderswithsuborders.contains(customerOrderFromFilter)) {
 				selectedCustomerorder = customerOrderFromFilter;
 			} else {
-				selectedCustomerorder = orders.get(0);
+				selectedCustomerorder = orderswithsuborders.get(0);
 			}
+		
+			request.getSession().setAttribute("selectedcustomerorder", selectedCustomerorder);
+			
+			// reset/init form entries
+			employeeOrderForm.reset(mapping, request);
+			employeeOrderForm.useDatesFromCustomerOrder(selectedCustomerorder);
 			
 			employeeOrderForm.setOrder(selectedCustomerorder.getSign());
 			employeeOrderForm.setOrderId(selectedCustomerorder.getId());
-		
+			
+			
 			List<Suborder> suborders = selectedCustomerorder.getSuborders();
 			// remove hidden suborders
 			Iterator<Suborder> suborderIterator = suborders.iterator();

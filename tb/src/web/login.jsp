@@ -4,6 +4,7 @@
 	pageEncoding="ISO-8859-1"%>
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%
 java.util.Enumeration names = session.getAttributeNames();
 while(names.hasMoreElements()) {
@@ -95,7 +96,13 @@ while(names.hasMoreElements()) {
 			</td>
 		</tr>
 		<tr><td colspan="2" class="noBborderStyle"><font color="red"> </font>
-		</td></tr> 
+		</td></tr>
+		
+		<!-- debug info -->
+		<!--  
+		<tr><td colspan="2" class="noBborderStyle">Client: <c:out value="${pageContext.request.remoteAddr}" /></td></tr>
+		<tr><td colspan="2" class="noBborderStyle">Server: <c:out value="${pageContext.request.serverName}" />:<c:out value="${pageContext.request.serverPort}" /></td></tr> 
+		-->
 	</table>
 </html:form>
 </body>

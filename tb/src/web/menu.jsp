@@ -106,12 +106,18 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowSettings">
 			<bean:message key="main.general.mainmenu.settings.text" />
 		</html:link></li>
-		<li><html:link styleClass="menu" target="_blank" href="http://wiki/mediawiki/index.php/Benutzerhandbuch_SALAT">
-			<bean:message key="main.general.mainmenu.bhbintern.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" target="_blank" href="https://wiki.hbt.de/mediawiki/index.php/Benutzerhandbuch_SALAT">
-			<bean:message key="main.general.mainmenu.bhbextern.text" />
-		</html:link></li>
+		<c:choose>
+			<c:when test="${clientIntern}">
+				<li><html:link styleClass="menu" target="_blank" href="http://wiki/mediawiki/index.php/Benutzerhandbuch_SALAT">
+					<bean:message key="main.general.mainmenu.bhb.text" />
+				</html:link></li>
+			</c:when>
+			<c:otherwise>
+				<li><html:link styleClass="menu" target="_blank" href="https://wiki.hbt.de/mediawiki/index.php/Benutzerhandbuch_SALAT">
+					<bean:message key="main.general.mainmenu.bhb.text" />
+				</html:link></li>
+			</c:otherwise>
+		</c:choose>
 		<c:if test="${loginEmployee.sign == 'adm'}">
 			<li><html:link styleClass="menu" action="/ShowAdminOptions">
 				Admin
@@ -123,7 +129,7 @@ window.onload=startList;
 		<bean:message key="main.general.logout.text" /> (<c:out
 			value="${loginEmployee.loginname}" />/<c:out
 			value="${loginEmployee.status}" />)
-		</html:link></li>
+	</html:link></li>
 </ul>
 </div>
 <br>

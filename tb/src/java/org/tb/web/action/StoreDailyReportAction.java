@@ -856,7 +856,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				Date lastDate = new Date(dates.get(dates.size()-1).getTime());
 				
 				Employeeorder employeeorder = employeeorders.get(0);
-				if (lastDate.after(employeeorder.getUntilDate())) {
+				if (employeeorder.getUntilDate() != null && lastDate.after(employeeorder.getUntilDate())) {
 					errors.add("serialbooking", new ActionMessage("form.timereport.error.serialbooking.extendsemployeeorder"));
 				} else {
 					request.getSession().setAttribute("saveEmployeeOrder", employeeorders.get(0));
