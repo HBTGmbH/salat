@@ -73,7 +73,9 @@
 		<form-bean name="showReleaseForm"
 			type="org.tb.web.form.ShowReleaseForm" />
 		<form-bean name="showAdminOptionsForm"
-			type="org.tb.web.form.ShowAdminOptionsForm" />	
+			type="org.tb.web.form.ShowAdminOptionsForm" />
+		<form-bean name="addEmployeeOrderContentForm"
+			type="org.tb.web.form.AddEmployeeOrderContentForm" />	
 	</form-beans>
 
 
@@ -301,7 +303,8 @@
 		</action>
 
 		<action path="/DeleteEmployeeorder"
-			input="/admin/showEmployeeOrder.jsp" name="addEmployeeOrderForm">
+			input="/admin/showEmployeeOrder.jsp" 
+			name="addEmployeeOrderForm">
 			<forward name="success" path="/admin/showEmployeeOrder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -320,6 +323,21 @@
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addEmployeeOrder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
+		</action>
+		
+		<!-- EmployeeOrderContent -->
+		<action path="/EditEmployeeOrderContent"
+			name="addEmployeeOrderContentForm">
+			<forward name="success" path="/admin/addEmployeeOrderContent.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+		
+		<action path="/StoreEmployeeOrderContent"
+			input="/admin/addEmployeeOrderContent.jsp"
+			name="addEmployeeOrderContentForm">
+			<forward name="success" path="/admin/addEmployeeOrderContent.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+			<forward name="back" path="/admin/showEmployeeOrder.jsp" />
 		</action>
 
 		<!-- Employeecontract -->

@@ -10,8 +10,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 
-import org.apache.naming.java.javaURLContextFactory;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 
@@ -43,6 +43,12 @@ public class Employeeorder implements Serializable {
 	@JoinColumn(name="EMPLOYEECONTRACT_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employeecontract employeecontract;
+	
+	/** EmployeeOrderContent */
+	@OneToOne
+	@JoinColumn(name="EMPLOYEEORDERCONTENT_ID")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	private Employeeordercontent employeeOrderContent;
 	
 	/** sign of the employee order */
 	private String sign;
@@ -143,6 +149,20 @@ public class Employeeorder implements Serializable {
 
 	public void setSuborder(Suborder suborder) {
 		this.suborder = suborder;
+	}
+
+	/**
+	 * @return the employeeOrderContent
+	 */
+	public Employeeordercontent getEmployeeordercontent() {
+		return employeeOrderContent;
+	}
+
+	/**
+	 * @param employeeOrderContent the employeeOrderContent to set
+	 */
+	public void setEmployeeordercontent(Employeeordercontent employeeOrderContent) {
+		this.employeeOrderContent = employeeOrderContent;
 	}
 
 	/**

@@ -8,8 +8,16 @@ package org.tb.util;
 public class OptionItem {
 	private String value;
 	private String label;
+	private Integer intValue;
 	
-	public OptionItem(String v, String l) { value = v; label = l; }
-	   public String getValue() { return value; }
-	   public String getLabel() { return label; }
+	public OptionItem(String v, String l) { 
+		value = v; label = l; 
+	}
+	public OptionItem(Integer i, String l) { 
+		intValue = i; label = l; 
+	}
+	
+	public String getValue() { return value == null ? intValue.toString() : value; }
+	public String getLabel() { return label; }
+	public Integer getIntValue() {return intValue; }
 }

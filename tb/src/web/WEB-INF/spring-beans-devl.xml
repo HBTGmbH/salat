@@ -47,6 +47,9 @@
 	<bean name="/EditEmployeeorder" class="org.tb.web.action.admin.EditEmployeeorderAction" />
 	<bean name="/ShowEmployeeorder" class="org.tb.web.action.admin.ShowEmployeeorderAction" />
 	<bean name="/StoreEmployeeorder" class="org.tb.web.action.admin.StoreEmployeeorderAction" />
+	
+	<bean name="/EditEmployeeOrderContent" class="org.tb.web.action.admin.EditEmployeeOrderContentAction" />
+	<bean name="/StoreEmployeeOrderContent" class="org.tb.web.action.admin.StoreEmployeeOrderContentAction" />
 	 
 	<bean name="/CreateEmployeecontract" class="org.tb.web.action.admin.CreateEmployeecontractAction" />
 	<bean name="/DeleteEmployeecontract" class="org.tb.web.action.admin.DeleteEmployeecontractAction" />
@@ -95,6 +98,8 @@
 	<bean name="workingdayDAO" class="org.tb.persistence.WorkingdayDAO">
 	</bean>
 	<bean name="overtimeDAO" class="org.tb.persistence.OvertimeDAO">
+	</bean>
+	<bean name="employeeOrderContentDAO" class="org.tb.persistence.EmployeeOrderContentDAO">
 	</bean>
 	
 	<!-- Business Logic -->

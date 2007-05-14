@@ -9,10 +9,6 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<%
-
-%>
-
 <html:html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -28,6 +24,11 @@
 			form.action = "/tb/do/DeleteEmployeeorder?eoId=" + id;
 			form.submit();
 		}
+	}
+	
+	function editContent(form, id) {		
+		form.action = "/tb/do/EditEmployeeOrderContent?eoId=" + id;
+		form.submit();
 	}
 	
 	function setUpdateEmployeeOrders(form) {
@@ -177,6 +178,10 @@
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
 			key="main.employeeorder.debithours.text" /></b></th>
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.employeeorders.content.text" />"><b><bean:message
+			key="main.employeeorder.content.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
@@ -404,6 +409,25 @@
 				</td>
 			</c:otherwise>
 		</c:choose>
+
+		<html:form action="/EditEmployeeOrderContent">
+			<td align="center">			
+				<c:choose>
+					<c:when test="${employeeorder.employeeordercontent == null}">
+						<html:image onclick="editContent(this.form, ${employeeorder.id})" 
+							src="/tb/images/script_add.png" />
+					</c:when>
+					<c:when test="${employeeorder.employeeordercontent != null && (!employeeorder.employeeordercontent.committed_mgmt || !employeeorder.employeeordercontent.committed_emp)}">
+						<html:image onclick="editContent(this.form, ${employeeorder.id})" 
+							src="/tb/images/script_edit.png" />
+					</c:when>		
+					<c:otherwise>
+						<html:image onclick="editContent(this.form, ${employeeorder.id})" 
+							src="/tb/images/script.png" />
+					</c:otherwise>
+				</c:choose>
+			</td>
+		</html:form>
 
 		<c:choose>
 			<c:when
