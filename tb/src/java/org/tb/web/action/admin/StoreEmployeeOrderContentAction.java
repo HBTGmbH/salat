@@ -6,6 +6,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -43,9 +45,6 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 		// boolean to trigger back action
 		boolean backAction = false;
 		
-		// remove status
-//		request.getSession().removeAttribute("contentStatus");
-		
 		
 		AddEmployeeOrderContentForm contentForm = (AddEmployeeOrderContentForm) form;
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
@@ -71,7 +70,10 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 			Employeeorder employeeorder = null;
 			
   			// validate
-			// TODO
+			ActionMessages errorMessages = validateFormData(request, contentForm);
+			if (errorMessages.size() > 0) {
+				return mapping.getInputForward();
+			}
 			
 			// test, if login user is authrized to safe
 			boolean authorized = false;
@@ -382,4 +384,75 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 		}		
 	}
 
+	
+	/**
+	 * Validates the form data.
+	 * 
+	 * @param request
+	 * @param contentForm
+	 * @return Returns the errors as {@link ActionMessages}.
+	 */
+	private ActionMessages validateFormData(HttpServletRequest request,
+			AddEmployeeOrderContentForm contentForm) {
+
+		ActionMessages errors = getErrors(request);
+		if (errors == null)
+			errors = new ActionMessages();
+		
+		// check description
+		String description = contentForm.getDescription();
+		if (description.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("description", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+		}
+		
+		// check boundary
+		String boundary = contentForm.getBoundary();
+		if (boundary.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("boundary", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+		}
+		
+		// check procedure
+		String procedure = contentForm.getProcedure();
+		if (procedure.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("procedure", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+		}
+		
+		// check task
+		String task = contentForm.getTask();
+		if (task.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("task", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+		}
+
+		// check contact_contract_customer
+		String contact_contract_customer = contentForm.getContact_contract_customer();
+		if (contact_contract_customer.length() > GlobalConstants.FORM_MAX_CHAR_NAME_TEXTFIELD) {
+			errors.add("contact_contract_customer", new ActionMessage("form.employeeordercontent.error.toomanychars.64.text"));
+		}
+		
+		// check contact_tech_customer
+		String contact_tech_customer = contentForm.getContact_tech_customer();
+		if (contact_tech_customer.length() > GlobalConstants.FORM_MAX_CHAR_NAME_TEXTFIELD) {
+			errors.add("contact_tech_customer", new ActionMessage("form.employeeordercontent.error.toomanychars.64.text"));
+		}
+
+		// check additional risks
+		String risks = contentForm.getAdditional_risks();
+		if (risks.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("risks", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+		}
+		
+		// check arrangement
+		String arrangement = contentForm.getArrangement();
+		if (arrangement.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("arrangement", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+		}
+
+		
+		saveErrors(request, errors);
+
+		return errors;
+	}
+	
+	
+	
 }

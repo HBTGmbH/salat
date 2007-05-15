@@ -169,5 +169,8 @@ public class GlobalConstants {
     public static final int QM_PROCESS_ID_PA09A_AUFTRAGSDURCHFUEHRUNG_WERKVERTRAG = 4;
     public static final int QM_PROCESS_ID_PA09B_AUFTRAGSDURCHFUEHRUNG_DIENSTLEISTUNGSVERTRAG = 5;
     public static final int QM_PROCESS_ID_PA09C_AUFTRAGSDURCHFUEHRUNG_1_MANN_GEWERK = 6;
+    
+    public static final int FORM_MAX_CHAR_BIG_TEXTAREA = 2048;
+    public static final int FORM_MAX_CHAR_NAME_TEXTFIELD = 64;
    
 }

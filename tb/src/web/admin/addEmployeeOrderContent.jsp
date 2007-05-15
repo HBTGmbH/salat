@@ -145,12 +145,12 @@
 			<td class="noBborderStyle" valign="top" colspan="2">
 				<c:choose>
 					<c:when test="${clientIntern}">
-						<html:link style="color: #7390b1" target="_blank" href="http://wiki/mediawiki/index.php/Benutzerhandbuch_SALAT">
+						<html:link style="color: #7390b1" target="_blank" href="http://wiki/mediawiki/index.php/Prozesshandbuch/Themen/Mitarbeiterauftrag">
 							<b><bean:message key="employeeordercontent.staticmatters.text"/></b>
 						</html:link>
 					</c:when>
 					<c:otherwise>
-						<html:link style="color: #7390b1" target="_blank" href="https://wiki.hbt.de/mediawiki/index.php/Benutzerhandbuch_SALAT">
+						<html:link style="color: #7390b1" target="_blank" href="https://wiki.hbt.de/mediawiki/index.php/Prozesshandbuch/Themen/Mitarbeiterauftrag">
 							<b><bean:message key="employeeordercontent.staticmatters.text"/></b>
 						</html:link>
 					</c:otherwise>
@@ -160,23 +160,15 @@
 		
 		<tr><td colspan="3" class="noBborderStyle"><hr></td></tr>
 	
+	
 		<!-- Description -->
-		<!--    
-		<tr>
-			<td class="noBborderStyle" valign="top">
-				Leistungsbeschreibung:
-			</td>
-			<td class="noBborderStyle" valign="top" colspan="2">
-				<textarea rows="5" readonly="readonly" cols="100" name="description" ></textarea>
-			</td>
-		</tr>
-		-->
 		<tr>
 			<td class="noBborderStyle" valign="top">
 				<b><bean:message key="employeeordercontent.description.text"/>:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
 				<html:textarea property="description" cols="100" rows="5" readonly="${!contentIsEditable}" />
+				<span style="color:red"><br><html:errors property="description" /></span>
 			</td>
 		</tr>
 		
@@ -190,6 +182,7 @@
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
 				<html:textarea property="task" cols="100" rows="5" readonly="${!contentIsEditable}" />
+				<span style="color:red"><br><html:errors property="task" /></span>
 			</td>
 		</tr>
 		
@@ -200,6 +193,7 @@
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
 				<html:textarea property="boundary" cols="100" rows="5" readonly="${!contentIsEditable}" />
+				<span style="color:red"><br><html:errors property="boundary" /></span>
 			</td>
 		</tr>
 		
@@ -212,6 +206,7 @@
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
 				<html:textarea property="procedure" cols="100" rows="5" readonly="${!contentIsEditable}" />
+				<span style="color:red"><br><html:errors property="procedure" /></span>
 			</td>
 		</tr>
 		<tr>
@@ -252,6 +247,7 @@
 			</td>
 			<td class="noBborderStyle" valign="top">
 				<html:text property="contact_contract_customer" maxlength="64" size="64" disabled="${!contentIsEditable}"/>
+				<span style="color:red"><html:errors property="contact_contract_customer" /></span>
 			</td>
 		</tr>
 		<tr>
@@ -265,6 +261,7 @@
 			</td>
 			<td class="noBborderStyle" valign="top">
 				<html:text property="contact_tech_customer" maxlength="64" size="64" disabled="${!contentIsEditable}"/>
+				<span style="color:red"><html:errors property="contact_tech_customer" /></span>
 			</td>
 		</tr>
 		
@@ -277,6 +274,7 @@
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
 				<html:textarea property="additional_risks" cols="100" rows="5" readonly="${!contentIsEditable}" />
+				<span style="color:red"><br><html:errors property="risks" /></span>
 			</td>
 		</tr>
 		
@@ -289,6 +287,7 @@
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
 				<html:textarea property="arrangement" cols="100" rows="5" readonly="${!contentIsEditable}" />
+				<span style="color:red"><br><html:errors property="arrangement" /></span>
 			</td>
 		</tr>
 		
