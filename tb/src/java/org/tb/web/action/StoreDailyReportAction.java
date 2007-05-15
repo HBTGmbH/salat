@@ -3,6 +3,7 @@ package org.tb.web.action;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -538,8 +539,10 @@ public class StoreDailyReportAction extends DailyReportAction {
 					return mapping.findForward("showDaily");
 				} else {
 					
+					java.util.Date selectedDate = getSelectedDateFromRequest(request);
+					
 					if (workingday != null) {
-						java.util.Date selectedDate = getSelectedDateFromRequest(request);
+						
 						int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
 						reportForm.setSelectedHourBegin(beginTime[0]);
 						reportForm.setSelectedMinuteBegin(beginTime[1]);
@@ -576,6 +579,33 @@ public class StoreDailyReportAction extends DailyReportAction {
 						reportForm.setSelectedHourDuration(0);
 						reportForm.setSelectedMinuteDuration(0);
 					}
+					
+					// set orders and suborders
+					List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
+					
+					// set order
+					request.getSession().setAttribute("orders", orders);
+					
+					List<Suborder> theSuborders = new ArrayList<Suborder>();
+					if ((orders != null) && (!orders.isEmpty())) {
+						long orderId = reportForm.getOrderId();
+						if (orderId == 0) {
+							orderId = orders.get(0).getId();
+						}
+						theSuborders = 
+							suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orderId, selectedDate);
+						if ((theSuborders == null) || (theSuborders.isEmpty())) {
+							request.setAttribute("errorMessage", 
+									"Orders/suborders inconsistent for employee - please call system administrator.");
+							return mapping.findForward("error");
+						}			
+					} else {
+						request.setAttribute("errorMessage", 
+						"no orders found for employee - please call system administrator.");
+						return mapping.findForward("error");
+					}
+					// set suborder
+					request.getSession().setAttribute("suborders", theSuborders);
 					
 					return mapping.findForward("addDaily");
 					
