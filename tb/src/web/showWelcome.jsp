@@ -54,16 +54,11 @@
 		</tr>
 		<c:forEach var="warning" items="${warnings}" >
 			<tr>
-				<td class="noBborderStyle" align="left">
-					<c:if test="${warning.sort eq 'timereportnotinrange'}">
-						<bean:message key="main.info.warning.timereportnotinrange" />:
-					</c:if>
-					<c:if test="${warning.sort eq 'timereportnotinrangeforeo'}">
-						<bean:message key="main.info.warning.timereportnotinrangeforeo" />:
-					</c:if>			
+				<td class="noBborderStyle" align="left" width="5%" nowrap="nowrap">
+					<span style="color:red"><c:out value="${warning.sort}" />:</span>		
 				</td>
 				<td class="noBborderStyle" align="left">
-					<c:out value="${warning.text}" />
+					<html:link style="color:red" href="${warning.link}"><c:out value="${warning.text}" /></html:link>
 				</td>
 			</tr>
 		</c:forEach>

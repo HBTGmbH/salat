@@ -171,6 +171,27 @@ public class GlobalConstants {
     public static final int QM_PROCESS_ID_PA09C_AUFTRAGSDURCHFUEHRUNG_1_MANN_GEWERK = 6;
     
     public static final int FORM_MAX_CHAR_BIG_TEXTAREA = 2048;
+    public static final int FORM_MAX_CHAR_TEXTAREA = 256;
     public static final int FORM_MAX_CHAR_NAME_TEXTFIELD = 64;
-   
+    public static final int FORM_MAX_CHAR_TEXTFIELD = 64;
+    
+    public static final Integer PHASE_ID_ORGANISATION = 1;
+    public static final Integer PHASE_ID_SPECIFICATIO = 2;
+    public static final Integer PHASE_ID_ANALYSIS = 3;
+    public static final Integer PHASE_ID_REALIZATION = 4;
+    public static final Integer PHASE_ID_ACCEPTANCE = 5;
+    public static final Integer PHASE_ID_DELIVERY = 6;
+    public static final Integer PHASE_ID_ROLLOUT = 7;
+    public static final Integer PHASE_ID_FINISH = 8;
+    
+    public static final Integer STATUS_CONSTANT = 1;
+    public static final Integer STATUS_ASCENDING = 2;
+    public static final Integer STATUS_EXTREM_ASCENDING = 3;
+    public static final Integer STATUS_DESCENDING = 4;
+    public static final Integer STATUS_EXTREM_DESCENDING = 5;
+    
+    public static final Integer STATUSREPORT_SORT_PERIODICAL = 1;
+    public static final Integer STATUSREPORT_SORT_EXTRA = 2;
+    public static final Integer STATUSREPORT_SORT_FINAL = 3;
+    
 }

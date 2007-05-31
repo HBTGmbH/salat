@@ -402,49 +402,49 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 		// check description
 		String description = contentForm.getDescription();
 		if (description.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-			errors.add("description", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+			errors.add("description", new ActionMessage("form.error.toomanychars.2048.text"));
 		}
 		
 		// check boundary
 		String boundary = contentForm.getBoundary();
 		if (boundary.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-			errors.add("boundary", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+			errors.add("boundary", new ActionMessage("form.error.toomanychars.2048.text"));
 		}
 		
 		// check procedure
 		String procedure = contentForm.getProcedure();
 		if (procedure.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-			errors.add("procedure", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+			errors.add("procedure", new ActionMessage("form.error.toomanychars.2048.text"));
 		}
 		
 		// check task
 		String task = contentForm.getTask();
 		if (task.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-			errors.add("task", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+			errors.add("task", new ActionMessage("form.error.toomanychars.2048.text"));
 		}
 
 		// check contact_contract_customer
 		String contact_contract_customer = contentForm.getContact_contract_customer();
 		if (contact_contract_customer.length() > GlobalConstants.FORM_MAX_CHAR_NAME_TEXTFIELD) {
-			errors.add("contact_contract_customer", new ActionMessage("form.employeeordercontent.error.toomanychars.64.text"));
+			errors.add("contact_contract_customer", new ActionMessage("form.error.toomanychars.64.text"));
 		}
 		
 		// check contact_tech_customer
 		String contact_tech_customer = contentForm.getContact_tech_customer();
 		if (contact_tech_customer.length() > GlobalConstants.FORM_MAX_CHAR_NAME_TEXTFIELD) {
-			errors.add("contact_tech_customer", new ActionMessage("form.employeeordercontent.error.toomanychars.64.text"));
+			errors.add("contact_tech_customer", new ActionMessage("form.error.toomanychars.64.text"));
 		}
 
 		// check additional risks
 		String risks = contentForm.getAdditional_risks();
 		if (risks.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-			errors.add("risks", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+			errors.add("risks", new ActionMessage("form.error.toomanychars.2048.text"));
 		}
 		
 		// check arrangement
 		String arrangement = contentForm.getArrangement();
 		if (arrangement.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-			errors.add("arrangement", new ActionMessage("form.employeeordercontent.error.toomanychars.2048.text"));
+			errors.add("arrangement", new ActionMessage("form.error.toomanychars.2048.text"));
 		}
 
 		

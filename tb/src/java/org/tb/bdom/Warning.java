@@ -4,6 +4,7 @@ public class Warning {
 	
 	private String sort;
 	private String text;
+	private String link;
 	
 	
 	/**
@@ -29,6 +30,18 @@ public class Warning {
 	 */
 	public void setText(String text) {
 		this.text = text;
+	}
+	/**
+	 * @return the link
+	 */
+	public String getLink() {
+		return link;
+	}
+	/**
+	 * @param link the link to set
+	 */
+	public void setLink(String link) {
+		this.link = link;
 	}
 	
 	

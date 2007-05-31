@@ -66,6 +66,12 @@
 	<bean name="/CreateAdminList" class="org.tb.web.action.admin.CreateAdminListAction" />
 	<bean name="/ShowAdminOptions" class="org.tb.web.action.admin.ShowAdminOptionsAction" />
 
+	<bean name="/ShowStatusReport" class="org.tb.web.action.admin.ShowStatusReportAction" />
+	<bean name="/CreateStatusReport" class="org.tb.web.action.admin.CreateStatusReportAction" />
+	<bean name="/EditStatusReport" class="org.tb.web.action.admin.EditStatusReportAction" />
+	<bean name="/DeleteStatusReport" class="org.tb.web.action.admin.DeleteStatusReportAction" />
+	<bean name="/StoreStatusReport" class="org.tb.web.action.admin.StoreStatusReportAction" />
+
 	<!-- Data Access Objects -->
 	<bean name="employeeDAO" class="org.tb.persistence.EmployeeDAO">
 		<property name="adminNames">
@@ -100,6 +106,8 @@
 	<bean name="overtimeDAO" class="org.tb.persistence.OvertimeDAO">
 	</bean>
 	<bean name="employeeOrderContentDAO" class="org.tb.persistence.EmployeeOrderContentDAO">
+	</bean>
+	<bean name="statusReportDAO" class="org.tb.persistence.StatusReportDAO">
 	</bean>
 	
 	<!-- Business Logic -->

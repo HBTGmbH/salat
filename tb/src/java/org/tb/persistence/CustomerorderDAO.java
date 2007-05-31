@@ -200,6 +200,21 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible and statusreports are neccesary.
+	 * 
+	 * @param responsibleHbtId
+	 * @return
+	 */
+	public List<Customerorder> getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(long responsibleHbtId) {
+		return getSession().createQuery("from Customerorder " +
+				"where RESPONSIBLE_HBT_ID = ? " +
+				"and (statusreport = 4 " +
+					"or statusreport = 6 " +
+					"or statusreport = 12) " +
+				"order by sign").setLong(0, responsibleHbtId).list();
+	}
+	
+	/**
 	 * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
 	 * 
 	 * @param responsibleHbtId
@@ -268,6 +283,7 @@ public class CustomerorderDAO extends HibernateDaoSupport {
 				.setDate(2, date)
 				.list();
 	}
+	
 	
 	/**
 	 * Calls {@link CustomerorderDAO#save(Customerorder, Employee)} with {@link Employee} = null.

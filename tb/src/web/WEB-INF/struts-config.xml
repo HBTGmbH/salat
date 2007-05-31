@@ -76,6 +76,10 @@
 			type="org.tb.web.form.ShowAdminOptionsForm" />
 		<form-bean name="addEmployeeOrderContentForm"
 			type="org.tb.web.form.AddEmployeeOrderContentForm" />	
+		<form-bean name="showStatusReportForm"
+			type="org.tb.web.form.ShowStatusReportForm" />
+		<form-bean name="addStatusReportForm"
+			type="org.tb.web.form.AddStatusReportForm" />	
 	</form-beans>
 
 
@@ -426,6 +430,40 @@
 		<action path="/ShowAdminOptions" input="/adminoptions.jsp"
 			validate="false" name="showAdminOptionsForm">
 			<forward name="success" path="/admin/adminoptions.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+
+		<!-- Status Report -->
+		<action path="/ShowStatusReport" validate="true"
+			name="showStatusReportForm">
+			<forward name="success" path="/admin/showStatusReport.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+
+		<action path="/CreateStatusReport" validate="true"
+			name="addStatusReportForm">
+			<forward name="success" path="/admin/addStatusReport.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+
+		<action path="/EditStatusReport" name="addStatusReportForm">
+			<forward name="success" path="/admin/addStatusReport.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+
+		<action path="/DeleteStatusReport" input="/admin/showStatusReport.jsp"
+			name="addStatusReportForm">
+			<forward name="success" path="/admin/showStatusReport.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+		</action>
+		
+		<action path="/StoreStatusReport"
+			input="/admin/addStatusReport.jsp" validate="true"
+			name="addStatusReportForm">
+			<forward name="success" path="/admin/addStatusReport.jsp" />
+			<forward name="back" path="/admin/showStatusReport.jsp" />
+			<forward name="cancel" path="/admin/showStatusReport.jsp" />
+			<forward name="reset" path="/admin/addStatusReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 
