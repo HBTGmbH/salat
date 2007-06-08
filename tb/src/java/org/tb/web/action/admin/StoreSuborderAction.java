@@ -3,6 +3,7 @@ package org.tb.web.action.admin;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,7 +28,6 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddSuborderForm;
-import org.tb.web.form.ShowSuborderForm;
 
 /**
  * action class for storing a suborder permanently
@@ -67,7 +67,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			HttpServletResponse response) {
 		AddSuborderForm soForm = (AddSuborderForm) form;
 		
-//		 remove list with timereports out of range
+		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
 
 		if ((request.getParameter("task") != null)
@@ -130,10 +130,12 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshParentProject"))) {
 			
-			soForm.setParentDescriptionAndSign(customerorderDAO.getCustomerorderById(soForm
-					.getCustomerorderId()).getSignAndDescription());
+			Customerorder parentOrder = customerorderDAO.getCustomerorderById(soForm.getCustomerorderId());
+			
+			soForm.setParentDescriptionAndSign(parentOrder.getSignAndDescription());
 			soForm.setParentId(soForm.getCustomerorderId());
 			request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
+			request.getSession().setAttribute("suborderParent", parentOrder);
 			
 			if ((request.getParameter("continue") != null)) {
 				try{
@@ -141,9 +143,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
 					Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
 					if (tempSubOrder!=null){
 						soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+						request.getSession().setAttribute("suborderParent", tempSubOrder);
 					}else{
 						Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
 						soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
+						request.getSession().setAttribute("suborderParent", tempOrder);
 					}
 					request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
 				}catch(Throwable th){
@@ -159,10 +163,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshHourlyRate"))) {
 			//first refresh the treestructure-content
-			soForm.setParentDescriptionAndSign(customerorderDAO.getCustomerorderById(soForm
-					.getCustomerorderId()).getSignAndDescription());
+			Customerorder customerorder = customerorderDAO.getCustomerorderById(soForm.getCustomerorderId());
+			soForm.setParentDescriptionAndSign(customerorder.getSignAndDescription());
 			soForm.setParentId(soForm.getCustomerorderId());
 			request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
+			request.getSession().setAttribute("suborderParent", customerorder);
 			
 			// refresh suborder default hourly rate after change of order
 			// (same rate as for order itself)
@@ -177,29 +182,38 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				&& (request.getParameter("task").equals("save"))
 				|| (request.getParameter("soId") != null)) {
 
+			ActionMessages errorMessages = validateFormData(request, soForm);
+			if (errorMessages.size() > 0) {
+				return mapping.getInputForward();
+			}
+			
+			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+			
 			// 'main' task - prepare everything to store the suborder.
 			// I.e., copy properties from the form into the suborder before
 			// saving.
 			long soId = -1;
 			Suborder so = null;
+			Customerorder customerorder = customerorderDAO.getCustomerorderById(soForm.getCustomerorderId());
 			if (request.getSession().getAttribute("soId") != null) {
 				// edited suborder
 				soId = Long.parseLong(request.getSession().getAttribute("soId")
 						.toString());
 				so = suborderDAO.getSuborderById(soId);
+			
+				if (so.getSuborders() != null 
+						&& !so.getSuborders().isEmpty() 
+						&& so.getCustomerorder().getId() != customerorder.getId()) {
+					// set customerorder in all descendants					
+					so.setCustomerOrderForAllDescendants(customerorder, suborderDAO, loginEmployee, so);
+				}
+				so = suborderDAO.getSuborderById(soId);
 			} else {
 				// new report
 				so = new Suborder();
 			}
-
-			ActionMessages errorMessages = validateFormData(request, soForm);
-			if (errorMessages.size() > 0) {
-				return mapping.getInputForward();
-			}
-
 			so.setCurrency(soForm.getCurrency());
-			so.setCustomerorder(customerorderDAO.getCustomerorderById(soForm
-					.getCustomerorderId()));
+			so.setCustomerorder(customerorder);
 			so.setSign(soForm.getSign());
 			so.setDescription(soForm.getDescription());
 			so.setShortdescription(soForm.getShortdescription());
@@ -222,8 +236,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				so.setUntilDate(null);
 			}
 			
-			Employee loginEmployee = (Employee) request.getSession()
-			.getAttribute("loginEmployee");
 			
 			// adjust employeeorders
 			List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
@@ -263,6 +275,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				so.setDebithoursunit(soForm.getDebithoursunit());
 			}
 			so.setHide(soForm.getHide());
+			so.setNoEmployeeOrderContent(soForm.getNoEmployeeOrderContent());
 			
 			so.setParentorder(suborderDAO.getSuborderById(soForm.getParentId()));
 			
@@ -481,10 +494,10 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			Date coUntilDate = customerorder.getUntilDate();
 			if (soFromDate != null && coFromDate != null) {
 				if (soFromDate.before(coFromDate)) {
-					errors.add("validFrom", new ActionMessage("form.suborder.error.date.outofrange"));
+					errors.add("validFrom", new ActionMessage("form.suborder.error.date.outofrange.order"));
 				}
 				if (!(coUntilDate == null || (soUntilDate != null && !soUntilDate.after(coUntilDate)))) {
-					errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange"));
+					errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.order"));
 				}
 			}
 			
@@ -560,6 +573,26 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			
 		}
 		
+		// check time period for hierachical higher suborders
+		Suborder parentSuborder = null;
+		if (soForm.getParentId() != null && !soForm.getParentId().equals(0) && !soForm.getParentId().equals(-1)) {
+			parentSuborder = suborderDAO.getSuborderById(soForm.getParentId());
+			if (parentSuborder != null) {
+				// check validity period
+				Date parentFromDate = parentSuborder.getFromDate();
+				Date parentUntilDate = parentSuborder.getUntilDate();
+				if (soFromDate != null && parentFromDate != null) {
+					if (soFromDate.before(parentFromDate)) {
+						errors.add("validFrom", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
+					}
+					if (!(parentUntilDate == null || (soUntilDate != null && !soUntilDate.after(parentUntilDate)))) {
+						errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
+					}
+				}
+			}
+		}
+		
+		
 //		// check if billable suborder has assigned debit hours
 //		if ("Y".equals(soForm.getInvoice()) && (soForm.getDebithours() == null || soForm.getDebithours() == 0.0)) {
 //			errors.add("debithours", new ActionMessage("form.suborder.error.debithours.necessary"));
@@ -570,14 +603,33 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.unavailable"));
 		}
 		
-//		 check, if dates fit to existing timereports
-		List<Timereport> timereportsInvalidForDates = timereportDAO.
-			getTimereportsBySuborderIdInvalidForDates(soFromDate, soUntilDate, soId);
+		// check, if dates fit to existing timereports
+		List<Timereport> timereportsInvalidForDates = new LinkedList<Timereport>();
+		
+				
+		if (request.getSession().getAttribute("soId") != null) {
+			// edited suborder
+			soId = Long.parseLong(request.getSession().getAttribute("soId")
+					.toString());
+			Suborder so = suborderDAO.getSuborderById(soId);
+			
+			timereportsInvalidForDates.addAll(so.getAllTimeReportsInvalidForDates(soFromDate, soUntilDate, timereportDAO));
+						
+		} else {
+			timereportsInvalidForDates.addAll(timereportDAO.
+					getTimereportsBySuborderIdInvalidForDates(soFromDate, soUntilDate, soId));
+		}		
+		
 		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
 			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
 			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
 			
 		}
+		
+		
+		
+		
+		
 		
 		
 		saveErrors(request, errors);

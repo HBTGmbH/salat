@@ -107,6 +107,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 			request.getSession().setAttribute("currentOrder", customerorder);
 			request.getSession().setAttribute("hourlyRate", customerorder.getHourly_rate());
 			request.getSession().setAttribute("parentDescriptionAndSign", customerorder.getSignAndDescription());
+			request.getSession().setAttribute("suborderParent", customerorder);
 			request.getSession().setAttribute("currentSuborderID", null);
 			suborderForm.setParentDescriptionAndSign(customerorder.getSignAndDescription());
 			suborderForm.setParentId(customerorder.getId());

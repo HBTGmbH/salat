@@ -125,7 +125,7 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select 
+			<td align="left" class="noBborderStyle" nowrap="nowrap"><html:select 
 				property="employeeContractId" value="${currentEmployeeContract.id}"
 				onchange="setUpdateTimereportsAction(this.form)">
 
@@ -147,7 +147,7 @@
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.customerorder.text" />:</b></td>
-			<td align="left" class="noBborderStyle">
+			<td align="left" class="noBborderStyle" nowrap="nowrap">
 				<html:select
 					property="order"
 					value="${currentOrder}"
@@ -337,6 +337,19 @@
 				</html:select></td>
 			</tr>
 		</c:if>
+
+		<!-- avoid refresh -->
+		<tr>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.general.timereport.avoidrefresh.text" /></b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:checkbox property="avoidRefresh" onclick="setUpdateTimereportsAction(this.form)"/>
+			</td>
+		</tr>
+
+		<!-- seperator line -->
+		<tr><td width="100%" class="noBborderStyle" colspan="2"><hr></td></tr>
 
 		<!-- select working day begin and break -->
 		<c:if test="${view eq 'day' || view == null}">

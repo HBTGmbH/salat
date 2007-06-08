@@ -72,6 +72,10 @@
 	<bean name="/DeleteStatusReport" class="org.tb.web.action.admin.DeleteStatusReportAction" />
 	<bean name="/StoreStatusReport" class="org.tb.web.action.admin.StoreStatusReportAction" />
 
+	<!-- BDOM -->
+	<!--  <bean name="suborder" class="org.tb.bdom.Suborder" />  -->
+	
+
 	<!-- Data Access Objects -->
 	<bean name="employeeDAO" class="org.tb.persistence.EmployeeDAO">
 		<property name="adminNames">
@@ -110,6 +114,7 @@
 	<bean name="statusReportDAO" class="org.tb.persistence.StatusReportDAO">
 	</bean>
 	
+		
 	<!-- Business Logic -->
 	
 	<!-- Hibernate Konfiguration -->

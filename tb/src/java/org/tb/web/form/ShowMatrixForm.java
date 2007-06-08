@@ -10,9 +10,6 @@
  */
 package org.tb.web.form;
 
-import java.util.Date;
-
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;

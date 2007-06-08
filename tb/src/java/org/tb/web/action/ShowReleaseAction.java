@@ -248,27 +248,57 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			request.getSession().setAttribute("releaseMonth", releaseForm.getMonth());
 			request.getSession().setAttribute("releaseYear", releaseForm.getYear());
 			
+			int day = Integer.parseInt(releaseForm.getDay());
+			
 			Date selectedDate = th.getDateFormStrings("01", releaseForm.getMonth(), releaseForm.getYear(), false);
-				
-			request.getSession().setAttribute("days", getDayList(selectedDate));
+			
+			List<OptionItem> days = getDayList(selectedDate);
+			
+			int lastDay = Integer.parseInt(days.get(days.size()-1).getValue());
+			
+			if (lastDay < day) {
+				releaseForm.setDay(lastDay+"");
+			}
+			
+			request.getSession().setAttribute("days", days);
 						
 		}
 		
 		if ((request.getParameter("task") != null)
 				&& ((request.getParameter("task").equals("refreshAcceptanceDate")))) {
 			
+			int day = Integer.parseInt(releaseForm.getAcceptanceDay());
+			
 			Date selectedDate = th.getDateFormStrings("01", releaseForm.getAcceptanceMonth(), releaseForm.getAcceptanceYear(), false);
-				
-			request.getSession().setAttribute("acceptanceDays", getDayList(selectedDate));
+			
+			List<OptionItem> days = getDayList(selectedDate);
+			
+			int lastDay = Integer.parseInt(days.get(days.size()-1).getValue());
+			
+			if (lastDay < day) {
+				releaseForm.setAcceptanceDay(lastDay+"");
+			}
+			
+			request.getSession().setAttribute("acceptanceDays", days);
 						
 		}
 		
 		if ((request.getParameter("task") != null)
 				&& ((request.getParameter("task").equals("refreshReopenDate")))) {
 			
+			int day = Integer.parseInt(releaseForm.getReopenDay());
+			
 			Date selectedDate = th.getDateFormStrings("01", releaseForm.getReopenMonth(), releaseForm.getReopenYear(), false);
-				
-			request.getSession().setAttribute("reopenDays", getDayList(selectedDate));
+			
+			List<OptionItem> days = getDayList(selectedDate);
+			
+			int lastDay = Integer.parseInt(days.get(days.size()-1).getValue());
+			
+			if (lastDay < day) {
+				releaseForm.setReopenDay(lastDay+"");
+			}
+			
+			request.getSession().setAttribute("reopenDays", days);
 						
 		}
 		

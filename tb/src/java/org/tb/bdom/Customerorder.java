@@ -3,6 +3,7 @@ package org.tb.bdom;
 import java.io.Serializable;
 import java.sql.Date;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -418,6 +419,19 @@ public class Customerorder implements Serializable {
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * TODO comment
+	 * 
+	 * @param visitor
+	 */
+	public void acceptVisitor(CustomerOrderVisitor visitor) {
+		visitor.visitCustomerOrder(this);
+		for (Iterator<Suborder> i = suborders.iterator(); i.hasNext();) {
+			Suborder suborder = i.next();
+			suborder.acceptVisitor(visitor);
+		}
 	}
 
 	@Override

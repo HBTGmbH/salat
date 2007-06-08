@@ -75,6 +75,9 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
 		
 		// use employee from overview filter
 		Long filterEmployeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
+		if (filterEmployeeId == null) {
+			filterEmployeeId = -1l;
+		}
 		employeeContractForm.setEmployee(filterEmployeeId);
 		
 		// make sure, no ecId still exists in session

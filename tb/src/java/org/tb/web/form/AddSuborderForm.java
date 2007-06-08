@@ -40,6 +40,7 @@ public class AddSuborderForm extends ActionForm {
 	private Boolean hide;
 	private Long parentId;
 	private String parentDescriptionAndSign;
+	private Boolean noEmployeeOrderContent;
 
 	
 	public String getParentDescriptionAndSign() {
@@ -226,6 +227,20 @@ public class AddSuborderForm extends ActionForm {
 		this.validUntil = validUntil;
 	}
 
+	/**
+	 * @return the noEmployeeOrderContent
+	 */
+	public Boolean getNoEmployeeOrderContent() {
+		return noEmployeeOrderContent;
+	}
+
+	/**
+	 * @param noEmployeeOrderContent the noEmployeeOrderContent to set
+	 */
+	public void setNoEmployeeOrderContent(Boolean noEmployeeOrderContent) {
+		this.noEmployeeOrderContent = noEmployeeOrderContent;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {	
 		sign = "";
@@ -243,6 +258,7 @@ public class AddSuborderForm extends ActionForm {
 		debithours = null;
 		debithoursunit = null;
 		hide=false;
+		noEmployeeOrderContent=false;
 		
 //		hourlyRate = 0.0;
 //		request.getSession().setAttribute("hourlyRate", new Double(0.0));

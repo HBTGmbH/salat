@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.bdom.comparators.TimereportByEmployeeAscComparator;
@@ -208,6 +210,59 @@ public class ShowDailyReportAction extends DailyReportAction {
 		
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshTimereports"))) {
+			
+			/* avoid refresh */
+			boolean doNotRefreshReports = reportForm.getAvoidRefresh();
+			if (doNotRefreshReports) {
+				// get all neccesary info from form
+				long employeeContractId = reportForm.getEmployeeContractId();
+				String orderSign = reportForm.getOrder();
+				long suborderId = reportForm.getSuborderId();
+				String view = reportForm.getView();
+				String beginDay = reportForm.getDay();
+				String beginMonth = reportForm.getMonth();
+				String beginYear = reportForm.getYear();
+				String endDay = reportForm.getLastday();
+				String endMonth = reportForm.getLastmonth();
+				String endYear = reportForm.getLastyear();
+				
+				/* set session attributes */
+				List<Customerorder> orders;
+				if (employeeContractId == 0 || employeeContractId == -1) {
+					orders = customerorderDAO.getCustomerorders();
+					request.getSession().setAttribute("currentEmployeeContract",null);
+				} else {
+					orders = customerorderDAO.getCustomerordersByEmployeeContractId(employeeContractId);
+					request.getSession().setAttribute("currentEmployeeContract",employeecontractDAO.getEmployeeContractById(employeeContractId));
+				}
+				request.getSession().setAttribute("orders",orders);
+				
+				List<Suborder> suborders = new LinkedList<Suborder>();
+				Customerorder customerorder = customerorderDAO.getCustomerorderBySign(orderSign);
+				if (orders.contains(customerorder)) {
+					suborders = customerorder.getSuborders();
+				} else if (!orders.isEmpty()){
+					suborders = orders.get(0).getSuborders();					
+				}
+				request.getSession().setAttribute("suborders",suborders);
+				
+				request.getSession().setAttribute("currentOrder",orderSign);
+				request.getSession().setAttribute("suborderFilerId",suborderId);
+				request.getSession().setAttribute("view",view);
+				request.getSession().setAttribute("currentDay",beginDay);
+				request.getSession().setAttribute("currentMonth",beginMonth);
+				request.getSession().setAttribute("currentYear",beginYear);
+				request.getSession().setAttribute("lastDay",endDay);
+				request.getSession().setAttribute("lastMonth",endMonth);
+				request.getSession().setAttribute("lastYear",endYear);
+				
+				request.getSession().setAttribute("timereports", new LinkedList<Timereport>());
+				
+				return mapping.findForward("success");
+			}
+						
+			
+			
 			// refresh list of timereports to be displayed
 			if (refreshTimereports(mapping, request, reportForm, customerorderDAO, timereportDAO, employeecontractDAO, 
 					suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO) != true) {

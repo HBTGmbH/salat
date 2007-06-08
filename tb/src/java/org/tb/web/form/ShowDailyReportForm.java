@@ -48,6 +48,8 @@ public class ShowDailyReportForm extends ActionForm {
 	
 	private String view;
 	
+	private Boolean avoidRefresh;
+	
 	public String getDay() {
 		return day;
 	}
@@ -323,6 +325,20 @@ public class ShowDailyReportForm extends ActionForm {
 		this.suborderId = suborderId;
 	}
 
+	/**
+	 * @return the avoidRefresh
+	 */
+	public Boolean getAvoidRefresh() {
+		return avoidRefresh;
+	}
+
+	/**
+	 * @param avoidRefresh the avoidRefresh to set
+	 */
+	public void setAvoidRefresh(Boolean avoidRefresh) {
+		this.avoidRefresh = avoidRefresh;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 //		if (null != request.getSession().getAttribute("currentEmployeeId")) {
@@ -339,7 +355,7 @@ public class ShowDailyReportForm extends ActionForm {
 			employeeContractId = -1;
 		}
 		
-		
+		avoidRefresh = false;
 	}
 
 	@Override

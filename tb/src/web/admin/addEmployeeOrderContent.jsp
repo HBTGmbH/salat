@@ -23,7 +23,15 @@
  		form.action = "/tb/do/StoreEmployeeOrderContent?action=" + actionVal;
 		form.submit();
 	}
-				
+		
+	function confirmBack(form) {	
+		var agree=confirm("<bean:message key="main.general.confirmback.text" />");
+		if (agree) {
+			form.action = "/tb/do/StoreEmployeeOrderContent?action=back";
+			form.submit();
+		}
+	}	
+			
 </script>
 </head>
 <body>
@@ -46,7 +54,7 @@
 		
 		<!-- Buttons -->
 		<tr><td colspan="3" class="noBborderStyle">
-			<html:submit onclick="setStoreAction(this.form, 'back')"
+			<html:submit onclick="confirmBack(this.form)"
 				styleId="button"><bean:message key="employeeordercontent.button.back.text"/></html:submit>
 			<c:if test="${contentIsEditable}">
 				<html:submit onclick="setStoreAction(this.form, 'save')"
@@ -331,7 +339,7 @@
 		
 		<!-- Buttons -->
 		<tr><td colspan="3" class="noBborderStyle">
-			<html:submit onclick="setStoreAction(this.form, 'back')"
+			<html:submit onclick="confirmBack(this.form)"
 				styleId="button"><bean:message key="employeeordercontent.button.back.text"/></html:submit>
 			<c:if test="${contentIsEditable}">
 				<html:submit onclick="setStoreAction(this.form, 'save')"

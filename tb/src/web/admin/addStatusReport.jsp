@@ -235,15 +235,16 @@
 		<!-- trend -->
 		<tr>			
 			<td class="noBborderStyle" valign="top" align="left">
-				<b>1. <bean:message key="statusreport.trend.text" />:</b>
+				<b>1. <bean:message key="statusreport.summary.text" />:</b>
 			</td>
 			
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
-				<html:radio property="trend" disabled="${!isReportEditable}" value="1"><html:img style="width:15px; height:15px;" src="/tb/images/arrow_right2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<html:radio property="trend" disabled="${!isReportEditable}" value="2"><html:img style="width:15px; height:15px;" src="/tb/images/arrow_diagonal_up2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<html:radio property="trend" disabled="${!isReportEditable}" value="3"><html:img style="width:15px; height:15px;" src="/tb/images/arrow_up2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<html:radio property="trend" disabled="${!isReportEditable}" value="4"><html:img style="width:15px; height:15px;" src="/tb/images/arrow_diagonal_down2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<html:radio property="trend" disabled="${!isReportEditable}" value="5"><html:img style="width:15px; height:15px;" src="/tb/images/arrow_down2.gif" /></html:radio>
+				<b><bean:message key="statusreport.trend.text"/></b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio titleKey="statusreport.trend.constant.text" property="trend" disabled="${!isReportEditable}" value="1"><html:img titleKey="statusreport.trend.constant.text" style="width:15px; height:15px;" altKey="statusreport.trend.constant.text" src="/tb/images/arrow_right2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio titleKey="statusreport.trend.up.text" property="trend" disabled="${!isReportEditable}" value="2"><html:img titleKey="statusreport.trend.up.text" style="width:15px; height:15px;" altKey="statusreport.trend.up.text" src="/tb/images/arrow_diagonal_up2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio titleKey="statusreport.trend.straightup.text" property="trend" disabled="${!isReportEditable}" value="3"><html:img titleKey="statusreport.trend.straightup.text" style="width:15px; height:15px;" altKey="statusreport.trend.straightup.text" src="/tb/images/arrow_up2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio titleKey="statusreport.trend.down.text" property="trend" disabled="${!isReportEditable}" value="4"><html:img titleKey="statusreport.trend.down.text" style="width:15px; height:15px;" altKey="statusreport.trend.down.text" src="/tb/images/arrow_diagonal_down2.gif" /></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio titleKey="statusreport.trend.straightdown.text" property="trend" disabled="${!isReportEditable}" value="5"><html:img titleKey="statusreport.trend.straightdown.text" style="width:15px; height:15px;" altKey="statusreport.trend.straightdown.text" src="/tb/images/arrow_down2.gif" /></html:radio>
 				<span style="color:red"><br><html:errors property="trend" /></span>
 			</td>
 		</tr>

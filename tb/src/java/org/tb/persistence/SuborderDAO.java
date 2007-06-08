@@ -6,10 +6,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
@@ -18,7 +14,6 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
-import org.tb.jsptags.TreeTag;
 import org.tb.logging.TbLogger;
 
 /**
@@ -309,6 +304,15 @@ public class SuborderDAO extends HibernateDaoSupport {
 		return suborders;
 	}
 	
+	
+	/**
+	 * Get a list of all children of the suborder associated to the given soId ordered by their sign.
+	 * 
+	 * @return List<Suborder>
+	 */
+	public List<Suborder> getSuborderChildren(long soId) {
+		return getSession().createQuery("from Suborder so where so.suborder.id = ? order by sign").setLong(0, soId).list();
+	}
 	
 	
 	/**

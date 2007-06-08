@@ -1,20 +1,11 @@
 package org.tb.web.action;
 
-import java.util.Date;
-import java.util.List;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Monthlyreport;
-import org.tb.bdom.Vacation;
-import org.tb.helper.EmployeeHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -22,8 +13,6 @@ import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
-import org.tb.util.DateUtils;
-import org.tb.web.form.ShowMonthlyReportForm;
 
 /**
  * Action class for a timereport to be shown in the monthly display

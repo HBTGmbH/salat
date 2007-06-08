@@ -7,6 +7,7 @@
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib uri="/WEB-INF/treeTag.tld" prefix="myjsp" %>
 
 <head>
@@ -94,7 +95,8 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.suborder.parent.text" /></b></td>
 			<td align="left" class="noBborderStyle"> 
-				<b>${parentDescriptionAndSign}</b> 
+				<b>${parentDescriptionAndSign}</b> <span style="color:red"><html:errors
+				property="parent" /></span>
 			</td>
 		</tr>
 	
@@ -149,7 +151,7 @@
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
 				alt="<bean:message key="main.date.popup.alt.text" />"
 				style="border:0;vertical-align:top"> </a> (<bean:message
-				key="main.suborder.customerorder.text" />: <c:out value="${currentOrder.fromDate}" />) <span 
+				key="main.suborder.parentelement.text" />: <fmt:formatDate value="${suborderParent.fromDate}" pattern="yyyy-MM-dd"/>) <span 
 				style="color:red"><html:errors
 				property="validFrom" /></span></td>
 		</tr>
@@ -165,12 +167,12 @@
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
 				alt="<bean:message key="main.date.popup.alt.text" />"
 				style="border:0;vertical-align:top"> </a> (<bean:message
-				key="main.suborder.customerorder.text" />: <c:choose>
-						<c:when test="${currentOrder.untilDate == null}">
+				key="main.suborder.parentelement.text" />: <c:choose>
+						<c:when test="${suborderParent.untilDate == null}">
 							<bean:message key="main.general.open.text" />)
 						</c:when>
 						<c:otherwise>
-							<c:out value="${currentOrder.untilDate}" />)
+							<fmt:formatDate value="${suborderParent.untilDate}" pattern="yyyy-MM-dd"/>)
 						</c:otherwise>
 					</c:choose> <span style="color:red"><html:errors
 				property="validUntil" /></span></td>
@@ -182,7 +184,7 @@
 				key="main.suborder.description.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:textarea
 				property="description" cols="30" rows="4" /> <span
-				style="color:red"><html:errors property="description" /></span></td>
+				style="color:red"><html:errors property="description" /><c:if test="${fn:length(param.description) > 256}"> (<c:out value="${fn:length(param.description)}" />/256)</c:if></span></td>
 		</tr>
 
 		<!-- short description -->
@@ -255,6 +257,15 @@
 			<td align="left" class="noBborderStyle"><html:checkbox
 				property="commentnecessary" /></td>
 		</tr>
+		
+		<!-- no employee order content -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.suborder.eocpossible.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:checkbox
+				property="noEmployeeOrderContent" /></td>
+		</tr>
+		
 		
 		<!-- hide -->
 		<tr>
@@ -472,7 +483,7 @@
 			</c:choose></td>
 
 			<!-- Dauer -->
-			<td align="center" nowrap><c:if
+			<td align="center" nowrap="nowrap"><c:if
 				test="${timereport.durationhours < 10}">0</c:if><c:out
 				value="${timereport.durationhours}" />:<c:if
 				test="${timereport.durationminutes < 10}">0</c:if><c:out

@@ -7,7 +7,6 @@ import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Overtime;
-import org.tb.bdom.Vacation;
 
 public class OvertimeDAO extends HibernateDaoSupport {
 	

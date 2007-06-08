@@ -288,6 +288,13 @@
 								</tr>
 								<tr>
 									<td class="info" valign="top"><bean:message
+										key="main.suborder.eocpossible.text" />:</td>
+									<td class="info"><c:choose><c:when test="${suborder.noEmployeeOrderContent == true}"><bean:message
+										key="main.general.yes" /></c:when><c:otherwise><bean:message
+										key="main.general.no" /></c:otherwise></c:choose></td>
+								</tr>
+								<tr>
+									<td class="info" valign="top"><bean:message
 										key="main.general.hide" />:</td>
 									<td class="info"><c:choose><c:when test="${suborder.hide == true}"><bean:message
 										key="main.general.yes" /></c:when><c:otherwise><bean:message
@@ -309,17 +316,35 @@
 								<td><c:out value="${suborder.sign}" /></td>
 								<td><c:out value="${suborder.shortdescription}" /></td>
 								<!-- <td><c:out value="${suborder.description}" /></td> -->
-								<td><c:out value="${suborder.fromDate}" /></td>
-								<td>
-									<c:choose>
-										<c:when test="${suborder.untilDate == null}">
-											<bean:message key="main.general.open.text" />
-										</c:when>
-										<c:otherwise>
-											<c:out value="${suborder.untilDate}" />
-										</c:otherwise>
-									</c:choose>
-								</td>
+								
+								<c:choose>
+									<c:when test="${!suborder.timePeriodFitsToUpperElement}">
+										<td style="color:red;"><c:out value="${suborder.fromDate}" /></td>
+										<td style="color:red;">
+											<c:choose>
+												<c:when test="${suborder.untilDate == null}">
+													<bean:message key="main.general.open.text" />
+												</c:when>
+												<c:otherwise>
+													<c:out value="${suborder.untilDate}" />
+												</c:otherwise>
+											</c:choose>
+										</td>
+									</c:when>
+									<c:otherwise>
+										<td><c:out value="${suborder.fromDate}" /></td>
+										<td>
+											<c:choose>
+												<c:when test="${suborder.untilDate == null}">
+													<bean:message key="main.general.open.text" />
+												</c:when>
+												<c:otherwise>
+													<c:out value="${suborder.untilDate}" />
+												</c:otherwise>
+											</c:choose>
+										</td>
+									</c:otherwise>
+								</c:choose>
 								
 								<!-- is hourly rate for billable suborders set? -->
 								<c:choose>
@@ -397,17 +422,35 @@
 								<td style="color:gray"><c:out value="${suborder.sign}" /></td>
 								<td style="color:gray"><c:out value="${suborder.shortdescription}" /></td>
 								<!-- <td style="color:gray"><c:out value="${suborder.description}" /></td> -->
-								<td style="color:gray"><c:out value="${suborder.fromDate}" /></td>
-								<td style="color:gray">
-									<c:choose>
-										<c:when test="${suborder.untilDate == null}">
-											<bean:message key="main.general.open.text" />
-										</c:when>
-										<c:otherwise>
-											<c:out value="${suborder.untilDate}" />
-										</c:otherwise>
-									</c:choose>
-								</td>
+								
+								<c:choose>
+									<c:when test="${!suborder.timePeriodFitsToUpperElement}">
+										<td style="color:red;"><c:out value="${suborder.fromDate}" /></td>
+										<td style="color:red;">
+											<c:choose>
+												<c:when test="${suborder.untilDate == null}">
+													<bean:message key="main.general.open.text" />
+												</c:when>
+												<c:otherwise>
+													<c:out value="${suborder.untilDate}" />
+												</c:otherwise>
+											</c:choose>
+										</td>
+									</c:when>
+									<c:otherwise>
+										<td style="color:gray"><c:out value="${suborder.fromDate}" /></td>
+										<td style="color:gray">
+											<c:choose>
+												<c:when test="${suborder.untilDate == null}">
+													<bean:message key="main.general.open.text" />
+												</c:when>
+												<c:otherwise>
+													<c:out value="${suborder.untilDate}" />
+												</c:otherwise>
+											</c:choose>
+										</td>
+									</c:otherwise>
+								</c:choose>
 								
 								<!-- is hourly rate for billable suborders set? -->
 								<c:choose>

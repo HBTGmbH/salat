@@ -9,7 +9,6 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.persistence.CustomerDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.ShowCustomerForm;
-import org.tb.web.form.ShowCustomerOrderForm;
 
 /**
  * action class for showing all customers

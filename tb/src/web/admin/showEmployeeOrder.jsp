@@ -412,20 +412,22 @@
 
 		<html:form action="/EditEmployeeOrderContent">
 			<td align="center">			
-				<c:choose>
-					<c:when test="${employeeorder.employeeordercontent == null}">
-						<html:image onclick="editContent(this.form, ${employeeorder.id})" 
-							src="/tb/images/script_add.png" />
-					</c:when>
-					<c:when test="${employeeorder.employeeordercontent != null && (!employeeorder.employeeordercontent.committed_mgmt || !employeeorder.employeeordercontent.committed_emp)}">
-						<html:image onclick="editContent(this.form, ${employeeorder.id})" 
-							src="/tb/images/script_edit.png" />
-					</c:when>		
-					<c:otherwise>
-						<html:image onclick="editContent(this.form, ${employeeorder.id})" 
-							src="/tb/images/script.png" />
-					</c:otherwise>
-				</c:choose>
+				<c:if test="${!loginEmployeeContract.freelancer && !employeeorder.suborder.noEmployeeOrderContent}">
+					<c:choose>
+						<c:when test="${employeeorder.employeeordercontent == null}">
+							<html:image onclick="editContent(this.form, ${employeeorder.id})" 
+								src="/tb/images/script_add.png" />
+						</c:when>
+						<c:when test="${employeeorder.employeeordercontent != null && (!employeeorder.employeeordercontent.committed_mgmt || !employeeorder.employeeordercontent.committed_emp)}">
+							<html:image onclick="editContent(this.form, ${employeeorder.id})" 
+								src="/tb/images/script_edit.png" />
+						</c:when>		
+						<c:otherwise>
+							<html:image onclick="editContent(this.form, ${employeeorder.id})" 
+								src="/tb/images/script.png" />
+						</c:otherwise>
+					</c:choose>
+				</c:if>&nbsp;
 			</td>
 		</html:form>
 

@@ -25,19 +25,12 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 					.getAttribute("loginEmployee");
 			if (!eoContent.getCommitted_emp() && !eoContent.getCommitted_mgmt()) {
 				return true;
-			} else if (!eoContent.getCommitted_mgmt()
-					&& (loginEmployee.equals(employeeorder
-							.getEmployeecontract().getEmployee()) || loginEmployee
-							.getStatus().equals(
-									GlobalConstants.EMPLOYEE_STATUS_GF))) {
+			} else if ((!eoContent.getCommitted_mgmt() || !eoContent.getCommitted_emp())
+					&& (loginEmployee.equals(employeeorder.getEmployeecontract().getEmployee()) 
+							|| loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)
+							|| loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL))) {
 				return true;
-			} else if (!eoContent.getCommitted_emp()
-					&& (loginEmployee.getStatus().equals(
-							GlobalConstants.EMPLOYEE_STATUS_GF) || loginEmployee
-							.equals(employeeorder.getEmployeecontract()
-									.getEmployee()))) {
-				return true;
-			} else if (loginEmployee.getStatus().equals(
+			}  else if (loginEmployee.getStatus().equals(
 					GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 				return true;
 			} else {
@@ -67,7 +60,9 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 				request.getSession().setAttribute("releaseEmpPossible", true);
 				request.getSession().setAttribute("releaseMgmtPossible", false);
 			} else if (loginEmployee.getStatus().equals(
-					GlobalConstants.EMPLOYEE_STATUS_GF)) {
+					GlobalConstants.EMPLOYEE_STATUS_GF) || 
+				loginEmployee.getStatus().equals(
+					GlobalConstants.EMPLOYEE_STATUS_BL)) {
 				request.getSession().setAttribute("releaseMgmtPossible", true);
 				request.getSession().setAttribute("releaseEmpPossible", false);
 			} else if (loginEmployee.getStatus().equals(

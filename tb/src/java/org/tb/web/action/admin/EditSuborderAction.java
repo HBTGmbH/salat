@@ -94,9 +94,11 @@ public class EditSuborderAction extends LoginRequiredAction {
 			Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
 			if (tempSubOrder!=null){
 				soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+				request.getSession().setAttribute("suborderParent", tempSubOrder);
 			}else{
 				Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
 				soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
+				request.getSession().setAttribute("suborderParent", tempOrder);
 			}
 			request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
 		}catch(Throwable th){
@@ -119,6 +121,7 @@ public class EditSuborderAction extends LoginRequiredAction {
 			soForm.setDebithoursunit(null);
 		}
 		soForm.setHide(so.getHide());
+		soForm.setNoEmployeeOrderContent(so.getNoEmployeeOrderContent());
 		
 		//request.getSession().setAttribute("currentSuborderID", new Long(so.getId()));
 		request.getSession().setAttribute("currentOrderId", new Long(so.getCustomerorder().getId()));

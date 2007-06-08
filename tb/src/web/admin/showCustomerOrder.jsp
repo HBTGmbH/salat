@@ -110,38 +110,28 @@
 			key="main.customerorder.customer.text" /></b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.orders.ordernumber.text" />"><b><bean:message
-			key="main.customerorder.order.text" /></b></th>
-		<th align="left"
-			title="<bean:message
+			key="main.headlinedescription.orders.ordernumber.text" /> - <bean:message
 			key="main.headlinedescription.orders.description.text" />"><b><bean:message
+			key="main.customerorder.order.text" /><br><bean:message
 			key="main.customerorder.shortdescription.short.text" /></b></th>
-		<!-- <th align="left"
-			title="<bean:message
-			key="main.headlinedescription.orders.description.text" />"><b><bean:message
-			key="main.customerorder.description.text" /></b></th> -->
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.orders.validfrom.text" />"><b><bean:message
-			key="main.customerorder.validfrom.text" /></b></th>
-		<th align="left"
-			title="<bean:message
+			key="main.headlinedescription.orders.validfrom.text" /> - <bean:message
 			key="main.headlinedescription.orders.validuntil.text" />"><b><bean:message
+			key="main.customerorder.validfrom.text" /><br><bean:message
 			key="main.customerorder.validuntil.text" /></b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.orders.responsecustomer.contract.text" />"><b><bean:message
-			key="main.customerorder.responsiblecustomer.contract.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.orders.responsecustomer.tech.text" />"><b><bean:message
-			key="main.customerorder.responsiblecustomer.tech.text" /></b></th>
+			key="main.headlinedescription.orders.responsecustomer.text" />"><b><bean:message
+			key="main.customerorder.responsiblecustomer.text" /><br><bean:message
+			key="main.customerorder.tech.text" /><br><bean:message
+			key="main.customerorder.contract.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.responsehbt.text" />"><b><bean:message
-			key="main.customerorder.responsiblehbt.execution.text" /></b></th>
-		<th align="left"><b><bean:message
-			key="main.customerorder.responsiblehbt.contract.text" /></b></th>
+			key="main.customerorder.table.responsiblehbt.text" /><br><bean:message
+			key="main.customerorder.dv.text" /><br><bean:message
+			key="main.customerorder.av.text" /></b></th>
 		<th align="left"><b><bean:message
 			key="main.customerorder.statusreport.text" /></b></th>				
 		<th align="left"
@@ -245,28 +235,33 @@
 		<c:choose>
 			<c:when test="${customerorder.currentlyValid}">
 				<td><c:out value="${customerorder.customer.shortname}" /></td>
-				<td><c:out value="${customerorder.sign}" /></td>
-				<td><c:out value="${customerorder.shortdescription}" /></td>
-				<!-- <td><c:out value="${customerorder.description}" /></td> -->
-				<td><c:out value="${customerorder.fromDate}" /></td>
-				<td><c:choose>
-					<c:when test="${customerorder.untilDate == null}">
-						<bean:message key="main.general.open.text" />
-					</c:when>
-					<c:otherwise>
-						<c:out value="${customerorder.untilDate}" />
-					</c:otherwise>
-				</c:choose></td>
-				<td><c:out
-					value="${customerorder.responsible_customer_contractually}" /></td>
-				<td><c:out
-					value="${customerorder.responsible_customer_technical}" /></td>
-				<td><c:out value="${customerorder.responsible_hbt.name}" /></td>
-				<td><c:out value="${customerorder.respEmpHbtContract.name}" />&nbsp;</td>
+				<td nowrap="nowrap"><c:out value="${customerorder.sign}" /><br><c:out value="${customerorder.shortdescription}" /></td>				
+				<td nowrap="nowrap">
+					<c:out value="${customerorder.fromDate}" />
+					<br>
+					<c:choose>
+						<c:when test="${customerorder.untilDate == null}">
+							<bean:message key="main.general.open.text" />
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.untilDate}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
+				<td nowrap="nowrap">
+					a) <c:out value="${customerorder.responsible_customer_contractually}" />
+					<br>
+					b) <c:out value="${customerorder.responsible_customer_technical}" />
+				</td>
+				<td nowrap="nowrap">
+					a) <c:out value="${customerorder.responsible_hbt.name}" />
+					<br>
+					b) <c:out value="${customerorder.respEmpHbtContract.name}" />
+				</td>
 				<td align="center">
 					<c:choose>
 						<c:when test="${customerorder.statusreport == 0}">
-							<bean:message key="main.customerorder.statusreport.option.0.text" />
+							-
 						</c:when>
 						<c:when test="${customerorder.statusreport == 12}">
 							<bean:message key="main.customerorder.statusreport.option.12.text" />
@@ -318,30 +313,34 @@
 				<!-- customerorder is invalid -->
 				<td style="color:gray"><c:out
 					value="${customerorder.customer.shortname}" /></td>
-				<td style="color:gray"><c:out value="${customerorder.sign}" /></td>
-				<td style="color:gray"><c:out
+				<td style="color:gray" nowrap="nowrap"><c:out value="${customerorder.sign}" /><br><c:out
 					value="${customerorder.shortdescription}" /></td>
-				<td style="color:gray"><c:out value="${customerorder.fromDate}" /></td>
-				<td style="color:gray"><c:choose>
-					<c:when test="${customerorder.untilDate == null}">
-						<bean:message key="main.general.open.text" />
-					</c:when>
-					<c:otherwise>
-						<c:out value="${customerorder.untilDate}" />
-					</c:otherwise>
-				</c:choose></td>
-				<td style="color:gray"><c:out
-					value="${customerorder.responsible_customer_contractually}" /></td>
-				<td style="color:gray"><c:out
-					value="${customerorder.responsible_customer_technical}" /></td>
-				<td style="color:gray"><c:out
-					value="${customerorder.responsible_hbt.name}" /></td>
-				<td style="color:gray"><c:out 
-					value="${customerorder.respEmpHbtContract.name}" />&nbsp;</td>
+				<td style="color:gray" nowrap="nowrap">
+					<c:out value="${customerorder.fromDate}" />
+					<br>
+					<c:choose>
+						<c:when test="${customerorder.untilDate == null}">
+							<bean:message key="main.general.open.text" />
+						</c:when>
+						<c:otherwise>
+							<c:out value="${customerorder.untilDate}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
+				<td nowrap="nowrap" style="color:gray">
+					a) <c:out value="${customerorder.responsible_customer_contractually}" />
+					<br>
+					b) <c:out value="${customerorder.responsible_customer_technical}" />
+				</td>
+				<td nowrap="nowrap" style="color:gray">
+					a) <c:out value="${customerorder.responsible_hbt.name}" />
+					<br>
+					b) <c:out value="${customerorder.respEmpHbtContract.name}" />
+				</td>
 				<td style="color:gray" align="center">
 					<c:choose>
 						<c:when test="${customerorder.statusreport == 0}">
-							<bean:message key="main.customerorder.statusreport.option.0.text" />
+							-
 						</c:when>
 						<c:when test="${customerorder.statusreport == 12}">
 							<bean:message key="main.customerorder.statusreport.option.12.text" />

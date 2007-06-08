@@ -75,7 +75,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 				return mapping.getInputForward();
 			}
 			
-			// test, if login user is authrized to safe
+			// test, if login user is authorized to safe
 			boolean authorized = false;
 			if (eoContent == null) {
 				eoContent = new Employeeordercontent();
@@ -86,16 +86,24 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 					return mapping.findForward("error");
 				}
 				Employee empFromEO = employeeorder.getEmployeecontract().getEmployee();
-				if (empFromEO != null && 
+				if (!eoContent.getCommitted_emp() &&
+						 !eoContent.getCommitted_mgmt()) {
+					// no one has committed yet - everyone may save
+					authorized = true;
+				} else if (empFromEO != null && 
 						empFromEO.equals(loginEmployee) &&
 						(!eoContent.getCommitted_emp() ||
 						 !eoContent.getCommitted_mgmt())) {
+					// only one side hast committed - emp from emploeeorder may save
 					authorized = true;
-				} else if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) &&
+				} else if ((loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)||
+						loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) &&
 						   (!eoContent.getCommitted_emp() ||
 									 !eoContent.getCommitted_mgmt())) {
+					// only one side has committed - bl and gf may save
 					authorized = true;
 				} else if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+					// login employee is admin - admin may save
 					authorized = true;
 				}				
 			}
@@ -218,7 +226,8 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 			//  status = admin
 			// OR
 			//  status = gf
-			if ((loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) ||
+			if ((loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
+				 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)||
 				 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) &&
 				 		employeeorder.getEmployeeordercontent() != null &&
 						formEntriesEqualDB(employeeorder.getEmployeeordercontent().getId(), contentForm)) {
