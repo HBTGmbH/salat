@@ -226,6 +226,12 @@ public class ShowDailyReportAction extends DailyReportAction {
 				String endMonth = reportForm.getLastmonth();
 				String endYear = reportForm.getLastyear();
 				
+				if (endDay == null && endMonth == null && endYear == null) {
+					endDay = beginDay;
+					endMonth = beginMonth;
+					endYear = beginYear;
+				}				
+				
 				/* set session attributes */
 				List<Customerorder> orders;
 				if (employeeContractId == 0 || employeeContractId == -1) {
@@ -351,6 +357,9 @@ public class ShowDailyReportAction extends DailyReportAction {
             monthMap.put("Nov", "main.timereport.select.month.nov.text");
             monthMap.put("Dec", "main.timereport.select.month.dec.text");
             request.getSession().setAttribute("MonthKey", monthMap.get(reportForm.getMonth()));
+            if (reportForm.getLastmonth() != null) {
+            	request.getSession().setAttribute("LastMonthKey", monthMap.get(reportForm.getLastmonth()));
+            }
             return mapping.findForward("print");
         }
         

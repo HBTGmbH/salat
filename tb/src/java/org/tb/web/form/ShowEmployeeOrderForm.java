@@ -23,6 +23,8 @@ public class ShowEmployeeOrderForm extends ActionForm {
 	private String filter;
 	private Boolean show;
 	
+	private Boolean showActualHours = false;
+	
 	
 	/**
 	 * @return the employeeContractId
@@ -82,6 +84,20 @@ public class ShowEmployeeOrderForm extends ActionForm {
 		this.show = show;
 	}
 
+	/**
+	 * @return the showActualHours
+	 */
+	public Boolean getShowActualHours() {
+		return showActualHours;
+	}
+
+	/**
+	 * @param showActualHours the showActualHours to set
+	 */
+	public void setShowActualHours(Boolean showActualHours) {
+		this.showActualHours = showActualHours;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
@@ -94,6 +110,7 @@ public class ShowEmployeeOrderForm extends ActionForm {
 		
 		filter = "";
 		show = false;
+		showActualHours = false;
 		
 		
 	}

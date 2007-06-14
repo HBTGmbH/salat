@@ -194,4 +194,6 @@ public class GlobalConstants {
     public static final Integer STATUSREPORT_SORT_EXTRA = 2;
     public static final Integer STATUSREPORT_SORT_FINAL = 3;
     
+    public static final Integer MINUTES_PER_HOUR = 60;
+    
 }

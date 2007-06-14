@@ -1,13 +1,19 @@
 package org.tb.web.action.admin;
 
 import java.text.SimpleDateFormat;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.tb.bdom.EmployeeOrderViewDecorator;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.SuborderViewDecorator;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeOrderForm;
 import org.tb.web.form.ShowEmployeeOrderForm;
@@ -50,7 +56,7 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 	 * @param orderForm
 	 * @param employeeorderDAO
 	 */
-	protected void refreshEmployeeOrders(HttpServletRequest request, ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO, EmployeecontractDAO employeecontractDAO) {
+	protected void refreshEmployeeOrders(HttpServletRequest request, ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO, EmployeecontractDAO employeecontractDAO, TimereportDAO timereportDAO) {
 		Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 		Long employeeContractId = 0L;		
@@ -111,7 +117,27 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 				orderForm.setShow(show);
 			}
 		}
-		request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+				
+		boolean showActualHours = orderForm.getShowActualHours();
+		request.getSession().setAttribute("showActualHours", showActualHours);
+		
+		orderForm.setFilter(filter);
+		orderForm.setOrderId(orderId);
+		orderForm.setShow(show);
+		orderForm.setShowActualHours(showActualHours);
+		
+		if (showActualHours) {
+			/* show actual hours */
+			List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId);
+			List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
+			for (Employeeorder employeeorder : employeeOrders) {
+				EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+				decorators.add(decorator);
+			}
+			request.getSession().setAttribute("employeeorders", decorators);
+		} else {
+			request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+		}
 		
 		if (employeeContractId == -1) {
 			request.getSession().setAttribute("currentEmployeeId", loginEmployeeContract.getEmployee().getId());

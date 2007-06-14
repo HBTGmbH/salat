@@ -352,8 +352,8 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 		} // action back end
 		
 		
-		// error
-		return mapping.findForward("error");
+		// no action selected - show page again
+		return mapping.findForward("success");
 	}
 	
 	

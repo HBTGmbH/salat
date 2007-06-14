@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,6 +19,7 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.EmployeeOrderViewDecorator;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
@@ -286,8 +288,20 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
 			}
 		
-			request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
-
+			boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
+			
+			if (showActualHours) {
+				/* show actual hours */
+				List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId);
+				List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
+				for (Employeeorder employeeorder : employeeOrders) {
+					EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+					decorators.add(decorator);
+				}
+				request.getSession().setAttribute("employeeorders", decorators);
+			} else {
+				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+			}
 
 			// request.getSession().setAttribute("employeeorders",
 			// employeeorderDAO.getSortedEmployeeorders());

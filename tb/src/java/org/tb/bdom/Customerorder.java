@@ -420,19 +420,6 @@ public class Customerorder implements Serializable {
 		}
 		return false;
 	}
-	
-	/**
-	 * TODO comment
-	 * 
-	 * @param visitor
-	 */
-	public void acceptVisitor(CustomerOrderVisitor visitor) {
-		visitor.visitCustomerOrder(this);
-		for (Iterator<Suborder> i = suborders.iterator(); i.hasNext();) {
-			Suborder suborder = i.next();
-			suborder.acceptVisitor(visitor);
-		}
-	}
 
 	@Override
 	public boolean equals(Object obj) {

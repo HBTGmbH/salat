@@ -126,7 +126,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		}
 		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
 		
-		refreshEmployeeOrders(request, orderForm, employeeorderDAO, employeecontractDAO);		
+		refreshEmployeeOrders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportDAO);		
 			
 		return mapping.findForward("success");
 			

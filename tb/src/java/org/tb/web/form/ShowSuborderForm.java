@@ -20,6 +20,22 @@ public class ShowSuborderForm extends ActionForm {
 	private String filter;
 	private Long customerOrderId;
 	private Boolean showstructure = false;
+	
+	private Boolean showActualHours = false;
+
+	/**
+	 * @return the showActualHours
+	 */
+	public Boolean getShowActualHours() {
+		return showActualHours;
+	}
+
+	/**
+	 * @param showActualHours the showActualHours to set
+	 */
+	public void setShowActualHours(Boolean showActualHours) {
+		this.showActualHours = showActualHours;
+	}
 
 	public Boolean getShowstructure() {
 		return showstructure;
@@ -70,7 +86,8 @@ public class ShowSuborderForm extends ActionForm {
 		filter = "";
 		show = false;
 		customerOrderId = -1L;
-		showstructure =false;
+		showstructure = false;
+		showActualHours = false;
 	}
 
 	@Override

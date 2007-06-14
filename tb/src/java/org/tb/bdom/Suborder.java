@@ -502,16 +502,11 @@ public class Suborder implements Serializable {
 		final List<Suborder> allChildren = new LinkedList<Suborder>();
 		
 		/* create visitor to collect suborders */
-		CustomerOrderVisitor allChildrenCollector = new CustomerOrderVisitor() {
+		SuborderVisitor allChildrenCollector = new SuborderVisitor() {
 			
 			public void visitSuborder(Suborder suborder) {
 				allChildren.add(suborder);
 			}
-
-			public void visitCustomerOrder(Customerorder customerorder) {
-				/* not needed */
-			}
-			
 		};
 		
 		/* start visiting */
@@ -539,16 +534,11 @@ public class Suborder implements Serializable {
 		final TimereportDAO visitorTimereportDAO = timereportDAO;
 		
 		/* create visitor to collect suborders */
-		CustomerOrderVisitor allInvalidTimeReportsCollector = new CustomerOrderVisitor() {
+		SuborderVisitor allInvalidTimeReportsCollector = new SuborderVisitor() {
 			
 			public void visitSuborder(Suborder suborder) { 
 				allInvalidTimeReports.addAll(visitorTimereportDAO.getTimereportsBySuborderIdInvalidForDates(visitorBeginDate, visitorEndDate, suborder.getId()));
 			}
-
-			public void visitCustomerOrder(Customerorder customerorder) {
-				/* not needed */
-			}
-			
 		};
 		
 		/* start visiting */
@@ -571,7 +561,7 @@ public class Suborder implements Serializable {
 		final Suborder visitorRootSuborder = rootSuborder;
 		
 		/* create visitor to collect suborders */
-		CustomerOrderVisitor customerOrderSetter = new CustomerOrderVisitor() {
+		SuborderVisitor customerOrderSetter = new SuborderVisitor() {
 			
 			public void visitSuborder(Suborder suborder) {
 				// do not modify root suborder
@@ -585,12 +575,7 @@ public class Suborder implements Serializable {
 								visitorLoginEmployee);
 					}
 				}				
-			}
-
-			public void visitCustomerOrder(Customerorder customerorder) {
-				/* not needed */
-			}
-			
+			}			
 		};
 		
 		/* start visiting */
@@ -604,7 +589,7 @@ public class Suborder implements Serializable {
 	 * 
 	 * @param visitor
 	 */
-	public void acceptVisitor(CustomerOrderVisitor visitor) {
+	public void acceptVisitor(SuborderVisitor visitor) {
 		visitor.visitSuborder(this);
 		for (Iterator<Suborder> i = children.iterator(); i.hasNext();) {
 			Suborder suborder = i.next();

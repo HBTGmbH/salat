@@ -76,6 +76,10 @@ public class EditDailyReportAction extends DailyReportAction {
 		long trId = Long.parseLong(request.getParameter("trId"));
 		Timereport tr = timereportDAO.getTimereportById(trId);
 		
+		// set collections
+		request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
+		request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
+		
 		// fill the form with properties of the timereport to be edited
 		setFormEntries(mapping, request, reportForm, tr);
 		

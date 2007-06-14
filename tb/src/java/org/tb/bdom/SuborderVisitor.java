@@ -5,14 +5,7 @@ package org.tb.bdom;
  * 
  * @author th
  */
-public interface CustomerOrderVisitor {
-	
-	/**
-	 * TODO comment
-	 * 
-	 * @param customerorder
-	 */
-	void visitCustomerOrder(Customerorder customerorder);
+public interface SuborderVisitor {
 	
 	/**
 	 * TODO comment

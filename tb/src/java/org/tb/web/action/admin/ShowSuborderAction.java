@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -10,9 +11,12 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.SuborderViewDecorator;
 import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.ShowSuborderForm;
 
@@ -27,6 +31,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
 	
 	private SuborderDAO suborderDAO;
 	private CustomerorderDAO customerorderDAO;
+	private TimereportDAO timereportDAO;
 	
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
@@ -34,6 +39,10 @@ public class ShowSuborderAction extends LoginRequiredAction {
 	
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
+	}
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
 	}
 
 	@Override
@@ -116,8 +125,23 @@ public class ShowSuborderAction extends LoginRequiredAction {
 			}
 			
 		}
+				
 		
-		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));			
+		boolean showActualHours = suborderForm.getShowActualHours();
+		request.getSession().setAttribute("showActualHours", showActualHours);
+		
+		if (showActualHours) {
+			/* show actual hours */
+			List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+			List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+			for (Suborder suborder : suborders) {
+				SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+				suborderViewDecorators.add(decorator);
+			}
+			request.getSession().setAttribute("suborders", suborderViewDecorators);
+		} else {
+			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+		}
 
 		// check if loginEmployee has responsibility for some orders
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

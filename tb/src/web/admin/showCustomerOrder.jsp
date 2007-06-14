@@ -85,6 +85,11 @@
 			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
 				property="show" onclick="refresh(this.form)" /></td>
 		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showactualhoursflag.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+					property="showActualHours" onclick="refresh(this.form)" /></td>
+		</tr>
 	</html:form>
 
 	<bean:size id="customerordersSize" name="customerorders" />
@@ -150,6 +155,9 @@
 			key="main.customerorder.hourlyrate.text" /></b></th>
 		<th align="left"><b><bean:message
 			key="main.general.debithours.text" /></b></th>
+		<c:if test="${showActualHours}">
+				<th align="left"><b><bean:message 
+				key="main.general.showactualhours.text" /></b></th></c:if>	
 		<c:if test="${employeeAuthorized}">
 			<th align="left"
 				title="<bean:message
@@ -249,9 +257,9 @@
 					</c:choose>
 				</td>
 				<td nowrap="nowrap">
-					a) <c:out value="${customerorder.responsible_customer_contractually}" />
+					a) <c:out value="${customerorder.responsible_customer_technical}" />
 					<br>
-					b) <c:out value="${customerorder.responsible_customer_technical}" />
+					b) <c:out value="${customerorder.responsible_customer_contractually}" />
 				</td>
 				<td nowrap="nowrap">
 					a) <c:out value="${customerorder.responsible_hbt.name}" />
@@ -308,6 +316,13 @@
 						</c:choose>
 					</c:otherwise>
 				</c:choose></td>
+				
+				<c:if test="${showActualHours}">
+					<td>
+						<c:out value="${customerorder.duration}" />
+					</td>
+				</c:if>
+				
 			</c:when>
 			<c:otherwise>
 				<!-- customerorder is invalid -->
@@ -388,6 +403,13 @@
 						</c:choose>
 					</c:otherwise>
 				</c:choose></td>
+				
+				<c:if test="${showActualHours}">
+					<td  style="color:gray">
+						<c:out value="${customerorder.duration}" />
+					</td>
+				</c:if>
+				
 			</c:otherwise>
 		</c:choose>
 

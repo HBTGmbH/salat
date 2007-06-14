@@ -1,5 +1,8 @@
 package org.tb.web.action.admin;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -10,9 +13,12 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.SuborderViewDecorator;
 import org.tb.logging.TbLogger;
 import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.ShowSuborderForm;
 
 /**
  * action class for deleting a suborder
@@ -23,6 +29,11 @@ import org.tb.web.action.LoginRequiredAction;
 public class DeleteSuborderAction extends LoginRequiredAction {
 	
 	private SuborderDAO suborderDAO;
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
@@ -35,6 +46,8 @@ public class DeleteSuborderAction extends LoginRequiredAction {
 		if ((GenericValidator.isBlankOrNull(request.getParameter("soId"))) ||
 				(!GenericValidator.isLong(request.getParameter("soId")))) 
 					return mapping.getInputForward();
+		
+		ShowSuborderForm suborderForm = (ShowSuborderForm) form;
 		
 		ActionMessages errors = new ActionMessages();
 		long soId = Long.parseLong(request.getParameter("soId"));
@@ -62,7 +75,25 @@ public class DeleteSuborderAction extends LoginRequiredAction {
 		if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
 			customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
 		}
-		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+		
+		suborderForm.setFilter(filter);
+		suborderForm.setShow(show);
+		suborderForm.setCustomerOrderId(customerOrderId);
+		
+		boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
+		suborderForm.setShowActualHours(showActualHours);
+		if (showActualHours) {
+			/* show actual hours */
+			List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+			List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+			for (Suborder suborder : suborders) {
+				SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+				suborderViewDecorators.add(decorator);
+			}
+			request.getSession().setAttribute("suborders", suborderViewDecorators);
+		} else {
+			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+		}
 		
 		TbLogger.debug(DeleteSuborderAction.class.toString(),"DeleteSuborderAction.executeAuthenticated - after deletion");
 		

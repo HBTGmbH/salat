@@ -24,6 +24,13 @@
 			
 	function afterCalenderClick() {
 	}
+	
+	// textarea limitation
+	function limitText(limitField, limitNum) {
+		if (limitField.value.length > limitNum) {
+			limitField.value = limitField.value.substring(0, limitNum);
+		} 
+	}
 				
 </script>
 </head>
@@ -278,10 +285,14 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="needforaction_text" /></span><br>
-				<html:textarea property="needforaction_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="needforaction_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.needforaction_text,2048);" 
+					onkeyup="limitText(this.form.needforaction_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="needforaction_source" /></span><br>
-				<html:textarea property="needforaction_source" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="needforaction_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.needforaction_source,256);" 
+					onkeyup="limitText(this.form.needforaction_source,256);"/>
 			</td>
 		</tr>
 		<tr>
@@ -314,13 +325,19 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="aim_text" /></span><br>
-				<html:textarea property="aim_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="aim_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.aim_text,2048);" 
+					onkeyup="limitText(this.form.aim_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="aim_source" /></span><br>
-				<html:textarea property="aim_source" cols="100" rows="3" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="aim_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.aim_source,256);" 
+					onkeyup="limitText(this.form.aim_source,256);"/><br>
 				<bean:message key="statusreport.action.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="aim_action" /></span><br>
-				<html:textarea property="aim_action" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="aim_action" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.aim_action,256);" 
+					onkeyup="limitText(this.form.aim_action,256);"/>
 			</td>
 		</tr>
 		<tr>
@@ -353,13 +370,19 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="budget_resources_date_text" /></span><br>
-				<html:textarea property="budget_resources_date_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="budget_resources_date_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.budget_resources_date_text,2048);" 
+					onkeyup="limitText(this.form.budget_resources_date_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="budget_resources_date_source" /></span><br>
-				<html:textarea property="budget_resources_date_source" cols="100" rows="3" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="budget_resources_date_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.budget_resources_date_source,256);" 
+					onkeyup="limitText(this.form.budget_resources_date_source,256);"/><br>
 				<bean:message key="statusreport.action.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="budget_resources_date_action" /></span><br>
-				<html:textarea property="budget_resources_date_action" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="budget_resources_date_action" cols="100" rows="4" readonly="${!isReportEditable}"
+					onkeydown="limitText(this.form.budget_resources_date_action,256);" 
+					onkeyup="limitText(this.form.budget_resources_date_action,256);" />
 			</td>
 		</tr>
 		<tr>
@@ -392,13 +415,19 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="riskmonitoring_text" /></span><br>
-				<html:textarea property="riskmonitoring_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="riskmonitoring_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.riskmonitoring_text,2048);" 
+					onkeyup="limitText(this.form.riskmonitoring_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="riskmonitoring_source" /></span><br>
-				<html:textarea property="riskmonitoring_source" cols="100" rows="3" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="riskmonitoring_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.riskmonitoring_source,256);" 
+					onkeyup="limitText(this.form.riskmonitoring_source,256);"/><br>
 				<bean:message key="statusreport.action.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="riskmonitoring_action" /></span><br>
-				<html:textarea property="riskmonitoring_action" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="riskmonitoring_action" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.riskmonitoring_action,256);" 
+					onkeyup="limitText(this.form.riskmonitoring_action,256);"/>
 			</td>
 		</tr>
 		<tr>
@@ -431,13 +460,19 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="changedirective_text" /></span><br>
-				<html:textarea property="changedirective_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="changedirective_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.changedirective_text,2048);" 
+					onkeyup="limitText(this.form.changedirective_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="changedirective_source" /></span><br>
-				<html:textarea property="changedirective_source" cols="100" rows="3" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="changedirective_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.changedirective_source,256);" 
+					onkeyup="limitText(this.form.changedirective_source,256);"/><br>
 				<bean:message key="statusreport.action.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="changedirective_action" /></span><br>
-				<html:textarea property="changedirective_action" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="changedirective_action" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.changedirective_action,256);" 
+					onkeyup="limitText(this.form.changedirective_action,256);"/>
 			</td>
 		</tr>
 		<tr>
@@ -470,13 +505,19 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="communication_text" /></span><br>
-				<html:textarea property="communication_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="communication_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.communication_text,2048);" 
+					onkeyup="limitText(this.form.communication_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="communication_source" /></span><br>
-				<html:textarea property="communication_source" cols="100" rows="3" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="communication_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.communication_source,256);" 
+					onkeyup="limitText(this.form.communication_source,256);"/><br>
 				<bean:message key="statusreport.action.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="communication_action" /></span><br>
-				<html:textarea property="communication_action" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="communication_action" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.communication_action,256);" 
+					onkeyup="limitText(this.form.communication_action,256);"/>
 			</td>
 		</tr>
 		<tr>
@@ -509,13 +550,19 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="improvement_text" /></span><br>
-				<html:textarea property="improvement_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="improvement_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.improvement_text,2048);" 
+					onkeyup="limitText(this.form.improvement_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="improvement_source" /></span><br>
-				<html:textarea property="improvement_source" cols="100" rows="3" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="improvement_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.improvement_source,256);" 
+					onkeyup="limitText(this.form.improvement_source,256);"/><br>
 				<bean:message key="statusreport.action.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="improvement_action" /></span><br>
-				<html:textarea property="improvement_action" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="improvement_action" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.improvement_action,256);" 
+					onkeyup="limitText(this.form.improvement_action,256);"/>
 			</td>
 		</tr>
 		<tr>
@@ -548,13 +595,19 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="miscellaneous_text" /></span><br>
-				<html:textarea property="miscellaneous_text" cols="100" rows="5" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="miscellaneous_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.miscellaneous_text,2048);" 
+					onkeyup="limitText(this.form.miscellaneous_text,2048);"/><br>
 				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="miscellaneous_source" /></span><br>
-				<html:textarea property="miscellaneous_source" cols="100" rows="3" readonly="${!isReportEditable}" /><br>
+				<html:textarea property="miscellaneous_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.miscellaneous_source,256);" 
+					onkeyup="limitText(this.form.miscellaneous_source,256);"/><br>
 				<bean:message key="statusreport.action.text" />: <span style="font-size: 7pt;">(max 256)</span>
 				<span style="color:red"><html:errors property="miscellaneous_action" /></span><br>
-				<html:textarea property="miscellaneous_action" cols="100" rows="3" readonly="${!isReportEditable}" />
+				<html:textarea property="miscellaneous_action" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.miscellaneous_action,256);" 
+					onkeyup="limitText(this.form.miscellaneous_action,256);"/>
 			</td>
 		</tr>
 		<tr>
@@ -602,7 +655,9 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="3">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
 				<span style="color:red"><html:errors property="notes" /></span><br>
-				<html:textarea property="notes" cols="100" rows="5" />
+				<html:textarea property="notes" cols="100" rows="10" 
+					onkeydown="limitText(this.form.notes,2048);" 
+					onkeyup="limitText(this.form.notes,2048);"/>
 			</td>
 		</tr>
 		

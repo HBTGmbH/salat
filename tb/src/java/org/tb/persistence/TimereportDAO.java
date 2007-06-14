@@ -9,6 +9,7 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.GlobalConstants;
@@ -80,6 +81,90 @@ public class TimereportDAO extends HibernateDaoSupport {
 	public List<Timereport> getTimereportsBySuborderId(long suborderId) {
 		return getSession().createQuery("from Timereport tr where tr.suborder.id = ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").setLong(0, suborderId).list();
 	}
+	
+	/**
+	 * Gets the sum of all duration hours without considering the minutes.
+	 * 
+	 * @param soId
+	 * @return
+	 */
+	public Long getTotalDurationHoursForSuborder(long soId) {
+		BigInteger hours = (BigInteger) getSession().createSQLQuery("select sum(durationhours) from Timereport tr, Employeeorder eo where tr.employeeorder_id = eo.id and eo.suborder_id = ?")
+		.setLong(0, soId)
+		.uniqueResult();
+		return hours == null ? 0l : hours.longValue();
+	}
+	
+	/**
+	 * Gets the sum of all duration minutes without considering the hours.
+	 * 
+	 * @param soId
+	 * @return
+	 */
+	public Long getTotalDurationMinutesForSuborder(long soId) {
+		BigInteger minutes = (BigInteger) getSession().createSQLQuery("select sum(durationminutes) from Timereport tr, Employeeorder eo where tr.employeeorder_id = eo.id and eo.suborder_id = ?")
+		.setLong(0, soId)
+		.uniqueResult();
+		return minutes == null ? 0l : minutes.longValue();
+	}
+	
+	
+	/**
+	 * Gets the sum of all duration hours without considering the minutes.
+	 * 
+	 * @param coId
+	 * @return
+	 */
+	public Long getTotalDurationHoursForCustomerOrder(long coId) {
+		BigInteger hours = (BigInteger) getSession().createSQLQuery("select sum(durationhours) from Timereport tr, Employeeorder eo, Suborder so " +
+				"where tr.employeeorder_id = eo.id and eo.suborder_id = so.id and so.customerorder_id = ?")
+		.setLong(0, coId)
+		.uniqueResult();
+		return hours == null ? 0l : hours.longValue();
+	}
+	
+	/**
+	 * Gets the sum of all duration minutes without considering the hours.
+	 * 
+	 * @param coId
+	 * @return
+	 */
+	public Long getTotalDurationMinutesForCustomerOrder(long coId) {
+		BigInteger minutes = (BigInteger) getSession().createSQLQuery("select sum(durationminutes) from Timereport tr, Employeeorder eo, Suborder so " +
+		"where tr.employeeorder_id = eo.id and eo.suborder_id = so.id and so.customerorder_id = ?")
+		.setLong(0, coId)
+		.uniqueResult();
+		return minutes == null ? 0l : minutes.longValue();
+	}
+	
+	/**
+	 * Gets the sum of all duration hours without considering the minutes.
+	 * 
+	 * @param eoId
+	 * @return
+	 */
+	public Long getTotalDurationHoursForEmployeeOrder(long eoId) {
+		BigInteger hours = (BigInteger) getSession().createSQLQuery("select sum(durationhours) from Timereport tr " +
+				"where tr.employeeorder_id = ?")
+		.setLong(0, eoId)
+		.uniqueResult();
+		return hours == null ? 0l : hours.longValue();
+	}
+	
+	/**
+	 * Gets the sum of all duration minutes without considering the hours.
+	 * 
+	 * @param eoId
+	 * @return
+	 */
+	public Long getTotalDurationMinutesForEmployeeOrder(long eoId) {
+		BigInteger minutes = (BigInteger) getSession().createSQLQuery("select sum(durationminutes) from Timereport tr " +
+		"where tr.employeeorder_id = ?")
+		.setLong(0, eoId)
+		.uniqueResult();
+		return minutes == null ? 0l : minutes.longValue();
+	}
+	
 
 	/**
 	 * 
@@ -278,6 +363,24 @@ public class TimereportDAO extends HibernateDaoSupport {
 				getSession().createQuery("from Timereport t where t.employeecontract.id = ? and (t.referenceday.refdate < t.employeeorder.fromDate  or  t.referenceday.refdate > t.employeeorder.untilDate) order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc").setLong(0, employeeContractId).list();
 
 		return allTimereports;
+	}
+	
+	/**
+	 * Gets a list of all {@link Timereport}s, that have no duration and are associated to the given ecId.
+	 * 
+	 * @param ecId id of the {@link Employeecontract}
+	 * @return
+	 */
+	public List<Timereport> getTimereportsWithoutDurationForEmployeeContractId(long ecId) {
+		return getSession().createQuery("from Timereport t " +
+						"where t.employeecontract.id = ? " +
+						"and durationminutes = 0 " +
+						"and durationhours = 0 " +
+						"order by t.referenceday.refdate asc, " +
+							"t.suborder.customerorder.sign asc, " +
+							"t.suborder.sign asc")
+						.setLong(0, ecId)
+						.list();
 	}
 	
 	

@@ -30,6 +30,13 @@
 			form.action = "/tb/do/StoreEmployeeOrderContent?action=back";
 			form.submit();
 		}
+	}
+	
+	// textarea limitation
+	function limitText(limitField, limitNum) {
+		if (limitField.value.length > limitNum) {
+			limitField.value = limitField.value.substring(0, limitNum);
+		} 
 	}	
 			
 </script>
@@ -174,9 +181,11 @@
 			<td class="noBborderStyle" valign="top">
 				<b><bean:message key="employeeordercontent.description.text"/>:</b>
 			</td>
-			<td class="noBborderStyle" valign="top" colspan="2">
-				<html:textarea property="description" cols="100" rows="5" readonly="${!contentIsEditable}" />
-				<span style="color:red"><br><html:errors property="description" /></span>
+			<td class="noBborderStyle" valign="top" colspan="2"> 
+				<span style="font-size: 7pt;">(max 2048)</span> <span style="color:red"><html:errors property="description" /></span><br>
+				<html:textarea property="description" cols="100" rows="10" readonly="${!contentIsEditable}" 					
+					onkeydown="limitText(this.form.description,2048);" 
+					onkeyup="limitText(this.form.description,2048);"/>			
 			</td>
 		</tr>
 		
@@ -189,8 +198,10 @@
 				<b><bean:message key="employeeordercontent.task.text"/>:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
-				<html:textarea property="task" cols="100" rows="5" readonly="${!contentIsEditable}" />
-				<span style="color:red"><br><html:errors property="task" /></span>
+				<span style="font-size: 7pt;">(max 2048)</span> <span style="color:red"><html:errors property="task" /></span><br>
+				<html:textarea property="task" cols="100" rows="10" readonly="${!contentIsEditable}" 										
+					onkeydown="limitText(this.form.task,2048);" 
+					onkeyup="limitText(this.form.task,2048);"/>				
 			</td>
 		</tr>
 		
@@ -200,8 +211,10 @@
 				<b><bean:message key="employeeordercontent.boundary.text"/>:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
-				<html:textarea property="boundary" cols="100" rows="5" readonly="${!contentIsEditable}" />
-				<span style="color:red"><br><html:errors property="boundary" /></span>
+				<span style="font-size: 7pt;">(max 2048)</span> <span style="color:red"><html:errors property="boundary" /></span><br>
+				<html:textarea property="boundary" cols="100" rows="10" readonly="${!contentIsEditable}" 					
+					onkeydown="limitText(this.form.boundary,2048);" 
+					onkeyup="limitText(this.form.boundary,2048);"/>				
 			</td>
 		</tr>
 		
@@ -213,8 +226,10 @@
 				<b><bean:message key="employeeordercontent.procedure.text"/>:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
-				<html:textarea property="procedure" cols="100" rows="5" readonly="${!contentIsEditable}" />
-				<span style="color:red"><br><html:errors property="procedure" /></span>
+				<span style="font-size: 7pt;">(max 2048)</span> <span style="color:red"><html:errors property="procedure" /></span><br>
+				<html:textarea property="procedure" cols="100" rows="10" readonly="${!contentIsEditable}" 				
+					onkeydown="limitText(this.form.procedure,2048);" 
+					onkeyup="limitText(this.form.procedure,2048);"/>				
 			</td>
 		</tr>
 		<tr>
@@ -281,8 +296,10 @@
 				<b><bean:message key="employeeordercontent.additionalrisks.text"/>:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
-				<html:textarea property="additional_risks" cols="100" rows="5" readonly="${!contentIsEditable}" />
-				<span style="color:red"><br><html:errors property="risks" /></span>
+				<span style="font-size: 7pt;">(max 2048)</span> <span style="color:red"><html:errors property="risks" /></span><br>
+				<html:textarea property="additional_risks" cols="100" rows="10" readonly="${!contentIsEditable}" 			
+					onkeydown="limitText(this.form.additional_risks,2048);" 
+					onkeyup="limitText(this.form.additional_risks,2048);"/>				
 			</td>
 		</tr>
 		
@@ -294,8 +311,10 @@
 				<b><bean:message key="employeeordercontent.arrangement.text"/>:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" colspan="2">
-				<html:textarea property="arrangement" cols="100" rows="5" readonly="${!contentIsEditable}" />
-				<span style="color:red"><br><html:errors property="arrangement" /></span>
+				<span style="font-size: 7pt;">(max 2048)</span> <span style="color:red"><html:errors property="arrangement" /></span><br>
+				<html:textarea property="arrangement" cols="100" rows="10" readonly="${!contentIsEditable}" 				
+					onkeydown="limitText(this.form.arrangement,2048);" 
+					onkeyup="limitText(this.form.arrangement,2048);"/>				
 			</td>
 		</tr>
 		
@@ -357,10 +376,6 @@
 					styleId="button"><bean:message key="employeeordercontent.button.delete.text"/></html:submit></c:if>
 		</td></tr>		
 	</table>
-		
-	
-	
-	
 	
 </html:form>
 </body>

@@ -91,6 +91,11 @@
 					property="show" onclick="refresh(this.form)" /> </td>
 		</tr>
 		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showactualhoursflag.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+					property="showActualHours" onclick="refresh(this.form)" /></td>
+		</tr>
+		<tr>
 			<c:choose>
 				<c:when test="${suborderCustomerOrderId == '-1'}" >
 					<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showStructure.text" /></b></td>
@@ -206,6 +211,9 @@
 						key="main.suborder.hourlyrate.text" /></b></th>
 					<th align="left"><b><bean:message
 						key="main.general.debithours.text" /></b></th>
+					<c:if test="${showActualHours}">
+						<th align="left"><b><bean:message 
+						key="main.general.showactualhours.text" /></b></th></c:if>	
 					<th align="left" title="<bean:message
 						key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
 						key="main.suborder.edit.text" /></b></th>
@@ -415,6 +423,14 @@
 										</c:otherwise>
 									</c:choose>
 								</td>
+								
+								<c:if test="${showActualHours}">
+									<td>
+										<c:out value="${suborder.duration}" />
+									</td>
+								</c:if>
+								
+								
 							</c:when>
 							<c:otherwise>
 							<!-- suborder is invalid -->
@@ -521,6 +537,12 @@
 										</c:otherwise>
 									</c:choose>
 								</td>
+								
+								<c:if test="${showActualHours}">
+									<td style="color:gray">
+										<c:out value="${suborder.duration}" />
+									</td>
+								</c:if>
 							</c:otherwise>
 						</c:choose>
 				

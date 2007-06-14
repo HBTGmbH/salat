@@ -3,6 +3,7 @@ package org.tb.web.action.admin;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
+import org.tb.bdom.CustomerOrderViewDecorator;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
@@ -76,13 +78,18 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddCustomerOrderForm coForm = (AddCustomerOrderForm) form;
 	
-//			 remove list with timereports out of range
+			/* remove list with timereports out of range */
 			request.getSession().removeAttribute("timereportsOutOfRange");
 			
 			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("save")) ||
 					(request.getParameter("coId") != null)) {
-						
+				
+				ActionMessages errorMessages = validateFormData(request, coForm);
+				if (errorMessages.size() > 0) {
+					return mapping.getInputForward();
+				}
+				
 				// 'main' task - prepare everything to store the customer.
 				// I.e., copy properties from the form into the customer before saving.
 				long coId = -1;
@@ -90,52 +97,40 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				if (request.getSession().getAttribute("coId") != null) {
 					// edited customerorder
 					coId = Long.parseLong(request.getSession().getAttribute("coId").toString());
-					co = customerorderDAO.getCustomerorderById(coId);
-				} else {
-					// new report
-					co = new Customerorder();
-				}
+				} 
+								
 				
-				ActionMessages errorMessages = validateFormData(request, coForm);
-				if (errorMessages.size() > 0) {
-					return mapping.getInputForward();
-				}
-				
-				co.setCurrency(coForm.getCurrency());
-				co.setCustomer(customerDAO.getCustomerById(coForm.getCustomerId()));
-				
-				
+				Date untilDate;
 				if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
-					Date untilDate = Date.valueOf(coForm.getValidUntil());
-					co.setUntilDate(untilDate);
+					untilDate = Date.valueOf(coForm.getValidUntil());
 				} else {
-					co.setUntilDate(null);
-				}
+					untilDate = null;
+				}				
 				Date fromDate = Date.valueOf(coForm.getValidFrom());
-				co.setFromDate(fromDate);
+				
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				
-				// adjust suborders
-				List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(co.getId());
+				/* adjust suborders */
+				List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(coId);
 				if (suborders != null && !suborders.isEmpty()) {
 					for (Suborder so : suborders) {
 						boolean suborderchanged = false;
-						if (so.getFromDate().before(co.getFromDate())) {
-							so.setFromDate(co.getFromDate());
+						if (so.getFromDate().before(fromDate)) {
+							so.setFromDate(fromDate);
 							suborderchanged = true;
 						}
-						if (so.getUntilDate() != null && so.getUntilDate().before(co.getFromDate())) {
-							 so.setUntilDate(co.getFromDate());
+						if (so.getUntilDate() != null && so.getUntilDate().before(fromDate)) {
+							 so.setUntilDate(fromDate);
 							 suborderchanged = true;
 						 }
-						if (co.getUntilDate() != null) {
-							if (so.getFromDate().after(co.getUntilDate())) {
-								 so.setFromDate(co.getUntilDate());
+						if (untilDate != null) {
+							if (so.getFromDate().after(untilDate)) {
+								 so.setFromDate(untilDate);
 								 suborderchanged = true;
 							 }
-							 if (so.getUntilDate() == null || so.getUntilDate().after(co.getUntilDate())) {
-								 so.setUntilDate(co.getUntilDate());
+							 if (so.getUntilDate() == null || so.getUntilDate().after(untilDate)) {
+								 so.setUntilDate(untilDate);
 								 suborderchanged = true;
 							 }
 						}
@@ -175,6 +170,21 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 						}
 					}
 				}
+				
+				if (coId != 0 && coId != -1) {
+					co = customerorderDAO.getCustomerorderById(coId);
+				}
+				if (co == null) {
+					// new customer order
+					co = new Customerorder();
+				}
+				
+				/* set attributes */				
+				co.setCurrency(coForm.getCurrency());
+				co.setCustomer(customerDAO.getCustomerById(coForm.getCustomerId()));
+				
+				co.setUntilDate(untilDate);
+				co.setFromDate(fromDate);
 				
 				co.setSign(coForm.getSign());
 				co.setDescription(coForm.getDescription());
@@ -219,8 +229,22 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 					if (request.getSession().getAttribute("customerorderCustomerId") != null) {
 						customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
 					}
-					request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
+					
+					
+					boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");				
+					if (showActualHours) {
+						/* show actual hours */
+						List<Customerorder> customerOrders =  customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
+						List<CustomerOrderViewDecorator> decorators = new LinkedList<CustomerOrderViewDecorator>();
+						for (Customerorder customerorder : customerOrders) {
+							CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
+							decorators.add(decorator);
+						}
+						request.getSession().setAttribute("customerorders", decorators);
+					} else {
+						request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
 
+					}
 					
 					return mapping.findForward("success");
 				} else {

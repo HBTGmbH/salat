@@ -1,5 +1,8 @@
 package org.tb.web.action.admin;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -10,9 +13,12 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.tb.bdom.CustomerOrderViewDecorator;
 import org.tb.bdom.Customerorder;
 import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
+import org.tb.web.form.ShowCustomerOrderForm;
 
 /**
  * action class for deleting a customer order
@@ -22,9 +28,15 @@ import org.tb.web.action.LoginRequiredAction;
  */
 public class DeleteCustomerorderAction extends LoginRequiredAction {
 	
-	private CustomerorderDAO customerorderDAO;
-	
 	private static Logger logger = Logger.getRootLogger();
+	
+	private CustomerorderDAO customerorderDAO;	
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
+	
 	
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
@@ -42,6 +54,8 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
 		Customerorder co = customerorderDAO.getCustomerorderById(coId);
 		if (co == null) 
 			return mapping.getInputForward();
+		
+		ShowCustomerOrderForm orderForm = (ShowCustomerOrderForm) form;
 		
 		boolean deleted = customerorderDAO.deleteCustomerorderById(coId);	
 		
@@ -61,9 +75,29 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
 		}
 		if (request.getSession().getAttribute("customerorderCustomerId") != null) {
 			customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
-		}
-		request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
+		}		
+		
+		orderForm.setFilter(filter);
+		orderForm.setShow(show);
+		orderForm.setCustomerId(customerId);
+		
+		
+		boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");				
+		orderForm.setShowActualHours(showActualHours);
+		if (showActualHours) {
+			/* show actual hours */
+			List<Customerorder> customerOrders =  customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
+			List<CustomerOrderViewDecorator> decorators = new LinkedList<CustomerOrderViewDecorator>();
+			for (Customerorder customerorder : customerOrders) {
+				CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
+				decorators.add(decorator);
+			}
+			request.getSession().setAttribute("customerorders", decorators);
+		} else {
+			request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
 
+		}
+		
 		// back to customer order display jsp
 		return mapping.getInputForward();
 	}

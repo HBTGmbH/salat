@@ -39,42 +39,47 @@
 		<center>
 		<table width="60%">
 			<tr>
-				<th class="matrix noBborderStyle"
-					colspan="<c:if test="${(view eq 'day')}">4</c:if><c:if test="${(view eq 'month')}">3</c:if><c:if test="${(view eq 'custom')}">5</c:if>"><span
+				<th class="matrix noBborderStyle" align="center"
+					colspan="<c:if test="${(view eq 'day')}">3</c:if><c:if test="${(view eq 'month')}">2</c:if><c:if test="${(view eq 'custom')}">3</c:if>"><span
 					style="font-size:12pt;"><bean:message
 					key="main.matrixoverview.headline.tb.text" /></span></th>
 			</tr>
 			<tr>
-				<th class="matrix noBborderStyle"><c:if test="${currentEmployee eq 'ALL EMPLOYEES'}"><bean:message
-					key="main.matrixoverview.headline.allemployees.text" /></c:if>
-				<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}"><c:out
-					value="${currentEmployee}" /></c:if></th>
-
 				<c:if test="${view eq 'day'}">
-					<th width="20%" class="matrix noBborderStyle"><c:out
+					<th width="40%" class="matrix noBborderStyle" align="right"><c:out
 						value="${currentDay}" />.</th>
-					<th width="20%" class="matrix noBborderStyle"><bean:message
+					<th width="20%" class="matrix noBborderStyle" align="center"><bean:message
 						key="${MonthKey}" /></th>
-					<th width="20%" class="matrix noBborderStyle"><c:out
+					<th width="40%" class="matrix noBborderStyle" align="left"><c:out
 						value="${currentYear}" /></th>
 				</c:if>
 				<c:if test="${view eq 'month'}">
-					<th width="20%" class="matrix noBborderStyle"><bean:message
+					<th width="50%" class="matrix noBborderStyle" align="right"><bean:message
 						key="${MonthKey}" /></th>
-					<th width="30%" class="matrix noBborderStyle"><c:out
+					<th width="50%" class="matrix noBborderStyle" align="left"><c:out
 						value="${currentYear}" /></th>
 				</c:if>
 				<c:if test="${view eq 'custom'}">
-					<th width="10%" class="matrix noBborderStyle"><c:out
-						value="${currentDay}" />.</th>
-					<th width="10%" class="matrix noBborderStyle"><c:out
-						value="${lastDay}" /></th>
-					<th width="20%" class="matrix noBborderStyle"><bean:message
-						key="${MonthKey}" /></th>
-					<th width="20%" class="matrix noBborderStyle"><c:out
+					<th width="45%" class="matrix noBborderStyle" nowrap="nowrap" align="right"><c:out
+						value="${currentDay}" />. <bean:message
+						key="${MonthKey}" /> <c:out
 						value="${currentYear}" /></th>
+					<th width="5%" class="matrix noBborderStyle" nowrap="nowrap" align="center"> - </th>	
+					<th width="45%" class="matrix noBborderStyle" nowrap="nowrap" align="left"><c:out
+						value="${lastDay}" />. <bean:message
+						key="${LastMonthKey}" /> <c:out
+						value="${lastYear}" /></th>
 				</c:if>
 			</tr>
+			<tr>
+				<!-- Employee -->
+				<th class="matrix noBborderStyle" align="center" colspan="<c:if 
+					test="${(view eq 'day')}">3</c:if><c:if test="${(view eq 'month')}">2</c:if><c:if test="${(view eq 'custom')}">3</c:if>"><c:if 
+					test="${currentEmployee eq 'ALL EMPLOYEES'}"><bean:message
+					key="main.matrixoverview.headline.allemployees.text" /></c:if>
+					<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}"><c:out
+					value="${currentEmployee}" /></c:if></th>
+			</tr>			
 		</table>
 		</center>
 		<br>
@@ -94,7 +99,7 @@
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
 			key="main.timereport.monthly.refday.text" /></b></th>
-		<th class="matrix" align="left"
+		<th class="matrix" align="left" colspan="2"
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
 			key="main.timereport.monthly.customerorder.text" /></b></th>
@@ -134,22 +139,18 @@
 					<br>
 					<c:out value="${timereport.referenceday.refdate}" />
 				</logic:equal></td>
-				<!--  
-				<td align="center"><logic:equal name="timereport"
-					property="sortofreport" value="W">
-					<bean:message key="main.timereport.monthly.sortofreport.work.text" />
-				</logic:equal> <logic:equal name="timereport" property="sortofreport" value="V">
-					<bean:message
-						key="main.timereport.monthly.sortofreport.vacation.text" />
-				</logic:equal> <logic:equal name="timereport" property="sortofreport" value="S">
-					<bean:message key="main.timereport.monthly.sortofreport.sick.text" />
-				</logic:equal></td>
-				-->
+		
 				<td class="matrix"
 					title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
 				<c:out value="${timereport.suborder.customerorder.sign}"></c:out><br>
 				<c:out value="${timereport.suborder.sign}"></c:out><br>
 				</td>
+				
+				<td class="matrix" nowrap="nowrap">
+					<c:out value="${timereport.suborder.customerorder.shortdescription}"></c:out><br>
+					<c:out value="${timereport.suborder.shortdescription}"></c:out>
+				</td>
+				
 
 				<!-- Kommentar -->
 				<c:choose>
@@ -177,7 +178,7 @@
 	</c:forEach>
 	<tr class="matrix">
 		<td
-			colspan="<c:if test="${(currentEmployee eq 'ALL EMPLOYEES')}">4</c:if><c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">3</c:if>"
+			colspan="<c:if test="${(currentEmployee eq 'ALL EMPLOYEES')}">5</c:if><c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">4</c:if>"
 			class="noBborderStyle Matrix" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>

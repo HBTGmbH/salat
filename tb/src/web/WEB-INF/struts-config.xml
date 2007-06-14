@@ -241,7 +241,7 @@
 		</action>
 
 		<action path="/DeleteCustomerorder"
-			input="/admin/showCustomerOrder.jsp" name="addCustomerOrderForm">
+			input="/admin/showCustomerOrder.jsp" name="showCustomerOrderForm">
 			<forward name="success" path="/admin/showCustomerOrder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -275,7 +275,7 @@
 		</action>
 
 		<action path="/DeleteSuborder" input="/admin/showSuborder.jsp"
-			name="addSuborderForm">
+			name="showSuborderForm">
 			<forward name="success" path="/admin/showSuborder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>

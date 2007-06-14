@@ -121,6 +121,11 @@
 			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
 					property="show" onclick="refresh(this.form)" /> </td>
 		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showactualhoursflag.text" /></b></td>
+			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
+					property="showActualHours" onclick="refresh(this.form)" /></td>
+		</tr>
 	</table>
 </html:form>
 
@@ -178,6 +183,9 @@
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
 			key="main.employeeorder.debithours.text" /></b></th>
+		<c:if test="${showActualHours}">
+			<th align="left"><b><bean:message 
+				key="main.general.showactualhours.text" /></b></th></c:if>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.content.text" />"><b><bean:message
@@ -345,6 +353,13 @@
 						</c:otherwise>
 					</c:choose>
 				</td>
+				
+				<c:if test="${showActualHours}">
+					<td style="color:gray">
+						<c:out value="${employeeorder.duration}" />
+					</td>
+				</c:if>
+				
 			</c:when>
 			<c:otherwise>
 				<td title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
@@ -407,6 +422,13 @@
 						</c:otherwise>
 					</c:choose>
 				</td>
+				
+				<c:if test="${showActualHours}">
+					<td>
+						<c:out value="${employeeorder.duration}" />
+					</td>
+				</c:if>
+				
 			</c:otherwise>
 		</c:choose>
 

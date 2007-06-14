@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Statusreport;
@@ -116,6 +117,7 @@ public class ShowWelcomeAction extends DailyReportAction {
 		List<Warning> warnings = new ArrayList<Warning>();
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		
+		
 		// timereport warning
 		List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
 		for (Timereport timereport : timereports) {
@@ -133,6 +135,22 @@ public class ShowWelcomeAction extends DailyReportAction {
 			warning.setText(timereport.getTimeReportAsString()+" "+timereport.getEmployeeorder().getEmployeeOrderAsString());
 			warnings.add(warning);
 		}
+		
+		// timereport warning 3: no duration
+		Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+		timereports = timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId());
+		for (Timereport timereport : timereports) {
+			Warning warning = new Warning();
+			warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.timereport.noduration"));
+			warning.setText(timereport.getTimeReportAsString());
+			if (loginEmployeeContract.equals(employeecontract) 
+					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
+					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)
+					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+				warning.setLink("/tb/do/EditDailyReport?trId="+timereport.getId());
+			}
+			warnings.add(warning);
+		}		
 		
 		// statusreport due warning
 		List<Customerorder> customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(employeecontract.getEmployee().getId());

@@ -429,6 +429,22 @@ public class LoginEmployeeAction extends Action {
 				warnings.add(warning);
 			}
 			
+			// timereport warning 3: no duration
+			Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+			timereports = timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId());
+			for (Timereport timereport : timereports) {
+				Warning warning = new Warning();
+				warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.timereport.noduration"));
+				warning.setText(timereport.getTimeReportAsString());
+				if (loginEmployeeContract.equals(employeecontract) 
+						|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
+						|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)
+						|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+					warning.setLink("/tb/do/EditDailyReport?trId="+timereport.getId());
+				}
+				warnings.add(warning);
+			}
+			
 			// statusreport due warning
 			List<Customerorder> customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(employeecontract.getEmployee().getId());
 			if (customerOrders != null && !customerOrders.isEmpty()) {

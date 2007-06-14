@@ -256,7 +256,10 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			
 			int lastDay = Integer.parseInt(days.get(days.size()-1).getValue());
 			
-			if (lastDay < day) {
+			if (request.getParameter("refreshMonth") != null
+					&& request.getParameter("refreshMonth").equals("true")) {
+				releaseForm.setDay(lastDay+"");
+			} else if (lastDay < day) {
 				releaseForm.setDay(lastDay+"");
 			}
 			
@@ -275,7 +278,10 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			
 			int lastDay = Integer.parseInt(days.get(days.size()-1).getValue());
 			
-			if (lastDay < day) {
+			if (request.getParameter("refreshMonth") != null
+					&& request.getParameter("refreshMonth").equals("true")) {
+				releaseForm.setAcceptanceDay(lastDay+"");
+			} else if (lastDay < day) {
 				releaseForm.setAcceptanceDay(lastDay+"");
 			}
 			
@@ -294,7 +300,10 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			
 			int lastDay = Integer.parseInt(days.get(days.size()-1).getValue());
 			
-			if (lastDay < day) {
+			if (request.getParameter("refreshMonth") != null
+					&& request.getParameter("refreshMonth").equals("true")) {
+				releaseForm.setReopenDay(lastDay+"");
+			} else if (lastDay < day) {
 				releaseForm.setReopenDay(lastDay+"");
 			}
 			

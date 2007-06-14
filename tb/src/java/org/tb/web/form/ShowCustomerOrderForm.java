@@ -19,6 +19,8 @@ public class ShowCustomerOrderForm extends ActionForm {
 	private Boolean show;
 	private String filter;
 	private Long customerId;
+	
+	private Boolean showActualHours = false;
 
 	
 	/**
@@ -63,11 +65,26 @@ public class ShowCustomerOrderForm extends ActionForm {
 		this.customerId = customerId;
 	}
 
+	/**
+	 * @return the showActualHours
+	 */
+	public Boolean getShowActualHours() {
+		return showActualHours;
+	}
+
+	/**
+	 * @param showActualHours the showActualHours to set
+	 */
+	public void setShowActualHours(Boolean showActualHours) {
+		this.showActualHours = showActualHours;
+	}
+
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		show = false;
 		filter="";
 		customerId = -1L;
+		showActualHours = false;
 	}
 
 	@Override

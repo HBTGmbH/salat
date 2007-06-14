@@ -20,6 +20,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.SuborderViewDecorator;
 import org.tb.bdom.Timereport;
 import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
@@ -311,7 +312,20 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
 					customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
 				}
-				request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+				
+				boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
+				if (showActualHours) {
+					/* show actual hours */
+					List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+					List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+					for (Suborder suborder : suborders) {
+						SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+						suborderViewDecorators.add(decorator);
+					}
+					request.getSession().setAttribute("suborders", suborderViewDecorators);
+				} else {
+					request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+				}
 				
 				return mapping.findForward("success");
 			} else {

@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -9,8 +10,11 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customer;
+import org.tb.bdom.CustomerOrderViewDecorator;
+import org.tb.bdom.Customerorder;
 import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.ShowCustomerOrderForm;
 
@@ -25,7 +29,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 	
 	private CustomerorderDAO customerorderDAO;
 	private CustomerDAO customerDAO;
-	
+	private TimereportDAO timereportDAO;
 
 	
 	public void setCustomerDAO(CustomerDAO customerDAO) {
@@ -34,6 +38,10 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
+	}
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
 	}
 
 
@@ -80,8 +88,24 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 				orderForm.setCustomerId(customerId);
 			}
 		}
+				
+		boolean showActualHours = orderForm.getShowActualHours();
+		request.getSession().setAttribute("showActualHours", showActualHours);
 		
-		request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
+		if (showActualHours) {
+			/* show actual hours */
+			List<Customerorder> customerOrders =  customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
+			List<CustomerOrderViewDecorator> decorators = new LinkedList<CustomerOrderViewDecorator>();
+			for (Customerorder customerorder : customerOrders) {
+				CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
+				decorators.add(decorator);
+			}
+			request.getSession().setAttribute("customerorders", decorators);
+		} else {
+			request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));			
+
+		}
+		
 		
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {

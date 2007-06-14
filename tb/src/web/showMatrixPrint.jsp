@@ -39,23 +39,25 @@
 		<center>
 		<table width="60%">
 			<tr>
-				<th class="matrix noBborderStyle" colspan="3"><span
+				<th class="matrix noBborderStyle" colspan="2"><span
 					style="font-size:12pt;"><bean:message
 					key="main.matrixoverview.headline.tb.text" /></span></th>
 			</tr>
+			<tr>				
+				<th width="50%" class="matrix noBborderStyle" align="right"><!--<bean:message
+					key="main.matrixoverview.headline.month.text" />:--> <bean:message
+					key="${MonthKey}" /></th>
+				<th width="50%" class="matrix noBborderStyle" align="left"><!--<bean:message
+					key="main.matrixoverview.headline.year.text" />:--> <c:out
+					value="${currentYear}" /></th>
+			</tr>
 			<tr>
-				<th width="33%" class="matrix noBborderStyle"><c:if
+				<th width="100%" class="matrix noBborderStyle" colspan="2" align="center"><c:if
 					test="${currentEmployee eq 'ALL EMPLOYEES'}">
 					<bean:message key="main.matrixoverview.headline.allemployees.text" />
 				</c:if> <c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">
 					<c:out value="${currentEmployee}" />
 				</c:if></th>
-				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
-					key="main.matrixoverview.headline.month.text" />:--> <bean:message
-					key="${MonthKey}" /></th>
-				<th width="33%" class="matrix noBborderStyle"><!--<bean:message
-					key="main.matrixoverview.headline.year.text" />:--> <c:out
-					value="${currentYear}" /></th>
 			</tr>
 		</table>
 		</center>

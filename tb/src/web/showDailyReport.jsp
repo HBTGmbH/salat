@@ -108,6 +108,15 @@
 		wmtt.style.display = "none";
 	}
 	
+	// textarea limitation
+	function limitText(limitField, limitCount, limitNum) {
+		if (limitField.value.length > limitNum) {
+			limitField.value = limitField.value.substring(0, limitNum);
+		} else {
+			limitCount.value = limitNum - limitField.value.length;
+	}
+}
+	
 </script>
 
 </head>
@@ -222,7 +231,8 @@
 				</c:when>
 				<c:otherwise>
 					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.monthlyreport.daymonthyear.text" />:</b></td>
+						key="main.monthlyreport.daymonthyear.text" /><c:if test="${view eq 'custom'}"> (<bean:message 
+						key="main.general.from.text" />)</c:if>:</b></td>
 				</c:otherwise>
 			</c:choose>
 
@@ -286,7 +296,8 @@
 		<c:if test="${view eq 'custom'}">
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
-					key="main.monthlyreport.daymonthyear.text" />:</b></td>
+					key="main.monthlyreport.daymonthyear.text" /> (<bean:message
+					key="main.general.to.text" />):</b></td>
 				<td align="left" class="noBborderStyle"><html:select
 					property="lastday" value="${lastDay}"
 					onchange="setUpdateTimereportsAction(this.form)">
@@ -665,10 +676,16 @@
 					test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf') && (timereport.status eq 'commited') && (loginEmployee != timereport.employeecontract.employee)) || loginEmployee.status eq 'adm'}">
 
 					<!-- Kommentar -->
-					<td><html:textarea property="comment" cols="30" rows="1"
-						value="${timereport.taskdescription}" /> <!--  
-	     		 				<html:text property="comment" size="10" maxlength="<%="" + org.tb.GlobalConstants.COMMENT_MAX_LENGTH %>" value="${timereport.taskdescription}"/> 
-	     		 				--></td>
+					<td><html:textarea property="comment" cols="30" rows="1" 
+							value="${timereport.taskdescription}" 
+							onkeydown="limitText(this.form.comment,this.form.countdown,5);" 
+							onkeyup="limitText(this.form.comment,this.form.countdown,5);"/>
+						<!--
+						<font size="1">(Maximum characters: 100)<br>
+								You have <input readonly type="text" 
+								name="countdown" size="2" value="5"> characters left.</font>
+						-->		
+					</td>
 
 					<!-- Dauer -->
 					<td align="center" nowrap="nowrap"><html:select

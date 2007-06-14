@@ -54,6 +54,21 @@
 		form.submit();
 	}
 	
+	function refreshMonth(form) {
+		form.action = "/tb/do/ShowRelease?task=refreshDate&refreshMonth=true";
+		form.submit();
+	}
+	
+	function refreshAcceptanceMonth(form) {
+		form.action = "/tb/do/ShowRelease?task=refreshAcceptanceDate&refreshMonth=true";
+		form.submit();
+	}
+	
+	function refreshReopenMonth(form) {
+		form.action = "/tb/do/ShowRelease?task=refreshReopenDate&refreshMonth=true";
+		form.submit();
+	}	
+	
 	function setUpdateEmployeeContract(form) {
 		form.action = "/tb/do/ShowRelease?task=updateEmployee";
 		form.submit();
@@ -133,7 +148,7 @@
 							labelProperty="label" />
 					</html:select>
 				
-					<html:select property="month" onchange="refreshDate(this.form)">
+					<html:select property="month" onchange="refreshMonth(this.form)">
 						<html:option value="Jan">
 							<bean:message key="main.timereport.select.month.jan.text" />
 						</html:option>
@@ -208,7 +223,7 @@
 							labelProperty="label" />
 					</html:select>
 				
-					<html:select property="acceptanceMonth" onchange="refreshAcceptanceDate(this.form)">
+					<html:select property="acceptanceMonth" onchange="refreshAcceptanceMonth(this.form)">
 						<html:option value="Jan">
 							<bean:message key="main.timereport.select.month.jan.text" />
 						</html:option>
@@ -283,7 +298,7 @@
 							labelProperty="label" />
 					</html:select>
 				
-					<html:select property="reopenMonth" onchange="refreshReopenDate(this.form)">
+					<html:select property="reopenMonth" onchange="refreshReopenMonth(this.form)">
 						<html:option value="Jan">
 							<bean:message key="main.timereport.select.month.jan.text" />
 						</html:option>

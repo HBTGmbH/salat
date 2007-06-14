@@ -13,6 +13,7 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.form.ShowEmployeeOrderForm;
 
 /**
@@ -25,6 +26,11 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 	
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeecontractDAO employeecontractDAO;
+	private TimereportDAO timereportDAO;
+	
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
+	}
 	
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
 		this.employeecontractDAO = employeecontractDAO;
@@ -67,7 +73,7 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 		employeeOrderForm.setOrderId(orderId);
 		
 		
-		refreshEmployeeOrders(request, employeeOrderForm, employeeorderDAO, employeecontractDAO);	
+		refreshEmployeeOrders(request, employeeOrderForm, employeeorderDAO, employeecontractDAO, timereportDAO);	
 				
 		// back to employee order display jsp
 		return mapping.getInputForward();
