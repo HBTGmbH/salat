@@ -678,8 +678,8 @@
 					<!-- Kommentar -->
 					<td><html:textarea property="comment" cols="30" rows="1" 
 							value="${timereport.taskdescription}" 
-							onkeydown="limitText(this.form.comment,this.form.countdown,5);" 
-							onkeyup="limitText(this.form.comment,this.form.countdown,5);"/>
+							onkeydown="limitText(this.form.comment,this.form.countdown,256);" 
+							onkeyup="limitText(this.form.comment,this.form.countdown,256);"/>
 						<!--
 						<font size="1">(Maximum characters: 100)<br>
 								You have <input readonly type="text" 

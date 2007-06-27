@@ -74,7 +74,7 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				request.getSession().setAttribute("employees", employeeDAO.getEmployees());
 				request.getSession().removeAttribute("emId");
 				
-				boolean addMoreEmployees = Boolean.parseBoolean((String)request.getParameter("continue"));
+				boolean addMoreEmployees = Boolean.parseBoolean(request.getParameter("continue"));
 				if (!addMoreEmployees) {
 					
 					String filter = null;

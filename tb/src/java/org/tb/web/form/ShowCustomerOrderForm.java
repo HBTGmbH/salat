@@ -16,6 +16,10 @@ import org.apache.struts.action.ActionMapping;
  */
 public class ShowCustomerOrderForm extends ActionForm {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1906438218934586588L;
 	private Boolean show;
 	private String filter;
 	private Long customerId;

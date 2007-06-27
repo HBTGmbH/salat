@@ -20,6 +20,10 @@ import org.tb.util.DateUtils;
  */
 public class AddEmployeeOrderForm extends ActionForm {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2418121509861779749L;
 	private long id;
 	private String sign;
 	private String validFrom;

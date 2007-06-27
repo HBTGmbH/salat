@@ -16,7 +16,7 @@ public class OvertimeDAO extends HibernateDaoSupport {
 	 * @return Returns a list with all {@link Overtime}s.
 	 */
 	public List<Overtime> getOvertimes() {
-		return (List<Overtime>) getSession().createQuery("from Overtime order by employeecontract.id asc, created asc").list();
+		return getSession().createQuery("from Overtime order by employeecontract.id asc, created asc").list();
 	}
 	
 	/**
@@ -25,7 +25,7 @@ public class OvertimeDAO extends HibernateDaoSupport {
 	 * @return Returns a list with all {@link Overtime}s associated to the given employeeContractId.
 	 */
 	public List<Overtime> getOvertimesByEmployeeContractId(long employeeContractId) {
-		return (List<Overtime>) getSession().createQuery("from Overtime where employeecontract.id = ? order by employeecontract.id asc, created asc").setLong(0, employeeContractId).list();
+		return getSession().createQuery("from Overtime where employeecontract.id = ? order by employeecontract.id asc, created asc").setLong(0, employeeContractId).list();
 	}
 	
 	/**

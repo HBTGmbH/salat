@@ -36,6 +36,8 @@ public class DeleteStatusReportAction extends StatusReportAction {
 		}
 		// go to error page, if statusreport is null
 		if (statusreport == null) {
+			request.setAttribute("errorMessage", 
+				"Status report not found - please call system administrator.");
 			return mapping.findForward("error");
 		}
 		

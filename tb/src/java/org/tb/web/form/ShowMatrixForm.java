@@ -22,7 +22,11 @@ import org.apache.struts.action.ActionMapping;
  */
 public class ShowMatrixForm extends ActionForm {
 
-    private String fromDay;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -5141807789236654602L;
+	private String fromDay;
     private String untilDay;
     private String fromMonth;
     private String untilMonth;

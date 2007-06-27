@@ -80,7 +80,8 @@ public class CreateStatusReportAction extends StatusReportAction {
 		Long customerOrderId = (Long) request.getSession().getAttribute("customerOrderId");
 		List<Customerorder> customerOrders = (List<Customerorder>) request.getSession().getAttribute("visibleCustomerOrders");
 		if (customerOrders == null || customerOrders.isEmpty()) {
-			//TODO error message
+			request.setAttribute("errorMessage", 
+				"No customer orders found - please call system administrator.");
 			return mapping.findForward("error");
 		}
 		Customerorder selectedCustomerOrder = null;

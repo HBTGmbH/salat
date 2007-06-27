@@ -486,7 +486,7 @@ public class Suborder implements Serializable {
 	}
 	
 	public Character getInvoiceChar() {
-		Character invoiceCharacter = (Character)invoice;
+		Character invoiceCharacter = invoice;
 		return (invoiceCharacter == null) ? 'U' : invoiceCharacter;
 	}
 	

@@ -8,6 +8,10 @@ import org.apache.struts.action.ActionMapping;
 
 public class ShowStatusReportForm extends ActionForm {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3493035136151698227L;
 	private Long customerOrderId;
 
 	/**

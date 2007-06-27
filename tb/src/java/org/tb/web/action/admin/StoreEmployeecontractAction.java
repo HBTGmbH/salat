@@ -185,7 +185,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					newContract = true;
 				}
 				
-				Employee theEmployee = (Employee) (employeeDAO.getEmployeeById(employeeId));
+				Employee theEmployee = (employeeDAO.getEmployeeById(employeeId));
 				
 				
 //				EmployeeHelper eh = new EmployeeHelper();
@@ -300,7 +300,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContracts());
 				request.getSession().removeAttribute("ecId");
 				
-				boolean addMoreContracts = Boolean.parseBoolean((String)request.getParameter("continue"));
+				boolean addMoreContracts = Boolean.parseBoolean(request.getParameter("continue"));
 				if (!addMoreContracts) {
 					
 					String filter = null;
@@ -511,9 +511,16 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 			errors.add("yearlyvacation", new ActionMessage("form.employeecontract.error.yearlyvacation.wrongformat"));
 		}
 		
-//		 check, if dates fit to existing timereports
+		// check, if dates fit to existing timereports
+		Date sqlUntilDate = null;
+		if (newContractValidUntil != null) {
+			sqlUntilDate = new java.sql.Date(newContractValidUntil.getTime());
+		}
+		if (ecId == null) {
+			ecId = 0l;
+		}
 		List<Timereport> timereportsInvalidForDates = timereportDAO.
-			getTimereportsByEmployeeContractIdInvalidForDates(new java.sql.Date(newContractValidFrom.getTime()), new java.sql.Date(newContractValidUntil.getTime()), ecId);
+			getTimereportsByEmployeeContractIdInvalidForDates(new java.sql.Date(newContractValidFrom.getTime()), sqlUntilDate, ecId);
 		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
 			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
 			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));

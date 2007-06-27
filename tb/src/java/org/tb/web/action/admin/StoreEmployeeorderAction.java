@@ -307,7 +307,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			// employeeorderDAO.getSortedEmployeeorders());
 			request.getSession().removeAttribute("eoId");
 
-			boolean addMoreOrders = Boolean.parseBoolean((String) request
+			boolean addMoreOrders = Boolean.parseBoolean(request
 					.getParameter("continue"));
 			if (!addMoreOrders) {
 				return mapping.findForward("success");

@@ -83,6 +83,8 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 			} else {
 				employeeorder = employeeorderDAO.getEmployeeOrderByContentId(eoContent.getId());
 				if (employeeorder == null) {
+					request.setAttribute("errorMessage", 
+						"Associated employee order not found - please call system administrator.");
 					return mapping.findForward("error");
 				}
 				Employee empFromEO = employeeorder.getEmployeecontract().getEmployee();

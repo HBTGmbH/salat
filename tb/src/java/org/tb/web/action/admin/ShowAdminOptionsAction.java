@@ -51,8 +51,6 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 		
-		ShowAdminOptionsForm optionsForm = (ShowAdminOptionsForm) form;
-	
 		request.getSession().removeAttribute("setemployeeorderresults");
 		request.getSession().removeAttribute("unassignedreports");
 		request.getSession().removeAttribute("problems");

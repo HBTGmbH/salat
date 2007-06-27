@@ -101,7 +101,8 @@ public class MergedReport implements Comparable {
         return bookingDay;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         String test = "";
         BookingDay temp;
         for (Iterator iter = bookingDay.iterator(); iter.hasNext();) {

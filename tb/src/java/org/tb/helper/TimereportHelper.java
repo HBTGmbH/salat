@@ -318,7 +318,7 @@ public class TimereportHelper {
 			List<Timereport> dailyTimereports = 
 				td.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
 			if (dailyTimereports.size() > 0) {
-				Timereport tr = (Timereport) dailyTimereports.get(0);
+				Timereport tr = dailyTimereports.get(0);
 				if (tr.getReferenceday().getWorkingday()) {
 					numberOfDays++;
 				}
@@ -677,7 +677,7 @@ public class TimereportHelper {
 		laborTimeHour += (laborTimeMinute/60);
 		laborTimeMinute = laborTimeMinute%60;
 		
-		double laborTime = (double)laborTimeHour+((double)laborTimeMinute/60.0);
+		double laborTime = laborTimeHour+(laborTimeMinute/60.0);
 		return (laborTime > maximalDailyLaborTime);
 	}
 	

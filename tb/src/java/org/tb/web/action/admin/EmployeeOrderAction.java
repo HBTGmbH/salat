@@ -10,7 +10,6 @@ import org.tb.bdom.EmployeeOrderViewDecorator;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
-import org.tb.bdom.SuborderViewDecorator;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.TimereportDAO;

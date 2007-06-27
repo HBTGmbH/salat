@@ -18,6 +18,10 @@ import org.tb.GlobalConstants;
  */
 public class AddSuborderForm extends ActionForm {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4415693005261710055L;
 	private long id;
 	private String sign;
 	private String description;

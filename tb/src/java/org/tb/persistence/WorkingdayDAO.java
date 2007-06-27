@@ -14,7 +14,7 @@ public class WorkingdayDAO extends HibernateDaoSupport{
 	 * @return
 	 */
 	public List<Workingday> getWorkingdays() {
-		return (List<Workingday>) getSession().createQuery("from Workingday order by employeecontract.id asc, refday asc").list();
+		return getSession().createQuery("from Workingday order by employeecontract.id asc, refday asc").list();
 	}
 		
 	/**

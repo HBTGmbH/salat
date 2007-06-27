@@ -45,6 +45,8 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
 
 		if ((GenericValidator.isBlankOrNull(request.getParameter("eoId")))
 				|| (!GenericValidator.isLong(request.getParameter("eoId")))) {
+			request.setAttribute("errorMessage", 
+				"Associated employee order not found - please call system administrator.");
 			mapping.findForward("error");
 		}
 		String eoIdString = request.getParameter("eoId");
@@ -54,6 +56,8 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
 		Employeeorder employeeorder = employeeorderDAO
 				.getEmployeeorderById(eoId);
 		if (employeeorder == null) {
+			request.setAttribute("errorMessage", 
+				"Associated employee order not found - please call system administrator.");
 			mapping.findForward("error");
 		}
 		Employeeordercontent eoContent = employeeorder

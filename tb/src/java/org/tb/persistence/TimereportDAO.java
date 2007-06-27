@@ -9,7 +9,6 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 
-import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.GlobalConstants;
@@ -761,15 +760,26 @@ public class TimereportDAO extends HibernateDaoSupport {
 	}
 	
 	public List<Timereport> getTimereportsByEmployeeContractIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long employeeContractId) {
-		return getSession().createQuery("from Timereport t where " +
-				"t.employeeorder.employeecontract.id = ? " +
-				"and (t.referenceday.refdate < ? " +
+		if (end != null) {
+			return getSession().createQuery("from Timereport t where " +
+					"t.employeeorder.employeecontract.id = ? " +
+					"and (t.referenceday.refdate < ? " +
 					"or t.referenceday.refdate > ?) " +		
-				"order by t.employeeorder.employeecontract.employee.sign asc, " +
-				"t.referenceday.refdate asc, " +
-				"t.employeeorder.suborder.customerorder.sign asc, " +
-				"t.employeeorder.suborder.sign asc"
-				).setLong(0, employeeContractId).setDate(1, begin).setDate(2, end).list();
+					"order by t.employeeorder.employeecontract.employee.sign asc, " +
+					"t.referenceday.refdate asc, " +
+					"t.employeeorder.suborder.customerorder.sign asc, " +
+					"t.employeeorder.suborder.sign asc"
+					).setLong(0, employeeContractId).setDate(1, begin).setDate(2, end).list();
+		} else {
+			return getSession().createQuery("from Timereport t where " +
+					"t.employeeorder.employeecontract.id = ? " +
+					"and t.referenceday.refdate < ? " +	
+					"order by t.employeeorder.employeecontract.employee.sign asc, " +
+					"t.referenceday.refdate asc, " +
+					"t.employeeorder.suborder.customerorder.sign asc, " +
+					"t.employeeorder.suborder.sign asc"
+					).setLong(0, employeeContractId).setDate(1, begin).list();
+		}
 	}
 	
 	

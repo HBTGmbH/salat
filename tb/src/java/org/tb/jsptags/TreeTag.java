@@ -24,6 +24,10 @@ import org.tb.logging.TbLogger;
 	 */
 public class TreeTag extends TagSupport {
 	
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 8705101629331486419L;
 	// The name of the browser used by the client.
     private String browser = null;
     // this is the function (java script) specified by a string, 
@@ -189,7 +193,7 @@ public class TreeTag extends TagSupport {
 				boolean tempBoolean = true;
 				if (enabled == false || this.currentSuborderID == tempOrder.getId())
 						tempBoolean = false; 
-				TbLogger.debug(TreeTag.class.toString(),"Logging for enabled:  " + enabled + " "+this.currentSuborderID +" " + " "+   tempOrder.getId());
+//				TbLogger.debug(TreeTag.class.toString(),"Logging for enabled:  " + enabled + " "+this.currentSuborderID +" " + " "+   tempOrder.getId());
 				String name = Integer.toString(rand.nextInt());  
 				String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");
 				String tempDeleteFunctionString = deleteFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");

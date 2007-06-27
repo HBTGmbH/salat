@@ -16,6 +16,10 @@ import org.tb.util.DateUtils;
  */
 public class AddDailyReportForm extends ActionForm {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1101951628777959966L;
 	private long id;
 //	private String employeename;
 	private String referenceday;

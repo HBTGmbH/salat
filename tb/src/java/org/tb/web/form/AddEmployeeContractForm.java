@@ -16,6 +16,10 @@ import org.tb.util.DateUtils;
  */
 public class AddEmployeeContractForm extends ActionForm {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4912271204885702837L;
 	private long id;
 	private String taskdescription;
 	private String validFrom;

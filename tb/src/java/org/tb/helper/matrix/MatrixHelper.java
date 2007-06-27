@@ -218,7 +218,7 @@ public class MatrixHelper {
                     if ((gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
                         dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setSatSun(true);
                     }
-                    dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setWeekDay((String)weekDaysMap.get(gregorianCalendar.get(gregorianCalendar.DAY_OF_WEEK)));
+                    dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setWeekDay(weekDaysMap.get(gregorianCalendar.get(gregorianCalendar.DAY_OF_WEEK)));
                 }
             }
             gregorianCalendar.add(Calendar.DAY_OF_MONTH, 1);

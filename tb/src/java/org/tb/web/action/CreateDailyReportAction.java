@@ -35,7 +35,6 @@ import org.tb.web.form.AddDailyReportForm;
  */
 public class CreateDailyReportAction extends DailyReportAction {
 	
-	private EmployeeDAO employeeDAO;
 	private EmployeecontractDAO employeecontractDAO;
 	private CustomerorderDAO customerorderDAO;
 	private SuborderDAO suborderDAO;
@@ -44,7 +43,6 @@ public class CreateDailyReportAction extends DailyReportAction {
 	
 
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-		this.employeeDAO = employeeDAO;
 	}
 
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {

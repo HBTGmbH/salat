@@ -14,6 +14,10 @@ import org.apache.struts.action.ActionMapping;
  */
 public class ShowMonthlyReportForm extends ActionForm {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7694572231721775229L;
 	private String month;
 	private String year;
 	private String employeename;

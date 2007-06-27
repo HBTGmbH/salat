@@ -18,6 +18,10 @@ import org.tb.bdom.Employeecontract;
 public class ShowEmployeeOrderForm extends ActionForm {
 
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6415687265295197319L;
 	private long employeeContractId;
 	private long orderId;
 	private String filter;

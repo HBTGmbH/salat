@@ -3,7 +3,6 @@ package org.tb.bdom;
 import java.io.Serializable;
 import java.sql.Date;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.Entity;

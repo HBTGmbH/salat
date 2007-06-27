@@ -12,6 +12,10 @@ import org.tb.helper.TimereportHelper;
 
 public class ShowReleaseForm extends ActionForm {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1069049121593017810L;
 	private String day;
 	private String month;
 	private String year;

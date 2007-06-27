@@ -56,6 +56,8 @@ public class StoreStatusReportAction extends StatusReportAction {
 			Statusreport currentReport = (Statusreport) request.getSession().getAttribute("currentStatusReport");
 
 			if (currentReport == null) {
+				request.setAttribute("errorMessage", 
+					"Status report not found - please call system administrator.");
 				return mapping.findForward("error");
 			} 
 			
@@ -101,6 +103,8 @@ public class StoreStatusReportAction extends StatusReportAction {
 			Statusreport currentReport = (Statusreport) request.getSession().getAttribute("currentStatusReport");
 
 			if (currentReport == null) {
+				request.setAttribute("errorMessage", 
+					"Status report not found - please call system administrator.");
 				return mapping.findForward("error");
 			} 
 			
@@ -185,6 +189,8 @@ public class StoreStatusReportAction extends StatusReportAction {
 			
 			Customerorder selectedCustomerOrder = customerorderDAO.getCustomerorderById(reportForm.getCustomerOrderId());
 			if (selectedCustomerOrder == null) {
+				request.setAttribute("errorMessage", 
+					"Selected customer order not found - please call system administrator.");
 				return mapping.findForward("error");
 			}
 			if (selectedCustomerOrder.getResponsible_hbt() != null) {
@@ -243,6 +249,8 @@ public class StoreStatusReportAction extends StatusReportAction {
 			// belongs to which customerorder?
 			Customerorder customerorder = customerorderDAO.getCustomerorderById(reportForm.getCustomerOrderId());
 			if (customerorder == null) {
+				request.setAttribute("errorMessage", 
+					"Selected customer order not found - please call system administrator.");
 				return mapping.findForward("error");
 			}
 			

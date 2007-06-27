@@ -16,6 +16,11 @@ import org.apache.struts.action.ActionMessage;
  */
 public class LoginEmployeeForm extends ActionForm {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3057468306212305857L;
+
 	private String loginname;
 
 	private String password;

@@ -214,7 +214,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 				request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
 				request.getSession().removeAttribute("coId");
 				
-				boolean addMoreOrders = Boolean.parseBoolean((String)request.getParameter("continue"));
+				boolean addMoreOrders = Boolean.parseBoolean(request.getParameter("continue"));
 				if (!addMoreOrders) {
 					
 					String filter = null;
