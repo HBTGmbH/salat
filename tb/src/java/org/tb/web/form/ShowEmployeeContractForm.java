@@ -19,7 +19,7 @@ public class ShowEmployeeContractForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -7114415176299026774L;
+	private static final long serialVersionUID = 1L; // -7114415176299026774L;
 	private String filter;
 	private Boolean show;
 	private Long employeeId;

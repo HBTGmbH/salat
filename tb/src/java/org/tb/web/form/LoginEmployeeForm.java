@@ -19,7 +19,7 @@ public class LoginEmployeeForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 3057468306212305857L;
+	private static final long serialVersionUID = 1L; // 3057468306212305857L;
 
 	private String loginname;
 

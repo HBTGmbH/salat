@@ -19,7 +19,7 @@ public class ShowEmployeeForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -3316717791855254L;
+	private static final long serialVersionUID = 1L; // -3316717791855254L;
 	private String filter;
 	
 	

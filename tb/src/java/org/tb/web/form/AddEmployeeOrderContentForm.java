@@ -9,7 +9,7 @@ import org.tb.GlobalConstants;
 
 public class AddEmployeeOrderContentForm extends ActionForm {
 
-	static final long serialVersionUID = 1L;
+	static final long serialVersionUID = 1L; // 1L;
 	
 	private String description;
 	private String task;

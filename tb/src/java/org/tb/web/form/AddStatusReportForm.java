@@ -11,7 +11,7 @@ public class AddStatusReportForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 2991618984884697261L;
+	private static final long serialVersionUID = 1L; // 2991618984884697261L;
 	private Long customerOrderId;
 	private Long senderId;
 	private Long recipientId;

@@ -27,7 +27,7 @@ public class TreeTag extends TagSupport {
 	/**
 		 * 
 		 */
-		private static final long serialVersionUID = 8705101629331486419L;
+		private static final long serialVersionUID = 1L; // 8705101629331486419L;
 	// The name of the browser used by the client.
     private String browser = null;
     // this is the function (java script) specified by a string, 

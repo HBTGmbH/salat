@@ -549,20 +549,25 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			}
 		}
 		
-		// check, if dates fit to existing timereports
-		Date validFromSqlDate = new java.sql.Date(validFromDate.getTime());
-		Date validUntilSqlDate = null;
-		if (validUntilDate != null) {
-			validUntilSqlDate = new java.sql.Date(validUntilDate.getTime());
-		}
-		List<Timereport> timereportsInvalidForDates = timereportDAO.
-			getTimereportsByEmployeeorderIdInvalidForDates(validFromSqlDate, validUntilSqlDate, eoId);
-		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
-			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
-			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
-			
-		}
-		
+		if (validFromDate != null) {
+			// check, if dates fit to existing timereports
+			Date validFromSqlDate = new java.sql.Date(validFromDate.getTime());
+			Date validUntilSqlDate = null;
+			if (validUntilDate != null) {
+				validUntilSqlDate = new java.sql.Date(validUntilDate.getTime());
+			}
+			List<Timereport> timereportsInvalidForDates = timereportDAO
+					.getTimereportsByEmployeeorderIdInvalidForDates(
+							validFromSqlDate, validUntilSqlDate, eoId);
+			if (timereportsInvalidForDates != null
+					&& !timereportsInvalidForDates.isEmpty()) {
+				request.getSession().setAttribute("timereportsOutOfRange",
+						timereportsInvalidForDates);
+				errors.add("timereportOutOfRange", new ActionMessage(
+						"form.general.error.timereportoutofrange"));
+
+			}
+		}		
 		saveErrors(request, errors);
 
 		return errors;

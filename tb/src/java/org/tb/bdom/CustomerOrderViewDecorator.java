@@ -8,7 +8,7 @@ import org.tb.persistence.TimereportDAO;
 
 public class CustomerOrderViewDecorator extends Customerorder {
 	
-	private static final long serialVersionUID = 456L;
+	private static final long serialVersionUID = 1L; // 456L;
 	
 	private TimereportDAO timereportDAO;
     private Customerorder customerOrder;

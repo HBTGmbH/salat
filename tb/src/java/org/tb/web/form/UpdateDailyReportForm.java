@@ -17,7 +17,7 @@ public class UpdateDailyReportForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -3593978643330934662L;
+	private static final long serialVersionUID = 1L; // -3593978643330934662L;
 	private String day;
 	private String month;
 	private String year;

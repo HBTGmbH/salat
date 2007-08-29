@@ -129,65 +129,15 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 			}
 			Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
 			request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-			request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
-			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+			if (employeecontract != null) {
+				request.getSession().setAttribute("currentEmployeeId",
+						employeecontract.getEmployee().getId());
+				request.getSession().setAttribute("currentEmployeeContract",
+						employeecontract);
+			}			
 			return mapping.findForward("success");
 		}
 		
-		/*
-		
-//		if (tr.getSortofreport().equals("W")) {
-			// update monthly hour balance...
-//			th.updateMonthlyHourBalance(tr, -1, timereportDAO, monthlyreportDAO);
-//		}
-//		if (tr.getSortofreport().equals("V")) {
-//			// update vacation...
-//			th.updateVacation(tr, -1, vacationDAO);
-//		}
-		
-		// set attributes to be analyzed by target jsp
-		String currentEmployeeName = (String) request.getSession().getAttribute("currentEmployee");
-		Employeecontract ec = tr.getEmployeecontract();
-		List<Timereport> timereports;
-		if (currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
-			timereports = timereportDAO.getTimereportsByDate(tr.getReferenceday().getRefdate());
-			request.getSession().setAttribute("timereports", timereports);
-		} else {
-			timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), tr.getReferenceday().getRefdate());
-			request.getSession().setAttribute("timereports", timereports);
-		}
-		
-		
-		request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
-		request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-		request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
-		
-		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
-		request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
-		
-		
-		
-		request.getSession().setAttribute("currentDay", trDay);
-		request.getSession().setAttribute("currentMonth", trMonth);
-		request.getSession().setAttribute("currentYear", trYear);			
-		
-//		refresh overtime
-		refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-		
-		
-		
-//		trMonth = DateUtils.getMonthMMStringFromShortstring(trMonth); // e.g., convert from 'Aug' to '08'
-//		Monthlyreport mr = monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract(ec.getId(),
-//										Integer.parseInt(trYear), Integer.parseInt(trMonth));		
-//		request.getSession().setAttribute("hourbalance", mr.getHourbalance());
-//		
-//		Vacation va = vacationDAO.getVacationByYearAndEmployeecontract(ec.getId(), Integer.parseInt(trYear));
-//		String vacationBalance = "" + va.getUsed().intValue() + "/" + va.getEntitlement().intValue(); 
-//		request.getSession().setAttribute("vacation", vacationBalance);
-		
-		return mapping.getInputForward();
-		
-		*/
 	}
 	
 }

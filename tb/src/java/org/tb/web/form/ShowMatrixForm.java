@@ -25,7 +25,7 @@ public class ShowMatrixForm extends ActionForm {
     /**
 	 * 
 	 */
-	private static final long serialVersionUID = -5141807789236654602L;
+	private static final long serialVersionUID = 1L; // -5141807789236654602L;
 	private String fromDay;
     private String untilDay;
     private String fromMonth;

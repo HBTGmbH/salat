@@ -8,7 +8,7 @@ import org.tb.persistence.TimereportDAO;
 
 public class SuborderViewDecorator extends Suborder {
 	
-	private static final long serialVersionUID = 123L;
+	private static final long serialVersionUID = 1L; // 123L;
 	
 	
 	private TimereportDAO timereportDAO;

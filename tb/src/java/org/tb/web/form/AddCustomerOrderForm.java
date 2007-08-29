@@ -20,7 +20,7 @@ public class AddCustomerOrderForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 3158661302891965253L;
+	private static final long serialVersionUID = 1L; // 3158661302891965253L;
 	private long id;
 	private String sign;
 	private String description;

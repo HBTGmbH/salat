@@ -251,11 +251,11 @@
 			<!-- edit, delete -->
 			<html:form action="/ShowStatusReport">
 				<td align="center" nowrap="nowrap"><html:link title="<bean:message key='statusreport.button.edit.text'/>"
-					href="/tb/do/EditStatusReport?srId=${statusreport.id}"><img 
-					src="/tb/images/Edit.gif" alt="<bean:message key='statusreport.button.edit.text' />" /></html:link> &nbsp; <c:if 
+					href="/tb/do/EditStatusReport?srId=${statusreport.id}"><html:image 
+					src="/tb/images/Edit.gif" altKey="statusreport.button.edit.text" titleKey="statusreport.button.edit.text" /></html:link> &nbsp; <c:if 
 					test="${loginEmployee.status == 'adm'}"><html:image
 					onclick="confirmDelete(this.form, ${statusreport.id})"
-					src="/tb/images/Delete.gif" alt="<bean:message key='statusreport.button.delete.text' />" title="<bean:message key='statusreport.button.delete.text' />" /></c:if></td>
+					src="/tb/images/Delete.gif" altKey="statusreport.button.delete.text" titleKey="statusreport.button.delete.text" /></c:if></td>
 			</html:form>
 		</c:forEach>
 	<tr>

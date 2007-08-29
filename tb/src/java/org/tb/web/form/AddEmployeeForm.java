@@ -17,7 +17,7 @@ public class AddEmployeeForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -222338996719117592L;
+	private static final long serialVersionUID = 1L; // -222338996719117592L;
 	private long id;
 	private String firstname;
 	private String lastname;

@@ -19,7 +19,7 @@ public class ShowCustomerForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -7614210631483022615L;
+	private static final long serialVersionUID = 1L; // -7614210631483022615L;
 	private String filter;
 	
 	

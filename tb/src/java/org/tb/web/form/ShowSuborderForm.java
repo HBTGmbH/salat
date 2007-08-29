@@ -19,7 +19,7 @@ public class ShowSuborderForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 3430200308525131845L;
+	private static final long serialVersionUID = 1L; // 3430200308525131845L;
 	private Boolean show;
 	private String filter;
 	private Long customerOrderId;

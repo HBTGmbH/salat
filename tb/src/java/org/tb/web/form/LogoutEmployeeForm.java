@@ -19,7 +19,7 @@ public class LogoutEmployeeForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 7096994213160642196L;
+	private static final long serialVersionUID = 1L; // 7096994213160642196L;
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {

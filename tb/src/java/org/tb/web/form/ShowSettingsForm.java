@@ -11,7 +11,7 @@ public class ShowSettingsForm extends ActionForm {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 4564667507077065751L;
+	private static final long serialVersionUID = 1L; // 4564667507077065751L;
 	private String oldpassword;
 	private String newpassword;
 	private String confirmpassword;
