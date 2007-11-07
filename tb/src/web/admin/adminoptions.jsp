@@ -26,6 +26,13 @@
 <br><span style="font-size:14pt;font-weight:bold;"><br>Admin Area<br></span>
 <br>
 <html:form action="/ShowAdminOptions">
+	<!--  used from conversion of passwords - never use again!
+	<html:submit
+		onclick="setAction(this.form, 'convertPasswordsToMD5');return false" styleId="button">
+		Convert Passwords To MD5
+	</html:submit>
+	<br />
+	-->
 	<html:submit
 		onclick="setAction(this.form, 'SetEmployeeOrderInTimereports');return false" styleId="button">
 		SetEmployeeOrderInTimereports

@@ -37,6 +37,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.util.MD5Util;
 import org.tb.web.form.LoginEmployeeForm;
 
 /**
@@ -96,8 +97,8 @@ public class LoginEmployeeAction extends Action {
 	@Override
 	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		LoginEmployeeForm loginEmployeeForm = (LoginEmployeeForm) form;
-
-		Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname(), loginEmployeeForm.getPassword());
+		
+		Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname(), MD5Util.makeMD5(loginEmployeeForm.getPassword()));
 		if(loginEmployee == null) {
 			ActionMessages errors = getErrors(request);
 			if(errors == null) errors = new ActionMessages();
@@ -541,7 +542,7 @@ public class LoginEmployeeAction extends Action {
 		}
 		
 		// show change password site, if password equals username
-		if (loginEmployee.getLoginname().equalsIgnoreCase(loginEmployee.getPassword())) {
+		if (loginEmployee.getPasswordchange()) {
 			return mapping.findForward("password");
 		}
 		

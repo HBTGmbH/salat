@@ -13,10 +13,12 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
+import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.util.MD5Util;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.ShowAdminOptionsForm;
 
@@ -26,8 +28,11 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 	private EmployeecontractDAO employeecontractDAO;
 	private SuborderDAO suborderDAO;
 	private EmployeeorderDAO employeeorderDAO;
+	private EmployeeDAO employeeDAO;
 	
-	
+	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
+		this.employeeDAO = employeeDAO;
+	}
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
@@ -132,6 +137,23 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 			request.getSession().setAttribute("setemployeeorderresults", "result:  total reports: "+total+" updated: "+updated+" unassignable: "+unassignable+" unaltered: "+assigned +"    duration: "+min+":"+sec+" minutes");
 			request.getSession().setAttribute("unassignedreports", unassignedTimereports);
 			request.getSession().setAttribute("problems", problems);
+			
+			return mapping.findForward("success");
+		}
+		
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("convertPasswordsToMD5"))) {
+			
+			List<Employee> employees = employeeDAO.getEmployees();
+			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+			
+			for (Employee employee : employees) {
+				if (!employee.equals(loginEmployee)) {
+					employee.changePassword(employee.getPassword());
+					employeeDAO.save(employee, loginEmployee);
+				}
+			}
+			
 			
 			return mapping.findForward("success");
 		}

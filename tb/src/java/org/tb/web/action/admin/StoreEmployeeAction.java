@@ -14,6 +14,7 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
+import org.tb.util.MD5Util;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeForm;
 
@@ -45,6 +46,8 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				// I.e., copy properties from the form into the employee before saving.
 				long emId = -1;
 				Employee em = null;
+				boolean create = false;
+				
 				if (request.getSession().getAttribute("emId") != null) {
 					// edited employee
 					emId = Long.parseLong(request.getSession().getAttribute("emId").toString());
@@ -52,6 +55,7 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				} else {
 					// new report
 					em = new Employee();
+					create = true;
 				}
 				
 				ActionMessages errorMessages = validateFormData(request, emForm);
@@ -62,21 +66,24 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				em.setFirstname(emForm.getFirstname());
 				em.setLastname(emForm.getLastname());
 				em.setLoginname(emForm.getLoginname());
-				em.setPassword(emForm.getPassword());
+//				em.setPassword(emForm.getPassword());
 				em.setStatus(emForm.getStatus());
 				em.setSign(emForm.getSign());
 				em.setGender(emForm.getGender().charAt(0));
+				
+				if (create) {
+					em.resetPassword();
+				}
 				
 				Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
 				
 				employeeDAO.save(em, loginEmployee);
 				
 				request.getSession().setAttribute("employees", employeeDAO.getEmployees());
-				request.getSession().removeAttribute("emId");
 				
 				boolean addMoreEmployees = Boolean.parseBoolean(request.getParameter("continue"));
 				if (!addMoreEmployees) {
-					
+					request.getSession().removeAttribute("emId");
 					String filter = null;
 					
 					if (request.getSession().getAttribute("employeeFilter") != null) {
@@ -92,6 +99,25 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 				}
 				
 			} 
+			
+			if ((request.getParameter("task") != null) && 
+					(request.getParameter("task").equals("resetPassword"))) {
+				long emId = -1;
+				Employee em = null;
+				if (request.getSession().getAttribute("emId") != null) {
+					// edited employee
+					emId = Long.parseLong(request.getSession().getAttribute("emId").toString());
+					em = employeeDAO.getEmployeeById(emId);
+				}
+				if (em != null) {
+					em.resetPassword();
+					Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");					
+					employeeDAO.save(em, loginEmployee);
+				}
+				
+				return mapping.findForward("reset");
+			}
+			
 			if ((request.getParameter("task") != null) && 
 						(request.getParameter("task").equals("back"))) {
 				// go back
@@ -168,12 +194,12 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 			errors.add("loginname", new ActionMessage("form.employee.error.loginname.required"));
 		}
 		
-		if (emForm.getPassword().length() > GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH) {
-			errors.add("password", new ActionMessage("form.employee.error.password.toolong"));
-		}
-		if (emForm.getPassword().length() <= 0) {
-			errors.add("password", new ActionMessage("form.employee.error.password.required"));
-		}
+//		if (emForm.getPassword().length() > GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH) {
+//			errors.add("password", new ActionMessage("form.employee.error.password.toolong"));
+//		}
+//		if (emForm.getPassword().length() <= 0) {
+//			errors.add("password", new ActionMessage("form.employee.error.password.required"));
+//		}
 		
 		if (emForm.getStatus().length() > GlobalConstants.EMPLOYEE_STATUS_MAX_LENGTH) {
 			errors.add("status", new ActionMessage("form.employee.error.status.toolong"));

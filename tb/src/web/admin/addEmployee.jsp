@@ -70,6 +70,7 @@
 			<span style="color:red"><html:errors property="loginname" /></span></td>
 		</tr>
 
+		<!--
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employee.password.text" /></b></td>
@@ -78,6 +79,7 @@
 				maxlength="<%="" + org.tb.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="password" /></span></td>
 		</tr>
+		-->
 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
@@ -138,6 +140,10 @@
 			<td class="noBborderStyle"><html:submit
 				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button" titleKey="main.general.button.reset.alttext.text">
 				<bean:message key="main.general.button.reset.text" />
+			</html:submit></td>
+			<td class="noBborderStyle"><html:submit
+				onclick="setStoreAction(this.form, 'resetPassword', 'false')" styleId="button">
+				<bean:message key="main.general.button.resetpassword.text" />
 			</html:submit></td>
 		</tr>
 	</table>

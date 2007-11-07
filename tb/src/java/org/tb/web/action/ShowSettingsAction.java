@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
+import org.tb.util.MD5Util;
 import org.tb.web.form.ShowSettingsForm;
 
 public class ShowSettingsAction extends LoginRequiredAction {
@@ -42,7 +43,7 @@ public class ShowSettingsAction extends LoginRequiredAction {
 				
 				// set new password and save
 				Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
-				em.setPassword(settingsForm.getNewpassword());
+				em.changePassword(settingsForm.getNewpassword());
 				employeeDAO.save(em, loginEmployee);
 				
 				request.getSession().setAttribute("passwordchanged", true);
@@ -75,7 +76,7 @@ public class ShowSettingsAction extends LoginRequiredAction {
 		//old password
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		String passwordFromDB = employeeDAO.getEmployeeById(loginEmployee.getId()).getPassword();
-		if (oldPassword == null || !oldPassword.equals(passwordFromDB)) {
+		if (oldPassword == null || !MD5Util.makeMD5(oldPassword).equals(passwordFromDB)) {
 			errors.add("oldpassword", new ActionMessage("form.settings.error.oldpassword.false"));
 		}
 		
