@@ -175,7 +175,7 @@ public class LoginEmployeeAction extends Action {
 					List<Employeeorder> employeeorders;
 					for (Suborder suborder : standardSuborders) {
 						employeeorders = employeeorderDAO
-								.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(
+								.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(
 										employeecontract.getId(), suborder
 												.getId(), date);
 						if (employeeorders == null || employeeorders.isEmpty()) {

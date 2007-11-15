@@ -70,6 +70,31 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		
 		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
+		
+		
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("copy"))) {
+			long soId = Long.parseLong(request.getSession().getAttribute("soId")
+					.toString());
+			Suborder so = suborderDAO.getSuborderById(soId);
+			
+			if (so != null) {
+				Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+				Suborder copy = so.copy(true, loginEmployee.getSign());
+				
+				suborderDAO.save(copy, loginEmployee);
+				
+				request.getSession().removeAttribute("soId");
+
+				// store used customer order id for the next creation of a suborder
+				request.getSession().setAttribute("lastCoId",
+						so.getCustomerorder().getId());
+			}
+			
+			refreshForOverview(request);
+			
+			return mapping.findForward("success");
+		}
 
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("generateSign"))) {
@@ -300,32 +325,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			boolean addMoreSuborders = Boolean.parseBoolean((String) request
 					.getParameter("continue"));
 			if (!addMoreSuborders) {
-				String filter = null;
-				Boolean show = null;
-				Long customerOrderId = null; 
-				if (request.getSession().getAttribute("suborderFilter") != null) {
-					filter = (String) request.getSession().getAttribute("suborderFilter");
-				}
-				if (request.getSession().getAttribute("suborderShow") != null) {
-					show = (Boolean) request.getSession().getAttribute("suborderShow");
-				}
-				if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
-					customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
-				}
-				
-				boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
-				if (showActualHours) {
-					/* show actual hours */
-					List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
-					List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
-					for (Suborder suborder : suborders) {
-						SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
-						suborderViewDecorators.add(decorator);
-					}
-					request.getSession().setAttribute("suborders", suborderViewDecorators);
-				} else {
-					request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
-				}
+				refreshForOverview(request);
 				
 				return mapping.findForward("success");
 			} else {
@@ -695,5 +695,34 @@ public class StoreSuborderAction extends LoginRequiredAction {
 
 		return true;
 
+	}
+	
+	private void refreshForOverview(HttpServletRequest request) {
+		String filter = null;
+		Boolean show = null;
+		Long customerOrderId = null; 
+		if (request.getSession().getAttribute("suborderFilter") != null) {
+			filter = (String) request.getSession().getAttribute("suborderFilter");
+		}
+		if (request.getSession().getAttribute("suborderShow") != null) {
+			show = (Boolean) request.getSession().getAttribute("suborderShow");
+		}
+		if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
+			customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
+		}
+		
+		boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
+		if (showActualHours) {
+			/* show actual hours */
+			List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+			List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+			for (Suborder suborder : suborders) {
+				SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+				suborderViewDecorators.add(decorator);
+			}
+			request.getSession().setAttribute("suborders", suborderViewDecorators);
+		} else {
+			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+		}
 	}
 }

@@ -1,5 +1,7 @@
 package org.tb.persistence;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -339,10 +341,19 @@ public class SuborderDAO extends HibernateDaoSupport {
 	
 	/**
 	 * 
-	 * @return Returns all {@link Suborder}s where the standard flag is true.
+	 * @return Returns all {@link Suborder}s where the standard flag is true and that did not end before today.
 	 */
 	public List<Suborder> getStandardSuborders() {
-		return getSession().createQuery("from Suborder where standard = ? order by sign").setBoolean(0, true).list();
+		Date date = new Date();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		String dateString = dateFormat.format(date);
+		try {
+			date = dateFormat.parse(dateString);
+		} catch (ParseException e) {
+			// absurd error
+			throw new RuntimeException("horrible exception - this should never happen ;D");
+		}
+		return getSession().createQuery("from Suborder where standard = ? and (untilDate = null or untilDate >= ? ) order by sign").setBoolean(0, true).setDate(1, date).list();
 	}
 	
 	/**

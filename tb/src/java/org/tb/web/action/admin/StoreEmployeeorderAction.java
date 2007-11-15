@@ -235,13 +235,32 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			eo.setFromDate(fromDate);
 
 			eo.setSign(eoForm.getSign());
+			
+			Employee loginEmployee = (Employee) request.getSession()
+			.getAttribute("loginEmployee");
 
 			if (eo.getSuborder().getCustomerorder().getSign().equals(
 					GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-				eo.setDebithours(eo.getEmployeecontract()
-						.getVacationEntitlement()
-						* eo.getEmployeecontract().getDailyWorkingTime());
-				eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
+				
+				if("adm".equals(loginEmployee.getSign())) {
+					if (eoForm.getDebithours() == null || eoForm.getDebithours() == 0.0) {
+						eo.setDebithours(null);
+						eo.setDebithoursunit(null);
+					} else {
+						eo.setDebithours(eoForm.getDebithours());
+						eo.setDebithoursunit(eoForm.getDebithoursunit());
+					}
+					
+				} else {
+					//TODO: code unreachable?
+					eo.setDebithours(eo.getEmployeecontract()
+							.getVacationEntitlement()
+							* eo.getEmployeecontract().getDailyWorkingTime());
+					eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
+				}
+				
+				
+				
 			} else if (eo.getSuborder().getCustomerorder().getSign().equals(
 					GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
 				eo.setDebithours(0.0);
@@ -255,9 +274,10 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					eo.setDebithoursunit(eoForm.getDebithoursunit());
 				}
 			}
+			
+			
  
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
+			
 			employeeorderDAO.save(eo, loginEmployee);
 
 			// not necessary

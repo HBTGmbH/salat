@@ -40,6 +40,14 @@
 		wmtt.style.display = "none";
 	}
 	
+	function confirmCopy(form) {	
+		var agree=confirm("<bean:message key="main.general.confirmsubordercopy.text" />");
+		if (agree) {
+			form.action = "/tb/do/StoreSuborder?task=copy";
+			form.submit();
+		}
+	}
+	
 </script>
 
 </head>
@@ -297,6 +305,14 @@
 				<bean:message key="main.general.button.reset.text" />
 			</html:submit></td>
 		</tr>
+		<tr><td class="noBborderStyle" colspan="3"><hr /></td></tr>
+		<tr>
+		<td class="noBborderStyle" colspan="3"><html:submit
+				onclick="confirmCopy(this.form)"
+				styleId="button" ><bean:message key="main.general.button.copy.suborder.text" /></html:submit></td>
+		</tr>
+		
+		
 	</table>
 	<html:hidden property="id" />
 	

@@ -57,6 +57,7 @@ public class Suborder implements Serializable {
 
 	/** list of children */
 	@OneToMany(mappedBy = "suborder")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private List<Suborder> children = new ArrayList<Suborder>();
 	
 	/** parentorder */
@@ -620,5 +621,38 @@ public class Suborder implements Serializable {
 	}
 
 	
+	public Suborder copy(boolean copyroot, String creator) {
+		Suborder copy = new Suborder();
+				
+		// set attrib values in copy
+		copy.setCommentnecessary(commentnecessary);
+		copy.setCreated(new java.util.Date());
+		copy.setCreatedby(creator+"_treecopy");
+		copy.setCurrency(currency);
+		copy.setCustomerorder(customerorder);
+		copy.setDebithours(debithours);
+		copy.setDebithoursunit(debithoursunit);
+		copy.setDescription(description);
+		copy.setFromDate(fromDate);
+		copy.setHide(hide);
+		copy.setHourly_rate(hourly_rate);
+		copy.setInvoice(invoice);
+		copy.setNoEmployeeOrderContent(noEmployeeOrderContent);
+		copy.setShortdescription(shortdescription);
+		copy.setStandard(standard);
+		copy.setUntilDate(untilDate);
+		copy.setSign(sign);
+		
+		if (copyroot) {
+			copy.setSign("copy_of_"+sign);
+		}
+		
+		for (Suborder child : children) {
+			Suborder childCopy = child.copy(false, creator);
+			childCopy.setParentorder(copy);
+			copy.getSuborders().add(childCopy);
+		}		
+		return copy;
+	}
 
 }
