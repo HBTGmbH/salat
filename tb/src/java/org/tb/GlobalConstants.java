@@ -52,6 +52,7 @@ public class GlobalConstants {
 	public static final int SUBORDER_SIGN_MAX_LENGTH = 16;
 	public static final int SUBORDER_DESCRIPTION_MAX_LENGTH = 256;
 	public static final int SUBORDER_CURRENCY_MAX_LENGTH = 64;
+	public static final int SUBORDER_Suborder_Customer_MAX_LENGTH = 30;
 	
 	public static final int SUBORDER_INVOICE_YES = 'Y';
 	public static final int SUBORDER_INVOICE_NO = 'N';

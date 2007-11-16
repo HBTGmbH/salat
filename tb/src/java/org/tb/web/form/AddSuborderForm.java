@@ -26,6 +26,7 @@ public class AddSuborderForm extends ActionForm {
 	private String sign;
 	private String description;
 	private String shortdescription;
+	private String suborder_customer;
 	private String invoice;
 	private String currency;
 	private Double hourlyRate;
@@ -274,6 +275,14 @@ public class AddSuborderForm extends ActionForm {
 
 		// actually, no checks here
 		return errors;
+	}
+
+	public String getSuborder_customer() {
+		return suborder_customer;
+	}
+
+	public void setSuborder_customer(String suborder_customer) {
+		this.suborder_customer = suborder_customer;
 	}
 
 }

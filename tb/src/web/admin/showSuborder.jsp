@@ -184,6 +184,9 @@
 					<th align="left" title="<bean:message
 						key="main.headlinedescription.suborders.subordernumber.text" />"><b><bean:message
 						key="main.suborder.sign.text" /></b></th>
+						<th align="left" title="<bean:message
+						key="main.headlinedescription.suborders.suborder_customer.text" />"><b><bean:message
+						key="main.suborder.suborder_customer.text" /></b></th>
 					<th align="left" title="<bean:message
 						key="main.headlinedescription.suborders.description.text" />"><b><bean:message
 						key="main.suborder.shortdescription.short.text" /></b></th>
@@ -322,6 +325,7 @@
 							<c:when test="${suborder.currentlyValid}">
 								<td title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
 								<td><c:out value="${suborder.sign}" /></td>
+								<td><c:out value="${suborder.suborder_customer}" /></td>
 								<td><c:out value="${suborder.shortdescription}" /></td>
 								<!-- <td><c:out value="${suborder.description}" /></td> -->
 								
@@ -436,6 +440,7 @@
 							<!-- suborder is invalid -->
 								<td style="color:gray" title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
 								<td style="color:gray"><c:out value="${suborder.sign}" /></td>
+								<td style="color:gray"><c:out value="${suborder.suborder_customer}" /></td>
 								<td style="color:gray"><c:out value="${suborder.shortdescription}" /></td>
 								<!-- <td style="color:gray"><c:out value="${suborder.description}" /></td> -->
 								

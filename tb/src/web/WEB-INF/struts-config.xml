@@ -36,6 +36,8 @@
 			type="org.tb.web.form.AddDailyReportForm" />
 		<form-bean name="showMatrixForm"
 			type="org.tb.web.form.ShowMatrixForm" />
+		<form-bean name="showInvoiceForm"
+			type="org.tb.web.form.ShowInvoiceForm" />
 		<form-bean name="showDailyReportForm"
 			type="org.tb.web.form.ShowDailyReportForm" />
 		<form-bean name="updateDailyReportForm"
@@ -192,6 +194,14 @@
 			<forward name="error" path="/admin/error.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="print" path="/showMatrixPrint.jsp" />
+		</action>
+
+		<action path="/ShowInvoice" input="/showInvoice.jsp"
+			validate="true" name="showInvoiceForm">
+			<forward name="success" path="/showInvoice.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
+			<forward name="print" path="/showInvoicePrint.jsp" />
 		</action>
 
 		<!-- Admin -->

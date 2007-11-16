@@ -65,6 +65,9 @@ public class Suborder implements Serializable {
 	@JoinColumn(name="PARENTORDER_ID")
 	private Suborder suborder;
 	
+	/** Customer subordersign */
+	private String suborder_customer;
+	
 	/** Invoice */
 	private char invoice;
 
@@ -123,7 +126,6 @@ public class Suborder implements Serializable {
 	@Column (name="NOEMPLOYEEORDERCONTENT")
 	private Boolean noEmployeeOrderContent;
 	
-	
 	public Suborder getParentorder() {
 		return suborder;
 	}
@@ -140,6 +142,14 @@ public class Suborder implements Serializable {
 		this.children = suborders;
 	}
 
+	public String getSuborder_customer() {
+		return suborder_customer;
+	}
+
+	public void setSuborder_customer(String suborder_customer) {
+		this.suborder_customer = suborder_customer;
+	}
+	
 	public long getId() {
 		return id;
 	}

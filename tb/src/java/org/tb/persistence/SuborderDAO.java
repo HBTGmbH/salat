@@ -33,7 +33,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
 	}
-		
+
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
 	}

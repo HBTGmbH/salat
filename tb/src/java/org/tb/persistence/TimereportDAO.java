@@ -601,6 +601,25 @@ public class TimereportDAO extends HibernateDaoSupport {
 		return allTimereports;
 	}
 	
+	/**
+	 * Gets a list of timereports, which lay between two dates and belong to the given {@link Suborder} id.
+	 * 
+	 * @param java.sql.Date begin
+	 * @param java.sql.Date end
+	 * @param suborderId
+	 * 
+	 * @return List<Timereport>
+	 */
+	public List<Timereport> getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(java.sql.Date begin, java.sql.Date end, long suborderId) {		
+		List<Timereport> allTimereports; 
+		if (begin.compareTo(end) == 0) {
+			allTimereports = getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by referenceday.refdate asc, employeecontract.employee.sign asc").setDate(0, begin).setDate(1, end).setLong(2, suborderId).list();
+		} else {
+			allTimereports = getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.id = ? order by referenceday.refdate asc, employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc").setDate(0, begin).setDate(1, end).setLong(2, suborderId).list();
+		}
+		return allTimereports;
+	}
+	
 	
 	/**
 	 * Gets a list of 'W' Timereports by employee contract id and customer id and month/year.

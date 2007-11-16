@@ -203,7 +203,14 @@
 				property="shortdescription" size="20" maxlength="20" /> <span
 				style="color:red"><html:errors property="shortdescription" /></span></td>
 		</tr>
-		
+		<!-- suborder_customer -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.suborder.suborder_customer.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="suborder_customer" size="20" maxlength="20" /> <span
+				style="color:red"><html:errors property="suborder_customer" /></span></td>
+		</tr>
 		<!-- invoice -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

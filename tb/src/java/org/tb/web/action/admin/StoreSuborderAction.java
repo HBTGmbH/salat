@@ -241,6 +241,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			so.setCurrency(soForm.getCurrency());
 			so.setCustomerorder(customerorder);
 			so.setSign(soForm.getSign());
+			so.setSuborder_customer(soForm.getSuborder_customer());
 			so.setDescription(soForm.getDescription());
 			so.setShortdescription(soForm.getShortdescription());
 			so.setHourly_rate(soForm.getHourlyRate());
@@ -333,6 +334,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				// reuse form entries and show add-page
 				soForm.setDescription("");
 				soForm.setSign("");
+				soForm.setSuborder_customer("");
 				soForm.setInvoice("J");
 				soForm.setCurrency(GlobalConstants.DEFAULT_CURRENCY);
 				return mapping.findForward("reset");
@@ -428,7 +430,14 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			errors.add("currency", new ActionMessage(
 					"form.suborder.error.currency.required"));
 		}
-
+		if (soForm.getSuborder_customer().length() <= 0) {
+			errors.add("currency", new ActionMessage(
+					"form.suborder.error.suborder_customer.required"));
+		}
+		if (soForm.getSuborder_customer().length() > GlobalConstants.SUBORDER_Suborder_Customer_MAX_LENGTH) {
+			errors.add("currency", new ActionMessage(
+					"form.suborder.error.suborder_customer.toolong"));
+		}
 		// check invoice character
 		if ((soForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_YES)
 				&& (soForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_NO)
