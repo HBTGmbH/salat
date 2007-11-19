@@ -463,8 +463,11 @@
 			<tr class="matrix">
 				<td class="matrix" style="border-style:none;"><bean:message
 					key="main.matrixoverview.headline.difference.text" /></td>
-				<td class="matrix underline" style="border-style:none;"><c:out
-					value="${dayhoursdiff}" /></td>
+				<td class="matrix underline" style="border-style:none;">
+					<c:if test="${dayhoursdiff < 0}"><font style="color: #FF0000;"></c:if>
+					<c:out value="${dayhoursdiff}" />
+					<c:if test="${dayhoursdiff < 0}"></font></c:if>
+					</td>
 			</tr>
 		</table>
 		</td>
