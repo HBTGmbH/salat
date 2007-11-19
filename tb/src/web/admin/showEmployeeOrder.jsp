@@ -167,10 +167,19 @@
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.ordernumber.text" />"><b><bean:message
 			key="main.employeeorder.customerorder.text" /></b></th>
+			
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.subordernumber.text" />"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></th>
+			
+			
+		<th align="left"
+			title="<bean:message
+			key="main.headlinedescription.suborders.description.text" />"><b><bean:message
+			key="main.headlinedescription.suborders.description.text" /></b></th>
+			
+			
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.validfrom.text" />"><b><bean:message
@@ -299,6 +308,8 @@
 					value="${employeeorder.suborder.customerorder.sign}" /></td>
 				<td style="color:gray" title="<c:out value="${employeeorder.suborder.description}" />"><c:out
 					value="${employeeorder.suborder.sign}" /></td>
+				<td style="color:gray"><c:out value="${employeeorder.suborder.customerorder.shortdescription}" /> -
+				<c:out value="${employeeorder.suborder.shortdescription}" /></td>
 				
 				<c:choose>
 					<c:when test="${!employeeorder.fitsToSuperiorObjects}">
@@ -366,8 +377,12 @@
 					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out value="${employeeorder.employeecontract.employee.sign}" /></td>
 				<td title="<c:out value="${employeeorder.suborder.customerorder.description}" />"><c:out
 					value="${employeeorder.suborder.customerorder.sign}" /></td>
+				<!-- td><c:out value="${employeeorder.suborder.customerorder.shortdescription}" /></td -->
 				<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out
 					value="${employeeorder.suborder.sign}" /></td>
+					
+					<td><c:out value="${employeeorder.suborder.customerorder.shortdescription}" /> -
+				<c:out value="${employeeorder.suborder.shortdescription}" /></td>
 				 
 				 <c:choose>
 					<c:when test="${!employeeorder.fitsToSuperiorObjects}">

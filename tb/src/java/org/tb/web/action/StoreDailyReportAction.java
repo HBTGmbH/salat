@@ -409,21 +409,21 @@ public class StoreDailyReportAction extends DailyReportAction {
 					tr.setReferenceday(rd);
 				}
 				
+				// set employee order
+				Employeeorder employeeorder = (Employeeorder) request.getSession().getAttribute("saveEmployeeOrder");
+				tr.setEmployeeorder(employeeorder);
+				request.getSession().removeAttribute("saveEmployeeOrder");
+				
 				if (reportForm.getSortOfReport().equals("W")) {
 					tr.setCosts(reportForm.getCosts());
 					tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
 					
-					// set employee order
-					Employeeorder employeeorder = (Employeeorder) request.getSession().getAttribute("saveEmployeeOrder");
-					tr.setEmployeeorder(employeeorder);
-					request.getSession().removeAttribute("saveEmployeeOrder");
-					
-					
-				} else {
+				} else { // TODO
 					// 'special' reports: set suborder in timereport to null.				
 					tr.setSuborder(null);				
 					tr.setCosts(0.0);
 				}
+				
 				List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(tr.getEmployeecontract().getId(), tr.getReferenceday().getRefdate());
 				boolean reportFoundInList = false;
 				if (timereports != null && !timereports.isEmpty()) {
