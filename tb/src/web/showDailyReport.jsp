@@ -579,7 +579,8 @@
 				<tr>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.created" />:</td>
-					<td class="info"><c:out value="${timereport.created}" /></td>
+					<td class="info">
+						<fmt:formatDate pattern="yyyy-MM-dd HH:mm:ss" value="${timereport.created}" /></td>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
 					<td class="info" valign="top"><c:out
@@ -588,7 +589,8 @@
 				<tr>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.edited" />:</td>
-					<td class="info"><c:out value="${timereport.lastupdate}" /></td>
+					<td class="info">
+						<fmt:formatDate pattern="yyyy-MM-dd HH:mm:ss" value="${timereport.lastupdate}" /></td>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
 					<td class="info" valign="top"><c:out
