@@ -122,7 +122,7 @@ public class Workingday implements Serializable {
 	 * @return the starttimehour
 	 */
 	public int getStarttimehour() {
-		return Starttimehour;
+		return Starttimehour < 6 ? 6 : Starttimehour;
 	}
 
 	/**
