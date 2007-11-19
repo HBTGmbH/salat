@@ -97,20 +97,38 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 //					}
 					
 					try {
-						overtimeDouble = Double.parseDouble(overtimeString);
-					
+						// test wether there are too many numbers after point-seperator
+						if (overtimeString.contains(".") && (overtimeString.length() - overtimeString.indexOf(".") > 2)) {
+							//if yes, cut off
+							overtimeDouble = Double.parseDouble(overtimeString.substring(0, overtimeString.indexOf('.') + 3));
+						} else {
+							overtimeDouble = Double.parseDouble(overtimeString);
+						}
+						
+						if(overtimeDouble == 0){
+							errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
+						}
+						
+						
 						if (!GenericValidator.isDouble(overtimeString) ||
 								(!GenericValidator.isInRange(overtimeDouble, 
 										GlobalConstants.MIN_OVERTIME, GlobalConstants.MAX_OVERTIME))) {
 							errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
 						}
+
+						ecForm.setNewOvertime(""+(overtimeDouble));
 						
 						Double time = overtimeDouble * 100000;
-						time += 0.5;
+						
+
+						if (time >= 0) {
+							time += 0.5;
+						} else {
+							time -= 0.5;
+						}
 						int time2 = time.intValue();
 						int modulo = time2%5000;
-						ecForm.setNewOvertime(""+(time2/100000.0));
-												
+						
 						if (modulo != 0) {
 							errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
 						}
@@ -122,8 +140,11 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				// new comment
 				if (ecForm.getNewOvertimeComment().length() > GlobalConstants.EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH) {
 					errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.toolong"));
+				} else if (ecForm.getNewOvertimeComment().trim().length() == 0) {
+					errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.missing"));
 				}
 				
+					
 				saveErrors(request, errors);
 				
 				if (errors.size() > 0) {
@@ -146,9 +167,17 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				
 				// refresh list of overtime adjustments
 				List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
-				double totalOvertime = 0.0;
+				Double totalOvertime = 0.0;
 				for (Overtime ot : overtimes) {
 					totalOvertime += ot.getTime();
+				}
+				
+				// optimizing totalOvertime
+				String tOString = totalOvertime.toString();
+				
+				if (tOString.length() - tOString.indexOf(".") > 2) {
+					tOString = tOString.substring(0, tOString.indexOf(".") + 3);
+					totalOvertime = Double.parseDouble(tOString);
 				}
 				request.getSession().setAttribute("overtimes", overtimes);
 				request.getSession().setAttribute("totalovertime", totalOvertime);
