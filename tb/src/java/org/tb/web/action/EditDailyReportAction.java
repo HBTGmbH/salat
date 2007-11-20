@@ -100,7 +100,7 @@ public class EditDailyReportAction extends DailyReportAction {
 	 */
 	private void setFormEntries(ActionMapping mapping, HttpServletRequest request, 
 									AddDailyReportForm reportForm, Timereport tr) {
-		
+			
 		Employeecontract ec = tr.getEmployeecontract();
 //		Employee theEmployee = ec.getEmployee();
 		
@@ -136,6 +136,9 @@ public class EditDailyReportAction extends DailyReportAction {
 		
 		List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeecontracts);
+		
+		/* set hours list in session in case of that the dialog is triggered from the welcome page */
+		request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
 		
 		request.getSession().setAttribute("trId", tr.getId());
 		request.getSession().setAttribute("orders", orders);
