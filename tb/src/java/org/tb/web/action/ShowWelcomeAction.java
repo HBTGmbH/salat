@@ -147,7 +147,7 @@ public class ShowWelcomeAction extends DailyReportAction {
 					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
 					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)
 					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-				warning.setLink("/tb/do/EditDailyReport?trId="+timereport.getId());
+				warning.setLink("/tb/do/EditDailyReport?trId="+timereport.getId());				
 			}
 			warnings.add(warning);
 		}		
