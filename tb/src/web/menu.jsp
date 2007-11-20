@@ -36,17 +36,12 @@ window.onload=startList;
 <table width="100%">
   <tr>
     <td class="noBborderStyle" align="center" width="25%"></td>
-    <td class="noBborderStyle" align="center" valign="top" width="50%"><span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.menu.text" /></span></td>
+    <td class="noBborderStyle" align="center" valign="top" width="50%" title="<bean:message key='main.general.mainmenu.menu.subtext' />"><span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.menu.text" /></span></td>
     <td class="noBborderStyle" align="right" valign="top" width="25%">
     	<jsp:include flush="true" page="/version.jsp">
 			<jsp:param name="version" value="Version" />
-		</jsp:include>
+		</jsp:include>   
 	</td>
-  </tr>
-  <tr>
-  	<td class="noBborderStyle" align="center" width="25%"></td>
-  	<td class="noBborderStyle" align="center" valign="top" width="50%"><span style="font-size:10pt;"><bean:message key="main.general.mainmenu.menu.subtext" /></span></td>
-  	<td class="noBborderStyle" align="center" width="25%"></td>
   </tr>
 </table>
 <div class="menu hiddencontent">
