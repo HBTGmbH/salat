@@ -23,7 +23,7 @@
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
-<br><span style="font-size:14pt;font-weight:bold;"><br>Admin Area<br></span>
+<br><span style="font-size:14pt;font-weight:bold;"><br><bean:message key="adminarea.title" /><br></span>
 <br>
 <html:form action="/ShowAdminOptions">
 	<!--  used from conversion of passwords - never use again!
@@ -33,11 +33,14 @@
 	</html:submit>
 	<br />
 	-->
+	
+	
+	
 	<html:submit
 		onclick="setAction(this.form, 'SetEmployeeOrderInTimereports');return false" styleId="button">
-		SetEmployeeOrderInTimereports
+		<bean:message key="adminarea.seteoitr.button.text" />
 	</html:submit>
-	Sets the employee order in all timereports with an empty foreign key
+	<bean:message key="adminarea.seteoitr.description" />
 	<br><br>
 	<c:out value="${setemployeeorderresults}" />
 	<br><br>

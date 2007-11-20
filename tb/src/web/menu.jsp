@@ -130,7 +130,7 @@ window.onload=startList;
 		</c:choose>
 		<c:if test="${loginEmployee.sign == 'adm'}">
 			<li><html:link styleClass="menu" action="/ShowAdminOptions">
-				Admin
+				<bean:message key="adminarea.title" />
 			</html:link></li>
 		</c:if>
 	</ul>
