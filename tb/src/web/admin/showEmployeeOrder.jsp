@@ -458,24 +458,24 @@
 		</c:choose>
 
 		<html:form action="/EditEmployeeOrderContent">
-			<td align="center"><c:if
+			<td align="center" valign="middle"><c:if
 				test="${!loginEmployeeContract.freelancer && !employeeorder.suborder.noEmployeeOrderContent}">
 				<c:choose>
 					<c:when test="${employeeorder.employeeordercontent == null}">
 						<html:image onclick="editContent(this.form, ${employeeorder.id})"
-							src="/tb/images/script_add.png" />
+							src="/tb/images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
 					</c:when>
 					<c:when
 						test="${employeeorder.employeeordercontent != null && (!employeeorder.employeeordercontent.committed_mgmt || !employeeorder.employeeordercontent.committed_emp)}">
 						<html:image onclick="editContent(this.form, ${employeeorder.id})"
-							src="/tb/images/script_edit.png" />
+							src="/tb/images/yellow.gif" titleKey="employeeordercontent.yellow.text" /> 
 					</c:when>
 					<c:otherwise>
 						<html:image onclick="editContent(this.form, ${employeeorder.id})"
-							src="/tb/images/script.png" />
+							src="/tb/images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
 					</c:otherwise>
 				</c:choose>
-			</c:if>&nbsp;</td>
+			</c:if></td>
 		</html:form>
 
 		<c:choose>
