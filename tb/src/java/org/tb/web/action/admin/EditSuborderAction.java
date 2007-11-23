@@ -86,6 +86,7 @@ public class EditSuborderAction extends LoginRequiredAction {
 		soForm.setInvoice(Character.toString(so.getInvoice()));
 		soForm.setStandard(so.getStandard());
 		soForm.setCommentnecessary(so.getCommentnecessary());
+		soForm.setSuborder_customer(so.getSuborder_customer());
 		if (so.getParentorder()!=null)
 			soForm.setParentId(so.getParentorder().getId());
 		else

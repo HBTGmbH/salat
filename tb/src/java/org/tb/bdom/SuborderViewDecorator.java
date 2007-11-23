@@ -538,6 +538,19 @@ public class SuborderViewDecorator extends Suborder {
 	public boolean validityPeriodFitsToCustomerOrder() {
 		return suborder.validityPeriodFitsToCustomerOrder();
 	}
+
+
+	public String getSuborder_customer() {
+		return suborder.getSuborder_customer();
+	}
+
+
+	public void setSuborder_customer(String suborder_customer) {
+		suborder.setSuborder_customer(suborder_customer);
+	}
+
+
+	
 	
 	
 

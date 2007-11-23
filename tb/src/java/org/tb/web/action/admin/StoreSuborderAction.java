@@ -430,12 +430,12 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			errors.add("currency", new ActionMessage(
 					"form.suborder.error.currency.required"));
 		}
-		if (soForm.getSuborder_customer().length() <= 0) {
-			errors.add("currency", new ActionMessage(
-					"form.suborder.error.suborder_customer.required"));
-		}
-		if (soForm.getSuborder_customer().length() > GlobalConstants.SUBORDER_Suborder_Customer_MAX_LENGTH) {
-			errors.add("currency", new ActionMessage(
+//		if (soForm.getSuborder_customer().length() <= 0) {
+//			errors.add("currency", new ActionMessage(
+//					"form.suborder.error.suborder_customer.required"));
+//		}
+		if (soForm.getSuborder_customer().length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
+			errors.add("suborder_customer", new ActionMessage(
 					"form.suborder.error.suborder_customer.toolong"));
 		}
 		// check invoice character
@@ -648,12 +648,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
 			
 		}
-		
-		
-		
-		
-		
-		
 		
 		saveErrors(request, errors);
 

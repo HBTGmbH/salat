@@ -251,6 +251,7 @@ public class AddSuborderForm extends ActionForm {
 		sign = "";
 		description = "";
 		shortdescription = "";
+		suborder_customer = "";
 		invoice = "J";
 		currency = GlobalConstants.DEFAULT_CURRENCY;
 		standard = false;

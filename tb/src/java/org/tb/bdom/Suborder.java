@@ -652,6 +652,8 @@ public class Suborder implements Serializable {
 		copy.setStandard(standard);
 		copy.setUntilDate(untilDate);
 		copy.setSign(sign);
+		copy.setSuborder_customer(suborder_customer);
+		
 		
 		if (copyroot) {
 			copy.setSign("copy_of_"+sign);
