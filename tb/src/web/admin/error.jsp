@@ -1,7 +1,6 @@
+<%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
+
 <html>
-<h1 style="color: red">ERROR</h1>
+<center><h1 style="color: red;"><img width="65px" height="62px" src="/tb/images/fehlerteufel.jpg" title="<bean:message key="main.general.errormessage" />" /> ERROR <img width="65px" height="62px" src="/tb/images/fehlerteufer.jpg" title="<bean:message key="main.general.errormessage" />" /></h1>
 <p><%= request.getAttribute("errorMessage") %></p>
-<center>
-	<img width="200px" height="200px" src="/tb/images/schnecke_big.gif" />
-</center>
-</html>
+</center></html>

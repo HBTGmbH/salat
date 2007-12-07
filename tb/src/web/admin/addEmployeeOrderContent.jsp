@@ -376,7 +376,6 @@
 					styleId="button"><bean:message key="employeeordercontent.button.delete.text"/></html:submit></c:if>
 		</td></tr>		
 	</table>
-	
 </html:form>
 </body>
 </html>

@@ -377,16 +377,50 @@ public class LoginEmployeeAction extends Action {
 				throw new RuntimeException("Error occured while parsing date");
 			}
 			
+
+			// get warnings			
+			List<Warning> warnings = new ArrayList<Warning>();
+			simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			
+			// eoc warning
+			List<Employeeorder> employeeorders = new ArrayList<Employeeorder>();
+			employeeorders.addAll(employeeorderDAO.getEmployeeordersForEmployeeordercontentWarning(employeecontract));			
+			
+			for (Employeeorder employeeorder: employeeorders) {
+				if (!employeecontract.getFreelancer() && !employeeorder.getSuborder().getNoEmployeeOrderContent()) {
+					try {
+						if (employeeorder.getEmployeeordercontent() == null) {
+							throw new RuntimeException("null content");
+						} else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_emp() != true && employeeorder.getEmployeecontract().getEmployee().equals(employeecontract.getEmployee())) {
+							Warning warning = new Warning();
+							warning.setSort(getResources(request).getMessage(getLocale(request), "employeeordercontent.thumbdown.text"));
+							warning.setText(employeeorder.getEmployeeOrderAsString());
+							warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
+							warnings.add(warning);
+						} else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_mgmt() != true && employeeorder.getEmployeeordercontent().getContactTechHbt().equals(employeecontract.getEmployee())) {
+							Warning warning = new Warning();
+							warning.setSort(getResources(request).getMessage(getLocale(request), "employeeordercontent.thumbdown.text"));
+							warning.setText(employeeorder.getEmployeeOrderAsString());
+							warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
+							warnings.add(warning);
+						} else {
+							throw new RuntimeException("query suboptimal");
+						}
+					}
+					catch (Exception e) {
+						System.out.println(e);
+					}
+				}
+			}
 			
 //			 vacation v2
 			java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
-			
+				
 			List<Employeeorder> orders = new ArrayList<Employeeorder>();
-			
+				
 			List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION, today);
 			List<Employeeorder> vacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, today);
 			List<Employeeorder> extraVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION, today);
-
 			
 			orders.addAll(specialVacationOrders);
 			orders.addAll(vacationOrders);
@@ -407,10 +441,6 @@ public class LoginEmployeeAction extends Action {
 				vacations.add(vacationView);
 			}
 			request.getSession().setAttribute("vacations", vacations);
-
-			// get warnings			
-			List<Warning> warnings = new ArrayList<Warning>();
-			simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			
 			// timereport warning
 			List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
@@ -549,7 +579,6 @@ public class LoginEmployeeAction extends Action {
 		// create collection of employeecontracts
 		List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeecontracts);
-
 		
 		return mapping.findForward("success");
 	}

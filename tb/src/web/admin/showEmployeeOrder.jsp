@@ -459,24 +459,28 @@
 		</c:choose>
 
 		<html:form action="/EditEmployeeOrderContent">
-			<td align="center" valign="middle"><c:if
-				test="${!loginEmployeeContract.freelancer && !employeeorder.suborder.noEmployeeOrderContent}">
+			<td align="center" valign="middle">
 				<c:choose>
-					<c:when test="${employeeorder.employeeordercontent == null}">
-						<html:image onclick="editContent(this.form, ${employeeorder.id})"
-							src="/tb/images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
+					<c:when test="${!loginEmployeeContract.freelancer && !employeeorder.suborder.noEmployeeOrderContent}">
+						<c:choose>
+							<c:when test="${employeeorder.employeeordercontent == null || (employeeorder.employeeordercontent.committed_mgmt != true && employeeorder.employeeordercontent.committed_emp != true)}">
+								<html:image onclick="editContent(this.form, ${employeeorder.id})"
+									src="/tb/images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
+							</c:when>
+							<c:when
+								test="${employeeorder.employeeordercontent != null && (employeeorder.employeeordercontent.committed_mgmt != true || employeeorder.employeeordercontent.committed_emp != true)}">
+								<html:image onclick="editContent(this.form, ${employeeorder.id})"
+									src="/tb/images/yellow.gif" titleKey="employeeordercontent.yellow.text" /> 
+							</c:when>
+							<c:otherwise>
+								<html:image onclick="editContent(this.form, ${employeeorder.id})"
+									src="/tb/images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
+							</c:otherwise>
+						</c:choose>
 					</c:when>
-					<c:when
-						test="${employeeorder.employeeordercontent != null && (!employeeorder.employeeordercontent.committed_mgmt || !employeeorder.employeeordercontent.committed_emp)}">
-						<html:image onclick="editContent(this.form, ${employeeorder.id})"
-							src="/tb/images/yellow.gif" titleKey="employeeordercontent.yellow.text" /> 
-					</c:when>
-					<c:otherwise>
-						<html:image onclick="editContent(this.form, ${employeeorder.id})"
-							src="/tb/images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
-					</c:otherwise>
+					<c:otherwise>&nbsp;</c:otherwise>
 				</c:choose>
-			</c:if></td>
+			</td>
 		</html:form>
 
 		<c:choose>
@@ -517,6 +521,7 @@
 		</tr>
 	</c:if>
 </table>
+<% request.getSession().setAttribute("addEmployeeOrderContentVisited", true); %>
 <br>
 <br>
 <br>

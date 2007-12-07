@@ -27,8 +27,7 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 				return true;
 			} else if ((!eoContent.getCommitted_mgmt() || !eoContent.getCommitted_emp())
 					&& (loginEmployee.equals(employeeorder.getEmployeecontract().getEmployee()) 
-							|| loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)
-							|| loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL))) {
+							|| loginEmployee.equals(eoContent.getContactTechHbt()))) {
 				return true;
 			}  else if (loginEmployee.getStatus().equals(
 					GlobalConstants.EMPLOYEE_STATUS_ADM)) {
@@ -59,10 +58,7 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 					.getEmployee())) {
 				request.getSession().setAttribute("releaseEmpPossible", true);
 				request.getSession().setAttribute("releaseMgmtPossible", false);
-			} else if (loginEmployee.getStatus().equals(
-					GlobalConstants.EMPLOYEE_STATUS_GF) || 
-				loginEmployee.getStatus().equals(
-					GlobalConstants.EMPLOYEE_STATUS_BL)) {
+			} else if (loginEmployee.equals(eoContent.getContactTechHbt())) {
 				request.getSession().setAttribute("releaseMgmtPossible", true);
 				request.getSession().setAttribute("releaseEmpPossible", false);
 			} else if (loginEmployee.getStatus().equals(

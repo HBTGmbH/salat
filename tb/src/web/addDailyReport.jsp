@@ -15,6 +15,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<% java.text.DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");%>
 <script type="text/javascript" language="JavaScript">
  	var req;
  		
@@ -32,11 +33,6 @@
 		form.action = "/tb/do/StoreDailyReport?task=adjustBeginTime";
 		form.submit();
 	}
-		
-	function afterCalenderClick() {
-		document.forms[0].action = "/tb/do/StoreDailyReport?task=adjustBeginTime";
-		document.forms[0].submit();	
-	}
 	
 	function adjustSuborderSignChangedAction(form) {	
  		form.action = "/tb/do/StoreDailyReport?task=adjustSuborderSignChanged";
@@ -46,7 +42,17 @@
 	function adjustSuborderDescriptionChangedAction(form) {	
  		form.action = "/tb/do/StoreDailyReport?task=adjustSuborderDescriptionChanged";
 		form.submit();
+	}
+	
+	function afterCalenderClick() {
+		document.forms[0].action = "/tb/do/StoreDailyReport?task=adjustBeginTime";
+		document.forms[0].submit();	
 	}			
+	
+	function setDate(howMuch) {
+		document.forms[0].action = "/tb/do/StoreDailyReport?task=setDate&howMuch=" + howMuch;
+		document.forms[0].submit();
+	}
 	
 	function setUpdateSortofreportAction(form) {	
  		form.action = "/tb/do/StoreDailyReport?task=updateSortOfReport";
@@ -72,8 +78,7 @@
 	function backToOverview(form) {	
  		form.action = "/tb/do/ShowDailyReport";
 		form.submit();
-	}		
-			
+	}
 </script>
 
 </head>
@@ -82,7 +87,7 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<html:form action="/StoreDailyReport">	
+<html:form action="/StoreDailyReport" styleId="StoreDailyReportForm">	
 	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
 		key="main.general.entertimereportproperties.text" />:<br></span>
 	<br>
@@ -146,6 +151,7 @@
                 </script> <script type="text/javascript" language="JavaScript">
                     function calenderPopup() {
                         var cal = new CalendarPopup();
+                        
                         cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
                         cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
                         cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
@@ -159,7 +165,25 @@
 				name="anchor1" ID="anchor1" style="text-decoration:none;"> <img
 				src="/tb/images/popupcalendar.gif" width="22" height="22"
 				alt="<bean:message key="main.date.popup.alt.text" />"
-				style="border:0;vertical-align:top"> </a> <span style="color:red"><html:errors
+				style="border:0;vertical-align:top"> </a>
+				
+				<%-- Arrows for navigating the Date --%>
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />">
+				<img src="/tb/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />">
+				<img src="/tb/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />">
+				<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
+				<span style="color:red"><html:errors
 				property="referenceday" /> <html:errors property="release" /></span></td>
 		</tr>
 		<!-- Serienbuchung -->

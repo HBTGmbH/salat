@@ -178,6 +178,7 @@
 
 		<action path="/ShowWelcome" input="/showWelcome.jsp"
 			validate="true" name="showWelcomeForm">
+			<forward name="login" path="/login.jsp" />
 			<forward name="success" path="/showWelcome.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>

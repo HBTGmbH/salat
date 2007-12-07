@@ -8,6 +8,7 @@ import java.util.List;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.EmployeeOrderComparator;
@@ -44,7 +45,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 		return (Employeeorder) getSession().createQuery("from Employeeorder eo where eo.id = ?").setLong(0, id).uniqueResult();
 	}
 	
-	
+	public List<Employeeorder> getEmployeeordersForEmployeeordercontentWarning(Employeecontract ec) {
+//		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo where eo.employeeOrderContent.contactTechHbt.id = ? or eo.employeecontract.id = ?").setLong(0, ec.getEmployee().getId()).setLong(1, ec.getId()).list();
+		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo where (eo.employeeOrderContent.committed_emp != true and eo.employeecontract.id = ?) or (eo.employeeOrderContent.committed_mgmt != true and eo.employeeOrderContent.contactTechHbt.id = ?)").setLong(0, ec.getId()).setLong(1, ec.getEmployee().getId()).list();
+	}
 //	/**
 //	 * 
 //	 * @param employeecontractId
@@ -124,9 +128,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	
 	
 	/**
-	 * Gets the list of employeeorders for the given employee contract id.
+	 * Gets the list of employeeorders for the given employee contract and suborder id.
 	 * 
 	 * @param employeeContractId
+	 * @param suborderId
 	 * @return
 	 */
 	public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId, long suborderId) {
@@ -134,9 +139,11 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	}
 	
 	/**
-	 * Gets the list of employeeorders for the given employee contract id.
+	 * Gets the list of employeeorders for the given employee contract and suborder id and date.
 	 * 
 	 * @param employeeContractId
+	 * @param suborderId
+	 * @param date
 	 * @return
 	 */
 	public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, Date date) {
@@ -148,9 +155,11 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
 	}
 	
 	/**
-	 * Gets the list of employeeorders for the given employee contract id.
+	 * Gets the list of employeeorders for the given employee contract and suborder id and date.
 	 * 
 	 * @param employeeContractId
+	 * @param suborderId
+	 * @param date
 	 * @return
 	 */
 	public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, Date date) {

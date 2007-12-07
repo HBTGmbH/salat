@@ -82,20 +82,12 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-	<p>
-	<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.release.title.text" />:<br></span>
-	</p>
-	<br>
+	
 	<html:form action="/ShowRelease">
-	<table border="0" cellspacing="0" cellpadding="2"
-		class="center backgroundcolor">
-		
-		<!-- release -->
-		<tr>
-			<td align="left" class="noBborderStyle"><h3><bean:message
-				key="main.release.releasetimeperiod.text" /></h3></td>
-		</tr> 
-		<tr>
+	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
+			<tr><td class="noBborderStyle" align="left">
+			<span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.release.title.text" />:&nbsp;&nbsp;<p></span>
+			</td></tr><tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.release.employee.text" />:</b></td>
 			<td align="left" class="noBborderStyle">
@@ -135,6 +127,9 @@
 				<c:out value="${acceptedUntil}" />	
 			</td>
 		</tr>
+		
+		<!-- release -->
+
 		<c:if test="${employeeAuthorized || employeeContractId == loginEmployeeContractId}">
 			<tr>
 				<td align="left" class="noBborderStyle" height="10"></td>
@@ -193,8 +188,7 @@
 					</html:select>
 					<span style="color:red"><html:errors property="releasedate" /></span>
 				</td>
-			</tr>
-			<tr>
+
 				<td class="noBborderStyle"><html:submit
 					onclick="confirmRelease(this.form);return false" styleId="button">
 					<bean:message key="main.general.button.release.text" />
@@ -209,11 +203,7 @@
 			<tr>
 				<td align="left" class="noBborderStyle" height="30"></td>
 			</tr>
-		
-			<tr>
-				<td align="left" class="noBborderStyle"><h3><bean:message
-					key="main.release.accepttimeperiod.text" /></h3></td>
-			</tr> 
+
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
 						key="main.release.accept.until.text" />:</b></td>
@@ -268,8 +258,7 @@
 					</html:select>
 					<span style="color:red"><html:errors property="acceptancedate" /></span>
 				</td>
-			</tr>
-			<tr>
+
 				<td class="noBborderStyle"><html:submit
 					onclick="confirmAcceptance(this.form);return false" styleId="button">
 					<bean:message key="main.general.button.accept.text" />
@@ -285,10 +274,6 @@
 				<td align="left" class="noBborderStyle" height="30"></td>
 			</tr>
 		
-			<tr>
-				<td align="left" class="noBborderStyle"><h3><bean:message
-					key="main.release.reopentimeperiod.text" /></h3></td>
-			</tr> 
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message
 						key="main.release.reopen.until.text" />:</b></td>
@@ -343,8 +328,7 @@
 					</html:select>
 					<span style="color:red"><html:errors property="reopendate" /></span>
 				</td>
-			</tr>
-			<tr>
+
 				<td class="noBborderStyle"><html:submit
 					onclick="confirmReopen(this.form);return false" styleId="button">
 					<bean:message key="main.general.button.reopen.text" />

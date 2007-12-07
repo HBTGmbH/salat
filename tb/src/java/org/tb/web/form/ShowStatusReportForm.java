@@ -13,7 +13,17 @@ public class ShowStatusReportForm extends ActionForm {
 	 */
 	private static final long serialVersionUID = 1L; // -3493035136151698227L;
 	private Long customerOrderId;
-
+	private Boolean showReleased = true;
+	
+	
+	public Boolean getShowReleased() {
+		return this.showReleased;
+	}
+	
+	public void setShowReleased(Boolean showReleased) {
+		this.showReleased = showReleased;
+	}
+	
 	/**
 	 * @return the customerOrderId
 	 */
@@ -34,7 +44,7 @@ public class ShowStatusReportForm extends ActionForm {
 	@Override
 	public void reset(ActionMapping arg0, HttpServletRequest arg1) {
 		// TODO Auto-generated method stub
-		
+		this.showReleased = false;
 	}
 
 	/* (non-Javadoc)

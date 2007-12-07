@@ -16,7 +16,7 @@
 
 <script type="text/javascript" language="JavaScript">	
 	
-	function refresh(form) {	
+	function refresh(form) {
 		form.action = "/tb/do/ShowStatusReport?task=refresh";
 		form.submit();
 	}
@@ -61,9 +61,9 @@
 <table class="center backgroundcolor">
 	<html:form action="/ShowStatusReport?task=refresh">
 		<tr>
-			<td class="noBborderStyle" colspan="2"><b><bean:message
+			<td class="noBborderStyle" colspan="3"><b><bean:message
 				key="main.suborder.customerorder.text" /></b></td>
-			<td class="noBborderStyle" colspan="9" align="left">
+			<td class="noBborderStyle" colspan="8" align="left">
 				<html:select property="customerOrderId" onchange="refresh(this.form)">
 					<html:option value="-1">
 						<bean:message key="main.general.allorders.text" />
@@ -71,6 +71,13 @@
 					<html:options collection="visibleCustomerOrders" labelProperty="signAndDescription"
 						property="id" />
 			</html:select>
+			</td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" colspan="3"><b><bean:message
+			key="main.customerorder.statusreport.hidereleased" /></b></td>
+			<td class="noBborderStyle" colspan="8" align="left">
+				<html:checkbox property="showReleased" onchange="refresh(this.form)"/>
 			</td>
 		</tr>
 	</html:form>
@@ -113,14 +120,19 @@
 			title="<bean:message 
 			key="statusreport.table.headline.from.title.text" />"><b><bean:message 
 			key="statusreport.table.headline.from.text" /></b></th>
-		<th align="left" 
-			title="<bean:message 
-			key="statusreport.table.headline.to.title.text" />"><b><bean:message 
-			key="statusreport.table.headline.to.text" /></b></th>
+			
 		<th align="left" 
 			title="<bean:message 
 			key="statusreport.table.headline.released.title.text" />"><b><bean:message 
 			key="statusreport.table.headline.released.text" /></b></th>
+			
+		<th align="left" 
+			title="<bean:message 
+			key="statusreport.table.headline.to.title.text" />"><b><bean:message 
+			key="statusreport.table.headline.to.text" /></b></th>
+			
+
+			
 		<th align="left" 
 			title="<bean:message 
 			key="statusreport.table.headline.accepted.title.text" />"><b><bean:message 
@@ -129,134 +141,136 @@
 			title="<bean:message
 			key="statusreport.table.headline.edit.title.text" />"><b><bean:message
 			key="statusreport.table.headline.edit.text" /></b></th>
-						
+		<% int i = 0; %>						
 		<c:forEach var="statusreport" items="${statusReports}" varStatus="statusID">
-			<c:choose>
-				<c:when test="${statusID.count%2==0}">
-					<tr class="primarycolor">
-				</c:when>
-				<c:otherwise>
-					<tr class="secondarycolor">
-				</c:otherwise>
-			</c:choose>
+			<c:if test="${!showReleased || (statusreport.accepted == null || statusreport.released == null)}">
+				<%if (i%2 == 0) { %>
+						<tr class="primarycolor">
+				<%} else { %>
+						<tr class="secondarycolor">
+				<%} %>
+				<!-- Info -->
+				<td align="center">
+					<div class="tooltip" id="info<c:out value='${statusreport.id}' />">
+						<table>
+							<tr>
+								<td class="info">id:</td>
+								<td class="info" colspan="3"><c:out
+									value="${statusreport.id}" /></td>
+							</tr>
+							<tr>
+								<td class="info"><bean:message
+									key="main.timereport.tooltip.order" />:</td>
+								<td class="info" colspan="3"><c:out
+									value="${statusreport.customerorder.sign}" /></td>
+							</tr>
+							<tr>
+								<td class="info">&nbsp;</td>
+								<td class="info" colspan="3"><c:out
+									value="${statusreport.customerorder.description}" /></td>
+							</tr>
+							<tr>
+								<td class="info" valign="top"><bean:message
+									key="main.timereport.tooltip.created" />:</td>
+								<td class="info"><c:out value="${statusreport.created}" /></td>
+								<td class="info" valign="top"><bean:message
+									key="main.timereport.tooltip.by" /></td>
+								<td class="info" valign="top"><c:out
+									value="${statusreport.createdby}" /></td>
+							</tr>
+							<tr>
+								<td class="info" valign="top"><bean:message
+									key="main.timereport.tooltip.edited" />:</td>
+								<td class="info"><c:out value="${statusreport.lastupdate}" /></td>
+								<td class="info" valign="top"><bean:message
+									key="main.timereport.tooltip.by" /></td>
+								<td class="info" valign="top"><c:out
+									value="${statusreport.lastupdatedby}" /></td>
+							</tr>
+						</table>				
+					</div>
+					<img
+						onMouseOver="showWMTT(this,'info<c:out value="${statusreport.id}" />')"
+						onMouseOut="hideWMTT()" width="12px" height="12px"
+						src="/tb/images/info_button.gif" />
+				</td>
+				<!-- order -->
+				<td>
+					<c:out value="${statusreport.customerorder.sign}" />			
+				</td>
+				<!-- order description -->
+				<td title="${statusreport.customerorder.description}">
+					<c:out value="${statusreport.customerorder.shortdescription}" />
+				</td>
+				<!-- sort -->
+				<td>
+					<c:choose>
+						<c:when test="${statusreport.sort == 1}">
+							<bean:message key="statusreport.sort.periodical"/>
+						</c:when>
+						<c:when test="${statusreport.sort == 2}">
+							<bean:message key="statusreport.sort.extra"/>
+						</c:when>
+						<c:when test="${statusreport.sort == 3}">
+							<bean:message key="statusreport.sort.final"/>
+						</c:when>
+						<c:otherwise>
+							n/a
+						</c:otherwise>
+					</c:choose>
+				</td>
+				<!-- status -->
+				<td>
+					<c:choose>
+						<c:when test="${statusreport.overallStatus == 1}">
+							<html:img style="width:15px; height:15px;" src="/tb/images/green.gif" /> <bean:message key="statusreport.status.green"/>
+						</c:when>
+						<c:when test="${statusreport.overallStatus == 2}">
+							<html:img style="width:15px; height:15px;" src="/tb/images/yellow.gif" /> <bean:message key="statusreport.status.yellow"/>
+						</c:when>
+						<c:when test="${statusreport.overallStatus == 3}">
+							<html:img style="width:15px; height:15px;" src="/tb/images/red.gif" /> <bean:message key="statusreport.status.red"/>
+						</c:when>
+						<c:otherwise>
+							n/a
+						</c:otherwise>
+					</c:choose>
+				</td>
+				<!-- time period -->
+				<td align="center">
+					<c:out value="${statusreport.fromdate}" /> - <c:out value="${statusreport.untildate}" />
+				</td>
+				<!-- sender -->
+				<td align="center" title="${statusreport.sender.name}">
+					<c:out value="${statusreport.sender.sign}" />
+				</td>
 				
-			<!-- Info -->
-			<td align="center">
-				<div class="tooltip" id="info<c:out value='${statusreport.id}' />">
-					<table>
-						<tr>
-							<td class="info">id:</td>
-							<td class="info" colspan="3"><c:out
-								value="${statusreport.id}" /></td>
-						</tr>
-						<tr>
-							<td class="info"><bean:message
-								key="main.timereport.tooltip.order" />:</td>
-							<td class="info" colspan="3"><c:out
-								value="${statusreport.customerorder.sign}" /></td>
-						</tr>
-						<tr>
-							<td class="info">&nbsp;</td>
-							<td class="info" colspan="3"><c:out
-								value="${statusreport.customerorder.description}" /></td>
-						</tr>
-						<tr>
-							<td class="info" valign="top"><bean:message
-								key="main.timereport.tooltip.created" />:</td>
-							<td class="info"><c:out value="${statusreport.created}" /></td>
-							<td class="info" valign="top"><bean:message
-								key="main.timereport.tooltip.by" /></td>
-							<td class="info" valign="top"><c:out
-								value="${statusreport.createdby}" /></td>
-						</tr>
-						<tr>
-							<td class="info" valign="top"><bean:message
-								key="main.timereport.tooltip.edited" />:</td>
-							<td class="info"><c:out value="${statusreport.lastupdate}" /></td>
-							<td class="info" valign="top"><bean:message
-								key="main.timereport.tooltip.by" /></td>
-							<td class="info" valign="top"><c:out
-								value="${statusreport.lastupdatedby}" /></td>
-						</tr>
-					</table>				
-				</div>
-				<img
-					onMouseOver="showWMTT(this,'info<c:out value="${statusreport.id}" />')"
-					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="/tb/images/info_button.gif" />
-			</td>
-			<!-- order -->
-			<td>
-				<c:out value="${statusreport.customerorder.sign}" />			
-			</td>
-			<!-- order description -->
-			<td title="${statusreport.customerorder.description}">
-				<c:out value="${statusreport.customerorder.shortdescription}" />
-			</td>
-			<!-- sort -->
-			<td>
-				<c:choose>
-					<c:when test="${statusreport.sort == 1}">
-						<bean:message key="statusreport.sort.periodical"/>
-					</c:when>
-					<c:when test="${statusreport.sort == 2}">
-						<bean:message key="statusreport.sort.extra"/>
-					</c:when>
-					<c:when test="${statusreport.sort == 3}">
-						<bean:message key="statusreport.sort.final"/>
-					</c:when>
-					<c:otherwise>
-						n/a
-					</c:otherwise>
-				</c:choose>
-			</td>
-			<!-- status -->
-			<td>
-				<c:choose>
-					<c:when test="${statusreport.overallStatus == 1}">
-						<html:img style="width:15px; height:15px;" src="/tb/images/green_circle3.gif" /> <bean:message key="statusreport.status.green"/>
-					</c:when>
-					<c:when test="${statusreport.overallStatus == 2}">
-						<html:img style="width:15px; height:15px;" src="/tb/images/yellow_circle3.gif" /> <bean:message key="statusreport.status.yellow"/>
-					</c:when>
-					<c:when test="${statusreport.overallStatus == 3}">
-						<html:img style="width:15px; height:15px;" src="/tb/images/red_circle3.gif" /> <bean:message key="statusreport.status.red"/>
-					</c:when>
-					<c:otherwise>
-						n/a
-					</c:otherwise>
-				</c:choose>
-			</td>
-			<!-- time period -->
-			<td align="center">
-				<c:out value="${statusreport.fromdate}" /> - <c:out value="${statusreport.untildate}" />
-			</td>
-			<!-- sender -->
-			<td align="center" title="${statusreport.sender.name}">
-				<c:out value="${statusreport.sender.sign}" />
-			</td>
-			<!-- recipient -->
-			<td align="center" title="${statusreport.recipient.name}">
-				<c:out value="${statusreport.recipient.sign}" />
-			</td>
-			<!-- released -->
-			<td align="center" title="${statusreport.released}">
-				<fmt:formatDate value="${statusreport.released}" pattern="yyyy-MM-dd HH:mm" />&nbsp;
-			</td>
-			<!-- accepted -->
-			<td align="center" title="${statusreport.accepted}">
-				<fmt:formatDate value="${statusreport.accepted}" pattern="yyyy-MM-dd HH:mm" />&nbsp;
-			</td>
-			
-			<!-- edit, delete -->
-			<html:form action="/ShowStatusReport">
-				<td align="center" nowrap="nowrap"><html:link title="<bean:message key='statusreport.button.edit.text'/>"
-					href="/tb/do/EditStatusReport?srId=${statusreport.id}"><html:image 
-					src="/tb/images/Edit.gif" altKey="statusreport.button.edit.text" titleKey="statusreport.button.edit.text" /></html:link> &nbsp; <c:if 
-					test="${loginEmployee.status == 'adm'}"><html:image
-					onclick="confirmDelete(this.form, ${statusreport.id})"
-					src="/tb/images/Delete.gif" altKey="statusreport.button.delete.text" titleKey="statusreport.button.delete.text" /></c:if></td>
-			</html:form>
+				<!-- released -->
+				<td align="center" title="${statusreport.released}">
+					<fmt:formatDate value="${statusreport.released}" pattern="yyyy-MM-dd HH:mm" />&nbsp;
+				</td>
+				
+				<!-- recipient -->
+				<td align="center" title="${statusreport.recipient.name}">
+					<c:out value="${statusreport.recipient.sign}" />
+				</td>
+	
+				<!-- accepted -->
+				<td align="center" title="${statusreport.accepted}">
+					<fmt:formatDate value="${statusreport.accepted}" pattern="yyyy-MM-dd HH:mm" />&nbsp;
+				</td>
+				
+				<!-- edit, delete -->
+				<html:form action="/ShowStatusReport">
+					<td align="center" nowrap="nowrap"><html:link title="<bean:message key='statusreport.button.edit.text'/>"
+						href="/tb/do/EditStatusReport?srId=${statusreport.id}"><html:image 
+						src="/tb/images/Edit.gif" altKey="statusreport.button.edit.text" titleKey="statusreport.button.edit.text" /></html:link> &nbsp; <c:if 
+						test="${loginEmployee.status == 'adm'}"><html:image
+						onclick="confirmDelete(this.form, ${statusreport.id})"
+						src="/tb/images/Delete.gif" altKey="statusreport.button.delete.text" titleKey="statusreport.button.delete.text" /></c:if></td>
+				</html:form>
+				<% i++; %>
+			</c:if>
 		</c:forEach>
 	<tr>
 		<html:form action="/CreateStatusReport">

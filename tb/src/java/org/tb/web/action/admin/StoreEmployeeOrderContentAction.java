@@ -98,8 +98,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 						 !eoContent.getCommitted_mgmt())) {
 					// only one side hast committed - emp from emploeeorder may save
 					authorized = true;
-				} else if ((loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)||
-						loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)) &&
+				} else if (loginEmployee.equals(eoContent.getContactTechHbt()) &&
 						   (!eoContent.getCommitted_emp() ||
 									 !eoContent.getCommitted_mgmt())) {
 					// only one side has committed - bl and gf may save
@@ -136,8 +135,8 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 			eoContent.setTask(contentForm.getTask());
 			
 			// after saving commits are no longer valid
-			eoContent.setCommitted_emp(false);
-			eoContent.setCommitted_mgmt(false);
+			eoContent.setCommitted_emp(false);											//why?!?! <------------------------------------------
+			eoContent.setCommitted_mgmt(false);											//why?!?! <------------------------------------------
 			
 			employeeOrderContentDAO.save(eoContent, loginEmployee);
 			
@@ -227,9 +226,8 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 			// user is authorized, if
 			//  status = admin
 			// OR
-			//  status = gf
-			if ((loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
-				 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)||
+			//  employee = responsible person for execution
+			if ((loginEmployee.equals(eoContent.getContactTechHbt()) ||
 				 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) &&
 				 		employeeorder.getEmployeeordercontent() != null &&
 						formEntriesEqualDB(employeeorder.getEmployeeordercontent().getId(), contentForm)) {
@@ -327,8 +325,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 		// action back
 		if (((request.getParameter("action") != null)
 				&& (request.getParameter("action").equals("back"))) || backAction) {
-			
-			
+
 			// get filter settings from session and refresh list of employeeorders for overview 
 			Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 			long employeeContractId = -1;
@@ -336,19 +333,17 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 				employeeContractId = employeecontract.getId();
 			}
 			
-			long orderId = (Long) request.getSession().getAttribute("currentOrderId");
 			String filter = null;
 			Boolean show = null;
-	
+			
+			long orderId = (Long) request.getSession().getAttribute("currentOrderId");
 			if (request.getSession().getAttribute("employeeOrderFilter") != null) {
 				filter = (String) request.getSession().getAttribute("employeeOrderFilter");
 			}
 			if (request.getSession().getAttribute("employeeOrderShow") != null) {
 				show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
 			}
-
 			request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
-
 			
 			return mapping.findForward("back");
 		} // action back end

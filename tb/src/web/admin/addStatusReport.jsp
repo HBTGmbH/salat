@@ -82,15 +82,15 @@
 			<td class="noBborderStyle" nowrap="nowrap" colspan="3">
 				<html:radio property="overallStatus" value="3" disabled="true"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 				<html:radio property="overallStatus" value="2" disabled="true"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;			
 				<html:radio property="overallStatus" value="1" disabled="true"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>							
 			</td>			
 		</tr>
@@ -260,17 +260,17 @@
 				<html:radio property="trendstatus" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="trendstatus" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="trendstatus" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>					
 			</td>
 		</tr>
@@ -300,17 +300,17 @@
 				<html:radio property="needforaction_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="needforaction_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="needforaction_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>			
 			</td>
 		</tr>
@@ -345,17 +345,17 @@
 				<html:radio property="aim_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="aim_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="aim_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>
 			</td>
 		</tr>		
@@ -390,17 +390,17 @@
 				<html:radio property="budget_resources_date_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="budget_resources_date_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="budget_resources_date_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>
 			</td>
 		</tr>
@@ -435,17 +435,17 @@
 				<html:radio property="riskmonitoring_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="riskmonitoring_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="riskmonitoring_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>
 			</td>
 		</tr>
@@ -480,17 +480,17 @@
 				<html:radio property="changedirective_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="changedirective_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="changedirective_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>
 			</td>
 		</tr>
@@ -525,17 +525,17 @@
 				<html:radio property="communication_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="communication_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="communication_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>
 			</td>
 		</tr>
@@ -570,17 +570,17 @@
 				<html:radio property="improvement_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="improvement_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="improvement_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>
 			</td>
 		</tr>
@@ -615,17 +615,17 @@
 				<html:radio property="miscellaneous_status" disabled="${!isReportEditable}"
 					value="3"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/red_circle3.gif" /> <bean:message 
+					src="/tb/images/red.gif" /> <bean:message 
 					key="statusreport.status.red"/></html:radio><br>
 				<html:radio property="miscellaneous_status" disabled="${!isReportEditable}" 
 					value="2"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/yellow_circle3.gif" /> <bean:message 
+					src="/tb/images/yellow.gif" /> <bean:message 
 					key="statusreport.status.yellow"/></html:radio><br>			
 				<html:radio property="miscellaneous_status" disabled="${!isReportEditable}"
 					value="1"><html:img 
 					style="width:15px; height:15px;" 
-					src="/tb/images/green_circle3.gif" /> <bean:message 
+					src="/tb/images/green.gif" /> <bean:message 
 					key="statusreport.status.green"/></html:radio>
 			</td>
 		</tr>

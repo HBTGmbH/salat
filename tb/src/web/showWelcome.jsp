@@ -27,6 +27,9 @@
 <br><span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.overview.text" /><br></span>
 <br>
 <html:form action="/ShowWelcome">
+<c:if test="${currentEmployeeContract.id == null}">
+	<jsp:forward page="login" />
+</c:if>
 &nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)"
 			 value="${currentEmployeeContract.id}">
 	<c:forEach var="employeecontract" items="${employeecontracts}" >
@@ -64,6 +67,5 @@
 		</c:forEach>
 	</table>
 </c:if>
-
 </body>
 </html>

@@ -32,8 +32,10 @@ public class ShowStatusReportAction extends LoginRequiredAction {
 			HttpServletResponse response) throws Exception {
 		
 		ShowStatusReportForm reportForm = (ShowStatusReportForm) form;
-		
 		request.getSession().setAttribute("visibleCustomerOrders", customerorderDAO.getVisibleCustomerorders());
+	
+		Boolean show= reportForm.getShowReleased();
+
 		
 		long customerOrderId;
 		if (reportForm != null && reportForm.getCustomerOrderId() != null) {
@@ -46,7 +48,6 @@ public class ShowStatusReportAction extends LoginRequiredAction {
 			customerOrderId = Long.parseLong(request.getParameter("coId"));
 		}
 		
-		
 		List<Statusreport> statusReports;
 		
 		if (customerOrderId != 0 && customerOrderId != -1) {
@@ -56,6 +57,7 @@ public class ShowStatusReportAction extends LoginRequiredAction {
 		}
 		request.getSession().setAttribute("statusReports", statusReports);
 		request.getSession().setAttribute("customerOrderId", customerOrderId);
+		request.getSession().setAttribute("showReleased", show);
 		
 		return mapping.findForward("success");
 	}

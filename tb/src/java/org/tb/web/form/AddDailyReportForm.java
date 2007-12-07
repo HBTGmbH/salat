@@ -2,6 +2,10 @@ package org.tb.web.form;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.Date;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
+
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
@@ -47,7 +51,13 @@ public class AddDailyReportForm extends ActionForm {
 	private int numberOfSerialDays;
 	
 	private String action;
-
+	
+	public AddDailyReportForm() {
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		
+		setReferenceday(format.format(new Date()));
+	}
+	
 	
 	public long getId() {
 		return id;
@@ -213,6 +223,8 @@ public class AddDailyReportForm extends ActionForm {
 		this.referenceday = referenceday;
 	}
 
+	
+	
 //	public long getEmployeecontractId() {
 //		return employeecontractId;
 //	}

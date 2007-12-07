@@ -237,11 +237,18 @@ public class Employeeorder implements Serializable {
 
 	public String getEmployeeOrderAsString() {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		return "EO["+getEmployeecontract().getEmployee().getSign()+" | "
-			+ getSuborder().getCustomerorder().getSign() + " / " 
-			+ getSuborder().getSign() + " | " 
-			+ simpleDateFormat.format(getFromDate()) + " - " 
-			+ simpleDateFormat.format(getUntilDate()) +  "]";
+		if (getUntilDate() != null) {
+			return "EO["+getEmployeecontract().getEmployee().getSign()+" | "
+				+ getSuborder().getCustomerorder().getSign() + " / " 
+				+ getSuborder().getSign() + " | " 
+				+ simpleDateFormat.format(getFromDate()) + " - " 
+				+ simpleDateFormat.format(getUntilDate()) +  "]";
+		} else {
+			return "EO["+getEmployeecontract().getEmployee().getSign()+" | "
+				+ getSuborder().getCustomerorder().getSign() + " / " 
+				+ getSuborder().getSign() + " | " 
+				+ simpleDateFormat.format(getFromDate()) + " - offen]";
+		}
 	}
 	
 	/**

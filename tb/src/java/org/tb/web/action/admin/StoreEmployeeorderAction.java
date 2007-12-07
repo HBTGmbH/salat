@@ -3,6 +3,7 @@ package org.tb.web.action.admin;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.web.form.AddDailyReportForm;
 import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
@@ -81,7 +83,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
 		AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
-
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		
 		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
 
@@ -99,7 +102,43 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 				return mapping.getInputForward();
 			}
 		}
+		
+		// Task for setting the date, previous, next and to-day for both, until and from date
+		if ((request.getParameter("task") != null) && (request.getParameter("task").equals("setDate"))) { 
+			String which = request.getParameter("which").toLowerCase();
+			Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+			
+			String datum = which.equals("until") ? eoForm.getValidUntil() : eoForm.getValidFrom();
+			Integer day, month, year;
+			Calendar cal = Calendar.getInstance();
+			
+			ActionMessages errorMessages = valiDate(request, eoForm, which);
+			if (errorMessages.size() > 0) {
+				return mapping.getInputForward();
+			}
+			
+			day = Integer.parseInt(datum.substring(8));
+			month = Integer.parseInt(datum.substring(5, 7));
+			year = Integer.parseInt(datum.substring(0, 4));
+			
+			cal.set(Calendar.DATE, day);
+			cal.set(Calendar.MONTH, month - 1);
+			cal.set(Calendar.YEAR, year);
+			
+			cal.add(Calendar.DATE, howMuch);
+			datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
 
+			request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
+			
+			if (which.equals("until")) {
+				eoForm.setValidUntil(datum); 
+			} else {
+				eoForm.setValidFrom(datum);
+			}
+			
+			return mapping.findForward("reset");
+		}		
+		
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshSuborders"))) {
 			// refresh suborders to be displayed in the select menu:
@@ -402,6 +441,34 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 		eoForm.useDatesFromCustomerOrder(co);
 	}
 
+	
+	private ActionMessages valiDate(HttpServletRequest request, AddEmployeeOrderForm eoForm, String which) {
+		ActionMessages errors = getErrors(request);
+		if (errors == null) errors = new ActionMessages();
+		
+		String dateString = "";
+		if (which.equals("from")) {
+			dateString = eoForm.getValidFrom().trim();
+		} else {
+			dateString = eoForm.getValidUntil().trim();
+		}
+		
+		int minus=0;
+		for (int i = 0; i < dateString.length(); i++) {
+			if (dateString.charAt(i) == '-') minus++;	
+		}
+		if (dateString.length() != 10 || minus != 2) {
+			if (which.equals("from")) {
+				errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
+			} else {
+				errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
+			}
+		}
+		
+		saveErrors(request, errors);
+		return errors;
+	}
+	
 	/**
 	 * validates the form data (syntax and logic)
 	 * 
