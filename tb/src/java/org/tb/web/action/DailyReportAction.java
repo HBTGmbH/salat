@@ -276,6 +276,9 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		Date beginDate;
 		Date endDate;
 		
+		/* make sure that the for is set in the http session, it could be a newly created object */ 
+		request.getSession().setAttribute("showDailyReportForm", reportForm);
+		
 		try {
 			TimereportHelper th = new TimereportHelper();
 			
@@ -483,13 +486,32 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 							"No employee contract found for employee - please call system administrator.");
 			throw new Exception("No employee contract found for employee");
 		}
+		//new parameter
+		Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract, workingdayDAO, false);
 		
-		Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract, workingdayDAO);
 		
+		
+		// save values from the data base into form-bean, when working day != null
+		if(workingday != null){
+			
+			//show break time, quitting time and working day ends on the showdailyreport.jsp
+			request.getSession().setAttribute("visibleworkingday", true);
+			
 		reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
 		reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
 		reportForm.setSelectedBreakHour(workingday.getBreakhours());
 		reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+		}
+		else{
+			
+			//don´t show break time, quitting time and working day ends on the showdailyreport.jsp
+			request.getSession().setAttribute("visibleworkingday", false);
+			
+			reportForm.setSelectedWorkHourBegin(0);
+			reportForm.setSelectedWorkMinuteBegin(0);
+			reportForm.setSelectedBreakHour(0);
+			reportForm.setSelectedBreakMinute(0);
+		}
 		return workingday;
 	}
 	
@@ -523,7 +545,8 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 	 * {@link Employeecontract}. If this workingday does not exist in the database so far, a new one is created.
 	 * @throws ParseException
 	 */
-	protected Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec, WorkingdayDAO workingdayDAO) throws Exception {
+	// getWorkingdayForReportformAndEmployeeContract have a new parameter, boolean
+	protected Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec, WorkingdayDAO workingdayDAO, boolean nullPruefung) throws Exception {
 		String dayString = reportForm.getDay();
 		String monthString = reportForm.getMonth();
 		String yearString = reportForm.getYear();
@@ -534,7 +557,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		java.sql.Date refDate = new java.sql.Date(tmp.getTime());
 		
 		Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
-		if (workingday == null) {
+		if (workingday == null && nullPruefung) {
 			workingday = new Workingday();
 			workingday.setRefday(refDate);
 			workingday.setEmployeecontract(ec);

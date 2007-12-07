@@ -272,7 +272,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 						int hours = minutes/60;
 						minutes = minutes%60;
 						reportForm.setSelectedMinuteEnd(minutes);
-						reportForm.setSelectedHourEnd(hours);
+						reportForm.setSelectedHourEnd(hours);				
 					} else if ((beginTime[0] < hour || (beginTime[0] == hour && beginTime[1] < minute)) && selectedDate.equals(today)) {
 						reportForm.setSelectedMinuteEnd(minute);
 						reportForm.setSelectedHourEnd(hour);
@@ -292,8 +292,23 @@ public class StoreDailyReportAction extends DailyReportAction {
 					
 					
 					if (standardOrder) {
+
 						int hours = dailyWorkingTimeMinutes / 60;
 						int minutes = dailyWorkingTimeMinutes % 60;
+						
+//						// clean possible truncation errors
+//						if (minutes % GlobalConstants.MINUTE_INCREMENT == 1) minutes--;
+//						if (minutes % GlobalConstants.MINUTE_INCREMENT == GlobalConstants.MINUTE_INCREMENT-1) minutes++;
+						
+						if (minutes % GlobalConstants.MINUTE_INCREMENT != 0) {	
+							if (minutes % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+								minutes += (5 - (minutes % GlobalConstants.MINUTE_INCREMENT));
+							} else if (minutes % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+								minutes -= (minutes % GlobalConstants.MINUTE_INCREMENT);
+							}
+						}
+						
+						
 						reportForm.setSelectedHourDuration(hours);
 						reportForm.setSelectedMinuteDuration(minutes);
 					}					
@@ -512,7 +527,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
 				showDailyReportForm.setOrder((String)request.getSession().getAttribute("lastOrder"));
 				showDailyReportForm.setSuborderId(tr.getEmployeeorder().getSuborder().getId());
-				
+
 				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
 				reports = (List<Timereport>) request.getSession().getAttribute("timereports");
 				
@@ -522,7 +537,11 @@ public class StoreDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
 				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
-				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request, "quittingtime"));
+				
+				//calculate Working Day End
+				request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
+
 				
 				request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 				request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
@@ -533,16 +552,50 @@ public class StoreDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
 				request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
 				
+				
+				// save values from the data base into form-bean, when working day != null
+				if(workingday != null){
+					
+					//show break time, quitting time and working day ends on the showdailyreport.jsp
+					request.getSession().setAttribute("visibleworkingday", true);
+					
+				showDailyReportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
+				showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
+				showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
+				showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+				}else{
+					
+					//don´t show break time, quitting time and working day ends on the showdailyreport.jsp
+					request.getSession().setAttribute("visibleworkingday", false);
+					
+					showDailyReportForm.setSelectedWorkHourBegin(0);
+					showDailyReportForm.setSelectedWorkMinuteBegin(0);
+					showDailyReportForm.setSelectedBreakHour(0);
+					showDailyReportForm.setSelectedBreakMinute(0);
+				}
+				
+				
 				if (!addMoreReprts) {
 					// refresh overtime and vacation
 					refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);					
+//					try {
+//						refreshWorkingday(mapping, showDailyReportForm, request, employeecontractDAO, workingdayDAO);
+//					} catch (Exception e) {
+//						// nanü?!
+//					}
 					return mapping.findForward("showDaily");
 				} else {
 					
 					java.util.Date selectedDate = getSelectedDateFromRequest(request);
 					
+					//deleting comment, costs and days of serialBookings in the addDailyReport-Form
+					reportForm.setComment("");
+					reportForm.setCosts(0.0);
+					reportForm.setNumberOfSerialDays(0);
+					
+					
 					if (workingday != null) {
-						
+
 						int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
 						reportForm.setSelectedHourBegin(beginTime[0]);
 						reportForm.setSelectedMinuteBegin(beginTime[1]);
@@ -606,7 +659,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 					}
 					// set suborder
 					request.getSession().setAttribute("suborders", theSuborders);
-					
+
 					return mapping.findForward("addDaily");
 					
 				}

@@ -49,9 +49,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 	private CustomerorderDAO customerorderDAO;
 
 	private SuborderDAO suborderDAO;
-	
+
 	private TimereportDAO timereportDAO;
-	
+
 	public void setTimereportDAO(TimereportDAO timereportDAO) {
 		this.timereportDAO = timereportDAO;
 	}
@@ -84,22 +84,22 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
 		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
-		
+
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshEmployee"))) {
 			Employeecontract employeecontract = employeecontractDAO
-				.getEmployeeContractById(eoForm.getEmployeeContractId());
+					.getEmployeeContractById(eoForm.getEmployeeContractId());
 			if (employeecontract == null) {
 				return mapping.findForward("error");
 			} else {
-				request.getSession().setAttribute("currentEmployeeContract", employeecontract);
-				
+				request.getSession().setAttribute("currentEmployeeContract",
+						employeecontract);
+
 				setFormDates(request, eoForm);
 				return mapping.getInputForward();
 			}
 		}
-		
-		
+
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshSuborders"))) {
 			// refresh suborders to be displayed in the select menu:
@@ -128,12 +128,25 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					}
 				}
 				request.getSession().setAttribute("suborders", suborders);
-				
+
 				request.getSession().setAttribute("selectedcustomerorder", co);
 				eoForm.useDatesFromCustomerOrder(co);
 				eoForm.setOrderId(co.getId());
- 				request.getSession().setAttribute("currentOrderId", co.getId());
+				request.getSession().setAttribute("currentOrderId", co.getId());
 				setFormDates(request, eoForm);
+
+				Employeecontract employeecontract = employeecontractDAO
+						.getEmployeeContractById(eoForm.getEmployeeContractId());
+
+				/* suggest value */
+				eoForm.setDebithours(so.getDebithours());
+
+				eoForm.setDebithoursunit((byte) -1); // default: no unit set
+				if (so.getDebithours() != null && so.getDebithours() > 0.0) {
+					/* set unit if applicable */
+					eoForm.setDebithoursunit(so.getDebithoursunit());
+				}
+
 				return mapping.getInputForward();
 			}
 		}
@@ -153,6 +166,17 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			// checkDatabaseForEmployeeOrder(request, eoForm,
 			// employeecontractDAO, employeeorderDAO);
 			setFormDates(request, eoForm);
+
+			/* suggest value */
+			eoForm.setDebithours(so.getDebithours());
+			//request.getSession().setAttribute("debithours", so.getDebithours());
+
+			eoForm.setDebithoursunit((byte) -1); // default: no unit set
+			if (so.getDebithours() != null && so.getDebithours() > 0.0) {
+				/* set unit if applicable */
+				eoForm.setDebithoursunit(so.getDebithoursunit());
+			}
+
 			return mapping.getInputForward();
 		}
 
@@ -213,13 +237,15 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			}
 
 			ActionMessages errorMessages = validateFormData(request, eoForm,
-					employeeorderDAO, employeecontractDAO, suborderDAO, eo.getId());
+					employeeorderDAO, employeecontractDAO, suborderDAO, eo
+							.getId());
 			if (errorMessages.size() > 0) {
 				return mapping.getInputForward();
 			}
 
-			request.getSession().setAttribute("currentEmployeeContract", employeecontract);
-			
+			request.getSession().setAttribute("currentEmployeeContract",
+					employeecontract);
+
 			eo.setEmployeecontract(employeecontract);
 			eo.setSuborder(suborderDAO.getSuborderById(eoForm.getSuborderId()));
 
@@ -235,38 +261,38 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			eo.setFromDate(fromDate);
 
 			eo.setSign(eoForm.getSign());
-			
+
 			Employee loginEmployee = (Employee) request.getSession()
-			.getAttribute("loginEmployee");
+					.getAttribute("loginEmployee");
 
 			if (eo.getSuborder().getCustomerorder().getSign().equals(
 					GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-				
-				if("adm".equals(loginEmployee.getSign())) {
-					if (eoForm.getDebithours() == null || eoForm.getDebithours() == 0.0) {
+
+				if ("adm".equals(loginEmployee.getSign())) {
+					if (eoForm.getDebithours() == null
+							|| eoForm.getDebithours() == 0.0) {
 						eo.setDebithours(null);
 						eo.setDebithoursunit(null);
 					} else {
 						eo.setDebithours(eoForm.getDebithours());
 						eo.setDebithoursunit(eoForm.getDebithoursunit());
 					}
-					
+
 				} else {
-					//TODO: code unreachable?
+					// TODO: code unreachable?
 					eo.setDebithours(eo.getEmployeecontract()
 							.getVacationEntitlement()
 							* eo.getEmployeecontract().getDailyWorkingTime());
 					eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
 				}
-				
-				
-				
+
 			} else if (eo.getSuborder().getCustomerorder().getSign().equals(
 					GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
 				eo.setDebithours(0.0);
 				eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
-			} else {				
-				if (eoForm.getDebithours() == null || eoForm.getDebithours() == 0.0) {
+			} else {
+				if (eoForm.getDebithours() == null
+						|| eoForm.getDebithours() == 0.0) {
 					eo.setDebithours(null);
 					eo.setDebithoursunit(null);
 				} else {
@@ -274,10 +300,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					eo.setDebithoursunit(eoForm.getDebithoursunit());
 				}
 			}
-			
-			
- 
-			
+
 			employeeorderDAO.save(eo, loginEmployee);
 
 			// not necessary
@@ -297,30 +320,39 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			} else {
 				employeeContractId = employeecontract.getId();
 			}
-				
+
 			String filter = null;
 			Boolean show = null;
-			
+
 			if (request.getSession().getAttribute("employeeOrderFilter") != null) {
-				filter = (String) request.getSession().getAttribute("employeeOrderFilter");
+				filter = (String) request.getSession().getAttribute(
+						"employeeOrderFilter");
 			}
 			if (request.getSession().getAttribute("employeeOrderShow") != null) {
-				show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
+				show = (Boolean) request.getSession().getAttribute(
+						"employeeOrderShow");
 			}
-		
-			boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
-			
+
+			boolean showActualHours = (Boolean) request.getSession()
+					.getAttribute("showActualHours");
+
 			if (showActualHours) {
 				/* show actual hours */
-				List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId);
+				List<Employeeorder> employeeOrders = employeeorderDAO
+						.getEmployeeordersByFilters(show, filter,
+								employeeContractId, orderId);
 				List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
 				for (Employeeorder employeeorder : employeeOrders) {
-					EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+					EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(
+							timereportDAO, employeeorder);
 					decorators.add(decorator);
 				}
 				request.getSession().setAttribute("employeeorders", decorators);
 			} else {
-				request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+				request.getSession().setAttribute(
+						"employeeorders",
+						employeeorderDAO.getEmployeeordersByFilters(show,
+								filter, employeeContractId, orderId));
 			}
 
 			// request.getSession().setAttribute("employeeorders",
@@ -378,8 +410,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 	 * @return
 	 */
 	private ActionMessages validateFormData(HttpServletRequest request,
-			AddEmployeeOrderForm eoForm, EmployeeorderDAO employeeorderDAO, EmployeecontractDAO employeecontractDAO, 
-			SuborderDAO suborderDAO, long eoId) {
+			AddEmployeeOrderForm eoForm, EmployeeorderDAO employeeorderDAO,
+			EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
+			long eoId) {
 
 		ActionMessages errors = getErrors(request);
 		if (errors == null)
@@ -418,7 +451,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 						"form.timereport.error.date.wrongformat"));
 			}
 		}
-		
+
 		// check if begin is before end
 		if (validFromDate != null && validUntilDate != null) {
 			if (validUntilDate.before(validFromDate)) {
@@ -426,7 +459,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 						"form.timereport.error.date.endbeforebegin"));
 			}
 		}
-		
+
 		// check if valid suborder exists - otherwise, no save possible
 		if (eoForm.getSuborderId() <= 0) {
 			errors.add("suborderId", new ActionMessage(
@@ -462,28 +495,32 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 		if (!GenericValidator.isDouble(eoForm.getDebithours().toString())
 				|| (!GenericValidator.isInRange(eoForm.getDebithours(), 0.0,
 						GlobalConstants.MAX_DEBITHOURS))) {
-			errors.add("debithours", new ActionMessage("form.employeeorder.error.debithours.wrongformat"));
-		} else if (eoForm.getDebithours() != null && eoForm.getDebithours() != 0.0) {
+			errors.add("debithours", new ActionMessage(
+					"form.employeeorder.error.debithours.wrongformat"));
+		} else if (eoForm.getDebithours() != null
+				&& eoForm.getDebithours() != 0.0) {
 			Double debithours = eoForm.getDebithours() * 100000;
 			debithours += 0.5;
-			
+
 			int debithours2 = debithours.intValue();
-			int modulo = debithours2%5000;
-			eoForm.setDebithours(debithours2/100000.0);
-			
+			int modulo = debithours2 % 5000;
+			eoForm.setDebithours(debithours2 / 100000.0);
+
 			if (modulo != 0) {
-				errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat2"));
-			}
-		} 
-		
-		if (eoForm.getDebithours() != 0.0) {
-			if (eoForm.getDebithoursunit() == null || !(eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH ||
-					eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
-				errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.nounit"));
+				errors.add("debithours", new ActionMessage(
+						"form.customerorder.error.debithours.wrongformat2"));
 			}
 		}
-		
-		
+
+		if (eoForm.getDebithours() != 0.0) {
+			if (eoForm.getDebithoursunit() == null
+					|| !(eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH
+							|| eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || eoForm
+							.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
+				errors.add("debithours", new ActionMessage(
+						"form.customerorder.error.debithours.nounit"));
+			}
+		}
 
 		// check for overleap with another employee order for the same employee
 		// contract and suborder
@@ -498,7 +535,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			if (validFromDate != null) {
 				for (Employeeorder employeeorder : employeeOrders) {
 					if (eoId != employeeorder.getId()) {
-						if (validUntilDate != null && employeeorder.getUntilDate() != null) {
+						if (validUntilDate != null
+								&& employeeorder.getUntilDate() != null) {
 							if (!validFromDate.before(employeeorder
 									.getFromDate())
 									&& !validFromDate.after(employeeorder
@@ -526,14 +564,18 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 										"form.employeeorder.error.overleap"));
 								break;
 							}
-						} else if (validUntilDate == null && employeeorder.getUntilDate() != null) {
-							if (!validFromDate.after(employeeorder.getUntilDate())) {
+						} else if (validUntilDate == null
+								&& employeeorder.getUntilDate() != null) {
+							if (!validFromDate.after(employeeorder
+									.getUntilDate())) {
 								errors.add("overleap", new ActionMessage(
 										"form.employeeorder.error.overleap"));
 								break;
-							}	
-						} else if (validUntilDate != null && employeeorder.getUntilDate() == null) {
-							if (!validUntilDate.before(employeeorder.getFromDate())) {
+							}
+						} else if (validUntilDate != null
+								&& employeeorder.getUntilDate() == null) {
+							if (!validUntilDate.before(employeeorder
+									.getFromDate())) {
 								errors.add("overleap", new ActionMessage(
 										"form.employeeorder.error.overleap"));
 								break;
@@ -541,34 +583,49 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 						} else {
 							// two employee orders with open end MUST overleap
 							errors.add("overleap", new ActionMessage(
-								"form.employeeorder.error.overleap"));
+									"form.employeeorder.error.overleap"));
 							break;
 						}
-					} 
+					}
 				}
-			} 
+			}
 		}
 		// check if dates fit to employee contract and suborder
-		//TODO
+		// TODO
 		if (validFromDate != null) {
-			Employeecontract ec = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
-			Suborder suborder = suborderDAO.getSuborderById(eoForm.getSuborderId());
+			Employeecontract ec = employeecontractDAO
+					.getEmployeeContractById(eoForm.getEmployeeContractId());
+			Suborder suborder = suborderDAO.getSuborderById(eoForm
+					.getSuborderId());
 			if (validFromDate.before(ec.getValidFrom())) {
-				errors.add("validFrom", new ActionMessage("form.employeeorder.error.date.outofrange.employeecontract"));
+				errors
+						.add(
+								"validFrom",
+								new ActionMessage(
+										"form.employeeorder.error.date.outofrange.employeecontract"));
 			}
 			if (validFromDate.before(suborder.getFromDate())) {
-				errors.add("validFrom", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
+				errors.add("validFrom", new ActionMessage(
+						"form.employeeorder.error.date.outofrange.suborder"));
 			}
-			if ((validUntilDate == null && ec.getValidUntil() != null) || 
-					(validUntilDate != null && ec.getValidUntil() != null &&  validUntilDate.after(ec.getValidUntil()))) {
-				errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.employeecontract"));
+			if ((validUntilDate == null && ec.getValidUntil() != null)
+					|| (validUntilDate != null && ec.getValidUntil() != null && validUntilDate
+							.after(ec.getValidUntil()))) {
+				errors
+						.add(
+								"validUntil",
+								new ActionMessage(
+										"form.employeeorder.error.date.outofrange.employeecontract"));
 			}
-			if ((validUntilDate == null && suborder.getUntilDate() != null) || 
-					(validUntilDate != null && suborder.getUntilDate() != null &&  validUntilDate.after(suborder.getUntilDate()))) {
-				errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
+			if ((validUntilDate == null && suborder.getUntilDate() != null)
+					|| (validUntilDate != null
+							&& suborder.getUntilDate() != null && validUntilDate
+							.after(suborder.getUntilDate()))) {
+				errors.add("validUntil", new ActionMessage(
+						"form.employeeorder.error.date.outofrange.suborder"));
 			}
 		}
-		
+
 		if (validFromDate != null) {
 			// check, if dates fit to existing timereports
 			Date validFromSqlDate = new java.sql.Date(validFromDate.getTime());
@@ -587,12 +644,10 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 						"form.general.error.timereportoutofrange"));
 
 			}
-		}		
+		}
 		saveErrors(request, errors);
 
 		return errors;
 	}
-	
-	
 
 }

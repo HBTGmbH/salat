@@ -17,7 +17,7 @@
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
 <script type="text/javascript" language="JavaScript">
- 
+
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
@@ -107,7 +107,8 @@
 				</html:option>
 				<html:options collection="orders" labelProperty="signAndDescription"
 					property="id" />
-			</html:select></td>
+			</html:select>	
+			</td>
 		</tr>
 		<tr>
 			<td class="noBborderStyle" colspan="2"><b><bean:message

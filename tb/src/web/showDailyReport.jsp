@@ -362,13 +362,13 @@
 		<!-- seperator line -->
 		<tr><td width="100%" class="noBborderStyle" colspan="2"><hr></td></tr>
 
-		<!-- select working day begin and break -->
+		<!-- select working day begin and  break -->
 		<c:if test="${view eq 'day' || view == null}">
 			<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message
 						key="main.timereport.startofwork.text" /></b> <i>(hh:mm)</i><b>:</b></td>
-					<td align="left" class="noBborderStyle"><html:select
+					<td align="left" class="noBborderStyle"><nobr><html:select
 						property="selectedWorkHourBegin">
 						<html:options collection="hours" property="value"
 							labelProperty="label" />
@@ -377,29 +377,40 @@
 						<html:options collection="minutes" property="value"
 							labelProperty="label" />
 					</html:select>&nbsp;&nbsp;<html:image onclick="saveBegin(this.form)"
-						src="/tb/images/Save.gif" alt="save start of work" />&nbsp;&nbsp;<i>(optional)</i></td>
+						src="/tb/images/Save.gif" alt="save start of work" />&nbsp;&nbsp;<i>(optional)</i>
+						</nobr></td>
 				</tr>
-				<tr>
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.breakduration.text" /></b> <i>(hh:mm)</i><b>:</b></td>
-					<td align="left" class="noBborderStyle"><html:select
-						property="selectedBreakHour">
-						<html:options collection="breakhours" property="value"
-							labelProperty="label" />
-					</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> <html:select
-						property="selectedBreakMinute">
-						<html:options collection="breakminutes" property="value"
-							labelProperty="label" />
-					</html:select>&nbsp;&nbsp;<html:image onclick="saveBreak(this.form)"
-						src="/tb/images/Save.gif" alt="save break" />&nbsp;&nbsp;<i>(optional)</i></td>
-				</tr>
-
-				<tr>
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.timereport.quittingtime.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><b><c:out
-						value="${quittingtime}"></c:out></b></td>
-				</tr>
+				
+				<%-- is a visible, when workingday null --%>
+				<c:if test="${visibleworkingday}">
+						<tr>
+							<td align="left" class="noBborderStyle"><b><bean:message
+								key="main.timereport.breakduration.text" /></b> <i>(hh:mm)</i><b>:</b></td>
+							<td align="left" class="noBborderStyle"><html:select
+								property="selectedBreakHour">
+								<html:options collection="breakhours" property="value"
+									labelProperty="label" />
+							</html:select><b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> <html:select
+								property="selectedBreakMinute">
+								<html:options collection="breakminutes" property="value"
+									labelProperty="label" />
+							</html:select>&nbsp;&nbsp;<html:image onclick="saveBreak(this.form)"
+								src="/tb/images/Save.gif" alt="save break" />&nbsp;&nbsp;<i>(optional)</i></td>
+						</tr>
+						<tr>
+							<td align="left" class="noBborderStyle"><b><bean:message
+								key="main.timereport.quittingtime.text" />:</b></td>
+							<td align="left" class="noBborderStyle"><b><c:out
+								value="${quittingtime}"></c:out></b></td>
+						</tr>
+						<tr>
+							<td align="left" class="noBborderStyle"><b><bean:message
+								key="main.timereport.workingdayends.text" />:</b></td>
+							<td align="left" class="noBborderStyle"><b><c:out
+								value="${workingDayEnds}"></c:out></b></td>
+						</tr>
+				</c:if>
+				
 			</c:if>
 		</c:if>
 	</table>

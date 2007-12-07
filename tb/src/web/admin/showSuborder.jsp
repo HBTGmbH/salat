@@ -325,7 +325,9 @@
 							<c:when test="${suborder.currentlyValid}">
 								<td title="<c:out value="${suborder.customerorder.description}" />"><c:out value="${suborder.customerorder.sign}" /></td>
 								<td><c:out value="${suborder.sign}" /></td>
-								<td><c:out value="${suborder.suborder_customer}" /></td>
+								<td>
+								<c:if test="${suborder.suborder_customer == null}">&nbsp;</c:if>
+								<c:out value="${suborder.suborder_customer}" /></td>
 								<td><c:out value="${suborder.shortdescription}" /></td>
 								<!-- <td><c:out value="${suborder.description}" /></td> -->
 								

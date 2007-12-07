@@ -47,7 +47,6 @@ public class Workingday implements Serializable {
 	/** BreakMinutes */
 	private int breakminutes;
 	
-	
 	/**
 	 * @return the breakhours
 	 */
@@ -145,6 +144,7 @@ public class Workingday implements Serializable {
 	public void setStarttimeminute(int starttimeminute) {
 		Starttimeminute = starttimeminute;
 	}
+
 
 	@Override
 	public boolean equals(Object obj) {

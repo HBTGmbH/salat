@@ -136,7 +136,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			// reset/init form entries
 			employeeOrderForm.reset(mapping, request);
 			employeeOrderForm.useDatesFromCustomerOrder(selectedCustomerorder);
-			
+
 			employeeOrderForm.setOrder(selectedCustomerorder.getSign());
 			employeeOrderForm.setOrderId(selectedCustomerorder.getId());
 			
@@ -158,10 +158,24 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			if ((selectedCustomerorder.getSuborders() != null) && (selectedCustomerorder.getSuborders().size() > 0)) {
 				employeeOrderForm.setSuborder(selectedCustomerorder.getSuborders().get(0).getSign());
 				employeeOrderForm.setSuborderId(selectedCustomerorder.getSuborders().get(0).getId());
-			}			
+			}	
+			/* suggest value */
+			employeeOrderForm.setDebithours(selectedCustomerorder.getSuborders().get(0).getDebithours());
+
+			employeeOrderForm.setDebithoursunit((byte) -1); // default: no unit set
+			if (selectedCustomerorder.getSuborders().get(0).getDebithours() != null && selectedCustomerorder.getSuborders().get(0).getDebithours() > 0.0) {
+				/* set unit if applicable */
+				employeeOrderForm.setDebithoursunit(selectedCustomerorder.getSuborders().get(0).getDebithoursunit());
+			}
+			
 		}
 		
 		setFormDates(request, employeeOrderForm);
+		
+
+
+		
+			
 		
 		// make sure, no eoId still exists in session
 		request.getSession().removeAttribute("eoId");

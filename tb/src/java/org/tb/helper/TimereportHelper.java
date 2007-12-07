@@ -472,12 +472,25 @@ public class TimereportHelper {
 		}
 		
 		reportForm.setHours(hours);
-		int hourDuration = hours.intValue();
-		int minuteDuration = (int) ((hours.doubleValue() - Math.floor(hours.doubleValue()))*60.);
+
+//		int hourDuration = hours.intValue();
+//		int minuteDuration = (int) ((hours.doubleValue() - Math.floor(hours.doubleValue()) )*60.);
 		
-		// clean possible truncation errors
-		if (minuteDuration % GlobalConstants.MINUTE_INCREMENT == 1) minuteDuration--;
-		if (minuteDuration % GlobalConstants.MINUTE_INCREMENT == GlobalConstants.MINUTE_INCREMENT-1) minuteDuration++;
+		// in der alten rechnug gabs einen rundungsfehler, der geschied jezt nicht mehr
+		long minuteDurationlong;
+		Integer hourDurationInteger = hours.intValue();
+		minuteDurationlong = Math.round((hours- hours.intValue()) * 60);
+		int hourDuration = hourDurationInteger;
+		int minuteDuration =(int)minuteDurationlong;
+
+		// clean possible truncation errors	
+		if (minuteDuration % GlobalConstants.MINUTE_INCREMENT != 0) {	
+			if (minuteDuration % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+				minuteDuration += (5 - (minuteDuration % GlobalConstants.MINUTE_INCREMENT));
+			} else if (minuteDuration % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+				minuteDuration -= (minuteDuration % GlobalConstants.MINUTE_INCREMENT);
+			}
+		}
 		
 		reportForm.setSelectedHourDuration(hourDuration);
 		reportForm.setSelectedMinuteDuration(minuteDuration);
@@ -504,9 +517,15 @@ public class TimereportHelper {
 		
 		int minutesEnd = reportForm.getSelectedMinuteBegin() + new Double(dMinutes).intValue();
 		
-		// clean possible truncation errors
-		if (minutesEnd % GlobalConstants.MINUTE_INCREMENT == 1) minutesEnd--;
-		if (minutesEnd % GlobalConstants.MINUTE_INCREMENT == GlobalConstants.MINUTE_INCREMENT-1) minutesEnd++;
+//		// clean possible truncation errors
+		if (minutesEnd % GlobalConstants.MINUTE_INCREMENT != 0) {	
+			if (minutesEnd % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+				minutesEnd += (5 - (minutesEnd % GlobalConstants.MINUTE_INCREMENT));
+			} else if (minutesEnd % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+				minutesEnd -= (minutesEnd % GlobalConstants.MINUTE_INCREMENT);
+			}
+		}
+		
 		
 		if (minutesEnd >= 60) {
 			minutesEnd -= 60;
@@ -601,6 +620,24 @@ public class TimereportHelper {
 			displayTimes[1] = displayTimes[1] % 60;
 			displayTimes[2] += displayTimes[3] / 60;
 			displayTimes[3] = displayTimes[3] % 60;
+			
+			
+//			// clean possible truncation errors
+			if (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT != 0) {	
+				if (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+					displayTimes[1] += (5 - (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT));
+				} else if (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+					displayTimes[1] -= (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT);
+				}
+			}
+			if (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT != 0) {	
+				if (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+					displayTimes[3] += (5 - (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT));
+				} else if (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+					displayTimes[3] -= (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT);
+				}
+			}
+			
 		}		
 		return displayTimes;
 	}
@@ -701,19 +738,45 @@ public class TimereportHelper {
 	 * @param request
 	 * @return Returns a string with the calculated quitting time (hh:mm). If something fails (may happen for missing workingday, etc.), "n/a" will be returned.
 	 */
-	public String calculateQuittingTime(Workingday workingday, HttpServletRequest request) {
+	public String calculateQuittingTime(Workingday workingday, HttpServletRequest request, String timeSwitch) {
 		String quittingTime;
 		try {
-			String labortimeString = (String) request.getSession().getAttribute("labortime");
-			String[] laborTimeArray = labortimeString.split(":");
-			String laborTimeHoursString = laborTimeArray[0];
-			String laborTimeMinutesString = laborTimeArray[1];
-			int laborTimeHoursInt = Integer.parseInt(laborTimeHoursString);
-			int laborTimeMinutesInt = Integer.parseInt(laborTimeMinutesString);
-			int quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + laborTimeHoursInt;
-			int quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + laborTimeMinutesInt;
+			
+			int timeHoursInt = 0;
+			int timeMinutesInt = 0;
+			
+			if (timeSwitch.equals("quittingtime")) {
+				String labortimeString = (String) request.getSession().getAttribute("labortime");
+				String[] laborTimeArray = labortimeString.split(":");
+				String laborTimeHoursString = laborTimeArray[0];
+				String laborTimeMinutesString = laborTimeArray[1];
+				int laborTimeHoursInt = Integer.parseInt(laborTimeHoursString);
+				int laborTimeMinutesInt = Integer.parseInt(laborTimeMinutesString);
+				timeHoursInt = laborTimeHoursInt;
+				timeMinutesInt = laborTimeMinutesInt;
+			}
+			if (timeSwitch.equals("workingDayEnds")) {
+				Employeecontract employeecontract=(Employeecontract) request.getSession().getAttribute("loginEmployeeContract");;
+				Double dailyWorkingTime = employeecontract.getDailyWorkingTime();
+				Integer dailyWorkingTimeHours = dailyWorkingTime.intValue();
+				Integer  dailyWorkingTimeMinutes = Integer.parseInt(dailyWorkingTime.toString().replace(".", ":").split(":")[1]) * 6;
+				timeHoursInt = dailyWorkingTimeHours;
+				timeMinutesInt = dailyWorkingTimeMinutes;
+			}
+			
+			int quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursInt;
+			int quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
 			quittingtimeHours += quittingtimeMinutes/60;
 			quittingtimeMinutes = quittingtimeMinutes%60;
+			
+			// clean possible truncation errors	
+			if (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT != 0) {	
+				if (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+					quittingtimeMinutes += (5 - (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT));
+				} else if (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+					quittingtimeMinutes -= (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT);
+				}
+			}
 			// format return string
 			quittingTime = "";
 			if (quittingtimeHours<10) {
@@ -723,6 +786,7 @@ public class TimereportHelper {
 			if (quittingtimeMinutes<10) {
 				quittingTime = quittingTime+"0";
 			}
+			
 			quittingTime = quittingTime + quittingtimeMinutes;
 		} catch (Exception e) {
 			quittingTime = "n/a";

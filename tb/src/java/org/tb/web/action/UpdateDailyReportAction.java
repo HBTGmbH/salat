@@ -156,6 +156,8 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
 				showDailyReportForm.setOrder((String)request.getSession().getAttribute("currentOrder"));
 				
+				
+				
 				Long currentSuborderId = (Long) request.getSession().getAttribute("currentSuborderId");
 				if (currentSuborderId == null || currentSuborderId == 0) {
 					currentSuborderId = -1l;
@@ -172,7 +174,29 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
 				
 				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
-				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+				
+				// save values from the data base into form-bean, when working day != null
+				if(workingday != null){
+					
+					//show break time, quitting time and working day ends on the showdailyreport.jsp
+					request.getSession().setAttribute("visibleworkingday", true);
+					
+					showDailyReportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
+					showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
+					showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
+					showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+					}else{
+						
+						//show´t break time, quitting time and working day ends on the showdailyreport.jsp
+						request.getSession().setAttribute("visibleworkingday", false);
+						
+						showDailyReportForm.setSelectedWorkHourBegin(0);
+						showDailyReportForm.setSelectedWorkMinuteBegin(0);
+						showDailyReportForm.setSelectedBreakHour(0);
+						showDailyReportForm.setSelectedBreakMinute(0);
+					}
+				
+				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request, "quittingtime"));
 				
 				//refresh overtime
 				refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);

@@ -27,7 +27,6 @@ public class ShowDailyReportForm extends ActionForm {
 	private String lastmonth;
 	private String lastyear;
 	
-	
 //	private long employeeId;
 	private long employeeContractId;
 	

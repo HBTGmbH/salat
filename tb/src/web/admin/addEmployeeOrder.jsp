@@ -210,7 +210,7 @@
 					property="debithoursunit" value="1" disabled="false" /><bean:message
 					key="main.general.year.text" /> <html:radio 
 					property="debithoursunit" value="0" disabled="false" /><bean:message
-					key="main.general.totaltime.text" /> <span 
+					key="main.general.totaltime.text" /><span 
 					style="color:red"><html:errors property="debithours" /></span>
 				</td>
 			</tr>

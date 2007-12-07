@@ -109,7 +109,8 @@ public class ShowDailyReportAction extends DailyReportAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
-
+		
+		
 		
 		TimereportHelper th = new TimereportHelper();
 		
@@ -172,6 +173,8 @@ public class ShowDailyReportAction extends DailyReportAction {
 				&& ((request.getParameter("task").equals("saveBegin")) || (request.getParameter("task").equals("saveBreak")) )) {
 			
 			Employeecontract ec = getEmployeeContractFromRequest(request, employeecontractDAO);	
+			
+			
 						
 			if (ec == null) {
 				request.setAttribute("errorMessage",
@@ -181,7 +184,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 
 			Workingday workingday;
 			try {
-				workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec, workingdayDAO);
+				workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec, workingdayDAO, true);
 			} catch (Exception e) {
 				request.setAttribute("errorMessage",
 					"More than one working day found");
@@ -201,15 +204,25 @@ public class ShowDailyReportAction extends DailyReportAction {
 			}
 			workingdayDAO.save(workingday);
 			
-			request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+			//show break time, quitting time and working day ends on the showdailyreport.jsp
+			request.getSession().setAttribute("visibleworkingday", true);
+			
+			request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request, "quittingtime"));
+			
+			//calculate Working Day End
+			request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
 			
 			request.getSession().setAttribute("reportForm", reportForm);
 			return mapping.findForward("success");
 		}
+
 		
 		
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("refreshTimereports"))) {
+			
+			
+			
 			
 			/* avoid refresh */
 			boolean doNotRefreshReports = reportForm.getAvoidRefresh();
@@ -295,12 +308,18 @@ public class ShowDailyReportAction extends DailyReportAction {
 			
 				// refresh workingday				
 				Workingday workingday;
+				
+				
 				try {
-					workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
+					workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);				
 				} catch (Exception e) {
 					return mapping.findForward("error");
 				}
-				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+
+				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request, "quittingtime"));
+				
+				//calculate Working Day End
+				request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
 				
 				return mapping.findForward("success");
 			}
@@ -461,14 +480,20 @@ public class ShowDailyReportAction extends DailyReportAction {
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 				request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
 				
-//				refresh workingday
+				// refresh workingday
 				Workingday workingday;
 				try {
 					workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
 				} catch (Exception e) {
 					return mapping.findForward("error");
 				}
-				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+				
+				if(workingday != null){
+				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request, "quittingtime"));
+				
+				//calculate Working Day End
+				request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
+				}
 				
 				if (request.getSession().getAttribute("timereportComparator") != null) {
 					Comparator<Timereport> comparator = (Comparator<Timereport>) request
@@ -488,14 +513,26 @@ public class ShowDailyReportAction extends DailyReportAction {
 				java.sql.Date refDate = new java.sql.Date(today.getTime());
 				
 				Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
-				if (workingday == null) {
-					workingday = new Workingday();
-				}
+
+				if(workingday != null){
+					
+					//show break time, quitting time and working day ends on the showdailyreport.jsp
+					request.getSession().setAttribute("visibleworkingday", true);
+					
 				reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
 				reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
 				reportForm.setSelectedBreakHour(workingday.getBreakhours());
 				reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
-				
+				}else{
+					
+					//don´t show break time, quitting time and working day ends on the showdailyreport.jsp
+					request.getSession().setAttribute("visibleworkingday", false);
+					
+					reportForm.setSelectedWorkHourBegin(0);
+					reportForm.setSelectedWorkMinuteBegin(0);
+					reportForm.setSelectedBreakHour(0);
+					reportForm.setSelectedBreakMinute(0);
+				}
 				
 				// call from main menu: set current month, year, timereports,
 				// orders, suborders...
@@ -548,7 +585,11 @@ public class ShowDailyReportAction extends DailyReportAction {
 					Collections.sort(timereports, comparator);
 				}
 				request.getSession().setAttribute("timereports", timereports);
-				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request));
+				
+				request.getSession().setAttribute("quittingtime",th.calculateQuittingTime(workingday, request, "quittingtime"));
+				
+				//calculate Working Day End
+				request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
 
 				// orders
 				List<Customerorder> orders = null;

@@ -539,12 +539,16 @@ public class SuborderViewDecorator extends Suborder {
 		return suborder.validityPeriodFitsToCustomerOrder();
 	}
 
-
+	/* (non-Javadoc)
+	 * @see org.tb.bdom.Suborder#getSuborder_customer()
+	 */
 	public String getSuborder_customer() {
 		return suborder.getSuborder_customer();
 	}
 
-
+	/* (non-Javadoc)
+	 * @see org.tb.bdom.Suborder#setSuborder_customer(java.lang.String)
+	 */
 	public void setSuborder_customer(String suborder_customer) {
 		suborder.setSuborder_customer(suborder_customer);
 	}
