@@ -424,7 +424,7 @@
 					</c:if>
 					<!-- Show targethours if active-->
 					<c:if test="${param.targethoursbox eq 'on'}">
-						<td><c:out value="${suborderviewhelper.debithours}"></c:out></td>
+						<td style="text-align: right;"><c:out value="${suborderviewhelper.debithours}"></c:out></td>
 					</c:if>
 					<!-- targethours -->
 					<c:if test="${param.actualhoursbox eq 'on'}">

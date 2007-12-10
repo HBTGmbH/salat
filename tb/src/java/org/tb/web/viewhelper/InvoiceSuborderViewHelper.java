@@ -124,8 +124,13 @@ public class InvoiceSuborderViewHelper {
 			double targetminutes = suborder.getDebithours()*60;
 			int targethours = (int) targetminutes / 60;
 			targetminutes = targetminutes % 60;
-			debitHours = targethours + ":" + (int) targetminutes;
+			String targetMinutesString = "";
+			if (targetminutes < 10) {
+				targetMinutesString += "0";
+			}
+			debitHours = targethours + ":" + targetMinutesString + (int)targetminutes;
 		}
+		
 		return debitHours;
 //		return "" + suborder.getDebithours();
 	}
