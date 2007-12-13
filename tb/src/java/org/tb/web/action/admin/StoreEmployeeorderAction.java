@@ -327,7 +327,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
 			} else if (eo.getSuborder().getCustomerorder().getSign().equals(
 					GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
-				eo.setDebithours(0.0);
+				eo.setDebithours(null);
 				eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
 			} else {
 				if (eoForm.getDebithours() == null
@@ -533,53 +533,36 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 					"form.employeeorder.suborder.invalid"));
 		}
 
-		// check length of text fields and if they are filled
-
-		// actually, sign is not used
-		// if (eoForm.getSign().length() >
-		// GlobalConstants.EMPLOYEEORDER_SIGN_MAX_LENGTH) {
-		// errors.add("sign", new
-		// ActionMessage("form.employeeorder.error.sign.toolong"));
-		// }
-		// if (eoForm.getSign().length() <= 0) {
-		// errors.add("sign", new
-		// ActionMessage("form.employeeorder.error.sign.required"));
-		// }
-
-		// if (eoForm.getStatus().length() >
-		// GlobalConstants.EMPLOYEEORDER_STATUS_MAX_LENGTH) {
-		// errors.add("status", new
-		// ActionMessage("form.employeeorder.error.status.toolong"));
-		// }
-
-		// actually, status is not required
-		// if (eoForm.getStatus().length() <= 0) {
-		// errors.add("status", new
-		// ActionMessage("form.employeeorder.error.status.required"));
-		// }
-
 		// check debit hours format
-		if (!GenericValidator.isDouble(eoForm.getDebithours().toString())
-				|| (!GenericValidator.isInRange(eoForm.getDebithours(), 0.0,
-						GlobalConstants.MAX_DEBITHOURS))) {
-			errors.add("debithours", new ActionMessage(
-					"form.employeeorder.error.debithours.wrongformat"));
-		} else if (eoForm.getDebithours() != null
-				&& eoForm.getDebithours() != 0.0) {
-			Double debithours = eoForm.getDebithours() * 100000;
-			debithours += 0.5;
-
-			int debithours2 = debithours.intValue();
-			int modulo = debithours2 % 5000;
-			eoForm.setDebithours(debithours2 / 100000.0);
-
-			if (modulo != 0) {
+		
+		// taking customerorder from request instead of database
+		// fast and not as secure as databaseaccess, but should do it
+		
+		Customerorder co = (Customerorder) request.getSession().getAttribute("selectedcustomerorder");
+		
+		if (co != null && !co.getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)  && !co.getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
+			if (!GenericValidator.isDouble(eoForm.getDebithours().toString())
+					|| (!GenericValidator.isInRange(eoForm.getDebithours(), 0.0,
+							GlobalConstants.MAX_DEBITHOURS))) {
 				errors.add("debithours", new ActionMessage(
-						"form.customerorder.error.debithours.wrongformat2"));
+						"form.employeeorder.error.debithours.wrongformat"));
+			} else if (eoForm.getDebithours() != null
+					&& eoForm.getDebithours() != 0.0) {
+				Double debithours = eoForm.getDebithours() * 100000;
+				debithours += 0.5;
+	
+				int debithours2 = debithours.intValue();
+				int modulo = debithours2 % 5000;
+				eoForm.setDebithours(debithours2 / 100000.0);
+	
+				if (modulo != 0) {
+					errors.add("debithours", new ActionMessage(
+							"form.customerorder.error.debithours.wrongformat2"));
+				}
 			}
 		}
 
-		if (eoForm.getDebithours() != 0.0) {
+		if (eoForm.getDebithours() != null && eoForm.getDebithours() != 0.0) {
 			if (eoForm.getDebithoursunit() == null
 					|| !(eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH
 							|| eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || eoForm

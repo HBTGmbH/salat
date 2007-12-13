@@ -57,15 +57,6 @@ public class AddEmployeeOrderForm extends ActionForm {
 	public void setAction(String action) {
 		this.action = action;
 	}
-
-	
-//	public String getEmployeename() {
-//		return employeename;
-//	}
-//
-//	public void setEmployeename(String employeename) {
-//		this.employeename = employeename;
-//	}
 	
 	public String getOrder() {
 		return order;

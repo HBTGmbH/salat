@@ -104,137 +104,6 @@ public class TimereportHelper {
 		return worktime;
 	}
 	
-//	/**
-//	 * calculates worktime from begin/end times in form
-//	 * 
-//	 * @param UpdateDailyReportForm form
-//	 * 
-//	 * @return double - decimal hours
-//	 */
-//	public static double calculateTime(UpdateDailyReportForm form) {
-//		double worktime = 0.0;
-//		
-//		int hours = form.getSelectedHourEnd() - form.getSelectedHourBegin();
-//		int minutes = form.getSelectedMinuteEnd() - form.getSelectedMinuteBegin();
-//		
-//		if (minutes < 0) {
-//			hours -= 1;
-//			minutes += 60;
-//		}
-//		worktime = hours*1. + minutes/60.;
-//		
-//		return worktime;
-//	}
-	
-//	/**
-//	 * calculates daily sum of hours for 'W' timereports
-//	 * 
-//	 * @param List<Timereport> allReports
-//	 * 
-//	 * @return double - decimal hours
-//	 */
-//	public static double calculateDailyHourSum(List<Timereport> allReports) {
-//		double sum = 0.0;
-//				
-//		if ((allReports != null) && (allReports.size() > 0)) {
-//			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
-//				Timereport tr = (Timereport) iter.next();
-//				// exclude all non-working timereports
-//				if (tr.getSortofreport().equals("W"))
-//					sum += tr.getHours();
-//			}
-//		}
-//		
-//		return sum;
-//	}
-	
-//	/**
-//	 * calculates sum of hours for a list of timereports
-//	 * 
-//	 * @param List<Timereport> allReports
-//	 * 
-//	 * @return double - decimal hours
-//	 */
-//	public static double calculateTimereportWorkingHourSum(List<Timereport> allReports) {
-//		double sum = 0.0;
-//				
-//		if ((allReports != null) && (allReports.size() > 0)) {
-//			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
-//				Timereport tr = (Timereport) iter.next();
-//				sum += tr.getHours();
-//			}
-//		}
-//		
-//		return sum;
-//	}
-	
-//	/**
-//	 * also calculates sum of hours for a list of timereports,
-//	 * but excludes tr with excludeId in calculation
-//	 * 
-//	 * @param List<Timereport> allReports
-//	 * @param long excludeId
-//	 * 
-//	 * @return double - decimal hours
-//	 */
-//	public static double calculateTimereportWorkingHourSum(List<Timereport> allReports, long excludeId) {
-//		double sum = 0.0;
-//				
-//		if ((allReports != null) && (allReports.size() > 0)) {
-//			for (Iterator iter = allReports.iterator(); iter.hasNext();) {
-//				Timereport tr = (Timereport) iter.next();
-//				if (tr.getId() != excludeId) sum += tr.getHours();
-//			}
-//		}
-//		
-//		return sum;
-//	}
-	
-//	/**
-//	 * updates hour balance: adds or subtracts one day used
-//	 * 
-//	 * @param Timereport tr
-//	 * @param action: 1 or -1 (add or subtract when deleting or inserting a report)
-//	 * @param td - TimereportDAO being used
-//	 * @param md - MonthlyreportDAO being used
-//	 * 
-//	 * @return void
-//	 */
-//	public void updateMonthlyHourBalance (Timereport tr, int action, TimereportDAO td, MonthlyreportDAO md) {
-//		String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
-//		String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM
-//		
-//		long ecId = tr.getEmployeecontract().getId();
-//		
-//		Monthlyreport mr = 
-//			md.getMonthlyreportByYearAndMonthAndEmployeecontract(ecId, Integer.parseInt(year),
-//																				Integer.parseInt(month));
-//		if (mr == null) {
-//			// add new monthly report
-//			mr = md.setNewReport(tr.getEmployeecontract(), 
-//							Integer.parseInt(year), Integer.parseInt(month));
-//		} 
-//		
-//		double balance = 0.0;
-//		if (tr.getReferenceday().getWorkingday()) {
-//			List<Timereport> monthlyTimereports = 
-//				td.getTimereportsByMonthAndYearAndEmployeeContractId(ecId, 
-//						TimereportHelper.getMonthStringFromTimereport(tr), year);
-//		
-//			int numberOfDaysWithReports = countWorkDaysInMonthWithTimereports(ecId, year, month, monthlyTimereports, td); 
-//		
-//			double monthlySum = calculateTimereportWorkingHourSum(monthlyTimereports);
-//			double pmnull = numberOfDaysWithReports * tr.getEmployeecontract().getDailyWorkingTime();
-//			balance = monthlySum - pmnull;
-//		} else {
-//			// if not a workingday, just add/remove the hours to/from actual balance...
-//			balance = mr.getHourbalance() + (action*tr.getHours());		
-//		}
-//		// update entry in monthly report...
-//		mr.setHourbalance(new Double(balance));
-//		md.save(mr); 
-//	}
-	
 	/**
 	 * updates vacation: adds or subtracts one day used
 	 * 
@@ -328,63 +197,6 @@ public class TimereportHelper {
 		return numberOfDays;		
 	}
 	
-//	/**
-//	 * checks if form input report has time overlap with existing report
-//	 * 
-//	 * @param Timereport tr
-//	 * @param AddDailyReportForm reportForm
-//	 * 
-//	 * @return boolean
-//	 */
-//	public static boolean checkTimeOverlap(Timereport tr, AddDailyReportForm reportForm) {
-//		
-//		int formBegin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
-//		int formEnd = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
-//		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
-//		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
-//		
-//		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
-//	}
-	
-//	/**
-//	 * checks if form input report has time overlap with existing report
-//	 * 
-//	 * @param Timereport tr
-//	 * @param UpdateDailyReportForm reportForm
-//	 * 
-//	 * @return boolean
-//	 */
-//	public static boolean checkTimeOverlap(Timereport tr, UpdateDailyReportForm reportForm) {
-//		
-//		int formBegin = reportForm.getSelectedHourBegin()*100 + reportForm.getSelectedMinuteBegin();
-//		int formEnd = reportForm.getSelectedHourEnd()*100 + reportForm.getSelectedMinuteEnd();
-//		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
-//		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
-//	
-//		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
-//	}
-	
-//	/**
-//	 * checks if form input report has time overlap with existing report
-//	 * 
-//	 * @param Timereport tr
-//	 * @param int hrbegin
-//	 * @param int minbegin
-//	 * @param int hrend
-//	 * @param int minend
-//	 * 
-//	 * @return boolean
-//	 */
-//	public static boolean checkTimeOverlap(Timereport tr, int hrbegin, int minbegin, int hrend, int minend) {
-//		
-//		int formBegin = hrbegin*100 + minbegin;
-//		int formEnd = hrend*100 + minend;
-//		int trBegin = tr.getBeginhour().intValue()*100 + tr.getBeginminute().intValue();
-//		int trEnd = tr.getEndhour().intValue()*100 + tr.getEndminute().intValue();
-//		
-//		return (checkOverlap(formBegin, formEnd, trBegin, trEnd));
-//	}
-	
 	/**
 	 * checks the overlap
 	 * 
@@ -427,34 +239,6 @@ public class TimereportHelper {
 		return overlap;
 	}
 	
-//	/**
-//	 * determines begin hour to set in add report form dependent on reports already existing for this day
-//	 * 
-//	 * @param long ecId
-//	 * @param td - TimereportDAO being used
-//	 * 
-//	 * @return int[] - hour/minute
-//	 */
-//	public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, Date date) {
-//		int[] beginTime = new int[2];
-//		int trLatest = -1;
-//		beginTime[0] = GlobalConstants.BEGINHOUR;
-//		beginTime[1] = GlobalConstants.BEGINMINUTE;
-//		java.sql.Date currentDate = DateUtils.getSqlDate(date);
-//		List<Timereport> dailyReports = td.getTimereportsByDateAndEmployeeContractId(ecId, currentDate);
-//		
-//		for (Iterator iter = dailyReports.iterator(); iter.hasNext();) {
-//			Timereport tr = (Timereport) iter.next();
-//			int trEnd = 100*tr.getEndhour().intValue() + tr.getEndminute().intValue();
-//			if (trEnd > trLatest) trLatest = trEnd;
-//		}
-//		if (trLatest > 0) {
-//			beginTime[0] = trLatest/100;
-//			beginTime[1] = trLatest % 100;
-//		}
-//		
-//		return beginTime;
-//	}
 	
 	/**
 	 * refreshes hours after change of begin/end times
@@ -803,104 +587,14 @@ public class TimereportHelper {
 	 * @return Returns an int[] containing the hours at index 0 and the minutes at index 1.
 	 */
 	public int[] calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
-//		int[] overtime = new int[2];
-//		long overtimeHours;
-//		long overtimeMinutes;
 		
 		Date today =  new Date();
-//		SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-//		String year = yearFormat.format(today);
+
 	
 		Date contractBegin = employeecontract.getValidFrom();
 		
 		return calculateOvertime(contractBegin, today, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-		
-//		GregorianCalendar calendar = new GregorianCalendar();
-//		
-//		calendar.clear();
-//		calendar.set(new Integer(year), Calendar.JANUARY, 1);
-//		
-//		// So = 1
-//		// Mo = 2
-//		// Di = 3
-//		// Mi = 4
-//		// Do = 5
-//		// Fr = 6
-//		// Sa = 7
-//		int firstday = calendar.get(Calendar.DAY_OF_WEEK);
-//				
-//		int numberOfHolidays = 0;
-//				
-//		List<Publicholiday> holidays = publicholidayDAO.getPublicHolidaysBetween(contractBegin, today);
-//		for (Publicholiday publicholiday : holidays) {
-//			calendar.setTimeInMillis(publicholiday.getRefdate().getTime());
-//			if ((calendar.get(Calendar.DAY_OF_WEEK) != 1) && (calendar.get(Calendar.DAY_OF_WEEK) != 8)) {
-//				numberOfHolidays += 1;
-//			}
-//		}
-//		
-//		
-//		long diffMillis;
-//        long diffDays;
-//        diffMillis = today.getTime() - contractBegin.getTime();
-//        diffDays = (diffMillis+(60*60*1000))/(24*60*60*1000);
-//        // 1 hour added because of possible differences caused by sommertime/wintertime
-//        
-//        // add 1 day (number of days are needed, not the difference)
-//        diffDays += 1;
-//        
-//        if (diffDays < 0) {
-//        	throw new RuntimeException("implementation error while calculating overtime");
-//        }
-//		long weeks = diffDays/7;			// how many complete weeks?
-//		long days = diffDays%7;				// days of incomplete week
-//		diffDays = diffDays - (weeks * 2); 	// subtract weekends of complete weeks
-//		
-//		// check weekdays of incomplete week
-//		if (days > 0) {
-//			if (firstday == 1) {
-//				// firstday is a sunday			
-//				diffDays -= 1;
-//			} else {
-//				if (firstday + days == 8) {
-//					diffDays -= 1;
-//				} else if (firstday + days > 8) {
-//					diffDays -= 2;
-//				}
-//			}
-//		}
-//		
-//		
-//		// substract holidays
-//		diffDays -= numberOfHolidays;
-//		
-//		// calculate working time
-//		double dailyWorkingTime = employeecontract.getDailyWorkingTime() * 60;
-//		if (dailyWorkingTime%1 != 0) {
-//			throw new RuntimeException("daily working time must be mutiple of 0.05: "+employeecontract.getDailyWorkingTime());
-//		}
-//		long expectedWorkingTimeInMinutes = (long)dailyWorkingTime * diffDays;
-//		long actualWorkingTimeInMinutes = 0;
-//		List<Timereport> reports = timereportDAO.getTimereportsByEmployeeContractId(employeecontract.getId());
-//		if (reports != null) {
-//			for (Timereport timereport : reports) {
-//				actualWorkingTimeInMinutes += (timereport.getDurationhours()*60) + timereport.getDurationminutes();
-//			}
-//		} 
-//		long overtimeAdjustmentMinutes = 0;
-//		List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
-//		for (Overtime ot : overtimes) {
-//			overtimeAdjustmentMinutes += (ot.getTime()*60);
-//		}
-//		
-//		overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
-//		overtimeHours = overtimeMinutes/60;
-//		overtimeMinutes = overtimeMinutes%60;
-//		
-//		overtime[0] = (int)overtimeHours;
-//		overtime[1] = (int)overtimeMinutes;
-//		
-//		return overtime;
+	
 	}
 	
 	public int[] calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO, boolean useOverTimeAdjustment) {
