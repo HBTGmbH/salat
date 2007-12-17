@@ -254,6 +254,7 @@ public class ShowInvoiceAction extends DailyReportAction {
 								Long.parseLong(invoiceForm.getSuborder()))
 								.getAllChildren();
 					}
+					Collections.sort(suborderList, new SubOrderComparator());
 					java.sql.Date sqlDateFirst = new java.sql.Date(dateFirst
 							.getTime());
 					java.sql.Date sqlDateLast = new java.sql.Date(dateLast
