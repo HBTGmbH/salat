@@ -362,6 +362,9 @@
 		action="/ShowInvoice?task=print">
 		<c:if test="${! empty viewhelpers}">
 			<tr>
+				<td class="noBborderStyle" align="left"><i>Hinweis: Bearbeiten der Anzeigeoptionen setzt die Änderung der Adresse zurück</i></td>
+			</tr>
+			<tr>
 				<td class="noBborderStyle" align="left"><html:text size="30" property="titleinvoiceattachment" /></td>
 			</tr>
 			<tr>

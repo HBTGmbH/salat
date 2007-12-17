@@ -22,6 +22,12 @@
 <FORM ONSUBMIT="javascript:window.print();return false;">
 <div align="right"><input class="hiddencontent" type="submit"
 	value="Drucken"></div>
+<table>
+	<tr>
+		<td align="left" class="matrix" style="border: 0px;"><bean:message
+			key="main.invoice.scroll.text" /></td>
+	</tr>
+</table>
 </form>
 <table>
 	<tr>
@@ -76,7 +82,7 @@
 				<th class="matrix"><c:out value="${titletargethourstext}" /></th>
 			</c:if>
 			<c:if test="${actualhoursbox eq 'true'}">
-			<th class="matrix"><c:out value="${titleactualhourstext}" /></th>
+				<th class="matrix"><c:out value="${titleactualhourstext}" /></th>
 			</c:if>
 		</tr>
 		<c:forEach var="suborderviewhelper" items="${viewhelpers}">
