@@ -103,7 +103,7 @@
 							value="${suborderviewhelper.shortdescription}"></c:out></td>
 					</c:if>
 					<c:if test="${targethoursbox eq 'true'}">
-						<td class="matrix"><c:out
+						<td class="matrix" style="text-align: right;"><c:out
 							value="${suborderviewhelper.debithours}"></c:out></td>
 					</c:if>
 					<c:if test="${actualhoursbox eq 'true'}">

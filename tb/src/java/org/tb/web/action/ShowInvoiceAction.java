@@ -2,6 +2,8 @@ package org.tb.web.action;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
+import org.tb.bdom.comparators.SubOrderComparator;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
@@ -174,6 +177,7 @@ public class ShowInvoiceAction extends DailyReportAction {
 								Long.parseLong(invoiceForm.getSuborder()))
 								.getAllChildren();
 					}
+					Collections.sort(suborderList, new SubOrderComparator());
 
 					java.sql.Date sqlDateFirst = new java.sql.Date(dateFirst
 							.getTime());
@@ -190,8 +194,6 @@ public class ShowInvoiceAction extends DailyReportAction {
 												invoiceSuborderViewHelperList,
 												sqlDateFirst, sqlDateLast,
 												invoiceForm));
-						request.getSession().setAttribute("viewhelpers",
-								invoiceSuborderViewHelperList);
 					} else {
 						for (Suborder suborder : suborderList) {
 							if (suborder.getInvoice() == 'Y') {
@@ -205,11 +207,9 @@ public class ShowInvoiceAction extends DailyReportAction {
 												invoiceSuborderViewHelperList,
 												sqlDateFirst, sqlDateLast,
 												invoiceForm));
-						request.getSession().setAttribute("viewhelpers",
-								invoiceSuborderViewHelperList);
-
 					}
-
+					request.getSession().setAttribute("viewhelpers",
+							invoiceSuborderViewHelperList);
 				} else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
 					// generate dates for a period of time in custom view mode
 					try {
@@ -258,11 +258,31 @@ public class ShowInvoiceAction extends DailyReportAction {
 							.getTime());
 					java.sql.Date sqlDateLast = new java.sql.Date(dateLast
 							.getTime());
-					request.getSession().setAttribute(
-							"targethourssum",
-							fillViewHelper(suborderList,
-									invoiceSuborderViewHelperList,
-									sqlDateFirst, sqlDateLast, invoiceForm));
+
+					List<Suborder> suborderListTemp = new LinkedList<Suborder>();
+
+					if (invoiceForm.isInvoicebox()) {
+						request.getSession()
+								.setAttribute(
+										"targethourssum",
+										fillViewHelper(suborderList,
+												invoiceSuborderViewHelperList,
+												sqlDateFirst, sqlDateLast,
+												invoiceForm));
+					} else {
+						for (Suborder suborder : suborderList) {
+							if (suborder.getInvoice() == 'Y') {
+								suborderListTemp.add(suborder);
+							}
+						}
+						request.getSession()
+								.setAttribute(
+										"targethourssum",
+										fillViewHelper(suborderListTemp,
+												invoiceSuborderViewHelperList,
+												sqlDateFirst, sqlDateLast,
+												invoiceForm));
+					}
 					request.getSession().setAttribute("viewhelpers",
 							invoiceSuborderViewHelperList);
 				} else {
@@ -432,7 +452,7 @@ public class ShowInvoiceAction extends DailyReportAction {
 			request.getSession().setAttribute("titlecustomersigntext",
 					invoiceForm.getTitlecustomersigntext());
 			request.getSession().setAttribute("titleinvoiceattachment",
-							invoiceForm.getTitleinvoiceattachment());
+					invoiceForm.getTitleinvoiceattachment());
 			request.getSession().setAttribute("titledatetext",
 					invoiceForm.getTitledatetext());
 			request.getSession().setAttribute("titledescriptiontext",

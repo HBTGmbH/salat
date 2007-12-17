@@ -165,8 +165,8 @@
 
 				<!-- Dauer -->
 				<td class="matrix" align="center" nowrap="nowrap"><c:out
-					value="${timereport.durationhours}" />:<c:out
-					value="${timereport.durationminutes}" /></td>
+					value="${timereport.durationhours}" />:<c:if test="${!(timereport.durationminutes eq '0')}"><c:out
+					value="${timereport.durationminutes}" /></c:if><c:if test="${timereport.durationminutes eq '0'}">00</c:if></td>
 
 				<!-- Kosten -->
 				<td class="matrix" align="center"><c:out
