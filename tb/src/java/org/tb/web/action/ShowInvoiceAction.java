@@ -288,6 +288,12 @@ public class ShowInvoiceAction extends DailyReportAction {
 				} else {
 					throw new RuntimeException("no view type selected");
 				}
+
+				invoiceForm.setCustomername(customerOrder.getCustomer()
+						.getName());
+				invoiceForm.setCustomeraddress(customerOrder.getCustomer()
+						.getAddress());
+
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.setTime(dateFirst);
 				request.getSession().setAttribute("dateMonth",
@@ -467,6 +473,13 @@ public class ShowInvoiceAction extends DailyReportAction {
 					actualHoursSum);
 			request.getSession().setAttribute("suborderdescription",
 					invoiceForm.getSuborderdescription());
+			request.getSession().setAttribute("customername", invoiceForm.getCustomername());
+			String customeraddress = invoiceForm.getCustomeraddress();
+			customeraddress = customeraddress.replace("\r\n", "<br/>");
+			customeraddress = customeraddress.replace("\n", "<br/>");
+			customeraddress = customeraddress.replace("\r", "<br/>");
+			request.getSession().setAttribute("customeraddress",
+					customeraddress);
 
 			return mapping.findForward("print");
 		}

@@ -37,6 +37,8 @@ public class ShowInvoiceForm extends ActionForm {
     private String titletargethourstext;
     private String titleactualhourstext;
     private String titleinvoiceattachment;
+    private String customername;
+    private String customeraddress;
     
 	public String getTitleinvoiceattachment() {
 		return titleinvoiceattachment;
@@ -223,5 +225,17 @@ public class ShowInvoiceForm extends ActionForm {
 	}
 	public void setActualhoursbox(boolean actualhoursbox) {
 		this.actualhoursbox = actualhoursbox;
+	}
+	public String getCustomeraddress() {
+		return customeraddress;
+	}
+	public void setCustomeraddress(String customeraddress) {
+		this.customeraddress = customeraddress;
+	}
+	public String getCustomername() {
+		return customername;
+	}
+	public void setCustomername(String customername) {
+		this.customername = customername;
 	}
 }

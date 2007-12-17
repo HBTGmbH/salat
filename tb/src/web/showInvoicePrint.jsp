@@ -33,11 +33,11 @@
 	</tr>
 	<tr>
 		<td align="left" class="matrix" style="border: 0px;"><c:out
-			value="${currentOrderObject.customer.name}" /></td>
+			value="${customername}" /></td>
 	</tr>
 	<tr>
 		<td align="left" class="matrix" style="border: 0px;"><c:out
-			value="${currentOrderObject.customer.address}" /></td>
+			escapeXml="false" value="${customeraddress}" /></td>
 	</tr>
 	<tr>
 		<td align="left" class="matrix" style="border: 0px;"></td>

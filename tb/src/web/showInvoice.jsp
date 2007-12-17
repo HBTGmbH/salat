@@ -362,6 +362,18 @@
 		action="/ShowInvoice?task=print">
 		<c:if test="${! empty viewhelpers}">
 			<tr>
+				<td class="noBborderStyle" align="left"><html:text size="30" property="titleinvoiceattachment" /></td>
+			</tr>
+			<tr>
+				<td class="noBborderStyle" align="left"><html:text size="30" property="customername" /></td>
+			</tr>
+			<tr>
+				<td class="noBborderStyle" align="left"><html:textarea style="width:100%" property="customeraddress" /></td>
+			</tr>
+			<tr>
+				<td class="noBborderStyle">&nbsp;</td>
+			</tr>
+			<tr>
 				<td class="noBborderStyle" align="left"><html:submit
 					styleId="button"
 					titleKey="main.invoice.button.createmaximumview.alttext.text">
@@ -374,7 +386,7 @@
 				<td class="noBborderStyle">&nbsp;</td>
 			</tr>
 			<tr>
-				<th><html:text size="30" property="titleinvoiceattachment" /><!--<bean:message key="main.invoice.title.print.text" />--></th>
+				<th><bean:message key="main.invoice.title.print.text" /></th>
 				<th><html:text property="titlesubordertext" /></th>
 				<!-- Subordersign and Customersign -->
 				<c:if test="${param.customeridbox eq 'on'}">
@@ -424,7 +436,8 @@
 					</c:if>
 					<!-- Show targethours if active-->
 					<c:if test="${param.targethoursbox eq 'on'}">
-						<td style="text-align: right;"><c:out value="${suborderviewhelper.debithours}"></c:out></td>
+						<td style="text-align: right;"><c:out
+							value="${suborderviewhelper.debithours}"></c:out></td>
 					</c:if>
 					<!-- targethours -->
 					<c:if test="${param.actualhoursbox eq 'on'}">
