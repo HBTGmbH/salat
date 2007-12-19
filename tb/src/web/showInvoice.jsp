@@ -368,10 +368,10 @@
 				<td class="noBborderStyle" align="left"><html:text size="30" property="titleinvoiceattachment" /></td>
 			</tr>
 			<tr>
-				<td class="noBborderStyle" align="left"><html:text size="30" property="customername" /></td>
+				<td class="noBborderStyle" align="left"><html:text size="30" property="customername" value="${customername}" /></td>
 			</tr>
 			<tr>
-				<td class="noBborderStyle" align="left"><html:textarea style="width:100%" property="customeraddress" /></td>
+				<td class="noBborderStyle" align="left"><html:textarea style="width:100%" property="customeraddress" value="${customeraddress}" /></td>
 			</tr>
 			<tr>
 				<td class="noBborderStyle">&nbsp;</td>

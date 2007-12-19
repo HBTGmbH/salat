@@ -290,10 +290,13 @@ public class ShowInvoiceAction extends DailyReportAction {
 					throw new RuntimeException("no view type selected");
 				}
 
-				invoiceForm.setCustomername(customerOrder.getCustomer()
-						.getName());
-				invoiceForm.setCustomeraddress(customerOrder.getCustomer()
-						.getAddress());
+//				invoiceForm.setCustomername(customerOrder.getCustomer()
+//						.getName());
+//				invoiceForm.setCustomeraddress(customerOrder.getCustomer()
+//						.getAddress());
+				
+				request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
+				request.getSession().setAttribute("customeraddress", customerOrder.getCustomer().getAddress());
 
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.setTime(dateFirst);
@@ -345,7 +348,14 @@ public class ShowInvoiceAction extends DailyReportAction {
 														invoiceForm.getOrder())
 												.getId()));
 			}
-
+			
+			/* Delete resultset if the customerorder of the invoice form has changed
+			 * if(request.getSession().getAttribute("viewhelpers") != null){
+				List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList = (List<InvoiceSuborderViewHelper>) request.getSession().getAttribute("viewhelpers");
+				invoiceSuborderViewHelperList.get(0).getParentorder().equals(customerorderDAO.getCustomerorderBySign(invoiceForm.getOrder()));
+			}*/
+			
+			
 			// activate subcheckboxes for timereport-attributes
 			if (invoiceForm.isTimereportsbox()) {
 				request.getSession().setAttribute("timereportsubboxes", true);
@@ -394,6 +404,14 @@ public class ShowInvoiceAction extends DailyReportAction {
 					invoiceForm.getMwst());
 			request.getSession().setAttribute("optionsuborderdescription",
 					invoiceForm.getSuborderdescription());
+//			if (invoiceForm.getCustomeraddress() != null
+//					&& invoiceForm.getCustomername() != null) {
+				request.getSession().setAttribute("customername",
+						invoiceForm.getCustomername());
+				String customeraddress = invoiceForm.getCustomeraddress();
+				request.getSession().setAttribute("customeraddress",
+						customeraddress);
+//			}
 
 			return mapping.findForward("success");
 		}
@@ -474,7 +492,8 @@ public class ShowInvoiceAction extends DailyReportAction {
 					actualHoursSum);
 			request.getSession().setAttribute("suborderdescription",
 					invoiceForm.getSuborderdescription());
-			request.getSession().setAttribute("customername", invoiceForm.getCustomername());
+			request.getSession().setAttribute("customername",
+					invoiceForm.getCustomername());
 			String customeraddress = invoiceForm.getCustomeraddress();
 			customeraddress = customeraddress.replace("\r\n", "<br/>");
 			customeraddress = customeraddress.replace("\n", "<br/>");

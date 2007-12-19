@@ -24,7 +24,7 @@
 	value="Drucken"></div>
 <table>
 	<tr>
-		<td align="left" class="matrix" style="border: 0px;"><bean:message
+		<td align="left" class="matrix hiddencontent" style="border: 0px;"><bean:message
 			key="main.invoice.scroll.text" /></td>
 	</tr>
 </table>
@@ -57,7 +57,6 @@
 			<td align="left" class="matrix" style="border: 0px;"><c:out
 				value="${dateFirst}" /> - <c:out value="${dateLast}" /></td>
 		</c:if>
-
 	</tr>
 </table>
 <br />
