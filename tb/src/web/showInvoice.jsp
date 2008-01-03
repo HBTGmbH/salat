@@ -475,7 +475,7 @@
 
 							<c:if
 								test="${param.employeesignbox eq 'on' && param.timereportsbox eq 'on'}">
-								<td><c:out value="${timereportviewhelper.createdby}"></c:out></td>
+								<td><c:out value="${timereportviewhelper.employeecontract.employee.sign}"></c:out></td>
 							</c:if>
 							<c:if test="${param.timereportdescriptionbox eq 'on'}">
 								<td><c:out value="${timereportviewhelper.taskdescription}"></c:out></td>

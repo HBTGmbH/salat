@@ -137,7 +137,7 @@
 								<c:if
 									test="${employeesignbox eq 'true' && timereportsbox eq 'true'}">
 									<td class="matrix"><c:out
-										value="${timereportviewhelper.createdby}"></c:out></td>
+										value="${timereportviewhelper.employeecontract.employee.sign}"></c:out></td>
 								</c:if>
 								<c:if test="${timereportdescriptionbox eq 'true'}">
 									<td class="matrix"><c:out
@@ -152,7 +152,8 @@
 								</c:if>
 								<c:if test="${actualhoursbox eq 'true'}">
 									<td class="matrix"><c:out
-										value="${timereportviewhelper.durationhours}" />:<c:out
+										value="${timereportviewhelper.durationhours}" />:<c:if
+										test="${timereportviewhelper.durationminutes<10}">0</c:if><c:out
 										value="${timereportviewhelper.durationminutes}" /></td>
 								</c:if>
 							</tr>
