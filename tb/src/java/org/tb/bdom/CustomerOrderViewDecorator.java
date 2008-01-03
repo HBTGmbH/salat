@@ -19,7 +19,21 @@ public class CustomerOrderViewDecorator extends Customerorder {
         this.timereportDAO = timereportDAO;
         this.customerOrder = customerOrder;
     }
+    
+	public Double getDifference() {
+		
+		if((this.customerOrder.getDebithours() != null && this.customerOrder.getDebithours() > 0.0) 
+				&& (this.customerOrder.getDebithoursunit() == null || this.customerOrder.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)){
+			
+			Double rounded,notRounded;
+			notRounded = ( this.customerOrder.getDebithours() - getDuration() );		
+			rounded = Math.round( notRounded * 100 ) / 100.0   ;
 
+			return rounded;
+		} else{
+			return null;
+		}
+	}
 	
     public double getDuration() {
 		Long durationHours = timereportDAO.getTotalDurationHoursForCustomerOrder(customerOrder.getId());

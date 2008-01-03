@@ -4,6 +4,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -156,8 +157,10 @@
 		<th align="left"><b><bean:message
 			key="main.general.debithours.text" /></b></th>
 		<c:if test="${showActualHours}">
-				<th align="left"><b><bean:message 
-				key="main.general.showactualhours.text" /></b></th></c:if>	
+			<th align="left"><b><bean:message 
+				key="main.general.showactualhours.text" /></b></th>
+			<th align="left"><b><bean:message
+				key="main.general.difference.text"/></b></th></c:if>	
 		<c:if test="${employeeAuthorized}">
 			<th align="left"
 				title="<bean:message
@@ -299,7 +302,7 @@
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-						<c:out value="${customerorder.debithours}" />
+						<fmt:formatNumber value="${customerorder.debithours}"  minFractionDigits="2"/>
 						<c:choose>
 							<c:when test="${customerorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -318,9 +321,25 @@
 				</c:choose></td>
 				
 				<c:if test="${showActualHours}">
-					<td>
-						<c:out value="${customerorder.duration}" />
+					<td align="right">
+						<fmt:formatNumber value="${customerorder.duration}"  minFractionDigits="2"/>
 					</td>
+						<td align="right">
+							<c:choose>
+								<c:when test="${customerorder.difference != null && (customerorder.difference < 0.0 || customerorder.difference >= 0.0)&&(customerorder.debithoursunit != 0 && customerorder.debithoursunit != 1 && customerorder.debithoursunit != 12)}">
+										<font color="#0000FF"><fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/></font>
+								</c:when>						
+								<c:when test="${customerorder.difference != null && customerorder.difference < 0.0}">
+										<font color="#FF7777"><fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/></font>
+								</c:when>
+								<c:when test="${customerorder.difference != null && customerorder.difference >= 0.0}">
+										<fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/>
+								</c:when>
+								<c:otherwise>
+									&nbsp;
+								</c:otherwise>
+							</c:choose>
+						</td>						
 				</c:if>
 				
 			</c:when>
@@ -386,7 +405,7 @@
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-						<c:out value="${customerorder.debithours}" />
+						<fmt:formatNumber value="${customerorder.debithours}"  minFractionDigits="2"/>
 						<c:choose>
 							<c:when test="${customerorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -405,9 +424,25 @@
 				</c:choose></td>
 				
 				<c:if test="${showActualHours}">
-					<td  style="color:gray">
-						<c:out value="${customerorder.duration}" />
+					<td  align="right" style="color:gray">
+						<fmt:formatNumber value="${customerorder.duration}"  minFractionDigits="2"/>
 					</td>
+						<td align="right" style="color:gray">
+							<c:choose>
+								<c:when test="${customerorder.difference != null && (customerorder.difference < 0.0 || customerorder.difference >= 0.0)&&(customerorder.debithoursunit != 0 && customerorder.debithoursunit != 1 && customerorder.debithoursunit != 12)}">
+										<font color="#0000FF"><fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/></font>
+								</c:when>						
+								<c:when test="${customerorder.difference != null && customerorder.difference < 0.0}">
+										<font color="#FF0000"><fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/></font>
+								</c:when>
+								<c:when test="${customerorder.difference != null && customerorder.difference >= 0.0}">
+										<fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/>
+								</c:when>
+								<c:otherwise>
+									&nbsp;
+								</c:otherwise>
+							</c:choose>
+						</td>	
 				</c:if>
 				
 			</c:otherwise>

@@ -5,6 +5,7 @@
 <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean"%>
 <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="/WEB-INF/treeTag.tld" prefix="myjsp" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -216,7 +217,9 @@
 						key="main.general.debithours.text" /></b></th>
 					<c:if test="${showActualHours}">
 						<th align="left"><b><bean:message 
-						key="main.general.showactualhours.text" /></b></th></c:if>	
+						key="main.general.showactualhours.text" /></b></th>
+						<th align="left"><b><bean:message
+						key="main.general.difference.text"/></b></th></c:if>	
 					<th align="left" title="<bean:message
 						key="main.headlinedescription.suborders.edit.text" />"><b><bean:message
 						key="main.suborder.edit.text" /></b></th>
@@ -411,7 +414,7 @@
 											&nbsp;
 										</c:when>
 										<c:otherwise>
-											<c:out value="${suborder.debithours}" />
+										<fmt:formatNumber value="${suborder.debithours}"  minFractionDigits="2"/>
 											<c:choose>
 												<c:when test="${suborder.debithoursunit == 0}">
 													/ <bean:message key="main.general.totaltime.text" />
@@ -431,12 +434,26 @@
 								</td>
 								
 								<c:if test="${showActualHours}">
-									<td>
-										<c:out value="${suborder.duration}" />
+									<td align="right">
+										<fmt:formatNumber value="${suborder.duration}" minFractionDigits="2"/>
 									</td>
+									<td align="right">
+										<c:choose>
+											<c:when test="${suborder.difference != null && (suborder.difference < 0.0 || suborder.difference >= 0.0)&&(suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12)}">
+													<font color="#0000FF"><fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/></font>
+											</c:when>						
+											<c:when test="${suborder.difference != null && suborder.difference < 0.0}">
+													<font color="#FF7777"><fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/></font>
+											</c:when>
+											<c:when test="${suborder.difference != null && suborder.difference >= 0.0}">
+													<fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/>
+											</c:when>
+											<c:otherwise>
+												&nbsp;
+											</c:otherwise>
+										</c:choose>
+									</td>										
 								</c:if>
-								
-								
 							</c:when>
 							<c:otherwise>
 							<!-- suborder is invalid -->
@@ -526,7 +543,7 @@
 											&nbsp;
 										</c:when>
 										<c:otherwise>
-											<c:out value="${suborder.debithours}" />
+											<fmt:formatNumber value="${suborder.debithours}"  minFractionDigits="2"/>
 											<c:choose>
 												<c:when test="${suborder.debithoursunit == 0}">
 													/ <bean:message key="main.general.totaltime.text" />
@@ -546,8 +563,24 @@
 								</td>
 								
 								<c:if test="${showActualHours}">
-									<td style="color:gray">
-										<c:out value="${suborder.duration}" />
+									<td align="right" style="color:gray">
+										<fmt:formatNumber value="${suborder.duration}"  minFractionDigits="2"/>
+									</td>
+									<td align="right" style="color: gray">
+										<c:choose>
+											<c:when test="${suborder.difference != null && (suborder.difference < 0.0 || suborder.difference >= 0.0)&&(suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12)}">
+													<font color="#0000FF"><fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/></font>
+											</c:when>
+											<c:when test="${suborder.difference != null && suborder.difference < 0.0}">
+													<font color="#FF0000"><fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/></font>
+											</c:when>
+											<c:when test="${suborder.difference != null && suborder.difference >= 0.0}">
+													<fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/>
+											</c:when>
+											<c:otherwise>
+												&nbsp;
+											</c:otherwise>
+										</c:choose>
 									</td>
 								</c:if>
 							</c:otherwise>

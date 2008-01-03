@@ -3,6 +3,7 @@ package org.tb.bdom;
 import java.sql.Date;
 import java.util.List;
 
+import org.tb.GlobalConstants;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
@@ -20,6 +21,21 @@ public class SuborderViewDecorator extends Suborder {
         this.timereportDAO = timereportDAO;
         this.suborder = suborder;
     }
+    
+	public Double getDifference() {
+		
+		if((this.suborder.getDebithours() != null && this.suborder.getDebithours() > 0.0) 
+				&& (this.suborder.getDebithoursunit() == null || this.suborder.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)){
+			
+			Double rounded,notRounded;
+			notRounded = ( this.suborder.getDebithours() - getDuration() );		
+			rounded = Math.round( notRounded * 100 ) / 100.0   ;
+
+			return rounded;
+		} else{
+			return null;
+		}
+	}
 
 	
     public double getDuration() {

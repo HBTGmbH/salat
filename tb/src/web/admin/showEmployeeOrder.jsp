@@ -200,6 +200,8 @@
 		<c:if test="${showActualHours}">
 			<th align="left"><b><bean:message
 				key="main.general.showactualhours.text" /></b></th>
+			<th align="left"><b><bean:message
+				key="main.general.difference.text"/></b></th>
 		</c:if>
 		<th align="left"
 			title="<bean:message
@@ -361,7 +363,7 @@
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-						<c:out value="${employeeorder.debithours}" />
+						<fmt:formatNumber value="${employeeorder.debithours}"  minFractionDigits="2"/>
 						<c:choose>
 							<c:when test="${employeeorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -380,8 +382,26 @@
 				</c:choose></td>
 
 				<c:if test="${showActualHours}">
-					<td style="color: gray"><c:out
-						value="${employeeorder.duration}" /></td>
+					<td align="right" style="color: gray">
+					<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+					<td align="right" style="color: gray">
+						<c:choose>
+						
+							<c:when test="${employeeorder.difference != null && (employeeorder.difference < 0.0 || employeeorder.difference >= 0.0)&&(employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12)}">
+									<font color="#0000FF"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							</c:when>						
+						
+							<c:when test="${employeeorder.difference != null && employeeorder.difference < 0.0}">
+									<font color="#FF7777"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							</c:when>
+							<c:when test="${employeeorder.difference != null && employeeorder.difference >= 0.0}">
+									<fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/>
+							</c:when>
+							<c:otherwise>
+								&nbsp;
+							</c:otherwise>
+						</c:choose>
+						</td> 	
 				</c:if>
 
 			</c:when>
@@ -433,7 +453,7 @@
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-						<c:out value="${employeeorder.debithours}" />
+					<fmt:formatNumber value="${employeeorder.debithours}"  minFractionDigits="2"/>
 						<c:choose>
 							<c:when test="${employeeorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -452,7 +472,25 @@
 				</c:choose></td>
 
 				<c:if test="${showActualHours}">
-					<td><c:out value="${employeeorder.duration}" /></td>
+					<td align="right"><fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/></td>
+					<td align="right">
+						<c:choose>
+						
+							<c:when test="${employeeorder.difference != null && (employeeorder.difference < 0.0 || employeeorder.difference >= 0.0)&&(employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12)}">
+									<font color="#0000FF"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							</c:when>
+													
+							<c:when test="${employeeorder.difference != null && employeeorder.difference < 0.0}">
+									<font color="#FF0000"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							</c:when>
+							<c:when test="${employeeorder.difference != null && employeeorder.difference >= 0.0}">
+									<fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/>
+							</c:when>
+							<c:otherwise>
+								&nbsp;
+							</c:otherwise>
+						</c:choose>
+					</td>
 				</c:if>
 
 			</c:otherwise>

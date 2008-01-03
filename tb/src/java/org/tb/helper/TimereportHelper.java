@@ -540,7 +540,7 @@ public class TimereportHelper {
 				timeMinutesInt = laborTimeMinutesInt;
 			}
 			if (timeSwitch.equals("workingDayEnds")) {
-				Employeecontract employeecontract=(Employeecontract) request.getSession().getAttribute("loginEmployeeContract");;
+				Employeecontract employeecontract=(Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 				Double dailyWorkingTime = employeecontract.getDailyWorkingTime();
 				Integer dailyWorkingTimeHours = dailyWorkingTime.intValue();
 				Integer  dailyWorkingTimeMinutes = Integer.parseInt(dailyWorkingTime.toString().replace(".", ":").split(":")[1]) * 6;

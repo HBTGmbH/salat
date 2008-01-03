@@ -27,6 +27,21 @@ public class EmployeeOrderViewDecorator extends Employeeorder {
 		return totalTime;
     }
 	
+	public Double getDifference() {
+		
+		if((this.employeeOrder.getDebithours() != null && this.employeeOrder.getDebithours() > 0.0) 
+				&& (this.employeeOrder.getDebithoursunit() == null || this.employeeOrder.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)){
+			
+			Double rounded,notRounded;
+			notRounded = ( this.employeeOrder.getDebithours() - getDuration() );		
+			rounded = Math.round( notRounded * 100 ) / 100.0   ;
+
+			return rounded;
+		} else{
+			return null;
+		}
+	}
+	
 	/**
 	 * @param timereportDAO
 	 * @param employeeOrder
