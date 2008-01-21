@@ -21,6 +21,9 @@ public class ShowSuborderForm extends ActionForm {
 	 */
 	private static final long serialVersionUID = 1L; // 3430200308525131845L;
 	private Boolean show;
+	private String[] suborderIdArray;
+	private String suborderOption;
+	private String suborderOptionValue;
 	private String filter;
 	private Long customerOrderId;
 	private Boolean showstructure = false;
@@ -102,4 +105,33 @@ public class ShowSuborderForm extends ActionForm {
 		return errors;
 	}
 
+	/**
+	 * @param getSuborderIdArray
+	 */
+	public String[] getSuborderIdArray() {
+		return suborderIdArray;
+	}
+	
+	/**
+	 * @param getSuborderIdArray the getSuborderIdArray to set
+	 */
+	public void setSuborderIdArray(String[] suborderIdArray) {
+		this.suborderIdArray = suborderIdArray;
+	}
+
+	public String getSuborderOption() {
+		return suborderOption;
+	}
+
+	public void setSuborderOption(String suborderOption) {
+		this.suborderOption = suborderOption;
+	}
+
+	public String getSuborderOptionValue() {
+		return suborderOptionValue;
+	}
+
+	public void setSuborderOptionValue(String suborderOptionValue) {
+		this.suborderOptionValue = suborderOptionValue;
+	}
 }

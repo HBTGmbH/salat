@@ -95,6 +95,25 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			
 			return mapping.findForward("success");
 		}
+		
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("fitDates"))) {
+			if(request.getSession().getAttribute("soId") != null){
+				long soId = Long.parseLong(request.getSession().getAttribute("soId")
+						.toString());
+				Suborder suborder = suborderDAO.getSuborderById(soId);
+				if(suborder != null){
+					Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+					for (Suborder tempSuborder : suborder.getAllChildren()) {
+						tempSuborder.setFromDate(suborder.getFromDate());
+						tempSuborder.setUntilDate(suborder.getUntilDate());
+					}
+					suborderDAO.save(suborder, loginEmployee);
+					
+				}
+			}
+			return mapping.findForward("success");
+		}
 
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("generateSign"))) {
@@ -160,6 +179,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			
 			soForm.setParentDescriptionAndSign(parentOrder.getSignAndDescription());
 			soForm.setParentId(soForm.getCustomerorderId());
+			
 			request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
 			request.getSession().setAttribute("suborderParent", parentOrder);
 			
@@ -169,6 +189,22 @@ public class StoreSuborderAction extends LoginRequiredAction {
 					Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
 					if (tempSubOrder!=null){
 						soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+
+//						String suborderFromDate="";
+//						String suborderUntilDate="";
+//						if(soForm.getValidFrom()!=null)
+//							suborderFromDate =soForm.getValidFrom();
+//						if(soForm.getValidUntil()!=null)
+//							suborderUntilDate =soForm.getValidUntil();
+						String parentOrderFromDate = "";
+						String parentOrderUntilDate = "";
+						if(tempSubOrder.getFromDate()!=null)
+							parentOrderFromDate = tempSubOrder.getFromDate().toString();
+						if(tempSubOrder.getUntilDate()!=null)
+							parentOrderUntilDate = tempSubOrder.getUntilDate().toString();
+						soForm.setValidFrom(parentOrderFromDate);
+						soForm.setValidUntil(parentOrderUntilDate);
+						
 						request.getSession().setAttribute("suborderParent", tempSubOrder);
 					}else{
 						Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());

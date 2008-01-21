@@ -387,7 +387,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 		}
 		session.saveOrUpdate(so);
 		session.flush();
-		session.clear();
+		//session.clear(); nicht praktikabel da später benötigte objekte der session bekannt aber nicht mehr vorhanden sind. bei speicherproblemen evtl. session.evict()
 	}
 
 	/**

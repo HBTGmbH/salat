@@ -1,14 +1,19 @@
 package org.tb.web.action.admin;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
@@ -24,23 +29,24 @@ import org.tb.web.form.ShowSuborderForm;
  * action class for showing all suborders
  * 
  * @author oda
- *
+ * 
  */
 public class ShowSuborderAction extends LoginRequiredAction {
 
-	
 	private SuborderDAO suborderDAO;
+
 	private CustomerorderDAO customerorderDAO;
+
 	private TimereportDAO timereportDAO;
-	
+
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
 	}
-	
+
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
 	}
-	
+
 	public void setTimereportDAO(TimereportDAO timereportDAO) {
 		this.timereportDAO = timereportDAO;
 	}
@@ -49,118 +55,213 @@ public class ShowSuborderAction extends LoginRequiredAction {
 	public ActionForward executeAuthenticated(ActionMapping mapping,
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
-		
-		
+
 		ShowSuborderForm suborderForm = (ShowSuborderForm) form;
-		List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
-		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
-				
+		List<Customerorder> visibleCustomerOrders = customerorderDAO
+				.getVisibleCustomerorders();
+		request.getSession().setAttribute("visibleCustomerOrders",
+				visibleCustomerOrders);
+		Employee loginEmployee = (Employee) request.getSession().getAttribute(
+				"loginEmployee");
+
 		String filter = null;
 		Boolean show = null;
-		Long customerOrderId = null; 
-		
-		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getShowStructure()"  + suborderForm.getShowstructure());
-		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getShow();" + suborderForm.getShow());
-		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getFilter-()"  + suborderForm.getFilter());
-		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderForm.getCustomerOrderId-();" + suborderForm.getCustomerOrderId());
-		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderFilter"  + request.getSession().getAttribute("suborderFilter"));
-		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderShow;" + request.getSession().getAttribute("suborderShow"));
-		TbLogger.debug(ShowSuborderForm.class.toString(),"suborderCustomerOrderId"  + request.getSession().getAttribute("suborderCustomerOrderId"));
-		TbLogger.debug(ShowSuborderForm.class.toString(),"showStructure" + request.getSession().getAttribute("showStructure"));
-		
-		
-		if ((request.getParameter("task") != null) && 
-				(request.getParameter("task").equals("refresh"))) {
-			
+		Long customerOrderId = null;
+
+		TbLogger.debug(ShowSuborderForm.class.toString(),
+				"suborderForm.getShowStructure()"
+						+ suborderForm.getShowstructure());
+		TbLogger.debug(ShowSuborderForm.class.toString(),
+				"suborderForm.getShow();" + suborderForm.getShow());
+		TbLogger.debug(ShowSuborderForm.class.toString(),
+				"suborderForm.getFilter-()" + suborderForm.getFilter());
+		TbLogger.debug(ShowSuborderForm.class.toString(),
+				"suborderForm.getCustomerOrderId-();"
+						+ suborderForm.getCustomerOrderId());
+		TbLogger.debug(ShowSuborderForm.class.toString(), "suborderFilter"
+				+ request.getSession().getAttribute("suborderFilter"));
+		TbLogger.debug(ShowSuborderForm.class.toString(), "suborderShow;"
+				+ request.getSession().getAttribute("suborderShow"));
+		TbLogger.debug(ShowSuborderForm.class.toString(),
+				"suborderCustomerOrderId"
+						+ request.getSession().getAttribute(
+								"suborderCustomerOrderId"));
+		TbLogger.debug(ShowSuborderForm.class.toString(), "showStructure"
+				+ request.getSession().getAttribute("showStructure"));
+
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("refresh"))) {
+
 			Boolean showStructure = suborderForm.getShowstructure();
 			request.getSession().setAttribute("showStructure", showStructure);
-			
+
 			filter = suborderForm.getFilter();
 
 			if (filter != null && !filter.trim().equals("")) {
 				filter = filter.toUpperCase();
 				filter = "%" + filter + "%";
-			}			
+			}
 			request.getSession().setAttribute("suborderFilter", filter);
-			
+
 			show = suborderForm.getShow();
 			request.getSession().setAttribute("suborderShow", show);
-			
+
 			customerOrderId = suborderForm.getCustomerOrderId();
-			request.getSession().setAttribute("suborderCustomerOrderId", customerOrderId);
-			
-			Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
-			TbLogger.debug(ShowSuborderForm.class.toString(),"ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
+			request.getSession().setAttribute("suborderCustomerOrderId",
+					customerOrderId);
+
+			Customerorder co = customerorderDAO
+					.getCustomerorderById(suborderForm.getCustomerOrderId());
+			TbLogger.debug(ShowSuborderForm.class.toString(),
+					"ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()"
+							+ suborderForm.getCustomerOrderId());
 			request.getSession().setAttribute("currentOrder", co);
-			if (customerOrderId == -1){
+			if (customerOrderId == -1) {
 				request.getSession().setAttribute("showStructure", false);
 				suborderForm.setShowstructure(false);
 			}
-			
+
 		} else {
 			if (request.getSession().getAttribute("suborderFilter") != null) {
-				filter = (String) request.getSession().getAttribute("suborderFilter");
+				filter = (String) request.getSession().getAttribute(
+						"suborderFilter");
 				suborderForm.setFilter(filter);
 			}
 			if (request.getSession().getAttribute("suborderShow") != null) {
-				show = (Boolean) request.getSession().getAttribute("suborderShow");
+				show = (Boolean) request.getSession().getAttribute(
+						"suborderShow");
 				suborderForm.setShow(show);
 			}
 			if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
-				customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
+				customerOrderId = (Long) request.getSession().getAttribute(
+						"suborderCustomerOrderId");
 				suborderForm.setCustomerOrderId(customerOrderId);
-				Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
-				TbLogger.debug(ShowSuborderForm.class.toString(),"ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
+				Customerorder co = customerorderDAO
+						.getCustomerorderById(suborderForm.getCustomerOrderId());
+				TbLogger.debug(ShowSuborderForm.class.toString(),
+						"ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()"
+								+ suborderForm.getCustomerOrderId());
 				request.getSession().setAttribute("currentOrder", co);
-			} else{
-				request.getSession().setAttribute("suborderCustomerOrderId", new Long(-1));
+			} else {
+				request.getSession().setAttribute("suborderCustomerOrderId",
+						new Long(-1));
 				suborderForm.setCustomerOrderId(customerOrderId);
 			}
 			if (request.getSession().getAttribute("showStructure") != null) {
-				Boolean showStructure = (Boolean) request.getSession().getAttribute("showStructure");
+				Boolean showStructure = (Boolean) request.getSession()
+						.getAttribute("showStructure");
 				suborderForm.setShowstructure(showStructure);
-			}else{
+			} else {
 				request.getSession().setAttribute("showStructure", false);
 				suborderForm.setShowstructure(false);
 			}
-			
 		}
-				
+
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("setflag"))) {
+			Long coID = suborderForm.getCustomerOrderId();
+
+			if (coID != -1) {
+				Customerorder co = customerorderDAO.getCustomerorderById(coID);
+				for (Suborder so : co.getSuborders()) {
+					if (!so.getCurrentlyValid()) {
+						so.setHide(true);
+						suborderDAO.save(so, loginEmployee);
+					}
+				}
+			} else {
+				for (Customerorder co : customerorderDAO.getCustomerorders()) {
+					for (Suborder so : co.getSuborders()) {
+						if (!so.getCurrentlyValid()) {
+							so.setHide(true);
+							suborderDAO.save(so, loginEmployee);
+						}
+					}
+				}
+			}
+		}
 		
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("multiplechange"))) {
+			ActionMessages errorMessages = validateFormData(request, suborderForm);
+			if (errorMessages.size() == 0) {
+			String [] suborderIdArray = suborderForm.getSuborderIdArray();
+			if(suborderIdArray!=null){
+				if(suborderForm.getSuborderOption().equals("delete")){
+					List<String> soIDList = new ArrayList<String>();
+					for (String soID : suborderIdArray) {
+						if(!suborderDAO.deleteSuborderById(Long.parseLong(soID))){
+							soIDList.add(soID);
+						}
+					}
+					if(soIDList.size()>0){
+						errorMessages.add("suborderOption", new ActionMessage(
+								"form.suborder.error.delete", soIDList));
+					}
+				}
+				if(suborderForm.getSuborderOption().equals("altersubordercustomer")){
+					for (String soID : suborderIdArray) {
+						Suborder so = suborderDAO.getSuborderById(Long.parseLong(soID));
+						so.setSuborder_customer(suborderForm.getSuborderOptionValue());
+						suborderDAO.save(so, loginEmployee);
+					}
+				}
+				if(suborderForm.getSuborderOption().equals("alterhourlyrate")){
+					for (String soID : suborderIdArray) {
+						Suborder so = suborderDAO.getSuborderById(Long.parseLong(soID));
+						so.setHourly_rate(Double.parseDouble(suborderForm.getSuborderOptionValue()));
+						suborderDAO.save(so, loginEmployee);
+					}
+				}
+			}
+			}
+			suborderForm.setSuborderOption("");
+			saveErrors(request, errorMessages);
+		}
+
 		boolean showActualHours = suborderForm.getShowActualHours();
 		request.getSession().setAttribute("showActualHours", showActualHours);
-		
+
 		if (showActualHours) {
 			/* show actual hours */
-			List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+			List<Suborder> suborders = suborderDAO.getSubordersByFilters(show,
+					filter, customerOrderId);
 			List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
 			for (Suborder suborder : suborders) {
-				SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+				SuborderViewDecorator decorator = new SuborderViewDecorator(
+						timereportDAO, suborder);
 				suborderViewDecorators.add(decorator);
 			}
-			request.getSession().setAttribute("suborders", suborderViewDecorators);
+			request.getSession().setAttribute("suborders",
+					suborderViewDecorators);
 		} else {
-			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+			request.getSession().setAttribute(
+					"suborders",
+					suborderDAO.getSubordersByFilters(show, filter,
+							customerOrderId));
 		}
 
 		// check if loginEmployee has responsibility for some orders
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		List<Customerorder> orders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+		List<Customerorder> orders = customerorderDAO
+				.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee
+						.getId());
 		boolean employeeIsResponsible = false;
-		
+
 		if (orders != null && orders.size() > 0) {
-			employeeIsResponsible =  true;
+			employeeIsResponsible = true;
 		}
-		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
-		
+		request.getSession().setAttribute("employeeIsResponsible",
+				employeeIsResponsible);
+
 		// check if there are visible customer orders
 		orders = customerorderDAO.getVisibleCustomerorders();
 		boolean visibleOrdersPresent = false;
 		if (orders != null && !orders.isEmpty()) {
 			visibleOrdersPresent = true;
-		} 
-		request.getSession().setAttribute("visibleOrdersPresent", visibleOrdersPresent);
-		
+		}
+		request.getSession().setAttribute("visibleOrdersPresent",
+				visibleOrdersPresent);
+
 		if (request.getParameter("task") != null) {
 			if (request.getParameter("task").equalsIgnoreCase("back")) {
 				// back to main menu
@@ -169,10 +270,77 @@ public class ShowSuborderAction extends LoginRequiredAction {
 				// forward to show suborders jsp
 				return mapping.findForward("success");
 			}
-		} else {		
+		} else {
 			// forward to show suborders jsp
 			return mapping.findForward("success");
 		}
 	}
 
+	private ActionMessages validateFormData(HttpServletRequest request, ShowSuborderForm suborderForm) {
+		ActionMessages errors = getErrors(request);
+		if (errors == null)
+			errors = new ActionMessages();
+		
+		if(suborderForm.getSuborderOption().equals("altersubordercustomer")){
+			if (suborderForm.getSuborderOptionValue().length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
+				errors.add("suborderOption", new ActionMessage(
+						"form.suborder.error.suborder_customer.toolong"));
+			}
+		}
+		
+		if(suborderForm.getSuborderOption().equals("alterhourlyrate")){
+			if (suborderForm.getSuborderOptionValue().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
+				errors.add("suborderOption", new ActionMessage(
+						"form.suborder.error.currency.toolong"));
+			}
+			if (suborderForm.getSuborderOptionValue().length() <= 0) {
+				errors.add("suborderOption", new ActionMessage(
+						"form.suborder.error.currency.required"));
+			}
+			
+			//			 check hourly rate format
+			if (!GenericValidator.isDouble(suborderForm.getSuborderOptionValue().toString())
+					|| (!GenericValidator.isInRange(Double.parseDouble(suborderForm.getSuborderOptionValue()), 0.0,
+							GlobalConstants.MAX_HOURLY_RATE))) {
+				errors.add("suborderOption", new ActionMessage(
+						"form.suborder.error.hourlyrate.wrongformat"));
+			}
+		}
+		//TODO alter dates check
+//		if(suborderForm.getSuborderOption().equals("altervalidfromdate")){
+////			check date formats (must now be 'yyyy-MM-dd')
+//			Date soFromDate = null;
+//			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyy-MM-dd");
+//			
+//			String dateFromString = suborderForm.getValidFrom().trim();
+//			
+//			try {
+//				soFromDate = new java.sql.Date(simpleDateFormat.parse(dateFromString).getTime());
+//			} catch (Exception e) {
+//				errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
+//			}
+//			if (suborderForm.getValidUntil() != null && !suborderForm.getValidUntil().trim().equals("")) {
+//				String dateUntilString = suborderForm.getValidUntil().trim();
+//				try {
+//					soUntilDate = new java.sql.Date(simpleDateFormat.parse(dateUntilString).getTime());
+//				} catch (Exception e) {
+//					errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
+//				}
+//			}
+//			
+//			if (soFromDate != null && soUntilDate != null) {
+//				if (soUntilDate.before(soFromDate)) {
+//					errors.add("validUntil", new ActionMessage("form.suborder.error.date.untilbeforefrom"));
+//				}
+//			}		
+//		}
+//		if(suborderForm.getSuborderOption().equals("altervaliduntildate")){
+//			Date soUntilDate = null;
+//			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyy-MM-dd");
+//		}
+		
+//		saveErrors(request, errors);
+
+		return errors;
+	}
 }

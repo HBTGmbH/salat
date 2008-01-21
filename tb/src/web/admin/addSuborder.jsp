@@ -48,6 +48,14 @@
 		}
 	}
 	
+	function confirmFit(form) {	
+		var agree=confirm("<bean:message key="main.general.confirmsuborderfit.text" />");
+		if (agree) {
+			form.action = "/tb/do/StoreSuborder?task=fitDates";
+			form.submit();
+		}
+	}
+	
 </script>
 
 </head>
@@ -315,8 +323,10 @@
 		<tr><td class="noBborderStyle" colspan="3"><hr /></td></tr>
 		<tr>
 		<td class="noBborderStyle" colspan="3"><html:submit
-				onclick="confirmCopy(this.form)"
-				styleId="button" ><bean:message key="main.general.button.copy.suborder.text" /></html:submit></td>
+				onclick="confirmCopy(this.form); return false;"
+				styleId="button" ><bean:message key="main.general.button.copy.suborder.text" /></html:submit><html:submit
+				onclick="confirmFit(this.form); return false;"
+				styleId="button" ><bean:message key="main.general.button.fit.suborder.text" /></html:submit></td>
 		</tr>
 		
 		
