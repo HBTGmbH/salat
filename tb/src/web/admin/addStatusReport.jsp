@@ -17,6 +17,11 @@
 
 <script type="text/javascript" language="JavaScript">
 	
+	function setDate(which, howMuch) {
+		document.forms[0].action = "/tb/do/StoreStatusReport?task=setDate&which=" + which + "&howMuch=" + howMuch;
+		document.forms[0].submit();
+	}
+	
 	function setStoreAction(form, actionVal) {	
  		form.action = "/tb/do/StoreStatusReport?action=" + actionVal;
 		form.submit();
@@ -189,21 +194,38 @@
                     function calenderPopupFrom() {
                         var cal = new CalendarPopup();
                         calenderPopup(cal);
-                        cal.select(document.forms[0].fromDateString,'from','yyyy-MM-dd');
+                        cal.select(document.forms[0].validFrom,'from','yyyy-MM-dd');
                     }
                     function calenderPopupUntil() {
                         var cal = new CalendarPopup();
                         calenderPopup(cal);
-                        cal.select(document.forms[0].untilDateString,'until','yyyy-MM-dd');
+                        cal.select(document.forms[0].validUntil,'until','yyyy-MM-dd');
                     }
                 </script>
-				<html:text property="fromDateString"  
+				<html:text property="validFrom"  
 					size="10" maxlength="10" disabled="${!isReportEditable}" /> <c:if test="${isReportEditable}"><a
 					href="javascript:calenderPopupFrom()" name="from" ID="from"
 					style="text-decoration:none;"> <img
 					src="/tb/images/popupcalendar.gif" width="22" height="22"
 					alt="<bean:message key="main.date.popup.alt.text" />"
 					style="border:0;vertical-align:top"> </a></c:if>
+					
+				<%-- Arrows for navigating the from-Date --%>
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('from','-1')" title="<bean:message key="main.date.popup.prevday" />">
+				<img src="/tb/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('from','0')" title="<bean:message key="main.date.popup.today" />">
+				<img src="/tb/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('from','1')" title="<bean:message key="main.date.popup.nextday" />">
+				<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+					
 				<span style="color:red"><html:errors property="fromdate" /></span>
 			</td>
 		</tr>
@@ -212,13 +234,30 @@
 				<b><bean:message key="statusreport.until.text" />:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" align="left" colspan="2">
-				<html:text property="untilDateString"  
+				<html:text property="validUntil"  
 					size="10" maxlength="10" disabled="${!isReportEditable}" /> <c:if test="${isReportEditable}"><a 
 					href="javascript:calenderPopupUntil()" name="until" ID="until"
 					style="text-decoration:none;" > <img
 					src="/tb/images/popupcalendar.gif" width="22" height="22"
 					alt="<bean:message key="main.date.popup.alt.text" />"
 					style="border:0;vertical-align:top"> </a></c:if>
+					
+				<%-- Arrows for navigating the until-Date --%>
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('until','-1')" title="<bean:message key="main.date.popup.prevday" />">
+				<img src="/tb/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('until','0')" title="<bean:message key="main.date.popup.today" />">
+				<img src="/tb/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
+				&nbsp;&nbsp;
+				<a href="javascript:setDate('until','1')" title="<bean:message key="main.date.popup.nextday" />">
+				<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				</a>
+				
 				<span style="color:red"><html:errors property="untildate" /></span>
 			</td>
 		</tr>

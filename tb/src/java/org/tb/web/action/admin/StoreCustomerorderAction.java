@@ -2,6 +2,7 @@ package org.tb.web.action.admin;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddCustomerOrderForm;
+import org.tb.web.form.AddEmployeeContractForm;
 
 /**
  * action class for storing a customer order permanently
@@ -77,9 +79,49 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddCustomerOrderForm coForm = (AddCustomerOrderForm) form;
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 	
 			/* remove list with timereports out of range */
 			request.getSession().removeAttribute("timereportsOutOfRange");
+			
+			// Task for setting the date, previous, next and to-day for both, until and from date
+			if ((request.getParameter("task") != null) && (request.getParameter("task").equals("setDate"))) { 
+				String which = request.getParameter("which").toLowerCase();
+				Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+				
+				String datum = which.equals("until") ? coForm.getValidUntil() : coForm.getValidFrom();
+				Integer day, month, year;
+				Calendar cal = Calendar.getInstance();
+				
+				if (howMuch != 0) {
+					ActionMessages errorMessages = valiDate(request, coForm, which);
+					if (errorMessages.size() > 0) {
+						return mapping.getInputForward();
+					}
+					
+					day = Integer.parseInt(datum.substring(8));
+					month = Integer.parseInt(datum.substring(5, 7));
+					year = Integer.parseInt(datum.substring(0, 4));
+					
+					cal.set(Calendar.DATE, day);
+					cal.set(Calendar.MONTH, month - 1);
+					cal.set(Calendar.YEAR, year);
+					
+					cal.add(Calendar.DATE, howMuch);
+				}
+							
+				datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+
+				request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
+				
+				if (which.equals("until")) {
+					coForm.setValidUntil(datum); 
+				} else {
+					coForm.setValidFrom(datum);
+				}
+				
+				return mapping.findForward("reset");
+			}	
 			
 			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("save")) ||
@@ -279,6 +321,33 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 	 */
 	private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddCustomerOrderForm coForm) {
 		coForm.reset(mapping, request);
+	}
+	
+	private ActionMessages valiDate(HttpServletRequest request, AddCustomerOrderForm coForm, String which) {
+		ActionMessages errors = getErrors(request);
+		if (errors == null) errors = new ActionMessages();
+		
+		String dateString = "";
+		if (which.equals("from")) {
+			dateString = coForm.getValidFrom().trim();
+		} else {
+			dateString = coForm.getValidUntil().trim();
+		}
+		
+		int minus=0;
+		for (int i = 0; i < dateString.length(); i++) {
+			if (dateString.charAt(i) == '-') minus++;	
+		}
+		if (dateString.length() != 10 || minus != 2) {
+			if (which.equals("from")) {
+				errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
+			} else {
+				errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
+			}
+		}
+		
+		saveErrors(request, errors);
+		return errors;
 	}
 	
 	/**

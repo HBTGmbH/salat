@@ -47,7 +47,47 @@ public class StoreStatusReportAction extends StatusReportAction {
 	protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		AddStatusReportForm reportForm = (AddStatusReportForm) form;
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 		boolean backAction = false;
+		
+		// Task for setting the date, previous, next and to-day for both, until and from date
+		if ((request.getParameter("task") != null) && (request.getParameter("task").equals("setDate"))) { 
+			String which = request.getParameter("which").toLowerCase();
+			Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+			
+			String datum = which.equals("until") ? reportForm.getValidUntil() : reportForm.getValidFrom();
+			Integer day, month, year;
+			Calendar cal = Calendar.getInstance();
+			
+			if (howMuch != 0) {
+				ActionMessages errorMessages = valiDate(request, reportForm, which);
+				if (errorMessages.size() > 0) {
+					return mapping.getInputForward();
+				}
+				
+				day = Integer.parseInt(datum.substring(8));
+				month = Integer.parseInt(datum.substring(5, 7));
+				year = Integer.parseInt(datum.substring(0, 4));
+				
+				cal.set(Calendar.DATE, day);
+				cal.set(Calendar.MONTH, month - 1);
+				cal.set(Calendar.YEAR, year);
+				
+				cal.add(Calendar.DATE, howMuch);
+			}
+						
+			datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+
+			request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
+			
+			if (which.equals("until")) {
+				reportForm.setValidUntil(datum); 
+			} else {
+				reportForm.setValidFrom(datum);
+			}
+			
+			return mapping.findForward("reset");
+		}	
 		
 		// action release
 		if ((request.getParameter("action") != null)
@@ -211,7 +251,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 				if (request.getSession().getAttribute("currentStatusReport") != null &&
 						((Statusreport) request.getSession().getAttribute("currentStatusReport")).getId() == lastKnownReport.getId()) {
 					fromDate = lastKnownReport.getFromdate();
-					reportForm.setUntilDateString(simpleDateFormat.format(lastKnownReport.getUntildate()));
+					reportForm.setValidUntil(simpleDateFormat.format(lastKnownReport.getUntildate()));
 				} else {				
 					fromDate = lastKnownReport.getUntildate();
 					GregorianCalendar calendar = new GregorianCalendar();
@@ -220,7 +260,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 					fromDate.setTime(calendar.getTimeInMillis());
 				}
 			}		
-			reportForm.setFromDateString(simpleDateFormat.format(fromDate));
+			reportForm.setValidFrom(simpleDateFormat.format(fromDate));
 						
 			// remove actionInfo
 			request.getSession().removeAttribute("actionInfo");
@@ -272,8 +312,8 @@ public class StoreStatusReportAction extends StatusReportAction {
 			
 			// get dates from validate later
 			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-			Date reportFromDate = new Date(simpleDateFormat.parse(reportForm.getFromDateString()).getTime());
-			Date reportUntilDate = new Date(simpleDateFormat.parse(reportForm.getUntilDateString()).getTime());
+			Date reportFromDate = new Date(simpleDateFormat.parse(reportForm.getValidFrom()).getTime());
+			Date reportUntilDate = new Date(simpleDateFormat.parse(reportForm.getValidUntil()).getTime());
 			currentReport.setFromdate(reportFromDate);
 			currentReport.setUntildate(reportUntilDate);
 			
@@ -404,7 +444,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 					reportForm.getCommunication_status().equals(statusreport.getCommunication_status()) &&
 					reportForm.getCommunication_text().equals(statusreport.getCommunication_text()) &&
 					reportForm.getCustomerOrderId() == statusreport.getCustomerorder().getId() &&
-					reportForm.getFromDateString().equals(simpleDateFormat.format(statusreport.getFromdate())) &&
+					reportForm.getValidFrom().equals(simpleDateFormat.format(statusreport.getFromdate())) &&
 					reportForm.getImprovement_action().equals(statusreport.getImprovement_action()) &&
 					reportForm.getImprovement_source().equals(statusreport.getImprovement_source()) &&
 					reportForm.getImprovement_status().equals(statusreport.getImprovement_status()) &&
@@ -426,7 +466,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 					reportForm.getSort().equals(statusreport.getSort()) &&
 					reportForm.getTrend().equals(statusreport.getTrend()) &&
 					reportForm.getTrendstatus().equals(statusreport.getTrendstatus()) &&
-					reportForm.getUntilDateString().equals(simpleDateFormat.format(statusreport.getUntildate()))
+					reportForm.getValidUntil().equals(simpleDateFormat.format(statusreport.getUntildate()))
 			);			
 		} catch (NullPointerException e) {
 			return false;
@@ -434,6 +474,32 @@ public class StoreStatusReportAction extends StatusReportAction {
 
 	}
 	
+	private ActionMessages valiDate(HttpServletRequest request, AddStatusReportForm reportForm, String which) {
+		ActionMessages errors = getErrors(request);
+		if (errors == null) errors = new ActionMessages();
+		
+		String dateString = "";
+		if (which.equals("from")) {
+			dateString = reportForm.getValidFrom().trim();
+		} else {
+			dateString = reportForm.getValidUntil().trim();
+		}
+		
+		int minus=0;
+		for (int i = 0; i < dateString.length(); i++) {
+			if (dateString.charAt(i) == '-') minus++;	
+		}
+		if (dateString.length() != 10 || minus != 2) {
+			if (which.equals("from")) {
+				errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
+			} else {
+				errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
+			}
+		}
+		
+		saveErrors(request, errors);
+		return errors;
+	}
 	
 	/**
 	 * Validates the form data.
@@ -452,14 +518,14 @@ public class StoreStatusReportAction extends StatusReportAction {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		
 		// check dates
-		String fromDateString = reportForm.getFromDateString();
+		String fromDateString = reportForm.getValidFrom();
 		java.util.Date fromDate = null;
 		try {
 			fromDate = simpleDateFormat.parse(fromDateString);
 		} catch (java.text.ParseException exception) {
 			errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.invalid.text"));
 		}
-		String untilDateString = reportForm.getUntilDateString();
+		String untilDateString = reportForm.getValidUntil();
 		java.util.Date untilDate = null;
 		try {
 			untilDate = simpleDateFormat.parse(untilDateString);

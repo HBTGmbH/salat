@@ -175,9 +175,14 @@ public class AddEmployeeContractForm extends ActionForm {
 	}
 
 	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {	
-		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		employee = loginEmployee.getId();
+	public void reset(ActionMapping mapping, HttpServletRequest request) {
+		try {
+			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+			employee = loginEmployee.getId();
+		}
+		catch (Exception e) {
+			mapping.findForward("login");
+		}
 		taskdescription = "";
 		validFrom = DateUtils.getCurrentYearString() + "-01-01";
 		validUntil = "";

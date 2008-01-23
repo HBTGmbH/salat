@@ -275,8 +275,13 @@ public class AddDailyReportForm extends ActionForm {
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 //		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-		Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-		employeeContractId = loginEmployeecontract.getId();
+		try {
+			Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+			employeeContractId = loginEmployeecontract.getId();
+		}
+		catch (Exception e) {
+			mapping.findForward("login");
+		}
 //		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
 		comment = "";
 		order = "";

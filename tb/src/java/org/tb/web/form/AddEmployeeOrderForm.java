@@ -164,8 +164,13 @@ public class AddEmployeeOrderForm extends ActionForm {
 		if (currentEmployeeContract != null) {
 			employeeContractId = currentEmployeeContract.getId();
 		} else {
-			Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-			employeeContractId = loginEmployeeContract.getId();
+			try {
+				Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+				employeeContractId = loginEmployeeContract.getId();
+			}
+			catch (Exception e) {
+				mapping.findForward("login");
+			}
 		}
 //		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
 		

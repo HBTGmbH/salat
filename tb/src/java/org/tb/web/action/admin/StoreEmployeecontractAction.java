@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -32,6 +33,7 @@ import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeContractForm;
+import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
  * action class for storing an employee contractpermanently
@@ -76,9 +78,49 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddEmployeeContractForm ecForm = (AddEmployeeContractForm) form;
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 			
 //			 remove list with timereports out of range
 			request.getSession().removeAttribute("timereportsOutOfRange");
+			
+			// Task for setting the date, previous, next and to-day for both, until and from date
+			if ((request.getParameter("task") != null) && (request.getParameter("task").equals("setDate"))) { 
+				String which = request.getParameter("which").toLowerCase();
+				Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+				
+				String datum = which.equals("until") ? ecForm.getValidUntil() : ecForm.getValidFrom();
+				Integer day, month, year;
+				Calendar cal = Calendar.getInstance();
+				
+				if (howMuch != 0) {
+					ActionMessages errorMessages = valiDate(request, ecForm, which);
+					if (errorMessages.size() > 0) {
+						return mapping.getInputForward();
+					}
+					
+					day = Integer.parseInt(datum.substring(8));
+					month = Integer.parseInt(datum.substring(5, 7));
+					year = Integer.parseInt(datum.substring(0, 4));
+					
+					cal.set(Calendar.DATE, day);
+					cal.set(Calendar.MONTH, month - 1);
+					cal.set(Calendar.YEAR, year);
+					
+					cal.add(Calendar.DATE, howMuch);
+				}
+							
+				datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+
+				request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
+				
+				if (which.equals("until")) {
+					ecForm.setValidUntil(datum); 
+				} else {
+					ecForm.setValidFrom(datum);
+				}
+				
+				return mapping.findForward("reset");
+			}	
 			
 			if ((request.getParameter("task") != null) && 
 					(request.getParameter("task").equals("storeOvertime")) ||
@@ -384,6 +426,34 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddEmployeeContractForm ecForm) {
 		ecForm.reset(mapping, request);
 	}
+	
+	private ActionMessages valiDate(HttpServletRequest request, AddEmployeeContractForm ecForm, String which) {
+		ActionMessages errors = getErrors(request);
+		if (errors == null) errors = new ActionMessages();
+		
+		String dateString = "";
+		if (which.equals("from")) {
+			dateString = ecForm.getValidFrom().trim();
+		} else {
+			dateString = ecForm.getValidUntil().trim();
+		}
+		
+		int minus=0;
+		for (int i = 0; i < dateString.length(); i++) {
+			if (dateString.charAt(i) == '-') minus++;	
+		}
+		if (dateString.length() != 10 || minus != 2) {
+			if (which.equals("from")) {
+				errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
+			} else {
+				errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
+			}
+		}
+		
+		saveErrors(request, errors);
+		return errors;
+	}
+	
 	
 	/**
 	 * validates the form data (syntax and logic)

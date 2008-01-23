@@ -136,8 +136,8 @@ public class CreateStatusReportAction extends StatusReportAction {
 					.getId());
 		}
 		
-		reportForm.setFromDateString(simpleDateFormat.format(fromDate));
-		reportForm.setUntilDateString(simpleDateFormat.format(new java.util.Date()));
+		reportForm.setValidFrom(simpleDateFormat.format(fromDate));
+		reportForm.setValidUntil(simpleDateFormat.format(new java.util.Date()));
 		//new report -> status green (1)
 		reportForm.setAim_status(one);
 		reportForm.setBudget_resources_date_status(one);

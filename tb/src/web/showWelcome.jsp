@@ -21,15 +21,15 @@
 </script>
 </head>
 <body>
+<c:if test="${currentEmployeeContract.employee.sign eq null}">
+	<jsp:forward page="/login.jsp" />
+</c:if>
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br><span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.overview.text" /><br></span>
 <br>
 <html:form action="/ShowWelcome">
-<c:if test="${currentEmployeeContract.id == null}">
-	<jsp:forward page="login" />
-</c:if>
 &nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)"
 			 value="${currentEmployeeContract.id}">
 	<c:forEach var="employeecontract" items="${employeecontracts}" >

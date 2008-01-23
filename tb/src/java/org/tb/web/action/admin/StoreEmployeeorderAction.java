@@ -112,20 +112,23 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			Integer day, month, year;
 			Calendar cal = Calendar.getInstance();
 			
-			ActionMessages errorMessages = valiDate(request, eoForm, which);
-			if (errorMessages.size() > 0) {
-				return mapping.getInputForward();
+			if (howMuch != 0) {
+				ActionMessages errorMessages = valiDate(request, eoForm, which);
+				if (errorMessages.size() > 0) {
+					return mapping.getInputForward();
+				}
+				
+				day = Integer.parseInt(datum.substring(8));
+				month = Integer.parseInt(datum.substring(5, 7));
+				year = Integer.parseInt(datum.substring(0, 4));
+				
+				cal.set(Calendar.DATE, day);
+				cal.set(Calendar.MONTH, month - 1);
+				cal.set(Calendar.YEAR, year);
+				
+				cal.add(Calendar.DATE, howMuch);
 			}
-			
-			day = Integer.parseInt(datum.substring(8));
-			month = Integer.parseInt(datum.substring(5, 7));
-			year = Integer.parseInt(datum.substring(0, 4));
-			
-			cal.set(Calendar.DATE, day);
-			cal.set(Calendar.MONTH, month - 1);
-			cal.set(Calendar.YEAR, year);
-			
-			cal.add(Calendar.DATE, howMuch);
+
 			datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
 
 			request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);

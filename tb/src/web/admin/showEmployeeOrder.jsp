@@ -382,8 +382,17 @@
 				</c:choose></td>
 
 				<c:if test="${showActualHours}">
-					<td align="right" style="color: gray">
-					<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+					<td align="right">
+						<c:choose>
+							<c:when test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
+								<font color="#FF7777">
+							</c:when>
+							<c:otherwise>
+								<font color="#736F6E">
+							</c:otherwise>
+						</c:choose>
+						<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/></font>
+					</td>
 					<td align="right" style="color: gray">
 						<c:choose>
 						
@@ -401,7 +410,7 @@
 								&nbsp;
 							</c:otherwise>
 						</c:choose>
-						</td> 	
+					</td>
 				</c:if>
 
 			</c:when>
@@ -472,7 +481,15 @@
 				</c:choose></td>
 
 				<c:if test="${showActualHours}">
-					<td align="right"><fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/></td>
+					<td align="right">
+						<c:if test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
+							<font color="#FF0000">
+						</c:if>
+						<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+						<c:if test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
+							</font>
+						</c:if>
+					</td>
 					<td align="right">
 						<c:choose>
 						

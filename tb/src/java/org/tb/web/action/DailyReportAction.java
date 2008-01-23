@@ -221,7 +221,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		for (Employeeorder employeeorder : orders) {
 			VacationViewer vacationView = new VacationViewer(employeecontract);
 			vacationView.setSuborderSign(employeeorder.getSuborder().getDescription());
-			vacationView.setBudget(employeeorder.getDebithours());
+			if (employeeorder.getDebithours() != null) vacationView.setBudget(employeeorder.getDebithours());
 			
 			List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(employeeorder.getSuborder().getId(), employeecontract.getId());
 			for (Timereport timereport : timereports) {

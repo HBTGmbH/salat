@@ -120,6 +120,43 @@ public class StoreDailyReportAction extends DailyReportAction {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 		boolean refreshTime = false;
 		
+			// task for setting the date
+			if ((request.getParameter("task") != null) && (request.getParameter("task").equals("setDate"))) {
+				Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+				String datum = reportForm.getReferenceday();
+				Integer day, month, year;
+				Calendar cal = Calendar.getInstance();
+				
+				ActionMessages errorMessages = valiDate(request, reportForm);
+				if (errorMessages.size() > 0) {
+					return mapping.getInputForward();
+				}
+				
+				day = Integer.parseInt(datum.substring(8));			// parsing date from string 
+				month = Integer.parseInt(datum.substring(5, 7));
+				year = Integer.parseInt(datum.substring(0, 4));
+				
+				cal.set(Calendar.DATE, day);
+				cal.set(Calendar.MONTH, month - 1);
+				cal.set(Calendar.YEAR, year);
+				
+				cal.add(Calendar.DATE, howMuch);
+				/* check if today is to be set (if howMuch == 0)or not */
+				datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+	
+				request.getSession().setAttribute("referenceday", datum);
+				reportForm.setReferenceday(datum);
+				
+				CustomerorderHelper ch = new CustomerorderHelper();
+				if (ch.refreshOrders(mapping, request, reportForm,
+						customerorderDAO, employeeDAO, employeecontractDAO, suborderDAO) != true) {
+					return mapping.findForward("error");
+				} else {
+					//return mapping.findForward("success");
+					refreshTime = true;
+				}
+				
+			}
 		
 			if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("refreshOrders"))) {
@@ -160,35 +197,6 @@ public class StoreDailyReportAction extends DailyReportAction {
 						return mapping.findForward("success");
 					}
 				}
-			}
-			
-			// task for setting the date
-			if ((request.getParameter("task") != null) && (request.getParameter("task").equals("setDate"))) {
-				Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
-				String datum = reportForm.getReferenceday();
-				Integer day, month, year;
-				Calendar cal = Calendar.getInstance();
-				
-				ActionMessages errorMessages = valiDate(request, reportForm);
-				if (errorMessages.size() > 0) {
-					return mapping.getInputForward();
-				}
-				
-				day = Integer.parseInt(datum.substring(8));			// parsing date from string 
-				month = Integer.parseInt(datum.substring(5, 7));
-				year = Integer.parseInt(datum.substring(0, 4));
-				
-				cal.set(Calendar.DATE, day);
-				cal.set(Calendar.MONTH, month - 1);
-				cal.set(Calendar.YEAR, year);
-				
-				cal.add(Calendar.DATE, howMuch);
-				/* check if today is to be set (if howMuch == 0)or not */
-				datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
-
-				request.getSession().setAttribute("referenceday", datum);
-				reportForm.setReferenceday(datum);
-				return mapping.findForward("success");
 			}
 			
 			if (((request.getParameter("task") != null) && 

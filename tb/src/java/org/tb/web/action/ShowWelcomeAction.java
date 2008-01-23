@@ -16,6 +16,7 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Statusreport;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Warning;
@@ -117,6 +118,36 @@ public class ShowWelcomeAction extends DailyReportAction {
 		List<Warning> warnings = new ArrayList<Warning>();
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		
+		// eoc warning
+		List<Employeeorder> employeeorders = new ArrayList<Employeeorder>();
+		employeeorders.addAll(employeeorderDAO.getEmployeeordersForEmployeeordercontentWarning(employeecontract));			
+		
+		for (Employeeorder employeeorder: employeeorders) {
+			if (!employeecontract.getFreelancer() && !employeeorder.getSuborder().getNoEmployeeOrderContent()) {
+				try {
+					if (employeeorder.getEmployeeordercontent() == null) {
+						throw new RuntimeException("null content");
+					} else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_emp() != true && employeeorder.getEmployeecontract().getEmployee().equals(employeecontract.getEmployee())) {
+						Warning warning = new Warning();
+						warning.setSort(getResources(request).getMessage(getLocale(request), "employeeordercontent.thumbdown.text"));
+						warning.setText(employeeorder.getEmployeeOrderAsString());
+						warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
+						warnings.add(warning);
+					} else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_mgmt() != true && employeeorder.getEmployeeordercontent().getContactTechHbt().equals(employeecontract.getEmployee())) {
+						Warning warning = new Warning();
+						warning.setSort(getResources(request).getMessage(getLocale(request), "employeeordercontent.thumbdown.text"));
+						warning.setText(employeeorder.getEmployeeOrderAsString());
+						warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
+						warnings.add(warning);
+					} else {
+						throw new RuntimeException("query suboptimal");
+					}
+				}
+				catch (Exception e) {
+					System.out.println(e);
+				}
+			}
+		}
 		
 		// timereport warning
 		List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);

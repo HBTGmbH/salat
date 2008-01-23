@@ -20,8 +20,8 @@ public class AddStatusReportForm extends ActionForm {
 	
 	private Byte sort;
 	private Byte phase;
-	private String fromDateString;
-	private String untilDateString;
+	private String validFrom;
+	private String validUntil;
 	private String allocator;
 	private Byte trend;
 	private Byte trendstatus;
@@ -278,14 +278,14 @@ public class AddStatusReportForm extends ActionForm {
 	/**
 	 * @return the fromDateString
 	 */
-	public String getFromDateString() {
-		return fromDateString;
+	public String getValidFrom() {
+		return validFrom;
 	}
 	/**
 	 * @param fromDateString the fromDateString to set
 	 */
-	public void setFromDateString(String fromDateString) {
-		this.fromDateString = fromDateString;
+	public void setValidFrom(String fromDateString) {
+		this.validFrom = fromDateString;
 	}
 	/**
 	 * @return the improvement_action
@@ -566,14 +566,14 @@ public class AddStatusReportForm extends ActionForm {
 	/**
 	 * @return the untilDateString
 	 */
-	public String getUntilDateString() {
-		return untilDateString;
+	public String getValidUntil() {
+		return validUntil;
 	}
 	/**
 	 * @param untilDateString the untilDateString to set
 	 */
-	public void setUntilDateString(String untilDateString) {
-		this.untilDateString = untilDateString;
+	public void setValidUntil(String untilDateString) {
+		this.validUntil = untilDateString;
 	}
 	
 	

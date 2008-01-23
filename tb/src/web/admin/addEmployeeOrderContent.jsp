@@ -38,7 +38,6 @@
 			limitField.value = limitField.value.substring(0, limitNum);
 		} 
 	}	
-			
 </script>
 </head>
 <body>
