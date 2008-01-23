@@ -121,7 +121,7 @@ public class EditStatusReportAction extends StatusReportAction {
 		
 		reportForm.setCustomerOrderId(statusreport.getCustomerorder().getId());
 		
-		reportForm.setFromDateString(simpleDateFormat.format(statusreport.getFromdate()));
+		reportForm.setValidFrom(simpleDateFormat.format(statusreport.getFromdate()));
 		
 		reportForm.setImprovement_action(statusreport.getImprovement_action());
 		reportForm.setImprovement_source(statusreport.getImprovement_source());
@@ -157,7 +157,7 @@ public class EditStatusReportAction extends StatusReportAction {
 		reportForm.setTrend(statusreport.getTrend());
 		reportForm.setTrendstatus(statusreport.getTrendstatus());
 		
-		reportForm.setUntilDateString(simpleDateFormat.format(statusreport.getUntildate()));
+		reportForm.setValidUntil(simpleDateFormat.format(statusreport.getUntildate()));
 				
 		
 		return mapping.findForward("success");

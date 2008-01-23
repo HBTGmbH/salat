@@ -543,7 +543,7 @@
 				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
 				<td align="center"><html:link
 					href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
-					<img src="/tb/images/Edit.gif" alt="Edit Employeeorder"
+					<html:img src="/tb/images/Edit.gif" alt="Edit Employeeorder"
 						titleKey="main.headlinedescription.employeeorders.edit.text" />
 				</html:link></td>
 				<html:form action="/DeleteEmployeeorder">

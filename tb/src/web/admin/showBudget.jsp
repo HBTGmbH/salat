@@ -77,27 +77,29 @@ function refresh(form, id) {
 	
 	<c:if test="${employeeAuthorized}">
 			<table class="center backgroundcolor">
-				<td>
-					<html:form action="/ShowBudget?task=calcStructure">
-						<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.Budget.calcStructure.alttext.text">
-							<bean:message key="main.general.button.Budget.calcStructure.text" />
-						</html:submit></td>
-					</html:form>
-				</td>
-				<td>
-					<html:form action="/ShowBudget?task=calcDebit">
-						<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.Budget.calcDebitHours.alttext.text">
-							<bean:message key="main.general.button.Budget.calcDebitHours.text" />
-						</html:submit></td>
-					</html:form>
-				</td>
-				<td>
-					<html:form action="/ShowBudget?task=calcBudget">
-						<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.Budget.calcBudget.alttext.text">
-							<bean:message key="main.general.button.Budget.calcBudget.text" />
-						</html:submit></td>
-					</html:form>
-				</td>
+				<tr>
+					<td>
+						<html:form action="/ShowBudget?task=calcStructure">
+							<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.Budget.calcStructure.alttext.text">
+								<bean:message key="main.general.button.Budget.calcStructure.text" />
+							</html:submit></td>
+						</html:form>
+					</td>
+					<td>
+						<html:form action="/ShowBudget?task=calcDebit">
+							<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.Budget.calcDebitHours.alttext.text">
+								<bean:message key="main.general.button.Budget.calcDebitHours.text" />
+							</html:submit></td>
+						</html:form>
+					</td>
+					<td>
+						<html:form action="/ShowBudget?task=calcBudget">
+							<td class="noBborderStyle" colspan="4"><html:submit styleId="button" titleKey="main.general.button.Budget.calcBudget.alttext.text">
+								<bean:message key="main.general.button.Budget.calcBudget.text" />
+							</html:submit></td>
+						</html:form>
+					</td>
+				</tr>
 			</table>
 	</c:if>
 	<c:if test="${showResult}">
