@@ -15,6 +15,14 @@
 <script type="text/javascript" language="JavaScript">
 	
 			
+	function confirmSendMail(form, sign) {	
+		var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
+		if (agree) {
+			form.action = "/tb/do/ShowRelease?task=sendmail&sign="+sign;
+			form.submit();
+		}
+	}
+	
 	function confirmRelease(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmrelease.text" />");
 		if (agree) {
@@ -85,6 +93,7 @@
 	
 	<html:form action="/ShowRelease">
 	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
+
 			<tr><td class="noBborderStyle" align="left">
 			<span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.release.title.text" />:&nbsp;&nbsp;<p></span>
 			</td></tr><tr>
@@ -342,6 +351,7 @@
 	<br>
 	<br>
 	<br>
+
 	<table class="center backgroundcolor">
 		<tr>
 			<td colspan="2" align="left" class="noBborderStyle"><h3><bean:message
@@ -376,8 +386,11 @@
 						key="main.general.open.text" /></c:if></td>
 					<td align="center">
 						<c:choose>
-							<c:when test="${employeecontract.releaseWarning}">
-								<font color="red"><c:out value="${employeecontract.reportReleaseDateString}" /></font>		
+							<c:when test="${employeecontract.releaseWarning}">		
+								<font color="red"><c:out value="${employeecontract.reportReleaseDateString}" /></font>
+								<c:if test="${loginEmployee.status == 'gf'}">				  
+								  <html:image onclick="confirmSendMail(this.form, '${employeecontract.employee.sign}');return false" src="/tb/images/script.png"><font color="red"><c:out value="${employeecontract.reportReleaseDateString}" /></font></html:image>		
+								</c:if>							
 							</c:when>
 							<c:otherwise>
 								<c:out value="${employeecontract.reportReleaseDateString}" />

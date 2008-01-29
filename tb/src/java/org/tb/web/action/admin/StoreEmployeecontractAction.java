@@ -312,7 +312,11 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					}
 				}
 				
-				
+				if(ecForm.getSupervisorid()==-1){
+					ec.setSupervisor(null);
+				}else{
+					ec.setSupervisor(employeeDAO.getEmployeeById(ecForm.getSupervisorid()));
+				}
 				
 				ec.setTaskDescription(ecForm.getTaskdescription());
 				ec.setFreelancer(ecForm.getFreelancer());

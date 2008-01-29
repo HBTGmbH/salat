@@ -157,7 +157,10 @@
 		<property name="path">
 			
 			
+			<value>file:d:/la/tools/hsqldb/data/taetigkeitsberichte</value>
+			<!--  
 			<value>file:d:/jm/taet/taetigkeitsberichte</value>
+			-->
 			<!--  
 			<value>file:d:/th/hsqldb/data/taetigkeitsberichte</value>
 			-->  

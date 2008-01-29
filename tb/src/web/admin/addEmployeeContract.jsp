@@ -62,7 +62,30 @@
 					</c:otherwise>
 				</c:choose>
 			</td>
-		</tr> 
+		</tr>
+		
+		
+	<tr>
+	  <td align="left" class="noBborderStyle"><b><bean:message
+				key="main.employeecontract.headofdepartment.text" /></b></td>
+	  <td align="left" class="noBborderStyle">
+	 
+		<html:select property="supervisorid" onchange="refresh(this.form)">
+				<html:option value="-1">
+					<bean:message key="main.general.nosupervisor.text" />
+				</html:option>
+				<c:forEach var="employee" items="${employees}">
+					<c:if test="${employee.status == 'bl' || employee.status == 'gf'}">
+						<html:option value="${employee.id}">
+							<c:out value="${employee.name}" />
+						</html:option>
+					</c:if>
+				</c:forEach>				
+			</html:select>
+	</td>
+	</tr>
+		
+		
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.taskdescription.text" /></b></td>

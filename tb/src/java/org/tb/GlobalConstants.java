@@ -197,4 +197,7 @@ public class GlobalConstants {
     
     public static final Integer MINUTES_PER_HOUR = 60;
     
+    public static final char GENDER_MALE = 'm';
+    public static final char GENDER_FEMALE = 'f';
+    
 }

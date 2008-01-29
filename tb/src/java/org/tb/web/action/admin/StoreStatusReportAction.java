@@ -1,6 +1,7 @@
 package org.tb.web.action.admin;
 
 import java.sql.Date;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -22,6 +23,7 @@ import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.web.form.AddStatusReportForm;
+import org.tb.web.util.MailSender;
 
 public class StoreStatusReportAction extends StatusReportAction {
 
@@ -100,7 +102,18 @@ public class StoreStatusReportAction extends StatusReportAction {
 					"Status report not found - please call system administrator.");
 				return mapping.findForward("error");
 			} 
-			
+	// Andreas 		
+			// validation 
+			ActionMessages errorMessages = validateFormDataForRelease(request, reportForm);
+			if (errorMessages.size() > 0) {
+				System.out.println("Errors in REALISE");
+				// set action info
+				request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.notreleased.text"));
+				return mapping.getInputForward();
+			}
+			// save the status report
+			saveStatusReport(mapping, request, reportForm);
+    // Andreas END			
 			if (isReportReadyForRelease(currentReport.getId(), statusReportDAO, request) && formEntriesEqualDB(currentReport.getId(), reportForm)) {						
 				
 				// get it fresh from db
@@ -124,6 +137,9 @@ public class StoreStatusReportAction extends StatusReportAction {
 				
 				// set action info
 				request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.released.text"));
+				
+				// send acknowledgement email for mitarbeiter wich have his statusberich released 
+				MailSender.sendStatusReportReleasedEmail(currentReport);
 				
 				// set current report
 				request.getSession().setAttribute("currentStatusReport", currentReport);
@@ -275,125 +291,10 @@ public class StoreStatusReportAction extends StatusReportAction {
 		// action save
 		if ((request.getParameter("action") != null)
 				&& (request.getParameter("action").equals("save"))) {
-			
-			// existing or new one?
-			Statusreport currentReport = (Statusreport) request.getSession().getAttribute("currentStatusReport");
-
-			if (currentReport == null) {
-				currentReport = new Statusreport();
-			} else {
-				// get it fresh from db
-				currentReport = statusReportDAO.getStatusReportById(currentReport.getId());
-			}
-			
-			// belongs to which customerorder?
-			Customerorder customerorder = customerorderDAO.getCustomerorderById(reportForm.getCustomerOrderId());
-			if (customerorder == null) {
-				request.setAttribute("errorMessage", 
-					"Selected customer order not found - please call system administrator.");
-				return mapping.findForward("error");
-			}
-			
-			// validate
-			ActionMessages errorMessages = validateFormData(request, reportForm);
-			if (errorMessages.size() > 0) {
-				// set action info
-				request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.notsaved.text"));
-				return mapping.getInputForward();
-			}
-			
-			// set attributes:			
-			currentReport.setCustomerorder(customerorder);
-			
-			currentReport.setSort(reportForm.getSort());
-			
-			currentReport.setSender(employeeDAO.getEmployeeById(reportForm.getSenderId()));
-			currentReport.setRecipient(employeeDAO.getEmployeeById(reportForm.getRecipientId()));
-			
-			// get dates from validate later
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-			Date reportFromDate = new Date(simpleDateFormat.parse(reportForm.getValidFrom()).getTime());
-			Date reportUntilDate = new Date(simpleDateFormat.parse(reportForm.getValidUntil()).getTime());
-			currentReport.setFromdate(reportFromDate);
-			currentReport.setUntildate(reportUntilDate);
-			
-			currentReport.setPhase(reportForm.getPhase());
-			
-			currentReport.setAllocator(reportForm.getAllocator());
-			
-			currentReport.setTrend(reportForm.getTrend());
-			currentReport.setTrendstatus(reportForm.getTrendstatus());
-			
-			currentReport.setNeedforaction_source(reportForm.getNeedforaction_source());
-			currentReport.setNeedforaction_status(reportForm.getNeedforaction_status());
-			currentReport.setNeedforaction_text(reportForm.getNeedforaction_text());
-			
-			currentReport.setAim_action(reportForm.getAim_action());
-			currentReport.setAim_source(reportForm.getAim_source());
-			currentReport.setAim_status(reportForm.getAim_status());
-			currentReport.setAim_text(reportForm.getAim_text());
-			
-			currentReport.setBudget_resources_date_action(reportForm.getBudget_resources_date_action());
-			currentReport.setBudget_resources_date_source(reportForm.getBudget_resources_date_source());
-			currentReport.setBudget_resources_date_status(reportForm.getBudget_resources_date_status());
-			currentReport.setBudget_resources_date_text(reportForm.getBudget_resources_date_text());
-			
-			currentReport.setRiskmonitoring_action(reportForm.getRiskmonitoring_action());
-			currentReport.setRiskmonitoring_source(reportForm.getRiskmonitoring_source());
-			currentReport.setRiskmonitoring_status(reportForm.getRiskmonitoring_status());
-			currentReport.setRiskmonitoring_text(reportForm.getRiskmonitoring_text());
-			
-			currentReport.setChangedirective_action(reportForm.getChangedirective_action());
-			currentReport.setChangedirective_source(reportForm.getChangedirective_source());
-			currentReport.setChangedirective_status(reportForm.getChangedirective_status());
-			currentReport.setChangedirective_text(reportForm.getChangedirective_text());
-			
-			currentReport.setCommunication_action(reportForm.getCommunication_action());
-			currentReport.setCommunication_source(reportForm.getCommunication_source());
-			currentReport.setCommunication_status(reportForm.getCommunication_status());
-			currentReport.setCommunication_text(reportForm.getCommunication_text());
-			
-			currentReport.setImprovement_action(reportForm.getImprovement_action());
-			currentReport.setImprovement_source(reportForm.getImprovement_source());
-			currentReport.setImprovement_status(reportForm.getImprovement_status());
-			currentReport.setImprovement_text(reportForm.getImprovement_text());
-			
-			currentReport.setMiscellaneous_action(reportForm.getMiscellaneous_action());
-			currentReport.setMiscellaneous_source(reportForm.getMiscellaneous_source());
-			currentReport.setMiscellaneous_status(reportForm.getMiscellaneous_status());
-			currentReport.setMiscellaneous_text(reportForm.getMiscellaneous_text());
-			
-			currentReport.setNotes(reportForm.getNotes());
-			
-			//save
-			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-			statusReportDAO.save(currentReport, loginEmployee);
-			
-			// set action info
-			request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.saved.text"));
-			
-			// set current report
-			request.getSession().setAttribute("currentStatusReport", currentReport);
-			
-			// set selected customer order
-			request.getSession().setAttribute("selectedCustomerOrder", customerorder);
-			
-			// set report status
-			request.getSession().setAttribute("reportStatus", "id "+currentReport.getId());
-			
-			// set overall status
-			reportForm.setOverallStatus(currentReport.getOverallStatus());
-			
-			// is report ready for release
-			request.getSession().setAttribute("isReportReadyForRelease", isReportReadyForRelease(currentReport.getId(), statusReportDAO, request));
-			
-			// is report ready for acceptance
-			request.getSession().setAttribute("isReportReadyForAcceptance", isReportReadyForAcceptance(currentReport.getId(), statusReportDAO, request));
-
-			
-			return mapping.findForward("success");
-			
-		} // end action save
+		
+			return saveStatusReport(mapping, request, reportForm);
+		}
+		// end action save
 		
 		
 		// action back
@@ -473,6 +374,136 @@ public class StoreStatusReportAction extends StatusReportAction {
 		}
 
 	}
+
+	/** 
+	 * Saves the status report
+	 * @param mapping
+	 * @param request
+	 * @param reportForm
+	 * @return
+	 * @throws ParseException
+	 */
+	private ActionForward saveStatusReport(ActionMapping mapping,
+			HttpServletRequest request, AddStatusReportForm reportForm)
+			throws ParseException {
+		// existing or new one?
+		Statusreport currentReport = (Statusreport) request.getSession().getAttribute("currentStatusReport");
+
+		if (currentReport == null) {
+			currentReport = new Statusreport();
+		} else {
+			// get it fresh from db
+			currentReport = statusReportDAO.getStatusReportById(currentReport.getId());
+		}
+		
+		// belongs to which customerorder?
+		Customerorder customerorder = customerorderDAO.getCustomerorderById(reportForm.getCustomerOrderId());
+		if (customerorder == null) {
+			request.setAttribute("errorMessage", 
+				"Selected customer order not found - please call system administrator.");
+			return mapping.findForward("error");
+		}
+		
+		// validate
+		ActionMessages errorMessages = validateFormDataForSave(request, reportForm);
+		if (errorMessages.size() > 0) {
+			// set action info
+			request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.notsaved.text"));
+			return mapping.getInputForward();
+		}
+		
+		// set attributes:			
+		currentReport.setCustomerorder(customerorder);
+		
+		currentReport.setSort(reportForm.getSort());
+		
+		currentReport.setSender(employeeDAO.getEmployeeById(reportForm.getSenderId()));
+		currentReport.setRecipient(employeeDAO.getEmployeeById(reportForm.getRecipientId()));
+		
+		// get dates from validate later
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date reportFromDate = new Date(simpleDateFormat.parse(reportForm.getValidFrom()).getTime());
+		Date reportUntilDate = new Date(simpleDateFormat.parse(reportForm.getValidUntil()).getTime());
+		currentReport.setFromdate(reportFromDate);
+		currentReport.setUntildate(reportUntilDate);
+		
+		currentReport.setPhase(reportForm.getPhase());
+		
+		currentReport.setAllocator(reportForm.getAllocator());
+		
+		currentReport.setTrend(reportForm.getTrend());
+		currentReport.setTrendstatus(reportForm.getTrendstatus());
+		
+		currentReport.setNeedforaction_source(reportForm.getNeedforaction_source());
+		currentReport.setNeedforaction_status(reportForm.getNeedforaction_status());
+		currentReport.setNeedforaction_text(reportForm.getNeedforaction_text());
+		
+		currentReport.setAim_action(reportForm.getAim_action());
+		currentReport.setAim_source(reportForm.getAim_source());
+		currentReport.setAim_status(reportForm.getAim_status());
+		currentReport.setAim_text(reportForm.getAim_text());
+		
+		currentReport.setBudget_resources_date_action(reportForm.getBudget_resources_date_action());
+		currentReport.setBudget_resources_date_source(reportForm.getBudget_resources_date_source());
+		currentReport.setBudget_resources_date_status(reportForm.getBudget_resources_date_status());
+		currentReport.setBudget_resources_date_text(reportForm.getBudget_resources_date_text());
+		
+		currentReport.setRiskmonitoring_action(reportForm.getRiskmonitoring_action());
+		currentReport.setRiskmonitoring_source(reportForm.getRiskmonitoring_source());
+		currentReport.setRiskmonitoring_status(reportForm.getRiskmonitoring_status());
+		currentReport.setRiskmonitoring_text(reportForm.getRiskmonitoring_text());
+		
+		currentReport.setChangedirective_action(reportForm.getChangedirective_action());
+		currentReport.setChangedirective_source(reportForm.getChangedirective_source());
+		currentReport.setChangedirective_status(reportForm.getChangedirective_status());
+		currentReport.setChangedirective_text(reportForm.getChangedirective_text());
+		
+		currentReport.setCommunication_action(reportForm.getCommunication_action());
+		currentReport.setCommunication_source(reportForm.getCommunication_source());
+		currentReport.setCommunication_status(reportForm.getCommunication_status());
+		currentReport.setCommunication_text(reportForm.getCommunication_text());
+		
+		currentReport.setImprovement_action(reportForm.getImprovement_action());
+		currentReport.setImprovement_source(reportForm.getImprovement_source());
+		currentReport.setImprovement_status(reportForm.getImprovement_status());
+		currentReport.setImprovement_text(reportForm.getImprovement_text());
+		
+		currentReport.setMiscellaneous_action(reportForm.getMiscellaneous_action());
+		currentReport.setMiscellaneous_source(reportForm.getMiscellaneous_source());
+		currentReport.setMiscellaneous_status(reportForm.getMiscellaneous_status());
+		currentReport.setMiscellaneous_text(reportForm.getMiscellaneous_text());
+		
+		currentReport.setNotes(reportForm.getNotes());
+		
+		//save
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		statusReportDAO.save(currentReport, loginEmployee);
+		
+		// set action info
+		request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.saved.text"));
+		
+		// set current report
+		request.getSession().setAttribute("currentStatusReport", currentReport);
+		
+		// set selected customer order
+		request.getSession().setAttribute("selectedCustomerOrder", customerorder);
+		
+		// set report status
+		request.getSession().setAttribute("reportStatus", "id "+currentReport.getId());
+		
+		// set overall status
+		reportForm.setOverallStatus(currentReport.getOverallStatus());
+		
+		// is report ready for release
+		request.getSession().setAttribute("isReportReadyForRelease", isReportReadyForRelease(currentReport.getId(), statusReportDAO, request));
+		
+		// is report ready for acceptance
+		request.getSession().setAttribute("isReportReadyForAcceptance", isReportReadyForAcceptance(currentReport.getId(), statusReportDAO, request));
+
+		
+		return mapping.findForward("success");
+	}
+	
 	
 	private ActionMessages valiDate(HttpServletRequest request, AddStatusReportForm reportForm, String which) {
 		ActionMessages errors = getErrors(request);
@@ -508,6 +539,392 @@ public class StoreStatusReportAction extends StatusReportAction {
 	 * @param reportForm
 	 * @return Returns the errors as {@link ActionMessages}.
 	 */
+	private ActionMessages validateFormDataForRelease(HttpServletRequest request,
+			AddStatusReportForm reportForm) {
+		System.out.println("Button Freigabe was cklicked!!!");
+		ActionMessages errors = getErrors(request);
+		if (errors == null)
+			errors = new ActionMessages();
+		
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		
+		// check dates
+		String fromDateString = reportForm.getValidFrom();
+		java.util.Date fromDate = null;
+		try {
+			fromDate = simpleDateFormat.parse(fromDateString);
+		} catch (java.text.ParseException exception) {
+			errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.invalid.text"));
+		}
+		String untilDateString = reportForm.getValidUntil();
+		java.util.Date untilDate = null;
+		try {
+			untilDate = simpleDateFormat.parse(untilDateString);
+		} catch (java.text.ParseException exception) {
+			errors.add("untildate", new ActionMessage("form.statusreport.error.untildate.invalid.text"));
+		}
+		if (fromDate != null && untilDate != null && !fromDate.before(untilDate)) {
+			errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.notbefore.untildate.text"));
+		}
+		
+		// check allocator
+		String allocator = reportForm.getAllocator();
+		if (allocator.length() > GlobalConstants.FORM_MAX_CHAR_TEXTFIELD) {
+			errors.add("allocator", new ActionMessage("form.error.toomanychars.64.text"));
+		}
+	
+		// check trend
+		if (reportForm.getTrend() == null || reportForm.getTrend() == (byte)0) {
+			errors.add("trend", new ActionMessage("form.statusreport.error.trend.notselected.text"));
+		}
+		
+		String text;
+		String source;
+		String action;
+		
+		// check need for action
+		text = reportForm.getNeedforaction_text();
+		source = reportForm.getNeedforaction_source();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("needforaction_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (text.trim().equals("")) {
+			errors.add("needforaction_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("needforaction_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check aim
+		text = reportForm.getAim_text();
+		source = reportForm.getAim_source();
+		action = reportForm.getAim_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("aim_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (text.trim().equals("")) {
+			errors.add("aim_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("aim_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("aim_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check budget resources date
+		text = reportForm.getBudget_resources_date_text();
+		source = reportForm.getBudget_resources_date_source();
+		action = reportForm.getBudget_resources_date_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("budget_resources_date_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (text.trim().equals("")) {
+			errors.add("budget_resources_date_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("budget_resources_date_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("budget_resources_date_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check risk monitoring
+		text = reportForm.getRiskmonitoring_text();
+		source = reportForm.getRiskmonitoring_source();
+		action = reportForm.getRiskmonitoring_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("riskmonitoring_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (text.trim().equals("")) {
+			errors.add("riskmonitoring_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("riskmonitoring_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("riskmonitoring_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check change directive
+		text = reportForm.getChangedirective_text();
+		source = reportForm.getChangedirective_source();
+		action = reportForm.getChangedirective_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("changedirective_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (text.trim().equals("")) {
+			errors.add("changedirective_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("changedirective_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("changedirective_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check communication
+		text = reportForm.getCommunication_text();
+		source = reportForm.getCommunication_source();
+		action = reportForm.getCommunication_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("communication_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (text.trim().equals("")) {
+			errors.add("communication_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("communication_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("communication_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check improvement
+		text = reportForm.getImprovement_text();
+		source = reportForm.getImprovement_source();
+		action = reportForm.getImprovement_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("improvement_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (text.trim().equals("")) {
+			errors.add("improvement_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("improvement_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("improvement_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+				
+		// check miscellaneous
+		text = reportForm.getMiscellaneous_text();
+		source = reportForm.getMiscellaneous_source();
+		action = reportForm.getMiscellaneous_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("miscellaneous_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("miscellaneous_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("miscellaneous_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check notes
+		text = reportForm.getNotes();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("notes", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		
+				
+		saveErrors(request, errors);
+
+		return errors;
+	}
+	
+	/**
+	 * Validates the form data only for save button
+	 * 
+	 * @param request
+	 * @param reportForm
+	 * @return Returns the errors as {@link ActionMessages}.
+	 */
+	private ActionMessages validateFormDataForSave(HttpServletRequest request,
+			AddStatusReportForm reportForm) {
+		System.out.println("Button Save was cklicked!!!");
+		ActionMessages errors = getErrors(request);
+		if (errors == null)
+			errors = new ActionMessages();
+		
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		
+		// check dates
+		String fromDateString = reportForm.getValidFrom();
+		java.util.Date fromDate = null;
+		try {
+			fromDate = simpleDateFormat.parse(fromDateString);
+		} catch (java.text.ParseException exception) {
+			errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.invalid.text"));
+		}
+		String untilDateString = reportForm.getValidUntil();
+		java.util.Date untilDate = null;
+		try {
+			untilDate = simpleDateFormat.parse(untilDateString);
+		} catch (java.text.ParseException exception) {
+			errors.add("untildate", new ActionMessage("form.statusreport.error.untildate.invalid.text"));
+		}
+		if (fromDate != null && untilDate != null && !fromDate.before(untilDate)) {
+			errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.notbefore.untildate.text"));
+		}
+		
+		// check allocator
+		String allocator = reportForm.getAllocator();
+		if (allocator.length() > GlobalConstants.FORM_MAX_CHAR_TEXTFIELD) {
+			errors.add("allocator", new ActionMessage("form.error.toomanychars.64.text"));
+		}
+	
+		// check trend
+		/*if (reportForm.getTrend() == null || reportForm.getTrend() == (byte)0) {
+			errors.add("trend", new ActionMessage("form.statusreport.error.trend.notselected.text"));
+		}*/
+		
+		String text;
+		String source;
+		String action;
+		
+		// check need for action
+		text = reportForm.getNeedforaction_text();
+		source = reportForm.getNeedforaction_source();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("needforaction_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		/*if (text.trim().equals("")) {
+			errors.add("needforaction_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}*/
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("needforaction_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check aim
+		text = reportForm.getAim_text();
+		source = reportForm.getAim_source();
+		action = reportForm.getAim_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("aim_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		/*if (text.trim().equals("")) {
+			errors.add("aim_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}*/
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("aim_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("aim_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check budget resources date
+		text = reportForm.getBudget_resources_date_text();
+		source = reportForm.getBudget_resources_date_source();
+		action = reportForm.getBudget_resources_date_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("budget_resources_date_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		/*if (text.trim().equals("")) {
+			errors.add("budget_resources_date_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}*/
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("budget_resources_date_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("budget_resources_date_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check risk monitoring
+		text = reportForm.getRiskmonitoring_text();
+		source = reportForm.getRiskmonitoring_source();
+		action = reportForm.getRiskmonitoring_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("riskmonitoring_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		/*
+		if (text.trim().equals("")) {
+			errors.add("riskmonitoring_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}*/
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("riskmonitoring_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("riskmonitoring_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check change directive
+		text = reportForm.getChangedirective_text();
+		source = reportForm.getChangedirective_source();
+		action = reportForm.getChangedirective_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("changedirective_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		/*if (text.trim().equals("")) {
+			errors.add("changedirective_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}*/
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("changedirective_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("changedirective_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check communication
+		text = reportForm.getCommunication_text();
+		source = reportForm.getCommunication_source();
+		action = reportForm.getCommunication_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("communication_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+	/*
+		if (text.trim().equals("")) {
+			errors.add("communication_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}*/
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("communication_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("communication_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check improvement
+		text = reportForm.getImprovement_text();
+		source = reportForm.getImprovement_source();
+		action = reportForm.getImprovement_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("improvement_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		/*if (text.trim().equals("")) {
+			errors.add("improvement_text", new ActionMessage("form.error.mandatoryfield.text"));
+		}*/
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("improvement_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("improvement_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+				
+		// check miscellaneous
+		text = reportForm.getMiscellaneous_text();
+		source = reportForm.getMiscellaneous_source();
+		action = reportForm.getMiscellaneous_action();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("miscellaneous_text", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("miscellaneous_source", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
+			errors.add("miscellaneous_action", new ActionMessage("form.error.toomanychars.256.text"));
+		}
+		
+		// check notes
+		text = reportForm.getNotes();
+		if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
+			errors.add("notes", new ActionMessage("form.error.toomanychars.2048.text"));
+		}
+		
+				
+		saveErrors(request, errors);
+
+		return errors;
+	}
+	
+	
+	/*
+	/**
+	 * Validates the form data.
+	 * 
+	 * @param request
+	 * @param reportForm
+	 * @return Returns the errors as {@link ActionMessages}.
+	 *//*
 	private ActionMessages validateFormData(HttpServletRequest request,
 			AddStatusReportForm reportForm) {
 
@@ -691,5 +1108,5 @@ public class StoreStatusReportAction extends StatusReportAction {
 
 		return errors;
 	}
-
+*/
 }

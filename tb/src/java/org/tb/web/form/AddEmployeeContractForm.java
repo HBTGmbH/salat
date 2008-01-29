@@ -28,6 +28,7 @@ public class AddEmployeeContractForm extends ActionForm {
 	private Double dailyworkingtime;
 	private Integer yearlyvacation;
 	private long employee;
+	private long supervisorid;
 	private String initialOvertime;
 	private String newOvertime;
 	private String newOvertimeComment;
@@ -200,6 +201,14 @@ public class AddEmployeeContractForm extends ActionForm {
 
 		// actually, no checks here
 		return errors;
+	}
+
+	public long getSupervisorid() {
+		return supervisorid;
+	}
+
+	public void setSupervisorid(long supervisorid) {
+		this.supervisorid = supervisorid;
 	}
 
 }

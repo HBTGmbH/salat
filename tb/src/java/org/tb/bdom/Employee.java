@@ -6,7 +6,11 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.tb.util.MD5Util;
 
 /**
@@ -25,7 +29,9 @@ public class Employee implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private long id;
+	
 
+	
 	/** registration first and last name of the employee */
 	private String loginname;
 
@@ -276,5 +282,7 @@ public class Employee implements Serializable {
 	public void setUpdatecounter(final Integer updatecounter) {
 		this.updatecounter = updatecounter;
 	}
+
+	
 
 }

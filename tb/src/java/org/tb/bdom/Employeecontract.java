@@ -12,6 +12,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
@@ -36,6 +37,12 @@ public class Employeecontract implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private long id;
+	
+	/** id of the supervisor */
+	@ManyToOne
+	@JoinColumn(name="SUPERVISOR_ID")
+	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	private Employee supervisor;
 	
 	/** valid from date */
 	private Date validFrom;
@@ -499,5 +506,13 @@ public class Employeecontract implements Serializable {
 			acceptanceWarning = true;
 		}
 		return acceptanceWarning;
+	}
+
+	public Employee getSupervisor() {
+		return supervisor;
+	}
+
+	public void setSupervisor(Employee supervisor) {
+		this.supervisor = supervisor;
 	}
 }

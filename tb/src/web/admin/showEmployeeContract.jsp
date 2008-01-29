@@ -91,6 +91,7 @@
 				property="show" onclick="refresh(this.form)" /> </td>
 	</tr>
 </html:form>
+
 	<bean:size id="employeecontractsSize" name="employeecontracts" />
 	<c:if test="${employeecontractsSize>10}">
 		<c:if test="${employeeAuthorized}">
@@ -115,6 +116,9 @@
 		<th align="left"
 			title="<bean:message key="main.headlinedescription.employeecontracts.taskdescription.text" />"><b><bean:message
 			key="main.employeecontract.taskdescription.text" /></b></th>
+		<th align="left"
+			title="<bean:message key="main.headlinedescription.employeecontracts.headofdepartment.text" />"><b><bean:message
+			key="main.employeecontract.headofdepartment.text" /></b></th>
 		<th align="left"
 			title="<bean:message key="main.headlinedescription.employeecontracts.validfrom.text" />"><b><bean:message
 			key="main.employeecontract.validfrom.text" /></b></th>
@@ -198,6 +202,8 @@
 				<c:when test="${!employeecontract.currentlyValid}">
 					<td style="color:gray"><c:out value="${employeecontract.employee.name}" /></td>
 					<td style="color:gray"><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
+<%--	änderung				--%>
+					<td style="color:gray"><c:out value="${employeecontract.supervisor.name}" /></td>
 					<td style="color:gray"><c:out value="${employeecontract.validFrom}" /></td>
 					<td style="color:gray">
 						<c:choose>
@@ -219,6 +225,8 @@
 				<c:otherwise>
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
+	<%--	änderung				--%>
+					<td><c:out value="${employeecontract.supervisor.name}" /></td>
 					<td><c:out value="${employeecontract.validFrom}" /></td>
 					<td>
 						<c:choose>
