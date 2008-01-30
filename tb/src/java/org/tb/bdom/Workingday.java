@@ -29,7 +29,6 @@ public class Workingday implements Serializable {
 	/** Employeecontract */
 	@ManyToOne
 	@JoinColumn(name="EMPLOYEECONTRACT_ID")
-	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employeecontract employeecontract;
 	
 	/** Date */
