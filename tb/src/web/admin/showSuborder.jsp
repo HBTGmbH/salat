@@ -503,7 +503,7 @@
 													&nbsp;
 												</c:when>
 										<c:otherwise>
-											<c:out value="${suborder.hourly_rate}" />&nbsp;<c:out
+											<fmt:formatNumber value="${suborder.hourly_rate}" minFractionDigits="2"/>&nbsp;<c:out
 												value="${suborder.currency}" />
 										</c:otherwise>
 									</c:choose></td>
@@ -611,8 +611,7 @@
 											<bean:message key="main.suborder.invoice.undefined.text" />
 										</c:when>
 									</c:choose></td>
-									<td style="color:red"><c:out
-										value="${suborder.hourly_rate}" /> <c:out
+									<td style="color:red"><fmt:formatNumber value="${suborder.hourly_rate}" minFractionDigits="2"/> <c:out
 										value="${suborder.currency}" /></td>
 								</c:when>
 								<c:otherwise>
@@ -632,7 +631,7 @@
 													&nbsp;
 												</c:when>
 										<c:otherwise>
-											<c:out value="${suborder.hourly_rate}" />&nbsp;<c:out
+											<fmt:formatNumber value="${suborder.hourly_rate}" minFractionDigits="2"/>&nbsp;<c:out
 												value="${suborder.currency}" />
 										</c:otherwise>
 									</c:choose></td>

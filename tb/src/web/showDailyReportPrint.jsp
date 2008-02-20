@@ -169,8 +169,7 @@
 					value="${timereport.durationminutes}" /></c:if><c:if test="${timereport.durationminutes eq '0'}">00</c:if></td>
 
 				<!-- Kosten -->
-				<td class="matrix" align="center"><c:out
-					value="${timereport.costs}" /></td>
+				<td class="matrix" align="center"><fmt:formatNumber value="${timereport.costs}" minFractionDigits="2"/></td>
 
 			</tr>
 
@@ -191,8 +190,8 @@
 					value="${labortime}"></c:out></b></th>
 			</c:otherwise>
 		</c:choose>
-		<th class="matrix" align="center"><b><c:out
-			value="${dailycosts}"></c:out></b></th>
+		<th class="matrix" align="center"><b>
+		<fmt:formatNumber minFractionDigits="2"	value="${dailycosts}"/></b></th>
 	</tr>
 </table>
 </body>

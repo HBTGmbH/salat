@@ -83,7 +83,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
 	}
-	
+  
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
 	}

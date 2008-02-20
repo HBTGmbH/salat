@@ -1,9 +1,14 @@
 package org.tb.web.action;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -15,6 +20,12 @@ import java.util.StringTokenizer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -40,10 +51,11 @@ import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowInvoiceForm;
+import org.tb.web.util.ExcelArchivirer;
 import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
 import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
 
-import sun.security.jca.GetInstance;
+import com.sun.org.apache.bcel.internal.Constants;
 
 public class ShowInvoiceAction extends DailyReportAction {
 
@@ -290,13 +302,15 @@ public class ShowInvoiceAction extends DailyReportAction {
 					throw new RuntimeException("no view type selected");
 				}
 
-//				invoiceForm.setCustomername(customerOrder.getCustomer()
-//						.getName());
-//				invoiceForm.setCustomeraddress(customerOrder.getCustomer()
-//						.getAddress());
-				
-				request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
-				request.getSession().setAttribute("customeraddress", customerOrder.getCustomer().getAddress());
+				// invoiceForm.setCustomername(customerOrder.getCustomer()
+				// .getName());
+				// invoiceForm.setCustomeraddress(customerOrder.getCustomer()
+				// .getAddress());
+
+				request.getSession().setAttribute("customername",
+						customerOrder.getCustomer().getName());
+				request.getSession().setAttribute("customeraddress",
+						customerOrder.getCustomer().getAddress());
 
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.setTime(dateFirst);
@@ -348,14 +362,16 @@ public class ShowInvoiceAction extends DailyReportAction {
 														invoiceForm.getOrder())
 												.getId()));
 			}
-			
-			/* Delete resultset if the customerorder of the invoice form has changed
-			 * if(request.getSession().getAttribute("viewhelpers") != null){
-				List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList = (List<InvoiceSuborderViewHelper>) request.getSession().getAttribute("viewhelpers");
-				invoiceSuborderViewHelperList.get(0).getParentorder().equals(customerorderDAO.getCustomerorderBySign(invoiceForm.getOrder()));
-			}*/
-			
-			
+
+			/*
+			 * Delete resultset if the customerorder of the invoice form has
+			 * changed if(request.getSession().getAttribute("viewhelpers") !=
+			 * null){ List<InvoiceSuborderViewHelper>
+			 * invoiceSuborderViewHelperList = (List<InvoiceSuborderViewHelper>)
+			 * request.getSession().getAttribute("viewhelpers");
+			 * invoiceSuborderViewHelperList.get(0).getParentorder().equals(customerorderDAO.getCustomerorderBySign(invoiceForm.getOrder())); }
+			 */
+
 			// activate subcheckboxes for timereport-attributes
 			if (invoiceForm.isTimereportsbox()) {
 				request.getSession().setAttribute("timereportsubboxes", true);
@@ -404,26 +420,39 @@ public class ShowInvoiceAction extends DailyReportAction {
 					invoiceForm.getMwst());
 			request.getSession().setAttribute("optionsuborderdescription",
 					invoiceForm.getSuborderdescription());
-//			if (invoiceForm.getCustomeraddress() != null
-//					&& invoiceForm.getCustomername() != null) {
-				request.getSession().setAttribute("customername",
-						invoiceForm.getCustomername());
-				String customeraddress = invoiceForm.getCustomeraddress();
-				request.getSession().setAttribute("customeraddress",
-						customeraddress);
-//			}
+			// if (invoiceForm.getCustomeraddress() != null
+			// && invoiceForm.getCustomername() != null) {
+			request.getSession().setAttribute("customername",
+					invoiceForm.getCustomername());
+			String customeraddress = invoiceForm.getCustomeraddress();
+			request.getSession().setAttribute("customeraddress",
+					customeraddress);
+			// }
 
 			return mapping.findForward("success");
+		}
+		// 
+
+		if ((request.getParameter("task") != null)
+				&& (request.getParameter("task").equals("export"))) {
+			
+			ExcelArchivirer.exportInvoice(mapping, form, request, response);
+			
+			
+			return mapping.getInputForward();
+
 		}
 
 		// call on InvoiceView with parameter print
 		if ((request.getParameter("task") != null)
 				&& (request.getParameter("task").equals("print"))) {
+
 			String[] suborderIdArray = invoiceForm.getSuborderIdArray();
 			String[] timereportIdArray = invoiceForm.getTimereportIdArray();
 			List<InvoiceSuborderViewHelper> suborderViewhelperList = (List<InvoiceSuborderViewHelper>) request
 					.getSession().getAttribute("viewhelpers");
 			for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : suborderViewhelperList) {
+			   System.out.println(invoiceSuborderViewHelper.getSignAndDescription());
 				for (int i = 0; i < suborderIdArray.length; i++) {
 					if (suborderIdArray[i].equals(String
 							.valueOf(invoiceSuborderViewHelper.getId()))) {
@@ -503,7 +532,7 @@ public class ShowInvoiceAction extends DailyReportAction {
 
 			return mapping.findForward("print");
 		}
-
+		// END
 		// call on InvoiceView with any parameter to forward or go back
 		if (request.getParameter("task") != null) {
 			// just go back to main menu

@@ -126,7 +126,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 		}
 
 		TimereportHelper th = new TimereportHelper();
-
+		// Release Action
 		if ((request.getParameter("task") != null)
 				&& ((request.getParameter("task").equals("release")))) {
 
@@ -135,6 +135,8 @@ public class ShowReleaseAction extends LoginRequiredAction {
 					releaseForm, employeecontract);
 			if (errorMessages.size() > 0) {
 				return mapping.getInputForward();
+			} else {
+
 			}
 
 			// set selected date in session
@@ -172,22 +174,91 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			// store new release date in employee contract
 			employeecontract.setReportReleaseDate(sqlReleaseDate);
 			employeecontractDAO.save(employeecontract, loginEmployee);
+			// contract was saved after RELEASE
+			// build recipient for releasemail for BL
+
+			System.out
+					.println("HURRRAAAAAAAAAAAAAAAAAA------------------------------");
+			System.out.println("DER ANGEMELDETE :" + loginEmployee.getName());
+			System.out.println("DER FREIGEGEBENE :"
+					+ employeecontract.getEmployee().getName());
+			if (employeecontract.getSupervisor() != null) {
+				System.out.println("SEIN BL :"
+						+ employeecontract.getSupervisor().getName());
+				Employee recipient = employeecontract.getSupervisor();
+				Employee from = employeecontract.getEmployee();
+				MailSender.sendSalatBuchungenReleasedMail(recipient, from);
+			} else {
+				System.out.println("KEIN BL ");
+			}
+			// check supervisor must not be null
+			// if(recipient!=null){
+			// String to = recipient.getName();
+			// String from;
+			// sender
+			// from = loginEmployee.getName();
+			// System.out.println("MAIL GO to:" + to);
+			// System.out.println("Go from:" + from);
+			// MailSender.sendSalatBuchungenToReleaseMail(recipient, from);
+			// }
 
 		}
+		// End Realese Action
 
 		if ((request.getParameter("task") != null)
-				&& ((request.getParameter("task").equals("sendmail")))) {
-         
-			// build recipient for mail  
+				&& ((request.getParameter("task").equals("sendreleasemail")))) {
+
+			// build recipient for releasemail
 			Employee loginEmployee = (Employee) request.getSession()
 					.getAttribute("loginEmployee");
 			Employee recipient = employeeDAO.getEmployeeBySign(request
 					.getParameter("sign"));
-			String from;
-			// sender
-			from = loginEmployee.getName();
-			
-			MailSender.sendSalatBuchungenToReleaseMail(recipient, from);
+
+			// * revipient = Empfaenger, loginEmployee = Absender
+			MailSender
+					.sendSalatBuchungenToReleaseMail(recipient, loginEmployee);
+
+			request
+					.setAttribute(
+							"actionInfo",
+							getResources(request)
+									.getMessage(getLocale(request),
+											"main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
+
+		}
+		if ((request.getParameter("task") != null)
+				&& ((request.getParameter("task").equals("sendacceptancemail")))) {
+
+			// build recipient for acceptancemail
+			Employee loginEmployee = (Employee) request.getSession()
+					.getAttribute("loginEmployee");
+			// Contract from Employee
+			Employee contEmployee = employeeDAO.getEmployeeBySign(request
+					.getParameter("sign"));
+			System.out.println(contEmployee.getName());
+			Employeecontract currentEmployeeContract = employeecontractDAO
+					.getEmployeeContractByEmployeeIdAndDate(contEmployee
+							.getId(), new Date());
+
+			// System.out.println("DER CONTRAKT" +
+			// temp.getSupervisor().getName());
+
+			// BL
+			Employee recipient = currentEmployeeContract.getSupervisor();
+			// sender of the mail
+			if (recipient != null) {
+				Employee from = loginEmployee;
+				MailSender.sendSalatBuchungenToAcceptanceMail(recipient,
+						contEmployee, from);
+				request
+				.setAttribute(
+						"actionInfo",
+						getResources(request)
+								.getMessage(getLocale(request),
+										"main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
+			} else {
+				// do nothing, Supervisor must not be null
+			}
 
 		}
 

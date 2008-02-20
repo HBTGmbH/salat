@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.util.Date;
 import java.util.Calendar;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
 import org.apache.struts.action.ActionErrors;
@@ -296,7 +297,10 @@ public class AddDailyReportForm extends ActionForm {
 		selectedMinuteDuration = 0;
 		referenceday = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		hours = 8.0;
-		costs = 0.0;
+		DecimalFormat df = new DecimalFormat( "0,00" );
+		costs = 0.0; 
+		costs = Double.valueOf(df.format(costs)); 
+		System.out.println( df.format(costs) );       
 		numberOfSerialDays = 0;
 //		employeecontractId = (Long) request.getSession().getAttribute("loginEmployeeContractId");
 	}

@@ -118,7 +118,7 @@
 			key="main.employeecontract.taskdescription.text" /></b></th>
 		<th align="left"
 			title="<bean:message key="main.headlinedescription.employeecontracts.headofdepartment.text" />"><b><bean:message
-			key="main.employeecontract.headofdepartment.text" /></b></th>
+			key="main.employeecontract.supervisor.text" /></b></th>
 		<th align="left"
 			title="<bean:message key="main.headlinedescription.employeecontracts.validfrom.text" />"><b><bean:message
 			key="main.employeecontract.validfrom.text" /></b></th>
@@ -203,7 +203,7 @@
 					<td style="color:gray"><c:out value="${employeecontract.employee.name}" /></td>
 					<td style="color:gray"><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 <%--	änderung				--%>
-					<td style="color:gray"><c:out value="${employeecontract.supervisor.name}" /></td>
+					<td style="color:gray"><c:out value="${employeecontract.supervisor.name}" />&nbsp;</td>
 					<td style="color:gray"><c:out value="${employeecontract.validFrom}" /></td>
 					<td style="color:gray">
 						<c:choose>
@@ -226,7 +226,7 @@
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
 	<%--	änderung				--%>
-					<td><c:out value="${employeecontract.supervisor.name}" /></td>
+					<td><c:out value="${employeecontract.supervisor.name}" />&nbsp;</td>
 					<td><c:out value="${employeecontract.validFrom}" /></td>
 					<td>
 						<c:choose>

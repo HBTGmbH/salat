@@ -312,10 +312,19 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					}
 				}
 				
-				if(ecForm.getSupervisorid()==-1){
-					ec.setSupervisor(null);
+				
+/*  Supervisor validation */		
+				if(ecForm.getSupervisorid()== employeeId){
+					System.out.println("MIST------------------");
+					ActionMessages errors = getErrors(request);
+					if (errors == null) errors = new ActionMessages();
+					errors.add("invalidSupervisor", new ActionMessage("form.timereport.error.employeecontract.invalidsupervisor"));
+					saveErrors(request, errors);
+					return mapping.getInputForward();
+					
 				}else{
 					ec.setSupervisor(employeeDAO.getEmployeeById(ecForm.getSupervisorid()));
+					System.out.println("SUPER------------------");
 				}
 				
 				ec.setTaskDescription(ecForm.getTaskdescription());

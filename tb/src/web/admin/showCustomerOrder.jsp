@@ -292,7 +292,7 @@
 							&nbsp;
 						</c:when>
 						<c:otherwise>
-							<c:out value="${customerorder.hourly_rate}" />&nbsp;<c:out value="${customerorder.currency}" />
+							<fmt:formatNumber value="${customerorder.hourly_rate}" minFractionDigits="2"/>&nbsp;<c:out value="${customerorder.currency}" />
 						</c:otherwise>
 					</c:choose>
 				</td>				

@@ -455,7 +455,7 @@
 				</th>
 			</c:otherwise>
 		</c:choose>
-		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
+		<th align="center"><b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2"/></b></th>
 	</tr>
 
 	<tr>
@@ -765,7 +765,8 @@
 						value="${timereport.durationminutes}" /></td>
 
 					<!-- Kosten -->
-					<td align="center"><c:out value="${timereport.costs}" /></td>
+				
+					<td align="center"><fmt:formatNumber value="${timereport.costs}" minFractionDigits="2"/></td>
 
 					<!-- 
 					<td align="center"><img width="12px" height="12px" src="/tb/images/verbot.gif"
@@ -805,7 +806,7 @@
 				</th>
 			</c:otherwise>
 		</c:choose>
-		<th align="center"><b><c:out value="${dailycosts}"></c:out></b></th>
+		<th align="center"><b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2"/></b></th>
 	</tr>
 </table>
 <table>

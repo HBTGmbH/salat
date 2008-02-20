@@ -29,10 +29,12 @@
 	</tr>
 </table>
 </form>
+
+
 <table>
 	<tr>
 		<td align="left" class="matrix" style="border: 0px;"><b><c:out
-			value="${titleinvoiceattachment}" /></b></td>
+			value="${titleinvoiceattachment}"/></b></td>
 	</tr>
 	<tr>
 		<td align="left" class="matrix" style="border: 0px;"></td>
@@ -64,7 +66,7 @@
 	<c:if test="${! empty viewhelpers}">
 		<tr class="matrix">
 			<!-- Subordersign and Customersign -->
-			<th class="matrix"><c:out value="${titlesubordertext}" /></th>
+			<th class="matrix"><c:out value="${titlesubordertext}  " /></th>
 			<c:if test="${customeridbox eq 'true'}">
 				<th class="matrix"><c:out value="${titlecustomersigntext}" /></th>
 			</c:if>
@@ -75,8 +77,7 @@
 				<th class="matrix"><c:out value="${titleemployeesigntext}" /></th>
 			</c:if>
 			<!-- Suborderdescription and targethours -->
-			<th class="matrix" width="70%"><c:out
-				value="${titledescriptiontext}" /></th>
+			<th class="matrix" width="70%"><c:out value="${titledescriptiontext}" /></th>
 			<c:if test="${targethoursbox eq 'true'}">
 				<th class="matrix"><c:out value="${titletargethourstext}" /></th>
 			</c:if>

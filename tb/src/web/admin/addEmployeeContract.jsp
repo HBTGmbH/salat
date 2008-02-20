@@ -71,9 +71,7 @@
 	  <td align="left" class="noBborderStyle">
 	 
 		<html:select property="supervisorid" onchange="refresh(this.form)">
-				<html:option value="-1">
-					<bean:message key="main.general.nosupervisor.text" />
-				</html:option>
+				
 				<c:forEach var="employee" items="${employees}">
 					<c:if test="${employee.status == 'bl' || employee.status == 'gf'}">
 						<html:option value="${employee.id}">
@@ -82,7 +80,11 @@
 					</c:if>
 				</c:forEach>				
 			</html:select>
-	</td>
+<%--			warning for supervisor --%>
+			<span style="color:red"><html:errors
+				property="invalidSupervisor" /></span>
+	</td> 
+	
 	</tr>
 		
 		
