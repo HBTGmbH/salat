@@ -16,6 +16,7 @@ import org.tb.bdom.Timereport;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.form.ShowEmployeeOrderForm;
 
@@ -28,9 +29,14 @@ import org.tb.web.form.ShowEmployeeOrderForm;
 public class ShowEmployeeorderAction extends EmployeeOrderAction {
 
 	private EmployeeorderDAO employeeorderDAO;
+	private SuborderDAO suborderDAO;
 	private EmployeecontractDAO employeecontractDAO;
 	private CustomerorderDAO customerorderDAO;
 	private TimereportDAO timereportDAO;
+	
+	public void setSuborderDAO(SuborderDAO suborderDAO) {
+		this.suborderDAO = suborderDAO;
+	}
 	
 	public void setTimereportDAO(TimereportDAO timereportDAO) {
 		this.timereportDAO = timereportDAO;
@@ -116,20 +122,22 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 			// back to main menu
 			return mapping.findForward("backtomenu");
 		} 
-		
 
 		orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+		
 		boolean employeeIsResponsible = false;
 		
 		if (orders != null && orders.size() > 0) {
 			employeeIsResponsible =  true;
 		}
-		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
+		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);		
 		
-		refreshEmployeeOrders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportDAO);		
-			
+		refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportDAO, suborderDAO, customerorderDAO);
+	
 		return mapping.findForward("success");
 			
 	}
+
+	
 	
 }

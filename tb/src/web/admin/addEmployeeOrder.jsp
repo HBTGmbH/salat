@@ -48,7 +48,6 @@
 
 </head>
 <body>
-
 <html:form action="/StoreEmployeeorder">
 	<jsp:include flush="true" page="/menu.jsp">
 		<jsp:param name="title" value="Menu" />
@@ -111,7 +110,8 @@
 		<tr>
 		<td align="left" class="noBborderStyle"><b><bean:message
 			key="main.employeeorder.suborder.text" /></b></td>
-		<td align="left" class="noBborderStyle" colspan="5"><html:select
+		<td align="left" class="noBborderStyle" colspan="5">
+		<html:select
 			property="suborderId" styleClass="mandatory"
 			onchange="setStoreAction(this.form, 'refreshSuborderDescription')">
 			<html:options collection="suborders" labelProperty="signAndDescription"

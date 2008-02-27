@@ -75,7 +75,8 @@
 		<tr>
 			<td align="left" class="noBborderStyle" colspan="2"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle" colspan="9"><html:select
+			<td align="left" class="noBborderStyle" colspan="9">
+			<html:select
 				property="employeeContractId" onchange="refresh(this.form)"
 				value="${currentEmployeeContract.id}">
 				<html:option value="-1">
@@ -99,7 +100,9 @@
 		<tr>
 			<td align="left" class="noBborderStyle" colspan="2"><b><bean:message
 				key="main.employeeorder.customerorder.text" />:</b></td>
-			<td align="left" class="noBborderStyle" colspan="9"><html:select
+			<td align="left" class="noBborderStyle" colspan="9">
+			
+			<html:select
 				property="orderId" onchange="refresh(this.form)"
 				value="${currentOrderId}">
 				<html:option value="-1">
@@ -110,6 +113,30 @@
 			</html:select>	
 			</td>
 		</tr>
+		<!--select suborder -->
+	
+		<tr>
+
+         <td align="left" class="noBborderStyle" colspan="2"><b><bean:message
+				key="main.employeeorder.suborder.text" />:</b></td>
+			<td align="left" class="noBborderStyle" colspan="9">
+			
+			
+			           <html:select property="suborderId"
+							value="${currentSub}"
+							onchange="refresh(this.form)">
+
+							<html:option value="-1">
+								<bean:message key="main.general.allsuborders.text" />
+							</html:option>
+
+							<html:options collection="suborders"
+								labelProperty="signAndDescription" property="id" />
+						</html:select>
+			</td>		
+		</tr>
+		
+		
 		<tr>
 			<td class="noBborderStyle" colspan="2"><b><bean:message
 				key="main.general.filter.text" /></b></td>
@@ -181,7 +208,13 @@
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.suborders.description.text" />"
-			colspan="2"><b><bean:message
+			colspan="1"><b><bean:message
+			key="main.headlinedescription.suborders.description.text" /></b></th>
+<%--info Unteraftrag			--%>
+        <th align="left"
+			title="<bean:message
+			key="main.headlinedescription.suborders.description.text" />"
+			colspan="1"><b><bean:message
 			key="main.headlinedescription.suborders.description.text" /></b></th>
 
 

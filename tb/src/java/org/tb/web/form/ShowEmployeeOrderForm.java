@@ -24,6 +24,7 @@ public class ShowEmployeeOrderForm extends ActionForm {
 	private static final long serialVersionUID = 1L; // -6415687265295197319L;
 	private long employeeContractId;
 	private long orderId;
+	private long suborderId;
 	private String filter;
 	private Boolean show;
 	
@@ -130,6 +131,14 @@ public class ShowEmployeeOrderForm extends ActionForm {
 		
 		// actually, no checks here
 		return errors;
+	}
+
+	public long getSuborderId() {
+		return suborderId;
+	}
+
+	public void setSuborderId(long subOrderId) {
+		this.suborderId = subOrderId;
 	}
 	
 
