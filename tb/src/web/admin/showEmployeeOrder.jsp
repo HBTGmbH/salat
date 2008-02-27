@@ -196,13 +196,13 @@
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.ordernumber.text" />"
-			colspan="2"><b><bean:message
+			colspan="1"><b><bean:message
 			key="main.employeeorder.customerorder.text" /></b></th>
 
-		<!-- th align="left"
+		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employeeorders.subordernumber.text" />"><b><bean:message
-			key="main.employeeorder.suborder.text" /></b></th -->
+			key="main.employeeorder.suborder.text" /></b></th>
 
 
 		<th align="left"
@@ -215,7 +215,7 @@
 			title="<bean:message
 			key="main.headlinedescription.suborders.description.text" />"
 			colspan="1"><b><bean:message
-			key="main.headlinedescription.suborders.description.text" /></b></th>
+			key="main.headlinedescription.suborders.suborderdescription.text" /></b></th>
 
 
 		<th align="left"
