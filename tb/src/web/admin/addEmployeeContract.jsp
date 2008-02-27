@@ -71,7 +71,6 @@
 	  <td align="left" class="noBborderStyle">
 	 
 		<html:select property="supervisorid" onchange="refresh(this.form)">
-				
 				<c:forEach var="employee" items="${employees}">
 					<c:if test="${employee.status == 'bl' || employee.status == 'gf'}">
 						<html:option value="${employee.id}">

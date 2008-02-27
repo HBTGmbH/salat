@@ -95,6 +95,10 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 		
 		Employee theEmployee = ec.getEmployee();
 		ecForm.setEmployee(theEmployee.getId());
+//only when the supervisor exists		
+      if(ec.getSupervisor()!= null)	ecForm.setSupervisorid(ec.getSupervisor().getId());
+        else ecForm.setSupervisorid(-1); 
+	
 		request.getSession().setAttribute("currentEmployee", theEmployee.getName());
 		request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
 		
