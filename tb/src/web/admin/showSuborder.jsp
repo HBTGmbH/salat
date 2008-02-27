@@ -118,11 +118,11 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<span style="font-size:14pt;font-weight:bold;"><br>
+<span style="font-size: 14pt; font-weight: bold;"><br>
 <bean:message key="main.general.mainmenu.suborders.text" /><br>
 </span>
 <br>
-<span style="color:red"><html:errors footer="<br>" /> </span>
+<span style="color: red"><html:errors footer="<br>" /> </span>
 
 <table class="center backgroundcolor">
 	<html:form action="/ShowSuborder?task=refresh">
@@ -185,18 +185,19 @@
 			test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
 			<tr>
 				<html:form action="/CreateSuborder">
-					<td class="noBborderStyle"><html:submit
-						styleId="button"
+					<td class="noBborderStyle"><html:submit styleId="button"
 						titleKey="main.general.button.createsuborder.alttext.text">
 						<bean:message key="main.general.button.createsuborder.text" />
-					</html:submit></td></html:form><html:form action="/ShowSuborder"><td colspan="3" class="noBborderStyle"><c:if
+					</html:submit></td>
+				</html:form>
+				<html:form action="/ShowSuborder">
+					<td colspan="3" class="noBborderStyle"><c:if
 						test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 						<html:submit styleId="button" onclick="setflag(this.form)"
 							titleKey="main.general.button.setflag.alttext.text">
 							<bean:message key="main.general.button.setflag.text" />
 						</html:submit>
-					</c:if>
-					</td>
+					</c:if></td>
 				</html:form>
 			</tr>
 		</c:if>
@@ -208,21 +209,22 @@
 			<c:when test="${showStructure}">
 				<br>
 				<%
-				String browser = request.getHeader("User-Agent");
+					String browser = request.getHeader("User-Agent");
 				%>
 				<%
-							org.apache.struts.util.PropertyMessageResources myMessages = (org.apache.struts.util.PropertyMessageResources) request
-							.getAttribute("org.apache.struts.action.MESSAGE");
+					org.apache.struts.util.PropertyMessageResources myMessages = (org.apache.struts.util.PropertyMessageResources) request
+											.getAttribute("org.apache.struts.action.MESSAGE");
 				%>
 				<%
-				String key = "main.employeeorder.openend.text";
+					String key = "main.employeeorder.openend.text";
 				%>
 				<%
-							java.util.Locale myLocale = (java.util.Locale) session
-							.getAttribute("org.apache.struts.action.LOCALE");
+					java.util.Locale myLocale = (java.util.Locale) session
+											.getAttribute("org.apache.struts.action.LOCALE");
 				%>
 				<%
-				String message = (String) myMessages.getMessage(myLocale, key);
+					String message = (String) myMessages.getMessage(
+											myLocale, key);
 				%>
 
 				<tr>
@@ -325,8 +327,8 @@
 						</c:otherwise>
 					</c:choose>
 					<!-- Checkbox -->
-						<td><html:multibox property="suborderIdArray"
-							value="${suborder.id}" /></td>
+					<td><html:multibox property="suborderIdArray"
+						value="${suborder.id}" /></td>
 					<!-- Info -->
 					<td align="center">
 					<div class="tooltip" id="info<c:out value='${suborder.id}' />">
@@ -444,8 +446,9 @@
 
 							<c:choose>
 								<c:when test="${!suborder.timePeriodFitsToUpperElement}">
-									<td style="color:red;"><c:out value="${suborder.fromDate}" /></td>
-									<td style="color:red;"><c:choose>
+									<td style="color: red;"><c:out
+										value="${suborder.fromDate}" /></td>
+									<td style="color: red;"><c:choose>
 										<c:when test="${suborder.untilDate == null}">
 											<bean:message key="main.general.open.text" />
 										</c:when>
@@ -471,7 +474,7 @@
 							<c:choose>
 								<c:when
 									test="${suborder.invoiceString == 'Y' && suborder.hourly_rate == 0.0}">
-									<td align="center" style="color:red"><c:choose>
+									<td align="center" style="color: red"><c:choose>
 										<c:when test="${suborder.invoiceString == 'Y'}">
 											<bean:message key="main.suborder.invoice.yes.text" />
 										</c:when>
@@ -482,7 +485,7 @@
 											<bean:message key="main.suborder.invoice.undefined.text" />
 										</c:when>
 									</c:choose></td>
-									<td style="color:red"><c:out
+									<td style="color: red"><c:out
 										value="${suborder.hourly_rate}" /> <c:out
 										value="${suborder.currency}" /></td>
 								</c:when>
@@ -561,20 +564,21 @@
 						</c:when>
 						<c:otherwise>
 							<!-- suborder is invalid -->
-							<td style="color:gray"
+							<td style="color: gray"
 								title="<c:out value="${suborder.customerorder.description}" />"><c:out
 								value="${suborder.customerorder.sign}" /></td>
-							<td style="color:gray"><c:out value="${suborder.sign}" /></td>
-							<td style="color:gray"><c:out
+							<td style="color: gray"><c:out value="${suborder.sign}" /></td>
+							<td style="color: gray"><c:out
 								value="${suborder.suborder_customer}" /></td>
-							<td style="color:gray"><c:out
+							<td style="color: gray"><c:out
 								value="${suborder.shortdescription}" /></td>
 							<!-- <td style="color:gray"><c:out value="${suborder.description}" /></td> -->
 
 							<c:choose>
 								<c:when test="${!suborder.timePeriodFitsToUpperElement}">
-									<td style="color:red;"><c:out value="${suborder.fromDate}" /></td>
-									<td style="color:red;"><c:choose>
+									<td style="color: red;"><c:out
+										value="${suborder.fromDate}" /></td>
+									<td style="color: red;"><c:choose>
 										<c:when test="${suborder.untilDate == null}">
 											<bean:message key="main.general.open.text" />
 										</c:when>
@@ -584,8 +588,9 @@
 									</c:choose></td>
 								</c:when>
 								<c:otherwise>
-									<td style="color:gray"><c:out value="${suborder.fromDate}" /></td>
-									<td style="color:gray"><c:choose>
+									<td style="color: gray"><c:out
+										value="${suborder.fromDate}" /></td>
+									<td style="color: gray"><c:choose>
 										<c:when test="${suborder.untilDate == null}">
 											<bean:message key="main.general.open.text" />
 										</c:when>
@@ -600,7 +605,7 @@
 							<c:choose>
 								<c:when
 									test="${suborder.invoiceString == 'Y' && suborder.hourly_rate == 0.0}">
-									<td align="center" style="color:red"><c:choose>
+									<td align="center" style="color: red"><c:choose>
 										<c:when test="${suborder.invoiceString == 'Y'}">
 											<bean:message key="main.suborder.invoice.yes.text" />
 										</c:when>
@@ -610,12 +615,12 @@
 										<c:when test="${suborder.invoiceString == 'U'}">
 											<bean:message key="main.suborder.invoice.undefined.text" />
 										</c:when>
-									</c:choose></td>
+									</c:choose></td>					
 									<td style="color:red"><fmt:formatNumber value="${suborder.hourly_rate}" minFractionDigits="2"/> <c:out
 										value="${suborder.currency}" /></td>
 								</c:when>
 								<c:otherwise>
-									<td align="center" style="color:gray"><c:choose>
+									<td align="center" style="color: gray"><c:choose>
 										<c:when test="${suborder.invoiceString == 'Y'}">
 											<bean:message key="main.suborder.invoice.yes.text" />
 										</c:when>
@@ -626,7 +631,7 @@
 											<bean:message key="main.suborder.invoice.undefined.text" />
 										</c:when>
 									</c:choose></td>
-									<td style="color:gray"><c:choose>
+									<td style="color: gray"><c:choose>
 										<c:when test="${suborder.hourly_rate == 0.0}">
 													&nbsp;
 												</c:when>
@@ -638,7 +643,7 @@
 								</c:otherwise>
 							</c:choose>
 
-							<td style="color:gray"><c:choose>
+							<td style="color: gray"><c:choose>
 								<c:when test="${suborder.debithours == null}">
 											&nbsp;
 										</c:when>
@@ -663,7 +668,7 @@
 							</c:choose></td>
 
 							<c:if test="${showActualHours}">
-								<td align="right" style="color:gray"><fmt:formatNumber
+								<td align="right" style="color: gray"><fmt:formatNumber
 									value="${suborder.duration}" minFractionDigits="2" /></td>
 								<td align="right" style="color: gray"><c:choose>
 									<c:when
@@ -715,41 +720,48 @@
 				</c:forEach>
 			</c:otherwise>
 		</c:choose>
-	<tr><html:hidden styleId="suborderOptionValue" property="suborderOptionValue"/><td colspan="13" class="noBborderStyle"><html:select styleId="suborderOption" property="suborderOption"
-					onchange="multipleChange(this.form)">
+		<tr>
+			<html:hidden styleId="suborderOptionValue"
+				property="suborderOptionValue" />
+			<td colspan="13" class="noBborderStyle"><html:select
+				styleId="suborderOption" property="suborderOption"
+				onchange="multipleChange(this.form)">
 				<html:option value="">
-					<bean:message key="main.suborder.suborderoption.choose.text"/>
+					<bean:message key="main.suborder.suborderoption.choose.text" />
 				</html:option>
 				<html:option value="delete">
-					<bean:message key="main.suborder.suborderoption.delete.text"/>
+					<bean:message key="main.suborder.suborderoption.delete.text" />
 				</html:option>
 				<html:option value="altersubordercustomer">
-					<bean:message key="main.suborder.suborderoption.subordercustomer.text"/>
+					<bean:message
+						key="main.suborder.suborderoption.subordercustomer.text" />
 				</html:option>
 				<html:option value="alterhourlyrate">
-					<bean:message key="main.suborder.suborderoption.hourlyrate.text"/>
+					<bean:message key="main.suborder.suborderoption.hourlyrate.text" />
 				</html:option>
-			</html:select><span 
-				style="color:red"><html:errors
-				property="suborderOption" /><html:errors
-				property="bla" /></span>
-	</html:form></td></tr>
+			</html:select><span style="color: red"><html:errors
+				property="suborderOption" /><html:errors property="bla" /></span>
+	</html:form>
+	</td>
+	</tr>
 	<c:if
 		test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
 		<tr>
-			<html:form action="/ShowSuborder">
-				<td class="noBborderStyle"><html:submit
-					styleId="button"
+			<html:form action="/CreateSuborder">
+				<td class="noBborderStyle"><html:submit styleId="button"
 					titleKey="main.general.button.createsuborder.alttext.text">
 					<bean:message key="main.general.button.createsuborder.text" />
-				</html:submit></td></html:form><html:form action="/ShowSuborder"><td colspan="3" class="noBborderStyle"><c:if
+				</html:submit></td>
+			</html:form>
+			<html:form action="/ShowSuborder">
+				<td colspan="3" class="noBborderStyle"><c:if
 					test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
-					<html:submit styleId="button" onclick="setflag(this.form); return false;"
+					<html:submit styleId="button"
+						onclick="setflag(this.form); return false;"
 						titleKey="main.general.button.setflag.alttext.text">
 						<bean:message key="main.general.button.setflag.text" />
 					</html:submit>
-				</c:if>
-				</td>
+				</c:if></td>
 			</html:form>
 		</tr>
 	</c:if>
