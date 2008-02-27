@@ -472,7 +472,7 @@
 									</font>
 
 									<c:if test="${loginEmployee.status == 'gf' || loginEmployee.status == 'adm'}">
-										<html:image title="erinnerungsmail senden"
+										<html:image title="Erinnerungsmail senden"
 											onclick="confirmSendReleaseMail(this.form, '${employeecontract.employee.sign}');return false"
 											src="/tb/images/mail_icon_01.gif">
 											<font color="red"><c:out
@@ -495,7 +495,7 @@
 									<font color="red"><c:out value="${employeecontract.reportAcceptanceDateString}" />
 									</font>
 									<c:if test="${(loginEmployee.status == 'gf' || loginEmployee.status == 'adm') && !employeecontract.releaseWarning}">
-										<html:image
+										<html:image title="Erinnerungsmail senden"
 											onclick="confirmSendAcceptanceMail(this.form, '${employeecontract.employee.sign}');return false"
 											src="/tb/images/mail_icon_01.gif">
 											<font color="red"><c:out
