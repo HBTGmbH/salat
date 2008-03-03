@@ -18,7 +18,7 @@ import org.tb.bdom.Statusreport;
 public class SimpleMailFactory {
 
 	private static final String HOST = "MSG01";
-	private static final String FROM = "SALAT@hbt.de";
+	private static final String FROM = "NoReply@hbt.de";
 
 	/* Email for released report */
 	public static SimpleEmail createStatusReportReleasedMail(
@@ -98,7 +98,7 @@ public class SimpleMailFactory {
 		SimpleEmail mail = new SimpleEmail();
 		mail.setHostName(HOST);
 		mail.setFrom(from.getSign()+"@hbt.de");
-    	mail.addTo(recipient.getSign());
+    	mail.addTo(recipient.getSign()+"@hbt.de");
 		mail.setSubject(subject);
 		mail.setMsg(message);
 		return mail;
