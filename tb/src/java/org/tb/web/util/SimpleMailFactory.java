@@ -106,7 +106,7 @@ public class SimpleMailFactory {
 
 	public static Email createSalatBuchungenReleasedMail(Employee recipient,
 			Employee from) throws EmailException {
-		String subject = "SALAT: Buchungen freigegeben";
+		String subject = "SALAT: Buchungen durch " + from.getSign() + " freigegeben";
 		String title;
 		
 
