@@ -327,6 +327,39 @@
 						&nbsp;
 					</td>
 				</tr>
+				<!-- limit layer -->
+				<tr>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.invoice.layerlimit.text" />:</b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<html:select property="layerlimit"
+							value="${layerlimit}"
+							onchange="setUpdateInvoiceAction(this.form)">
+							<html:option value="-1">
+								<bean:message key="main.invoice.layerlimit.nolimit.text" />
+							</html:option>
+							<html:option value="0">
+								1 <bean:message key="main.invoice.layerlimit.layer.text" />
+							</html:option>
+							<html:option value="1">
+								1 <bean:message key="main.invoice.layerlimit.sublayer.text" />
+							</html:option>
+							<html:option value="2">
+								2 <bean:message key="main.invoice.layerlimit.sublayers.text" />
+							</html:option>
+							<html:option value="3">
+								3 <bean:message key="main.invoice.layerlimit.sublayers.text" />
+							</html:option>
+							<html:option value="4">
+								4 <bean:message key="main.invoice.layerlimit.sublayers.text" />
+							</html:option>
+							<html:option value="5">
+								5 <bean:message key="main.invoice.layerlimit.sublayers.text" />
+							</html:option>
+						</html:select>
+					</td>
+				</tr>
 				<!-- show timereports -->
 				<tr>
 					<td align="left" class="noBborderStyle">
@@ -513,6 +546,7 @@
 						</c:if>
 					</tr>
 					<c:forEach var="suborderviewhelper" items="${viewhelpers}">
+						<c:if test="${(suborderviewhelper.layer <= layerlimit) || (layerlimit eq -1)}">
 						<tr>
 							<!-- Checkbox -->
 							<td>
@@ -521,7 +555,7 @@
 							</td>
 							<!-- Subordersign -->
 							<td>
-								<c:out value="${suborderviewhelper.sign}"></c:out>
+								<c:out value="${suborderviewhelper.sign}"/>
 							</td>
 							<!-- Employeesign -->
 							<c:if test="${param.customeridbox eq 'on'}">
@@ -552,13 +586,14 @@
 							<!-- Show targethours if active-->
 							<c:if test="${param.targethoursbox eq 'on'}">
 								<td style="text-align: right;">
-									<c:out value="${suborderviewhelper.debithours}"></c:out>
+									<c:out value="${suborderviewhelper.debithoursString}"></c:out>
 								</td>
 							</c:if>
 							<!-- targethours -->
 							<c:if test="${param.actualhoursbox eq 'on'}">
 								<td style="text-align: right;">
-									<c:out value="${suborderviewhelper.actualhours}"></c:out>
+									<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}"><c:out value="${suborderviewhelper.actualhours}"></c:out></c:if>
+									<c:if test="${suborderviewhelper.layer eq layerlimit && !(layerlimit eq -1)}"><c:if test="${!(suborderviewhelper.duration eq '0:00') && !(suborderviewhelper.duration eq suborderviewhelper.actualhours)}">*</c:if> <c:out value="${suborderviewhelper.duration}"></c:out></c:if>
 								</td>
 							</c:if>
 						</tr>
@@ -613,15 +648,12 @@
 									</c:if>
 									<c:if test="${param.actualhoursbox eq 'on'}">
 										<td>
-											<c:out value="${timereportviewhelper.durationhours}" />
-											:
-											<c:if test="${timereportviewhelper.durationminutes<10}">0</c:if>
-											<c:out value="${timereportviewhelper.durationminutes}" />
+											<c:out value="${timereportviewhelper.durationhours}" />:<c:if test="${timereportviewhelper.durationminutes<10}">0</c:if><c:out value="${timereportviewhelper.durationminutes}" />
 										</td>
 									</c:if>
 								</tr>
 							</c:forEach>
-						</c:if>
+						</c:if></c:if>
 					</c:forEach>
 					<c:if test="${param.actualhoursbox eq 'on'}">
 						<tr>

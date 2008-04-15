@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.hibernate.Hibernate;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -55,7 +56,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 		
 		AddEmployeeContractForm ecForm = (AddEmployeeContractForm) form;
 		long ecId = Long.parseLong(request.getParameter("ecId"));
-		Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
+		Employeecontract ec = employeecontractDAO.getEmployeeContractByIdInitializeEager(ecId);
 		request.getSession().setAttribute("ecId", ec.getId());
 		
 		// fill the form with properties of employee contract to be edited

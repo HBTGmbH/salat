@@ -10,6 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -406,6 +408,8 @@ public class ShowInvoiceAction extends DailyReportAction {
 					invoiceForm.getMwst());
 			request.getSession().setAttribute("optionsuborderdescription",
 					invoiceForm.getSuborderdescription());
+			request.getSession().setAttribute("layerlimit",
+					invoiceForm.getLayerlimit());
 			// if (invoiceForm.getCustomeraddress() != null
 			// && invoiceForm.getCustomername() != null) {
 			request.getSession().setAttribute("customername",
@@ -438,7 +442,6 @@ public class ShowInvoiceAction extends DailyReportAction {
 			List<InvoiceSuborderViewHelper> suborderViewhelperList = (List<InvoiceSuborderViewHelper>) request
 					.getSession().getAttribute("viewhelpers");
 			for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : suborderViewhelperList) {
-			   System.out.println(invoiceSuborderViewHelper.getSignAndDescription());
 				for (int i = 0; i < suborderIdArray.length; i++) {
 					if (suborderIdArray[i].equals(String
 							.valueOf(invoiceSuborderViewHelper.getId()))) {
@@ -560,8 +563,8 @@ public class ShowInvoiceAction extends DailyReportAction {
 					new LinkedList<Suborder>());
 
 			request.getSession().setAttribute("optionmwst", "19");
-			request.getSession().setAttribute("optionsuborderdescription",
-					"main.invoice.suborderdescription.long.text");
+			request.getSession().setAttribute("layerlimit",
+					0);
 
 			// selected view and selected dates
 			String selectedView = invoiceForm.getInvoiceview();
@@ -663,9 +666,17 @@ public class ShowInvoiceAction extends DailyReportAction {
 				timereportIdList.add(String.valueOf(invoiceTimereportViewHelper
 						.getId()));
 			}
-			invoiceSuborderViewHelper = new InvoiceSuborderViewHelper(suborder);
+			invoiceSuborderViewHelper = new InvoiceSuborderViewHelper(suborder, timereportDAO, dateFirst, dateLast, invoiceForm.isInvoicebox());
 			invoiceSuborderViewHelper
 					.setInvoiceTimereportViewHelperList(invoiceTimereportViewHelperList);
+			
+			Pattern p = Pattern.compile("\\.");
+			Matcher m = p.matcher(suborder.getSign());
+			int counter=0;
+			while(m.find()){
+				counter++;
+			}
+			invoiceSuborderViewHelper.setLayer(counter);
 			invoiceSuborderViewHelperList.add(invoiceSuborderViewHelper);
 			suborderIdList.add(String
 					.valueOf(invoiceSuborderViewHelper.getId()));

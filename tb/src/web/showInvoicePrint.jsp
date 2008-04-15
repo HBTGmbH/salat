@@ -86,6 +86,7 @@
 			</c:if>
 		</tr>
 		<c:forEach var="suborderviewhelper" items="${viewhelpers}">
+		<c:if test="${(suborderviewhelper.layer <= layerlimit) || (layerlimit eq -1)}">
 			<c:if test="${suborderviewhelper.visible}">
 				<tr class="matrix" style="background-color:c1c1c1;">
 					<!-- Subordersign and Customersign -->
@@ -113,8 +114,10 @@
 							value="${suborderviewhelper.debithours}"></c:out></td>
 					</c:if>
 					<c:if test="${actualhoursbox eq 'true'}">
-						<td class="matrix" style="text-align: right;"><c:out
-							value="${suborderviewhelper.actualhours}"></c:out></td>
+						<td class="matrix" style="text-align: right;">
+									<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}"><c:out value="${suborderviewhelper.actualhoursPrint}"></c:out></c:if>
+									<c:if test="${suborderviewhelper.layer eq layerlimit && !(layerlimit eq -1)}"><c:if test="${!(suborderviewhelper.duration eq '0:00') && !(suborderviewhelper.duration eq suborderviewhelper.actualhoursPrint)}">*</c:if> <c:out value="${suborderviewhelper.duration}"></c:out></c:if>
+						</td>
 					</c:if>
 				</tr>
 				<bean:size id="invoiceTimereportViewHelperListSize"
@@ -161,7 +164,7 @@
 						</c:if>
 					</c:forEach>
 				</c:if>
-			</c:if>
+			</c:if></c:if>
 		</c:forEach>
 		<c:if test="${actualhoursbox eq 'true'}">
 			<tr class="matrix">

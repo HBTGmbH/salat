@@ -33,6 +33,5 @@ public class CustomerOrderActualHoursVisitor implements SuborderVisitor {
 		
 		/* return result */
 		return totalTime;
-	}
-	
+	}	
 }

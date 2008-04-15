@@ -17,6 +17,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.hibernate.Hibernate;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -33,7 +34,6 @@ import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeContractForm;
-import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
  * action class for storing an employee contractpermanently
@@ -189,14 +189,17 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 					
 				saveErrors(request, errors);
 				
+//				 get employeecontract
+				long ecId = -1;
+				ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
+				Employeecontract ec = employeecontractDAO.getEmployeeContractByIdInitializeEager(ecId);
+				
 				if (errors.size() > 0) {
+					setFormEntries(mapping, request, ecForm, ec);
 					return mapping.getInputForward();
 				}
 				
-				// get employeecontract
-				long ecId = -1;
-				ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
-				Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
+				
 				
 				Overtime overtime = new Overtime();
 				overtime.setComment(ecForm.getNewOvertimeComment());
@@ -227,6 +230,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				// reset form
 				ecForm.setNewOvertime("0.0");
 				ecForm.setNewOvertimeComment("");
+				
+				setFormEntries(mapping, request, ecForm, ec);
 				
 				return mapping.findForward("reset");
 			}
@@ -421,7 +426,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 				doResetActions(mapping, request, ecForm);
 				return mapping.getInputForward();				
 			}	
-						
+			
 			return mapping.findForward("error");
 			
 	}
@@ -640,5 +645,51 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 		saveErrors(request, errors);
 		
 		return errors;
+	}
+	/**
+	 * fills employee contract form with properties of given employee contract
+	 * 
+	 * @param mapping
+	 * @param request
+	 * @param ecForm
+	 * @param ec - the employee contract
+	 */
+	private void setFormEntries(ActionMapping mapping, HttpServletRequest request, 
+									AddEmployeeContractForm ecForm, Employeecontract ec) {
+		
+		Employee theEmployee = ec.getEmployee();
+		ecForm.setEmployee(theEmployee.getId());
+//only when the supervisor exists		
+      if(ec.getSupervisor()!= null)	ecForm.setSupervisorid(ec.getSupervisor().getId());
+        else ecForm.setSupervisorid(-1); 
+	
+		request.getSession().setAttribute("currentEmployee", theEmployee.getName());
+		request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
+		
+		List<Employee> employees = employeeDAO.getEmployees();
+		request.getSession().setAttribute("employees", employees);
+		
+//		ecForm.setEmployeeId(theEmployee.getId());
+		ecForm.setTaskdescription(ec.getTaskDescription());
+		ecForm.setFreelancer(ec.getFreelancer());
+		ecForm.setHide(ec.getHide());
+		ecForm.setDailyworkingtime(ec.getDailyWorkingTime());
+		if (ec.getVacations().size() > 0) {
+			// actually, vacation entitlement is a constant value
+			// for an employee (not year-dependent), so just take the
+			// first vacation entry to set the form value
+			Vacation va = ec.getVacations().get(0);
+			ecForm.setYearlyvacation(va.getEntitlement());
+		} else {
+			ecForm.setYearlyvacation(GlobalConstants.VACATION_PER_YEAR);
+		}
+		
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		
+		ecForm.setValidFrom(dateFormat.format(ec.getValidFrom()));
+		
+		if (ec.getValidUntil() != null) {
+			ecForm.setValidUntil(dateFormat.format(ec.getValidUntil()));
+		}		
 	}
 }

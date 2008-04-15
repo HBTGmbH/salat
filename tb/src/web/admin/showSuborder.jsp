@@ -184,21 +184,28 @@
 		<c:if
 			test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
 			<tr>
-				<html:form action="/CreateSuborder">
-					<td class="noBborderStyle"><html:submit styleId="button"
-						titleKey="main.general.button.createsuborder.alttext.text">
-						<bean:message key="main.general.button.createsuborder.text" />
-					</html:submit></td>
-				</html:form>
-				<html:form action="/ShowSuborder">
-					<td colspan="3" class="noBborderStyle"><c:if
-						test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
-						<html:submit styleId="button" onclick="setflag(this.form)"
-							titleKey="main.general.button.setflag.alttext.text">
-							<bean:message key="main.general.button.setflag.text" />
-						</html:submit>
-					</c:if></td>
-				</html:form>
+				<td colspan="11" class="noBborderStyle">
+				<table class="center backgroundcolor">
+					<tr>
+						<html:form action="/CreateSuborder">
+							<td class="noBborderStyle"><html:submit styleId="button"
+								titleKey="main.general.button.createsuborder.alttext.text">
+								<bean:message key="main.general.button.createsuborder.text" />
+							</html:submit></td>
+						</html:form>
+						<html:form action="/ShowSuborder">
+							<td class="noBborderStyle"><c:if
+								test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+								<html:submit styleId="button" onclick="setflag(this.form)"
+									titleKey="main.general.button.setflag.alttext.text">
+									<bean:message key="main.general.button.setflag.text" />
+								</html:submit>
+							</c:if></td>
+						</html:form>
+					</tr>
+				</table>
+				</td>
+
 			</tr>
 		</c:if>
 	</c:if>
@@ -209,22 +216,21 @@
 			<c:when test="${showStructure}">
 				<br>
 				<%
-					String browser = request.getHeader("User-Agent");
+				String browser = request.getHeader("User-Agent");
 				%>
 				<%
-					org.apache.struts.util.PropertyMessageResources myMessages = (org.apache.struts.util.PropertyMessageResources) request
-											.getAttribute("org.apache.struts.action.MESSAGE");
+							org.apache.struts.util.PropertyMessageResources myMessages = (org.apache.struts.util.PropertyMessageResources) request
+							.getAttribute("org.apache.struts.action.MESSAGE");
 				%>
 				<%
-					String key = "main.employeeorder.openend.text";
+				String key = "main.employeeorder.openend.text";
 				%>
 				<%
-					java.util.Locale myLocale = (java.util.Locale) session
-											.getAttribute("org.apache.struts.action.LOCALE");
+							java.util.Locale myLocale = (java.util.Locale) session
+							.getAttribute("org.apache.struts.action.LOCALE");
 				%>
 				<%
-					String message = (String) myMessages.getMessage(
-											myLocale, key);
+				String message = (String) myMessages.getMessage(myLocale, key);
 				%>
 
 				<tr>
@@ -258,7 +264,7 @@
 			</c:when>
 			<c:otherwise>
 				<tr>
-					<th align="left" title="select"></th>
+					<th align="left" title="select">&nbsp;</th>
 					<th align="left" title="Info"><b>Info</b></th>
 					<th align="left"
 						title="<bean:message
@@ -506,7 +512,8 @@
 													&nbsp;
 												</c:when>
 										<c:otherwise>
-											<fmt:formatNumber value="${suborder.hourly_rate}" minFractionDigits="2"/>&nbsp;<c:out
+											<fmt:formatNumber value="${suborder.hourly_rate}"
+												minFractionDigits="2" />&nbsp;<c:out
 												value="${suborder.currency}" />
 										</c:otherwise>
 									</c:choose></td>
@@ -615,8 +622,9 @@
 										<c:when test="${suborder.invoiceString == 'U'}">
 											<bean:message key="main.suborder.invoice.undefined.text" />
 										</c:when>
-									</c:choose></td>					
-									<td style="color:red"><fmt:formatNumber value="${suborder.hourly_rate}" minFractionDigits="2"/> <c:out
+									</c:choose></td>
+									<td style="color:red"><fmt:formatNumber
+										value="${suborder.hourly_rate}" minFractionDigits="2" /> <c:out
 										value="${suborder.currency}" /></td>
 								</c:when>
 								<c:otherwise>
@@ -636,7 +644,8 @@
 													&nbsp;
 												</c:when>
 										<c:otherwise>
-											<fmt:formatNumber value="${suborder.hourly_rate}" minFractionDigits="2"/>&nbsp;<c:out
+											<fmt:formatNumber value="${suborder.hourly_rate}"
+												minFractionDigits="2" />&nbsp;<c:out
 												value="${suborder.currency}" />
 										</c:otherwise>
 									</c:choose></td>
@@ -747,22 +756,27 @@
 	<c:if
 		test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
 		<tr>
-			<html:form action="/CreateSuborder">
-				<td class="noBborderStyle"><html:submit styleId="button"
-					titleKey="main.general.button.createsuborder.alttext.text">
-					<bean:message key="main.general.button.createsuborder.text" />
-				</html:submit></td>
-			</html:form>
-			<html:form action="/ShowSuborder">
-				<td colspan="3" class="noBborderStyle"><c:if
-					test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
-					<html:submit styleId="button"
-						onclick="setflag(this.form); return false;"
-						titleKey="main.general.button.setflag.alttext.text">
-						<bean:message key="main.general.button.setflag.text" />
-					</html:submit>
-				</c:if></td>
-			</html:form>
+			<td colspan="11" class="noBborderStyle">
+			<table class="center backgroundcolor">
+				<tr>
+					<html:form action="/CreateSuborder">
+						<td class="noBborderStyle"><html:submit styleId="button"
+							titleKey="main.general.button.createsuborder.alttext.text">
+							<bean:message key="main.general.button.createsuborder.text" />
+						</html:submit></td>
+					</html:form>
+					<html:form action="/ShowSuborder">
+						<td class="noBborderStyle"><c:if
+							test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+							<html:submit styleId="button" onclick="setflag(this.form)"
+								titleKey="main.general.button.setflag.alttext.text">
+								<bean:message key="main.general.button.setflag.text" />
+							</html:submit>
+						</c:if></td>
+					</html:form>
+				</tr>
+			</table>
+			</td>
 		</tr>
 	</c:if>
 </table>

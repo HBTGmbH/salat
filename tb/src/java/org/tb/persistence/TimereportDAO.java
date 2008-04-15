@@ -107,6 +107,35 @@ public class TimereportDAO extends HibernateDaoSupport {
 		return minutes == null ? 0l : minutes.longValue();
 	}
 	
+	/**
+	 * Gets the sum of all duration hours within a range of time without considering the minutes.
+	 * 
+	 * @param soId
+	 * @return
+	 */
+	public Long getTotalDurationHoursForSuborder(long soId, java.sql.Date fromDate, java.sql.Date untilDate) {
+		BigInteger hours = (BigInteger) getSession().createSQLQuery("select sum(durationhours) from Timereport tr, Employeeorder eo, Referenceday rd where rd.refdate >= ? and rd.refdate <= ? and tr.employeeorder_id = eo.id and eo.suborder_id = ? and rd.id = tr.referenceday_id")
+		.setDate(0,fromDate)
+		.setDate(1, untilDate)
+		.setLong(2, soId)
+		.uniqueResult();
+		return hours == null ? 0l : hours.longValue();
+	}
+
+	/**
+	 * Gets the sum of all duration minutes within a range of time without considering the hours.
+	 * 
+	 * @param soId
+	 * @return
+	 */
+	public Long getTotalDurationMinutesForSuborder(long soId, java.sql.Date fromDate, java.sql.Date untilDate) {
+		BigInteger minutes = (BigInteger) getSession().createSQLQuery("select sum(durationminutes) from Timereport tr, Employeeorder eo, Referenceday rd where rd.refdate >= ? and rd.refdate <= ? and tr.employeeorder_id = eo.id and eo.suborder_id = ? and rd.id = tr.referenceday_id")
+		.setDate(0,fromDate)
+		.setDate(1, untilDate)
+		.setLong(2, soId)
+		.uniqueResult();
+		return minutes == null ? 0l : minutes.longValue();
+	}
 	
 	/**
 	 * Gets the sum of all duration hours without considering the minutes.

@@ -2,13 +2,13 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.sql.Date;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -56,9 +56,9 @@ public class Suborder implements Serializable {
 	private List<Employeeorder> employeeorders;
 
 	/** list of children */
-	@OneToMany(mappedBy = "suborder")
+	@OneToMany(mappedBy = "suborder", fetch = FetchType.EAGER)
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
-	private List<Suborder> children = new ArrayList<Suborder>();
+	private List<Suborder> children;
 	
 	/** parentorder */
 	@ManyToOne

@@ -1,24 +1,47 @@
 package org.tb.web.viewhelper;
 
-import java.lang.annotation.Target;
 import java.util.Date;
 import java.util.List;
 
+import org.tb.GlobalConstants;
+import org.tb.bdom.CustomerOrderActualHoursVisitor;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.InvoiceSuborderActualHoursVisitor;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.SuborderVisitor;
 import org.tb.bdom.Timereport;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
-public class InvoiceSuborderViewHelper {
+public class InvoiceSuborderViewHelper extends Suborder{
+	
+	private static final long serialVersionUID = 1L;
+
 	private Suborder suborder;
+
+	private TimereportDAO timereportDAO;
+	
+	private java.sql.Date fromDate;
+	
+	private java.sql.Date untilDate;
 
 	private List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList;
 
 	private boolean visible;
+
+	private int layer;
+
+	private boolean invoicebox ;
+
+	public int getLayer() {
+		return layer;
+	}
+
+	public void setLayer(int layer) {
+		this.layer = layer;
+	}
 
 	public Suborder getSuborder() {
 		return suborder;
@@ -32,7 +55,39 @@ public class InvoiceSuborderViewHelper {
 		return visible;
 	}
 
+	public String getDuration() {
+
+		InvoiceSuborderActualHoursVisitor visitor = new InvoiceSuborderActualHoursVisitor(
+				timereportDAO, fromDate, untilDate, invoicebox);
+
+		/* start visiting */
+		acceptVisitor(visitor);
+
+		/* return result */
+		return visitor.getTotalTime();
+	}
+
 	public String getActualhours() {
+		int actualhours = 0;
+		int actualminutes = 0;
+		for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceTimereportViewHelperList) {
+				actualminutes += invoiceTimereportViewHelper
+						.getDurationminutes();
+				int tempHours = actualminutes / 60;
+				actualminutes = actualminutes % 60;
+				actualhours += invoiceTimereportViewHelper.getDurationhours()
+						+ tempHours;
+		}
+		String targetMinutesString = "";
+		if (actualminutes < 10) {
+			targetMinutesString += "0";
+		}
+
+		return String.valueOf(actualhours) + ":" + targetMinutesString
+				+ String.valueOf(actualminutes);
+	}
+	
+	public String getActualhoursPrint() {
 		int actualhours = 0;
 		int actualminutes = 0;
 		for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceTimereportViewHelperList) {
@@ -50,9 +105,9 @@ public class InvoiceSuborderViewHelper {
 		if (actualminutes < 10) {
 			targetMinutesString += "0";
 		}
-		
-		return String.valueOf(actualhours) + ":"
-				+ targetMinutesString + String.valueOf(actualminutes);
+
+		return String.valueOf(actualhours) + ":" + targetMinutesString
+				+ String.valueOf(actualminutes);
 	}
 
 	public void setVisible(boolean visible) {
@@ -68,12 +123,17 @@ public class InvoiceSuborderViewHelper {
 		this.invoiceTimereportViewHelperList = invoiceTimereportViewHelperList;
 	}
 
-	public InvoiceSuborderViewHelper(Suborder suborder) {
-		if(suborder == null) {
+	public InvoiceSuborderViewHelper(Suborder suborder,
+			TimereportDAO timereportDAO, java.sql.Date fromDate, java.sql.Date untilDate, boolean invoicebox) {
+		if (suborder == null) {
 			throw new IllegalArgumentException("suborder must not be null!");
 		}
+		this.timereportDAO = timereportDAO;
 		this.suborder = suborder;
 		this.visible = true;
+		this.fromDate = fromDate;
+		this.untilDate = untilDate;
+		this.invoicebox = invoicebox;
 	}
 
 	public void acceptVisitor(SuborderVisitor visitor) {
@@ -118,21 +178,26 @@ public class InvoiceSuborderViewHelper {
 		return suborder.getCustomerorder();
 	}
 
-	public String getDebithours() {
+	public Double getDebithours() {
+		return suborder.getDebithours();
+	}
+
+	public String getDebithoursString() {
 		String debitHours = "";
 		if (suborder.getDebithours() != null && suborder.getDebithours() != 0.0) {
-			double targetminutes = suborder.getDebithours()*60;
+			double targetminutes = suborder.getDebithours() * 60;
 			int targethours = (int) targetminutes / 60;
 			targetminutes = targetminutes % 60;
 			String targetMinutesString = "";
 			if (targetminutes < 10) {
 				targetMinutesString += "0";
 			}
-			debitHours = targethours + ":" + targetMinutesString + (int)targetminutes;
+			debitHours = targethours + ":" + targetMinutesString
+					+ (int) targetminutes;
 		}
-		
+
 		return debitHours;
-//		return "" + suborder.getDebithours();
+		// return "" + suborder.getDebithours();
 	}
 
 	public Byte getDebithoursunit() {

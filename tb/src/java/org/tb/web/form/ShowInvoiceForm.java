@@ -19,6 +19,7 @@ public class ShowInvoiceForm extends ActionForm {
     private String suborder;
     private String mwst;
     private String suborderdescription;
+    private String layerlimit;
     private boolean timereportsbox;
     private boolean customeridbox;
     private boolean targethoursbox;
@@ -237,5 +238,11 @@ public class ShowInvoiceForm extends ActionForm {
 	}
 	public void setCustomername(String customername) {
 		this.customername = customername;
+	}
+	public String getLayerlimit() {
+		return layerlimit;
+	}
+	public void setLayerlimit(String layerlimit) {
+		this.layerlimit = layerlimit;
 	}
 }

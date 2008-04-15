@@ -8,6 +8,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -204,6 +205,9 @@ public class Employeecontract implements Serializable {
 	}
 
 	public List<Vacation> getVacations() {
+//		for (Vacation vacation : vacations) {
+//			vacation.getId();
+//		}
 		return vacations;
 	}
 

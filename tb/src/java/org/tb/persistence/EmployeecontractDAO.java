@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
@@ -128,6 +129,20 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	 */
 	public Employeecontract getEmployeeContractById(long id) {
 		return (Employeecontract) getSession().createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
+	}
+	
+	/**
+	 * Gets the EmployeeContract with the given id and concretly initialize vacations.
+	 * 
+	 * @param long id
+	 * 
+	 * @return Employeecontract
+	 */
+	public Employeecontract getEmployeeContractByIdInitializeEager(long id) {
+		Session session = getSession();
+		Employeecontract ec = (Employeecontract)session.createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
+		Hibernate.initialize(ec.getVacations());
+		return ec;
 	}
 	
 	/**
