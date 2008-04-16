@@ -62,6 +62,10 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 				request.getSession().setAttribute("releaseMgmtPossible", true);
 				request.getSession().setAttribute("releaseEmpPossible", false);
 			} else if (loginEmployee.getStatus().equals(
+					GlobalConstants.EMPLOYEE_STATUS_GF)) {
+				request.getSession().setAttribute("releaseEmpPossible", false);
+				request.getSession().setAttribute("releaseMgmtPossible", true);
+			} else if (loginEmployee.getStatus().equals(
 					GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 				request.getSession().setAttribute("releaseEmpPossible", true);
 				request.getSession().setAttribute("releaseMgmtPossible", true);

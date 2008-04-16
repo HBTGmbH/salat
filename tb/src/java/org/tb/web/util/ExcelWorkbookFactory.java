@@ -289,19 +289,19 @@ public class ExcelWorkbookFactory {
 				if (targetHoursBoxOn) {
 					c = r.createCell(cellIndex);
 					cellIndex += 1;
-					if (invoiceSuborderViewHelper.getDebithours() != "")
-						c.setCellValue(timeToExcelDouble(invoiceSuborderViewHelper
-										.getDebithours()));
+					if (invoiceSuborderViewHelper.getDebithours() != null)
+						c.setCellValue(invoiceSuborderViewHelper
+										.getDebithours());
 					else
 						c.setCellValue(new HSSFRichTextString(
-								(invoiceSuborderViewHelper.getDebithours())));
+								("")));
 
 					c.setCellStyle(csTime);
 				}
 				if (actualHoursBoxOn) {
 					c = r.createCell(cellIndex);
 					cellIndex += 1;
-					if (invoiceSuborderViewHelper.getDebithours() != "")
+					if (invoiceSuborderViewHelper.getDebithours() != null)
 						c
 								.setCellValue(timeToExcelDouble(invoiceSuborderViewHelper
 										.getActualhours()));
