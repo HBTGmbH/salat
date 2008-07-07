@@ -24,7 +24,8 @@ public class WorkingdayDAO extends HibernateDaoSupport{
 	 * @return
 	 */
 	public Workingday getWorkingdayByDateAndEmployeeContractId(java.sql.Date refdate, long employeeContractId) {
-		return (Workingday) getSession().createQuery("from Workingday w where w.refday = ? and w.employeecontract.id = ? ").setDate(0, refdate).setLong(1, employeeContractId).uniqueResult();
+		List<Workingday> workingdays = getSession().createQuery("from Workingday w where w.refday = ? and w.employeecontract.id = ? ").setDate(0, refdate).setLong(1, employeeContractId).list();
+		return workingdays != null && workingdays.size() > 0 ? workingdays.iterator().next() : null;
 	}
 	
 	/**

@@ -44,5 +44,8 @@
 	<classpathentry kind="lib" path="src/web/WEB-INF/lib/spring-web.jar"/>
 	<classpathentry kind="lib" path="src/web/WEB-INF/lib/standard.jar"/>
 	<classpathentry kind="lib" path="src/web/WEB-INF/lib/struts-el.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/poi-3.0.2-FINAL-20080204.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/poi-contrib-3.0.2-FINAL-20080204.jar"/>
+	<classpathentry kind="lib" path="src/web/WEB-INF/lib/poi-scratchpad-3.0.2-FINAL-20080204.jar"/>
 	<classpathentry kind="output" path="src/web/WEB-INF/classes"/>
 </classpath>

@@ -30,7 +30,7 @@
     
    <target name="dist">
     	<mkdir dir="temp" />
-    	<war destfile="temp/tb.war" webxml="src/web/WEB-INF/web.xml">
+    	<war webxml="src/web/WEB-INF/web.xml" destfile="temp/tb.war">
       		<fileset dir="src/web"/>
     	</war>
     	<copy todir="${tomcat.home}/webapps">
