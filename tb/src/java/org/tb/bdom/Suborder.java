@@ -126,6 +126,13 @@ public class Suborder implements Serializable {
 	@Column (name="NOEMPLOYEEORDERCONTENT")
 	private Boolean noEmployeeOrderContent;
 	
+	public void addSuborder(Suborder child) {
+		if (children == null) {
+			children = new LinkedList<Suborder>();
+		}
+		children.add(child);
+	}
+	
 	public Suborder getParentorder() {
 		return suborder;
 	}
@@ -662,7 +669,7 @@ public class Suborder implements Serializable {
 		for (Suborder child : children) {
 			Suborder childCopy = child.copy(false, creator);
 			childCopy.setParentorder(copy);
-			copy.getSuborders().add(childCopy);
+			copy.addSuborder(childCopy);
 		}		
 		return copy;
 	}
