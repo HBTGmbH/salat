@@ -47,6 +47,9 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
 		List<Employee> employees = employeeDAO.getEmployees();
 		request.getSession().setAttribute("employees", employees);
 		
+		List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+		request.getSession().setAttribute("empWithCont", employeesWithContracts);
+		
 		List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContracts();
 		
 		if ((employees == null) || (employees.size() <= 0)) {

@@ -67,17 +67,21 @@
 		
 	<tr>
 	  <td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.headofdepartment.text" /></b></td>
+				key="main.employeecontract.supervisor.text" /></b></td>
 	  <td align="left" class="noBborderStyle">
 	 
 		<html:select property="supervisorid" onchange="refresh(this.form)">
-				<c:forEach var="employee" items="${employees}">
-					<c:if test="${employee.status == 'bl' || employee.status == 'gf'}">
+				<html:options collection="empWithCont" labelProperty="name"
+							property="id" />
+				<%--
+				<c:forEach var="employee" items="${empWithCont}">
+					 <c:if test="${employee.status == 'bl' || employee.status == 'gf'}"> 
 						<html:option value="${employee.id}">
 							<c:out value="${employee.name}" />
 						</html:option>
-					</c:if>
-				</c:forEach>				
+					</c:if> 
+				</c:forEach>
+				--%>				
 			</html:select>
 <%--			warning for supervisor --%>
 			<span style="color:red"><html:errors

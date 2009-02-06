@@ -1,6 +1,7 @@
 package org.tb.persistence;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -166,6 +167,25 @@ public class EmployeeDAO extends HibernateDaoSupport {
 		List<Employee> employees = new ArrayList<Employee>();
 		for (Employeecontract employeecontract : employeeContracts) {
 			if (!employees.contains(employeecontract.getEmployee())) {
+				employees.add(employeecontract.getEmployee());
+			}			
+		}
+		// remove admin 
+		Employee admin = getEmployeeBySign("adm");
+		employees.remove(admin);		
+		return employees;
+	}
+	
+	/**
+	 * 
+	 * @param date
+	 * @return Returns all {@link Employee}s with a contract.
+	 */
+	public List<Employee> getEmployeesWithValidContracts() {
+		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
+		List<Employee> employees = new ArrayList<Employee>();
+		for (Employeecontract employeecontract : employeeContracts) {
+			if (employeecontract.getCurrentlyValid() && !employees.contains(employeecontract.getEmployee())) {
 				employees.add(employeecontract.getEmployee());
 			}			
 		}

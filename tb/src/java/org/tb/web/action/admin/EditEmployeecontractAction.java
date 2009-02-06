@@ -106,6 +106,10 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 		List<Employee> employees = employeeDAO.getEmployees();
 		request.getSession().setAttribute("employees", employees);
 		
+		List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+		request.getSession().setAttribute("empWithCont", employeesWithContracts);
+		
+		
 //		ecForm.setEmployeeId(theEmployee.getId());
 		ecForm.setTaskdescription(ec.getTaskDescription());
 		ecForm.setFreelancer(ec.getFreelancer());
