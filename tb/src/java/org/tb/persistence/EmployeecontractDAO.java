@@ -189,6 +189,21 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
 	}
 	
 	/**
+	 * Get a list of all Employeecontracts ordered by lastname.
+	 * 
+	 * @return List<Employeecontract>
+	 */
+	public List<Employeecontract> getTeamContracts(Long supervisorId) {
+		Date now = new Date();
+		return getSession().createQuery("from Employeecontract ec " +
+				"where supervisor.id = ? " +
+				"and validFrom <= ? " +
+				"and (validUntil = null " +
+					"or validUntil >= ?) " +
+				"order by employee.lastname asc, validFrom asc").setLong(0, supervisorId).setDate(1, now).setDate(2, now).list();
+	}
+	
+	/**
 	 * Get a list of all Employeecontracts fitting to the given filters ordered by lastname.
 	 * 
 	 * @return List<Employeecontract>

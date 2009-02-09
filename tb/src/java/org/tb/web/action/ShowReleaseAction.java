@@ -66,11 +66,19 @@ public class ShowReleaseAction extends LoginRequiredAction {
 							.getEmployeeContractId());
 
 		}
+		
+		/* get team members */
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+		List<Employeecontract> teamMemberContracts = employeecontractDAO.getTeamContracts(loginEmployee.getId());
+		boolean supervisor = !teamMemberContracts.isEmpty();
+		request.getSession().setAttribute("isSupervisor", supervisor);
+		request.getSession().setAttribute("teamContracts", teamMemberContracts);
+		
 
 		String task = request.getParameter("task");
 		System.out.println(task);
 
-		if ((Boolean) request.getSession().getAttribute("employeeAuthorized")) {
+		if (supervisor || (Boolean) request.getSession().getAttribute("employeeAuthorized")) {
 			Employeecontract currentEmployeeContract = null;
 			if ((request.getParameter("task") != null)
 					&& ((request.getParameter("task").equals("updateEmployee")))) {
@@ -89,8 +97,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
 		}
 
 		if (employeecontract == null) {
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
 			employeecontract = employeecontractDAO
 					.getEmployeeContractByEmployeeIdAndDate(loginEmployee
 							.getId(), new Date());
@@ -152,8 +158,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			java.sql.Date sqlReleaseDate = new java.sql.Date(releaseDate
 					.getTime());
 
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
 
 			// set status in timereports
 			List<Timereport> timereports = timereportDAO
@@ -187,7 +191,11 @@ public class ShowReleaseAction extends LoginRequiredAction {
 						+ employeecontract.getSupervisor().getName());
 				Employee recipient = employeecontract.getSupervisor();
 				Employee from = employeecontract.getEmployee();
-				MailSender.sendSalatBuchungenReleasedMail(recipient, from);
+				try {
+					MailSender.sendSalatBuchungenReleasedMail(recipient, from);
+				} catch (Exception e) {
+					System.out.println("sending release mail failed!!!");
+				}
 			} else {
 				System.out.println("KEIN BL ");
 			}
@@ -209,8 +217,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
 				&& ((request.getParameter("task").equals("sendreleasemail")))) {
 
 			// build recipient for releasemail
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
 			Employee recipient = employeeDAO.getEmployeeBySign(request
 					.getParameter("sign"));
 
@@ -230,8 +236,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
 				&& ((request.getParameter("task").equals("sendacceptancemail")))) {
 
 			// build recipient for acceptancemail
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
 			// Contract from Employee
 			Employee contEmployee = employeeDAO.getEmployeeBySign(request
 					.getParameter("sign"));
@@ -277,8 +281,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			java.sql.Date sqlAcceptanceDate = new java.sql.Date(acceptanceDate
 					.getTime());
 
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
 
 			// set status in timereports
 			List<Timereport> timereports = timereportDAO
@@ -322,9 +324,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
 			}
 			java.sql.Date sqlReopenDate = new java.sql.Date(reopenDate
 					.getTime());
-
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
 
 			// set status in timereports
 			List<Timereport> timereports = timereportDAO

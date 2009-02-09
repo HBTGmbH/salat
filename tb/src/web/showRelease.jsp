@@ -146,6 +146,31 @@
 								</html:select>
 								<html:hidden property="employeeContractId" />
 							</c:when>
+							<c:when test="${isSupervisor}">
+								<html:select property="employeeContractId"
+									onchange="setUpdateEmployeeContract(this.form)">
+									<html:option value="${loginEmployeeContract.id}">
+												<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+													value="${loginEmployeeContract.timeString}" />
+												<c:if test="${loginEmployeeContract.openEnd}">
+													<bean:message key="main.general.open.text" />
+												</c:if>)
+									</html:option>
+									<c:forEach var="employeecontract" items="${teamContracts}">
+										<c:if
+											test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+											<html:option value="${employeecontract.id}">
+												<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+													value="${employeecontract.timeString}" />
+												<c:if test="${employeecontract.openEnd}">
+													<bean:message key="main.general.open.text" />
+												</c:if>)
+									</html:option>
+										</c:if>
+									</c:forEach>
+								</html:select>
+								<html:hidden property="employeeContractId" />
+							</c:when>
 							<c:otherwise>
 								<c:out value="${loginEmployee.name}" />
 							</c:otherwise>
@@ -246,7 +271,7 @@
 
 
 				<!-- acceptance -->
-				<c:if test="${employeeAuthorized}">
+				<c:if test="${isSupervisor || employeeAuthorized}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="30"></td>
 					</tr>
