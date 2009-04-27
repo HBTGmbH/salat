@@ -83,9 +83,9 @@ public class SimpleMailFactory {
 		
 
 		if (recipient.getGender() == GlobalConstants.GENDER_FEMALE) {
-			title = "Liebe Bereichsleiterin ";
+			title = "Liebe ";
 		} else
-			title = "Lieber Bereichsleiter ";
+			title = "Lieber ";
 
 		String firstname = recipient.getFirstname();
 
