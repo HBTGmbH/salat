@@ -79,7 +79,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddCustomerOrderForm coForm = (AddCustomerOrderForm) form;
-			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 	
 			/* remove list with timereports out of range */
 			request.getSession().removeAttribute("timereportsOutOfRange");
@@ -466,7 +466,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 		}
 		
 //		 check, if dates fit to existing timereports
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		Date fromDate = null;
 		Date untilDate = null;
 		try {

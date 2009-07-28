@@ -69,7 +69,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
 		AddSuborderForm soForm = (AddSuborderForm) form;
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		
 		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
@@ -783,8 +783,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			soForm.setHourlyRate(co.getHourly_rate());
 			soForm.setCurrency(co.getCurrency());
 
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-					"yyyy-MM-dd");
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 			soForm.setValidFrom(simpleDateFormat.format(co.getFromDate()));
 			if (co.getUntilDate() != null) {
 				soForm

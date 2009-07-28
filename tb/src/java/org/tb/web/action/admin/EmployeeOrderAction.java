@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.tb.GlobalConstants;
 import org.tb.bdom.EmployeeOrderViewDecorator;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -42,7 +43,7 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 	// if (employeeorder != null) {
 	// request.getSession().setAttribute("employeeorderalreadyexists", true);
 	// //fill form with data from existing employeeorder
-	// SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	// SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 	// eoForm.setValidFrom(simpleDateFormat.format(employeeorder.getFromDate()));
 	// eoForm.setValidUntil(simpleDateFormat.format(employeeorder.getUntilDate()));
 	// eoForm.setStandingorder(employeeorder.getStandingorder());
@@ -356,7 +357,7 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 		java.util.Date soFromDate = null;
 		java.util.Date soUntilDate = null;
 
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
 		if (employeecontract != null) {
 			ecFromDate = employeecontract.getValidFrom();

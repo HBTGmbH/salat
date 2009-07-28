@@ -117,7 +117,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 			
 		// check if special tasks initiated from the form or the daily display need to be carried out...
 		AddDailyReportForm reportForm = (AddDailyReportForm) form;
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		boolean refreshTime = false;
 		
 			// task for setting the date
@@ -142,7 +142,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				
 				cal.add(Calendar.DATE, howMuch);
 				/* check if today is to be set (if howMuch == 0)or not */
-				datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+				datum = howMuch == 0 ? simpleDateFormat.format(new java.util.Date()) : simpleDateFormat.format(cal.getTime());
 	
 				request.getSession().setAttribute("referenceday", datum);
 				reportForm.setReferenceday(datum);
@@ -236,12 +236,9 @@ public class StoreDailyReportAction extends DailyReportAction {
 				
 				TimereportHelper th = new TimereportHelper();
 				
-				String refDateString = reportForm.getReferenceday();
-								
-				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 				java.util.Date selectedDate;
 				try {
-					selectedDate = simpleDateFormat.parse(refDateString);
+					selectedDate = simpleDateFormat.parse(reportForm.getReferenceday());
 				} catch (ParseException e) {
 					// error occured while parsing date - use current date instead
 					selectedDate = new java.util.Date();
@@ -402,16 +399,12 @@ public class StoreDailyReportAction extends DailyReportAction {
 					(request.getParameter("task").equals("save")) ||
 					(request.getParameter("trId") != null)) {
 			
-				boolean addMoreReprts = Boolean.parseBoolean(request.getParameter("continue"));
-				
+				boolean addMoreReports = Boolean.parseBoolean(request.getParameter("continue"));
 				
 				// 'main' task - prepare everything to store the report.
 				// I.e., copy properties from the form into the timereport before saving.
-								
 				Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
-				
 				double hours = TimereportHelper.calculateTime(reportForm);
-				
 				long trId = -1;
 				Timereport tr = null;
 				if (request.getSession().getAttribute("trId") != null) {
@@ -431,9 +424,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 				if (errorMessages.size() > 0) {
 					return mapping.getInputForward();
 				}
-				
 				Date theDate = Date.valueOf(reportForm.getReferenceday());
-				
 				tr.setTaskdescription(reportForm.getComment());	
 				tr.setEmployeecontract(ec);
 	
@@ -552,24 +543,60 @@ public class StoreDailyReportAction extends DailyReportAction {
 				if (request.getSession().getAttribute("trId") != null) {					
 					request.getSession().removeAttribute("trId");
 				}	
+
+				// set new ShowDailyReportForm with saved filter settings
+				ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
+				if (request.getSession().getAttribute("lastCurrentMonth") != null) {
+					showDailyReportForm.setDay((String) request.getSession().getAttribute("lastCurrentDay"));
+					showDailyReportForm.setMonth((String) request.getSession().getAttribute("lastCurrentMonth"));
+					showDailyReportForm.setYear((String) request.getSession().getAttribute("lastCurrentYear"));				
+					showDailyReportForm.setLastday((String) request.getSession().getAttribute("lastLastDay"));
+					showDailyReportForm.setLastmonth((String) request.getSession().getAttribute("lastLastMonth"));
+					showDailyReportForm.setLastyear((String) request.getSession().getAttribute("lastLastYear"));
+				} else {
+					java.util.Date referenceDate;
+					try {
+						referenceDate = simpleDateFormat.parse(reportForm.getReferenceday());
+					} catch (ParseException e) {
+						// error occured while parsing date - use current date instead
+						referenceDate = new java.util.Date();
+					} 
+					showDailyReportForm.setDay(DateUtils.getDayString(referenceDate));
+					showDailyReportForm.setMonth(DateUtils.getMonthShortString(referenceDate));
+					showDailyReportForm.setYear(DateUtils.getYearString(referenceDate));
+					showDailyReportForm.setLastday(DateUtils.getDayString(referenceDate));
+					showDailyReportForm.setLastmonth(DateUtils.getMonthShortString(referenceDate));
+					showDailyReportForm.setLastyear(DateUtils.getYearString(referenceDate));
+				}
+				showDailyReportForm.setStartdate(showDailyReportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(showDailyReportForm.getMonth()) + "-" + showDailyReportForm.getDay());
+				showDailyReportForm.setEnddate(showDailyReportForm.getLastyear() + "-" + DateUtils.getMonthMMStringFromShortstring(showDailyReportForm.getLastmonth()) + "-" + showDailyReportForm.getLastday());
+				request.getSession().removeAttribute("lastCurrentDay");
+				request.getSession().removeAttribute("lastCurrentMonth");
+				request.getSession().removeAttribute("lastCurrentYear");
+				request.getSession().removeAttribute("lastLastDay");
+				request.getSession().removeAttribute("lastLastMonth");
+				request.getSession().removeAttribute("lastLastYear");
+				if (request.getSession().getAttribute("lastView") != null) {
+					showDailyReportForm.setView((String) request.getSession().getAttribute("lastView"));
+				} else {
+					showDailyReportForm.setView(GlobalConstants.VIEW_DAILY);
+				}
+				request.getSession().removeAttribute("lastView");
+				showDailyReportForm.setOrder((String) request.getSession().getAttribute("lastOrder"));
+				if (request.getSession().getAttribute("lastSuborderId") != null) {
+					showDailyReportForm.setSuborderId((Long) request.getSession().getAttribute("lastSuborderId")); 
+				} else {
+					showDailyReportForm.setSuborderId(-1l);
+				}
+				showDailyReportForm.setEmployeeContractId((Long) request.getSession().getAttribute("lastEmployeeContractId"));
+				request.getSession().removeAttribute("lastSuborderId");
+				request.getSession().removeAttribute("lastOrder");
+				request.getSession().removeAttribute("lastEmployeeContractId");
 				
 				// get updated list of timereports from DB
-				ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
-				showDailyReportForm.setDay((String)request.getSession().getAttribute("currentDay"));
-				showDailyReportForm.setMonth((String)request.getSession().getAttribute("currentMonth"));
-				showDailyReportForm.setYear((String)request.getSession().getAttribute("currentYear"));				
-				showDailyReportForm.setLastday((String)request.getSession().getAttribute("lastDay"));
-				showDailyReportForm.setLastmonth((String)request.getSession().getAttribute("lastMonth"));
-				showDailyReportForm.setLastyear((String)request.getSession().getAttribute("lastYear"));
-				showDailyReportForm.setEmployeeContractId(ec.getId());
-				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
-				showDailyReportForm.setOrder((String)request.getSession().getAttribute("lastOrder"));
-				showDailyReportForm.setSuborderId(tr.getEmployeeorder().getSuborder().getId());
-
 				refreshTimereports(mapping, request, showDailyReportForm, customerorderDAO, timereportDAO, employeecontractDAO, suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO, vacationDAO, employeeDAO);
 				reports = (List<Timereport>) request.getSession().getAttribute("timereports");
-				
-				request.getSession().setAttribute("suborderFilerId", tr.getEmployeeorder().getSuborder().getId());
+				request.getSession().setAttribute("suborderFilerId", showDailyReportForm.getSuborderId());
 				
 				request.getSession().setAttribute("labortime", th.calculateLaborTime(reports));
 				request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
@@ -579,7 +606,6 @@ public class StoreDailyReportAction extends DailyReportAction {
 				
 				//calculate Working Day End
 				request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
-
 				
 				request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 				request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
@@ -592,35 +618,27 @@ public class StoreDailyReportAction extends DailyReportAction {
 				
 				
 				// save values from the data base into form-bean, when working day != null
-				if(workingday != null){
-					
-					//show break time, quitting time and working day ends on the showdailyreport.jsp
+				if (workingday != null) {
+					// show break time, quitting time and working day ends on the
+					// showdailyreport.jsp
 					request.getSession().setAttribute("visibleworkingday", true);
-					
-				showDailyReportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
-				showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
-				showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
-				showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
-				}else{
-					
-					//don´t show break time, quitting time and working day ends on the showdailyreport.jsp
+					showDailyReportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
+					showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
+					showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
+					showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+				} else {
+					// don´t show break time, quitting time and working day ends on
+					// the showdailyreport.jsp
 					request.getSession().setAttribute("visibleworkingday", false);
-					
 					showDailyReportForm.setSelectedWorkHourBegin(0);
 					showDailyReportForm.setSelectedWorkMinuteBegin(0);
 					showDailyReportForm.setSelectedBreakHour(0);
 					showDailyReportForm.setSelectedBreakMinute(0);
-				}
+				}				
 				
-				
-				if (!addMoreReprts) {
+				if (!addMoreReports) {
 					// refresh overtime and vacation
 					refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);					
-//					try {
-//						refreshWorkingday(mapping, showDailyReportForm, request, employeecontractDAO, workingdayDAO);
-//					} catch (Exception e) {
-//						// nanü?!
-//					}
 					return mapping.findForward("showDaily");
 				} else {
 					
@@ -631,22 +649,15 @@ public class StoreDailyReportAction extends DailyReportAction {
 					reportForm.setCosts(0.0);
 					reportForm.setNumberOfSerialDays(0);
 					
-					
 					if (workingday != null) {
-
 						int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
 						reportForm.setSelectedHourBegin(beginTime[0]);
 						reportForm.setSelectedMinuteBegin(beginTime[1]);
-						
 						reportForm.setNumberOfSerialDays(0);
-						
-						SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-						
-						
 						java.util.Date today = new java.util.Date();
 						SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
 						SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
-													int hour = new Integer(hourFormat.format(today));
+						int hour = new Integer(hourFormat.format(today));
 						int minute = new Integer(minuteFormat.format(today));
 						minute = (minute/5)*5;
 						
@@ -747,7 +758,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 		request.getSession().setAttribute("currentEmployeeContract", loginEmployeeContract);
 		
 		String dateString = reportForm.getReferenceday();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		java.util.Date date;
 		try {
 			date = simpleDateFormat.parse(dateString);
@@ -943,7 +954,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(ecId);
 		Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");		
 		Boolean authorized = (Boolean) request.getSession().getAttribute("employeeAuthorized");
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		java.util.Date refDate = null;
 		Date releaseDate = employeecontract.getReportReleaseDate();
 		Date acceptanceDate = employeecontract.getReportAcceptanceDate();

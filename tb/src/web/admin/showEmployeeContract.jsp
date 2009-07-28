@@ -86,7 +86,7 @@
 		</td>
 	</tr>
 	<tr>
-		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showinvalid.text" /></b></td>
+		<td class="noBborderStyle" colspan="2"><b><bean:message key="main.general.showexpired.text" /></b></td>
 		<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
 				property="show" onclick="refresh(this.form)" /> </td>
 	</tr>

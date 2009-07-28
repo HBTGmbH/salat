@@ -479,7 +479,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
 					getDayList(releaseDateFromContract));
 		}
 
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
 		String releasedUntil = simpleDateFormat.format(releaseDateFromContract);
 		request.getSession().setAttribute("releasedUntil", releasedUntil);

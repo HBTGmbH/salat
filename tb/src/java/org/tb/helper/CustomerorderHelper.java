@@ -7,6 +7,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
@@ -42,7 +43,7 @@ public class CustomerorderHelper {
 			CustomerorderDAO cd, EmployeeDAO ed, EmployeecontractDAO ecd, SuborderDAO sd) {
 		
 		String dateString = reportForm.getReferenceday();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		Date date;
 		try {
 			date = simpleDateFormat.parse(dateString);

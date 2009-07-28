@@ -745,7 +745,7 @@ public class TimereportDAO extends HibernateDaoSupport {
 		calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
 		Date lastDay = calendar.getTime();
 		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		System.out.println(simpleDateFormat.format(firstDay));
 		System.out.println(simpleDateFormat.format(lastDay));
 //		List<Timereport> timereportList = getSession().createQuery("from Timereport t where t.accepted is not null and ? <= t.accepted and ? >= t.accepted and t.acceptedby is not null and t.employeecontract.id = ? order by t.accepted desc").setDate(0, firstDay).setDate(1, lastDay).setLong(2, ecId).list();

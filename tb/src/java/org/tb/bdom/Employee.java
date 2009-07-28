@@ -6,11 +6,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.util.MD5Util;
 
 /**
@@ -19,6 +17,7 @@ import org.tb.util.MD5Util;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Employee implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -29,8 +28,6 @@ public class Employee implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private long id;
-	
-
 	
 	/** registration first and last name of the employee */
 	private String loginname;

@@ -75,7 +75,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 		request.getSession().setAttribute("totalovertime", totalOvertime);
 		
 		// set day string for overime
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		Date now = new Date();
 		request.getSession().setAttribute("dateString", simpleDateFormat.format(now));
 		

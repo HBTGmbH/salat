@@ -11,8 +11,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 
 /**
@@ -24,6 +28,7 @@ import org.hibernate.annotations.CascadeType;
  */
 @Entity
 @Table(name="EMPLOYEEORDERCONTENT")
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Employeeordercontent implements Serializable {
 	
 	private static final long serialVersionUID = 1L; // 2L;
@@ -37,24 +42,28 @@ public class Employeeordercontent implements Serializable {
 	
 	/** Responsible Contract HBT */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="CONTACT_CONTRACT_HBT")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee contactContractHbt;
 	
 	/** Responsible Technical HBT */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="CONTACT_TECH_HBT")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee contactTechHbt;
 	
 	/** Responsible Technical HBT */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="COMMITTEDBY_MGMT")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee committedby_mgmt;
 	
 	/** Responsible Technical HBT */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="COMMITTEDBY_EMP")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee committedby_emp;

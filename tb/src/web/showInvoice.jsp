@@ -19,36 +19,37 @@
 		<link rel="stylesheet" type="text/css" href="/tb/print.css"
 			media="print" />
 		<script type="text/javascript" language="JavaScript">	
- 	function setUpdateInvoiceAction(form) {	
- 		form.action = "/tb/do/ShowInvoice?task=refreshInvoiceForm";
-		form.submit();
-	}
-	function exportExcel(form) {
-		form.action = "/tb/do/ShowInvoice?task=export";
-		form.submit();
-	}
-	
-	function showPrint(form) {
-		form.action = "/tb/do/ShowInvoice?task=print";
-		form.submit();
-	}
-	
-</script>
+		 	function setUpdateInvoiceAction(form) {	
+		 		form.action = "/tb/do/ShowInvoice?task=refreshInvoiceForm";
+				form.submit();
+			}
+			function exportExcel(form) {
+				form.action = "/tb/do/ShowInvoice?task=export";
+				form.submit();
+			}
+			
+			function showPrint(form) {
+				form.action = "/tb/do/ShowInvoice?task=print";
+				form.submit();
+			}
+		</script>
 	</head>
 	<body>
 		<jsp:include flush="true" page="/menu.jsp">
 			<jsp:param name="title" value="Menu" />
 		</jsp:include>
 		<br>
-		<span style="font-size: 14pt; font-weight: bold;"><br> <bean:message
-				key="main.general.mainmenu.invoice.title.text" />
-			<br> </span>
+		<span style="font-size: 14pt; font-weight: bold;">
+			<br>
+			<bean:message key="main.general.mainmenu.invoice.title.text" />
+			<br>
+		</span>
 		<br>
 		<html:form action="/ShowInvoice?task=generateMaximumView">
 			<table class="center backgroundcolor">
 				<tr>
 					<td colspan="2" align="left" class="noBborderStyle">
-						<hr>
+						<hr/>
 					</td>
 				</tr>
 				<!-- dataset options title -->
@@ -80,8 +81,7 @@
 					</td>
 					<td align="left" class="noBborderStyle">
 						<html:select property="order"
-							value="<%=(String) request.getSession().getAttribute(
-									"currentOrder")%>"
+							value="<%=(String) request.getSession().getAttribute("currentOrder")%>"
 							onchange="setUpdateInvoiceAction(this.form)">
 
 							<html:option value="CHOOSE ORDER">
@@ -103,13 +103,21 @@
 							value="<%=(String) request.getSession().getAttribute(
 									"currentSuborder")%>"
 							onchange="setUpdateInvoiceAction(this.form)">
-
 							<html:option value="ALL SUBORDERS">
 								<bean:message key="main.general.allsuborders.text" />
 							</html:option>
 
-							<html:options collection="suborders"
-								labelProperty="signAndDescription" property="id" />
+							<c:forEach var="suborder" items="${suborders}">
+								<html:option value="${suborder.id}">
+									<c:out value="${suborder.signAndDescription}" />
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(
+									<c:out value="${suborder.timeString}" />
+									<c:if test="${suborder.openEnd}">
+										<bean:message key="main.general.open.text" />
+									</c:if>
+									)
+								</html:option>
+							</c:forEach>
 
 						</html:select>
 					</td>
@@ -298,7 +306,6 @@
 					</td>
 				</tr>
 				<tr>
-
 					<td class="noBborderStyle" align="left">
 						<html:submit styleId="button"
 							titleKey="main.invoice.button.createmaximumview.alttext.text">
@@ -440,21 +447,22 @@
 						&nbsp;
 					</td>
 				</tr>
-				<!-- select value added tax 
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.invoice.mwst.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="mwst" value="${optionmwst}" size="2" maxlength="2"
-				onchange="setUpdateInvoiceAction(this.form)" /></td>
-		</tr>-->
-
-
+				<!-- select value added tax -->
+				<%-- 
+				<tr>
+					<td align="left" class="noBborderStyle"><b><bean:message
+						key="main.invoice.mwst.text" />:</b></td>
+					<td align="left" class="noBborderStyle"><html:text
+						property="mwst" value="${optionmwst}" size="2" maxlength="2"
+						onchange="setUpdateInvoiceAction(this.form)" /></td>
+				</tr>
+				 --%>
+				 
 			</table>
 		</html:form>
 
-		<table>
-			<html:form target="fenster" action="/ShowInvoice?task=print">
+		<html:form target="fenster" action="/ShowInvoice?task=print">
+			<table>
 				<c:if test="${! empty viewhelpers}">
 					<tr>
 						<td class="noBborderStyle" align="left">
@@ -677,7 +685,7 @@
 								</td>
 							</c:if>
 							<c:if test="${empty param.targethoursbox}">
-								<td class="noBborderStyle style="text-align:right;">
+								<td class="noBborderStyle" style="text-align:right;">
 									<bean:message key="main.invoice.overall.text" />
 									:
 								</td>
@@ -697,7 +705,7 @@
 						<td class="noBborderStyle"></td>
 					</tr>
 				</c:if>
-		</table>
+			</table>
 		</html:form>
 	</body>
 </html>

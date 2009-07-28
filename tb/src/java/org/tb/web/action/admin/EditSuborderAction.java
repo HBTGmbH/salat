@@ -106,7 +106,7 @@ public class EditSuborderAction extends LoginRequiredAction {
 		}
 		
 		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); 
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT); 
 		soForm.setValidFrom(simpleDateFormat.format(so.getFromDate()));
 		if (so.getUntilDate() != null) {
 			soForm.setValidUntil(simpleDateFormat.format(so.getUntilDate()));

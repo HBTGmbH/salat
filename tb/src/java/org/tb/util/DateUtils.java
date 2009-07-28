@@ -19,15 +19,9 @@ import org.tb.GlobalConstants;
  */
 public class DateUtils {
 	
-	public static String[] monthShortStrings = {
-			"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-			"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-	};
+	private static String[] monthShortStrings = GlobalConstants.MONTH_SHORTFORMS;
 	
-	public static String[] monthLongStrings = {
-		"January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November", "December"
-};
+	private static String[] monthLongStrings = GlobalConstants.MONTH_LONGFORMS;
 	
 	/**
 	 * Gets the date without the time value.
@@ -100,7 +94,8 @@ public class DateUtils {
 	
 	public static String getMonthShortString(java.util.Date dt) {
 		// returns EEE from date (e.g., 'Jan')
-		return (getDateString(dt).substring(0,3));
+		return (dt.toString().substring(4,7));
+//		return (getDateString(dt).substring(4,7));
 	}
 	
 	public static String getMonthShortString(java.sql.Date dt) {
@@ -226,8 +221,8 @@ public class DateUtils {
 	/*
 	 * builds up a list of string with current and previous year
 	 */
-	public static List getYearsToDisplay() {
-		List theList = new ArrayList();
+	public static List<OptionItem> getYearsToDisplay() {
+		List<OptionItem> theList = new ArrayList<OptionItem>();
 		
 		for (int i=GlobalConstants.STARTING_YEAR; i <= getCurrentYear()+1; i++) {
 			String yearString = "" + i;

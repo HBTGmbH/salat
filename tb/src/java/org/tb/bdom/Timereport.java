@@ -10,8 +10,13 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.tb.GlobalConstants;
 
 /**
  * Bean for table 'timereport'.
@@ -19,6 +24,7 @@ import org.hibernate.annotations.CascadeType;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Timereport implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -32,18 +38,21 @@ public class Timereport implements Serializable {
 
 	/** Referenceday */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="REFERENCEDAY_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Referenceday referenceday;
 	
 	/** Employeecontract */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="EMPLOYEECONTRACT_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employeecontract employeecontract;
 	
 	/** Suborder */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="SUBORDER_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Suborder suborder;
@@ -51,6 +60,7 @@ public class Timereport implements Serializable {
 	
 	/** Employeeorder */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="EMPLOYEEORDER_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employeeorder employeeorder;
@@ -330,7 +340,7 @@ public class Timereport implements Serializable {
 	}
 	
 	public String getTimeReportAsString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		return "TR["+getEmployeecontract().getEmployee().getSign()+" | "
 			+simpleDateFormat.format(getReferenceday().getRefdate()) + " | " 
 			+ getSuborder().getCustomerorder().getSign() + " / " 

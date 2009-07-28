@@ -11,6 +11,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 
@@ -20,6 +22,7 @@ import org.hibernate.annotations.CascadeType;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Referenceday implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -35,6 +38,7 @@ public class Referenceday implements Serializable {
 	/** list of timereports, associated to this refday */
 	@OneToMany
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Timereport> timereports;
 
 	/** Date */

@@ -2,6 +2,7 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,8 +14,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.tb.GlobalConstants;
 import org.tb.bdom.comparators.SubOrderComparator;
 
 /**
@@ -23,6 +29,7 @@ import org.tb.bdom.comparators.SubOrderComparator;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Customerorder implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -36,6 +43,7 @@ public class Customerorder implements Serializable {
 	
 	/** Customer */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="CUSTOMER_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Customer customer;
@@ -43,6 +51,7 @@ public class Customerorder implements Serializable {
 	/** list of suborders, associated to this customerorder */
 	@OneToMany(mappedBy = "customerorder")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Suborder> suborders;
 	
 	/** Responsible of Customer */
@@ -51,12 +60,14 @@ public class Customerorder implements Serializable {
 	
 	/** Responsible employee of HBT */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="RESPONSIBLE_HBT_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee responsible_hbt;
 	
 	/** contractually responsible employee of HBT */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="RESPONSIBLE_HBT_CONTRACTUALLY_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee respEmpHbtContract;
@@ -228,6 +239,14 @@ public class Customerorder implements Serializable {
 		this.untilDate = untilDate;
 	}
 
+	public String getFormattedUntilDate() {
+		Date untilDate = getUntilDate();
+		if (untilDate != null) {
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
+			return simpleDateFormat.format(untilDate);
+		}
+		return "";
+	}
 	public String getDescription() {
 		return description;
 	}

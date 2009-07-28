@@ -2,6 +2,7 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,8 +17,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.tb.GlobalConstants;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
@@ -28,6 +34,7 @@ import org.tb.persistence.TimereportDAO;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Suborder implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -42,28 +49,43 @@ public class Suborder implements Serializable {
 
 	/** Customerorder */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="CUSTOMERORDER_ID")
 	private Customerorder customerorder;
 
 	/** list of timereports, associated to this suborder */
 	@OneToMany(mappedBy = "suborder")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Timereport>  timereports;
 	
 	/** list of employeeorders, associated to this suborder */
 	@OneToMany(mappedBy = "suborder")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Employeeorder> employeeorders;
 
 	/** list of children */
-	@OneToMany(mappedBy = "suborder", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "suborder")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Suborder> children;
 	
 	/** parentorder */
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.LAZY)
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="PARENTORDER_ID")
 	private Suborder suborder;
+	
+//	@PostLoad
+//	public void initChildren() {
+//		System.err.println("init suborder " + id);
+//		Hibernate.initialize(suborder);
+//		Hibernate.initialize(children);
+//		for (Suborder child : children) {
+//			Hibernate.initialize(child);
+//		}
+//	}
 	
 	/** Customer subordersign */
 	private String suborder_customer;
@@ -88,6 +110,7 @@ public class Suborder implements Serializable {
 	
 	/** Creation Date */
 	private java.util.Date created;
+	
 	
 	/** Last Update */
 	private java.util.Date lastupdate;
@@ -422,6 +445,23 @@ public class Suborder implements Serializable {
 		this.hide = hide;
 	}
 
+	public String getTimeString() {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
+		Date untilDate = getUntilDate();
+		Date fromDate = getFromDate();
+		if (untilDate == null) {
+			return simpleDateFormat.format(fromDate) + " - ";
+		}
+		return simpleDateFormat.format(fromDate) + " - " + simpleDateFormat.format(untilDate);
+	}
+	
+	public Boolean getOpenEnd() {
+		if (getUntilDate() == null) {
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * @return the untilDate
 	 */
@@ -442,10 +482,28 @@ public class Suborder implements Serializable {
 		this.untilDate = untilDate;
 	}
 	
-	
+	public String getFormattedUntilDate() {
+		Date untilDate = getUntilDate();
+		if (untilDate != null) {
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
+			return simpleDateFormat.format(untilDate);
+		}
+		return "";
+	}
 	
 	public String getSignAndDescription() {
-		return sign+" - "+getShortdescription();
+		return getSign() + " - " + getShortdescription();
+	}
+	
+	public String getSignAndDescriptionWithExpirationDate() {
+		String result = getSign() + " - " + getShortdescription();
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
+		Date from = getFromDate();
+		Date until = getUntilDate();
+		if (from != null && until != null) {
+			result += " (" + simpleDateFormat.format(from) + " - " + simpleDateFormat.format(until) + ")";
+		}
+		return result;
 	}
 	
 	/**

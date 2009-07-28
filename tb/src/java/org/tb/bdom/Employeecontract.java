@@ -8,7 +8,6 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -17,8 +16,12 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.tb.GlobalConstants;
 
 
@@ -28,6 +31,7 @@ import org.tb.GlobalConstants;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Employeecontract implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -41,6 +45,7 @@ public class Employeecontract implements Serializable {
 	
 	/** id of the supervisor */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="SUPERVISOR_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee supervisor;
@@ -88,7 +93,8 @@ public class Employeecontract implements Serializable {
 	private Boolean hide;
 	
 	/** Employee */
-	@OneToOne
+	@OneToOne // FIXME check if ManyToOne?
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="EMPLOYEE_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employee employee;
@@ -96,21 +102,25 @@ public class Employeecontract implements Serializable {
 	/** list of timereports, associated to this employeecontract */
 	@OneToMany(mappedBy = "employeecontract")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Timereport> timereports;
 
 	/** list of employeeorders, associated to this employeecontract */
 	@OneToMany(mappedBy = "employeecontract")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Employeeorder> employeeorders;
 	
 	/** list of monthlyreports, associated to this employeecontract */
 	@OneToMany(mappedBy = "employeecontract")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Monthlyreport> monthlyreports;
 	
 	/** list of vacations, associated to this employeecontract */
 	@OneToMany(mappedBy = "employeecontract")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
+	@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 	private List<Vacation> vacations;
 	
 	public long getId() {
@@ -220,7 +230,7 @@ public class Employeecontract implements Serializable {
 	}
 	
 	public String getReportAcceptanceDateString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		if (reportAcceptanceDate != null) {
 			return simpleDateFormat.format(reportAcceptanceDate); 
 		} else {
@@ -237,7 +247,7 @@ public class Employeecontract implements Serializable {
 	}
 	
 	public String getReportReleaseDateString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		if (reportReleaseDate != null) {
 			return simpleDateFormat.format(reportReleaseDate);
 		} else {
@@ -334,7 +344,7 @@ public class Employeecontract implements Serializable {
 	}
 
 	public String getTimeString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		if (validUntil == null) {
 			return simpleDateFormat.format(validFrom) + " - ";
 		}

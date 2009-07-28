@@ -115,7 +115,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 			suborderForm.setHourlyRate(customerorder.getHourly_rate());
 			suborderForm.setCurrency(customerorder.getCurrency());
 			
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd"); 
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT); 
 			suborderForm.setValidFrom(simpleDateFormat.format(customerorder.getFromDate()));
 			if (customerorder.getUntilDate() != null) {
 				suborderForm.setValidUntil(simpleDateFormat.format(customerorder.getUntilDate()));

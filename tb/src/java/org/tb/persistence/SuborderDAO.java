@@ -10,9 +10,11 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
@@ -50,7 +52,8 @@ public class SuborderDAO extends HibernateDaoSupport {
 	 * @return Suborder
 	 */
 	public Suborder getSuborderById(long id) {
-		return (Suborder) getSession().createQuery("from Suborder so where so.id = ?").setLong(0, id).uniqueResult();
+//		return (Suborder) getSession().createQuery("from Suborder so where so.id = ?").setLong(0, id).uniqueResult();
+		return (Suborder) getSession().get(Suborder.class, id);
 	}
 	
 	/**
@@ -61,16 +64,23 @@ public class SuborderDAO extends HibernateDaoSupport {
 	 * @return List<Suborder>
 	 */
 	public List<Suborder> getSubordersByEmployeeContractId(long contractId) {
-
-		List<Employeeorder> employeeOrders = 
-			getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign asc, suborder.sign asc").setLong(0, contractId).list();
-		
-		List<Suborder> allSuborders = new ArrayList();
-		for (Iterator iter = employeeOrders.iterator(); iter.hasNext();) {
-			Employeeorder eo = (Employeeorder) iter.next();			
-			Suborder so = (Suborder) getSession().createQuery("from Suborder s where s.id = ? ").setLong(0, eo.getSuborder().getId()).uniqueResult();
-
-			allSuborders.add(so);
+//		List<Employeeorder> employeeOrders = 
+//			getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign asc, suborder.sign asc").setLong(0, contractId).list();
+//		
+//		List<Suborder> allSuborders = new ArrayList();
+//		for (Iterator iter = employeeOrders.iterator(); iter.hasNext();) {
+//			Employeeorder eo = (Employeeorder) iter.next();			
+//			Suborder so = (Suborder) getSession().createQuery("from Suborder s where s.id = ? ").setLong(0, eo.getSuborder().getId()).uniqueResult();
+//
+//			allSuborders.add(so);
+//		}
+//		Collections.sort(allSuborders, new SubOrderComparator());
+//		return allSuborders;
+		Employeecontract contract = (Employeecontract) getSession().get(Employeecontract.class, contractId);
+		List<Employeeorder> employeeOrders = contract.getEmployeeorders();
+		List<Suborder> allSuborders = new ArrayList<Suborder>();
+		for (Employeeorder order : employeeOrders) {
+			allSuborders.add(order.getSuborder());
 		}
 		Collections.sort(allSuborders, new SubOrderComparator());
 		return allSuborders;
@@ -126,7 +136,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 	 * @return List<Suborder>
 	 */
 	public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
-		return getSession().createQuery("from Suborder s where s.customerorder.id = ? order by sign").setLong(0, customerorderId).list();
+		return getSession().createQuery("from Suborder s where s.customerorder.id = ? order by sign").setLong(0, customerorderId).setCacheable(true).list();
 	}
 	
 	
@@ -345,7 +355,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 	 */
 	public List<Suborder> getStandardSuborders() {
 		Date date = new Date();
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat dateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		String dateString = dateFormat.format(date);
 		try {
 			date = dateFormat.parse(dateString);

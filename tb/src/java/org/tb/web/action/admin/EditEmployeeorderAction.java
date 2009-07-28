@@ -177,7 +177,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		
 		eoForm.setSign(eo.getSign());
 		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		eoForm.setValidFrom(simpleDateFormat.format(eo.getFromDate()));
 		if (eo.getUntilDate() != null) {
 			eoForm.setValidUntil(simpleDateFormat.format(eo.getUntilDate()));

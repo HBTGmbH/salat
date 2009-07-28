@@ -380,7 +380,7 @@ public class LoginEmployeeAction extends Action {
 
 			// get warnings			
 			List<Warning> warnings = new ArrayList<Warning>();
-			simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 			
 			// eoc warning
 			List<Employeeorder> employeeorders = new ArrayList<Employeeorder>();

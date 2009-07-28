@@ -12,8 +12,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.tb.GlobalConstants;
 
 /**
  * Bean for table 'Employeeorder'.
@@ -21,6 +26,7 @@ import org.hibernate.annotations.CascadeType;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Employeeorder implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -34,18 +40,21 @@ public class Employeeorder implements Serializable {
 
 	/** Suborder */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="SUBORDER_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Suborder suborder;
 	
 	/** EmployeeContract */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="EMPLOYEECONTRACT_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employeecontract employeecontract;
 	
 	/** EmployeeOrderContent */
 	@OneToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="EMPLOYEEORDERCONTENT_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Employeeordercontent employeeOrderContent;
@@ -236,7 +245,7 @@ public class Employeeorder implements Serializable {
 	}
 
 	public String getEmployeeOrderAsString() {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		if (getUntilDate() != null) {
 			return "EO["+getEmployeecontract().getEmployee().getSign()+" | "
 				+ getSuborder().getCustomerorder().getSign() + " / " 

@@ -1,8 +1,6 @@
 package org.tb.bdom;
 
-import org.tb.GlobalConstants;
 import org.tb.persistence.TimereportDAO;
-import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
 
 public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
 

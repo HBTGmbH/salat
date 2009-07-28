@@ -63,196 +63,192 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<span style="font-size: 14pt; font-weight: bold;"><br>
-<bean:message key="main.general.mainmenu.employeeorders.text" /><br>
+<span style="font-size: 14pt; font-weight: bold;">
+	<br>
+	<bean:message key="main.general.mainmenu.employeeorders.text" />
+	<br>
 </span>
 <br>
 <span style="color: red"><html:errors footer="<br>" /> </span>
 
 <html:form action="/ShowEmployeeorder?task=refresh">
 	<table class="center backgroundcolor">
+		<colgroup>
+			<col align="left" width="185" />
+			<col align="left" width="750" />
+		</colgroup>
 		<!-- select employeecontract -->
 		<tr>
-			<td align="left" class="noBborderStyle" colspan="2"><b><bean:message
-				key="main.monthlyreport.employee.fullname.text" />:</b></td>
-			<td align="left" class="noBborderStyle" colspan="9">
-			<html:select
-				property="employeeContractId" onchange="refresh(this.form)"
-				value="${currentEmployeeContract.id}">
-				<html:option value="-1">
-					<bean:message key="main.general.allemployees.text" />
-				</html:option>
-				<c:forEach var="employeecontract" items="${employeecontracts}">
-					<c:if
-						test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
-						<html:option value="${employeecontract.id}">
-							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
-								value="${employeecontract.timeString}" />
-							<c:if test="${employeecontract.openEnd}">
-								<bean:message key="main.general.open.text" />
-							</c:if>)
-							</html:option>
-					</c:if>
-				</c:forEach>
-			</html:select></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="employeeContractId" onchange="refresh(this.form)" value="${currentEmployeeContract.id}">
+					<html:option value="-1">
+						<bean:message key="main.general.allemployees.text" />
+					</html:option>
+					<c:forEach var="employeecontract" items="${employeecontracts}">
+						<c:if
+							test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+							<html:option value="${employeecontract.id}">
+								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+									value="${employeecontract.timeString}" />
+								<c:if test="${employeecontract.openEnd}">
+									<bean:message key="main.general.open.text" />
+								</c:if>)
+								</html:option>
+						</c:if>
+					</c:forEach>
+				</html:select>
+			</td>
 		</tr>
 		<!-- select order -->
 		<tr>
-			<td align="left" class="noBborderStyle" colspan="2"><b><bean:message
-				key="main.employeeorder.customerorder.text" />:</b></td>
-			<td align="left" class="noBborderStyle" colspan="9">
-			
-			<html:select
-				property="orderId" onchange="refresh(this.form)"
-				value="${currentOrderId}">
-				<html:option value="-1">
-					<bean:message key="main.general.allorders.text" />
-				</html:option>
-				<html:options collection="orders" labelProperty="signAndDescription"
-					property="id" />
-			</html:select>	
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.employeeorder.customerorder.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="orderId" onchange="refresh(this.form)" value="${currentOrderId}">
+					<html:option value="-1">
+						<bean:message key="main.general.allorders.text" />
+					</html:option>
+					<html:options collection="orders" labelProperty="signAndDescription" property="id" />
+				</html:select>	
 			</td>
 		</tr>
-		<!--select suborder -->
-	
+		<!-- select suborder -->
 		<tr>
-
-         <td align="left" class="noBborderStyle" colspan="2"><b><bean:message
-				key="main.employeeorder.suborder.text" />:</b></td>
-			<td align="left" class="noBborderStyle" colspan="9">
-			
-			
-			           <html:select property="suborderId"
-							value="${currentSub}"
-							onchange="refresh(this.form)">
-
-							<html:option value="-1">
-								<bean:message key="main.general.allsuborders.text" />
-							</html:option>
-
-							<html:options collection="suborders"
-								labelProperty="signAndDescription" property="id" />
-						</html:select>
+	        <td align="left" class="noBborderStyle">
+	        	<b><bean:message key="main.employeeorder.suborder.text" />:</b>
+	        </td>
+			<td align="left" class="noBborderStyle">
+	           <html:select property="suborderId"
+					value="${currentSub}"
+					onchange="refresh(this.form)">
+					<html:option value="-1">
+						<bean:message key="main.general.allsuborders.text" />
+					</html:option>
+					<c:forEach var="suborder" items="${suborders}">
+						<html:option value="${suborder.id}">
+							${suborder.signAndDescription}
+							<c:if test="${!suborder.currentlyValid}">
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(&dagger; ${suborder.formattedUntilDate})
+							</c:if>
+						</html:option>
+					</c:forEach>
+				</html:select>
+				<span style="font-size: 0.6em">
+					<bean:message key="main.general.select.expired.text" />
+				</span>
 			</td>		
 		</tr>
-		
-		
+		<!-- filter results-->
 		<tr>
-			<td class="noBborderStyle" colspan="2"><b><bean:message
-				key="main.general.filter.text" /></b></td>
-			<td class="noBborderStyle" colspan="9" align="left"><html:text
-				property="filter" size="40" /> <html:submit styleId="button"
-				titleKey="main.general.button.filter.alttext.text">
-				<bean:message key="main.general.button.filter.text" />
-			</html:submit></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.general.filter.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:text property="filter" size="40" />
+				<html:submit styleId="button" titleKey="main.general.button.filter.alttext.text">
+					<bean:message key="main.general.button.filter.text" />
+				</html:submit>
+			</td>
 		</tr>
+		<!-- show expired -->
 		<tr>
-			<td class="noBborderStyle" colspan="2"><b><bean:message
-				key="main.general.showinvalid.text" /></b></td>
-			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
-				property="show" onclick="refresh(this.form)" /></td>
+			<td align="left" valign="top" class="noBborderStyle">
+				<b><bean:message key="main.general.showexpired.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:checkbox property="show" onclick="refresh(this.form)" />
+			</td>
 		</tr>
+		<!-- show expired -->
 		<tr>
-			<td class="noBborderStyle" colspan="2"><b><bean:message
-				key="main.general.showactualhoursflag.text" /></b></td>
-			<td class="noBborderStyle" colspan="9" align="left"><html:checkbox
-				property="showActualHours" onclick="refresh(this.form)" /></td>
+			<td align="left" valign="top" class="noBborderStyle">
+				<b><bean:message key="main.general.showactualhoursflag.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:checkbox property="showActualHours" onclick="refresh(this.form)" />
+			</td>
 		</tr>
 	</table>
 </html:form>
 
+<table>
+	<tbody>
+		<tr>
+			<bean:size id="employeeordersSize" name="employeeorders" />
+			<c:if test="${employeeordersSize > 10 && (employeeAuthorized || employeeIsResponsible)}">
+				<td class="noBborderStyle" >
+					<html:form action="/CreateEmployeeorder">
+							<html:submit styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
+								<bean:message key="main.general.button.createemployeeorder.text" />
+							</html:submit>
+					</html:form>
+				</td>
+			</c:if>
+			<c:if test="${employeeAuthorized}">
+				<td class="noBborderStyle"> 
+					<html:form action="/ShowEmployeeorder?task=adjustDates">
+						<html:submit styleId="button" titleKey="main.general.button.adjustemployeeorder.alttext.text">
+							<bean:message key="main.general.button.adjustemployeeorder.text" />
+						</html:submit>
+					</html:form>
+				</td>			
+			</c:if>
+		</tr>
+	</tbody>
+</table>
+
 <table class="center backgroundcolor">
-	<bean:size id="employeeordersSize" name="employeeorders" />
-	<c:if test="${employeeAuthorized}">
-		<html:form action="/ShowEmployeeorder?task=adjustDates">
-			<tr>
-				<td class="noBborderStyle" colspan="4"><html:submit
-					styleId="button"
-					titleKey="main.general.button.adjustemployeeorder.alttext.text">
-					<bean:message key="main.general.button.adjustemployeeorder.text" />
-				</html:submit></td>
-			</tr>
-		</html:form>
-	</c:if>
-	<c:if test="${employeeordersSize>10}">
-		<c:if test="${employeeAuthorized || employeeIsResponsible}">
-			<tr>
-				<html:form action="/CreateEmployeeorder">
-					<td class="noBborderStyle" colspan="4"><html:submit
-						styleId="button"
-						titleKey="main.general.button.createemployeeorder.alttext.text">
-						<bean:message key="main.general.button.createemployeeorder.text" />
-					</html:submit></td>
-				</html:form>
-			</tr>
-		</c:if>
-	</c:if>
 	<tr>
 		<th align="left" title="Info"><b>Info</b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.employeename.text" />"><b><bean:message
-			key="main.employeeorder.employee.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.ordernumber.text" />"
-			colspan="1"><b><bean:message
-			key="main.employeeorder.customerorder.text" /></b></th>
-
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.subordernumber.text" />"><b><bean:message
-			key="main.employeeorder.suborder.text" /></b></th>
-
-
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.suborders.description.text" />"
-			colspan="1"><b><bean:message
-			key="main.headlinedescription.suborders.description.text" /></b></th>
-<%--info Unteraftrag			--%>
-        <th align="left"
-			title="<bean:message
-			key="main.headlinedescription.suborders.description.text" />"
-			colspan="1"><b><bean:message
-			key="main.headlinedescription.suborders.suborderdescription.text" /></b></th>
-
-
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.validfrom.text" />"><b><bean:message
-			key="main.employeeorder.validfrom.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.validuntil.text" />"><b><bean:message
-			key="main.employeeorder.validuntil.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.debit.text" />"><b><bean:message
-			key="main.employeeorder.debithours.text" /></b></th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.employeename.text' />">
+			<b><bean:message key="main.employeeorder.employee.text" /></b>
+		</th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.ordernumber.text' />" colspan="1">
+			<b><bean:message key="main.employeeorder.customerorder.text" /></b>
+		</th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.subordernumber.text' />">
+			<b><bean:message key="main.employeeorder.suborder.text" /></b>
+		</th>
+		<th align="left" title="<bean:message key='main.headlinedescription.suborders.description.text' />"	colspan="1">
+			<b><bean:message key="main.headlinedescription.suborders.description.text" /></b>
+		</th>
+        <th align="left" title="<bean:message key='main.headlinedescription.suborders.description.text' />" colspan="1">
+        	<b><bean:message key="main.headlinedescription.suborders.suborderdescription.text" /></b>
+        </th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.validfrom.text' />">
+			<b><bean:message key="main.employeeorder.validfrom.text" /></b>
+		</th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.validuntil.text' />">
+			<b><bean:message key="main.employeeorder.validuntil.text" /></b>
+		</th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.debit.text' />">
+			<b><bean:message key="main.employeeorder.debithours.text" /></b>
+		</th>
 		<c:if test="${showActualHours}">
-			<th align="left"><b><bean:message
-				key="main.general.showactualhours.text" /></b></th>
-			<th align="left"><b><bean:message
-				key="main.general.difference.text"/></b></th>
+			<th align="left">
+				<b><bean:message key="main.general.showactualhours.text" /></b>
+			</th>
+			<th align="left">
+				<b><bean:message key="main.general.difference.text"/></b>
+			</th>
 		</c:if>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.content.text" />"><b><bean:message
-			key="main.employeeorder.content.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.edit.text" />"><b><bean:message
-			key="main.employeeorder.edit.text" /></b></th>
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.employeeorders.delete.text" />"><b><bean:message
-			key="main.employeeorder.delete.text" /></b></th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.content.text' />">
+			<b><bean:message key="main.employeeorder.content.text" /></b>
+		</th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.edit.text' />">
+			<b><bean:message key="main.employeeorder.edit.text" /></b>
+		</th>
+		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.delete.text' />">
+			<b><bean:message key="main.employeeorder.delete.text" /></b>
+		</th>
 	</tr>
-	<c:forEach var="employeeorder" items="${employeeorders}"
-		varStatus="statusID">
+	<c:forEach var="employeeorder" items="${employeeorders}" varStatus="statusID">
 		<c:choose>
-			<c:when test="${statusID.count%2==0}">
+			<c:when test="${statusID.count % 2 == 0}">
 				<tr class="primarycolor">
 			</c:when>
 			<c:otherwise>
@@ -419,12 +415,15 @@
 						<c:choose>
 							<c:when test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
 								<font color="#FF7777">
+									<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+								</font>
 							</c:when>
 							<c:otherwise>
 								<font color="#736F6E">
+									<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+								</font>
 							</c:otherwise>
 						</c:choose>
-						<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/></font>
 					</td>
 					<td align="right" style="color: gray">
 						<c:choose>
@@ -515,13 +514,16 @@
 
 				<c:if test="${showActualHours}">
 					<td align="right">
-						<c:if test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
-							<font color="#FF0000">
-						</c:if>
-						<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
-						<c:if test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
-							</font>
-						</c:if>
+						<c:choose>
+							<c:when test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
+								<font color="#FF0000">
+									<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+								</font>
+							</c:when>
+							<c:otherwise>
+								<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+							</c:otherwise>
+						</c:choose>
 					</td>
 					<td align="right">
 						<c:choose>
@@ -595,20 +597,23 @@
 					title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 			</c:otherwise>
 		</c:choose>
-		</tr>
 	</c:forEach>
-	<c:if test="${employeeAuthorized || employeeIsResponsible}">
-		<tr>
-			<html:form action="/CreateEmployeeorder">
-				<td class="noBborderStyle" colspan="4"><html:submit
-					styleId="button"
-					titleKey="main.general.button.createemployeeorder.alttext.text">
-					<bean:message key="main.general.button.createemployeeorder.text" />
-				</html:submit></td>
-			</html:form>
-		</tr>
-	</c:if>
 </table>
+<c:if test="${employeeAuthorized || employeeIsResponsible}">
+	<table>
+		<tbody>
+			<tr>
+				<td class="noBborderStyle">
+					<html:form action="/CreateEmployeeorder">
+						<html:submit styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
+							<bean:message key="main.general.button.createemployeeorder.text" />
+						</html:submit>
+					</html:form>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</c:if>
 <% request.getSession().setAttribute("addEmployeeOrderContentVisited", true); %>
 <br>
 <br>

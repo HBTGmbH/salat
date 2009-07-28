@@ -258,7 +258,7 @@ public class AddSuborderForm extends ActionForm {
 		commentnecessary = false;
 		
 		Date now = new Date();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		validFrom = simpleDateFormat.format(now);
 		validUntil = simpleDateFormat.format(now);
 		debithours = null;

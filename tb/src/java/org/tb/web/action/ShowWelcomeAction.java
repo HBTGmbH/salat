@@ -116,7 +116,7 @@ public class ShowWelcomeAction extends DailyReportAction {
 		
 		// warnings
 		List<Warning> warnings = new ArrayList<Warning>();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		
 		// eoc warning
 		List<Employeeorder> employeeorders = new ArrayList<Employeeorder>();

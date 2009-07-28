@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
 
@@ -54,8 +55,7 @@ public class AddDailyReportForm extends ActionForm {
 	private String action;
 	
 	public AddDailyReportForm() {
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-		
+		SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		setReferenceday(format.format(new Date()));
 	}
 	

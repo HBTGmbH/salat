@@ -10,8 +10,11 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.tb.GlobalConstants;
 
 
 @Entity
@@ -28,6 +31,7 @@ public class Workingday implements Serializable {
 	
 	/** Employeecontract */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="EMPLOYEECONTRACT_ID")
 	private Employeecontract employeecontract;
 	
@@ -149,7 +153,7 @@ public class Workingday implements Serializable {
 	public boolean equals(Object obj) {
 		if (obj instanceof Workingday) {
 			Workingday other = (Workingday) obj;
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 			String refdateString = simpleDateFormat.format(refday);
 			String otherString = simpleDateFormat.format(other.getRefday());
 			

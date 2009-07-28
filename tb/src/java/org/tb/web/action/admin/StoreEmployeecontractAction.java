@@ -78,7 +78,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 			AddEmployeeContractForm ecForm = (AddEmployeeContractForm) form;
-			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 			
 //			 remove list with timereports out of range
 			request.getSession().removeAttribute("timereportsOutOfRange");
@@ -500,7 +500,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 		}		
 		//		String validFrom = ecForm.getValidFrom();
 //		String validUntil = ecForm.getValidUntil();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		java.util.Date newContractValidFrom;
 		java.util.Date newContractValidUntil = null;
 		try {
@@ -684,7 +684,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 			ecForm.setYearlyvacation(GlobalConstants.VACATION_PER_YEAR);
 		}
 		
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat dateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		
 		ecForm.setValidFrom(dateFormat.format(ec.getValidFrom()));
 		

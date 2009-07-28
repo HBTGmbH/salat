@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
@@ -82,11 +83,18 @@ public class EditDailyReportAction extends DailyReportAction {
 		
 		// fill the form with properties of the timereport to be edited
 		setFormEntries(mapping, request, reportForm, tr);
-		
-		// store last selected order
-		String lastOrder = (String) request.getSession().getAttribute("currentOrder");
-		request.getSession().setAttribute("lastOrder", lastOrder);
-		
+
+		// save the filter settings
+		request.getSession().setAttribute("lastCurrentDay", (String) request.getSession().getAttribute("currentDay"));
+		request.getSession().setAttribute("lastCurrentMonth", (String) request.getSession().getAttribute("currentMonth"));
+		request.getSession().setAttribute("lastCurrentYear", (String) request.getSession().getAttribute("currentYear"));
+		request.getSession().setAttribute("lastLastDay", (String) request.getSession().getAttribute("lastDay"));
+		request.getSession().setAttribute("lastLastMonth", (String) request.getSession().getAttribute("lastMonth"));
+		request.getSession().setAttribute("lastLastYear", (String) request.getSession().getAttribute("lastYear"));
+		request.getSession().setAttribute("lastOrder", (String) request.getSession().getAttribute("currentOrder"));
+		request.getSession().setAttribute("lastSuborderId", (Long) request.getSession().getAttribute("suborderFilerId"));
+		request.getSession().setAttribute("lastView", (String) request.getSession().getAttribute("view"));
+		request.getSession().setAttribute("lastEmployeeContractId", reportForm.getEmployeeContractId());
 		return mapping.findForward("success");	
 	}
 	
@@ -164,7 +172,7 @@ public class EditDailyReportAction extends DailyReportAction {
 		
 //		 workingday should only be available for today
 		java.util.Date today = new java.util.Date();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		String todayString = simpleDateFormat.format(today);
 		try {
 			today = simpleDateFormat.parse(todayString);

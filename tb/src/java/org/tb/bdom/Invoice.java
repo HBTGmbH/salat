@@ -9,8 +9,12 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 /**
  * Bean for table 'invoice'.
@@ -18,6 +22,7 @@ import org.hibernate.annotations.CascadeType;
  * @author oda
  */
 @Entity
+@Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
 public class Invoice implements Serializable {
 
 	private static final long serialVersionUID = 1L; // 1L;
@@ -31,6 +36,7 @@ public class Invoice implements Serializable {
 	
 	/** Customer */
 	@ManyToOne
+	@Fetch(FetchMode.SELECT)
 	@JoinColumn(name="CUSTOMER_ID")
 	@Cascade(value = { CascadeType.SAVE_UPDATE })
 	private Customer customer;

@@ -24,6 +24,7 @@ public class GlobalConstants {
 	public static final int STATUS_MAX_LENGTH = 64;
 	
 	public static final String DEFAULT_CURRENCY = "EUR";
+	public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
 	
 	public static final int BEGINHOUR = 9;
 	public static final int BEGINMINUTE = 0;
@@ -81,7 +82,7 @@ public class GlobalConstants {
 	public static final String EMPLOYEE_STATUS_ADM = "adm";
 	
 	public static final String MONTH_SHORTFORM_JANUARY = "Jan";
-	public static final String MONTH_SHORTFORM_FEBRURAY = "Feb";
+	public static final String MONTH_SHORTFORM_FEBRUARY = "Feb";
 	public static final String MONTH_SHORTFORM_MARCH = "Mar";
 	public static final String MONTH_SHORTFORM_APRIL = "Apr";
 	public static final String MONTH_SHORTFORM_MAY = "May";
@@ -92,6 +93,32 @@ public class GlobalConstants {
 	public static final String MONTH_SHORTFORM_OCTOBER = "Oct";
 	public static final String MONTH_SHORTFORM_NOVEMBER = "Nov";
 	public static final String MONTH_SHORTFORM_DECEMBER = "Dec";
+	public static final String[] MONTH_SHORTFORMS = new String[] {
+		MONTH_SHORTFORM_JANUARY, MONTH_SHORTFORM_FEBRUARY, MONTH_SHORTFORM_MARCH,
+		MONTH_SHORTFORM_APRIL, MONTH_SHORTFORM_MAY, MONTH_SHORTFORM_JUNE,
+		MONTH_SHORTFORM_JULY, MONTH_SHORTFORM_AUGUST, MONTH_SHORTFORM_SEPTEMBER,
+		MONTH_SHORTFORM_OCTOBER, MONTH_SHORTFORM_NOVEMBER, MONTH_SHORTFORM_DECEMBER
+	};
+
+	public static final String MONTH_LONGFORM_JANUARY = "January";
+	public static final String MONTH_LONGFORM_FEBRUARY = "February";
+	public static final String MONTH_LONGFORM_MARCH = "March";
+	public static final String MONTH_LONGFORM_APRIL = "April";
+	public static final String MONTH_LONGFORM_MAY = "May";
+	public static final String MONTH_LONGFORM_JUNE = "June";
+	public static final String MONTH_LONGFORM_JULY = "July";
+	public static final String MONTH_LONGFORM_AUGUST = "August";
+	public static final String MONTH_LONGFORM_SEPTEMBER = "September";
+	public static final String MONTH_LONGFORM_OCTOBER = "October";
+	public static final String MONTH_LONGFORM_NOVEMBER = "November";
+	public static final String MONTH_LONGFORM_DECEMBER = "December";
+	public static final String[] MONTH_LONGFORMS = new String[] {
+		MONTH_LONGFORM_JANUARY, MONTH_LONGFORM_FEBRUARY, MONTH_LONGFORM_MARCH,
+		MONTH_LONGFORM_APRIL, MONTH_LONGFORM_MAY, MONTH_LONGFORM_JUNE,
+		MONTH_LONGFORM_JULY, MONTH_LONGFORM_AUGUST, MONTH_LONGFORM_SEPTEMBER,
+		MONTH_LONGFORM_OCTOBER, MONTH_LONGFORM_NOVEMBER, MONTH_LONGFORM_DECEMBER
+	};
+	
 	
 	public static final int MONTH_INTVALUE_JANUARY = 1;
 	public static final int MONTH_INTVALUE_FEBRURAY = 2;

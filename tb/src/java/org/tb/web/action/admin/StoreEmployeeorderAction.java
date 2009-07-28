@@ -83,7 +83,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 			ActionForm form, HttpServletRequest request,
 			HttpServletResponse response) {
 		AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		
 		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
@@ -503,7 +503,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 		// ActionMessage("form.timereport.error.date.wrongformat"));
 		// }
 
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		java.util.Date validFromDate = null;
 		java.util.Date validUntilDate = null;
 		try {
@@ -582,7 +582,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 						.getEmployeeContractId(), eoForm.getSuborderId());
 		if (employeeOrders != null && !employeeOrders.isEmpty()) {
 			// SimpleDateFormat simpleDateFormat = new
-			// SimpleDateFormat("yyyy-MM-dd");
+			// SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 			// java.util.Date validFromDate;
 			// java.util.Date validUntilDate;
 			if (validFromDate != null) {

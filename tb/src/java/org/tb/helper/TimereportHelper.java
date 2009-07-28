@@ -50,8 +50,7 @@ public class TimereportHelper {
 		Date dt = tr.getReferenceday().getRefdate();
 		String trMonth = dt.toString().substring(5,7);
 		int trMonthI = Integer.parseInt(trMonth);
-		
-		return DateUtils.monthShortStrings[trMonthI-1];
+		return GlobalConstants.MONTH_SHORTFORMS[trMonthI-1];
 	}
 	
 	/**
@@ -722,7 +721,7 @@ public class TimereportHelper {
 		
 		if (GlobalConstants.MONTH_SHORTFORM_JANUARY.equals(monthString)) {
 			month = GlobalConstants.MONTH_INTVALUE_JANUARY;			
-		} else if (GlobalConstants.MONTH_SHORTFORM_FEBRURAY.equals(monthString)) {
+		} else if (GlobalConstants.MONTH_SHORTFORM_FEBRUARY.equals(monthString)) {
 			month = GlobalConstants.MONTH_INTVALUE_FEBRURAY;
 		} else if (GlobalConstants.MONTH_SHORTFORM_MARCH.equals(monthString)) {
 			month = GlobalConstants.MONTH_INTVALUE_MARCH;
@@ -746,7 +745,7 @@ public class TimereportHelper {
 			month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
 		}
 		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		Date selectedDate;
 		try {
 			selectedDate = simpleDateFormat.parse(year+"-"+month+"-"+day);
@@ -781,7 +780,7 @@ public class TimereportHelper {
 		if (monthValue == GlobalConstants.MONTH_INTVALUE_JANUARY){
 			month = GlobalConstants.MONTH_SHORTFORM_JANUARY;
 		} else if (monthValue == GlobalConstants.MONTH_INTVALUE_FEBRURAY) {
-			month = GlobalConstants.MONTH_SHORTFORM_FEBRURAY;
+			month = GlobalConstants.MONTH_SHORTFORM_FEBRUARY;
 		} else if (monthValue == GlobalConstants.MONTH_INTVALUE_MARCH) {
 			month = GlobalConstants.MONTH_SHORTFORM_MARCH;
 		} else if (monthValue == GlobalConstants.MONTH_INTVALUE_APRIL) {

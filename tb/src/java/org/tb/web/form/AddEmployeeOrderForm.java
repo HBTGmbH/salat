@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
@@ -193,7 +194,7 @@ public class AddEmployeeOrderForm extends ActionForm {
 		}
 		Date coFromDate = customerorder.getFromDate();
 		Date coUntilDate = customerorder.getUntilDate();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		String coFromDateString = simpleDateFormat.format(coFromDate);
 		String coUntilDateString;
 		if (coUntilDate != null) {

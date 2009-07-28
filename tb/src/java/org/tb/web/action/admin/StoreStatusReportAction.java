@@ -49,7 +49,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 	protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		AddStatusReportForm reportForm = (AddStatusReportForm) form;
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		boolean backAction = false;
 		
 		// Task for setting the date, previous, next and to-day for both, until and from date
@@ -261,7 +261,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 			// refresh fromdate
 			List<Statusreport> existingReports = statusReportDAO.getStatusReportsByCustomerOrderId(selectedCustomerOrder.getId());
 			Date fromDate = selectedCustomerOrder.getFromDate();
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 			if (existingReports != null && !existingReports.isEmpty()) {
 				Statusreport lastKnownReport = existingReports.get(existingReports.size() -1);
 				
@@ -325,7 +325,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 	
 	private boolean formEntriesEqualDB(Long srId, AddStatusReportForm reportForm) {
 		Statusreport statusreport = statusReportDAO.getStatusReportById(srId);
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 				
 		try {
 			return (reportForm.getAim_action().equals(statusreport.getAim_action()) &&
@@ -422,7 +422,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 		currentReport.setRecipient(employeeDAO.getEmployeeById(reportForm.getRecipientId()));
 		
 		// get dates from validate later
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		Date reportFromDate = new Date(simpleDateFormat.parse(reportForm.getValidFrom()).getTime());
 		Date reportUntilDate = new Date(simpleDateFormat.parse(reportForm.getValidUntil()).getTime());
 		currentReport.setFromdate(reportFromDate);
@@ -547,7 +547,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 		if (errors == null)
 			errors = new ActionMessages();
 		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		
 		// check dates
 		String fromDateString = reportForm.getValidFrom();
@@ -738,7 +738,7 @@ public class StoreStatusReportAction extends StatusReportAction {
 		if (errors == null)
 			errors = new ActionMessages();
 		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		
 		// check dates
 		String fromDateString = reportForm.getValidFrom();

@@ -276,7 +276,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		Date beginDate;
 		Date endDate;
 		
-		/* make sure that the for is set in the http session, it could be a newly created object */ 
+		/* make sure that the form is set in the http session, it could be a newly created object */ 
 		request.getSession().setAttribute("showDailyReportForm", reportForm);
 		
 		try {
@@ -318,10 +318,6 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		java.sql.Date beginSqlDate = new java.sql.Date(beginDate.getTime());
 		java.sql.Date endSqlDate = new java.sql.Date(endDate.getTime());
 		
-//		String sqlDateString = reportForm.getYear() + "-" + 
-//			DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
-//		java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);
-		
 		// test, if an order is select, the selected employee is not associated with
 		long employeeContractId = reportForm.getEmployeeContractId();
 		if (employeeContractId != 0 && employeeContractId != -1) {
@@ -345,14 +341,12 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			List<Customerorder> orders = customerorderDAO.getCustomerorders();
 			request.getSession().setAttribute("orders", orders);
 
-			if ((reportForm.getOrder() == null)
-					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
+			if ((reportForm.getOrder() == null)	|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, all employees, all orders
 				timereports = timereportDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
 				
 			} else {
-				Customerorder co = customerorderDAO
-						.getCustomerorderBySign(reportForm.getOrder());
+				Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
 				long orderId = co.getId();
 				request.getSession().setAttribute("suborders", co.getSuborders());
 				
@@ -367,60 +361,37 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 				} else {				
 					timereports = timereportDAO.getTimereportsByDatesAndSuborderId(beginSqlDate, endSqlDate, reportForm.getSuborderId());
 				}
-				
 			}
 
 		} else {
 			// consider timereports for specific employee
 			// long employeeId = reportForm.getEmployeeId();
-			
-			Employeecontract ec = employeecontractDAO
-					.getEmployeeContractById(employeeContractId);
-
+			Employeecontract ec = employeecontractDAO.getEmployeeContractById(employeeContractId);
 			if (ec == null) {
-				request
-						.setAttribute("errorMessage",
-								"No employee contract found for employee - please call system administrator.");
+				request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
 				return false;
 			}
-
 			// also refresh orders/suborders to be displayed for specific employee 
-			List<Customerorder> orders = customerorderDAO
-					.getCustomerordersByEmployeeContractId(ec.getId());
+			List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
 			request.getSession().setAttribute("orders", orders);
-//			if (orders.size() > 0) {
-//				request.getSession().setAttribute("suborders",
-//								suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
-//			}
-			
-			
-			if ((reportForm.getOrder() == null)
-					|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
+			if ((reportForm.getOrder() == null)	|| (reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS))) {
 				// get the timereports for specific date, specific employee, all orders
-				timereports = timereportDAO
-					.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate);
-				
+				timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate);
 			} else {
-				Customerorder co = customerorderDAO
-						.getCustomerorderBySign(reportForm.getOrder());
+				Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
 				long orderId = co.getId();
 				request.getSession().setAttribute("suborders", co.getSuborders());
-				
 				Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderId());
 				if (suborder == null || suborder.getCustomerorder().getId() != orderId) {
 					reportForm.setSuborderId(-1l);
 				}
-				
 				// get the timereports for specific date, specific employee, specific order
 				// fill up order-specific list with 'working' reports only...
 				if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {
-					timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(
-							ec.getId(), beginSqlDate, endSqlDate, orderId);
+					timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ec.getId(), beginSqlDate, endSqlDate, orderId);
 				} else {
-					timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(
-							ec.getId(), beginSqlDate, endSqlDate, reportForm.getSuborderId());
+					timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), beginSqlDate, endSqlDate, reportForm.getSuborderId());
 				}
-				
 			}
 			// refresh overtime and vacation
 			if (reportForm.getEmployeeContractId() != -1) {
@@ -430,12 +401,10 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		
 		// set timereports in session
 		if (request.getSession().getAttribute("timereportComparator") != null) {
-			Comparator<Timereport> comparator = (Comparator<Timereport>) request
-					.getSession().getAttribute("timereportComparator");
+			Comparator<Timereport> comparator = (Comparator<Timereport>) request.getSession().getAttribute("timereportComparator");
 			Collections.sort(timereports, comparator);
 		}				
 		request.getSession().setAttribute("timereports", timereports);
-		
 		request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());
 
 		// refresh all relevant attributes
@@ -450,12 +419,10 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 			request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
 		}
 		
-		if ((reportForm.getOrder() == null)
-				|| (reportForm.getOrder().equals("ALL ORDERS"))) {
+		if ((reportForm.getOrder() == null)	|| (reportForm.getOrder().equals("ALL ORDERS"))) {
 			request.getSession().setAttribute("currentOrder", GlobalConstants.ALL_ORDERS);
 		} else {
-			request.getSession().setAttribute("currentOrder",
-					reportForm.getOrder());
+			request.getSession().setAttribute("currentOrder", reportForm.getOrder());
 		}
 		request.getSession().setAttribute("currentDay", reportForm.getDay());
 		request.getSession().setAttribute("currentMonth", reportForm.getMonth());

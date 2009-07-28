@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
 import org.tb.persistence.CustomerorderDAO;
@@ -94,7 +95,7 @@ public class EditStatusReportAction extends StatusReportAction {
 
 		
 		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		
 		// set form entries
 		reportForm.setAim_action(statusreport.getAim_action());
