@@ -23,8 +23,8 @@
 		document.forms[0].submit();
 	}
 	
-	function setStoreAction(form, actionVal, addMore) {	
- 		form.action = "/tb/do/StoreSuborder?task=" + actionVal + "&continue=" + addMore;
+	function setStoreAction(form, task, addMore) {	
+ 		form.action = "/tb/do/StoreSuborder?task=" + task + "&continue=" + addMore;
 		form.submit();
 	}		
 			
@@ -77,76 +77,92 @@
 	</span>
 	<br>
 	<table class="center backgroundcolor">
-		
+		<colgroup>
+			<col width="195" align="left"/>
+			<col width="750" align="left"/>
+		</colgroup>
 		<!-- select customerorder -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.customerorder.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="customerorderId" value="${currentOrderId}"
-				onchange="setStoreAction(this.form,'refreshHourlyRate')">
-				<html:options collection="customerorders"
-					labelProperty="signAndDescription" property="id" />
-			</html:select><span style="color:red"><html:errors property="customerorder" /></span></td>
-		</tr>
-	</table>
-	
-		<!-- show the order-structure -->
-		<HR>
-		<% String browser = request.getHeader("User-Agent");  %>
-		<myjsp:tree 
-			mainProject="${currentOrder}" 
-			subProjects="${suborders}"
-			browser="<%=browser%>"
-			changeFunctionString="setStoreAction(this.form,'refreshParentProject','default')"
-			defaultString="default"
-			currentSuborderID="${soId}"
-			/>
-		<HR>
-		<br>
-		<td class="noBborderStyle" nowrap align="left"> 
-			<img id="img1" src="/tb/images/Smily_Krone.gif" border="0"> 
-			<bean:message key="main.general.structureInstructionAsParent.text" />
-		</td>
-		<HR>
-	<table class="center backgroundcolor">
-	
-		<!-- show the parent of this suborder -->
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.parent.text" /></b></td>
-			<td align="left" class="noBborderStyle"> 
-				<b>${parentDescriptionAndSign}</b> <span style="color:red"><html:errors
-				property="parent" /></span>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.customerorder.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="customerorderId" value="${currentOrderId}" onchange="setStoreAction(this.form,'refreshHourlyRate')">
+					<html:options collection="customerorders" labelProperty="signAndDescription" property="id" />
+				</html:select>
+				<span style="color:red">
+					<html:errors property="customerorder" />
+				</span>
 			</td>
 		</tr>
-	
+		<tr>
+			<td align="left" valign="top" class="noBborderStyle">
+				<b><bean:message key="main.suborder.structure.text" />:</b>
+			</td>
+			<td align="left" valign="top" class="noBborderStyle">
+				<% String browser = request.getHeader("User-Agent");  %>
+				<myjsp:tree	mainProject="${currentOrder}" subProjects="${suborders}"
+					browser="<%=browser%>" changeFunctionString="setStoreAction(this.form,'refreshParentProject','default')"
+					defaultString="default"	currentSuborderID="${soId}"	/>
+			</td>
+		</tr>
+		<tr>
+			<td align="left" class="noBborderStyle">
+				&nbsp;
+			</td>
+			<td class="noBborderStyle" nowrap align="left"> 
+				<img id="img1" src="/tb/images/Smily_Krone.gif" border="0"> <bean:message key="main.general.structureInstructionAsParent.text" />
+			</td>
+		</tr>
+		<!-- show the parent of this suborder -->
+		<tr>
+			<td align="left" valign="top" class="noBborderStyle">
+				<b><bean:message key="main.suborder.parent.text" />:</b>
+			</td>
+			<td align="left" valign="top" class="noBborderStyle"> 
+				<b><c:out value="${parentDescriptionAndSign}"/></b>&nbsp;&nbsp;&nbsp;
+				<i>
+					(<fmt:formatDate value="${suborderParent.fromDate}" pattern="yyyy-MM-dd"/>&nbsp;-
+					<c:choose>
+						<c:when test="${suborderParent.untilDate == null}">
+							<bean:message key="main.general.open.text" />)
+						</c:when>
+						<c:otherwise>
+							<fmt:formatDate value="${suborderParent.untilDate}" pattern="yyyy-MM-dd"/>)							
+						</c:otherwise>
+					</c:choose>
+				</i>
+				<span style="color:red">
+					<html:errors property="parent" />
+				</span>
+			</td>
+		</tr>
 		<!-- enter suborder sign -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.sign.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="sign" size="40"
-				maxlength="<%="" + org.tb.GlobalConstants.SUBORDER_SIGN_MAX_LENGTH %>" />
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.sign.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:text property="sign" size="40" maxlength="<%="" + org.tb.GlobalConstants.SUBORDER_SIGN_MAX_LENGTH %>" />
 				<span style="color:red"><html:errors property="sign" /></span>
-				<html:submit
-				onclick="setStoreAction(this.form, 'generateSign')"
-				styleId="button" titleKey="main.suborder.generatesign.text">
-				<bean:message key="main.suborder.generatesign.text" />
-			</html:submit></td>
-
+				<html:submit onclick="setStoreAction(this.form, 'generateSign')" styleId="button" titleKey="main.suborder.generatesign.text">
+					<bean:message key="main.suborder.generatesign.text" />
+				</html:submit>
+			</td>
 		</tr>
-		
 		<!-- from date -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.validfrom.text" /></b></td>
-			<td align="left" class="noBborderStyle"><!-- JavaScript Stuff for popup calender -->
-			<script type="text/javascript" language="JavaScript"
-				src="/tb/CalendarPopup.js"></script> <script type="text/javascript"
-				language="JavaScript">
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.customerorder.validfrom.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<!-- JavaScript Stuff for popup calender -->
+				<script type="text/javascript" language="JavaScript"
+					src="/tb/CalendarPopup.js"></script> <script type="text/javascript"
+					language="JavaScript">
                     document.write(getCalendarStyles());
-                </script> <script type="text/javascript" language="JavaScript">
+                </script> 
+                <script type="text/javascript" language="JavaScript">
                     function calenderPopup(cal) {
                         cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
                         cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
@@ -165,40 +181,36 @@
                         //cal.select(document.forms[0].validUntil,'until','E yyyy-MM-dd');
                         cal.select(document.forms[0].validUntil,'until','yyyy-MM-dd');
                     }
-                </script> <html:text property="validFrom" readonly="false"
-				size="12" maxlength="10" /> <a
-				href="javascript:calenderPopupFrom()" name="from" ID="from"
-				style="text-decoration:none;"> <img
-				src="/tb/images/popupcalendar.gif" width="22" height="22"
-				alt="<bean:message key="main.date.popup.alt.text" />"
-				style="border:0;vertical-align:top"> </a>
-				
+                </script> 
+               	<html:text property="validFrom" readonly="false" size="12" maxlength="10" />
+               	<a href="javascript:calenderPopupFrom()" name="from" ID="from" style="text-decoration:none;"> 
+               		<img src="/tb/images/popupcalendar.gif" width="22" height="22" 
+	               		alt="<bean:message key="main.date.popup.alt.text" />" style="border:0;vertical-align:top">
+				</a>
 				<%-- Arrows for navigating the from-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','-1')" title="<bean:message key="main.date.popup.prevday" />">
-				<img src="/tb/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="/tb/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','0')" title="<bean:message key="main.date.popup.today" />">
-				<img src="/tb/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="/tb/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','1')" title="<bean:message key="main.date.popup.nextday" />">
-				<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
-				(<bean:message
-				key="main.suborder.parentelement.text" />: <fmt:formatDate value="${suborderParent.fromDate}" pattern="yyyy-MM-dd"/>) <span 
-				style="color:red"><html:errors
-				property="validFrom" /></span></td>
+				<span style="color:red">
+					<html:errors property="validFrom" />
+				</span>
+			</td>
 		</tr>
 		
 		<!-- until date -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.validuntil.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.customerorder.validuntil.text" />:</b>
+			</td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="validUntil" readonly="false" size="12" maxlength="10" />
 			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
@@ -222,155 +234,185 @@
 				<a href="javascript:setDate('until','1')" title="<bean:message key="main.date.popup.nextday" />">
 				<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
-				(<bean:message
-				key="main.suborder.parentelement.text" />: <c:choose>
-						<c:when test="${suborderParent.untilDate == null}">
-							<bean:message key="main.general.open.text" />)
-						</c:when>
-						<c:otherwise>
-							<fmt:formatDate value="${suborderParent.untilDate}" pattern="yyyy-MM-dd"/>)
-						</c:otherwise>
-					</c:choose> <span style="color:red"><html:errors
-				property="validUntil" /></span></td>
+				<span style="color:red">
+					<html:errors property="validUntil" />
+				</span>
+			</td>
 		</tr>
 		
 		<!-- description -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.description.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:textarea
-				property="description" cols="30" rows="4" /> <span
-				style="color:red"><html:errors property="description" /><c:if test="${fn:length(param.description) > 256}"> (<c:out value="${fn:length(param.description)}" />/256)</c:if></span></td>
+			<td align="left" valign="top" class="noBborderStyle">
+				<b><bean:message key="main.suborder.description.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:textarea property="description" cols="30" rows="4" />
+				<span style="color:red">
+					<html:errors property="description" />
+					<c:if test="${fn:length(param.description) > 256}"> (<c:out value="${fn:length(param.description)}" />/256)</c:if>
+				</span>
+			</td>
 		</tr>
 
 		<!-- short description -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.shortdescription.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="shortdescription" size="20" maxlength="20" /> <span
-				style="color:red"><html:errors property="shortdescription" /></span></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.shortdescription.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:text property="shortdescription" size="20" maxlength="20" />
+				<span style="color:red">
+					<html:errors property="shortdescription" />
+				</span>
+			</td>
 		</tr>
 		<!-- suborder_customer -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.suborder_customer.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="suborder_customer" size="20" maxlength="20" /> <span
-				style="color:red"><html:errors property="suborder_customer" /></span></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.suborder_customer.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:text property="suborder_customer" size="20" maxlength="20" />
+				<span style="color:red">
+					<html:errors property="suborder_customer" />
+				</span>
+			</td>
 		</tr>
 		<!-- invoice -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.invoice.text" />:</b></td>
-			<td align="left" class="noBborderStyle"><html:select
-				property="invoice" value="${invoice}">
-				<html:option value="Y">
-					<bean:message key="main.general.suborder.invoice.yes" />
-				</html:option>
-				<html:option value="N">
-					<bean:message key="main.general.suborder.invoice.no" />
-				</html:option>
-				<html:option value="U">
-					<bean:message key="main.general.suborder.invoice.undefined" />
-				</html:option>
-			</html:select> <span style="color:red"><html:errors property="invoice" /></span></td>
-
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.invoice.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="invoice" value="${invoice}">
+					<html:option value="Y">
+						<bean:message key="main.general.suborder.invoice.yes" />
+					</html:option>
+					<html:option value="N">
+						<bean:message key="main.general.suborder.invoice.no" />
+					</html:option>
+					<html:option value="U">
+						<bean:message key="main.general.suborder.invoice.undefined" />
+					</html:option>
+				</html:select> 
+				<span style="color:red">
+					<html:errors property="invoice" />
+				</span>
+			</td>
 		</tr>
 
 		<!-- hourly rate & currency -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.hourlyrate.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="hourlyRate" size="20" value="${hourlyRate}" /> <html:select property="currency">
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.hourlyrate.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:text property="hourlyRate" size="20" value="${hourlyRate}" />
+				<html:select property="currency">
 					<html:option value="EUR">EUR</html:option>
-				</html:select> <span style="color:red"><html:errors property="hourlyRate" /></span></td>
+				</html:select>
+				<span style="color:red">
+					<html:errors property="hourlyRate" />
+				</span>
+			</td>
 		</tr>
 		
 		<!-- debithours -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.general.debithours.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="debithours" size="20" />&nbsp;&nbsp;<bean:message
-				key="main.general.per.text" />&nbsp;&nbsp;&nbsp;&nbsp;
-				<html:radio property="debithoursunit" value="12" disabled="false" /><bean:message
-				key="main.general.month.text" /> <html:radio 
-				property="debithoursunit" value="1" disabled="false" /><bean:message
-				key="main.general.year.text" /> <html:radio 
-				property="debithoursunit" value="0" disabled="false" /><bean:message
-				key="main.general.totaltime.text" /> <span 
-				style="color:red"><html:errors property="debithours" /></span>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.general.debithours.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:text property="debithours" size="20" />
+				&nbsp;&nbsp;
+				<bean:message key="main.general.per.text" />
+				&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio property="debithoursunit" value="12" disabled="false" />
+				<bean:message key="main.general.month.text" />
+				<html:radio property="debithoursunit" value="1" disabled="false" />
+				<bean:message key="main.general.year.text" />
+				<html:radio property="debithoursunit" value="0" disabled="false" />
+				<bean:message key="main.general.totaltime.text" />
+				<span style="color:red">
+					<html:errors property="debithours" />
+				</span>
 			</td>
 		</tr>
 
 		<!-- is it a standard suborder? -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.standard.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:checkbox
-				property="standard" /></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.standard.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:checkbox property="standard" />
+			</td>
 		</tr>
 
 		<!-- comment necessary? -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.commentnecessary.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:checkbox
-				property="commentnecessary" /></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.commentnecessary.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:checkbox property="commentnecessary" />
+			</td>
 		</tr>
 		
 		<!-- no employee order content -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.suborder.eocpossible.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:checkbox
-				property="noEmployeeOrderContent" /></td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.eocpossible.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:checkbox property="noEmployeeOrderContent" />
+			</td>
 		</tr>
-		
-		
 		<!-- hide -->
 		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.general.hideinselectboxes.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:checkbox
-				property="hide" /> </td>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.general.hideinselectboxes.text" />:</b>
+			</td>
+			<td align="left" valign="top" class="noBborderStyle">
+				<html:checkbox property="hide" />
+			</td>
 		</tr>
-
 
 	</table>
 	<br>
 	<table class="center">
 		<tr>
-			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'false');return false"
-				styleId="button" titleKey="main.general.button.save.alttext.text">
-				<bean:message key="main.general.button.save.text" />
-			</html:submit></td>
-			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'true');return false"
-				styleId="button"
-				titleKey="main.general.button.saveandcontinue.alttext.text">
-				<bean:message key="main.general.button.saveandcontinue.text" />
-			</html:submit></td>
-			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'reset', 'false')"
-				styleId="button" titleKey="main.general.button.reset.alttext.text">
-				<bean:message key="main.general.button.reset.text" />
-			</html:submit></td>
+			<td class="noBborderStyle">
+				<html:submit onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button" titleKey="main.general.button.save.alttext.text">
+					<bean:message key="main.general.button.save.text" />
+				</html:submit>
+			</td>
+			<td class="noBborderStyle">
+				<html:submit onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button" titleKey="main.general.button.saveandcontinue.alttext.text">
+					<bean:message key="main.general.button.saveandcontinue.text" />
+				</html:submit>
+			</td>
+			<td class="noBborderStyle">
+				<html:submit onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button" titleKey="main.general.button.reset.alttext.text">
+					<bean:message key="main.general.button.reset.text" />
+				</html:submit>
+			</td>
 		</tr>
-		<tr><td class="noBborderStyle" colspan="3"><hr /></td></tr>
 		<tr>
-		<td class="noBborderStyle" colspan="3"><html:submit
-				onclick="confirmCopy(this.form); return false;"
-				styleId="button" ><bean:message key="main.general.button.copy.suborder.text" /></html:submit><html:submit
-				onclick="confirmFit(this.form); return false;"
-				styleId="button" ><bean:message key="main.general.button.fit.suborder.text" /></html:submit></td>
+			<td class="noBborderStyle" colspan="3">
+				<hr />
+			</td>
 		</tr>
-		
-		
+		<tr>
+			<td class="noBborderStyle" colspan="3">
+				<html:submit onclick="confirmCopy(this.form); return false;" styleId="button" >
+					<bean:message key="main.general.button.copy.suborder.text" />
+				</html:submit>
+				<html:submit onclick="confirmFit(this.form); return false;"	styleId="button" >
+					<bean:message key="main.general.button.fit.suborder.text" />
+				</html:submit>
+			</td>
+		</tr>
 	</table>
 	<html:hidden property="id" />
 	
