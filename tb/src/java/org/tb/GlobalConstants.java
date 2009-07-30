@@ -224,7 +224,15 @@ public class GlobalConstants {
     
     public static final Integer MINUTES_PER_HOUR = 60;
     
-    public static final char GENDER_MALE = 'm';
-    public static final char GENDER_FEMALE = 'f';
+    public static final Character GENDER_MALE = 'm';
+    public static final Character GENDER_FEMALE = 'f';
+    
+    public static final Character INVOICE_YES = 'Y';
+    public static final Character INVOICE_NO = 'N';
+    public static final Character INVOICE_UNDEFINED = 'U';
+    
+    public static final String MAIL_HOST = "MSG01";
+    public static final String MAIL_DOMAIN = "hbt.de";
+    public static final String MAIL_NOREPLY_ADRESS = "noreply@" + GlobalConstants.MAIL_DOMAIN;
     
 }

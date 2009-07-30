@@ -557,13 +557,11 @@ public class Suborder implements Serializable {
 	}
 	
 	public String getInvoiceString() {
-		String invoiceString = ((Character)invoice).toString();
-		return (invoiceString == null || invoiceString == "") ? "U" : invoiceString;
+		return ((Character) invoice == null) ? GlobalConstants.INVOICE_UNDEFINED.toString() : ((Character) invoice).toString();
 	}
 	
 	public Character getInvoiceChar() {
-		Character invoiceCharacter = invoice;
-		return (invoiceCharacter == null) ? 'U' : invoiceCharacter;
+		return ((Character) invoice == null) ? GlobalConstants.INVOICE_UNDEFINED : (Character) invoice;
 	}
 	
 	

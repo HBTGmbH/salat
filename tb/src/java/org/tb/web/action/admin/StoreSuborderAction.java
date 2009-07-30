@@ -2,6 +2,7 @@ package org.tb.web.action.admin;
 
 import java.sql.Date;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
@@ -459,16 +460,21 @@ public class StoreSuborderAction extends LoginRequiredAction {
 	 * @return
 	 */
 	private ActionMessages validateFormData(HttpServletRequest request, AddSuborderForm addSuborderForm) {
-
 		ActionMessages errors = getErrors(request);
 		if (errors == null){
 			errors = new ActionMessages();
 		}
-
-		Long soId = (Long) request.getSession().getAttribute("soId");
+		Long suborderId;
+		if (request.getSession().getAttribute("soId") != null) {
+			// edited suborder
+			suborderId = (Long) request.getSession().getAttribute("soId"); 
+		} else {
+			// new suborder
+			suborderId = 0l;
+		}
+		
 		// for a new suborder, check if the sign already exists
-		if (soId == null) {
-			soId = 0l;
+		if (suborderId == 0l) {
 			// Liste aller Children der übergeordneten Suborder
 			// ggf. gibt es keine übergeordnete Suborder (=null?)
 			// dann die untergeordneten Suboders der Customerorder.
@@ -523,58 +529,41 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			errors.add("currency", new ActionMessage(
 					"form.suborder.error.currency.required"));
 		}
-//		if (soForm.getSuborder_customer().length() <= 0) {
-//			errors.add("currency", new ActionMessage(
-//					"form.suborder.error.suborder_customer.required"));
-//		}
 		if (addSuborderForm.getSuborder_customer().length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
-			errors.add("suborder_customer", new ActionMessage(
-					"form.suborder.error.suborder_customer.toolong"));
+			errors.add("suborder_customer", new ActionMessage("form.suborder.error.suborder_customer.toolong"));
 		}
 		// check invoice character
 		if ((addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_YES)
 				&& (addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_NO)
 				&& (addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_UNDEFINED)) {
-			errors.add("invoice", new ActionMessage(
-					"form.suborder.error.invoice.invalid"));
+			errors.add("invoice", new ActionMessage("form.suborder.error.invoice.invalid"));
 		}
-
 		// check hourly rate format
 		if (!GenericValidator.isDouble(addSuborderForm.getHourlyRate().toString())
-				|| (!GenericValidator.isInRange(addSuborderForm.getHourlyRate(), 0.0,
-						GlobalConstants.MAX_HOURLY_RATE))) {
-			errors.add("hourlyRate", new ActionMessage(
-					"form.suborder.error.hourlyrate.wrongformat"));
+				|| (!GenericValidator.isInRange(addSuborderForm.getHourlyRate(), 0.0, GlobalConstants.MAX_HOURLY_RATE))) {
+			errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.wrongformat"));
 		}
-
-//		check date formats (must now be 'yyyy-MM-dd')
-		Date soFromDate = null;
-		Date soUntilDate = null;
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyy-MM-dd");
-		
-		String dateFromString = addSuborderForm.getValidFrom().trim();
-		
+		// check date formats
+		Date suborderFromDate = null;
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 		try {
-			soFromDate = new java.sql.Date(simpleDateFormat.parse(dateFromString).getTime());
-		} catch (Exception e) {
+			suborderFromDate = new Date(simpleDateFormat.parse(addSuborderForm.getValidFrom()).getTime());
+		} catch (ParseException e) {
 			errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
 		}
+		Date suborderUntilDate = null;
 		if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
-			String dateUntilString = addSuborderForm.getValidUntil().trim();
 			try {
-				soUntilDate = new java.sql.Date(simpleDateFormat.parse(dateUntilString).getTime());
-			} catch (Exception e) {
+				suborderUntilDate = new Date(simpleDateFormat.parse(addSuborderForm.getValidUntil()).getTime());
+			} catch (ParseException e) {
 				errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
 			}
 		}
-		
-		if (soFromDate != null && soUntilDate != null) {
-			if (soUntilDate.before(soFromDate)) {
+		if (suborderFromDate != null && suborderUntilDate != null) {
+			if (suborderUntilDate.before(suborderFromDate)) {
 				errors.add("validUntil", new ActionMessage("form.suborder.error.date.untilbeforefrom"));
 			}
 		}
-		
-		
 		// check debit hours
 		if (!GenericValidator.isDouble(addSuborderForm.getDebithours().toString()) ||
 				(!GenericValidator.isInRange(addSuborderForm.getDebithours(), 
@@ -583,7 +572,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
 		} else if (addSuborderForm.getDebithours() != null && addSuborderForm.getDebithours() != 0.0) {
 			Double debithours = addSuborderForm.getDebithours() * 100000;
 			debithours += 0.5;
-			
 			int debithours2 = debithours.intValue();
 			int modulo = debithours2%5000;
 			addSuborderForm.setDebithours(debithours2/100000.0);
@@ -608,85 +596,14 @@ public class StoreSuborderAction extends LoginRequiredAction {
 			// check validity period
 			Date coFromDate = customerorder.getFromDate();
 			Date coUntilDate = customerorder.getUntilDate();
-			if (soFromDate != null && coFromDate != null) {
-				if (soFromDate.before(coFromDate)) {
+			if (suborderFromDate != null && coFromDate != null) {
+				if (suborderFromDate.before(coFromDate)) {
 					errors.add("validFrom", new ActionMessage("form.suborder.error.date.outofrange.order"));
 				}
-				if (!(coUntilDate == null || (soUntilDate != null && !soUntilDate.after(coUntilDate)))) {
+				if (!(coUntilDate == null || (suborderUntilDate != null && !suborderUntilDate.after(coUntilDate)))) {
 					errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.order"));
 				}
 			}
-			
-//			// check debit hours
-//			if (customerorder.getDebithours() != null && customerorder.getDebithours() != 0.0 && 
-//					"Y".equals(soForm.getInvoice()) && soForm.getDebithoursunit() != null) {
-//				int coDebithoursunit = customerorder.getDebithoursunit();
-//				int soDebithoursunit = soForm.getDebithoursunit();
-//				
-//				switch (coDebithoursunit) {
-//				case GlobalConstants.DEBITHOURS_UNIT_TOTALTIME:
-//					switch (soDebithoursunit) {
-//					case GlobalConstants.DEBITHOURS_UNIT_TOTALTIME:			
-//						
-//						break;
-//						
-//					case GlobalConstants.DEBITHOURS_UNIT_YEAR:
-//						
-//						break;
-//					
-//					case GlobalConstants.DEBITHOURS_UNIT_MONTH:
-//						
-//						break;	
-//						
-//					default:
-//						throw new RuntimeException("Suborder has an invaild debit hours unit");
-//					}
-//					break;
-//					
-//				case GlobalConstants.DEBITHOURS_UNIT_YEAR:
-//					switch (soDebithoursunit) {
-//					case GlobalConstants.DEBITHOURS_UNIT_TOTALTIME:
-//						
-//						break;
-//						
-//					case GlobalConstants.DEBITHOURS_UNIT_YEAR:
-//						
-//						break;
-//					
-//					case GlobalConstants.DEBITHOURS_UNIT_MONTH:
-//						
-//						break;	
-//						
-//					default:
-//						throw new RuntimeException("Suborder has an invaild debit hours unit");
-//					}
-//					break;
-//				
-//				case GlobalConstants.DEBITHOURS_UNIT_MONTH:
-//					switch (soDebithoursunit) {
-//					case GlobalConstants.DEBITHOURS_UNIT_TOTALTIME:
-//						
-//						break;
-//						
-//					case GlobalConstants.DEBITHOURS_UNIT_YEAR:
-//						
-//						break;
-//					
-//					case GlobalConstants.DEBITHOURS_UNIT_MONTH:
-//						
-//						break;	
-//						
-//					default:
-//						throw new RuntimeException("Suborder has an invaild debit hours unit");
-//					}
-//					break;	
-//					
-//				default:
-//					throw new RuntimeException("Customerorder has an invaild debit hours unit");
-//				}
-//				
-//			}
-			
 		}
 		
 		// check time period for hierachical higher suborders
@@ -697,53 +614,36 @@ public class StoreSuborderAction extends LoginRequiredAction {
 				// check validity period
 				Date parentFromDate = parentSuborder.getFromDate();
 				Date parentUntilDate = parentSuborder.getUntilDate();
-				if (soFromDate != null && parentFromDate != null) {
-					if (soFromDate.before(parentFromDate)) {
+				if (suborderFromDate != null && parentFromDate != null) {
+					if (suborderFromDate.before(parentFromDate)) {
 						errors.add("validFrom", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
 					}
-					if (!(parentUntilDate == null || (soUntilDate != null && !soUntilDate.after(parentUntilDate)))) {
+					if (!(parentUntilDate == null || (suborderUntilDate != null && !suborderUntilDate.after(parentUntilDate)))) {
 						errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
 					}
 				}
 			}
 		}
 		
-		
-//		// check if billable suborder has assigned debit hours
-//		if ("Y".equals(soForm.getInvoice()) && (soForm.getDebithours() == null || soForm.getDebithours() == 0.0)) {
-//			errors.add("debithours", new ActionMessage("form.suborder.error.debithours.necessary"));
-//		}
-		
 		// check if billable suborder has assigned hourly rate
-		if ("Y".equals(addSuborderForm.getInvoice()) && (addSuborderForm.getHourlyRate() == null || addSuborderForm.getHourlyRate() == 0.0)) {
+		if (addSuborderForm.getInvoice().equals(GlobalConstants.INVOICE_YES.toString()) && (addSuborderForm.getHourlyRate() == null || addSuborderForm.getHourlyRate() == 0.0)) {
 			errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.unavailable"));
 		}
 		
 		// check, if dates fit to existing timereports
-		List<Timereport> timereportsInvalidForDates = new LinkedList<Timereport>();
-		
-				
-		if (request.getSession().getAttribute("soId") != null) {
-			// edited suborder
-			soId = Long.parseLong(request.getSession().getAttribute("soId")
-					.toString());
-			Suborder so = suborderDAO.getSuborderById(soId);
-			
-			timereportsInvalidForDates.addAll(so.getAllTimeReportsInvalidForDates(soFromDate, soUntilDate, timereportDAO));
-						
+		List<Timereport> timereportsInvalidForDates;
+		if (suborderId != 0l) {
+			Suborder suborder = suborderDAO.getSuborderById(suborderId);
+			timereportsInvalidForDates = suborder.getAllTimeReportsInvalidForDates(suborderFromDate, suborderUntilDate, timereportDAO);
 		} else {
-			timereportsInvalidForDates.addAll(timereportDAO.
-					getTimereportsBySuborderIdInvalidForDates(soFromDate, soUntilDate, soId));
+			timereportsInvalidForDates = timereportDAO.getTimereportsBySuborderIdInvalidForDates(suborderFromDate, suborderUntilDate, suborderId);
 		}		
-		
 		if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
 			request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
 			errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
-			
 		}
 		
 		saveErrors(request, errors);
-
 		return errors;
 	}
 
