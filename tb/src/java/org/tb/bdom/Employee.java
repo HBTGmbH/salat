@@ -9,6 +9,7 @@ import javax.persistence.Id;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.tb.GlobalConstants;
 import org.tb.util.MD5Util;
 
 /**
@@ -280,6 +281,8 @@ public class Employee implements Serializable {
 		this.updatecounter = updatecounter;
 	}
 
-	
+	public String getEmailAddress() {
+		return getSign() + "@" + GlobalConstants.MAIL_DOMAIN;
+	}
 
 }

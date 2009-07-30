@@ -379,7 +379,7 @@ public class Customerorder implements Serializable {
 	}
 
 	public String getSignAndDescription() {
-		return sign+" - "+getShortdescription();
+		return sign + " - " + getShortdescription();
 	}
 	
 	/**
