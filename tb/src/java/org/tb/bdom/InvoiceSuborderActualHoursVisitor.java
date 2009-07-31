@@ -1,5 +1,9 @@
 package org.tb.bdom;
 
+import java.sql.Date;
+import java.text.DecimalFormat;
+
+import org.tb.GlobalConstants;
 import org.tb.persistence.TimereportDAO;
 
 public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
@@ -7,11 +11,11 @@ public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
 	private TimereportDAO timereportDAO;
 	private Long durationHours;
 	private Long durationMinutes;
-	private java.sql.Date fromDate;
-	private java.sql.Date untilDate;
+	private Date fromDate;
+	private Date untilDate;
 	private boolean invoicebox;
 	
-	public InvoiceSuborderActualHoursVisitor(TimereportDAO timereportDAO, java.sql.Date fromDate, java.sql.Date untilDate, boolean invoicebox) {
+	public InvoiceSuborderActualHoursVisitor(TimereportDAO timereportDAO, Date fromDate, Date untilDate, boolean invoicebox) {
 		this.durationHours = 0l;
 		this.durationMinutes = 0l;
 		this.timereportDAO = timereportDAO;
@@ -19,54 +23,28 @@ public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
 		this.untilDate = untilDate;
 		this.invoicebox = invoicebox;
 	}
-	
 
 	public void visitSuborder(Suborder suborder) {
-		if(invoicebox && suborder.getInvoice() == 'N'){
+		if (invoicebox && GlobalConstants.INVOICE_NO.equals(suborder.getInvoice())) {
 			durationHours += timereportDAO.getTotalDurationHoursForSuborder(suborder.getId(), fromDate, untilDate);
 			durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);			
-		}else if (invoicebox && suborder.getInvoice() == 'Y') {
+		} else if (invoicebox && GlobalConstants.INVOICE_YES.equals(suborder.getInvoice())) {
 			durationHours += timereportDAO.getTotalDurationHoursForSuborder(suborder.getId(), fromDate, untilDate);
 			durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
-		}else if (!invoicebox && suborder.getInvoice() == 'N') {
-			
-		}else if (!invoicebox && suborder.getInvoice() == 'Y') {
+//		} else if (!invoicebox && GlobalConstants.INVOICE_NO.equals(suborder.getInvoice())) {
+//			// do nothing
+		} else if (!invoicebox && GlobalConstants.INVOICE_YES.equals(suborder.getInvoice())) {
 			durationHours += timereportDAO.getTotalDurationHoursForSuborder(suborder.getId(), fromDate, untilDate);
 			durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
 		}
-		
-			
 	}
 
-	
-
 	public String getTotalTime() {
-//		double totalTime = durationHours.doubleValue() + (durationMinutes.doubleValue() / GlobalConstants.MINUTES_PER_HOUR);
-//		
-//		/* round totalTime */
-//		totalTime *= 100.0;
-//		long roundedTime = Math.round(totalTime);
-//		totalTime = roundedTime / 100.0;
-//		
-//		/* return result */
-//		return totalTime;
-		
-		int actualhours = 0;
-		int actualminutes = 0;
-		
-		actualminutes = durationMinutes.intValue();
-		int tempHours = (int)actualminutes / 60;
-		actualminutes = actualminutes % 60;
-		actualhours = durationHours.intValue() + tempHours;
-		
-
-		String targetMinutesString = "";
-		if (actualminutes < 10) {
-			targetMinutesString += "0";
-		}
-
-		return String.valueOf(actualhours) + ":" + targetMinutesString
-				+ String.valueOf(actualminutes);
+		DecimalFormat decimalFormat = new DecimalFormat("00");
+		return decimalFormat.format(durationHours + durationMinutes / 60) + ":" + decimalFormat.format(durationMinutes % 60);
 	}	
 
+	public long getTotalMinutes() {
+		return durationHours * 60 + durationMinutes;
+	}
 }

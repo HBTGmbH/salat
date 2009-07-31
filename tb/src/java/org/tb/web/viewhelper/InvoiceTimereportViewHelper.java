@@ -9,6 +9,7 @@ import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 
 public class InvoiceTimereportViewHelper {
+	
 	private Timereport timereport;
 	private boolean visible;
 

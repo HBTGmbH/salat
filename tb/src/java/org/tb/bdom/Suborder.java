@@ -447,12 +447,11 @@ public class Suborder implements Serializable {
 
 	public String getTimeString() {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-		Date untilDate = getUntilDate();
-		Date fromDate = getFromDate();
-		if (untilDate == null) {
-			return simpleDateFormat.format(fromDate) + " - ";
+		String result = simpleDateFormat.format(getFromDate()) + " - ";
+		if (getUntilDate() != null) {
+			result += simpleDateFormat.format(getUntilDate());
 		}
-		return simpleDateFormat.format(fromDate) + " - " + simpleDateFormat.format(untilDate);
+		return result;
 	}
 	
 	public Boolean getOpenEnd() {

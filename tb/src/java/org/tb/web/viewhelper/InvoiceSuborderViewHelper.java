@@ -1,10 +1,9 @@
 package org.tb.web.viewhelper;
 
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
-import org.tb.GlobalConstants;
-import org.tb.bdom.CustomerOrderActualHoursVisitor;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
@@ -56,58 +55,56 @@ public class InvoiceSuborderViewHelper extends Suborder{
 	}
 
 	public String getDuration() {
-
-		InvoiceSuborderActualHoursVisitor visitor = new InvoiceSuborderActualHoursVisitor(
-				timereportDAO, fromDate, untilDate, invoicebox);
-
+		InvoiceSuborderActualHoursVisitor visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
 		/* start visiting */
 		acceptVisitor(visitor);
-
 		/* return result */
 		return visitor.getTotalTime();
 	}
+	
+	public long getDurationInMinutes() {
+		InvoiceSuborderActualHoursVisitor visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
+		/* start visiting */
+		acceptVisitor(visitor);
+		/* return result */
+		return visitor.getTotalMinutes();
+	}
 
 	public String getActualhours() {
-		int actualhours = 0;
-		int actualminutes = 0;
-		for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceTimereportViewHelperList) {
-				actualminutes += invoiceTimereportViewHelper
-						.getDurationminutes();
-				int tempHours = actualminutes / 60;
-				actualminutes = actualminutes % 60;
-				actualhours += invoiceTimereportViewHelper.getDurationhours()
-						+ tempHours;
-		}
-		String targetMinutesString = "";
-		if (actualminutes < 10) {
-			targetMinutesString += "0";
-		}
-
-		return String.valueOf(actualhours) + ":" + targetMinutesString
-				+ String.valueOf(actualminutes);
+		return getActualhoursHelper(false);
 	}
 	
 	public String getActualhoursPrint() {
-		int actualhours = 0;
-		int actualminutes = 0;
-		for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceTimereportViewHelperList) {
-			if (invoiceTimereportViewHelper.isVisible()) {
-				actualminutes += invoiceTimereportViewHelper
-						.getDurationminutes();
-				int tempHours = actualminutes / 60;
-				actualminutes = actualminutes % 60;
-				actualhours += invoiceTimereportViewHelper.getDurationhours()
-						+ tempHours;
+		return getActualhoursHelper(true);
+	}
+	
+	private String getActualhoursHelper(boolean print) {
+		long actualhours = getTotalActualminutesHelper(print) / 60;
+		long actualminutes = getTotalActualminutesHelper(print) % 60;
+		DecimalFormat decimalFormat = new DecimalFormat("00");
+		return decimalFormat.format(actualhours) + ":" + decimalFormat.format(actualminutes);
+	}
+	
+	public long getTotalActualminutes() {
+		return getTotalActualminutesHelper(false);
+	}
+	
+	public long getTotalActualminutesPrint() {
+		return getTotalActualminutesHelper(true);
+	}
+	
+	private long getTotalActualminutesHelper(boolean print) {
+		long actualminutes = 0;
+		for (InvoiceTimereportViewHelper invoiceTimereportViewHelper: invoiceTimereportViewHelperList) {
+			if (!print) {
+				actualminutes += invoiceTimereportViewHelper.getDurationminutes();
+				actualminutes += invoiceTimereportViewHelper.getDurationhours() * 60;
+			} else if (invoiceTimereportViewHelper.isVisible()) {
+				actualminutes += invoiceTimereportViewHelper.getDurationminutes();
+				actualminutes += invoiceTimereportViewHelper.getDurationhours() * 60;
 			}
-
 		}
-		String targetMinutesString = "";
-		if (actualminutes < 10) {
-			targetMinutesString += "0";
-		}
-
-		return String.valueOf(actualhours) + ":" + targetMinutesString
-				+ String.valueOf(actualminutes);
+		return actualminutes;
 	}
 
 	public void setVisible(boolean visible) {
@@ -118,13 +115,11 @@ public class InvoiceSuborderViewHelper extends Suborder{
 		return invoiceTimereportViewHelperList;
 	}
 
-	public void setInvoiceTimereportViewHelperList(
-			List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList) {
+	public void setInvoiceTimereportViewHelperList(List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList) {
 		this.invoiceTimereportViewHelperList = invoiceTimereportViewHelperList;
 	}
 
-	public InvoiceSuborderViewHelper(Suborder suborder,
-			TimereportDAO timereportDAO, java.sql.Date fromDate, java.sql.Date untilDate, boolean invoicebox) {
+	public InvoiceSuborderViewHelper(Suborder suborder, TimereportDAO timereportDAO, java.sql.Date fromDate, java.sql.Date untilDate, boolean invoicebox) {
 		if (suborder == null) {
 			throw new IllegalArgumentException("suborder must not be null!");
 		}
@@ -148,10 +143,8 @@ public class InvoiceSuborderViewHelper extends Suborder{
 		return suborder.getAllChildren();
 	}
 
-	public List<Timereport> getAllTimeReportsInvalidForDates(
-			java.sql.Date begin, java.sql.Date end, TimereportDAO timereportDAO) {
-		return suborder.getAllTimeReportsInvalidForDates(begin, end,
-				timereportDAO);
+	public List<Timereport> getAllTimeReportsInvalidForDates(java.sql.Date begin, java.sql.Date end, TimereportDAO timereportDAO) {
+		return suborder.getAllTimeReportsInvalidForDates(begin, end, timereportDAO);
 	}
 
 	public Boolean getCommentnecessary() {
@@ -183,21 +176,14 @@ public class InvoiceSuborderViewHelper extends Suborder{
 	}
 
 	public String getDebithoursString() {
-		String debitHours = "";
+		String result = "";
 		if (suborder.getDebithours() != null && suborder.getDebithours() != 0.0) {
-			double targetminutes = suborder.getDebithours() * 60;
-			int targethours = (int) targetminutes / 60;
-			targetminutes = targetminutes % 60;
-			String targetMinutesString = "";
-			if (targetminutes < 10) {
-				targetMinutesString += "0";
-			}
-			debitHours = targethours + ":" + targetMinutesString
-					+ (int) targetminutes;
+			DecimalFormat decimalFormat = new DecimalFormat("00");
+			String hours = decimalFormat.format(Math.floor(suborder.getDebithours()));
+			String minutes = decimalFormat.format(suborder.getDebithours() % 1 * 60);
+			result = hours + ":" + minutes;
 		}
-
-		return debitHours;
-		// return "" + suborder.getDebithours();
+		return result;
 	}
 
 	public Byte getDebithoursunit() {

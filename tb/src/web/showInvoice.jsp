@@ -12,12 +12,11 @@
 	<head>
 		<meta http-equiv="Content-Type"
 			content="text/html; charset=ISO-8859-1">
-		<title><bean:message key="main.general.application.title" />
-			- <bean:message key="main.general.mainmenu.invoice.title.text" />
+		<title>
+			<bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.invoice.title.text" />
 		</title>
 		<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="/tb/print.css"
-			media="print" />
+		<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
 		<script type="text/javascript" language="JavaScript">	
 		 	function setUpdateInvoiceAction(form) {	
 		 		form.action = "/tb/do/ShowInvoice?task=refreshInvoiceForm";
@@ -27,7 +26,6 @@
 				form.action = "/tb/do/ShowInvoice?task=export";
 				form.submit();
 			}
-			
 			function showPrint(form) {
 				form.action = "/tb/do/ShowInvoice?task=print";
 				form.submit();
@@ -99,14 +97,10 @@
 				<tr>
 					<td align="left" class="noBborderStyle"></td>
 					<td align="left" class="noBborderStyle">
-						<html:select property="suborder"
-							value="<%=(String) request.getSession().getAttribute(
-									"currentSuborder")%>"
-							onchange="setUpdateInvoiceAction(this.form)">
+						<html:select property="suborder" value="<%=(String) request.getSession().getAttribute("currentSuborder")%>" onchange="setUpdateInvoiceAction(this.form)">
 							<html:option value="ALL SUBORDERS">
 								<bean:message key="main.general.allsuborders.text" />
 							</html:option>
-
 							<c:forEach var="suborder" items="${suborders}">
 								<html:option value="${suborder.id}">
 									<c:out value="${suborder.signAndDescription}" />
@@ -114,11 +108,9 @@
 									<c:out value="${suborder.timeString}" />
 									<c:if test="${suborder.openEnd}">
 										<bean:message key="main.general.open.text" />
-									</c:if>
-									)
+									</c:if>)
 								</html:option>
 							</c:forEach>
-
 						</html:select>
 					</td>
 				</tr>
@@ -137,7 +129,6 @@
 							<html:option value="custom">
 								<bean:message key="main.general.timereport.view.custom.text" />
 							</html:option>
-
 						</html:select>
 					</td>
 				</tr>
@@ -312,7 +303,9 @@
 							<bean:message key="main.invoice.button.createmaximumview.text" />
 						</html:submit>
 					</td>
-					<td class="noBborderStyle"></td>
+					<td class="noBborderStyle">
+						&nbsp;
+					</td>
 				</tr>
 				<tr>
 					<td colspan="2" align="left" class="noBborderStyle">
@@ -466,8 +459,7 @@
 				<c:if test="${! empty viewhelpers}">
 					<tr>
 						<td class="noBborderStyle" align="left">
-							<i>Hinweis: Bearbeiten der Anzeigeoptionen setzt die Änderung
-								der Adresse zurück</i>
+							<i>Hinweis: Bearbeiten der Anzeigeoptionen setzt die Änderung der Adresse zurück</i>
 						</td>
 					</tr>
 					<tr>
@@ -558,8 +550,7 @@
 						<tr>
 							<!-- Checkbox -->
 							<td>
-								<html:multibox property="suborderIdArray"
-									value="${suborderviewhelper.id}" />
+								<html:multibox property="suborderIdArray" value="${suborderviewhelper.id}" />
 							</td>
 							<!-- Subordersign -->
 							<td>
@@ -601,7 +592,7 @@
 							<c:if test="${param.actualhoursbox eq 'on'}">
 								<td style="text-align: right;">
 									<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}"><c:out value="${suborderviewhelper.actualhours}"></c:out></c:if>
-									<c:if test="${suborderviewhelper.layer eq layerlimit && !(layerlimit eq -1)}"><c:if test="${!(suborderviewhelper.duration eq '0:00') && !(suborderviewhelper.duration eq suborderviewhelper.actualhours)}">*</c:if> <c:out value="${suborderviewhelper.duration}"></c:out></c:if>
+									<c:if test="${suborderviewhelper.layer eq layerlimit && !(layerlimit eq -1)}"><c:if test="${!(suborderviewhelper.duration eq '00:00') && !(suborderviewhelper.duration eq suborderviewhelper.actualhours)}">*</c:if> <c:out value="${suborderviewhelper.duration}"></c:out></c:if>
 								</td>
 							</c:if>
 						</tr>
@@ -665,17 +656,27 @@
 					</c:forEach>
 					<c:if test="${param.actualhoursbox eq 'on'}">
 						<tr>
-							<td class="noBborderStyle"></td>
-							<td class="noBborderStyle"></td>
+							<td class="noBborderStyle">
+								&nbsp;
+							</td>
+							<td class="noBborderStyle">
+								&nbsp;
+							</td>
 							<c:if test="${param.customeridbox eq 'on'}">
-								<td class="noBborderStyle"></td>
+								<td class="noBborderStyle">
+									&nbsp;
+								</td>
 							</c:if>
 							<c:if test="${param.timereportsbox eq 'on'}">
-								<td class="noBborderStyle"></td>
+								<td class="noBborderStyle">
+									&nbsp;
+								</td>
 							</c:if>
 							<c:if
 								test="${param.employeesignbox eq 'on' && param.timereportsbox eq 'on'}">
-								<td class="noBborderStyle"></td>
+								<td class="noBborderStyle">
+									&nbsp;
+								</td>
 							</c:if>
 							<c:if test="${param.targethoursbox eq 'on'}">
 								<td class="noBborderStyle"></td>
@@ -686,8 +687,7 @@
 							</c:if>
 							<c:if test="${empty param.targethoursbox}">
 								<td class="noBborderStyle" style="text-align:right;">
-									<bean:message key="main.invoice.overall.text" />
-									:
+									<b><bean:message key="main.invoice.overall.text" />:</b>
 								</td>
 							</c:if>
 							<th style="text-align: right;">
