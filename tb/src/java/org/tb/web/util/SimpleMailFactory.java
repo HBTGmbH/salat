@@ -37,8 +37,10 @@ public class SimpleMailFactory {
 		
 		SimpleEmail mail = new SimpleEmail();
 		mail.setHostName(GlobalConstants.MAIL_HOST);
-		mail.setFrom(report.getSender().getEmailAddress());
-		mail.addTo(report.getRecipient().getEmailAddress());
+		mail.setFrom(report.getSender().getEmailAddress(), report.getSender().getName());
+//		mail.setFrom(GlobalConstants.MAIL_NOREPLY_ADDRESS, "HBT-SALAT");
+//		mail.addReplyTo(report.getSender().getEmailAddress(), report.getSender().getName());
+		mail.addTo(report.getRecipient().getEmailAddress(), report.getRecipient().getName());
 		mail.setSubject(subject.toString());
 		mail.setMsg(message.toString());
 		return mail;
@@ -66,7 +68,9 @@ public class SimpleMailFactory {
 		SimpleEmail mail = new SimpleEmail();
 		mail.setHostName(GlobalConstants.MAIL_HOST);
 		mail.setFrom(sender.getEmailAddress());
-		mail.addTo(recipient.getEmailAddress());
+//		mail.setFrom(GlobalConstants.MAIL_NOREPLY_ADDRESS, "HBT-SALAT");
+//		mail.addReplyTo(sender.getEmailAddress(), sender.getName());
+		mail.addTo(recipient.getEmailAddress(), recipient.getName());
 		mail.setSubject(subject);
 		mail.setMsg(message.toString());
 		return mail;
@@ -100,7 +104,9 @@ public class SimpleMailFactory {
 		SimpleEmail mail = new SimpleEmail();
 		mail.setHostName(GlobalConstants.MAIL_HOST);
 		mail.setFrom(sender.getEmailAddress());
-    	mail.addTo(recipient.getEmailAddress());
+//		mail.setFrom(GlobalConstants.MAIL_NOREPLY_ADDRESS, "HBT-SALAT");
+//		mail.addReplyTo(sender.getEmailAddress(), sender.getName());
+    	mail.addTo(recipient.getEmailAddress(), recipient.getName());
 		mail.setSubject(subject);
 		mail.setMsg(message.toString());
 		return mail;
@@ -136,7 +142,9 @@ public class SimpleMailFactory {
 		SimpleEmail mail = new SimpleEmail();
 		mail.setHostName(GlobalConstants.MAIL_HOST);
 		mail.setFrom(sender.getEmailAddress());
-		mail.addTo(recipient.getEmailAddress());
+//		mail.setFrom(GlobalConstants.MAIL_NOREPLY_ADDRESS, "HBT-SALAT");
+//		mail.addReplyTo(sender.getEmailAddress(), sender.getName());
+		mail.addTo(recipient.getEmailAddress(), recipient.getName());
 		mail.setSubject(subject.toString());
 		mail.setMsg(message.toString());
 		return mail;

@@ -153,7 +153,7 @@ public class Employee implements Serializable {
 	}
 
 	public String getName() {
-		return (this.firstname + " " + this.lastname);
+		return getFirstname() + " " + getLastname();
 	}
 
 	public String getPassword() {

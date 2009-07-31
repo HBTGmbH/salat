@@ -233,6 +233,6 @@ public class GlobalConstants {
     
     public static final String MAIL_HOST = "MSG01";
     public static final String MAIL_DOMAIN = "hbt.de";
-    public static final String MAIL_NOREPLY_ADRESS = "noreply@" + GlobalConstants.MAIL_DOMAIN;
+    public static final String MAIL_NOREPLY_ADDRESS = "noreply@" + GlobalConstants.MAIL_DOMAIN;
     
 }
