@@ -95,7 +95,9 @@
 
 				<!-- select suborder -->
 				<tr>
-					<td align="left" class="noBborderStyle"></td>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.monthlyreport.suborder.text" />:</b>
+					</td>
 					<td align="left" class="noBborderStyle">
 						<html:select property="suborder" value="<%=(String) request.getSession().getAttribute("currentSuborder")%>" onchange="setUpdateInvoiceAction(this.form)">
 							<html:option value="ALL SUBORDERS">

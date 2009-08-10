@@ -36,7 +36,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowInvoiceForm;
-import org.tb.web.util.ExcelArchivirer;
+import org.tb.web.util.ExcelArchivierer;
 import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
 import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
 
@@ -265,10 +265,8 @@ public class ShowInvoiceAction extends DailyReportAction {
 			String customeraddress = showInvoiceForm.getCustomeraddress();
 			request.getSession().setAttribute("customeraddress", customeraddress);
 			return mapping.findForward("success");
-		} else  if ((request.getParameter("task") != null) && (request.getParameter("task").equals("export"))) {
-			ExcelArchivirer.exportInvoice(mapping, form, request, response);
-			return mapping.getInputForward();
-		} else if ((request.getParameter("task") != null) && (request.getParameter("task").equals("print"))) {
+		} else if ((request.getParameter("task") != null) 
+					&& ((request.getParameter("task").equals("print")) || (request.getParameter("task").equals("export")))) {
 			// call on InvoiceView with parameter print
 			List<InvoiceSuborderViewHelper> suborderViewhelperList = (List<InvoiceSuborderViewHelper>) request.getSession().getAttribute("viewhelpers");
 			// reset visibility to false
@@ -297,7 +295,7 @@ public class ShowInvoiceAction extends DailyReportAction {
 					}
 				}
 			}
-			long totalMinutes = 0;
+			long actualMinutesSum = 0;
 			int layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
 			for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : suborderViewhelperList) {
 				if (invoiceSuborderViewHelper.getLayer() <= layerlimit
@@ -305,16 +303,16 @@ public class ShowInvoiceAction extends DailyReportAction {
 					if (invoiceSuborderViewHelper.isVisible()) {
 						if (invoiceSuborderViewHelper.getLayer() < layerlimit
 								|| showInvoiceForm.getLayerlimit().equals("-1")) {
-							totalMinutes += invoiceSuborderViewHelper.getTotalActualminutesPrint();
+							actualMinutesSum += invoiceSuborderViewHelper.getTotalActualminutesPrint();
 						} else {
-							totalMinutes += invoiceSuborderViewHelper.getDurationInMinutes();
+							actualMinutesSum += invoiceSuborderViewHelper.getDurationInMinutes();
 						}
 					}
 				}
 			}
+			request.getSession().setAttribute("actualminutessum", (double) actualMinutesSum);
 			DecimalFormat decimalFormat = new DecimalFormat("00");
-			String actualHoursSum = decimalFormat.format(totalMinutes / 60) + ":" + decimalFormat.format(totalMinutes % 60);
-			request.getSession().setAttribute("printactualhourssum", actualHoursSum);
+			request.getSession().setAttribute("printactualhourssum", decimalFormat.format(actualMinutesSum / 60) + ":" + decimalFormat.format(actualMinutesSum % 60));
 			request.getSession().setAttribute("titleactualhourstext", showInvoiceForm.getTitleactualhourstext());
 			request.getSession().setAttribute("titlecustomersigntext", showInvoiceForm.getTitlecustomersigntext());
 			request.getSession().setAttribute("titleinvoiceattachment", showInvoiceForm.getTitleinvoiceattachment());
@@ -330,7 +328,15 @@ public class ShowInvoiceAction extends DailyReportAction {
 			customeraddress = customeraddress.replace("\n", "<br/>");
 			customeraddress = customeraddress.replace("\r", "<br/>");
 			request.getSession().setAttribute("customeraddress", customeraddress);
-			return mapping.findForward("print");
+			if (request.getParameter("task").equals("print")) {
+				return mapping.findForward("print");
+			} else {
+				MessageResources messageResources = getResources(request);
+				request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
+				ExcelArchivierer.exportInvoice(showInvoiceForm, request, response);
+				request.getSession().removeAttribute("overall");
+				return mapping.getInputForward();
+			}
 		} else if (request.getParameter("task") != null) {
 			// END
 			// call on InvoiceView with any parameter to forward or go back
@@ -342,9 +348,6 @@ public class ShowInvoiceAction extends DailyReportAction {
 			}
 		} else if (request.getParameter("task") == null) {
 			// call on invoiceView without a parameter
-			// set monthly view as standard
-			showInvoiceForm.setInvoiceview(GlobalConstants.VIEW_MONTHLY);
-			request.getSession().setAttribute("invoiceview", GlobalConstants.VIEW_MONTHLY);
 			// no special task - prepare everything to show invoice
 			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 			EmployeeHelper eh = new EmployeeHelper();
@@ -359,10 +362,9 @@ public class ShowInvoiceAction extends DailyReportAction {
 			request.getSession().setAttribute("suborders", new LinkedList<Suborder>());
 			request.getSession().setAttribute("optionmwst", "19");
 			request.getSession().setAttribute("layerlimit", "-1");
-
 			// selected view and selected dates
-			request.getSession().setAttribute("invoiceview", showInvoiceForm.getInvoiceview());
 			if (showInvoiceForm.getFromDay() == null || showInvoiceForm.getFromMonth() == null || showInvoiceForm.getFromYear() == null) {
+				// set standard dates and view
 				Date today = new Date();
 				showInvoiceForm.setFromDay("01");
 				showInvoiceForm.setFromMonth(DateUtils.getMonthShortString(today));
@@ -370,22 +372,25 @@ public class ShowInvoiceAction extends DailyReportAction {
 				showInvoiceForm.setUntilDay(new Integer(DateUtils.getLastDayOfMonth(DateUtils.getYearString(today), DateUtils.getMonthString(today))).toString());
 				showInvoiceForm.setUntilMonth(DateUtils.getMonthShortString(today));
 				showInvoiceForm.setUntilYear(DateUtils.getYearString(today));
-				MessageResources messageResources = getResources(request);
-				showInvoiceForm.setTitleactualhourstext(messageResources.getMessage("main.invoice.title.actualhours.text"));
-				showInvoiceForm.setTitlecustomersigntext(messageResources.getMessage("main.invoice.title.customersign.text"));
-				showInvoiceForm.setTitledatetext(messageResources.getMessage("main.invoice.title.date.text"));
-				showInvoiceForm.setTitledescriptiontext(messageResources.getMessage("main.invoice.title.description.text"));
-				showInvoiceForm.setTitleemployeesigntext(messageResources.getMessage("main.invoice.title.employeesign.text"));
-				showInvoiceForm.setTitlesubordertext(messageResources.getMessage("main.invoice.title.suborder.text"));
-				showInvoiceForm.setTitletargethourstext(messageResources.getMessage("main.invoice.title.targethours.text"));
-				showInvoiceForm.setTitleinvoiceattachment(messageResources.getMessage("main.invoice.addresshead.text"));
+				request.getSession().setAttribute("invoiceview", GlobalConstants.VIEW_MONTHLY);
+				showInvoiceForm.setInvoiceview(GlobalConstants.VIEW_MONTHLY);
 			}
+			MessageResources messageResources = getResources(request);
+			showInvoiceForm.setTitleactualhourstext(messageResources.getMessage("main.invoice.title.actualhours.text"));
+			showInvoiceForm.setTitlecustomersigntext(messageResources.getMessage("main.invoice.title.customersign.text"));
+			showInvoiceForm.setTitledatetext(messageResources.getMessage("main.invoice.title.date.text"));
+			showInvoiceForm.setTitledescriptiontext(messageResources.getMessage("main.invoice.title.description.text"));
+			showInvoiceForm.setTitleemployeesigntext(messageResources.getMessage("main.invoice.title.employeesign.text"));
+			showInvoiceForm.setTitlesubordertext(messageResources.getMessage("main.invoice.title.suborder.text"));
+			showInvoiceForm.setTitletargethourstext(messageResources.getMessage("main.invoice.title.targethours.text"));
+			showInvoiceForm.setTitleinvoiceattachment(messageResources.getMessage("main.invoice.addresshead.text"));
 			request.getSession().setAttribute("currentDay", showInvoiceForm.getFromDay());
 			request.getSession().setAttribute("currentMonth", showInvoiceForm.getFromMonth());
 			request.getSession().setAttribute("currentYear", showInvoiceForm.getFromYear());
 			request.getSession().setAttribute("lastDay", showInvoiceForm.getUntilDay());
 			request.getSession().setAttribute("lastMonth", showInvoiceForm.getUntilMonth());
 			request.getSession().setAttribute("lastYear", showInvoiceForm.getUntilYear());
+			request.getSession().removeAttribute("viewhelpers");
 		}
 		return mapping.findForward("success");
 	}

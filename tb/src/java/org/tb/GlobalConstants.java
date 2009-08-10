@@ -230,6 +230,10 @@ public class GlobalConstants {
     public static final Character INVOICE_YES = 'Y';
     public static final Character INVOICE_NO = 'N';
     public static final Character INVOICE_UNDEFINED = 'U';
+    public static final String INVOICE_EXCEL_EXPORT_FILENAME = "SALAT_Rechnung.xls";
+    public static final String INVOICE_EXCEL_SHEET_NAME = "SALAT Rechnung";
+    public static final String INVOICE_EXCEL_CONTENT_TYPE = "application/msexcel";
+    public static final String INVOICE_DATE_FORMAT = GlobalConstants.DEFAULT_DATE_FORMAT.replace('y', 'J').replace('d', 'T');
     
     public static final String MAIL_HOST = "MSG01";
     public static final String MAIL_DOMAIN = "hbt.de";
