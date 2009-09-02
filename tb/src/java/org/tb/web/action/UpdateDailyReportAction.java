@@ -146,17 +146,17 @@ public class UpdateDailyReportAction extends DailyReportAction {
 				
 				// get updated list of timereports from DB
 				ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
-				showDailyReportForm.setDay((String)request.getSession().getAttribute("currentDay"));
-				showDailyReportForm.setMonth((String)request.getSession().getAttribute("currentMonth"));
-				showDailyReportForm.setYear((String)request.getSession().getAttribute("currentYear"));				
-				showDailyReportForm.setLastday((String)request.getSession().getAttribute("lastDay"));
-				showDailyReportForm.setLastmonth((String)request.getSession().getAttribute("lastMonth"));
-				showDailyReportForm.setLastyear((String)request.getSession().getAttribute("lastYear"));
+				showDailyReportForm.setDay((String) request.getSession().getAttribute("currentDay"));
+				showDailyReportForm.setMonth((String) request.getSession().getAttribute("currentMonth"));
+				showDailyReportForm.setYear((String) request.getSession().getAttribute("currentYear"));
+				showDailyReportForm.setLastday((String) request.getSession().getAttribute("lastDay"));
+				showDailyReportForm.setLastmonth((String) request.getSession().getAttribute("lastMonth"));
+				showDailyReportForm.setLastyear((String) request.getSession().getAttribute("lastYear"));
 				showDailyReportForm.setEmployeeContractId(ec.getId());
-				showDailyReportForm.setView((String)request.getSession().getAttribute("view"));
-				showDailyReportForm.setOrder((String)request.getSession().getAttribute("currentOrder"));
-				
-				
+				showDailyReportForm.setView((String) request.getSession().getAttribute("view"));
+				showDailyReportForm.setOrder((String) request.getSession().getAttribute("currentOrder"));
+				showDailyReportForm.setStartdate((String) request.getSession().getAttribute("startdate"));
+				showDailyReportForm.setEnddate((String) request.getSession().getAttribute("enddate"));
 				
 				Long currentSuborderId = (Long) request.getSession().getAttribute("currentSuborderId");
 				if (currentSuborderId == null || currentSuborderId == 0) {

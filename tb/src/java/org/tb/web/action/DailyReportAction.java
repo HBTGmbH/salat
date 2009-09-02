@@ -427,10 +427,12 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 		request.getSession().setAttribute("currentDay", reportForm.getDay());
 		request.getSession().setAttribute("currentMonth", reportForm.getMonth());
 		request.getSession().setAttribute("currentYear", reportForm.getYear());
+		request.getSession().setAttribute("startdate", reportForm.getStartdate());
 		
 		request.getSession().setAttribute("lastDay", reportForm.getLastday());
 		request.getSession().setAttribute("lastMonth", reportForm.getLastmonth());
 		request.getSession().setAttribute("lastYear", reportForm.getLastyear());
+		request.getSession().setAttribute("enddate", reportForm.getEnddate());
 
 		request.getSession().setAttribute("reportForm", reportForm);
 		
