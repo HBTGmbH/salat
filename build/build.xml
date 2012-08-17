@@ -10,7 +10,7 @@
    <!-- set directories used in this build -->
    
    <property name="sources" location="sources"/>
-   <property name="web_sources" location="web"/>
+   <property name="web_sources" location="WebContent"/>
    <property name="tb-lib" location="lib"/>
    <property name="doc" location="doc"/>
    <property name="log" location="log"/>
@@ -30,8 +30,8 @@
     
    <target name="dist">
     	<mkdir dir="temp" />
-    	<war webxml="src/web/WEB-INF/web.xml" destfile="temp/tb.war">
-      		<fileset dir="src/web"/>
+    	<war webxml="WebContent/WEB-INF/web.xml" destfile="temp/tb.war">
+      		<fileset dir="WebContent"/>
     	</war>
     	<copy todir="${tomcat.home}/webapps">
     		<fileset file="temp/tb.war"/>
