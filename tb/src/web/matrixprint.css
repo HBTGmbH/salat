@@ -1,0 +1,48 @@
+.bold {
+	font-weight: bold;
+}
+tr.primarycolor {
+	background-color: transparent;
+}
+
+tr.secondarycolor {
+	background-color: #c1d5eb;
+}
+.borderStyle {
+	border-spacing: 2px;
+	border-collapse: seperate;
+}
+.noBborderStyle {
+	border: 0px;
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
+.underline {
+	text-decoration: underline;
+}
+table.matrix {
+	border-collapse: collapse;
+	border-spacing: 0px;
+	empty-cells: show;
+	font-family: verdana, arial, sans-serif;
+	font-size: 7pt;
+	color: black;
+}
+
+tr.matrix,td.matrix,th.matrix {
+	font-family: verdana, arial, sans-serif;
+	font-size: 7pt;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	padding-left: 1px;
+	padding-right: 1px;
+}
+
+tr.matrix,td.matrix {
+	border: 1px black solid;
+}
+
+th.matrix #borderdouble {
+	border-style: double;
+	border-color: black;
+}

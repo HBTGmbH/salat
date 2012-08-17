@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE taglib
+ PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.1//EN"
+ "http://java.sun.com/j2ee/dtds/web-jsptaglibrary_1_1.dtd">
+
+<taglib>
+
+<tlibversion>1.0</tlibversion>
+<jspversion>1.1</jspversion>
+<shortname>davisjsp</shortname>
+<uri></uri>
+<info>
+</info>
+
+<!-- Tree Tag: 
+	This file is part of the realisation of a order tree structure for the Salat.
+ -->
+
+<tag>
+<name>tree</name>
+<tagclass>org.tb.jsptags.TreeTag</tagclass>
+<bodycontent>JSP</bodycontent>
+<info>Outputs node in a HTML menu tree</info>
+
+<attribute> <name>mainProject</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>subProjects</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>browser</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>changeFunctionString</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>deleteFunctionString</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>onlySuborders</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>defaultString</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>currentSuborderID</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+<attribute> <name>endlessDate</name> <required>false</required> <rtexprvalue>true</rtexprvalue> </attribute>
+
+
+</tag>
+
+</taglib>

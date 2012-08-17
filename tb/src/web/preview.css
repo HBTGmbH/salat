@@ -1,0 +1,33 @@
+body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
+	font-family: verdana, arial, sans-serif;
+	font-size: 10pt;
+	color: black;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0px;
+	empty-cells: show;
+}
+
+tr,td,th {
+	font-family: verdana, arial, sans-serif;
+	font-size: 10pt;
+	border: 1px black solid;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+.borderStyle {
+	border-spacing: 2px;
+	border-collapse: seperate;
+}
+
+.noBborderStyle {
+	border: 0px;
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
+
