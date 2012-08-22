@@ -75,7 +75,7 @@
 							property="id" />
 				<%--
 				<c:forEach var="employee" items="${empWithCont}">
-					 <c:if test="${employee.status == 'bl' || employee.status == 'gf'}"> 
+					 <c:if test="${employee.status == 'bl' || employee.status == 'pv'}"> 
 						<html:option value="${employee.id}">
 							<c:out value="${employee.name}" />
 						</html:option>

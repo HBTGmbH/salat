@@ -735,7 +735,7 @@
 		
 					<!-- visibility dependent on user and status -->
 					<c:choose>
-						<c:when	test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf') && (timereport.status eq 'commited') && (loginEmployee != timereport.employeecontract.employee)) || loginEmployee.status eq 'adm'}">
+						<c:when	test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv') && (timereport.status eq 'commited') && (loginEmployee != timereport.employeecontract.employee)) || loginEmployee.status eq 'adm'}">
 							<!-- Kommentar -->
 							<td>
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}" 

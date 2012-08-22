@@ -176,7 +176,7 @@ public class ShowWelcomeAction extends DailyReportAction {
 			warning.setText(timereport.getTimeReportAsString());
 			if (loginEmployeeContract.equals(employeecontract) 
 					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
-					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)
+					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
 					|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 				warning.setLink("/tb/do/EditDailyReport?trId="+timereport.getId());				
 			}

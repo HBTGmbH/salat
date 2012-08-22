@@ -55,7 +55,7 @@ public class EditSuborderAction extends LoginRequiredAction {
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		List<Customerorder> customerorders;
 		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
-				loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) ||
+				loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV) ||
 				loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 			customerorders = customerorderDAO.getVisibleCustomerorders();
 		} else {

@@ -238,7 +238,7 @@
 	<table>
 		<tr>
 			<c:if
-				test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
+				test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv'|| loginEmployee.status eq 'adm'}">
 				<html:form action="/CreateDailyReport?task=matrix">
 					<td class="noBborderStyle" align="left"><html:submit
 						styleId="button"
@@ -475,7 +475,7 @@
 <table>
 	<tr>
 		<c:if
-			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'gf'|| loginEmployee.status eq 'adm'}">
+			test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv'|| loginEmployee.status eq 'adm'}">
 			<html:form action="/CreateDailyReport?task=matrix">
 				<td class="noBborderStyle" align="left"><html:submit
 					styleId="button"

@@ -149,8 +149,8 @@
 	<bean name="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" depends-on="hsqlDriver">
 		<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
 		<property name="url" value="jdbc:hsqldb:hsql://localhost/taetigkeitsberichte" />
-		<property name="username" value="sa" />
-		<property name="password" value="" />
+		<property name="username" value="SA" />
+		<property name="password" value="SA" />
 	</bean>
 	
 	<!-- JDBC Treiber der HSQL Datenbank -->

@@ -139,7 +139,7 @@ public class LoginEmployeeAction extends Action {
 		request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 		
 		if ((loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL)) || 
-			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_GF)) ||
+			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PV)) ||
 			    (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))) {
 					request.getSession().setAttribute("employeeAuthorized", true);
 		} else {
@@ -469,7 +469,7 @@ public class LoginEmployeeAction extends Action {
 				warning.setText(timereport.getTimeReportAsString());
 				if (loginEmployeeContract.equals(employeecontract) 
 						|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
-						|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF)
+						|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
 						|| loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 					warning.setLink("/tb/do/EditDailyReport?trId="+timereport.getId());
 				}

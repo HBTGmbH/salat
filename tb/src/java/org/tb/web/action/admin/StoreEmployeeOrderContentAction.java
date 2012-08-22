@@ -93,7 +93,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 				} else if (loginEmployee.equals(eoContent.getContactTechHbt())
 						&& (!eoContent.getCommitted_emp() || !eoContent
 								.getCommitted_mgmt())) {
-					// only one side has committed - bl and gf may save
+					// only one side has committed - bl and pv may save
 					authorized = true;
 				} else if (loginEmployee.getStatus().equals(
 						GlobalConstants.EMPLOYEE_STATUS_ADM)) {
@@ -270,7 +270,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 			if ((loginEmployee.equals(eoContent.getContactTechHbt())
 					|| loginEmployee.getStatus().equals(
 							GlobalConstants.EMPLOYEE_STATUS_ADM) || loginEmployee
-					.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF))
+					.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV))
 					&& employeeorder.getEmployeeordercontent() != null
 					&& formEntriesEqualDB(employeeorder
 							.getEmployeeordercontent().getId(), contentForm)) {

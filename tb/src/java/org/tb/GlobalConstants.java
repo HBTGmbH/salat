@@ -77,7 +77,7 @@ public class GlobalConstants {
 	public static final String EMPLOYEE_STATUS_PL = "pl";
 	public static final String EMPLOYEE_STATUS_MA = "ma";
 	public static final String EMPLOYEE_STATUS_AV = "av";
-	public static final String EMPLOYEE_STATUS_GF = "gf";
+	public static final String EMPLOYEE_STATUS_PV = "pv";
 	public static final String EMPLOYEE_STATUS_RESTRICTED = "restricted";
 	public static final String EMPLOYEE_STATUS_ADM = "adm";
 	

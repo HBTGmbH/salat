@@ -307,7 +307,7 @@
 						<html:option value="open"><bean:message key="main.timereport.select.status.open.text"/></html:option>
 					</html:select> 
 					 
-                	<html:text property="status" size="30" maxlength="<%="" + org.tb.GlobalConstants.STATUS_MAX_LENGTH %>"/>              
+                	<html:text property="status" size="30" maxlength="<%=\"\" + org.tb.GlobalConstants.STATUS_MAX_LENGTH %>"/>              
             		
             	<span style="color:red"><html:errors property="status"/></span>
             	</td>

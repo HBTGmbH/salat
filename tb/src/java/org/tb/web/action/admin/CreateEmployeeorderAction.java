@@ -70,7 +70,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 		if (loginEmployee.getStatus()
 				.equals(GlobalConstants.EMPLOYEE_STATUS_BL)
 				|| loginEmployee.getStatus().equals(
-						GlobalConstants.EMPLOYEE_STATUS_GF)
+						GlobalConstants.EMPLOYEE_STATUS_PV)
 				|| loginEmployee.getStatus().equals(
 						GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 			orders = customerorderDAO.getCustomerorders();

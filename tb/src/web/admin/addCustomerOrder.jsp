@@ -72,7 +72,7 @@
 				key="main.customerorder.sign.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="sign" size="40"
-				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH %>" />
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="sign" /></span></td>
 		</tr>
 
@@ -211,7 +211,7 @@
 				key="main.customerorder.responsiblecustomer.tech.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="responsibleCustomerTechnical" size="40"
-				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors
 				property="responsibleCustomerTechnical" /></span></td>
 		</tr>
@@ -222,7 +222,7 @@
 				key="main.customerorder.responsiblecustomer.contract.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="responsibleCustomerContractually" size="40"
-				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="responsibleCustomerContractually" /></span>
 			</td>
 		</tr>
@@ -232,21 +232,12 @@
 				key="main.customerorder.ordercustomer.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="orderCustomer" size="40"
-				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH %>" />
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="orderCustomer" /></span>
 			</td>
 		</tr>
 		
-		<!-- 
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.currency.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="currency" size="20"
-				maxlength="<%="" + org.tb.GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH %>" />
-			<span style="color:red"><html:errors property="currency" /></span></td>
-		</tr>
-		 -->
+		
 		<!-- hourly rate & currency -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

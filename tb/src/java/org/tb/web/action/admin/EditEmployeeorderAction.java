@@ -119,7 +119,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		List<Customerorder> orders;
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
-			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_GF) ||
+			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV) ||
 			loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
 			orders = customerorderDAO.getCustomerorders();
 		} else {
