@@ -297,6 +297,17 @@
 				 	</span>
 				 </td>
 			</tr>
+			
+			<tr>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.timereport.training.text"/>:</b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } /> 
+					</td>
+					
+			</tr>
+				
 			<%--
      	   <tr>
            	  	<td align="left" class="noBborderStyle">

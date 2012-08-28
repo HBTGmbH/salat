@@ -110,6 +110,10 @@
 			key="main.timereport.monthly.taskdescription.text" /></b></th>
 		<th class="matrix" align="center"
 			title="<bean:message
+			key="main.headlinedescription.dailyoverview.training.text"/>"><b><bean:message
+			key="main.timereport.monthly.training.text" /></b></th>
+		<th class="matrix" align="center"
+			title="<bean:message
 			key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
 			key="main.timereport.monthly.hours.text" /></b></th>
 		<th class="matrix" align="center"
@@ -162,6 +166,12 @@
 							value="${timereport.taskdescription}" /></td>
 					</c:otherwise>
 				</c:choose>
+				
+				<!-- Fortbildung -->
+				<td align="center">
+					<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />  
+				</td>
+
 
 				<!-- Dauer -->
 				<td class="matrix" align="center" nowrap="nowrap"><c:out

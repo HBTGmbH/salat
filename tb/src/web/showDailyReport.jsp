@@ -292,7 +292,7 @@
 								</html:image>
 							</c:when>
 							<c:otherwise>
-								<html:select property="month" value="<%=(String) request.getSession().getAttribute("currentMonth")%>" 
+								<html:select property="month" value="<%=(String) request.getSession().getAttribute(\"currentMonth\")%>" 
 									onchange="setUpdateTimereportsAction(this.form)">
 									<html:option value="Jan">
 										<bean:message key="main.timereport.select.month.jan.text" />
@@ -331,7 +331,7 @@
 										<bean:message key="main.timereport.select.month.dec.text" />
 									</html:option>
 								</html:select>
-								<html:select property="year" value="<%=(String) request.getSession().getAttribute("currentYear")%>" 
+								<html:select property="year" value="<%=(String) request.getSession().getAttribute(\"currentYear\")%>" 
 									onchange="setUpdateTimereportsAction(this.form)">
 									<html:options collection="years" property="value" labelProperty="label" />
 								</html:select>
@@ -483,7 +483,7 @@
 	
 		<table class="center backgroundcolor" width="100%">
 			<tr>
-				<td colspan="5" class="noBborderStyle">
+				<td colspan="6" class="noBborderStyle">
 					&nbsp;
 				</td>
 				<td class="noBborderStyle" align="right">
@@ -544,6 +544,9 @@
 				</th>
 				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.taskdescription.text' />" width="25%">
 					<b><bean:message key="main.timereport.monthly.taskdescription.text" /></b>
+				</th>
+				<th align="center" title="<bean:message key='main.headlinedescription.dailyoverview.training.text' />">
+					<b><bean:message key="main.timereport.monthly.training.text" /></b>
 				</th>
 				<th align="center" title="<bean:message key='main.headlinedescription.dailyoverview.hours.text' />">
 					<b><bean:message key="main.timereport.monthly.hours.text" /></b>
@@ -747,6 +750,12 @@
 									</font>
 								 --%>
 							</td>
+							
+							<!-- Fortbildung -->
+							<td align="center">
+								<!--<html:checkbox property="training" value="${timereport.training}"/>-->
+								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />   
+							</td>
 		
 							<!-- Dauer -->
 							<td align="center" nowrap="nowrap">
@@ -832,7 +841,7 @@
 				</html:form>
 			</c:forEach>
 			<tr>
-				<td colspan="5" class="noBborderStyle">
+				<td colspan="6" class="noBborderStyle">
 					&nbsp;
 				</td>
 				<td class="noBborderStyle" align="right">

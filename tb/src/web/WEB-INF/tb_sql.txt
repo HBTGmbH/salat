@@ -1,3 +1,9 @@
+27.08.2012
+
+ALTER TABLE TIMEREPORTES ADD TRAINING BOOLEAN;
+UPDATE TIMEREPORT SET TRAINING = FALSE;
+----------------------------------------
+
 7.7.06
 
 create table employeeorder (

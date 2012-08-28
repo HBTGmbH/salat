@@ -13,163 +13,171 @@ import org.apache.struts.action.ActionMapping;
  *
  */
 public class UpdateDailyReportForm extends ActionForm {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L; // -3593978643330934662L;
-	private String day;
-	private String month;
-	private String year;
-	private String employeename;
-	private String action;
-	
-	private String comment;
-	private String order;
-	private String suborder;
-	private String status;
-	private Double costs;
-	private int selectedDurationHour;
-	private int selectedDurationMinute;
-	
-	private long trOrderId;
-	private long orderId;
-	private long trSuborderId;
-	
-	
-	
-	public String getDay() {
-		return day;
-	}
-
-	public void setDay(String day) {
-		this.day = day;
-	}
-
-	public String getMonth() {
-		return month;
-	}
-
-	public void setMonth(String month) {
-		this.month = month;
-	}
-	
-	public String getYear() {
-		return year;
-	}
-
-	public void setYear(String year) {
-		this.year = year;
-	}
-
-	public String getEmployeename() {
-		return employeename;
-	}
-
-	public void setEmployeename(String employeename) {
-		this.employeename = employeename;
-	}
-	
-	public String getOrder() {
-		return order;
-	}
-
-	public void setOrder(String order) {
-		this.order = order;
-	}
-
-	public long getOrderId() {
-		return orderId;
-	}
-
-	public void setOrderId(long orderId) {
-		this.orderId = orderId;
-	}
-
-	public String getAction() {
-		return action;
-	}
-
-	public void setAction(String action) {
-		this.action = action;
-	}
-	
-	public String getComment() {
-		return comment;
-	}
-
-	public void setComment(String comment) {
-		this.comment = comment;
-	}
-
-	public Double getCosts() {
-		return costs;
-	}
-
-	public void setCosts(Double costs) {
-		this.costs = costs;
-	}
-
-	public int getSelectedDurationHour() {
-		return selectedDurationHour;
-	}
-
-	public void setSelectedDurationHour(int selectedDurationHour) {
-		this.selectedDurationHour = selectedDurationHour;
-	}
-
-	public int getSelectedDurationMinute() {
-		return selectedDurationMinute;
-	}
-
-	public void setSelectedDurationMinute(int selectedDurationMinute) {
-		this.selectedDurationMinute = selectedDurationMinute;
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public String getSuborder() {
-		return suborder;
-	}
-
-	public void setSuborder(String suborder) {
-		this.suborder = suborder;
-	}
-
-	public long getTrSuborderId() {
-		return trSuborderId;
-	}
-
-	public void setTrSuborderId(long trSuborderId) {
-		this.trSuborderId = trSuborderId;
-	}
-	
-	public long getTrOrderId() {
-		return trOrderId;
-	}
-
-	public void setTrOrderId(long trOrderId) {
-		this.trOrderId = trOrderId;
-	}
-
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		month = null;
-		employeename = null;
-	}
-
-	@Override
-	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-		ActionErrors errors = new ActionErrors();
-		
-		// actually, no checks here
-		return errors;
-	}
-
+    
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L; // -3593978643330934662L;
+    private String day;
+    private String month;
+    private String year;
+    private String employeename;
+    private String action;
+    
+    private String comment;
+    private String order;
+    private String suborder;
+    private String status;
+    private Double costs;
+    private boolean training;
+    private int selectedDurationHour;
+    private int selectedDurationMinute;
+    
+    private long trOrderId;
+    private long orderId;
+    private long trSuborderId;
+    
+    public String getDay() {
+        return day;
+    }
+    
+    public void setDay(String day) {
+        this.day = day;
+    }
+    
+    public String getMonth() {
+        return month;
+    }
+    
+    public void setMonth(String month) {
+        this.month = month;
+    }
+    
+    public String getYear() {
+        return year;
+    }
+    
+    public void setYear(String year) {
+        this.year = year;
+    }
+    
+    public String getEmployeename() {
+        return employeename;
+    }
+    
+    public void setEmployeename(String employeename) {
+        this.employeename = employeename;
+    }
+    
+    public String getOrder() {
+        return order;
+    }
+    
+    public void setOrder(String order) {
+        this.order = order;
+    }
+    
+    public long getOrderId() {
+        return orderId;
+    }
+    
+    public void setOrderId(long orderId) {
+        this.orderId = orderId;
+    }
+    
+    public String getAction() {
+        return action;
+    }
+    
+    public void setAction(String action) {
+        this.action = action;
+    }
+    
+    public String getComment() {
+        return comment;
+    }
+    
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+    
+    public Double getCosts() {
+        return costs;
+    }
+    
+    public void setCosts(Double costs) {
+        this.costs = costs;
+    }
+    
+    public boolean isTraining() {
+        return training;
+    }
+    
+    public void setTraining(boolean training) {
+        this.training = training;
+    }
+    
+    public int getSelectedDurationHour() {
+        return selectedDurationHour;
+    }
+    
+    public void setSelectedDurationHour(int selectedDurationHour) {
+        this.selectedDurationHour = selectedDurationHour;
+    }
+    
+    public int getSelectedDurationMinute() {
+        return selectedDurationMinute;
+    }
+    
+    public void setSelectedDurationMinute(int selectedDurationMinute) {
+        this.selectedDurationMinute = selectedDurationMinute;
+    }
+    
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    public String getSuborder() {
+        return suborder;
+    }
+    
+    public void setSuborder(String suborder) {
+        this.suborder = suborder;
+    }
+    
+    public long getTrSuborderId() {
+        return trSuborderId;
+    }
+    
+    public void setTrSuborderId(long trSuborderId) {
+        this.trSuborderId = trSuborderId;
+    }
+    
+    public long getTrOrderId() {
+        return trOrderId;
+    }
+    
+    public void setTrOrderId(long trOrderId) {
+        this.trOrderId = trOrderId;
+    }
+    
+    @Override
+    public void reset(ActionMapping mapping, HttpServletRequest request) {
+        month = null;
+        employeename = null;
+        training = false;
+    }
+    
+    @Override
+    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
+        ActionErrors errors = new ActionErrors();
+        
+        // actually, no checks here
+        return errors;
+    }
+    
 }
