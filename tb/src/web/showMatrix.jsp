@@ -73,7 +73,7 @@
 				key="main.monthlyreport.customerorder.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:select
 				property="order"
-				value="<%=(String) request.getSession().getAttribute("currentOrder")%>"
+				value="<%=(String) request.getSession().getAttribute(\"currentOrder\")%>"
 				onchange="setUpdateMergedreportsAction(this.form)">
 
 				<html:option value="ALL ORDERS">

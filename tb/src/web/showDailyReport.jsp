@@ -388,6 +388,16 @@
 					</td>
 				</tr>
 		
+				<!-- show only project based training -->
+				<tr>
+					<td align="left" valign="top" class="noBborderStyle">
+						<b><bean:message key="main.general.timereport.showOnlyTraining.text"/>:</b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<html:checkbox property="showTraining" onclick="setUpdateTimereportsAction(this.form)" />
+					</td>
+				</tr>
+				
 				<!-- seperator line -->
 				<tr>
 					<td width="100%" class="noBborderStyle" colspan="2">

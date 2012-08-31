@@ -79,7 +79,7 @@
 					</td>
 					<td align="left" class="noBborderStyle">
 						<html:select property="order"
-							value="<%=(String) request.getSession().getAttribute("currentOrder")%>"
+							value="<%=(String) request.getSession().getAttribute(\"currentOrder\")%>"
 							onchange="setUpdateInvoiceAction(this.form)">
 
 							<html:option value="CHOOSE ORDER">
@@ -99,7 +99,7 @@
 						<b><bean:message key="main.monthlyreport.suborder.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:select property="suborder" value="<%=(String) request.getSession().getAttribute("currentSuborder")%>" onchange="setUpdateInvoiceAction(this.form)">
+						<html:select property="suborder" value="<%=(String) request.getSession().getAttribute(\"currentSuborder\")%>" onchange="setUpdateInvoiceAction(this.form)">
 							<html:option value="ALL SUBORDERS">
 								<bean:message key="main.general.allsuborders.text" />
 							</html:option>

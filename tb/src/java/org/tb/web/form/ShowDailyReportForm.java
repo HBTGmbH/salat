@@ -55,6 +55,7 @@ public class ShowDailyReportForm extends ActionForm {
     
     private String view;
     private Boolean avoidRefresh;
+    private Boolean showTraining;
     
     /**
      * @return the selected startdate yyyy-MM-dd
@@ -456,6 +457,14 @@ public class ShowDailyReportForm extends ActionForm {
         this.avoidRefresh = avoidRefresh;
     }
     
+    public Boolean getShowTraining() {
+        return showTraining;
+    }
+    
+    public void setShowTraining(Boolean showTraining) {
+        this.showTraining = showTraining;
+    }
+    
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         Employeecontract employeecontract;
@@ -467,6 +476,7 @@ public class ShowDailyReportForm extends ActionForm {
         }
         
         avoidRefresh = false;
+        showTraining = false;
         training = false;
     }
     
