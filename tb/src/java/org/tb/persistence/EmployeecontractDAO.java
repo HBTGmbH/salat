@@ -1,7 +1,6 @@
 package org.tb.persistence;
 
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Hibernate;
@@ -22,414 +21,413 @@ import org.tb.bdom.Vacation;
  *
  */
 public class EmployeecontractDAO extends HibernateDaoSupport {
-
-	private EmployeeorderDAO employeeorderDAO;
-	private MonthlyreportDAO monthlyreportDAO;
-	private VacationDAO vacationDAO;
-	private TimereportDAO timereportDAO;
-	private OvertimeDAO overtimeDAO;
-	
-	public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-		this.overtimeDAO = overtimeDAO;
-	}
-	
-	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-		this.employeeorderDAO = employeeorderDAO;
-	}
-
-	public void setMonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
-		this.monthlyreportDAO = monthlyreportDAO;
-	}
-
-	public void setVacationDAO(VacationDAO vacationDAO) {
-		this.vacationDAO = vacationDAO;
-	}
-
-	public void setTimereportDAO(TimereportDAO timereportDAO) {
-		this.timereportDAO = timereportDAO;
-	}
-	
-//	/**
-//	 * Gets the EmployeeContract with the given employee id.
-//	 * 
-//	 * @param long employeeId
-//	 * 
-//	 * @return Employeecontract
-//	 */
-//	public Employeecontract getEmployeeContractByEmployeeId(long employeeId) {
-//		return (Employeecontract) getSession().createQuery
-//				("from Employeecontract e where e.employee.id = ?").setLong(0, employeeId).uniqueResult();
-//	}
-	
-	/**
-	 * Gets the EmployeeContract with the given employee id, that is valid for the given date.
-	 * 
-	 * @param long employeeId
-	 * 
-	 * @return Employeecontract
-	 */
-	public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
-		return (Employeecontract) getSession().createQuery
-				("from Employeecontract e where e.employee.id = ? and validfrom <= ? and (validuntil >= ? or validuntil = null)").setLong(0, employeeId).setDate(1, date).setDate(2, date).uniqueResult();
-	}
-	
-	
-//	/**
-//	 * Gets the EmployeeContract with the given employee contract id, that is valid for the given date.
-//	 * 
-//	 * @param employeeContractId
-//	 * @param date 
-//	 * @return Employeecontract
-//	 */
-//	public Employeecontract getEmployeeContractByIdAndDate(long employeeContractId, Date date) {
-//		return (Employeecontract) getSession().createQuery
-//				("from Employeecontract e where id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeContractId).setDate(1, date).setDate(2, date).uniqueResult();
-//	}
-	
-	
-//	/**
-//	 * Gets the EmployeeContracts with the given employee id, that are valid for the given dates.
-//	 * 
-//	 * @param long employeeId
-//	 * @param date1
-//	 * @param date2
-//	 * 
-//	 * @return Employeecontract
-//	 */
-//	public List<Employeecontract> getEmployeeContractsByEmployeeIdAndDates(long employeeId, Date date1, Date date2) {
-//		return (List<Employeecontract>) getSession().createQuery
-//				("from Employeecontract e where e.employee.id = ? and ((validfrom <= ? and validuntil >= ? ) or (e.employee.id = ? and validfrom <= ? and validuntil >= ? )) order by validfrom").setLong(0, employeeId).setDate(1, date1).setDate(2, date1).setDate(3, date2).setDate(4, date2).list();
-//	}
-	
-//	/**
-//	 * Gets the EmployeeContract with the given employee name.
-//	 * 
-//	 * @param String first
-//	 * @param String last
-//	 * 
-//	 * @return Employeecontract
-//	 */
-//	public Employeecontract getEmployeeContractByEmployeeName(String first, String last) {
-//		Employee emp = (Employee) getSession().createQuery
-//			("from Employee e where e.firstname = ? and e.lastname = ?").setString(0, first).setString(1, last).uniqueResult();
-//		if (emp == null) return null;
-//		
-//		Employeecontract ec = (Employeecontract) getSession().createQuery
-//			("from Employeecontract e where e.employee.id = ?").setLong(0, emp.getId()).uniqueResult();
-//		
-//		return ec;
-//	}
-	
-	/**
-	 * Gets the EmployeeContract with the given id.
-	 * 
-	 * @param long id
-	 * 
-	 * @return Employeecontract
-	 */
-	public Employeecontract getEmployeeContractById(long id) {
-		return (Employeecontract) getSession().createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
-	}
-	
-	/**
-	 * Gets the EmployeeContract with the given id and concretly initialize vacations.
-	 * 
-	 * @param long id
-	 * 
-	 * @return Employeecontract
-	 */
-	public Employeecontract getEmployeeContractByIdInitializeEager(long id) {
-		Session session = getSession();
-		Employeecontract ec = (Employeecontract)session.createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
-		Hibernate.initialize(ec.getVacations());
-		return ec;
-	}
-	
-	/**
-	 * Calls {@link EmployeecontractDAO#save(Employeecontract, Employee)} with {@link Employee} = null.
-	 * @param ec
-	 */
-	public void save(Employeecontract ec) {
-		save(ec, null);
-	}
-	
-	/**
-	 * Saves the given Employeecontract and sets creation-/update-user and creation-/update-date.
-	 * 
-	 * @param Employeecontract ec
-	 */
-	public void save(Employeecontract ec, Employee loginEmployee) {
-		if (loginEmployee == null) {
-			throw new RuntimeException("the login-user must be passed to the db");
-		}
-		Session session = getSession();
-		java.util.Date creationDate = ec.getCreated();
-		if (creationDate == null) {
-			ec.setCreated(new java.util.Date());
-			ec.setCreatedby(loginEmployee.getSign());
-		} else {
-			ec.setLastupdate(new java.util.Date());
-			ec.setLastupdatedby(loginEmployee.getSign());
-			Integer updateCounter = ec.getUpdatecounter();
-			updateCounter = (updateCounter == null) ? 1 : updateCounter +1;
-			ec.setUpdatecounter(updateCounter);
-		}
-		session.saveOrUpdate(ec);
-		session.flush();
-//		session.clear();
-	}
-
-	/**
-	 * Get a list of all Employeecontracts ordered by lastname.
-	 * 
-	 * @return List<Employeecontract>
-	 */
-	public List<Employeecontract> getEmployeeContracts() {
-		return getSession().createQuery("from Employeecontract e order by employee.lastname asc, validFrom asc").list();
-	}
-	
-	/**
-	 * Get a list of all Employeecontracts ordered by lastname.
-	 * 
-	 * @return List<Employeecontract>
-	 */
-	public List<Employeecontract> getTeamContracts(Long supervisorId) {
-		Date now = new Date();
-		return getSession().createQuery("from Employeecontract ec " +
-				"where supervisor.id = ? " +
-				"and validFrom <= ? " +
-				"and (validUntil = null " +
-					"or validUntil >= ?) " +
-				"order by employee.lastname asc, validFrom asc").setLong(0, supervisorId).setDate(1, now).setDate(2, now).list();
-	}
-	
-	/**
-	 * Get a list of all Employeecontracts fitting to the given filters ordered by lastname.
-	 * 
-	 * @return List<Employeecontract>
-	 */
-	public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId) {
-		List<Employeecontract> employeeContracts = null;
-		if (showInvalid == null || !showInvalid) {
-			Date now = new Date();
-			if (filter == null || filter.trim().equals("")) {
-				if (employeeId == null || employeeId == -1) {
-					// case 1
-					employeeContracts = getSession().createQuery("from Employeecontract e where " +
-							"validFrom <= ? " +
-							"and (validUntil = null " +
-								"or validUntil >= ?) " +
-							"order by employee.lastname asc, validFrom asc")
-							.setDate(0, now)
-							.setDate(1, now)
-							.list();
-				} else {
-					// case 2
-					employeeContracts = getSession().createQuery("from Employeecontract e where " +
-							"e.employee.id = ? " +
-							"and validFrom <= ? " +
-							"and (validUntil = null " +
-								"or validUntil >= ?) " +
-							"order by employee.lastname asc, validFrom asc")
-							.setLong(0, employeeId)
-							.setDate(1, now)
-							.setDate(2, now)
-							.list();
-				}
-			} else {
-				if (employeeId == null || employeeId == -1) {
-					// case 3
-					employeeContracts = getSession().createQuery("from Employeecontract e where " +
-							"(upper(e.employee.firstname) like ? " +
-								"or upper(e.employee.lastname) like ? " +
-								"or upper(taskdescription) like ? " +
-								"or upper(id) like ?) " +
-							"and validFrom <= ? " +
-							"and (validUntil = null " +
-								"or validUntil >= ?) " +
-							"order by employee.lastname asc, validFrom asc")
-							.setString(0, filter)
-							.setString(1, filter)
-							.setString(2, filter)
-							.setString(3, filter)
-							.setDate(4, now)
-							.setDate(5, now)
-							.list();
-				} else {
-					// case 4
-					employeeContracts = getSession().createQuery("from Employeecontract e where " +
-							"(upper(e.employee.firstname) like ? " +
-								"or upper(e.employee.lastname) like ? " +
-								"or upper(taskdescription) like ? " +
-								"or upper(id) like ?) " +
-							"and e.employee.id = ? " +
-							"and validFrom <= ? " +
-							"and (validUntil = null " +
-								"or validUntil >= ?) " +
-							"order by employee.lastname asc, validFrom asc")
-							.setString(0, filter)
-							.setString(1, filter)
-							.setString(2, filter)
-							.setString(3, filter)
-							.setLong(4, employeeId)
-							.setDate(5, now)
-							.setDate(6, now)
-							.list();
-				}
-			}
-		} else {
-			if (filter == null || filter.trim().equals("")) {
-				if (employeeId == null || employeeId == -1) {
-					// case 5
-					employeeContracts = getSession().createQuery("from Employeecontract e " +
-							"order by employee.lastname asc, validFrom asc")
-							.list();
-				} else {
-					// case 6
-					employeeContracts = getSession().createQuery("from Employeecontract e where " +
-							"e.employee.id = ? " +
-							"order by employee.lastname asc, validFrom asc")
-							.setLong(0, employeeId)
-							.list();
-				}
-			} else {
-				if (employeeId == null || employeeId == -1) {
-					// case 7
-					employeeContracts = getSession().createQuery("from Employeecontract e where " +
-							"upper(e.employee.firstname) like ? " +
-							"or upper(e.employee.lastname) like ? " +
-							"or upper(taskdescription) like ? " +
-							"or upper(id) like ? " +
-							"order by employee.lastname asc, validFrom asc")
-							.setString(0, filter)
-							.setString(1, filter)
-							.setString(2, filter)
-							.setString(3, filter)
-							.list();
-				} else {
-					// case 8
-					employeeContracts = getSession().createQuery("from Employeecontract e where " +
-							"(upper(e.employee.firstname) like ? " +
-								"or upper(e.employee.lastname) like ? " +
-								"or upper(taskdescription) like ? " +
-								"or upper(id) like ?) " +
-							"and e.employee.id = ? " +
-							"order by employee.lastname asc, validFrom asc")
-							.setString(0, filter)
-							.setString(1, filter)
-							.setString(2, filter)
-							.setString(3, filter)
-							.setLong(4, employeeId)
-							.list();
-				}
-			}
-		}
-		return employeeContracts;
-	}
-	
-	
-	/**
-	 * Get a list of all Employeecontracts where the hide flag is unset or that is currently valid ordered by employee sign.
-	 * 
-	 * @return List<Employeecontract>
-	 */
-	public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
-		java.util.Date date = new Date();
-		Boolean hide = false;
-		return getSession().createQuery("from Employeecontract e where hide = ? or hide = null or (validFrom <= ? and (validUntil >= ? or validUntil = null)) order by employee.sign asc, validFrom asc").setBoolean(0, hide).setDate(1, date).setDate(2, date).list();
-	}
-
-//	/**
-//	 * 
-//	 * @param date
-//	 * @return Returns a list of all {@link Employeecontract}s that are valid for the given date.
-//	 */
-//	public List<Employeecontract> getEmployeeContractsValidForDate(java.util.Date date) {
-//		return getSession().createQuery("from Employeecontract e where e.validFrom <= ? and e.validUntil >= ? order by employee.lastname").setDate(0, date).setDate(1, date).list();
-//	}
-	
-	
-	/**
-	 * Deletes the given employee contract .
-	 * 
-	 * @param long ecId
-	 * 
-	 * @return boolean
-	 */
-	public boolean deleteEmployeeContractById(long ecId) {
-		List<Employeecontract> allEmployeecontracts = getEmployeeContracts();
-		Employeecontract ecToDelete = getEmployeeContractById(ecId);
-		boolean ecDeleted = false;
-		
-		for (Iterator iter = allEmployeecontracts.iterator(); iter.hasNext();) {
-			Employeecontract ec = (Employeecontract) iter.next();
-			if(ec.getId() == ecToDelete.getId()) {
-				// check if related employeeorders/timereports exist 
-				// if so, no deletion possible				
-
-				boolean deleteOk = true;
-				List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
-				for (Iterator iter2 = allEmployeeorders.iterator(); iter2.hasNext();) {
-					Employeeorder eo = (Employeeorder) iter2.next();
-					if (eo.getEmployeecontract().getId() == ecToDelete.getId()) {
-						deleteOk = false;
-						break;
-					}
-				}
-				
-				if (deleteOk) {
-					List<Timereport> allTimereports = timereportDAO.getTimereports();
-					for (Iterator iter2 = allTimereports.iterator(); iter2.hasNext();) {
-						Timereport tr = (Timereport) iter2.next();
-						if ((tr.getEmployeecontract() != null) && 
-							(tr.getEmployeecontract().getId() == ecToDelete.getId())) {
-							deleteOk = false;
-							break;
-						}
-					}
-				}
-				
-				// if ok for deletion, check for monthlyreport and vacation entries and
-				// delete them successively (cannot yet be done via web application)				
-				if (deleteOk) {
-					List<Monthlyreport> allMonthlyreports = monthlyreportDAO.getMonthlyreports();
-					for (Iterator iter3 = allMonthlyreports.iterator(); iter3.hasNext();) {
-						Monthlyreport mr = (Monthlyreport) iter3.next();
-						if (mr.getEmployeecontract().getId() == ecToDelete.getId()) {
-							monthlyreportDAO.deleteMonthlyreportById(mr.getId());
-						}
-					}
-				}
-				
-				if (deleteOk) {
-					List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecToDelete.getId());
-					for (Overtime overtime : overtimes) {
-						overtimeDAO.deleteOvertimeById(overtime.getId());
-					}
-				}
-				
-				if (deleteOk) {
-					List<Vacation> allVacations = vacationDAO.getVacations();
-					for (Iterator iter4 = allVacations.iterator(); iter4.hasNext();) {
-						Vacation va = (Vacation) iter4.next();
-						if (va.getEmployeecontract().getId() == ecToDelete.getId()) {
-							vacationDAO.deleteVacationById(va.getId());
-						}
-					}
-				}
-				
-				// finally, go for deletion of employeecontract
-				if (deleteOk) {
-					Session session = getSession();
-					session.delete(ecToDelete);
-					session.flush();
-					ecDeleted = true;
-				}
-				break;
-			}
-		}
-		
-		return ecDeleted;
-	}
-	
+    
+    private EmployeeorderDAO employeeorderDAO;
+    private MonthlyreportDAO monthlyreportDAO;
+    private VacationDAO vacationDAO;
+    private TimereportDAO timereportDAO;
+    private OvertimeDAO overtimeDAO;
+    
+    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+        this.overtimeDAO = overtimeDAO;
+    }
+    
+    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+        this.employeeorderDAO = employeeorderDAO;
+    }
+    
+    public void setMonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
+        this.monthlyreportDAO = monthlyreportDAO;
+    }
+    
+    public void setVacationDAO(VacationDAO vacationDAO) {
+        this.vacationDAO = vacationDAO;
+    }
+    
+    public void setTimereportDAO(TimereportDAO timereportDAO) {
+        this.timereportDAO = timereportDAO;
+    }
+    
+    //	/**
+    //	 * Gets the EmployeeContract with the given employee id.
+    //	 * 
+    //	 * @param long employeeId
+    //	 * 
+    //	 * @return Employeecontract
+    //	 */
+    //	public Employeecontract getEmployeeContractByEmployeeId(long employeeId) {
+    //		return (Employeecontract) getSession().createQuery
+    //				("from Employeecontract e where e.employee.id = ?").setLong(0, employeeId).uniqueResult();
+    //	}
+    
+    /**
+     * Gets the EmployeeContract with the given employee id, that is valid for the given date.
+     * 
+     * @param long employeeId
+     * 
+     * @return Employeecontract
+     */
+    public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
+        return (Employeecontract)getSession().createQuery
+                ("from Employeecontract e where e.employee.id = ? and validfrom <= ? and (validuntil >= ? or validuntil = null)").setLong(0, employeeId).setDate(1, date).setDate(2, date)
+                .uniqueResult();
+    }
+    
+    //	/**
+    //	 * Gets the EmployeeContract with the given employee contract id, that is valid for the given date.
+    //	 * 
+    //	 * @param employeeContractId
+    //	 * @param date 
+    //	 * @return Employeecontract
+    //	 */
+    //	public Employeecontract getEmployeeContractByIdAndDate(long employeeContractId, Date date) {
+    //		return (Employeecontract) getSession().createQuery
+    //				("from Employeecontract e where id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeContractId).setDate(1, date).setDate(2, date).uniqueResult();
+    //	}
+    
+    //	/**
+    //	 * Gets the EmployeeContracts with the given employee id, that are valid for the given dates.
+    //	 * 
+    //	 * @param long employeeId
+    //	 * @param date1
+    //	 * @param date2
+    //	 * 
+    //	 * @return Employeecontract
+    //	 */
+    //	public List<Employeecontract> getEmployeeContractsByEmployeeIdAndDates(long employeeId, Date date1, Date date2) {
+    //		return (List<Employeecontract>) getSession().createQuery
+    //				("from Employeecontract e where e.employee.id = ? and ((validfrom <= ? and validuntil >= ? ) or (e.employee.id = ? and validfrom <= ? and validuntil >= ? )) order by validfrom").setLong(0, employeeId).setDate(1, date1).setDate(2, date1).setDate(3, date2).setDate(4, date2).list();
+    //	}
+    
+    //	/**
+    //	 * Gets the EmployeeContract with the given employee name.
+    //	 * 
+    //	 * @param String first
+    //	 * @param String last
+    //	 * 
+    //	 * @return Employeecontract
+    //	 */
+    //	public Employeecontract getEmployeeContractByEmployeeName(String first, String last) {
+    //		Employee emp = (Employee) getSession().createQuery
+    //			("from Employee e where e.firstname = ? and e.lastname = ?").setString(0, first).setString(1, last).uniqueResult();
+    //		if (emp == null) return null;
+    //		
+    //		Employeecontract ec = (Employeecontract) getSession().createQuery
+    //			("from Employeecontract e where e.employee.id = ?").setLong(0, emp.getId()).uniqueResult();
+    //		
+    //		return ec;
+    //	}
+    
+    /**
+     * Gets the EmployeeContract with the given id.
+     * 
+     * @param long id
+     * 
+     * @return Employeecontract
+     */
+    public Employeecontract getEmployeeContractById(long id) {
+        return (Employeecontract)getSession().createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
+    }
+    
+    /**
+     * Gets the EmployeeContract with the given id and concretly initialize vacations.
+     * 
+     * @param long id
+     * 
+     * @return Employeecontract
+     */
+    public Employeecontract getEmployeeContractByIdInitializeEager(long id) {
+        Session session = getSession();
+        Employeecontract ec = (Employeecontract)session.createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
+        Hibernate.initialize(ec.getVacations());
+        return ec;
+    }
+    
+    /**
+     * Calls {@link EmployeecontractDAO#save(Employeecontract, Employee)} with {@link Employee} = null.
+     * @param ec
+     */
+    public void save(Employeecontract ec) {
+        save(ec, null);
+    }
+    
+    /**
+     * Saves the given Employeecontract and sets creation-/update-user and creation-/update-date.
+     * 
+     * @param Employeecontract ec
+     */
+    public void save(Employeecontract ec, Employee loginEmployee) {
+        if (loginEmployee == null) {
+            throw new RuntimeException("the login-user must be passed to the db");
+        }
+        Session session = getSession();
+        java.util.Date creationDate = ec.getCreated();
+        if (creationDate == null) {
+            ec.setCreated(new java.util.Date());
+            ec.setCreatedby(loginEmployee.getSign());
+        } else {
+            ec.setLastupdate(new java.util.Date());
+            ec.setLastupdatedby(loginEmployee.getSign());
+            Integer updateCounter = ec.getUpdatecounter();
+            updateCounter = updateCounter == null ? 1 : updateCounter + 1;
+            ec.setUpdatecounter(updateCounter);
+        }
+        session.saveOrUpdate(ec);
+        session.flush();
+        //		session.clear();
+    }
+    
+    /**
+     * Get a list of all Employeecontracts ordered by lastname.
+     * 
+     * @return List<Employeecontract>
+     */
+    public List<Employeecontract> getEmployeeContracts() {
+        return getSession().createQuery("from Employeecontract e order by employee.lastname asc, validFrom asc").list();
+    }
+    
+    /**
+     * Get a list of all Employeecontracts ordered by lastname.
+     * 
+     * @return List<Employeecontract>
+     */
+    public List<Employeecontract> getTeamContracts(Long supervisorId) {
+        Date now = new Date();
+        return getSession().createQuery("from Employeecontract ec " +
+                "where supervisor.id = ? " +
+                "and validFrom <= ? " +
+                "and (validUntil = null " +
+                "or validUntil >= ?) " +
+                "order by employee.lastname asc, validFrom asc").setLong(0, supervisorId).setDate(1, now).setDate(2, now).list();
+    }
+    
+    /**
+     * Get a list of all Employeecontracts fitting to the given filters ordered by lastname.
+     * 
+     * @return List<Employeecontract>
+     */
+    public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId) {
+        List<Employeecontract> employeeContracts = null;
+        if (showInvalid == null || !showInvalid) {
+            Date now = new Date();
+            if (filter == null || filter.trim().equals("")) {
+                if (employeeId == null || employeeId == -1) {
+                    // case 1
+                    employeeContracts = getSession().createQuery("from Employeecontract e where " +
+                            "validFrom <= ? " +
+                            "and (validUntil = null " +
+                            "or validUntil >= ?) " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .setDate(0, now)
+                            .setDate(1, now)
+                            .list();
+                } else {
+                    // case 2
+                    employeeContracts = getSession().createQuery("from Employeecontract e where " +
+                            "e.employee.id = ? " +
+                            "and validFrom <= ? " +
+                            "and (validUntil = null " +
+                            "or validUntil >= ?) " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .setLong(0, employeeId)
+                            .setDate(1, now)
+                            .setDate(2, now)
+                            .list();
+                }
+            } else {
+                if (employeeId == null || employeeId == -1) {
+                    // case 3
+                    employeeContracts = getSession().createQuery("from Employeecontract e where " +
+                            "(upper(e.employee.firstname) like ? " +
+                            "or upper(e.employee.lastname) like ? " +
+                            "or upper(taskdescription) like ? " +
+                            "or upper(id) like ?) " +
+                            "and validFrom <= ? " +
+                            "and (validUntil = null " +
+                            "or validUntil >= ?) " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .setString(0, filter)
+                            .setString(1, filter)
+                            .setString(2, filter)
+                            .setString(3, filter)
+                            .setDate(4, now)
+                            .setDate(5, now)
+                            .list();
+                } else {
+                    // case 4
+                    employeeContracts = getSession().createQuery("from Employeecontract e where " +
+                            "(upper(e.employee.firstname) like ? " +
+                            "or upper(e.employee.lastname) like ? " +
+                            "or upper(taskdescription) like ? " +
+                            "or upper(id) like ?) " +
+                            "and e.employee.id = ? " +
+                            "and validFrom <= ? " +
+                            "and (validUntil = null " +
+                            "or validUntil >= ?) " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .setString(0, filter)
+                            .setString(1, filter)
+                            .setString(2, filter)
+                            .setString(3, filter)
+                            .setLong(4, employeeId)
+                            .setDate(5, now)
+                            .setDate(6, now)
+                            .list();
+                }
+            }
+        } else {
+            if (filter == null || filter.trim().equals("")) {
+                if (employeeId == null || employeeId == -1) {
+                    // case 5
+                    employeeContracts = getSession().createQuery("from Employeecontract e " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .list();
+                } else {
+                    // case 6
+                    employeeContracts = getSession().createQuery("from Employeecontract e where " +
+                            "e.employee.id = ? " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .setLong(0, employeeId)
+                            .list();
+                }
+            } else {
+                if (employeeId == null || employeeId == -1) {
+                    // case 7
+                    employeeContracts = getSession().createQuery("from Employeecontract e where " +
+                            "upper(e.employee.firstname) like ? " +
+                            "or upper(e.employee.lastname) like ? " +
+                            "or upper(taskdescription) like ? " +
+                            "or upper(id) like ? " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .setString(0, filter)
+                            .setString(1, filter)
+                            .setString(2, filter)
+                            .setString(3, filter)
+                            .list();
+                } else {
+                    // case 8
+                    employeeContracts = getSession().createQuery("from Employeecontract e where " +
+                            "(upper(e.employee.firstname) like ? " +
+                            "or upper(e.employee.lastname) like ? " +
+                            "or upper(taskdescription) like ? " +
+                            "or upper(id) like ?) " +
+                            "and e.employee.id = ? " +
+                            "order by employee.lastname asc, validFrom asc")
+                            .setString(0, filter)
+                            .setString(1, filter)
+                            .setString(2, filter)
+                            .setString(3, filter)
+                            .setLong(4, employeeId)
+                            .list();
+                }
+            }
+        }
+        return employeeContracts;
+    }
+    
+    /**
+     * Get a list of all Employeecontracts where the hide flag is unset or that is currently valid ordered by employee sign.
+     * 
+     * @return List<Employeecontract>
+     */
+    public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
+        java.util.Date date = new Date();
+        Boolean hide = false;
+        return getSession()
+                .createQuery("from Employeecontract e where hide = ? or hide = null or (validFrom <= ? and (validUntil >= ? or validUntil = null)) order by employee.sign asc, validFrom asc")
+                .setBoolean(0, hide).setDate(1, date).setDate(2, date).list();
+    }
+    
+    //	/**
+    //	 * 
+    //	 * @param date
+    //	 * @return Returns a list of all {@link Employeecontract}s that are valid for the given date.
+    //	 */
+    //	public List<Employeecontract> getEmployeeContractsValidForDate(java.util.Date date) {
+    //		return getSession().createQuery("from Employeecontract e where e.validFrom <= ? and e.validUntil >= ? order by employee.lastname").setDate(0, date).setDate(1, date).list();
+    //	}
+    
+    /**
+     * Deletes the given employee contract .
+     * 
+     * @param long ecId
+     * 
+     * @return boolean
+     */
+    public boolean deleteEmployeeContractById(long ecId) {
+        List<Employeecontract> allEmployeecontracts = getEmployeeContracts();
+        Employeecontract ecToDelete = getEmployeeContractById(ecId);
+        boolean ecDeleted = false;
+        
+        for (Object element : allEmployeecontracts) {
+            Employeecontract ec = (Employeecontract)element;
+            if (ec.getId() == ecToDelete.getId()) {
+                // check if related employeeorders/timereports exist 
+                // if so, no deletion possible				
+                
+                boolean deleteOk = true;
+                List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
+                for (Object element2 : allEmployeeorders) {
+                    Employeeorder eo = (Employeeorder)element2;
+                    if (eo.getEmployeecontract().getId() == ecToDelete.getId()) {
+                        deleteOk = false;
+                        break;
+                    }
+                }
+                
+                if (deleteOk) {
+                    List<Timereport> allTimereports = timereportDAO.getTimereports();
+                    for (Object element2 : allTimereports) {
+                        Timereport tr = (Timereport)element2;
+                        if (tr.getEmployeecontract() != null &&
+                                tr.getEmployeecontract().getId() == ecToDelete.getId()) {
+                            deleteOk = false;
+                            break;
+                        }
+                    }
+                }
+                
+                // if ok for deletion, check for monthlyreport and vacation entries and
+                // delete them successively (cannot yet be done via web application)				
+                if (deleteOk) {
+                    List<Monthlyreport> allMonthlyreports = monthlyreportDAO.getMonthlyreports();
+                    for (Object element2 : allMonthlyreports) {
+                        Monthlyreport mr = (Monthlyreport)element2;
+                        if (mr.getEmployeecontract().getId() == ecToDelete.getId()) {
+                            monthlyreportDAO.deleteMonthlyreportById(mr.getId());
+                        }
+                    }
+                }
+                
+                if (deleteOk) {
+                    List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecToDelete.getId());
+                    for (Overtime overtime : overtimes) {
+                        overtimeDAO.deleteOvertimeById(overtime.getId());
+                    }
+                }
+                
+                if (deleteOk) {
+                    List<Vacation> allVacations = vacationDAO.getVacations();
+                    for (Object element2 : allVacations) {
+                        Vacation va = (Vacation)element2;
+                        if (va.getEmployeecontract().getId() == ecToDelete.getId()) {
+                            vacationDAO.deleteVacationById(va.getId());
+                        }
+                    }
+                }
+                
+                // finally, go for deletion of employeecontract
+                if (deleteOk) {
+                    Session session = getSession();
+                    session.delete(ecToDelete);
+                    session.flush();
+                    ecDeleted = true;
+                }
+                break;
+            }
+        }
+        
+        return ecDeleted;
+    }
+    
 }

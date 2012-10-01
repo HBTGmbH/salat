@@ -60,6 +60,9 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowMatrix">
 			<bean:message key="main.general.mainmenu.matrixmenu.text" />
 		</html:link></li>
+		<li><html:link styleClass="menu" action="/ShowTraining">
+			<bean:message key="main.general.mainmenu.training.text" />
+		</html:link></li>
 		<li><html:link styleClass="menu" action="/ShowRelease">
 			<bean:message key="main.general.mainmenu.release.title.text" />
 		</html:link></li>

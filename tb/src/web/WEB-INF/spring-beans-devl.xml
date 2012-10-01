@@ -21,6 +21,7 @@
 	<bean name="/ShowSettings" class="org.tb.web.action.ShowSettingsAction" />
 	<bean name="/ShowWelcome" class="org.tb.web.action.ShowWelcomeAction" />
 	<bean name="/ShowRelease" class="org.tb.web.action.ShowReleaseAction" />
+	<bean name="/ShowTraining" class="org.tb.web.action.ShowTrainingAction" />
 
 	<!-- Struts Admin Actions -->
 	<bean name="/CreateCustomer" class="org.tb.web.action.admin.CreateCustomerAction" />
@@ -109,6 +110,8 @@
 	<bean name="employeeOrderContentDAO" class="org.tb.persistence.EmployeeOrderContentDAO">
 	</bean>
 	<bean name="statusReportDAO" class="org.tb.persistence.StatusReportDAO">
+	</bean>
+	<bean name="trainingDAO" class="org.tb.persistence.TrainingDAO">
 	</bean>
 	
 	<!-- other classes -->

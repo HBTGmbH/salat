@@ -1,0 +1,99 @@
+- New training variable for project bookings + filter in showdailyreports:
+
+	Change of databank scheme:
+	ALTER TABLE TIMEREPORTES ADD TRAINING BOOLEAN;
+	UPDATE TIMEREPORT SET TRAINING = FALSE;
+	
+	changes in tb: 
+	java org.tb.web.form.AddDailyReportForm.
+	org.tb.web.form.UpdateDailyRecordForm.java
+	org.tb.web.form.ShowDailyRecordForm.java
+	org.tb.bdom.Timereport.java
+	/tb/src/java/org/tb/web/action/UpdateDailyReportAction.java
+	/tb/src/java/org/tb/web/action/EditDailyReportAction.java
+	/tb/src/java/org/tb/web/action/StoreDailyReportAction.java
+	/tb/src/java/org/tb/web/action/ShowDailyReportAction.java
+	/tb/src/web/addDailyReport.jsp
+	/tb/src/web/showDailyReport.jsp
+	/tb/src/web/showDailyReportPrint.jsp
+	/tb/src/web/WEB-INF/tb_sql.txt 
+	MessageResources( /_de/_en)
+	
+	--> new variable training + getters & setters where needed; 
+	wrote training into forms and request where needed;
+	added checkbox for new bookings and editing if booking is project-based training;
+	added checkbox in daily reports for filtering for project-based training; 
+	Script for Change of databank scheme (see above);
+	added new text properties in RessourceBundle
+	
+	Testfälle für Änderungen am SALAT – Buchung als Fortbildung markieren
+		1.)	Neue Buchung - CreateDailyReport
+			a.	Als Fortbildung markiert
+			-	wird in ShowDailyReport-Seite korrekt mit markierter Checkbox angezeigt
+			-	wird korrekt in Datenbank mit true für training gespeichert: 
+			INSERT INTO TIMEREPORT VALUES(120493,120340,7150,3,0,0,0.0E0,'NeuMitFB',[…],TRUE)
+			b.	Nicht als Fortbildung markiert
+			-	wird in ShowDailyReport-Seite korrekt mit unmarkierter Checkbox angezeigt
+			-	wird korrekt in Datenbank mit false für training gespeichert: 
+			INSERT INTO TIMEREPORT VALUES(120492,120340,7150,2,0,0,0.0E0,'NeuOhneFB',[...],FALSE)
+		2.)	bestehende Buchung editieren
+			a.	im ShowDailyReport-Fenster
+				i.	nicht markierte markieren
+				o	wird auch nach speichern korrekt mit markierter Checkbox im selben Fenster angezeigt 
+				o	wird korrekt in Datenbank mit true für training gespeichert:  
+				INSERT INTO TIMEREPORT VALUES(120494,120340,102275,4,0,0,0.0E0,'ChangeMitFB',[…],TRUE)
+				ii.	bestehende Markierung entfernen
+				o	wird auch nach speichern korrekt mit unmarkierter Checkbox im selben Fenster angezeigt 
+				o	wird korrekt in Datenbank mit false für training gespeichert: 
+				INSERT INTO TIMEREPORT VALUES(120495,120340,102275,5,0,0,0.0E0,'ChangeOhneFB',[],FALSE)
+			b.	im EditDailyReport-Fenster
+				i.	nicht markierte markieren
+				o	wird nach speichern korrekt im ShowDailyReport-Fenster mit markierter Checkbox angezeigt
+				o	wird nach speichern korrekt in DB mit true für training gespeichert:
+				INSERT INTO TIMEREPORT VALUES(120496,120340,12760,6,0,0,0.0E0,'EditMitFB',[…],TRUE)
+				o	
+				ii.	bestehende Markierung entfernen 
+				o	wird nach speichern korrekt im ShowDailyReport-Fenster mit unmarkierter Checkbox angezeigt
+				o	wird nach speichern korrekt in DB mit false für training gespeichert
+				INSERT INTO TIMEREPORT VALUES(120497,120340,102275,7,0,0,0.0E0,'EditOhneFB',[…],FALSE)
+		Alle Varianten werden sowohl in der showDailyReport.jsp als auch in der addDailyReport.jsp korrekt angezeigt.
+			
+
+
+- new page for showing training over year:
+
+	newly added:
+
+	/tb/src/web/showTraining.jsp
+	/tb/src/java/org/tb/web/form/ShowTrainingForm.java
+	/tb/src/java/org/tb/web/action/ShowTrainingAction.java
+	/tb/src/java/org/tb/persistence/TrainingDAO.java
+	/tb/src/java/org/tb/bdom/TrainingOverview.java
+	
+	changes:
+	path	/tb/src/web/menu.jsp
+	path	/tb/src/web/WEB-INF/spring-beans-devl.xml
+	path	/tb/src/web/WEB-INF/spring-beans.xml
+	path	/tb/src/web/WEB-INF/struts-config.xml
+	path	/tb/src/java/org/tb/util/DateUtils.java
+	
+	-> new page with everything needed to display yearly common training and project based training for every employeecontract,
+	including form, jsp, action, dao, a new class for showing the needed data, mappings, appending in request and a new function 
+	for a list of years since start of employeecontract
+	
+	test cases in browser:
+	- login as admin
+		- show trainings for single employeecontracts, different years
+		- show trainings for alle employees, different years
+	- login as normal employee
+		- show trainings for single employeecontracts, different years
+		- show trainings for alle employees, different years
+	everything correctly shown.
+		
+		
+		
+		
+		
+		
+		
+		

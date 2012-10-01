@@ -82,6 +82,8 @@
 			type="org.tb.web.form.ShowStatusReportForm" />
 		<form-bean name="addStatusReportForm"
 			type="org.tb.web.form.AddStatusReportForm" />	
+		<form-bean name="showTrainingForm"
+			type="org.tb.web.form.ShowTrainingForm" />
 	</form-beans>
 
 
@@ -204,6 +206,14 @@
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="print" path="/showInvoicePrint.jsp" />
 		</action>
+		
+		<action path="/ShowTraining" input="/showTraining.jsp"
+			validate="true" name="showTrainingForm">
+			<forward name="success" path="/showTraining.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
+		</action>
+		
 
 		<!-- Admin -->
 

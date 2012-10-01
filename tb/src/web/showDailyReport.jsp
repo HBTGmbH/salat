@@ -818,6 +818,11 @@
 									</c:otherwise>
 								</c:choose>
 							</td>
+							<!-- Fortbildung -->
+							<td align="center">
+								<!--<html:checkbox property="training" value="${timereport.training}"/>-->
+								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />   
+							</td>
 							<!-- Dauer -->
 							<td align="center" nowrap>
 								<%--

@@ -11,6 +11,7 @@
 	<bean name="/CreateDailyReport" class="org.tb.web.action.CreateDailyReportAction" />
 	<bean name="/StoreDailyReport" class="org.tb.web.action.StoreDailyReportAction" />
 
+
 	<!-- Struts Admin Actions -->
 	<bean name="/AddEmployee" class="org.tb.web.action.admin.AddEmployeeAction" />
 	<bean name="/CreateAdminList" class="org.tb.web.action.admin.CreateAdminListAction" />
@@ -40,6 +41,9 @@
 	</bean>
 	<bean name="referencedayDAO" class="org.tb.persistence.ReferencedayDAO">
 	</bean>
+	<bean name="trainingDAO" class="org.tb.persistence.TrainingDAO"	>
+	</bean>
+
 	
 	<!-- Business Logic -->
 	
