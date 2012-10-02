@@ -30,9 +30,11 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	<span style="font-size: 14pt; font-weight: bold;"> <br> <bean:message
-			key="main.general.mainmenu.training.text" /> <br>
+	<span style="font-size: 14pt; font-weight: bold;"> <br> <bean:message key="main.general.mainmenu.training.text" /> 
 	</span>
+	<br>
+	<br>
+	<b><font color="red"><bean:message key="main.training.textwarning" /></font></b> <br>
 	<br>
 	<html:form action="/ShowTraining">
 		<table class="center backgroundcolor">
