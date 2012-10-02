@@ -85,6 +85,7 @@ public class EditDailyReportAction extends DailyReportAction {
         setFormEntries(mapping, request, reportForm, tr);
         
         request.getSession().setAttribute("timereport", tr);
+        request.getSession().setAttribute("currentEmployeeContract", tr.getEmployeecontract());
         
         // save the filter settings
         request.getSession().setAttribute("lastCurrentDay", request.getSession().getAttribute("currentDay"));
