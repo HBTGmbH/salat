@@ -94,6 +94,11 @@
 		form.action = "/tb/do/ShowRelease?task=updateEmployee";
 		form.submit();
 	}
+	
+	function setUpdateSupervisor(form) {
+		form.action = "/tb/do/ShowRelease?task=updateSupervisor";
+		form.submit();
+	}
 		
 </script>
 
@@ -116,16 +121,35 @@
 						</span>
 					</td>
 				</tr>
+				
+				<c:if test="${isSupervisor or employeeAuthorized}">	
+					<tr>
+						<td align="left" class="noBborderStyle">
+							<b><bean:message key="main.release.supervisor.text" />:&nbsp;&nbsp;</b>
+						</td>
+					
+						<td align="left" class="noBborderStyle">
+							<html:select property="supervisorId" value="${supervisorId}" 
+								onchange="setUpdateSupervisor(this.form)">
+								<html:option value="-1">
+									<bean:message key="main.general.all.text" />
+								</html:option>
+								 <c:forEach var="supervisor" items="${supervisors}">
+									<html:option value="${supervisor.id}">
+										<c:out value="${supervisor.sign}" />
+									</html:option>
+								</c:forEach> 
+							</html:select>
+							<html:hidden property="supervisorId" /> 
+						</td>
+					</tr>
+				</c:if> 
+				
 				<tr>
 					<td align="left" class="noBborderStyle">
 						<b><bean:message key="main.release.employee.text" />:</b>
 					</td>
-					
-			
-
-	
-	
-	
+						
 					<td align="left" class="noBborderStyle">
 						<c:choose>
 							<c:when test="${employeeAuthorized}">
@@ -464,6 +488,9 @@
 						<b> <bean:message key="main.release.accepted.until.text" />
 						</b>
 					</th>
+					<!-- <th align="left">
+						Buchungen prüfen
+					</th> -->
 				</tr>
 				<c:forEach var="employeecontract" items="${employeecontracts}"
 					varStatus="statusID">
@@ -481,7 +508,12 @@
 							<c:out value="${employeecontract.employee.sign}" />
 						</td>
 						<td>
+							<%-- <html:link title="Buchungen prüfen" 
+							href="/tb/do/ShowDailyReport?currentEmployeeContract='${employeecontract}'"> 
+							<font color="blue">--%>
 							<c:out value="${employeecontract.employee.name}" />
+							<%-- </font>
+							</html:link> --%>
 						</td>
 						<td align="left">
 							<c:out value="${employeecontract.timeString}" />
