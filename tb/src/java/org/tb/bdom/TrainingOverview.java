@@ -9,6 +9,17 @@ public class TrainingOverview {
     private final String pTTHoursMin;
     private final Employeecontract employeecontract;
     
+    public TrainingOverview(String year, Employeecontract employeecontract, String projectTrainingTime,
+            String commonTrainingTime, String pTTHoursMin, String cTTHoursMin) {
+        this.year = year;
+        this.employeecontract = employeecontract;
+        this.projectTrainingTime = projectTrainingTime;
+        this.commonTrainingTime = commonTrainingTime;
+        this.pTTHoursMin = pTTHoursMin;
+        this.cTTHoursMin = cTTHoursMin;
+        
+    }
+    
     public String getYear() {
         return year;
     }
@@ -31,17 +42,6 @@ public class TrainingOverview {
     
     public Employeecontract getEmployeecontract() {
         return employeecontract;
-    }
-    
-    public TrainingOverview(String year, Employeecontract employeecontract, String projectTrainingTime,
-            String commonTrainingTime, String pTTHoursMin, String cTTHoursMin) {
-        this.year = year;
-        this.employeecontract = employeecontract;
-        this.projectTrainingTime = projectTrainingTime;
-        this.commonTrainingTime = commonTrainingTime;
-        this.pTTHoursMin = pTTHoursMin;
-        this.cTTHoursMin = cTTHoursMin;
-        
     }
     
 }

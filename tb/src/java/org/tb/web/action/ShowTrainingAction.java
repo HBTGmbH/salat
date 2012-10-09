@@ -35,6 +35,7 @@ import org.tb.web.form.ShowTrainingForm;
  */
 public class ShowTrainingAction extends LoginRequiredAction {
     
+    private final static String TRAINING_ID = "i976";
     private EmployeecontractDAO employeecontractDAO;
     private TrainingDAO trainingDAO;
     private EmployeeDAO employeeDAO;
@@ -91,8 +92,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
             } else {
                 return mapping.findForward("error");
             }
-        }
-        else if (request.getParameter("task") != null) {
+        } else if (request.getParameter("task") != null) {
             // just go back to main menu
             if (request.getParameter("task").equalsIgnoreCase("back")) {
                 return mapping.findForward("backtomenu");
@@ -115,7 +115,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         long employeeContractId = trainingForm.getEmployeeContractId();
         request.getSession().setAttribute("showTrainingForm", trainingForm);
         Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
-        Customerorder trainingOrder = customerorderDAO.getCustomerorderBySign("i976");
+        Customerorder trainingOrder = customerorderDAO.getCustomerorderBySign(TRAINING_ID);
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverview = new LinkedList<TrainingOverview>();
         
@@ -167,7 +167,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         long employeeContractId = trainingForm.getEmployeeContractId();
         Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeHelper().setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
-        long orderID = customerorderDAO.getCustomerorderBySign("i976").getId();
+        long orderID = customerorderDAO.getCustomerorderBySign(TRAINING_ID).getId();
         List<TrainingOverview> trainingOverview = new LinkedList<TrainingOverview>();
         
         request.getSession().setAttribute("showTrainingForm", trainingForm);
