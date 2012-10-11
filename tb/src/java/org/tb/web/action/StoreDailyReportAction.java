@@ -355,6 +355,15 @@ public class StoreDailyReportAction extends DailyReportAction {
             // refresh suborder sign/description select menus
             SuborderHelper sh = new SuborderHelper();
             sh.adjustSuborderSignChanged(request, reportForm, suborderDAO);
+            
+            // if selected Order is Overtime Compensation, delete the previously automatically set daily working time
+            Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+            if (suborder != null &&
+                    suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+                reportForm.setSelectedHourDuration(0);
+                reportForm.setSelectedMinuteDuration(0);
+            }
+            
             return mapping.findForward("success");
         }
         

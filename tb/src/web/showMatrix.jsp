@@ -385,15 +385,22 @@
 						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix"
 							align="right" style="font-size: 7pt;border:1px black solid;">
 					</c:if>
-
 				</c:if>
-				<c:if
-					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
-				<c:if
-					test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
 
-					<c:out value="${bookingday.roundHours}"></c:out>
-				</c:if>
+				<c:choose>
+					<c:when
+						test="${(mergedreport.subOrder.sign eq overtimeCompensation and (not empty bookingday.taskdescription) 
+						and bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+						<c:out value="X"></c:out>
+					</c:when>
+					<c:otherwise>
+						<c:if test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
+						<c:if test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+							<c:out value="${bookingday.roundHours}"></c:out>
+						</c:if>
+					</c:otherwise>
+				</c:choose>
 				</td>
 			</c:forEach>
 			<td class="matrix" align="right"><c:out

@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
@@ -32,7 +33,7 @@ import org.tb.persistence.TimereportDAO;
  * @since 04.12.2006
  */
 public class MatrixHelper {
-
+    
     /**
      * @param dateFirst
      * @param dateLast
@@ -46,7 +47,8 @@ public class MatrixHelper {
      * @author cb
      * @since 08.02.2007
      */
-    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method, long customerOrderId,
+    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method,
+            long customerOrderId,
             boolean invoice) {
         List<Timereport> timeReportList;
         List<Timereport> tempTimeReportList;
@@ -78,7 +80,7 @@ public class MatrixHelper {
         int dayHoursSumTemp;
         int dayHoursTargetTemp;
         Double dayHoursDiff;
-
+        
         //conversion and localization of weekday values
         Map<Integer, String> weekDaysMap = new HashMap<Integer, String>();
         weekDaysMap.put(2, "main.matrixoverview.weekdays.monday.text");
@@ -88,7 +90,7 @@ public class MatrixHelper {
         weekDaysMap.put(6, "main.matrixoverview.weekdays.friday.text");
         weekDaysMap.put(7, "main.matrixoverview.weekdays.saturday.text");
         weekDaysMap.put(1, "main.matrixoverview.weekdays.sunday.text");
-
+        
         //choice of timereports by date, employeecontractid and/or customerorderid
         if (method == 1 || method == 3) {
             if (employeeContractId == -1) {
@@ -109,12 +111,12 @@ public class MatrixHelper {
             timeReportList = new ArrayList<Timereport>();
             throw new RuntimeException("this should not happen!");
         }
-
+        
         //devide billable orders if necessary
         tempTimeReportList = new ArrayList<Timereport>();
         if (invoice == true) {
-            for (Iterator iter = timeReportList.iterator(); iter.hasNext();) {
-                tempTimeReport = (Timereport)iter.next();
+            for (Object element : timeReportList) {
+                tempTimeReport = (Timereport)element;
                 if (tempTimeReport.getSuborder().getInvoice() == 'Y') {
                     tempTimeReportList.add(tempTimeReport);
                 }
@@ -122,22 +124,31 @@ public class MatrixHelper {
             timeReportList.clear();
             timeReportList.addAll(tempTimeReportList);
         }
-
+        
         //filling a list with new or merged 'mergedreports'
-        for (Iterator iter = timeReportList.iterator(); iter.hasNext();) {
-            tempTimeReport = (Timereport)iter.next();
+        for (Object element : timeReportList) {
+            tempTimeReport = (Timereport)element;
             taskdescription = tempTimeReport.getTaskdescription();
             date = tempTimeReport.getReferenceday().getRefdate();
             durationHours = tempTimeReport.getDurationhours();
             durationMinutes = tempTimeReport.getDurationminutes();
+            
+            // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Überstundenausgleich" into it
+            // -> needed because overtime compensation should be shown in matrix overview! (taskdescription as if-clause in jsp!)
+            if (tempTimeReport.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+                if (taskdescription == null || taskdescription.length() == 0) {
+                    taskdescription = GlobalConstants.OVERTIME_COMPENSATION_TEXT;
+                }
+            }
+            
             //insert into list if its not empty
             if (!mergedReportList.isEmpty()) {
                 mergedReportAvailable = false;
                 bookingDayAvailable = false;
                 tempMergedReport = null;
                 //search until timereport matching mergedreport; merge bookingdays in case of match
-                for (Iterator iter2 = mergedReportList.iterator(); iter2.hasNext();) {
-                    tempMergedReport = (MergedReport)iter2.next();
+                for (Object element2 : mergedReportList) {
+                    tempMergedReport = (MergedReport)element2;
                     mergedReportIndex = mergedReportList.indexOf(tempMergedReport);
                     if ((tempMergedReport.getCustomOrder().getSign() + tempMergedReport.getSubOrder().getSign()).equals(tempTimeReport.getSuborder().getCustomerorder().getSign()
                             + tempTimeReport.getSuborder().getSign())) {
@@ -169,33 +180,33 @@ public class MatrixHelper {
                 mergedReportList.add(new MergedReport(tempTimeReport.getSuborder().getCustomerorder(), tempTimeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
             }
         }
-
+        
         //set all empty bookingdays to 0, calculate sum of the bookingdays for each MergedReport and sort them
-        for (Iterator iter = mergedReportList.iterator(); iter.hasNext();) {
-            tempMergedReport = (MergedReport)iter.next();
+        for (Object element : mergedReportList) {
+            tempMergedReport = (MergedReport)element;
             tempMergedReport.fillBookingDaysWithNull(dateFirst, dateLast);
             tempMergedReport.setSum();
             Collections.sort(tempMergedReport.getBookingDay());
         }
-
+        
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
-        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst)
+        while (gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast) || gregorianCalendar.getTime().equals(dateFirst)
                 || gregorianCalendar.getTime().equals(dateLast)) {
             day++;
             dayHoursCount.add(new DayAndWorkingHourCount(day, 0, gregorianCalendar.getTime()));
             gregorianCalendar.add(Calendar.DAY_OF_MONTH, 1);
         }
-
+        
         day = 0;
         gregorianCalendar.setTime(dateFirst);
-        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst)
+        while (gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast) || gregorianCalendar.getTime().equals(dateFirst)
                 || gregorianCalendar.getTime().equals(dateLast)) {
             day++;
             dayIsPublicHoliday = false;
             //counting weekdays for dayhourstargettime
-            if ((gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SATURDAY) && (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SUNDAY)) {
-                for (Iterator iter = publicHolidayList.iterator(); iter.hasNext();) {
-                    tempPublicHoliday = (Publicholiday)iter.next();
+            if (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SATURDAY && gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SUNDAY) {
+                for (Object element : publicHolidayList) {
+                    tempPublicHoliday = (Publicholiday)element;
                     if (tempPublicHoliday.getRefdate().equals(gregorianCalendar.getTime())) {
                         dayIsPublicHoliday = true;
                     }
@@ -205,17 +216,17 @@ public class MatrixHelper {
                 }
             }
             //setting publicholidays and weekend for dayhourscount(status and name)
-            for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
-                tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
+            for (Object element : dayHoursCount) {
+                tempDayAndWorkingHourCount = (DayAndWorkingHourCount)element;
                 if (tempDayAndWorkingHourCount.getDay() == day) {
-                    for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
-                        tempPublicHoliday = (Publicholiday)iter3.next();
+                    for (Object element2 : publicHolidayList) {
+                        tempPublicHoliday = (Publicholiday)element2;
                         if (tempPublicHoliday.getRefdate().equals(gregorianCalendar.getTime())) {
                             dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setPublicHoliday(true);
                             dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setPublicHolidayName(tempPublicHoliday.getName());
                         }
                     }
-                    if ((gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
+                    if (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY || gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY) {
                         dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setSatSun(true);
                     }
                     dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setWeekDay(weekDaysMap.get(gregorianCalendar.get(gregorianCalendar.DAY_OF_WEEK)));
@@ -223,79 +234,79 @@ public class MatrixHelper {
             }
             gregorianCalendar.add(Calendar.DAY_OF_MONTH, 1);
         }
-
+        
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
         gregorianCalendar.setTime(dateFirst);
         day = 0;
-        while ((gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast)) || gregorianCalendar.getTime().equals(dateFirst)
+        while (gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast) || gregorianCalendar.getTime().equals(dateFirst)
                 || gregorianCalendar.getTime().equals(dateLast)) {
             day++;
-            for (Iterator iter = mergedReportList.iterator(); iter.hasNext();) {
-                tempMergedReport = (MergedReport)iter.next();
+            for (Object element : mergedReportList) {
+                tempMergedReport = (MergedReport)element;
                 for (Iterator iter2 = tempMergedReport.getBookingDay().iterator(); iter2.hasNext();) {
                     tempBookingDay = (BookingDay)iter2.next();
                     if (tempBookingDay.getDate().equals(gregorianCalendar.getTime())) {
                         //                        if (!dayHoursCount.isEmpty()) {
-                        if ((gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY) || (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY)) {
+                        if (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY || gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY) {
                             tempBookingDay.setSatSun(true);
                         }
-                        for (Iterator iter4 = dayHoursCount.iterator(); iter4.hasNext();) {
-                            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter4.next();
+                        for (Object element2 : dayHoursCount) {
+                            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)element2;
                             if (tempDayAndWorkingHourCount.getDay() == day) {
                                 tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day,
-                                        ((tempBookingDay.getDurationHours() * 60) + tempBookingDay.getDurationMinutes() + (tempDayAndWorkingHourCount.getWorkingHour() * 60)) / 60, tempBookingDay
+                                        (tempBookingDay.getDurationHours() * 60 + tempBookingDay.getDurationMinutes() + tempDayAndWorkingHourCount.getWorkingHour() * 60) / 60, tempBookingDay
                                                 .getDate());
                                 tempDayAndWorkingHourCount2.setPublicHoliday(tempDayAndWorkingHourCount.getPublicHoliday());
                                 tempDayAndWorkingHourCount2.setPublicHolidayName(tempDayAndWorkingHourCount.getPublicHolidayName());
                                 tempDayAndWorkingHourCount2.setSatSun(tempDayAndWorkingHourCount.getSatSun());
                                 tempDayAndWorkingHourCount2.setWeekDay(tempDayAndWorkingHourCount.getWeekDay());
                                 dayHoursCount.set(dayHoursCount.indexOf(tempDayAndWorkingHourCount), tempDayAndWorkingHourCount2);
-                                for (Iterator iter3 = publicHolidayList.iterator(); iter3.hasNext();) {
-                                    tempPublicHoliday = (Publicholiday)iter3.next();
+                                for (Object element3 : publicHolidayList) {
+                                    tempPublicHoliday = (Publicholiday)element3;
                                     if (tempPublicHoliday.getRefdate().equals(gregorianCalendar.getTime())) {
                                         tempBookingDay.setPublicHoliday(true);
                                     }
-
+                                    
                                 }
                             }
                         }
                     }
                 }
-
+                
             }
             gregorianCalendar.add(Calendar.DAY_OF_MONTH, 1);
         }
-
+        
         //sort mergedreportlist by custom- and subordersign
         Collections.sort(mergedReportList);
-
+        
         //calculate dayhourssum
-        for (Iterator iter5 = dayHoursCount.iterator(); iter5.hasNext();) {
-            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)iter5.next();
+        for (Object element : dayHoursCount) {
+            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)element;
             dayHoursSum += tempDayAndWorkingHourCount.getWorkingHour();
         }
         dayHoursSum = (dayHoursSum + 0.05) * 10;
         dayHoursSumTemp = dayHoursSum.intValue();
         dayHoursSum = dayHoursSumTemp / 10.0;
-
+        
         //calculate dayhourstarget
         if (employeeContractId == -1) {
             List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
             Employeecontract tempEmployeeContract;
             tempDailyWorkingTime = 0.0;
-            for (Iterator iter = employeeContractList.iterator(); iter.hasNext();) {
-                tempEmployeeContract = (Employeecontract)iter.next();
+            for (Object element : employeeContractList) {
+                tempEmployeeContract = (Employeecontract)element;
                 tempDailyWorkingTime += tempEmployeeContract.getDailyWorkingTime();
             }
-            dayHoursTarget = (dayHoursTarget * tempDailyWorkingTime);
+            dayHoursTarget = dayHoursTarget * tempDailyWorkingTime;
         } else {
-        	Employeecontract employeecontract = ecDAO.getEmployeeContractById(employeeContractId);
-            dayHoursTarget = (dayHoursTarget * employeecontract.getDailyWorkingTime());
+            Employeecontract employeecontract = ecDAO.getEmployeeContractById(employeeContractId);
+            dayHoursTarget = dayHoursTarget * employeecontract.getDailyWorkingTime();
         }
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;
         dayHoursTargetTemp = dayHoursTarget.intValue();
         dayHoursTarget = dayHoursTargetTemp / 10.0;
-
+        
         //calculate dayhoursdiff
         dayHoursDiff = dayHoursSum - dayHoursTarget;
         if (dayHoursDiff < 0) {
@@ -305,10 +316,10 @@ public class MatrixHelper {
         }
         int dayHoursDiffTemp = dayHoursDiff.intValue();
         dayHoursDiff = dayHoursDiffTemp / 10.0;
-
+        
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
-
+    
     //    public List<List> getMonths(Date dateFirst, Date dateLast) {
     //        Calendar gcFirst = GregorianCalendar.getInstance();
     //        Calendar gcLast = GregorianCalendar.getInstance();
