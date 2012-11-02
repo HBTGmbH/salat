@@ -73,7 +73,7 @@
 		}
 	}					
 	
-	function confirmSave(form, id) {	
+	function confirmSave(form, id) {
 		if (form.elements['status'].value == 'closed') {
 			var agree=confirm("<bean:message key="main.timereport.confirmclose.text" />");
 			if (agree) {
@@ -124,9 +124,10 @@
 			limitCount.value = limitNum - limitField.value.length;
 		}
 	}
-	
-		</script>
+			</script>
+
 	</head>
+	
 	<body>
 		<jsp:include flush="true" page="/menu.jsp">
 			<jsp:param name="title" value="Menu" />
@@ -488,6 +489,14 @@
 						</td>
 					</html:form>
 				</tr>
+			</table>
+		</c:if>
+		
+		<c:if test="${vacationBudgetOverrun}">
+			<table>
+				<td  class="noBborderStyle"  style="font-size: 14pt; ">
+					<b><font color="red"><bean:message key="form.timereport.error.vacationBudgetOverrun" /></font></b>
+				</td>
 			</table>
 		</c:if>
 	

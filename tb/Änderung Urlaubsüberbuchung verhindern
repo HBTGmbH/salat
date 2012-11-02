@@ -1,0 +1,36 @@
+Änderungen in StoreDailyReportAction:
+	ll 516-552: Einfügen der Überprüfung, ob Buchung Urlaub ist. 
+	Wenn ja, überprüfen, ob Buchung Budget überschreitet (mit Hilfe von vacationViewer).
+		Wenn ja, setze in der Session Attribut "vacationBudgetOverrun" auf True und beende die Action mit Weiterleitung auf showDailyReport.jsp
+		Wenn nein, setze ---------------------"--------------------------- false und speichere Buchung wie gehabt.
+
+Änderungen in UpdateDailyReportAction:
+	ll 133-165: Einfügen der Überprüfung, ob Buchung Urlaub ist. 
+	Wenn ja, überprüfen, ob Buchung Budget überschreitet (mit Hilfe von vacationViewer).
+		Wenn ja, setze in der Session Attribut "vacationBudgetOverrun" auf True und beende die Action mit Weiterleitung auf showDailyReport.jsp
+		Wenn nein, setze ---------------------"--------------------------- false und speichere Buchung wie gehabt.
+
+Änderungen in showDailyReport.jsp:
+	ll 495-501: wenn das Session-Attribut "vacationBudgetOverrun" True ist, füge nach der Trennlinie (bzw. nach den Buttons für neue Buchung und Druckansicht)
+	eine große, dicke, rote Nachricht ein, dass die Buchung das Budget überschreitet und deshalb nicht gebucht wurde.
+
+Änderungen in ShowDailyReportAction:
+	l 116: um zu verhindern, dass nach einer Buchung, die das Urlaubsbudget überschreiben würde, die ganze Zeit in der showDailyReport.jsp
+	die o.g. Warnung angezeigt wird, setze beim Neuladen (über ShowDailyReportAction) den Wert des Session-Attributs "vacationBudgetOverrun" auf False.
+
+Tests:
+	eingeloggt mit sql (normaler User/als Teamleiter für test&test2 zugeordnet).
+	
+	Überprüfen der Änderungen in StoreDailyReportAction: (wird aufgerufen wann immer eine Buchung im "addDailyReport.jsp" gespeichert wird)
+		Überbuchen des Urlaubsbudgets über "Neue Buchung" (sowohl über Menü als auch über den Button in der Einzelübersicht aufgerufen):
+		Serienbuchung und Einzelbuchung reagieren korrekt, d.h. Buchung(en) werden nicht gespeichert, statt dessen wird showDailyReport.jsp
+		mit der Warnung angezeigt. Auch wenn man über Speichern&Neu speichern wollte, wird nicht die addDailyReport-Seite geladen, sondern
+		die showDailyReport.jsp mit der Warnung.
+		Buchungen, die das Urlaubsbudget nicht überschreiten, werden wie bisher abgespeichert.
+	Überprüfen der Änderungen in UpdateDailyReport (wird aufgerufen, wenn in der Einzelübersicht auf den Speichern-Button für einen timereport gedrückt wird):
+		Wenn mit der Änderung der Dauer das Budget überschritten wird, wird die Änderung nicht gespeichert und beim refreshen der showDailyReport.jsp
+		die Warnung angezeigt. Wird das Budget nicht überschritten, wird die Änderung wie gehabt gespeichert.
+	Überprüfen der Änderungen in ShowDailyReportAction:
+		Wenn die Seite showDailyReport.jsp über diese Action aufgerufen wird, wird keine Warnung angezeigt. Wenn vorher eine Warnung angezeigt wurde
+		und die Seite nochmals neu geladen oder aufgerufen wird, wird die Warnung nicht mehr angezeigt.
+	

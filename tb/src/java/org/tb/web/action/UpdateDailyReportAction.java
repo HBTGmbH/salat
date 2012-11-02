@@ -15,9 +15,11 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
+import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -126,9 +128,45 @@ public class UpdateDailyReportAction extends DailyReportAction {
             tr.setCosts(reportForm.getCosts());
             tr.setTraining(reportForm.isTraining());
             
-            // save updated report
             Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-            timereportDAO.save(tr, loginEmployee, true);
+            
+            //check if report's order is vacation but not Overtime compensation
+            if (tr.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+                    && !tr.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+                //fill VacationView with data
+                java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
+                Employeeorder vacationOrder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(ec.getId(), tr.getSuborder().getId(), today);
+                VacationViewer vacationView = new VacationViewer(ec);
+                vacationView.setSuborderSign(vacationOrder.getSuborder().getSign());
+                if (vacationOrder.getDebithours() != null) {
+                    vacationView.setBudget(vacationOrder.getDebithours());
+                } else { //should not happen since debit hours of yearly vacation order is generated automatically when the order is created
+                    vacationOrder.setDebithours(vacationOrder.getEmployeecontract().getVacationEntitlement() * vacationOrder.getEmployeecontract().getDailyWorkingTime());
+                    vacationView.setBudget(vacationOrder.getDebithours());
+                }
+                List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(vacationOrder.getSuborder().getId(), ec.getId());
+                for (Timereport timereport : timereports) {
+                    if (tr.getId() != timereport.getId()) {
+                        vacationView.addVacationHours(timereport.getDurationhours());
+                        vacationView.addVacationMinutes(timereport.getDurationminutes());
+                    }
+                }
+                vacationView.addVacationHours(tr.getDurationhours());
+                vacationView.addVacationMinutes(tr.getDurationminutes());
+                //check if current timereport would overrun vacation budget of corresponding year of suborder
+                if (vacationView.getExtended()) {
+                    request.getSession().setAttribute("vacationBudgetOverrun", true);
+                    return mapping.findForward("success");
+                } else {
+                    request.getSession().setAttribute("vacationBudgetOverrun", false);
+                    timereportDAO.save(tr, loginEmployee, true);
+                }
+                
+            } else {
+                // save updated report
+                request.getSession().setAttribute("vacationBudgetOverrun", false);
+                timereportDAO.save(tr, loginEmployee, true);
+            }
             
             //				if (tr.getSortofreport().equals("W")) {
             //					// update monthly hour balance...

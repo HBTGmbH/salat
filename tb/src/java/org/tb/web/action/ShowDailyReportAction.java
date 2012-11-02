@@ -113,6 +113,7 @@ public class ShowDailyReportAction extends DailyReportAction {
         
         TimereportHelper th = new TimereportHelper();
         ShowDailyReportForm reportForm = (ShowDailyReportForm)form;
+        request.getSession().setAttribute("vacationBudgetOverrun", false);
         
         // check if special tasks initiated from the daily display need to be carried out...
         String sortModus = (String)request.getSession().getAttribute("timereportSortModus");
