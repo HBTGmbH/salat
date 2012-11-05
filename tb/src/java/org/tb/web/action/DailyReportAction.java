@@ -154,7 +154,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             throw new RuntimeException("Error occured while parsing date");
         }
         
-        //vacation
+        //vacation old version
         //		Date now = new Date();
         //
         //		java.sql.Date sqlNowDate = new java.sql.Date(now.getTime());
@@ -195,46 +195,9 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         //		request.getSession().setAttribute("vacationhoursused", usedVacationHours);
         //		request.getSession().setAttribute("vacationminutesused", usedVacationMinutes);
         
-        // vacation v2
-        java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
-        
-        List<Employeeorder> orders = new ArrayList<Employeeorder>();
-        
-        List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(),
-                GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION,
-                today);
-        List<Employeeorder> vacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(),
-                GlobalConstants.CUSTOMERORDER_SIGN_VACATION,
-                today);
-        List<Employeeorder> extraVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(),
-                GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION,
-                today);
-        
-        orders.addAll(specialVacationOrders);
-        for (Employeeorder vacation : vacationOrders) {
-            if (!vacation.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                orders.add(vacation);
-            }
-        }
-        orders.addAll(extraVacationOrders);
-        
-        List<VacationViewer> vacations = new ArrayList<VacationViewer>();
-        
-        for (Employeeorder employeeorder : orders) {
-            VacationViewer vacationView = new VacationViewer(employeecontract);
-            vacationView.setSuborderSign(employeeorder.getSuborder().getDescription());
-            if (employeeorder.getDebithours() != null) {
-                vacationView.setBudget(employeeorder.getDebithours());
-            }
-            
-            List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(employeeorder.getSuborder().getId(), employeecontract.getId());
-            for (Timereport timereport : timereports) {
-                vacationView.addVacationHours(timereport.getDurationhours());
-                vacationView.addVacationMinutes(timereport.getDurationminutes());
-            }
-            vacations.add(vacationView);
-        }
-        request.getSession().setAttribute("vacations", vacations);
+        //vacation v2 extracted to VacationViewer:
+        VacationViewer vw = new VacationViewer(employeecontract);
+        vw.computeVacations(request, employeecontract, employeeorderDAO, timereportDAO);
         
         // release
         request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
