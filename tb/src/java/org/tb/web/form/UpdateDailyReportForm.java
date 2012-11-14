@@ -29,7 +29,7 @@ public class UpdateDailyReportForm extends ActionForm {
     private String suborder;
     private String status;
     private Double costs;
-    private boolean training;
+    private Boolean training;
     private int selectedDurationHour;
     private int selectedDurationMinute;
     
@@ -109,11 +109,11 @@ public class UpdateDailyReportForm extends ActionForm {
         this.costs = costs;
     }
     
-    public boolean isTraining() {
+    public Boolean getTraining() {
         return training;
     }
     
-    public void setTraining(boolean training) {
+    public void setTraining(Boolean training) {
         this.training = training;
     }
     

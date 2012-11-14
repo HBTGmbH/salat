@@ -169,7 +169,7 @@
 				
 				<!-- Fortbildung -->
 				<td align="center">
-					<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />  
+					<html:checkbox property="training" />   
 				</td>
 
 

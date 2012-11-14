@@ -224,7 +224,7 @@ public class EditDailyReportAction extends DailyReportAction {
             reportForm.setStatus(tr.getStatus());
         }
         reportForm.setComment(tr.getTaskdescription());
-        reportForm.setTraining(tr.isTraining());
+        reportForm.setTraining(tr.getTraining());
     }
     
 }

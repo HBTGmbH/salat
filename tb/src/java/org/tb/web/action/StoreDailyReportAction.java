@@ -357,12 +357,17 @@ public class StoreDailyReportAction extends DailyReportAction {
             SuborderHelper sh = new SuborderHelper();
             sh.adjustSuborderSignChanged(request, reportForm, suborderDAO);
             
-            // if selected Order is Overtime Compensation, delete the previously automatically set daily working time
+            // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
             Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
             if (suborder != null &&
                     suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 reportForm.setSelectedHourDuration(0);
                 reportForm.setSelectedMinuteDuration(0);
+            }
+            
+            // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
+            if (suborder.getTrainingFlag()) {
+                reportForm.setTraining(true);
             }
             
             return mapping.findForward("success");
@@ -430,7 +435,7 @@ public class StoreDailyReportAction extends DailyReportAction {
             Date theDate = Date.valueOf(reportForm.getReferenceday());
             tr.setTaskdescription(reportForm.getComment());
             tr.setEmployeecontract(ec);
-            tr.setTraining(reportForm.isTraining());
+            tr.setTraining(reportForm.getTraining());
             
             // currently every timereport has status 'w'
             if (!reportForm.getSortOfReport().equals("W")) {

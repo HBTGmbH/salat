@@ -331,7 +331,7 @@ public class ShowDailyReportAction extends DailyReportAction {
                     if (reportForm.getShowTraining()) {
                         for (Iterator<Timereport> iterator = timereports.iterator(); iterator.hasNext();) {
                             Timereport c = iterator.next();
-                            if (!c.isTraining()) {
+                            if (!c.getTraining()) {
                                 iterator.remove();
                             }
                         }

@@ -303,7 +303,7 @@
 						<b><bean:message key="main.timereport.training.text"/>:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } /> 
+						<html:checkbox property="training" /> 
 					</td>
 					
 			</tr>

@@ -81,7 +81,7 @@ public class Timereport implements Serializable {
     private Double costs;
     
     /** Training */
-    private boolean training;
+    private Boolean training;
     
     /** Sequencial number */
     private int sequencenumber;
@@ -193,11 +193,11 @@ public class Timereport implements Serializable {
         this.costs = costs;
     }
     
-    public boolean isTraining() {
+    public Boolean getTraining() {
         return training;
     }
     
-    public void setTraining(boolean training) {
+    public void setTraining(Boolean training) {
         this.training = training;
     }
     

@@ -126,7 +126,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
             tr.setDurationhours(new Integer(reportForm.getSelectedDurationHour()));
             tr.setDurationminutes(new Integer(reportForm.getSelectedDurationMinute()));
             tr.setCosts(reportForm.getCosts());
-            tr.setTraining(reportForm.isTraining());
+            tr.setTraining(reportForm.getTraining());
             
             Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
             

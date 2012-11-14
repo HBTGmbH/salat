@@ -359,6 +359,16 @@
 			</td>
 		</tr>
 		
+		<!--  default training flag? -->
+		<tr>
+				<td align="left" class="noBborderStyle">
+					<b><bean:message key="main.suborder.trainingflag.text"/>:</b>
+				</td>
+				<td align="left" class="noBborderStyle">
+					<html:checkbox property="trainingFlag" /> 
+				</td>
+		</tr>		
+		
 		<!-- no employee order content -->
 		<tr>
 			<td align="left" class="noBborderStyle">
@@ -368,6 +378,7 @@
 				<html:checkbox property="noEmployeeOrderContent" />
 			</td>
 		</tr>
+				
 		<!-- hide -->
 		<tr>
 			<td align="left" class="noBborderStyle">
