@@ -1,5 +1,11 @@
 Version 1.82.10 -> 1.83
 
+16.11.2012
+
+DELETE  FROM PUBLIC.PUBLICHOLIDAY WHERE ID = 33210;
+// Grund: Fix des Bugs bei den Überstunden, wenn ein Feiertag auf einen Samstag fällt.
+//Da der 2. Weihnachtsfeiertag 2009 ein Samstag war, würde nach dem Fix ein Tag Überstunden zu wenig berechnet werden 
+
 09.11.2012
 
 ALTER TABLE SUBORDER ADD TRAININGFLAG BOOLEAN;
