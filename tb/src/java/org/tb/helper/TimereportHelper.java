@@ -601,13 +601,15 @@ public class TimereportHelper {
         
         SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
         String month = monthFormat.format(start);
-        
         int monthIntValue = Integer.valueOf(month);
+        
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
+        String day = dayFormat.format(start);
         
         GregorianCalendar calendar = new GregorianCalendar();
         
         calendar.clear();
-        calendar.set(new Integer(year), monthIntValue - 1, 1);
+        calendar.set(new Integer(year), monthIntValue - 1, new Integer(day));
         
         // So = 1
         // Mo = 2
@@ -630,6 +632,7 @@ public class TimereportHelper {
         
         long diffMillis;
         long diffDays;
+        
         diffMillis = end.getTime() - start.getTime();
         diffDays = (diffMillis + 60 * 60 * 1000) / (24 * 60 * 60 * 1000);
         // 1 hour added because of possible differences caused by sommertime/wintertime
@@ -667,7 +670,7 @@ public class TimereportHelper {
         // calculate working time
         double dailyWorkingTime = employeecontract.getDailyWorkingTime() * 60;
         if (dailyWorkingTime % 1 != 0) {
-            throw new RuntimeException("daily working time must be mutiple of 0.05: " + employeecontract.getDailyWorkingTime());
+            throw new RuntimeException("daily working time must be multiple of 0.05: " + employeecontract.getDailyWorkingTime());
         }
         long expectedWorkingTimeInMinutes = (long)dailyWorkingTime * diffDays;
         long actualWorkingTimeInMinutes = 0;
@@ -690,8 +693,14 @@ public class TimereportHelper {
         overtimeHours = overtimeMinutes / 60;
         overtimeMinutes = overtimeMinutes % 60;
         
-        overtime[0] = (int)overtimeHours;
-        overtime[1] = (int)overtimeMinutes;
+        if (end.getTime() >= start.getTime()) {
+            overtime[0] = (int)overtimeHours;
+            overtime[1] = (int)overtimeMinutes;
+        } else {
+            //startdate > enddate, should only happen when reopened on day of contractbegin (because then, enddate is set to (contractbegin - 1))
+            overtime[0] = 0;
+            overtime[1] = 0;
+        }
         
         return overtime;
     }

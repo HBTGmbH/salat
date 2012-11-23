@@ -37,6 +37,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.util.DateUtils;
 import org.tb.util.MD5Util;
 import org.tb.web.form.LoginEmployeeForm;
 
@@ -290,9 +291,19 @@ public class LoginEmployeeAction extends Action {
             request.getSession().setAttribute("acceptedUntil", acceptanceDate);
             
             TimereportHelper th = new TimereportHelper();
-            int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-            int overtimeHours = overtime[0];
-            int overtimeMinutes = overtime[1];
+            Double overtimeStatic = employeecontract.getOvertimeStatic();
+            int otStaticMinutes = (int)(overtimeStatic * 60);
+            //            if (overtimeStatic == 0.0) {
+            //                int[] overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+            //                int overtimeHours = overtime[0];
+            //                int overtimeMinutes = overtime[1];
+            //            } else {
+            //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
+            Date dynamicDate = DateUtils.getChangedDateFromDate(employeecontract.getReportAcceptanceDate(), 1);
+            int[] overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+            int overtimeHours = overtimeDynamic[0] + otStaticMinutes / 60;
+            int overtimeMinutes = overtimeDynamic[1] + otStaticMinutes % 60;
+            //        }
             
             boolean overtimeIsNegative = false;
             if (overtimeMinutes < 0) {
@@ -558,5 +569,4 @@ public class LoginEmployeeAction extends Action {
         
         return mapping.findForward("success");
     }
-    
 }

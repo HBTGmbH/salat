@@ -556,12 +556,13 @@ public class StoreDailyReportAction extends DailyReportAction {
                 }
             }
             request.getSession().setAttribute("vacationBudgetOverrun", false);
+            TimereportHelper th = new TimereportHelper();
             if (numberOfLaborDays > 1) {
                 if (tr.getId() != 0) {
                     timereportDAO.deleteTimereportById(tr.getId());
                 }
                 Date startDate = tr.getReferenceday().getRefdate();
-                TimereportHelper th = new TimereportHelper();
+                
                 List<java.util.Date> dates = th.getDatesForTimePeriod(startDate, numberOfLaborDays, publicholidayDAO);
                 for (java.util.Date date : dates) {
                     java.sql.Date sqlDate = new java.sql.Date(date.getTime());
@@ -578,7 +579,15 @@ public class StoreDailyReportAction extends DailyReportAction {
             } else {
                 timereportDAO.save(tr, loginEmployee, true);
             }
-            TimereportHelper th = new TimereportHelper();
+            
+            if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
+                // recompute overtimeStatic and store it in employeecontract
+                int[] otStatic = th.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(),
+                        ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                ec.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+                employeecontractDAO.save(ec, loginEmployee);
+            }
+            
             request.getSession().setAttribute("currentDay", DateUtils.getDayString(theDate));
             request.getSession().setAttribute("currentMonth", DateUtils.getMonthShortString(theDate));
             request.getSession().setAttribute("currentYear", DateUtils.getYearString(theDate));

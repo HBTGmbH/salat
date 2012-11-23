@@ -6,15 +6,20 @@ DELETE  FROM PUBLIC.PUBLICHOLIDAY WHERE ID = 33210;
 // Grund: Fix des Bugs bei den Überstunden, wenn ein Feiertag auf einen Samstag fällt.
 //Da der 2. Weihnachtsfeiertag 2009 ein Samstag war, würde nach dem Fix ein Tag Überstunden zu wenig berechnet werden 
 
+ALTER TABLE EMPLOYEECONTRACT ADD OVERTIMESTATIC DOUBLE; 
+UPDATE EMPLOYEECONTRACT SET OVERTIMESTATIC = 0.0;
+
 09.11.2012
 
 ALTER TABLE SUBORDER ADD TRAININGFLAG BOOLEAN;
 Update SUBORDER SET TRAININGFLAG = False;
 
+
 27.08.2012
 
-ALTER TABLE TIMEREPORTES ADD TRAINING BOOLEAN;
+ALTER TABLE TIMEREPORT ADD TRAINING BOOLEAN;
 UPDATE TIMEREPORT SET TRAINING = FALSE;
+
 ----------------------------------------
 
 7.7.06

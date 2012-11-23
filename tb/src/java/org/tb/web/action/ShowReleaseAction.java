@@ -23,6 +23,9 @@ import org.tb.bdom.Timereport;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
@@ -33,8 +36,10 @@ public class ShowReleaseAction extends LoginRequiredAction {
     
     private EmployeecontractDAO employeecontractDAO;
     private TimereportDAO timereportDAO;
-    
     private EmployeeDAO employeeDAO;
+    private PublicholidayDAO publicholidayDAO;
+    private OvertimeDAO overtimeDAO;
+    private EmployeeorderDAO employeeorderDAO;
     
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
@@ -46,6 +51,18 @@ public class ShowReleaseAction extends LoginRequiredAction {
     
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
+    }
+    
+    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
+        this.publicholidayDAO = publicholidayDAO;
+    }
+    
+    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
+        this.overtimeDAO = overtimeDAO;
+    }
+    
+    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+        this.employeeorderDAO = employeeorderDAO;
     }
     
     @Override
@@ -310,8 +327,13 @@ public class ShowReleaseAction extends LoginRequiredAction {
             request.getSession().setAttribute("acceptanceDays",
                     getDayList(acceptanceDateFromContract));
             
-            // store new acceptance date in employee contract
+            // set new acceptance date in employee contract
             employeecontract.setReportAcceptanceDate(sqlAcceptanceDate);
+            //compute overtimeStatic and set it in employee contract
+            int[] otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+                    employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+            employeecontract.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+            
             employeecontractDAO.save(employeecontract, loginEmployee);
         }
         
@@ -368,12 +390,17 @@ public class ShowReleaseAction extends LoginRequiredAction {
                 releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
                 releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);
                 releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
+                
+                // recompute overtimeStatic and set it in employeecontract
+                int[] otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+                        employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                employeecontract.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
             }
             
             request.getSession().setAttribute("reopenDays",
                     getDayList(reopenDate));
             
-            // store date in employee contract
+            // store changed employee contract
             employeecontractDAO.save(employeecontract, loginEmployee);
         }
         
@@ -639,7 +666,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
         Employee loginEmployee = (Employee)request.getSession().getAttribute(
                 "loginEmployee");
         if (selectedEmployeecontract.getEmployee().equals(loginEmployee)) {
-            errors.add("acceptancedate", new ActionMessage(
+            errors.add("acceptanceda)te", new ActionMessage(
                     "form.release.error.foureyesprinciple"));
         }
         

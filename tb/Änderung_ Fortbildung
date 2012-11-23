@@ -1,7 +1,7 @@
 - New training variable for project bookings + filter in showdailyreports:
 
 	Change of databank scheme:
-	ALTER TABLE TIMEREPORTES ADD TRAINING BOOLEAN;
+	ALTER TABLE TIMEREPORT ADD TRAINING BOOLEAN;
 	UPDATE TIMEREPORT SET TRAINING = FALSE;
 	
 	changes in tb: 

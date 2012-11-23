@@ -168,6 +168,15 @@ public class UpdateDailyReportAction extends DailyReportAction {
                 timereportDAO.save(tr, loginEmployee, true);
             }
             
+            TimereportHelper th = new TimereportHelper();
+            if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
+                // recompute overtimeStatic and store it in employeecontract
+                int[] otStatic = th.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(),
+                        ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                ec.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+                employeecontractDAO.save(ec, loginEmployee);
+            }
+            
             //				if (tr.getSortofreport().equals("W")) {
             //					// update monthly hour balance...
             //
@@ -214,7 +223,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
                     employeeDAO);
             List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
             
-            TimereportHelper th = new TimereportHelper();
             request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
             request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));

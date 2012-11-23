@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import org.tb.GlobalConstants;
@@ -493,6 +494,40 @@ public class DateUtils {
         worktime = hours * 1. + minutes / 60.;
         
         return worktime;
+    }
+    
+    /**
+     * Takes a Date and a number of days. Changes the Date by adding (changeDays is positive) or subtracting (changeDays is negative)
+     *  the number of days to it. For example, you have some Date and need the next day: input parameters are (date, 1).
+     * 
+     * @param originalDate
+     * @param changeYear
+     * @param changeMonths
+     * @param changeDays
+     * @return
+     */
+    public static Date getChangedDateFromDate(Date originalDate, int changeDays) {
+        
+        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
+        String year = yearFormat.format(originalDate);
+        
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
+        String month = monthFormat.format(originalDate);
+        int monthIntValue = Integer.valueOf(month);
+        
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
+        String day = dayFormat.format(originalDate);
+        
+        GregorianCalendar calendar = new GregorianCalendar();
+        
+        calendar.clear();
+        calendar.set(new Integer(year), monthIntValue - 1, new Integer(day));
+        
+        calendar.add(Calendar.DATE, changeDays);
+        
+        Date date = calendar.getTime();
+        
+        return date;
     }
     
 }
