@@ -1,0 +1,24 @@
+Einzelübersicht: Checkbox für Anzeige der Überstunden zu eingestelltem Datum (bzw. Enddatum bei Zeitraum) eingebaut.
+Wenn Checkbox angeklickt ist, werden unten bei den Überstunden zusätzlich die Überstunden bis zum eingestellten (End-)Datum angezeigt.
+
+Änderungen:
+
+showDailyReport.jsp: Checkbox im oberen Bereich eingebaut
+
+showDailyReportAction: im Bereich, wo alle Abfragen zu "refresh timereports" abgearbeitet werden:
+	ll. 340-389 Berechnung der Überstunden von Contractbeginn bis enddate der reportForm
+
+showDailyReportForm: neue Variable Boolean showOvertimeUntil mit Getter und Setter
+
+info2.jsp: Anzeige der Überstunden zu (End-)Datum eingebaut
+
+
+
+Tests:
+- als sql eingeloggt:
+	- An- und Ausmachen der Checkbox in
+		- Tagesansicht (verschiedene Tage)
+		- Monatsansicht (verschiedene Monate)
+		- Zeitraum (verschiedene Zeiträume)
+		-> Überprüfen der Plausibilität der Anzeige durch Debugging und anhand der vorhandenen Timereports
+	- Anlassen der Checkbox, wechseln der Zeitansichten.

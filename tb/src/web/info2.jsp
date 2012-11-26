@@ -90,7 +90,21 @@
 							<td align="left" class="noBborderStyle"><b><c:out value="${monthlyOvertime}" /></b></td>
 						</c:otherwise>
 					</c:choose>
-				</tr>				
+				</tr>	
+				<!--  only for showDailyReport: overtime until (end-)date-->
+				<c:if test="${showOvertimeUntil}">
+					<tr>
+						<td align="left" class="noBborderStyle"><b>bis <c:out value="${enddate}"/>: </b></td>
+						<c:choose>
+							<c:when test="${overtimeUntilIsNeg}">
+								<td align="left" class="noBborderStyle"><b><font color="red"><c:out value="${overtimeUntil}" /></font></b></td>
+							</c:when>
+							<c:otherwise>
+								<td align="left" class="noBborderStyle"><b><c:out value="${overtimeUntil}" /></b></td>
+							</c:otherwise>
+						</c:choose>
+					</tr>		
+				</c:if>	
 			</table>
 		</td>
 		<td align="left" valign="top" class="noBborderStyle">

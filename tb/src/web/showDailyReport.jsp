@@ -399,6 +399,16 @@
 					</td>
 				</tr>
 				
+				<!-- compute overtime until chosen Date -->
+				<tr>
+					<td align="left" valign="top" class="noBborderStyle">
+						<b><bean:message key="main.general.timereport.overtimeUntilDate"/>:</b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(this.form)" />
+					</td>
+				</tr>
+				
 				<!-- seperator line -->
 				<tr>
 					<td width="100%" class="noBborderStyle" colspan="2">

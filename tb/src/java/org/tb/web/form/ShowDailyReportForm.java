@@ -39,6 +39,7 @@ public class ShowDailyReportForm extends ActionForm {
     private String status;
     private Double costs;
     private Boolean training;
+    private Boolean showOvertimeUntil;
     private int selectedHourBegin;
     private int selectedMinuteBegin;
     private int selectedHourEnd;
@@ -189,6 +190,14 @@ public class ShowDailyReportForm extends ActionForm {
     
     public void setTraining(Boolean training) {
         this.training = training;
+    }
+    
+    public Boolean getShowOvertimeUntil() {
+        return showOvertimeUntil;
+    }
+    
+    public void setShowOvertimeUntil(Boolean showOvertimeUntil) {
+        this.showOvertimeUntil = showOvertimeUntil;
     }
     
     /**
@@ -478,6 +487,7 @@ public class ShowDailyReportForm extends ActionForm {
         avoidRefresh = false;
         showTraining = false;
         training = false;
+        showOvertimeUntil = false;
     }
     
     @Override

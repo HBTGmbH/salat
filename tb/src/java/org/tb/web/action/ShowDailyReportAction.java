@@ -6,6 +6,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -109,11 +110,12 @@ public class ShowDailyReportAction extends DailyReportAction {
     
     @SuppressWarnings({ "unchecked", "null" })
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws ParseException {
         
         TimereportHelper th = new TimereportHelper();
         ShowDailyReportForm reportForm = (ShowDailyReportForm)form;
         request.getSession().setAttribute("vacationBudgetOverrun", false);
+        Employeecontract ec = getEmployeeContractFromRequest(request, employeecontractDAO);
         
         // check if special tasks initiated from the daily display need to be carried out...
         String sortModus = (String)request.getSession().getAttribute("timereportSortModus");
@@ -165,7 +167,6 @@ public class ShowDailyReportAction extends DailyReportAction {
             return mapping.findForward("success");
         } else if (request.getParameter("task") != null && (request.getParameter("task").equals("saveBegin") || request.getParameter("task").equals("saveBreak"))) {
             //*** task for saving work starting time and saving work pausing time ***
-            Employeecontract ec = getEmployeeContractFromRequest(request, employeecontractDAO);
             if (ec == null) {
                 request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
                 return mapping.findForward("error");
@@ -336,6 +337,57 @@ public class ShowDailyReportAction extends DailyReportAction {
                             }
                         }
                     }
+                    //check if overtime should be computed until enddate
+                    if (reportForm.getShowOvertimeUntil()) {
+                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
+                        Date date = simpleDateFormat.parse(reportForm.getEnddate());
+                        if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
+                            GregorianCalendar gc = new GregorianCalendar();
+                            gc.setTime(date);
+                            int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
+                            gc.set(Calendar.DATE, maxday);
+                            date = gc.getTime();
+                        }
+                        request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
+                        int overtimeHours;
+                        int overtimeMinutes;
+                        if (ec.getReportAcceptanceDate().before(date)) {
+                            Double overtimeStatic = ec.getOvertimeStatic();
+                            int otStaticMinutes = (int)(overtimeStatic * 60);
+                            Date dynamicDate = DateUtils.getChangedDateFromDate(ec.getReportAcceptanceDate(), 1);
+                            int[] overtimeDynamic = th.calculateOvertime(dynamicDate, date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                            overtimeHours = overtimeDynamic[0] + otStaticMinutes / 60;
+                            overtimeMinutes = overtimeDynamic[1] + otStaticMinutes % 60;
+                        } else {
+                            int[] overtimeUntil = th.calculateOvertime(ec.getValidFrom(), date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                            overtimeHours = overtimeUntil[0];
+                            overtimeMinutes = overtimeUntil[1];
+                        }
+                        boolean overtimeUntilIsNeg = false;
+                        if (overtimeMinutes < 0) {
+                            overtimeUntilIsNeg = true;
+                            overtimeMinutes *= -1;
+                        }
+                        if (overtimeHours < 0) {
+                            overtimeUntilIsNeg = true;
+                            overtimeHours *= -1;
+                        }
+                        request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);
+                        request.getSession().setAttribute("enddate", simpleDateFormat.format(date));
+                        String overtimeString;
+                        if (overtimeUntilIsNeg) {
+                            overtimeString = "-" + overtimeHours + ":";
+                        } else {
+                            overtimeString = overtimeHours + ":";
+                        }
+                        
+                        if (overtimeMinutes < 10) {
+                            overtimeString += "0";
+                        }
+                        overtimeString += overtimeMinutes;
+                        request.getSession().setAttribute("overtimeUntil", overtimeString);
+                    }
+                    
                     request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
                     request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
                     request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
@@ -429,6 +481,7 @@ public class ShowDailyReportAction extends DailyReportAction {
                 request.getSession().setAttribute("LastMonthKey", monthMap.get(reportForm.getLastmonth()));
             }
             return mapping.findForward("print");
+            
         } else if (request.getParameter("task") != null) {
             // just go back to main menu
             if (request.getParameter("task").equalsIgnoreCase("back")) {
