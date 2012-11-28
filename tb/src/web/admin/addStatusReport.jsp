@@ -626,10 +626,51 @@
 		
 		<tr><td colspan="4" class="noBborderStyle"><hr></td></tr>
 		
+		<!-- customer feedback -->
+		<tr>			
+			<td class="noBborderStyle" valign="top" align="left">
+				<b>9. <bean:message key="statusreport.customerfeedback.text" />:</b>
+			</td>
+			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
+				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
+				<span style="color:red"><html:errors property="customerfeedback_text" /></span><br>
+				<html:textarea property="customerfeedback_text" cols="100" rows="10" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.customerfeedback_text,2048);" 
+					onkeyup="limitText(this.form.customerfeedback_text,2048);"/><br>
+				<bean:message key="statusreport.source.text" />: <span style="font-size: 7pt;">(max 256)</span>
+				<span style="color:red"><html:errors property="customerfeedback_source" /></span><br>
+				<html:textarea property="customerfeedback_source" cols="100" rows="4" readonly="${!isReportEditable}" 
+					onkeydown="limitText(this.form.customerfeedback_source,256);" 
+					onkeyup="limitText(this.form.customerfeedback_source,256);"/><br>
+			</td>
+		</tr>
+		<tr>
+			<td class="noBborderStyle" nowrap="nowrap">
+				<html:radio property="customerfeedback_status" disabled="${!isReportEditable}"
+					value="3"><html:img 
+					style="width:15px; height:15px;" 
+					src="/tb/images/red.gif" /> <bean:message 
+					key="statusreport.status.red"/></html:radio><br>
+				<html:radio property="customerfeedback_status" disabled="${!isReportEditable}" 
+					value="2"><html:img 
+					style="width:15px; height:15px;" 
+					src="/tb/images/yellow.gif" /> <bean:message 
+					key="statusreport.status.yellow"/></html:radio><br>			
+				<html:radio property="customerfeedback_status" disabled="${!isReportEditable}"
+					value="1"><html:img 
+					style="width:15px; height:15px;" 
+					src="/tb/images/green.gif" /> <bean:message 
+					key="statusreport.status.green"/></html:radio>
+			</td>
+		</tr>
+		
+		<tr><td colspan="4" class="noBborderStyle"><hr></td></tr>
+	
+		
 		<!-- miscellaneous -->
 		<tr>			
 			<td class="noBborderStyle" valign="top" align="left">
-				<b>9. <bean:message key="statusreport.miscellaneous.text" />:</b>
+				<b>10. <bean:message key="statusreport.miscellaneous.text" />:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" align="left" colspan="3" rowspan="2">
 				<bean:message key="statusreport.text.text" />: <span style="font-size: 7pt;">(max 2048)</span>
