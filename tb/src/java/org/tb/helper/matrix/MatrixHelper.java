@@ -80,6 +80,7 @@ public class MatrixHelper {
         int dayHoursSumTemp;
         int dayHoursTargetTemp;
         Double dayHoursDiff;
+        String separator = System.getProperty("line.separator");
         
         //conversion and localization of weekday values
         Map<Integer, String> weekDaysMap = new HashMap<Integer, String>();
@@ -128,7 +129,7 @@ public class MatrixHelper {
         //filling a list with new or merged 'mergedreports'
         for (Object element : timeReportList) {
             tempTimeReport = (Timereport)element;
-            taskdescription = tempTimeReport.getTaskdescription();
+            taskdescription = tempTimeReport.getTaskdescription() + separator;
             date = tempTimeReport.getReferenceday().getRefdate();
             durationHours = tempTimeReport.getDurationhours();
             durationMinutes = tempTimeReport.getDurationminutes();
