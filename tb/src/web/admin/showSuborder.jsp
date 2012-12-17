@@ -109,7 +109,7 @@
 		form.action = "/tb/do/EditSuborder?soId=" + soId;
 		form.submit();
 	}
-	
+		
 </script>
 
 </head>
@@ -264,7 +264,8 @@
 			</c:when>
 			<c:otherwise>
 				<tr>
-					<th align="left" title="select">&nbsp;</th>
+					<c:if test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+							<th align="left" title="select">&nbsp;</th> </c:if>
 					<th align="left" title="Info"><b>Info</b></th>
 					<th align="left"
 						title="<bean:message
@@ -332,9 +333,14 @@
 							<tr class="secondarycolor">
 						</c:otherwise>
 					</c:choose>
+					
 					<!-- Checkbox -->
+					<c:if test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && 
+									(suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">		
 					<td><html:multibox property="suborderIdArray"
 						value="${suborder.id}" /></td>
+					</c:if>
+				
 					<!-- Info -->
 					<td align="center">
 					<div class="tooltip" id="info<c:out value='${suborder.id}' />">
@@ -741,10 +747,11 @@
 				</c:forEach>
 			</c:otherwise>
 		</c:choose>
+	<c:if test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 		<tr>
 			<html:hidden styleId="suborderOptionValue"
 				property="suborderOptionValue" />
-			<td colspan="13" class="noBborderStyle"><html:select
+			<td class="noBborderStyle"><html:select
 				styleId="suborderOption" property="suborderOption"
 				onchange="multipleChange(this.form)">
 				<html:option value="">
@@ -762,9 +769,14 @@
 				</html:option>
 			</html:select><span style="color: red"><html:errors
 				property="suborderOption" /><html:errors property="bla" /></span>
-	</html:form>
-	</td>
-	</tr>
+			</td>
+			<td class="noBborderStyle" ><b><bean:message
+				key="main.general.button.resetChoice.text" />:</b></td>
+			<td class="noBborderStyle" align="left"><html:checkbox
+				property="noResetChoice" /></td> 
+		</tr>
+	</c:if>
+</html:form>
 	<c:if
 		test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
 		<tr>

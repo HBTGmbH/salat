@@ -20,6 +20,12 @@
  		form.action = "/tb/do/ShowMatrix?task=refreshMergedreports";
 		form.submit();
 	}
+ 	
+ /* 	function showDailyReportForDay(form, year, month, day) {	
+ 		form.startdate = year + "-" + month + "-" + day;
+ 		form.action = "/tb/do/ShowDailyReport?task=refreshTimereports";
+ 		form.submit();
+	}	 */
 </script>
 </head>
 <body>
@@ -319,34 +325,33 @@
 			<c:if test="${dayhourcount.satSun==true}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
 					<td
-						title="${dayhourcount.publicHolidayName} / <bean:message
-					key="${dayhourcount.weekDay}" />"
-						class="matrix bold" align="right" style="background-color:c1c1c1;">
+						title="${dayhourcount.publicHolidayName} / <bean:message key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right" style="background-color:c1c1c1;" id="matrixTableLink">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
-					<td title="<bean:message
-					key="${dayhourcount.weekDay}" />"
+					<td 
+						title="<bean:message key="${dayhourcount.weekDay}" />"
 						class="matrix bold" align="right"
-						style="background-color:lightgrey;">
+						style="background-color:lightgrey;" id="matrixTableLink">
 				</c:if>
 			</c:if>
 			<c:if test="${dayhourcount.satSun==false}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
-					<td
-						title="${dayhourcount.publicHolidayName} / <bean:message
-					key="${dayhourcount.weekDay}" />"
-						class="matrix bold" align="right" style="background-color:c1c1c1;">
+					<td 
+						title="${dayhourcount.publicHolidayName} / <bean:message key="${dayhourcount.weekDay}" />"
+						class="matrix bold" align="right" style="background-color:c1c1c1;" id="matrixTableLink">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
-					<td
-						title="<c:if test="${dayhourcount.weekDay!=null}"><bean:message
-					key="${dayhourcount.weekDay}" /></c:if>"
-						class="matrix bold" align="right">
+					<td 
+						title="<c:if test="${dayhourcount.weekDay!=null}"><bean:message key="${dayhourcount.weekDay}" /></c:if>"
+						class="matrix bold" align="right"  id="matrixTableLink">
 				</c:if>
 
 			</c:if>
-			&nbsp;<c:out value="${dayhourcount.dayString}" />&nbsp;
-		
+				<html:link href="/tb/do/ShowDailyReport?day=${dayhourcount.dayString}&month=${currentMonth}&year=${currentYear}"> 
+									&nbsp;<c:out value="${dayhourcount.dayString}" />&nbsp; 
+				</html:link>
+		<%-- ?task=refreshTimereports&day=${dayhourcount.dayString}&month=${currentMonth}&year=${currentYear} --%>
 		</td>
 		</c:forEach>
 		<td class="matrix bold"><bean:message

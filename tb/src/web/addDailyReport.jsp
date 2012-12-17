@@ -298,6 +298,7 @@
 				 </td>
 			</tr>
 			
+		<%-- Training Flag --%>
 			<tr>
 					<td align="left" class="noBborderStyle">
 						<b><bean:message key="main.timereport.training.text"/>:</b>

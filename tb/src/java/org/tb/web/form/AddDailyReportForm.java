@@ -139,11 +139,11 @@ public class AddDailyReportForm extends ActionForm {
         this.costs = costs;
     }
     
-    public boolean getTraining() {
+    public Boolean getTraining() {
         return training;
     }
     
-    public void setTraining(boolean training) {
+    public void setTraining(Boolean training) {
         this.training = training;
     }
     

@@ -236,3 +236,8 @@ li>ul {
 li:hover ul,li.over ul {
 	display: block;
 }
+
+td#matrixTableLink a:link, td#matrixTableLink a:visited, td#matrixTableLink a:hover, td#matrixTableLink a:active{
+	color: black !important;
+	text-decoration:none;
+}

@@ -116,6 +116,8 @@ public class ShowDailyReportAction extends DailyReportAction {
         ShowDailyReportForm reportForm = (ShowDailyReportForm)form;
         request.getSession().setAttribute("vacationBudgetOverrun", false);
         Employeecontract ec = getEmployeeContractFromRequest(request, employeecontractDAO);
+        Date startdate;
+        Date enddate;
         
         // check if special tasks initiated from the daily display need to be carried out...
         String sortModus = (String)request.getSession().getAttribute("timereportSortModus");
@@ -213,8 +215,6 @@ public class ShowDailyReportAction extends DailyReportAction {
                 reportForm.setEnddate(reportForm.getStartdate());
             } else {
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-                Date startdate;
-                Date enddate;
                 if (reportForm.getStartdate() != null) {
                     try {
                         startdate = simpleDateFormat.parse(reportForm.getStartdate());
@@ -493,6 +493,11 @@ public class ShowDailyReportAction extends DailyReportAction {
             //*** initialisation ***
             String forward = init(mapping, request, th, reportForm);
             //TODO: Hier bitte findForward zurückgeben.
+            if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
+                // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
+                String date = request.getParameter("year") + "-" + DateUtils.getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
+                reportForm.setStartdate(date);
+            }
         }
         request.getSession().setAttribute("reportForm", reportForm);
         request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());

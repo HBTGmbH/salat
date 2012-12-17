@@ -1,0 +1,25 @@
+Beschreibung des Bugs: Problem mit Checkboxen vor Suborder, nach Ausführen der Dropdownmenü-Aktion nicht mehr abwählbar (Details siehe Mantis Ticket 0003374.
+
+Änderungen ShowSuborder:
+
+Links vor jedem Suborder gibt es eine Checkbox. Unten links ist ein Dropdownmenü, dessen Auswahlmöglichkeiten für alle über die Checkboxen 
+ausgewählten Unteraufträge durchgeführt werden.
+Es gibt nun eine neue Checkbox neben diesem Dropdownmenü unten links, mit dem man auswählen kann ob die Auswahl der Suborder nach 
+Ausführen der Dropdown-Aktion beibehalten werden soll oder nicht. Default-Einstellung ist, dass die Markierung nicht beibehalten wird.
+
+Außerdem wird dieses Dropdownmenü, die Checkbox daneben sowie die Checkboxen vor den Unteraufträgen für "normale" Mitarbeiter nicht mehr angezeigt.
+
+Tests:
+
+Eingeloggt mit adm:
+- Verschiedene Suborders markiert, Checkbox für beibehalten nicht markiert:  nach Ausführen der Dropdownmenü-Aktion sind alle Checkboxen 
+	(auch die für beibehalten) nicht mehr markiert.
+- Verschiedene Suborders markiert, Checkbox für beibehalten markiert: nach Ausführen der Dropdownmenü-Aktion sind alle Checkboxen 
+	(auch die für beibehalten) weiterhin markiert. 
+	Anschließend einige der Suborder demarkiert, Checkbox für beibehalten markiert:nach Ausführen der Dropdownmenü-Aktion sind alle Checkboxen 
+	(auch die für beibehalten) weiterhin markiert.
+	Anschließend einige der Suborder demarkiert andere markiert, Checkbox für beibehalten demarkiert:nach Ausführen der Dropdownmenü-Aktion sind alle Checkboxen 
+	(auch die für beibehalten) nicht markiert.
+Eingeloggt mit pv: wie adm
+Eingelogt mit ma: Gesamte Zeile mit Checkboxen vor Suborder nicht angezeigt, Dropdownmenü und Checkbox ebenfalls nicht angezeigt.
+	
