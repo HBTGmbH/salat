@@ -72,6 +72,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
         
         ShowReleaseForm releaseForm = (ShowReleaseForm)form;
         boolean updateEmployee = false;
+        long superId;
         
         request.getSession().setAttribute("years",
                 DateUtils.getYearsToDisplay());
@@ -107,11 +108,21 @@ public class ShowReleaseAction extends LoginRequiredAction {
         boolean supervisor = !teamMemberContracts.isEmpty();
         request.getSession().setAttribute("isSupervisor", supervisor);
         request.getSession().setAttribute("teamContracts", teamMemberContracts);
-        
         String task = request.getParameter("task");
         System.out.println(task);
         
-        if (supervisor) {
+        /* check if supervisor has been set before, if not use isSupervisor or employeeAuthorized for preselecting employeecontracts shown*/
+        if (request.getSession().getAttribute("supervisorId") != null) {
+            superId = (Long)request.getSession().getAttribute("supervisorId");
+            if (superId == -1) {
+                request.getSession().setAttribute("employeecontracts",
+                        employeeContracts);
+            } else {
+                teamMemberContracts = employeecontractDAO.getTeamContracts(superId);
+                request.getSession().setAttribute("employeecontracts",
+                        teamMemberContracts);
+            }
+        } else if (supervisor) {
             request.getSession().setAttribute("employeecontracts",
                     teamMemberContracts);
             request.getSession().setAttribute("supervisorId", loginEmployee.getId());
@@ -406,7 +417,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
         
         if (request.getParameter("task") != null
                 && request.getParameter("task").equals("updateSupervisor")) {
-            long superId = releaseForm.getSupervisorId();
+            superId = releaseForm.getSupervisorId();
             request.getSession().setAttribute("supervisorId", superId);
             if (superId == -1) {
                 request.getSession().setAttribute("employeecontracts",

@@ -1,35 +1,43 @@
-Änderungen an der Überstundenberechnung: Wird jetzt nicht mehr bei jedem Aufruf der Übersichts- und der Einzelübersichtsseite über die gesamte DB berechnet.
-Statt dessen wird bei jeder Abnahme (Acceptance) der Überstundenwert von Contractbeginn bis Abnahmedatum berechnet und im Employeecontract gespeichert. Bei jedem Aufruf
-der Einzelübersicht oder der Übersicht wird dann dieser Wert addiert zu einem dynamisch berechneten (von acceptancedate bis aktuellem Datum).
+Änderungen an der Überstundenberechnung: Wird jetzt nicht mehr bei jedem Aufruf der Übersichts- und der Einzelübersichtsseite über die gesamte DB 
+berechnet. Statt dessen wird bei jeder Abnahme (Acceptance) der Überstundenwert von Contractbeginn bis Abnahmedatum berechnet und im 
+Employeecontract gespeichert. Bei jedem Aufruf der Einzelübersicht oder der Übersicht wird dann dieser Wert addiert zu einem dynamisch berechneten 
+(von acceptancedate bis aktuellem Datum).
 
 1. Änderung am DB-Modell: 
 -	Einfügen einer neuen Double-Variable für die Überstunden bis zum letzten reportAcceptanceDate. 
--	Speicherort: im Table Employeecontract, da die Überstunden für einen Employeecontract berechnet werden und dort auch das Datum der letzten Abnahme gespeichert ist (reportAcceptanceDate). Zusätzlicher Vorteil: Es muss keine neue query geschrieben werden, um an die Variable ranzukommen, da der Employeecontract ja sowieso für diverse Seiten geladen wird.
+-	Speicherort: im Table Employeecontract, da die Überstunden für einen Employeecontract berechnet werden und dort auch das Datum der letzten 
+Abnahme gespeichert ist (reportAcceptanceDate). Zusätzlicher Vorteil: Es muss keine neue query geschrieben werden, um an die Variable ranzukommen, 
+da der Employeecontract ja sowieso für diverse Seiten geladen wird.
 -	Name: overtimeStatic (vs. dynamic die andere Hälfte)
 
 2.	Zeitpunkt der Berechnung von overtimeStatic:
 -	Bei jeder Acceptance (Abnahme) durch Teamleiter neu berechnen und abspeichern (showReleaseAction)
--	Wenn der admin eine Abnahme rückgängig macht (reopen, aber nur wenn das neue Datum vor der letzten Abnahme liegt!), wird der statische Wert neu berechnet (mit Ende -> vom admin neu gesetztes Abnahmedatum) (showReleaseAction)
--	Wenn der admin einen timereport ändert, der in einem bereits abgenommenen und nicht neu geöffneten Zeitraum liegt, wird neu berechnet und gespeichert. (StoreDailyReportAction, UpdateDailyReportAction) 
+-	Wenn der admin eine Abnahme rückgängig macht (reopen, aber nur wenn das neue Datum vor der letzten Abnahme liegt!), wird der statische Wert 
+neu berechnet (mit Ende -> vom admin neu gesetztes Abnahmedatum) (showReleaseAction)
+-	Wenn der admin einen timereport ändert, der in einem bereits abgenommenen und nicht neu geöffneten Zeitraum liegt, wird neu berechnet und 
+gespeichert. (StoreDailyReportAction, UpdateDailyReportAction) 
 
 3.	Berechnung von overtimeStatic:
--	Verwendung der bisherigen Berechnung mit Modifikation (über TimereportHelper): (DailyReportAction, LoginEmployeeAction - alle anderen Actions bei denen Überstunden berechnet werden greifen auf DailyReportAction.refreshVacationAndOvertime zurück)
+-	Verwendung der bisherigen Berechnung mit Modifikation (über TimereportHelper): (DailyReportAction, LoginEmployeeAction - alle anderen Actions bei 
+denen Überstunden berechnet werden greifen auf DailyReportAction.refreshVacationAndOvertime zurück)
 o	Berechne alle Überstunden bis zum Release/Acceptancedate (gespeichert im Employeecontract)
-o	Speichere Wert in Variable overtimeStatic in der DB ab (Speichern des Employeecontracts verwenden, ggf. neue Funktion mit query in OvertimeDAO schreiben)
+o	Speichere Wert in Variable overtimeStatic in der DB ab (Speichern des Employeecontracts verwenden, ggf. neue Funktion mit query in OvertimeDAO 
+schreiben)
 
 4.	Berechnung der Überstundenangabe:
 -	an allen Stellen, an denen bisher Überstunden gesamt/Monat berechnet werden
 a.	Gesamt
 o	hole overtimeStatic und reportAcceptanceDate aus der DB
-o	berechne overtimeDynamic: Überstunden von AcceptanceDate+1 (damit der Acceptance-Tag nicht doppelt eingerechnet wird)  bis heute
+o	wenn overtimeStatic !=0.0, berechne overtimeDynamic: Überstunden von AcceptanceDate+1 (damit der Acceptance-Tag nicht doppelt eingerechnet wird)  bis heute
 o	addiere overtimeStatic und overtimeDynamic
-o	um eine falsche Anzeige nach dem Release zu vermeiden, sollte bei der Berechnung immer geprüft werden, ob in overtimeStatic etwas drin steht, wenn nicht, sollte die alte Variante verwendet werden
+o	wenn overtimeStatic = 0.0 verwende bisherige Berechnung über die gesamte Contractdauer.
 b.	Monat
 o	bleibt wie gehabt
 
 
 Tests:
-- Speichern von overtimeStatic mit verschiedenen Usern (PV, admin) und verschiedenen Abnahme-Daten sowie reopen und speichern eines timereports im geschlossenen Zeitraum im Debug-Modus
+- Speichern von overtimeStatic mit verschiedenen Usern (PV, admin) und verschiedenen Abnahme-Daten sowie reopen und speichern eines timereports im 
+geschlossenen Zeitraum im Debug-Modus
   getestet und mit den zu erwartendenen Werten aufgrund der vorhandenen Timereports abgeglichen.
 - Änderung der Berechnung zunächst nur in LoginEmployeeAction. Vergleich der Ergebnisse der Berechnung mit der bisherigen Variante in DailyReportAction.
 - Debugging: Verfolgen der Variablenwerte während der Berechnungen, Abgleich mit zu erwartenden Werten aufgrund der vorhandenen timereports.

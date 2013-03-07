@@ -21,3 +21,8 @@ Tests:
 	andere Abnehmer können im Filter-Dropdownmenü eingestellt werden, deren Teammitglieder werden dann in Tabelle angezeigt. Abenommen werden können trotzdem nur die sql zugeordneten MA.
 Generell: 	Default-Einstellung funktioniert (Anzeige im Droppdownmenü mit sign, in Tabelle Teammitglieder bzw. bei ALLE alle employeecontracts)
 			Wechseln zwischen verschiedenen Auswahlen im Dropdown-Menü funktioniert inklulsive Update der Tabelle
+			
+
+			
+Update 06.03.2013: in ShowReleaseAction ergänzt, das beim Aufrufen der Action überprüft wird ob schon ein Supervisor im Filter gesetzt wurde, 
+wenn ja, dessen Mitarbeiter anzeigen sonst wie bisher

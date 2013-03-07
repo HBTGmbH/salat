@@ -351,7 +351,7 @@ public class ShowDailyReportAction extends DailyReportAction {
                         request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
                         int overtimeHours;
                         int overtimeMinutes;
-                        if (ec.getReportAcceptanceDate().before(date)) {
+                        if (ec.getReportAcceptanceDate().before(date) && ec.getOvertimeStatic() != 0.0) {
                             Double overtimeStatic = ec.getOvertimeStatic();
                             int otStaticMinutes = (int)(overtimeStatic * 60);
                             Date dynamicDate = DateUtils.getChangedDateFromDate(ec.getReportAcceptanceDate(), 1);
