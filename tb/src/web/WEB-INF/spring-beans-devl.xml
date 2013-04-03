@@ -165,12 +165,12 @@
 			
 			<!--  
 			<value>file:d:/jm/taet/taetigkeitsberichte</value>
-			-->
+		
 			<value>file:d:/sql/salat_db/taetigkeitsberichte</value>
-			
-			  <!-- 
+			-->	
+			   
 			<value>file:/var/lib/hsqldb/taetigkeitsberichte</value>
-			 	 -->		 
+			 		 
 		</property>
 		<property name="name">
 			<value>taetigkeitsberichte</value>
