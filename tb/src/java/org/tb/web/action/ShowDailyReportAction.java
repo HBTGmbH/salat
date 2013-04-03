@@ -337,7 +337,7 @@ public class ShowDailyReportAction extends DailyReportAction {
                             }
                         }
                     }
-                    //check if overtime should be computed until enddate
+                    //check if overtime should be computed until enddate (not today)
                     if (reportForm.getShowOvertimeUntil()) {
                         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
                         Date date = simpleDateFormat.parse(reportForm.getEnddate());
@@ -351,13 +351,14 @@ public class ShowDailyReportAction extends DailyReportAction {
                         request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
                         int overtimeHours;
                         int overtimeMinutes;
-                        if (ec.getReportAcceptanceDate().before(date) && ec.getOvertimeStatic() != 0.0) {
+                        if (ec.getReportAcceptanceDate().before(date) && ec.getUseOvertimeOld() == false) {
                             Double overtimeStatic = ec.getOvertimeStatic();
                             int otStaticMinutes = (int)(overtimeStatic * 60);
-                            Date dynamicDate = DateUtils.getChangedDateFromDate(ec.getReportAcceptanceDate(), 1);
+                            Date dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
                             int[] overtimeDynamic = th.calculateOvertime(dynamicDate, date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-                            overtimeHours = overtimeDynamic[0] + otStaticMinutes / 60;
-                            overtimeMinutes = overtimeDynamic[1] + otStaticMinutes % 60;
+                            int minutes = otStaticMinutes + overtimeDynamic[0] * 60 + overtimeDynamic[1];
+                            overtimeHours = minutes / 60;
+                            overtimeMinutes = minutes % 60;
                         } else {
                             int[] overtimeUntil = th.calculateOvertime(ec.getValidFrom(), date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
                             overtimeHours = overtimeUntil[0];

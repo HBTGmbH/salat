@@ -9,6 +9,9 @@ Employeecontract gespeichert. Bei jedem Aufruf der Einzelübersicht oder der Über
 Abnahme gespeichert ist (reportAcceptanceDate). Zusätzlicher Vorteil: Es muss keine neue query geschrieben werden, um an die Variable ranzukommen, 
 da der Employeecontract ja sowieso für diverse Seiten geladen wird.
 -	Name: overtimeStatic (vs. dynamic die andere Hälfte)
+- Einfügen einer neuen Boolean-Variable useOvertimeOld im Employeecontract, setzen auf True für alle bestehenden Employeecontracts; 
+default-Wert in StoreEmployeecontract auf False bei Erstellung eines neuen Employeecontracts
+
 
 2.	Zeitpunkt der Berechnung von overtimeStatic:
 -	Bei jeder Acceptance (Abnahme) durch Teamleiter neu berechnen und abspeichern (showReleaseAction)
@@ -23,14 +26,17 @@ denen Überstunden berechnet werden greifen auf DailyReportAction.refreshVacation
 o	Berechne alle Überstunden bis zum Release/Acceptancedate (gespeichert im Employeecontract)
 o	Speichere Wert in Variable overtimeStatic in der DB ab (Speichern des Employeecontracts verwenden, ggf. neue Funktion mit query in OvertimeDAO 
 schreiben)
+- Beim Speichern von overtimeStatic setze useOvertimeOld auf False, falls es vorher True war (Sinn: Nach Release muss die alte Berechnung bis zur 
+nächsten Abnahme weiter verwendet werden; bei erster Abnahme nach Release wird die Variable auf False gesetzt und danach nie wieder geändert; 
+bei allen neu erstellten employeecontracts wird die Variable default-mäßig auf False gesetzt.
 
 4.	Berechnung der Überstundenangabe:
 -	an allen Stellen, an denen bisher Überstunden gesamt/Monat berechnet werden
 a.	Gesamt
 o	hole overtimeStatic und reportAcceptanceDate aus der DB
-o	wenn overtimeStatic !=0.0, berechne overtimeDynamic: Überstunden von AcceptanceDate+1 (damit der Acceptance-Tag nicht doppelt eingerechnet wird)  bis heute
+o	wenn employeecontract.useOvertimeOld==false, berechne overtimeDynamic: Überstunden von AcceptanceDate+1 (damit der Acceptance-Tag nicht doppelt eingerechnet wird)  bis heute
 o	addiere overtimeStatic und overtimeDynamic
-o	wenn overtimeStatic = 0.0 verwende bisherige Berechnung über die gesamte Contractdauer.
+o	wenn employeecontract.useOvertimeOld==true verwende bisherige Berechnung über die gesamte Contractdauer.
 b.	Monat
 o	bleibt wie gehabt
 

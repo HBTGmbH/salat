@@ -76,34 +76,31 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         Double overtimeStatic = employeecontract.getOvertimeStatic();
         int otStaticMinutes = (int)(overtimeStatic * 60);
         
-        if (overtimeStatic == 0.0) {
+        if (employeecontract.getUseOvertimeOld() != null && employeecontract.getUseOvertimeOld() == false) {
+            //use new overtime computation with static + dynamic overtime
+            //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
+            Date dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
+            int[] overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+            int minutes = otStaticMinutes + overtimeDynamic[0] * 60 + overtimeDynamic[1];
+            overtimeHours = minutes / 60;
+            overtimeMinutes = minutes % 60;
+            // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
+        } else {
             overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
             overtimeHours = overtime[0];
             overtimeMinutes = overtime[1];
-        } else {
-            //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
-            Date dynamicDate = DateUtils.getChangedDateFromDate(employeecontract.getReportAcceptanceDate(), 1);
-            int[] overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-            overtimeHours = overtimeDynamic[0] + otStaticMinutes / 60;
-            overtimeMinutes = overtimeDynamic[1] + otStaticMinutes % 60;
         }
+        
         boolean overtimeIsNegative = false;
         if (overtimeMinutes < 0) {
             overtimeIsNegative = true;
             overtimeMinutes *= -1;
-        }
-        if (overtimeHours < 0) {
+        } else if (overtimeHours < 0) {
             overtimeIsNegative = true;
-            overtimeHours *= -1;
         }
         request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
         
-        String overtimeString;
-        if (overtimeIsNegative) {
-            overtimeString = "-" + overtimeHours + ":";
-        } else {
-            overtimeString = overtimeHours + ":";
-        }
+        String overtimeString = overtimeHours + ":";
         
         if (overtimeMinutes < 10) {
             overtimeString += "0";
@@ -144,16 +141,11 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             }
             if (monthlyOvertimeHours < 0) {
                 monthlyOvertimeIsNegative = true;
-                monthlyOvertimeHours *= -1;
             }
             request.getSession().setAttribute("monthlyOvertimeIsNegative",
                     monthlyOvertimeIsNegative);
-            String monthlyOvertimeString;
-            if (monthlyOvertimeIsNegative) {
-                monthlyOvertimeString = "-" + monthlyOvertimeHours + ":";
-            } else {
-                monthlyOvertimeString = monthlyOvertimeHours + ":";
-            }
+            String monthlyOvertimeString = monthlyOvertimeHours + ":";
+            
             if (monthlyOvertimeMinutes < 10) {
                 monthlyOvertimeString += "0";
             }

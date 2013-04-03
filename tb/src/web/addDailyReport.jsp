@@ -276,11 +276,11 @@
 					<b><bean:message key="main.timereport.duration.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
 				</td>
 				<td align="left" class="noBborderStyle">
-					<html:select property="selectedHourDuration" onchange="setUpdatePeriodAction(this.form)">
+					<html:select property="selectedHourDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${currentSuborderSign eq overtimeCompensation}">
 						<html:options collection="hoursDuration" property="value" labelProperty="label" />
 					</html:select>
 					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-					<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)">
+					<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${currentSuborderSign eq overtimeCompensation}">
 						<html:options collection="minutes" property="value" labelProperty="label" />
 					</html:select>
 				</td>

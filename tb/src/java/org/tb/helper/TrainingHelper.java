@@ -7,13 +7,11 @@ public class TrainingHelper {
     public static int[] getHoursMin(Object[] time) {
         int[] intTime = { 0, 0 };
         if (time != null && time.length == 2) {
-            if (time[0] != null && time[0] instanceof Long) {
-                Long hours = (Long)time[0];
-                intTime[0] = hours.intValue();
-            }
-            if (time[1] != null && time[1] instanceof Long) {
-                Long min = (Long)time[1];
-                intTime[1] = min.intValue();
+            for (int i = 0; i <= 1; i++) {
+                if (time[i] != null && time[i] instanceof Long) {
+                    Long t = (Long)time[i];
+                    intTime[i] = t.intValue();
+                }
             }
         }
         return intTime;
@@ -22,11 +20,7 @@ public class TrainingHelper {
     public static int getMinutesForHourDouble(Double doubleValue) {
         int hours = doubleValue.intValue();
         doubleValue = doubleValue - hours;
-        int minutes = 0;
-        if (doubleValue != 0.0) {
-            doubleValue *= 100;
-            minutes = doubleValue.intValue() * 60 / 100;
-        }
+        int minutes = doubleValue.intValue() * 60;
         minutes += hours * 60;
         return minutes;
     }
@@ -49,7 +43,7 @@ public class TrainingHelper {
             trainingMinutes = restMinutes % 60;
         }
         
-        StringBuffer trainingString = new StringBuffer();
+        StringBuilder trainingString = new StringBuilder();
         if (trainingDays < 10) {
             trainingString.append(0);
         }
@@ -76,7 +70,7 @@ public class TrainingHelper {
         trainingHours += trainingMinutes / 60;
         trainingMinutes = trainingMinutes % 60;
         
-        StringBuffer trainingString = new StringBuffer();
+        StringBuilder trainingString = new StringBuilder();
         
         if (trainingHours < 10) {
             trainingString.append(0);

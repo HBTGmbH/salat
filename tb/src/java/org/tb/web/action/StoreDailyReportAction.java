@@ -357,8 +357,10 @@ public class StoreDailyReportAction extends DailyReportAction {
             SuborderHelper sh = new SuborderHelper();
             sh.adjustSuborderSignChanged(request, reportForm, suborderDAO);
             
-            // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
             Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+            request.getSession().setAttribute("currentSuborderSign", suborder.getSign());
+            
+            // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
             if (suborder != null &&
                     suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 reportForm.setSelectedHourDuration(0);
@@ -540,15 +542,11 @@ public class StoreDailyReportAction extends DailyReportAction {
                         vacationView.addVacationMinutes(timereport.getDurationminutes());
                     }
                 }
-                if (numberOfLaborDays > 1) {
-                    for (int i = 0; i < numberOfLaborDays; i++) {
-                        vacationView.addVacationHours(tr.getDurationhours());
-                        vacationView.addVacationMinutes(tr.getDurationminutes());
-                    }
-                } else {
-                    vacationView.addVacationHours(tr.getDurationhours());
-                    vacationView.addVacationMinutes(tr.getDurationminutes());
-                }
+                
+                numberOfLaborDays = Math.max(numberOfLaborDays, 1);
+                vacationView.addVacationHours(numberOfLaborDays * tr.getDurationhours());
+                vacationView.addVacationMinutes(numberOfLaborDays * tr.getDurationminutes());
+                
                 //check if current timereport/serial reports would overrun vacation budget of corresponding year of suborder
                 if (vacationView.getExtended()) {
                     request.getSession().setAttribute("vacationBudgetOverrun", true);

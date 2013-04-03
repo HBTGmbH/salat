@@ -94,6 +94,9 @@ public class Employeecontract implements Serializable {
     /** static overtime from begin of employeecontract to reportAcceptanceDate*/
     private double overtimeStatic;
     
+    /** boolean for new overtime computation: if true, overtimeStatic has not been set before*/
+    private Boolean useOvertimeOld;
+    
     /** Employee */
     @OneToOne
     // FIXME check if ManyToOne?
@@ -352,6 +355,14 @@ public class Employeecontract implements Serializable {
     
     public void setOvertimeStatic(double overtimeStatic) {
         this.overtimeStatic = overtimeStatic;
+    }
+    
+    public Boolean getUseOvertimeOld() {
+        return useOvertimeOld;
+    }
+    
+    public void setUseOvertimeOld(Boolean useOvertimeOld) {
+        this.useOvertimeOld = useOvertimeOld;
     }
     
     public String getTimeString() {

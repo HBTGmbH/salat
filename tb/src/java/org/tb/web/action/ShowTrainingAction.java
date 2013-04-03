@@ -117,7 +117,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
         Customerorder trainingOrder = customerorderDAO.getCustomerorderBySign(TRAINING_ID);
         long orderID = trainingOrder.getId();
-        List<TrainingOverview> trainingOverview = new LinkedList<TrainingOverview>();
+        List<TrainingOverview> trainingOverviews;
         
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
         for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext();) {
@@ -129,22 +129,23 @@ public class ShowTrainingAction extends LoginRequiredAction {
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         
         // refresh all relevant attributes
-        if (trainingForm.getEmployeeContractId() == -1 || employeecontract.getFreelancer() || employeecontract.getDailyWorkingTime() <= 0 || employeecontract.getEmployeeorders() == null) {
+        if (trainingForm.getEmployeeContractId() == -1 || employeecontract.getFreelancer() || employeecontract.getDailyWorkingTime() <= 0
+                || employeecontract.getEmployeeorders() == null) {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
-            trainingOverview = getTrainingOverviewsForAll(startdate,
+            trainingOverviews = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1);
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
             
         } else {
             // get the training times for specific year, specific employee, all orders (project Training) and order i976 (CommonTraining)
-            trainingOverview.add(getTrainingOverviewByEmployeecontract(startdate,
-                    enddate, employeecontract, orderID, year));
+            trainingOverviews = getTrainingOverviewByEmployeecontract(startdate,
+                    enddate, employeecontract, orderID, year);
             
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
             request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(employeecontract));
         }
-        request.getSession().setAttribute("trainingOverview", trainingOverview);
+        request.getSession().setAttribute("trainingOverview", trainingOverviews);
         request.getSession().setAttribute("year", year);
         
         return true;
@@ -168,7 +169,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeHelper().setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
         long orderID = customerorderDAO.getCustomerorderBySign(TRAINING_ID).getId();
-        List<TrainingOverview> trainingOverview = new LinkedList<TrainingOverview>();
+        List<TrainingOverview> trainingOverview;
         
         request.getSession().setAttribute("showTrainingForm", trainingForm);
         
@@ -205,8 +206,8 @@ public class ShowTrainingAction extends LoginRequiredAction {
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
             // get a List of TrainingOverviews with only one entry for the selected Employee
         } else {
-            trainingOverview.add(getTrainingOverviewByEmployeecontract(startdate,
-                    enddate, ec, orderID, year));
+            trainingOverview = getTrainingOverviewByEmployeecontract(startdate,
+                    enddate, ec, orderID, year);
             request.getSession().setAttribute("currentEmployeeId", employeeContractId);
             request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(ec));
         }
@@ -216,44 +217,31 @@ public class ShowTrainingAction extends LoginRequiredAction {
     
     private List<TrainingOverview> getTrainingOverviewsForAll(Date startdate,
             Date enddate, EmployeecontractDAO employeecontractDAO, Long orderID, List<Employeecontract> employeecontracts, String year) {
-        List<TrainingOverview> trainingOverview = new LinkedList<TrainingOverview>();
+        List<TrainingOverview> trainingOverviews = new LinkedList<TrainingOverview>();
         List<Object[]> cTrain = trainingDAO.getCommonTrainingTimesByDates(employeecontractDAO, startdate, enddate, orderID);
         List<Object[]> pTrain = trainingDAO.getProjectTrainingTimesByDates(employeecontractDAO, startdate, enddate);
-        Long id = (long)0;
-        Map<Long, Object[]> projTrain = new HashMap<Long, Object[]>();
-        for (Object[] pt : pTrain) {
-            if (pt[0] != null && pt[0] instanceof Long) {
-                id = (Long)pt[0];
-                projTrain.put(id, pt);
-            }
-        }
-        Map<Long, Object[]> comTrain = new HashMap<Long, Object[]>();
-        for (Object[] ct : cTrain) {
-            if (ct[0] != null && ct[0] instanceof Long) {
-                id = (Long)ct[0];
-                comTrain.put(id, ct);
-            }
-        }
+        Map<Long, Object[]> projTrain = createMap(pTrain);
+        Map<Long, Object[]> comTrain = createMap(cTrain);
         
         for (Employeecontract empCon : employeecontracts) {
-            TrainingOverview to = new TrainingOverview(year, empCon, "nicht verfügbar", "nicht verfügbar", "", "");
+            TrainingOverview to;
             Object[] commonTraining = comTrain.get(empCon.getId());
             Object[] projectTraining = projTrain.get(empCon.getId());
             if (commonTraining == null && projectTraining == null) {
-                to = new TrainingOverview(year, empCon, "00:00:00", "00:00:00", "00:00", "00:00");
+                to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_HM, GlobalConstants.ZERO_HM);
             } else if (commonTraining == null) {
                 Object[] t = { projectTraining[1], projectTraining[2] };
                 int[] ti = TrainingHelper.getHoursMin(t);
                 String time = TrainingHelper.fromDBtimeToString(empCon, ti[0], ti[1]);
                 String hoursMin = TrainingHelper.hoursMinToString(ti);
-                to = new TrainingOverview(year, empCon, time, "00:00:00", hoursMin, "00:00");
+                to = new TrainingOverview(year, empCon, time, GlobalConstants.ZERO_DHM, hoursMin, GlobalConstants.ZERO_HM);
             } else if (projectTraining == null) {
                 Object[] t = { commonTraining[1], commonTraining[2] };
                 int[] ti = TrainingHelper.getHoursMin(t);
                 String time = TrainingHelper.fromDBtimeToString(empCon, ti[0], ti[1]);
                 String hoursMin = TrainingHelper.hoursMinToString(ti);
-                to = new TrainingOverview(year, empCon, "00:00:00", time, "00:00", hoursMin);
-            } else if (commonTraining != null && projectTraining != null) {
+                to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, time, GlobalConstants.ZERO_HM, hoursMin);
+            } else {
                 Object[] cT = { commonTraining[1], commonTraining[2] };
                 int[] tcT = TrainingHelper.getHoursMin(cT);
                 String commonTime = TrainingHelper.fromDBtimeToString(empCon, tcT[0], tcT[1]);
@@ -264,13 +252,28 @@ public class ShowTrainingAction extends LoginRequiredAction {
                 String pHoursMin = TrainingHelper.hoursMinToString(tpT);
                 to = new TrainingOverview(year, empCon, projectTime, commonTime, pHoursMin, cHoursMin);
             }
-            trainingOverview.add(to);
+            trainingOverviews.add(to);
         }
-        return trainingOverview;
+        return trainingOverviews;
     }
     
-    private TrainingOverview getTrainingOverviewByEmployeecontract(Date startdate,
+    /**
+     * @param pTrain
+     * @return
+     */
+    private Map<Long, Object[]> createMap(List<Object[]> objectList) {
+        Map<Long, Object[]> projTrain = new HashMap<Long, Object[]>();
+        for (Object[] o : objectList) {
+            if (o[0] != null && o[0] instanceof Long) {
+                projTrain.put((Long)o[0], o);
+            }
+        }
+        return projTrain;
+    }
+    
+    private List<TrainingOverview> getTrainingOverviewByEmployeecontract(Date startdate,
             Date enddate, Employeecontract ec, Long orderID, String year) {
+        List<TrainingOverview> result = new LinkedList<TrainingOverview>();
         
         Object[] cTT = trainingDAO.getCommonTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate, orderID);
         Object[] pTT = trainingDAO.getProjectTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate);
@@ -283,6 +286,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         String pHoursMin = TrainingHelper.hoursMinToString(pTime);
         
         TrainingOverview to = new TrainingOverview(year, ec, projectTrainingTime, commonTrainingTime, pHoursMin, cHoursMin);
-        return to;
+        result.add(to);
+        return result;
     }
 }

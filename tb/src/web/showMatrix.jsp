@@ -396,7 +396,7 @@
 					<c:when
 						test="${(mergedreport.subOrder.sign eq overtimeCompensation and (not empty bookingday.taskdescription) 
 						and bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-						<c:out value="X"></c:out>
+						<c:out value="0.0"></c:out>
 					</c:when>
 					<c:otherwise>
 						<c:if test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">

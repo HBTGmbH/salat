@@ -787,10 +787,10 @@
 		
 							<!-- Dauer -->
 							<td align="center" nowrap="nowrap">
-								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}">
+								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborder.sign eq overtimeCompensation}">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
-								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}">
+								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborder.sign eq overtimeCompensation}">
 									<html:options collection="minutes" property="value"	labelProperty="label" />
 								</html:select>
 							</td>

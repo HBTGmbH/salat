@@ -108,6 +108,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
         boolean supervisor = !teamMemberContracts.isEmpty();
         request.getSession().setAttribute("isSupervisor", supervisor);
         request.getSession().setAttribute("teamContracts", teamMemberContracts);
+        
         String task = request.getParameter("task");
         System.out.println(task);
         
@@ -129,8 +130,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
         } else {
             request.getSession().setAttribute("employeecontracts",
                     employeeContracts);
-            long sId = -1;
-            request.getSession().setAttribute("supervisorId", sId);
+            request.getSession().setAttribute("supervisorId", -1l);
         }
         
         if (supervisor || (Boolean)request.getSession().getAttribute("employeeAuthorized")) {
@@ -141,11 +141,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
             } else {
                 currentEmployeeContract = (Employeecontract)request
                         .getSession().getAttribute("currentEmployeeContract");
-            }
-            if (currentEmployeeContract != null) {
-                if (!currentEmployeeContract.equals(employeecontract)) {
-                    employeecontract = currentEmployeeContract;
-                }
+                employeecontract = currentEmployeeContract;
                 releaseForm.setEmployeeContractId(employeecontract.getId());
             }
         }
@@ -344,6 +340,11 @@ public class ShowReleaseAction extends LoginRequiredAction {
             int[] otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                     employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
             employeecontract.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+            
+            //only used the first time a release is accepted after SALAT-Release 1.83:
+            if (employeecontract.getUseOvertimeOld() == null || employeecontract.getUseOvertimeOld()) {
+                employeecontract.setUseOvertimeOld(false);
+            }
             
             employeecontractDAO.save(employeecontract, loginEmployee);
         }

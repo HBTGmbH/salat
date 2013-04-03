@@ -198,6 +198,7 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("suborders", theSuborders);
         request.getSession().setAttribute("subordersByDescription", subordersByDescription);
         request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());
+        request.getSession().setAttribute("currentSuborderSign", theSuborders.get(0).getSign());
         // get first Suborder to synchronize suborder lists
         Suborder so = theSuborders.get(0);
         request.getSession().setAttribute("currentSuborderId", so.getId());
@@ -231,7 +232,8 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("lastView", request.getSession().getAttribute("view"));
         request.getSession().setAttribute("lastEmployeeContractId", reportForm.getEmployeeContractId());
         
+        request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+        
         return mapping.findForward("success");
     }
-    
 }
