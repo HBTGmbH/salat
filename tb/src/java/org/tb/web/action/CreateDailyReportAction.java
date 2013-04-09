@@ -232,7 +232,11 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("lastView", request.getSession().getAttribute("view"));
         request.getSession().setAttribute("lastEmployeeContractId", reportForm.getEmployeeContractId());
         
-        request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+        //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
+        if (request.getSession().getAttribute("overtimeCompensation") == null
+                || request.getSession().getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+            request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+        }
         
         return mapping.findForward("success");
     }

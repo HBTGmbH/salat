@@ -249,9 +249,8 @@ In der Matrixübersicht wird sowohl für Überstundenausgleich mit als auch ohne Ko
 wird beim Mouseover "Überstundenausgleich" als Kommentar angezeigt (benötigt zum Selektieren bei der Anzeige).
 
 Anmerkungen: 
-- Man kann auf den Unterauftrag Überstundenausleich auch mit Stundenangabe buchen. 
-	Allerdings werden diese Stunden dann natürlich als Arbeitszeit verbucht. Es wäre allerdings sehr aufwändig, für diesen Auftrag die Angabe von Stunden/Minuten 
-	zu unterbinden, deshalb habe ich mit Blick auf das Aufwand-NutzenVerhältnis entschieden es so zu lassen.
+- Man kann auf den Unterauftrag Überstundenausgleich nun nicht mehr mit Dauer buchen, da die Dropdown-Menüs für die Dauer ausgegraut (disabled) sind,
+wenn der eingestellte Unterauftrag der Überstundenausgleich ist.
 - Die Lösung zur Voreinstellung beim Buchen (siehe oben) ist suboptimal, da bei jeder Buchung immer für diesen einen Unterauftrag geprüft wird.
 	allerdings ist mir keine optimale generische Lösung eingefallen. 
 - wenn man auf einen Tag mehrfach Überstundenausgleich bucht (ob mit oder ohne Dauer), werden im Mouseover, ebenso wie bei anderen
