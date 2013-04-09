@@ -361,10 +361,16 @@ public class StoreDailyReportAction extends DailyReportAction {
             request.getSession().setAttribute("currentSuborderSign", suborder.getSign());
             
             // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
+            // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
             if (suborder != null &&
                     suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 reportForm.setSelectedHourDuration(0);
                 reportForm.setSelectedMinuteDuration(0);
+                if (request.getSession().getAttribute("overtimeCompensation") == null
+                        || request.getSession().getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+                    request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+                }
+                
             }
             
             // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked

@@ -81,6 +81,13 @@ public class EditDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
         request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
         
+        // make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
+        // if the current suborder is overtime compensation.
+        if (request.getSession().getAttribute("overtimeCompensation") == null
+                || request.getSession().getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+            request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+        }
+        
         // fill the form with properties of the timereport to be edited
         setFormEntries(mapping, request, reportForm, tr);
         
