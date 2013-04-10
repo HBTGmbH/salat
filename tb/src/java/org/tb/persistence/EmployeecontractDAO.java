@@ -161,6 +161,9 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
             throw new RuntimeException("the login-user must be passed to the db");
         }
         Session session = getSession();
+        
+        ec = (Employeecontract)session.get(Employeecontract.class, ec.getId());
+        
         java.util.Date creationDate = ec.getCreated();
         if (creationDate == null) {
             ec.setCreated(new java.util.Date());
@@ -172,8 +175,22 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
             updateCounter = updateCounter == null ? 1 : updateCounter + 1;
             ec.setUpdatecounter(updateCounter);
         }
-        session.saveOrUpdate(ec);
+        
+        if (session.contains(ec)) {
+            // existing and attached to session
+            session.saveOrUpdate(ec);
+        } else {
+            if (ec.getId() != 0L) {
+                // existing but detached from session
+                session.merge(ec);
+            } else {
+                // new object -> persist it!
+                session.saveOrUpdate(ec);
+            }
+        }
+        
         session.flush();
+        
         //		session.clear();
     }
     

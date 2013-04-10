@@ -181,11 +181,11 @@ wenn LoginEmployee kein Abnehmer aber authorized ist (BL, PV, adm), ist "ALLE" v
 Wenn der LoginEmployee weder Abnehmer noch authorized ist, wird das Filtermenü gar nicht angezeigt, 
 an dieser Ansicht der Seite wurde keine Änderung vorgenommen.
 
-Wenn einer der Abnehmer im Filter-Dropdownmenü ausgewählt ist, werden nur seine Teammitglieder in der Tabelle angezeigt.
+Wenn einer der Abnehmer im Filter-Dropdownmenü ausgewählt ist, werden nur seine Teammitglieder sowie er selbst in der Tabelle angezeigt.
 Bei der Auswahl "ALLE" wird wie bisher die gesamte Tabelle über alle Mitarbeiter angezeigt.
 
-Wenn ein Abnehmer der nicht PV,BL oder adm ist, einen anderen Abnehmer als sich selbst im Filter einstellt, bekommt er zwar dessen Teammitglieder in der Tabelle angezeit,
-er kann aber trotzdem nur seine eigenen Teammitglieder im Mitarbeiter-Dropdownmenü auswählen und abnehmen.
+Wenn ein Abnehmer der nicht PV,BL oder adm ist, einen anderen Abnehmer als sich selbst im Filter einstellt, bekommt er zwar dessen Teammitglieder 
+und sich selbst in der Tabelle angezeit, er kann aber trotzdem nur seine eigenen Teammitglieder im Mitarbeiter-Dropdownmenü auswählen und abnehmen.
 
 
 
