@@ -162,8 +162,6 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
         }
         Session session = getSession();
         
-        ec = (Employeecontract)session.get(Employeecontract.class, ec.getId());
-        
         java.util.Date creationDate = ec.getCreated();
         if (creationDate == null) {
             ec.setCreated(new java.util.Date());

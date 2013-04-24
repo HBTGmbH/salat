@@ -153,7 +153,7 @@
 		<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
 		<property name="url" value="jdbc:hsqldb:hsql://localhost/taetigkeitsberichte" />
 		<property name="username" value="SA" />
-		<property name="password" value="SA" />
+		<property name="password" value="HBT54147" />
 	</bean>
 	
 	<!-- JDBC Treiber der HSQL Datenbank -->
@@ -165,12 +165,12 @@
 			
 			<!--  
 			<value>file:d:/jm/taet/taetigkeitsberichte</value>
-		
+			
 			<value>file:d:/sql/salat_db/taetigkeitsberichte</value>
-			-->	
-			   
+			-->
+			
 			<value>file:/var/lib/hsqldb/taetigkeitsberichte</value>
-			 		 
+			
 		</property>
 		<property name="name">
 			<value>taetigkeitsberichte</value>
