@@ -680,16 +680,19 @@ public class TimereportHelper {
                 actualWorkingTimeInMinutes += timereport.getDurationhours() * 60 + timereport.getDurationminutes();
             }
         }
-        long overtimeAdjustmentMinutes = 0;
         
-        if (useOverTimeAdjustment) {
+        if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
+            long overtimeAdjustmentMinutes = 0;
             List<Overtime> overtimes = overtimeDAO
                     .getOvertimesByEmployeeContractId(employeecontract.getId());
             for (Overtime ot : overtimes) {
                 overtimeAdjustmentMinutes += ot.getTime() * 60;
             }
+            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
+        } else {
+            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
         }
-        overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
+        
         overtimeHours = overtimeMinutes / 60;
         overtimeMinutes = overtimeMinutes % 60;
         

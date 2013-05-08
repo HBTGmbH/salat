@@ -339,6 +339,9 @@ public class ShowDailyReportAction extends DailyReportAction {
                     }
                     //check if overtime should be computed until enddate (not today)
                     if (reportForm.getShowOvertimeUntil()) {
+                        if (ec.getId() != reportForm.getEmployeeContractId()) {
+                            ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+                        }
                         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
                         Date date = simpleDateFormat.parse(reportForm.getEnddate());
                         if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
