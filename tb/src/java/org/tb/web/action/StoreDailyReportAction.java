@@ -531,8 +531,8 @@ public class StoreDailyReportAction extends DailyReportAction {
                     && tr.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
                     && !tr.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 //fill VacationView with data
-                java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
-                Employeeorder vacationOrder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(ec.getId(), tr.getSuborder().getId(), today);
+                //                java.sql.Date bookedDay = (Date)refDate;
+                Employeeorder vacationOrder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(ec.getId(), tr.getSuborder().getId(), refDate);
                 VacationViewer vacationView = new VacationViewer(ec);
                 vacationView.setSuborderSign(vacationOrder.getSuborder().getSign());
                 if (vacationOrder.getDebithours() != null) {

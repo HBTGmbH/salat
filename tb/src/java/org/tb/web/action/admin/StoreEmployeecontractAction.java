@@ -5,7 +5,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -290,6 +293,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
                         employeeorder.setUntilDate(fromDate);
                         changed = true;
                     }
+                    // if enddate of employeecontract is set, check dates of corresponding employeeorders and adjust as needed
                     if (ec.getValidUntil() != null) {
                         if (employeeorder.getFromDate().after(ec.getValidUntil())) {
                             employeeorder.setFromDate(ec.getValidUntil());
@@ -299,8 +303,36 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
                             employeeorder.setUntilDate(ec.getValidUntil());
                             changed = true;
                         }
+                        if (changed) {
+                            employeeorderDAO.save(employeeorder, loginEmployee);
+                        }
                     }
-                    if (changed) {
+                }
+                
+                // remove all employeeorders with duplicate suborders 
+                // (needed due to previous bug that contract duration extensions produced new automatic entries of standard employeeorders 
+                // instead of extending the existing ones)
+                Set<Long> suborderIDs = new HashSet<Long>();
+                Iterator<Employeeorder> iterator = employeeorders.iterator();
+                while (iterator.hasNext()) {
+                    Employeeorder eo = iterator.next();
+                    if (!suborderIDs.contains(eo.getSuborder().getId())) {
+                        suborderIDs.add(eo.getSuborder().getId());
+                    } else {
+                        iterator.remove();
+                    }
+                }
+                for (Employeeorder employeeorder : employeeorders) {
+                    // cases where enddate employeeorder < enddate employeecontract.
+                    // if enddate of suborder is earlier than enddate of employeecontract 
+                    // set enddate of employeeorder to enddate of suborder, else to enddate of employeecontract.
+                    if (employeeorder.getSuborder().getUntilDate() != null && employeeorder.getSuborder().getUntilDate().before(ec.getValidUntil())) {
+                        if (!employeeorder.getSuborder().getUntilDate().equals(employeeorder.getUntilDate())) {
+                            employeeorder.setUntilDate(employeeorder.getSuborder().getUntilDate());
+                            employeeorderDAO.save(employeeorder, loginEmployee);
+                        }
+                    } else if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().before(ec.getValidUntil())) {
+                        employeeorder.setUntilDate(ec.getValidUntil());
                         employeeorderDAO.save(employeeorder, loginEmployee);
                     }
                 }

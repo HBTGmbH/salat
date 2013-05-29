@@ -153,10 +153,10 @@
 		<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
 		<property name="url" value="jdbc:hsqldb:hsql://localhost/taetigkeitsberichte" />
 		<property name="username" value="SA" />
-<!-- 	<property name="password" value="SA" />
--->
- 		<property name="password" value="HBT54147" />
-
+	 	<!-- <property name="password" value="SA" />
+		-->
+ 		<property name="password" value="HBT54147" /> 
+ 	
 	</bean>
 	
 	<!-- JDBC Treiber der HSQL Datenbank -->
