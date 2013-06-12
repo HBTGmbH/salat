@@ -451,7 +451,7 @@ public class LoginEmployeeAction extends Action {
             
             // timereport warning 3: no duration
             Employeecontract loginEmployeeContract = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
-            timereports = timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId());
+            timereports = timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
             for (Timereport timereport : timereports) {
                 Warning warning = new Warning();
                 warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.timereport.noduration"));

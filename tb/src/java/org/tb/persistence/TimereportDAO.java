@@ -448,13 +448,17 @@ public class TimereportDAO extends HibernateDaoSupport {
      * Gets a list of all {@link Timereport}s, that have no duration and are associated to the given ecId.
      * 
      * @param ecId id of the {@link Employeecontract}
+     * @param date 
      * @return
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsWithoutDurationForEmployeeContractId(long ecId) {
-        return getSession().createQuery("from Timereport t where t.employeecontract.id = ? and t.suborder.sign not like ? and durationminutes = 0 and durationhours = 0 " +
-                "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
-                .setLong(0, ecId).setString(1, GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION).setCacheable(true).list();
+    public List<Timereport> getTimereportsWithoutDurationForEmployeeContractId(long ecId, java.sql.Date releaseDate) {
+        /*  sql: function changed to just get zero-duration-timereports that were made after the last releasedate, since only those can be changed by the employee himself and therefore the earlier ones should not be shown as warning */
+        return getSession()
+                .createQuery("from Timereport t where t.employeecontract.id = ?  and t.referenceday.refdate >= ?"
+                        + "and t.suborder.sign not like ? and durationminutes = 0 and durationhours = 0"
+                        + "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
+                .setLong(0, ecId).setDate(1, releaseDate).setString(2, GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION).setCacheable(true).list();
     }
     
     /**
