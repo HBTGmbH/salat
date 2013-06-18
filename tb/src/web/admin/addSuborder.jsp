@@ -249,7 +249,7 @@
 				<html:textarea property="description" cols="30" rows="4" />
 				<span style="color:red">
 					<html:errors property="description" />
-					<c:if test="${fn:length(param.description) > 256}"> (<c:out value="${fn:length(param.description)}" />/256)</c:if>
+					<c:if test="${fn:length(param.description) > 2048}"> (<c:out value="${fn:length(param.description)}" />/2048)</c:if>
 				</span>
 			</td>
 		</tr>

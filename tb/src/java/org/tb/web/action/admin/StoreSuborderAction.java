@@ -513,7 +513,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             errors.add("sign", new ActionMessage(
                     "form.suborder.error.sign.required"));
         }
-        if (addSuborderForm.getDescription().length() > GlobalConstants.CUSTOMERORDER_DESCRIPTION_MAX_LENGTH) {
+        if (addSuborderForm.getDescription().length() > GlobalConstants.SUBORDER_DESCRIPTION_MAX_LENGTH) {
             errors.add("description", new ActionMessage(
                     "form.suborder.error.description.toolong"));
         }
