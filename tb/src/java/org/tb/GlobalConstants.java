@@ -51,6 +51,7 @@ public class GlobalConstants {
     
     public static final int SUBORDER_SIGN_MAX_LENGTH = 16;
     public static final int SUBORDER_DESCRIPTION_MAX_LENGTH = 2048;
+    public static final int SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH = 40;
     public static final int SUBORDER_CURRENCY_MAX_LENGTH = 64;
     public static final int SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH = 30;
     

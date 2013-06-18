@@ -260,7 +260,7 @@
 				<b><bean:message key="main.suborder.shortdescription.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:text property="shortdescription" size="20" maxlength="20" />
+				<html:text property="shortdescription" size="40" maxlength="40" />
 				<span style="color:red">
 					<html:errors property="shortdescription" />
 				</span>
