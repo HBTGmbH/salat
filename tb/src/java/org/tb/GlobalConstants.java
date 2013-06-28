@@ -170,7 +170,7 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
     
-    public static final String OVERTIME_COMPENSATION_TEXT = "Überstundenausgleich";
+    public static final String OVERTIME_COMPENSATION_TEXT = "ï¿½berstundenausgleich";
     
     // pathstrings and iconstrings
     public static final String ICONPATH = "/tb/images/";
@@ -239,7 +239,7 @@ public class GlobalConstants {
     public static final String INVOICE_EXCEL_CONTENT_TYPE = "application/msexcel";
     public static final String INVOICE_DATE_FORMAT = GlobalConstants.DEFAULT_DATE_FORMAT.replace('y', 'J').replace('d', 'T');
     
-    public static final String MAIL_HOST = "MSG01";
+    public static final String MAIL_HOST = "***REMOVED***";
     public static final String MAIL_DOMAIN = "hbt.de";
     public static final String MAIL_NOREPLY_ADDRESS = "noreply@" + GlobalConstants.MAIL_DOMAIN;
     
