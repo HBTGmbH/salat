@@ -110,6 +110,30 @@ public class SuborderDAO extends HibernateDaoSupport {
 		return allSuborders;
 	}
 	
+	/**
+	 * Gets all {@link Suborder}s for the given employee, restricted to those that have
+	 * valid {@link Employeeorder}s.
+	 * 
+	 * @param ecId id of the employee's contract
+	 * @param date the date to check validity against
+	 * @return a distinct list of matching {@link Suborder}s
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Suborder> getSubordersByEmployeeContractIdWithValidEmployeeOrders(long ecId, Date date) {
+		return getSession().createSQLQuery("select distinct {so.*} from suborder so, employeeorder eo " +
+				"where so.id = eo.suborder_id " +
+				"and eo.employeecontract_id = ?" +
+				"and eo.fromdate <= ? " +
+				"and (eo.untildate is null " +
+					"or eo.untildate >= ?) " +
+				"order by so.sign asc, so.description")
+				.addEntity("so", Suborder.class)
+				.setLong(0, ecId)
+				.setDate(1, date)
+				.setDate(2, date)
+				.list();
+	}
+	
 	public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long ecId, long coId, Date date) {
 		return getSession().createSQLQuery("select distinct {so.*} from suborder so, employeeorder eo " +
 				"where so.id = eo.suborder_id " +

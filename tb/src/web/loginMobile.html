@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet"
+	href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script	src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+<script src="./js/loginMobile.js"></script>
+<title>Salat Mobile</title>
+</head>
+<body>
+
+	<div data-role="page" data-theme="b" id="loginPage">
+		<!-- 	Login part start-->
+		<div data-role='header' id='hLogin' class='hLogin' data-nobackbtn=true>
+			<h1>Salat-Mobile</h1>
+		</div>
+		<div data-role='content' id='loginContent' class='loginContent'>
+			<form id="loginForm">
+				<div id='userDiv'>
+					 <input type="text" name="username" id="usernameInput" placeholder="Username">
+				</div>
+				<div id='passwordDiv'>
+					<input type="password"
+						name="password" id="passwordInput" autocomplete="off" placeholder="Passwort">
+				</div>
+				<div>
+					<button type="submit" id="loginSubmit">Login</button>
+				</div>
+			</form>
+
+
+		</div>
+		<div data-role='footer' id='fLogin' class='fLogin'></div>
+	</div>
+	<!-- 	Login part end-->
+
+
+
+	<!-- 	Login error start -->
+	<div data-role="page" data-theme="b" id="loginErrorPage">
+		<div data-role='content' id='loginErrorContent' class='loginErrorContent'>
+
+			<div align="CENTER" data-role="content" id="loginErrorDialog"
+				class="loginErrorDialog">
+				<div>Passwort oder Username falsch!</div>
+				<a id="okButton" class="okButton" href="#loginPage"
+					data-role="button" data-inline="true">OK!</a>
+			</div>
+		</div>
+	</div>
+	<!-- 	Login error end -->
+
+
+	<!-- 	Login missing fields start -->
+	<div data-role="page" data-theme="b" id="loginMissingPage">
+		<div data-role='content' id='loginMissingContent' class='loginMissingContent'>
+
+			<div align="CENTER" data-role="content" id="loginMissingDialog"
+				class="loginMissingDialog">
+				<div>Alle Felder müssen ausgefüllt sein!</div>
+				<a id="okButton" class="okButton" href="#loginPage"
+					data-role="button" data-inline="true">OK!</a>
+			</div>
+		</div>
+	</div>
+	<!-- 	Login missing fields start -->
+
+
+
+
+
+</body>
+</html>
