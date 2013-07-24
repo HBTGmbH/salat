@@ -304,6 +304,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             so.setInvoice(addSuborderForm.getInvoice().charAt(0));
             so.setStandard(addSuborderForm.getStandard());
             so.setCommentnecessary(addSuborderForm.getCommentnecessary());
+            so.setFixedPrice(addSuborderForm.getFixedPrice());
             so.setTrainingFlag(addSuborderForm.getTrainingFlag());
             
             if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().equals("")) {

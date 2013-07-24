@@ -36,6 +36,7 @@ public class AddSuborderForm extends ActionForm {
     private String action;
     private Boolean standard;
     private Boolean commentnecessary;
+    private Boolean fixedPrice;
     private Boolean trainingFlag;
     
     private String validFrom;
@@ -157,6 +158,14 @@ public class AddSuborderForm extends ActionForm {
         this.commentnecessary = commentnecessary;
     }
     
+    public Boolean getFixedPrice() {
+        return fixedPrice;
+    }
+    
+    public void setFixedPrice(Boolean fixedPrice) {
+        this.fixedPrice = fixedPrice;
+    }
+    
     public Boolean getTrainingFlag() {
         return trainingFlag;
     }
@@ -259,6 +268,7 @@ public class AddSuborderForm extends ActionForm {
         currency = GlobalConstants.DEFAULT_CURRENCY;
         standard = false;
         commentnecessary = false;
+        fixedPrice = false;
         trainingFlag = false;
         
         Date now = new Date();

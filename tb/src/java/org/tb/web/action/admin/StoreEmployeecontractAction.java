@@ -323,16 +323,21 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
                     }
                 }
                 for (Employeeorder employeeorder : employeeorders) {
-                    // cases where enddate employeeorder < enddate employeecontract.
+                    // cases where enddate employeeorder < enddate employeecontract (or employeeorder has enddate, employeecontract does not have enddate).
                     // if enddate of suborder is earlier than enddate of employeecontract 
                     // set enddate of employeeorder to enddate of suborder, else to enddate of employeecontract.
-                    if (employeeorder.getSuborder().getUntilDate() != null && employeeorder.getSuborder().getUntilDate().before(ec.getValidUntil())) {
+                    if (employeeorder.getSuborder().getUntilDate() != null && ec.getValidUntil() != null
+                            && employeeorder.getSuborder().getUntilDate().before(ec.getValidUntil())
+                            || employeeorder.getSuborder().getUntilDate() != null && ec.getValidUntil() == null) {
                         if (!employeeorder.getSuborder().getUntilDate().equals(employeeorder.getUntilDate())) {
                             employeeorder.setUntilDate(employeeorder.getSuborder().getUntilDate());
                             employeeorderDAO.save(employeeorder, loginEmployee);
                         }
-                    } else if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().before(ec.getValidUntil())) {
+                    } else if (employeeorder.getUntilDate() != null && ec.getValidUntil() != null && employeeorder.getUntilDate().before(ec.getValidUntil())) {
                         employeeorder.setUntilDate(ec.getValidUntil());
+                        employeeorderDAO.save(employeeorder, loginEmployee);
+                    } else if (employeeorder.getUntilDate() != null && ec.getValidUntil() == null) {
+                        employeeorder.setUntilDate(null);
                         employeeorderDAO.save(employeeorder, loginEmployee);
                     }
                 }

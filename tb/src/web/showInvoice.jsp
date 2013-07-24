@@ -293,6 +293,17 @@
 							onchange="setUpdateInvoiceAction(this.form)" />
 					</td>
 				</tr>
+				<!-- show fixed price offers -->
+				<tr>
+					<td align="left" class="noBborderStyle">
+							<b><bean:message key="main.invoice.fixedprice.text" />:</b>
+						</td>
+						<td align="left" class="noBborderStyle">
+							<html:checkbox property="fixedpricebox"
+								onchange="setUpdateInvoiceAction(this.form)" />
+					</td>
+				</tr>
+				
 				<tr>
 					<td colspan="2" align="left" class="noBborderStyle">
 						<hr>

@@ -29,6 +29,7 @@ public class ShowSuborderForm extends ActionForm {
     private Boolean showstructure = false;
     private Boolean showActualHours = false;
     private Boolean noResetChoice;
+    private Boolean fixedPrice;
     
     /**
      * @return the showActualHours
@@ -110,6 +111,14 @@ public class ShowSuborderForm extends ActionForm {
         this.noResetChoice = noResetChoice;
     }
     
+    public Boolean getFixedPrice() {
+        return fixedPrice;
+    }
+    
+    public void setFixedPrice(Boolean fixedPrice) {
+        this.fixedPrice = fixedPrice;
+    }
+    
     public String getSuborderOption() {
         return suborderOption;
     }
@@ -134,6 +143,7 @@ public class ShowSuborderForm extends ActionForm {
         showstructure = false;
         showActualHours = false;
         noResetChoice = false;
+        fixedPrice = false;
     }
     
     @Override

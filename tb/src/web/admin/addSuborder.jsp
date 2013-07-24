@@ -359,6 +359,17 @@
 			</td>
 		</tr>
 		
+		<%-- FixedPrice Flag --%>
+		<tr>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.fixedprice.text"/>:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:checkbox property="fixedPrice" /> 
+			</td>
+					
+		</tr>
+		
 		<!--  default training flag? -->
 		<tr>
 				<td align="left" class="noBborderStyle">

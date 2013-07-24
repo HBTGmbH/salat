@@ -148,6 +148,9 @@ public class Suborder implements Serializable {
     /** Default-Flag for projectbased Training */
     private Boolean trainingFlag;
     
+    /** Flag for fixed price proposal */
+    private Boolean fixedPrice;
+    
     public void addSuborder(Suborder child) {
         if (children == null) {
             children = new LinkedList<Suborder>();
@@ -341,6 +344,14 @@ public class Suborder implements Serializable {
     
     public void setTrainingFlag(Boolean trainingFlag) {
         this.trainingFlag = trainingFlag;
+    }
+    
+    public Boolean getFixedPrice() {
+        return fixedPrice;
+    }
+    
+    public void setFixedPrice(Boolean fixedPrice) {
+        this.fixedPrice = fixedPrice;
     }
     
     /**

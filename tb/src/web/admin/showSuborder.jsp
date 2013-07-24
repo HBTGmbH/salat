@@ -296,6 +296,10 @@
 						key="main.customerorder.validuntil.text" /></b></th>
 					<th align="left"
 						title="<bean:message
+						key="main.headlinedescription.suborders.fixedprice.text" />"><b><bean:message
+						key="main.suborder.fixedprice.text" /></b></th>
+					<th align="left"
+						title="<bean:message
 						key="main.headlinedescription.suborders.invoice.text" />"><b><bean:message
 						key="main.suborder.invoice.text" /></b></th>
 					<!--  
@@ -337,7 +341,7 @@
 					<!-- Checkbox -->
 					<c:if test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && 
 									(suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">		
-					<td><html:multibox property="suborderIdArray"
+					<td align="center"><html:multibox property="suborderIdArray"
 						value="${suborder.id}" /></td>
 					</c:if>
 				
@@ -494,6 +498,16 @@
 								</c:otherwise>
 							</c:choose>
 
+							<!-- fixed price offer? -->
+							<td align="center" > <c:choose>
+								<c:when test="${suborder.fixedPrice}">
+									<bean:message key="main.general.yes"/>
+								</c:when>
+								<c:otherwise>
+									<bean:message key="main.general.no" />
+								</c:otherwise>
+							</c:choose></td>
+							
 							<!-- is hourly rate for billable suborders set? -->
 							<c:choose>
 								<c:when
@@ -626,6 +640,16 @@
 								</c:otherwise>
 							</c:choose>
 
+							<!-- fixed price offer? -->
+							<td align="center" > <c:choose>
+								<c:when test="${suborder.fixedPrice}">
+									<bean:message key="main.general.yes"/>
+								</c:when>
+								<c:otherwise>
+									<bean:message key="main.general.yes" />
+								</c:otherwise>
+							</c:choose></td>
+							
 							<!-- is hourly rate for billable suborders set? -->
 							<c:choose>
 								<c:when

@@ -3,6 +3,9 @@
 alter table SUBORDER alter column DESCRIPTION varchar(2048);
 alter table SUBORDER alter column  SHORTDESCRIPTION varchar(40); 
 
+ALTER TABLE SUBORDER ADD FIXEDPRICE BOOLEAN;
+Update SUBORDER SET FIXEDPRICE = False;
+
 -------------------------------------------
 Version 1.82.10 -> 1.83
 
