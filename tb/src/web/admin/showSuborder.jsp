@@ -641,15 +641,15 @@
 							</c:choose>
 
 							<!-- fixed price offer? -->
-							<td align="center" > <c:choose>
+							<td style="color: gray" align="center" > <c:choose>
 								<c:when test="${suborder.fixedPrice}">
 									<bean:message key="main.general.yes"/>
 								</c:when>
 								<c:otherwise>
-									<bean:message key="main.general.yes" />
+									<bean:message key="main.general.no" />
 								</c:otherwise>
 							</c:choose></td>
-							
+												
 							<!-- is hourly rate for billable suborders set? -->
 							<c:choose>
 								<c:when

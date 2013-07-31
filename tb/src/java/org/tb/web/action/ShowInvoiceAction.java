@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +136,13 @@ public class ShowInvoiceAction extends DailyReportAction {
                     java.sql.Date sqlDateFirst = new java.sql.Date(dateFirst.getTime());
                     java.sql.Date sqlDateLast = new java.sql.Date(dateLast.getTime());
                     List<Suborder> suborderListTemp = new LinkedList<Suborder>();
+                    // remove suborders that are not valid sometime between dateFirst and dateLast
+                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
+                        Suborder so = iterator.next();
+                        if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
+                            iterator.remove();
+                        }
+                    }
                     // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
                     if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
                         request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
@@ -189,6 +197,13 @@ public class ShowInvoiceAction extends DailyReportAction {
                         suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId());
                     } else {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
+                    }
+                    // remove suborders that are not valid sometime between dateFirst and dateLast
+                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
+                        Suborder so = iterator.next();
+                        if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
+                            iterator.remove();
+                        }
                     }
                     Collections.sort(suborderList, new SubOrderComparator());
                     java.sql.Date sqlDateFirst = new java.sql.Date(dateFirst.getTime());
