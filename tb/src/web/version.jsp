@@ -1,1 +1,1 @@
-<font size="1pt">Version 1.84.1 03.07.2013</font>
+<font size="1pt">Version 1.84.2 31.07.2013</font>
