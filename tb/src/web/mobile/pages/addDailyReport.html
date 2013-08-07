@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, target-densitydpi=device-dpi, user-scalable=no"/>
+<title>Log Work</title>
+<link rel="stylesheet"
+	href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+<link rel="stylesheet" href="addDailyReport.css">
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script
+	src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+<script src="addDailyReport1.js"></script>
+</head>
+<body>
+	<!-- 	Booking start -->
+	<div data-role='page' id='bookingPage'>
+		<div data-role='header' data-position="fixed" id='hBooking'  class='hBooking' data-nobackbtn=true>
+			<h1>Salat Mobile</h1>
+		</div>
+		<div data-role='content' id='bookingContent' class='bookingContent'>
+			<form id="bookingForm">
+				<div id="select">
+					<select name="orderSelect" id="orderSelect"
+						data-native-menu="false">
+						<option value='choose'>Auftrag auswählen</option>
+					</select>
+				</div>
+				<div id='comment'>
+					<input type="text" data-clear-btn="true" name="comment" id="commentInput" placeholder="Kommentar" size="256"/>
+				</div>
+				<div id='timeRadios' class='timeRadios'>
+					<fieldset  data-type="horizontal"
+						data-role="controlgroup">
+						<div class="ui-grid-b">
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-1"
+									value="1" /> <label for="radio-choice-1">1</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-2"
+									value="2" /> <label for="radio-choice-2">2</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-3"
+									value="3" /> <label for="radio-choice-3">3</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-4"
+									value="4" /> <label for="radio-choice-4">4</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-5"
+									value="5" /> <label for="radio-choice-5">5</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-6"
+									value="6" /> <label for="radio-choice-6">6</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-7"
+									value="7" /> <label for="radio-choice-7">7</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-8"
+									value="8" /> <label for="radio-choice-8">8</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="hours" id="radio-choice-9"
+									value="9" /> <label for="radio-choice-9">9</label>
+							</div>
+						</div>
+					</fieldset>
+					<fieldset data-type="horizontal"
+						data-role="controlgroup">
+						<div class="ui-grid-b">
+
+							<div class="ui-block-b">
+								<input type="radio" name="minutes" id="radio-choice-15"
+									value="15"> <label for="radio-choice-15">15</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="minutes" id="radio-choice-30"
+									value="30"> <label for="radio-choice-30">30</label>
+							</div>
+							<div class="ui-block-b">
+								<input type="radio" name="minutes" id="radio-choice-45"
+									value="45"> <label for="radio-choice-45">45</label>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+				<div>
+					<input id="bookingSubmit" type="submit" value="Buchen"/>
+				</div>
+				<input type="hidden" name="hiddenTimereportId" id="hiddenTimereportId" />
+			</form>
+		
+		</div>
+		<div data-role='footer' id='bookingFooter' class='bookingFooter'>
+			<div data-role="navbar">
+        		<ul>
+            		<li><a class='ui-btn-active'>Neue Buchung</a></li>
+            		<li><a href="#bookingOverviewPage"  data-transition='slide'>Übersicht</a></li>
+        		</ul>
+    		</div>
+		</div>
+	</div>
+	<!-- 	Booking end -->
+	<!-- 	Booking missing start -->
+	<div data-role='page' id='bookingMissingPage'>
+		<div data-role='content' id='bookingMissingContent'
+			class='bookingMissingContent'>
+			<div align="CENTER" data-role="content" id="bookingMissingDialog"
+				class="bookingMissingDialog">
+				<div style="font-weight: bold;">Wählen Sie einen Auftrag aus und geben Sie die Zeit ein!</div>
+				<a id="okBookMisButton" class="okBookMisButton" href="#bookingPage"
+					data-role="button" data-inline="true">OK!</a>
+			</div>
+		</div>
+	</div>
+	<!-- 	Booking missing end -->
+	<!-- 	Comment missing start -->
+	<div data-role='page' id='commentMissingPage'>
+		<div data-role='content' id='commentMissingContent'
+			class='commentMissingContent'>
+			<div align="CENTER" data-role="content" id="commentMissingDialog"
+				class="commentMissingDialog">
+				<div style="font-weight: bold;">Geben Sie bitte einen Kommentar ein!</div>
+				<a id="okCommMisButton" class="okCommMisButton" href="#bookingPage"
+					data-role="button" data-inline="true">OK!</a>
+			</div>
+		</div>
+	</div>
+	<!-- 	Comment missing end -->
+	<!-- 	Booking success start -->
+	<div data-role='page' id='bookingSuccessPage'>
+		<div data-role='content' id='bookingSuccessContent'
+			class='bookingSuccessContent'></div>
+		<div align="CENTER" data-role="content" id="bookingSuccessDialog"
+			class="bookingSuccessDialog">			
+			<div id="successBooking"><span id="thisBookingHours"></span> Stunden und <span id="thisBookingMinutes"></span> Minuten unter <span id="thisBookingSuborder"></span> gebucht!</div>		
+			<a data-role="button" href='#bookingOverviewPage'>Übersicht</a>
+			<a id="okSucButton" class="okSucButton" href="#bookingPage"
+				data-role="button">Weitere Buchung</a>
+		</div>
+	</div>
+	<!-- 	Booking success end -->
+	<!-- 	Bookings Overview start -->
+	<div data-role='page' id='bookingOverviewPage'>
+		<div data-role='header' data-position='fixed' id='bookingOverviewHeader' class='bookingOverviewHeader' data-nobackbtn=true>
+			<h1>Übersicht</h1>
+		</div>
+		<div data-role='content' id='bookingOverviewContent' class='bookingOverviewContent'>			
+			<div align="CENTER" data-role="content" id="bookingOverviewDialog" class="bookingOverviewDialog">
+				
+			</div>
+		</div>
+		<div data-role='footer' id='bookingOverviewFooter' class='bookingOverviewFooter' >
+			<div data-role="navbar">
+        		<ul>
+            		<li><a href="#bookingPage" data-transition='slide'>Neue Buchung</a></li>
+            		<li><a class='ui-btn-active'>Übersicht</a></li>
+        		</ul>
+    		</div>
+		</div>
+	</div>
+	<!-- 	Bookings Overview end -->
+</body>
+</html>

@@ -12,8 +12,7 @@
 		<listener-class>
 			org.springframework.web.context.ContextLoaderListener
 		</listener-class>
-	</listener>
-	
+	</listener>	
 	<filter>
 		<filter-name>HibernateFilter</filter-name>
 		<filter-class>
@@ -25,6 +24,19 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
+	<!-- Mobile Login Filter -->
+	
+	 <filter>
+		<display-name>LoginMobileFilter</display-name>
+		<filter-name>LoginMobileFilter</filter-name>
+		<filter-class>org.tb.mobile.LoginMobileFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>LoginMobileFilter</filter-name>
+		<url-pattern>/mobile/pages/addDailyReport.html</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+	</filter-mapping>
+	
 	<!-- Performance Logging Filter -->
 	<filter>
    		<filter-name>PerformanceLoggingFilter</filter-name>
@@ -33,23 +45,11 @@
      		<param-name>log_category</param-name>
       		<param-value>DurationLog</param-value>
    		</init-param>
-	</filter>
-	<filter>
-		<display-name>LoginMobileFilter</display-name>
-		<filter-name>LoginMobileFilter</filter-name>
-		<filter-class>org.tb.mobile.LoginMobileFilter</filter-class>
-	</filter>
-	
+	</filter>	
 	<filter-mapping>
    		<filter-name>PerformanceLoggingFilter</filter-name>
    		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>LoginMobileFilter</filter-name>
-		<url-pattern>/addDailyReportMobile.html</url-pattern>
-		<dispatcher>REQUEST</dispatcher>
 	</filter-mapping>	
-	
 	<servlet>
 		<servlet-name>action</servlet-name>
 		<servlet-class>
@@ -60,35 +60,10 @@
 			<param-value>/WEB-INF/struts-config.xml</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
-	</servlet>
-	
-	<servlet>
-		<description>
-		</description>
-		<display-name>LoginMobile</display-name>
-		<servlet-name>LoginMobile</servlet-name>
-		<servlet-class>org.tb.mobile.LoginMobile</servlet-class>
-	</servlet>
-	<servlet>
-		<description>
-		</description>
-		<display-name>StoreReportMobile</display-name>
-		<servlet-name>StoreReportMobile</servlet-name>
-		<servlet-class>org.tb.mobile.StoreReportMobile</servlet-class>
-	</servlet>
-	
-	
+	</servlet>		
 	<servlet-mapping>
 		<servlet-name>action</servlet-name>
 		<url-pattern>/do/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>LoginMobile</servlet-name>
-		<url-pattern>/LoginMobile</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>StoreReportMobile</servlet-name>
-		<url-pattern>/StoreReportMobile</url-pattern>
 	</servlet-mapping>
 
 	

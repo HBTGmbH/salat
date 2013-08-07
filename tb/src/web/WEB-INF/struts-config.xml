@@ -487,6 +487,23 @@
 			<forward name="reset" path="/admin/addStatusReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
+		
+				<!-- Mobile pages  -->
+		<action path="/mobile/suborder/getSuborders" scope="request" validate="false">
+			<forward name="success" path="/mobile/suborder/getSubordersResponse.jsp" />
+		</action>
+		<action path="/mobile/timereport/store" scope="request" validate="false">
+			<forward name="success" path="/mobile/timereport/storeResponse.jsp" />
+		</action>
+		<action path="/mobile/timereport/getTimereports" scope="request" validate="false">
+			<forward name="success" path="/mobile/timereport/getTimereportsResponse.jsp" />
+		</action>
+		<action path="/mobile/timereport/getTimereport" scope="request" validate="false">
+			<forward name="success" path="/mobile/timereport/getTimereportResponse.jsp" />
+		</action>
+		<action path="/mobile/login" scope="request" validate="false">
+			<forward name="success" path="/mobile/login/loginMobileResponse.jsp" />
+		</action>
 
 	</action-mappings>
 
