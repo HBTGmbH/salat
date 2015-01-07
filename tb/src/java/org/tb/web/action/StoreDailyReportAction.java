@@ -374,7 +374,7 @@ public class StoreDailyReportAction extends DailyReportAction {
             }
             
             // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
-            if (suborder.getTrainingFlag()) {
+            if (Boolean.TRUE.equals(suborder.getTrainingFlag())) {
                 reportForm.setTraining(true);
             }
             
@@ -708,7 +708,7 @@ public class StoreDailyReportAction extends DailyReportAction {
                     showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
                     showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
                 } else {
-                    // don´t show break time, quitting time and working day ends on
+                    // donï¿½t show break time, quitting time and working day ends on
                     // the showdailyreport.jsp
                     request.getSession().setAttribute("visibleworkingday", false);
                     showDailyReportForm.setSelectedWorkHourBegin(0);
