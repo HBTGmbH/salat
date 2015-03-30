@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Hibernate;
-import org.hibernate.ObjectNotFoundException;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;

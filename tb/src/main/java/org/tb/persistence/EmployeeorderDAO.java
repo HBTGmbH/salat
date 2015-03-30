@@ -35,13 +35,13 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return Employeeorder
      */
     public Employeeorder getEmployeeorderById(long id) {
-        return (Employeeorder)getSession().createQuery("from Employeeorder eo where eo.id = ?").setLong(0, id).uniqueResult();
+        return (Employeeorder)getSession().createQuery("select eo from Employeeorder eo where eo.id = ?").setLong(0, id).uniqueResult();
     }
     
     public List<Employeeorder> getEmployeeordersForEmployeeordercontentWarning(Employeecontract ec) {
         //		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo where eo.employeeOrderContent.contactTechHbt.id = ? or eo.employeecontract.id = ?").setLong(0, ec.getEmployee().getId()).setLong(1, ec.getId()).list();
         return getSession()
-                .createQuery("from Employeeorder eo where (eo.employeeOrderContent.committed_emp != true and eo.employeecontract.id = ?) or (eo.employeeOrderContent.committed_mgmt != true and eo.employeeOrderContent.contactTechHbt.id = ?)")
+                .createQuery("select eo from Employeeorder eo where (eo.employeeOrderContent.committed_emp != true and eo.employeecontract.id = ?) or (eo.employeeOrderContent.committed_mgmt != true and eo.employeeOrderContent.contactTechHbt.id = ?)")
                 .setLong(0, ec.getId()).setLong(1, ec.getEmployee().getId()).list();
     }
     
@@ -63,12 +63,12 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(long employeecontractId, String customerOrderSign, java.sql.Date date) {
-        return getSession().createQuery("from Employeeorder eo " +
+        return getSession().createQuery("select eo from Employeeorder eo " +
                 "where eo.employeecontract.id = ? " +
                 "and eo.suborder.customerorder.sign = ? " +
-                "and fromdate <= ? " +
-                "and (untildate is null " +
-                "or untildate >= ? )")
+                "and eo.fromDate <= ? " +
+                "and (eo.untilDate is null " +
+                "or eo.untilDate >= ? )")
                 .setLong(0, employeecontractId)
                 .setString(1, customerOrderSign)
                 .setDate(2, date)
@@ -110,7 +110,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractId(long employeeContractId) {
-        return getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = ? order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, employeeContractId)
+        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, employeeContractId)
                 .list();
     }
     
@@ -121,7 +121,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Employeeorder> getEmployeeOrdersBySuborderId(long suborderId) {
-        return getSession().createQuery("from Employeeorder e where e.suborder.id = ? order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, suborderId).list();
+        return getSession().createQuery("from Employeeorder e where e.suborder.id = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, suborderId).list();
     }
     
     /**
@@ -132,7 +132,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId, long suborderId) {
-        return getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = ? and SUBORDER_ID = ? order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and SUBORDER_ID = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                 .setLong(0, employeeContractId).setLong(1, suborderId).list();
     }
     
@@ -145,10 +145,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, Date date) {
-        return getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = ? and " +
+        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and " +
                 "SUBORDER_ID = ? and  " +
-                "fromdate <= ? and (untildate >= ? or untildate = null or untildate = '') " +
-                "order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                "eo.fromDate <= ? and (eo.untilDate >= ? or eo.untilDate = null or eo.untilDate = '') " +
+                "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                 .setLong(0, employeeContractId).setLong(1, suborderId).setDate(2, date).setDate(3, date).list();
     }
     
@@ -161,10 +161,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, Date date) {
-        return getSession().createQuery("from Employeeorder where EMPLOYEECONTRACT_ID = ? and " +
+        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and " +
                 "SUBORDER_ID = ? and  " +
-                " (untildate >= ? or untildate = null or untildate = '') " +
-                "order by suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                " (eo.untilDate >= ? or eo.untilDate = null or eo.untilDate = '') " +
+                "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                 .setLong(0, employeeContractId).setLong(1, suborderId).setDate(2, date).list();
     }
     
@@ -186,7 +186,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return List<Employeeorder> 
      */
     public List<Employeeorder> getEmployeeorders() {
-        return getSession().createQuery("from Employeeorder order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").list();
+        return getSession().createQuery("select eo from Employeeorder eo order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").list();
     }
     
     /**
@@ -196,7 +196,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      */
     public List<Employeeorder> getEmployeeordersByOrderId(long orderId) {
         return getSession()
-                .createQuery("from Employeeorder where suborder.customerorder.id = ? order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                .createQuery("select eo from Employeeorder eo where eo.suborder.customerorder.id = ? order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                 .setLong(0, orderId).list();
     }
     
@@ -216,7 +216,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
     //	 * @return Returns a list of all {@link Employeeorder}s associated to the given orderId and employeeId.
     //	 */
     //	public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeId(long orderId, long employeeId) {
-    //		return getSession().createQuery("from Employeeorder where suborder.customerorder.id = ? and employeecontract.employee.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).setLong(1, employeeId).list();
+    //		return getSession().createQuery("select eo from Employeeorder eo where suborder.customerorder.id = ? and employeecontract.employee.id = ? order by employeecontract.employee.firstname asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc").setLong(0, orderId).setLong(1, employeeId).list();
     //	}
     
     /**
@@ -227,7 +227,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      */
     public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeContractId(long orderId, long employeeContractId) {
         return getSession()
-                .createQuery("from Employeeorder where suborder.customerorder.id = ? and employeecontract.id = ? order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                .createQuery("select eo from Employeeorder eo where eo.suborder.customerorder.id = ? and eo.employeecontract.id = ? order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                 .setLong(0, orderId).setLong(1, employeeContractId).list();
     }
     
@@ -255,11 +255,11 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                 if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 01: only valid, no filter, no employeeContractId, no customerOrderId
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                        employeeorders = getSession().createQuery("select eo from Employeeorder eo where " +
+                                "eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setDate(0, now)
                                 .setDate(1, now)
                                 .list();
@@ -267,25 +267,25 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         // case 02: only valid, no filter, no employeeContractId, customerOrderId
                         if (customerSuborderId == 0 || customerSuborderId == -1) {
                             // suborder wasn't selected
-                            employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                    "suborder.customerorder.id = ? " +
-                                    "and fromdate <= ? " +
-                                    "and (untildate = null " +
-                                    "or untildate >= ?) " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                            employeeorders = getSession().createQuery("select eo from Employeeorder eo where " +
+                                    "eo.suborder.customerorder.id = ? " +
+                                    "and eo.fromDate <= ? " +
+                                    "and (eo.untilDate = null " +
+                                    "or eo.untilDate >= ?) " +
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .setDate(1, now)
                                     .setDate(2, now)
                                     .list();
                         }
                         else { // suborder was selected
-                            employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                    "suborder.customerorder.id = ? " +
-                                    "and suborder.id = ? " +
-                                    "and fromdate <= ? " +
-                                    "and (untildate = null " +
-                                    "or untildate >= ?) " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                            employeeorders = getSession().createQuery("select eo from Employeeorder eo where " +
+                                    "eo.suborder.customerorder.id = ? " +
+                                    "and eo.suborder.id = ? " +
+                                    "and eo.fromDate <= ? " +
+                                    "and (eo.untilDate = null " +
+                                    "or eo.untilDate >= ?) " +
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .setLong(1, customerSuborderId)
                                     .setDate(2, now)
@@ -296,12 +296,12 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                 } else {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 03: only valid, no filter, employeeContractId, no customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "employeecontract.id = ? " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                        employeeorders = getSession().createQuery("select eo from Employeeorder eo where " +
+                                "eo.employeecontract.id = ? " +
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .setDate(1, now)
                                 .setDate(2, now)
@@ -310,13 +310,13 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         // case 04: only valid, no filter, employeeContractId, customerOrderId
                         if (customerSuborderId == -1 || customerSuborderId == 0) {
                             // when no suborder was selected
-                            employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                    "suborder.customerorder.id = ? " +
-                                    "and employeecontract.id = ? " +
-                                    "and fromdate <= ? " +
-                                    "and (untildate = null " +
-                                    "or untildate >= ?) " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                            employeeorders = getSession().createQuery("select eo from Employeeorder eo where " +
+                                    "eo.suborder.customerorder.id = ? " +
+                                    "and eo.employeecontract.id = ? " +
+                                    "and eo.fromDate <= ? " +
+                                    "and (eo.untilDate = null " +
+                                    "or eo.untilDate >= ?) " +
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .setLong(1, employeeContractId)
                                     .setDate(2, now)
@@ -325,14 +325,14 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         }
                         else {
                             // when suborder was selected
-                            employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                    "suborder.customerorder.id = ? " +
-                                    "and employeecontract.id = ? " +
-                                    "and suborder.id = ? " +
-                                    "and fromdate <= ? " +
-                                    "and (untildate = null " +
-                                    "or untildate >= ?) " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                            employeeorders = getSession().createQuery("select eo from Employeeorder eo where " +
+                                    "eo.suborder.customerorder.id = ? " +
+                                    "and eo.employeecontract.id = ? " +
+                                    "and eo.suborder.id = ? " +
+                                    "and eo.fromDate <= ? " +
+                                    "and (eo.untilDate = null " +
+                                    "or eo.untilDate >= ?) " +
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .setLong(1, employeeContractId)
                                     .setLong(2, customerSuborderId)
@@ -360,7 +360,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "and fromdate <= ? " +
                                 "and (untildate = null " +
                                 "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setString(0, filter)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -391,7 +391,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "and fromdate <= ? " +
                                 "and (untildate = null " +
                                 "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -425,7 +425,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "and fromdate <= ? " +
                                 "and (untildate = null " +
                                 "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -456,10 +456,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setLong(1, employeeContractId)
                                 .setString(2, filter)
@@ -484,7 +484,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 09: valid + invalid, no filter, no employeeContractId, no customerOrderId  
                         employeeorders = getSession().createQuery("from Employeeorder eo " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .list();
                     } else {
                         // case 10: valid + invalid, no filter, no employeeContractId, customerOrderId  
@@ -492,7 +492,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                             // suborder was not selected
                             employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                     "suborder.customerorder.id = ? " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .list();
                         }
@@ -500,7 +500,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                             employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                     "suborder.customerorder.id = ? " +
                                     "and suborder.id = ? " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .setLong(1, customerSuborderId)
                                     .list();
@@ -511,7 +511,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         // case 11: valid + invalid, no filter, employeeContractId, no customerOrderId  
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                 "employeecontract.id = ? " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .list();
                     } else {
@@ -521,7 +521,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                             employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                     "suborder.customerorder.id = ? " +
                                     "and employeecontract.id = ? " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .setLong(1, employeeContractId)
                                     .list();
@@ -532,7 +532,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                     "suborder.customerorder.id = ? " +
                                     "and employeecontract.id = ? " +
                                     "and suborder.id = ? " +
-                                    "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                    "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                     .setLong(0, customerOrderId)
                                     .setLong(1, employeeContractId)
                                     .setLong(2, customerSuborderId)
@@ -555,7 +555,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ? " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setString(0, filter)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -581,7 +581,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -610,7 +610,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -638,7 +638,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setLong(1, employeeContractId)
                                 .setString(2, filter)
@@ -673,10 +673,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 01: only valid, no filter, no employeeContractId, no customerOrderId
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                        		"and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setDate(0, now)
                                 .setDate(1, now)
                                 .list();
@@ -684,10 +684,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         // case 02: only valid, no filter, no employeeContractId, customerOrderId 
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                 "suborder.customerorder.id = ? " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setDate(1, now)
                                 .setDate(2, now)
@@ -698,10 +698,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         // case 03: only valid, no filter, employeeContractId, no customerOrderId  
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                 "employeecontract.id = ? " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .setDate(1, now)
                                 .setDate(2, now)
@@ -711,10 +711,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                 "suborder.customerorder.id = ? " +
                                 "and employeecontract.id = ? " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setLong(1, employeeContractId)
                                 .setDate(2, now)
@@ -737,10 +737,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setString(0, filter)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -768,10 +768,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -802,10 +802,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -835,10 +835,10 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setLong(1, employeeContractId)
                                 .setString(2, filter)
@@ -863,13 +863,13 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 09: valid + invalid, no filter, no employeeContractId, no customerOrderId  
                         employeeorders = getSession().createQuery("from Employeeorder eo " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .list();
                     } else {
                         // case 10: valid + invalid, no filter, no employeeContractId, customerOrderId  
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                 "suborder.customerorder.id = ? " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .list();
                     }
@@ -878,7 +878,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         // case 11: valid + invalid, no filter, employeeContractId, no customerOrderId  
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                 "employeecontract.id = ? " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .list();
                     } else {
@@ -886,7 +886,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
                                 "suborder.customerorder.id = ? " +
                                 "and employeecontract.id = ? " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setLong(1, employeeContractId)
                                 .list();
@@ -907,7 +907,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ? " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setString(0, filter)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -933,7 +933,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -962,7 +962,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .setString(1, filter)
                                 .setString(2, filter)
@@ -990,7 +990,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, fromdate asc")
+                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, customerOrderId)
                                 .setLong(1, employeeContractId)
                                 .setString(2, filter)

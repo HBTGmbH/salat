@@ -2,9 +2,7 @@ package org.tb.mobile;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,25 +28,20 @@ public class GetSubordersAction extends LoginRequiredAction {
         
         Long employeeId = (Long) request.getSession().getAttribute("employeeId");
         Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
-        Map<String, Object> subordersMap = new HashMap<String, Object>();
         //The method getSubordersByEmployeeContractIdWithValidEmployeeOrders was added to the SuborderDao class!!!
-        ArrayList<Suborder> suborders = (ArrayList<Suborder>) suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(ec.getId(), date);
+        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(ec.getId(), date);
+        
+        List<SuborderEntry> suborderEntries = new ArrayList<SuborderEntry>(suborders.size());
 
-        for (int i = 0, l = suborders.size(); i < l; i++) {
-            Suborder suborder = suborders.get(i);
-
+        for (Suborder suborder : suborders) {
             // Filtering valid suborders with not required description
             if (suborder.getCurrentlyValid()) {
                 String suborderLabel = suborder.getCustomerorder().getSign() + "/" + suborder.getSign() + " " + suborder.getShortdescription();
-                String suborderCommentRequired = String.valueOf(suborder.getCommentnecessary());
-                List<String> suborderList = new ArrayList<String>();
-                suborderList.add(suborderLabel);
-                suborderList.add(suborderCommentRequired);
-                subordersMap.put(String.valueOf(suborder.getId()),suborderList);
+                suborderEntries.add(new SuborderEntry(suborder.getId(), suborderLabel, suborder.getCommentnecessary()));
             }
         }
         
-        request.setAttribute("suborders.json", new Gson().toJson(subordersMap));
+        request.setAttribute("suborders.json", new Gson().toJson(suborderEntries));
         
         return mapping.findForward("success");
     }

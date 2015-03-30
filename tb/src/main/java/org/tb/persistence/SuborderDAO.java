@@ -13,6 +13,7 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Ticket;
@@ -120,34 +121,32 @@ public class SuborderDAO extends HibernateDaoSupport {
      */
     @SuppressWarnings("unchecked")
     public List<Suborder> getSubordersByEmployeeContractIdWithValidEmployeeOrders(long ecId, Date date) {
-        return getSession().createSQLQuery("select distinct {so.*} from suborder so, employeeorder eo " +
-                "where so.id = eo.suborder_id " +
-                "and eo.employeecontract_id = ?" +
-                "and eo.fromdate <= ? " +
-                "and (eo.untildate is null " +
-                "or eo.untildate >= ?) " +
-                "order by so.sign asc, so.description")
-                .addEntity("so", Suborder.class)
-                .setLong(0, ecId)
-                .setDate(1, date)
-                .setDate(2, date)
+    	Session session = getSession();
+        return session.createQuery("select distinct so from Employeeorder eo inner join eo.suborder so inner join so.customerorder co " +
+                "where " +
+                "eo.employeecontract = :employeecontract " +
+                "and eo.fromDate <= :refDate " +
+                "and (eo.untilDate is null " +
+                "or eo.untilDate >= :refDate) " +
+                "order by co.sign asc, so.sign asc")
+                .setEntity("employeecontract", session.load(Employeecontract.class, ecId))
+                .setDate("refDate", date)
                 .list();
     }
     
     public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long ecId, long coId, Date date) {
-        return getSession().createSQLQuery("select distinct {so.*} from suborder so, employeeorder eo " +
-                "where so.id = eo.suborder_id " +
-                "and eo.employeecontract_id = ?" +
-                "and so.customerorder_id = ?" +
-                "and eo.fromdate <= ? " +
-                "and (eo.untildate is null " +
-                "or eo.untildate >= ?) " +
+        Session session = getSession();
+		return session.createQuery("select distinct so from Employeeorder eo inner join eo.suborder so inner join so.customerorder co " +
+                "where " +
+                "eo.employeecontract = :employeecontract " +
+                "and so.customerorder = :customerorder " +
+                "and eo.fromDate <= :refDate " +
+                "and (eo.untilDate is null " +
+                "or eo.untilDate >= :refDate) " +
                 "order by so.sign asc, so.description")
-                .addEntity("so", Suborder.class)
-                .setLong(0, ecId)
-                .setLong(1, coId)
-                .setDate(2, date)
-                .setDate(3, date)
+                .setEntity("employeecontract", session.load(Employeecontract.class, ecId))
+                .setEntity("customerorder", session.load(Customerorder.class, coId))
+                .setDate("refDate", date)
                 .list();
     }
     
@@ -187,7 +186,7 @@ public class SuborderDAO extends HibernateDaoSupport {
                     suborders = getSession().createQuery("from Suborder s where " +
                             "(fromDate <= ? " +
                             "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? ))" +
+                            "and s.customerorder.fromDate <= ? )) " +
                             "and (untilDate >= ? " +
                             "or (untilDate = null " +
                             "and (s.customerorder.untilDate = null " +
@@ -203,7 +202,7 @@ public class SuborderDAO extends HibernateDaoSupport {
                             "s.customerorder.id = ? " +
                             "and (fromDate <= ? " +
                             "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? ))" +
+                            "and s.customerorder.fromDate <= ? )) " +
                             "and (untilDate >= ? " +
                             "or (untilDate = null " +
                             "and (s.customerorder.untilDate = null " +
@@ -228,7 +227,7 @@ public class SuborderDAO extends HibernateDaoSupport {
                             "or upper(hourly_rate) like ?) " +
                             "and (fromDate <= ? " +
                             "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? ))" +
+                            "and s.customerorder.fromDate <= ? )) " +
                             "and (untilDate >= ? " +
                             "or (untilDate = null " +
                             "and (s.customerorder.untilDate = null " +
@@ -258,7 +257,7 @@ public class SuborderDAO extends HibernateDaoSupport {
                             "or upper(hourly_rate) like ?) " +
                             "and (fromDate <= ? " +
                             "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? ))" +
+                            "and s.customerorder.fromDate <= ? )) " +
                             "and (untilDate >= ? " +
                             "or (untilDate = null " +
                             "and (s.customerorder.untilDate = null " +

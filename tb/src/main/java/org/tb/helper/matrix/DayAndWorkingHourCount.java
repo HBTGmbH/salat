@@ -10,13 +10,14 @@
  */
 package org.tb.helper.matrix;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * @author cb
  * @since 29.12.2006
  */
-public class DayAndWorkingHourCount {
+public class DayAndWorkingHourCount implements Serializable {
     
     /**
      * @param day

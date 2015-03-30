@@ -279,7 +279,7 @@ public class CustomerorderDAO extends HibernateDaoSupport {
         return getSession().createSQLQuery("select distinct {co.*} from customerorder co, employeeorder eo, suborder so " +
                 "where so.id = eo.suborder_id " +
                 "and co.id = so.customerorder_id " +
-                "and eo.employeecontract_id = ?" +
+                "and eo.employeecontract_id = ? " +
                 "and eo.fromdate <= ? " +
                 "and (eo.untildate is null " +
                 "or eo.untildate >= ?) " +

@@ -6,7 +6,7 @@
 <%@ taglib
 	uri="http://struts.apache.org/tags-html"
 	prefix="html"%>
-<%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 	
 <%
 	Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee"); 

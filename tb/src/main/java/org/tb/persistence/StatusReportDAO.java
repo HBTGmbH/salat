@@ -1,6 +1,5 @@
 package org.tb.persistence;
 
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
@@ -132,12 +131,12 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	}
 	
 	public java.sql.Date getMaxUntilDateForCustomerOrderId(long coId) {
-		Timestamp timestamp = (Timestamp) getSession().createSQLQuery("select max(untildate) from statusreport " +
+		Date date = (Date) getSession().createSQLQuery("select max(untildate) from statusreport " +
 				"where sort = 1 and released is not null " +
 				"and customerorder = ?")
 				.setLong(0, coId)
 				.uniqueResult();
-		return (timestamp == null ? null : new java.sql.Date(timestamp.getTime()));
+		return (date == null ? null : new java.sql.Date(date.getTime()));
 	}
 	
 	

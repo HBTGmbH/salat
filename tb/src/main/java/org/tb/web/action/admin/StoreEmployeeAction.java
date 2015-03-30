@@ -14,7 +14,6 @@ import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
-import org.tb.util.MD5Util;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddEmployeeForm;
 

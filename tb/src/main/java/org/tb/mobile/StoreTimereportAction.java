@@ -46,8 +46,7 @@ public class StoreTimereportAction extends LoginRequiredAction {
         //Check for description existence and if existing  add a preceding space
         if(description == null){
             description ="Mobile booking";
-        }
-        else if (!description.contains("Mobile booking")){
+        } else {
         	description = "Mobile booking " + description;
         }
         

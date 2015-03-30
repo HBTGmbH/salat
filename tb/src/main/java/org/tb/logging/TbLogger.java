@@ -2,14 +2,7 @@ package org.tb.logging;
 
 import java.util.Date;
 
-import org.apache.commons.lang.SystemUtils;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.SimpleLayout;
-import org.tb.GlobalConstants;
 
 /**
  * Use this class for logging by calling the static methode debug.
@@ -57,28 +50,28 @@ public class TbLogger {
 	private static void initLogger() {
 		logger = Logger.getLogger("SalatLogger");
 		
-		String salat_log_url = GlobalConstants.SALAT_LOG;
-		if (SystemUtils.IS_OS_WINDOWS) {
-			salat_log_url = SystemUtils.USER_DIR + "\\salat.log";
-		}
-		
-		try {
-			SimpleLayout layout = new SimpleLayout();
-			FileAppender fileAppender = new FileAppender(layout, salat_log_url, false);
-//			ConsoleAppender consoleAppender = new ConsoleAppender(new ANSIColorLayout());
-			ConsoleAppender consoleAppender = new ConsoleAppender(new PatternLayout());
-			
-			logger.addAppender(fileAppender);
-			logger.addAppender(consoleAppender);
-			logger.setLevel(Level.ALL);
-		} catch (Exception ignored) {
-		}
+//		String salat_log_url = GlobalConstants.SALAT_LOG;
+//		if (SystemUtils.IS_OS_WINDOWS) {
+//			salat_log_url = SystemUtils.USER_DIR + "\\salat.log";
+//		}
+//		
+//		try {
+//			SimpleLayout layout = new SimpleLayout();
+//			FileAppender fileAppender = new FileAppender(layout, salat_log_url, false);
+////			ConsoleAppender consoleAppender = new ConsoleAppender(new ANSIColorLayout());
+//			ConsoleAppender consoleAppender = new ConsoleAppender(new PatternLayout());
+//			
+//			logger.addAppender(fileAppender);
+//			logger.addAppender(consoleAppender);
+//			logger.setLevel(Level.ALL);
+//		} catch (Exception ignored) {
+//		}
 		logger.debug("--------------------------------------------------");
 		logger.debug("--------Logging started for SalatLogger-----------");
 		logger.debug("--------        (c) HBT GmbH 2007      -----------");
 		logger.debug("--------------------------------------------------");
-		logger.debug("Logging in: " + salat_log_url);
-		logger.debug("--------------------------------------------------");
+//		logger.debug("Logging in: " + salat_log_url);
+//		logger.debug("--------------------------------------------------");
 	}
 
 }

@@ -1,6 +1,7 @@
 package org.tb;
 
 import java.util.Properties;
+
 import org.tb.util.SalatPropertiesUtil;
 
 /**

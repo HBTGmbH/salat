@@ -22,6 +22,8 @@ import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.tb.GlobalConstants;
 import org.tb.web.form.ShowInvoiceForm;
 import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
@@ -370,14 +372,13 @@ public class ExcelArchivierer {
 		cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
 	}
 	
-	@SuppressWarnings("unchecked")
 	private static void setColumnWidths(HSSFSheet sheet) {
 		// get the highest width per column and set the column width for sheet
 		Map<Integer, Integer> widthMap = new HashMap<Integer, Integer>();
-		for (Iterator<HSSFRow> rowIter = sheet.rowIterator(); rowIter.hasNext();) {
-			HSSFRow row = rowIter.next();
-			for (Iterator<HSSFCell> cellIter = row.cellIterator(); cellIter.hasNext();) {
-				HSSFCell cell = cellIter.next();
+		for (Iterator<Row> rowIter = sheet.rowIterator(); rowIter.hasNext();) {
+			HSSFRow row = (HSSFRow) rowIter.next();
+			for (Iterator<Cell> cellIter = row.cellIterator(); cellIter.hasNext();) {
+				HSSFCell cell = (HSSFCell) cellIter.next();
 				Integer widthFromMap = widthMap.get(cell.getColumnIndex());
 				Integer width;
 				switch (cell.getCellType()) {

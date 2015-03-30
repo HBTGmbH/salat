@@ -10,6 +10,7 @@
  */
 package org.tb.helper.matrix;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -23,8 +24,11 @@ import org.tb.bdom.Suborder;
  * @author cb
  * @since 04.12.2006
  */
-public class MergedReport implements Comparable {
-    /**
+public class MergedReport implements Comparable<MergedReport>, Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	/**
      * @param subOrderSign
      * * @param customOrderSign
      * @param taskdescription
@@ -42,7 +46,7 @@ public class MergedReport implements Comparable {
     private Suborder subOrder;
     private Customerorder customOrder;
     private double sum;
-    private ArrayList bookingDay = new ArrayList<BookingDay>();
+    private ArrayList<BookingDay> bookingDay = new ArrayList<BookingDay>();
 
     public int getCountOfDays() {
         return bookingDay.size();
@@ -66,8 +70,8 @@ public class MergedReport implements Comparable {
     public void setSum() {
         BookingDay tempBookingDay;
         double tempMinutes = 0;
-        for (Iterator iter = bookingDay.iterator(); iter.hasNext();) {
-            tempBookingDay = (BookingDay)iter.next();
+        for (Iterator<BookingDay> iter = bookingDay.iterator(); iter.hasNext();) {
+            tempBookingDay = iter.next();
             tempMinutes = tempMinutes + ((tempBookingDay.getDurationHours() * 60) + tempBookingDay.getDurationMinutes());
         }
         sum = (tempMinutes / 60);
@@ -84,8 +88,8 @@ public class MergedReport implements Comparable {
         boolean dateAvailable;
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
             dateAvailable = false;
-            for (Iterator iter = bookingDay.iterator(); iter.hasNext();) {
-                tempBookingDay = (BookingDay)iter.next();
+            for (Iterator<BookingDay> iter = bookingDay.iterator(); iter.hasNext();) {
+                tempBookingDay = iter.next();
                 if (tempBookingDay.getDate().equals(gc.getTime())) {
                     dateAvailable = true;
                 }
@@ -97,7 +101,7 @@ public class MergedReport implements Comparable {
         }
     }
 
-    public ArrayList getBookingDay() {
+    public ArrayList<BookingDay> getBookingDay() {
         return bookingDay;
     }
 
@@ -105,20 +109,15 @@ public class MergedReport implements Comparable {
 	public String toString() {
         String test = "";
         BookingDay temp;
-        for (Iterator iter = bookingDay.iterator(); iter.hasNext();) {
-            temp = (BookingDay)iter.next();
+        for (Iterator<BookingDay> iter = bookingDay.iterator(); iter.hasNext();) {
+            temp = iter.next();
             test = test + temp.getDate() + "-" + temp.getDurationHours() + "/" + temp.getDurationMinutes() + " // ";
         }
         return "<br>" + customOrder.getSign() + subOrder.getSign() + " - " + test;
     }
 
-    public int compareTo(Object o) {
-        if (o instanceof MergedReport) {
-            return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo((((MergedReport)o).customOrder.getSign() + ((MergedReport)o).subOrder.getSign()));
-        } else {
-            throw new IllegalArgumentException("Parameter must be a MergedReport");
-        }
-
+    public int compareTo(MergedReport o) {
+    	return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo(o.customOrder.getSign() + o.subOrder.getSign());
     }
     
     public Double getRoundSum(){
