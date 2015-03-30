@@ -1,6 +1,10 @@
 package org.tb.bdom;
 
-public class TrainingOverview {
+import java.io.Serializable;
+
+public class TrainingOverview implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
     
     private final String year;
     private final String commonTrainingTime;

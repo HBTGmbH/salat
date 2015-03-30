@@ -42,7 +42,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		
-//		 remove list with timereports out of range
+		// remove list with timereports out of range
 		request.getSession().removeAttribute("timereportsOutOfRange");
 		
 		AddSuborderForm suborderForm = (AddSuborderForm) form;
@@ -64,8 +64,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		List<Suborder> suborders = suborderDAO.getSuborders();
 		
 		if ((customerorders == null) || (customerorders.size() <= 0)) {
-			request.setAttribute("errorMessage", 
-					"No customer orders found - please call system administrator.");
+			request.setAttribute("errorMessage", "No customer orders found - please call system administrator.");
 			return mapping.findForward("error");
 		}
 	
@@ -109,22 +108,23 @@ public class CreateSuborderAction extends LoginRequiredAction {
 			request.getSession().setAttribute("parentDescriptionAndSign", customerorder.getSignAndDescription());
 			request.getSession().setAttribute("suborderParent", customerorder);
 			request.getSession().setAttribute("currentSuborderID", null);
+			request.getSession().setAttribute("currency", customerorder.getCurrency());
+			
 			suborderForm.setParentDescriptionAndSign(customerorder.getSignAndDescription());
 			suborderForm.setParentId(customerorder.getId());
-			request.getSession().setAttribute("currency", customerorder.getCurrency());
 			suborderForm.setHourlyRate(customerorder.getHourly_rate());
 			suborderForm.setCurrency(customerorder.getCurrency());
 			
 			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT); 
 			suborderForm.setValidFrom(simpleDateFormat.format(customerorder.getFromDate()));
+			
 			if (customerorder.getUntilDate() != null) {
 				suborderForm.setValidUntil(simpleDateFormat.format(customerorder.getUntilDate()));
 			} else {
 				suborderForm.setValidUntil("");
 			}
+			
 			suborderForm.setHide(customerorder.getHide());
-			
-			
 		}
 		
 		// make sure, no soId still exists in session

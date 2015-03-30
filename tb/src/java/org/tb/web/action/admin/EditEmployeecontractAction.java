@@ -71,6 +71,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 		for (Overtime overtime : overtimes) {
 			totalOvertime += overtime.getTime();
 		}
+		totalOvertime = Math.rint(totalOvertime*100)/100;
 		request.getSession().setAttribute("overtimes", overtimes);
 		request.getSession().setAttribute("totalovertime", totalOvertime);
 		

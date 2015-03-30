@@ -10,16 +10,18 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
+import org.tb.logging.TbLogger;
+
 public class PerformanceLoggingFilter implements Filter {
 
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
+		
 		long starttime = System.currentTimeMillis();
 		chain.doFilter(request, response);
 		long duration = System.currentTimeMillis() - starttime;
-		/* TODO refactor to logging */
 		HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-		System.err.println(httpServletRequest.getRequestURL() + " took " + duration + "ms.");
+		TbLogger.debug(this.getClass().getSimpleName(), httpServletRequest.getRequestURL() + " took " + duration + "ms.");
 	}
 
 	public void init(FilterConfig config) throws ServletException {

@@ -37,21 +37,17 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 	public void setSuborderDAO(SuborderDAO suborderDAO) {
 		this.suborderDAO = suborderDAO;
 	}
-	
-	public void setTimereportDAO(TimereportDAO timereportDAO) {
-		this.timereportDAO = timereportDAO;
-	}
-	
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
 	}
-	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
 	}
-
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
 		this.employeecontractDAO = employeecontractDAO;
+	}
+	public void setTimereportDAO(TimereportDAO timereportDAO) {
+		this.timereportDAO = timereportDAO;
 	}
 		
 	@Override
@@ -110,10 +106,8 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		// get valid employeecontracts
 		List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
 		request.getSession().setAttribute("employeecontracts", employeeContracts);
-		
 
 		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
 		
 		List<Customerorder> orders = customerorderDAO.getCustomerorders();
 		request.getSession().setAttribute("orders", orders);
@@ -137,7 +131,5 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		return mapping.findForward("success");
 			
 	}
-
-	
 	
 }

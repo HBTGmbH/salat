@@ -35,13 +35,9 @@ import org.tb.helper.matrix.ReportWrapper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.persistence.VacationDAO;
-import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowMatrixForm;
 
@@ -51,64 +47,30 @@ import org.tb.web.form.ShowMatrixForm;
  */
 public class ShowMatrixAction extends DailyReportAction {
     
-    private OvertimeDAO overtimeDAO;
-    
     private CustomerorderDAO customerorderDAO;
-    
     private TimereportDAO timereportDAO;
-    
     private EmployeecontractDAO employeecontractDAO;
-    
     private SuborderDAO suborderDAO;
-    
-    private EmployeeorderDAO employeeorderDAO;
-    
-    private VacationDAO vacationDAO;
-    
     private PublicholidayDAO publicholidayDAO;
-    
-    private WorkingdayDAO workingdayDAO;
-    
     private EmployeeDAO employeeDAO;
     
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
-    public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
-        this.workingdayDAO = workingdayDAO;
-    }
-    
     public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
         this.publicholidayDAO = publicholidayDAO;
     }
-    
-    public void setVacationDAO(VacationDAO vacationDAO) {
-        this.vacationDAO = vacationDAO;
-    }
-    
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
-    }
-    
-    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-        this.overtimeDAO = overtimeDAO;
     }
     
     @Override
@@ -122,7 +84,7 @@ public class ShowMatrixAction extends DailyReportAction {
         monthMap.put("Feb", "main.timereport.select.month.feb.text");
         monthMap.put("Mar", "main.timereport.select.month.mar.text");
         monthMap.put("Apr", "main.timereport.select.month.apr.text");
-        monthMap.put("May", "main.timereport.select.month.mai.text");
+        monthMap.put("May", "main.timereport.select.month.may.text");
         monthMap.put("Jun", "main.timereport.select.month.jun.text");
         monthMap.put("Jul", "main.timereport.select.month.jul.text");
         monthMap.put("Aug", "main.timereport.select.month.aug.text");
@@ -140,12 +102,6 @@ public class ShowMatrixAction extends DailyReportAction {
         // request
         if (request.getParameter("task") != null
                 && request.getParameter("task").equals("refreshMergedreports")) {
-            //
-            // if(reportForm.getInvoice()==true){
-            // reportForm.setInvoice(false);
-            // }else{
-            // reportForm.setInvoice(true);
-            // }
             //            
             // selected view and selected dates
             String selectedView = reportForm.getMatrixview();
@@ -526,20 +482,8 @@ public class ShowMatrixAction extends DailyReportAction {
                 return mapping.findForward("error");
             }
             
-            // List<Employee> employees = employeeDAO.getEmployees();
-            // List<Employee> employeesWithContract =
-            // employeeDAO.getEmployeesWithContracts();
             List<Employeecontract> employeeContracts = employeecontractDAO
                     .getVisibleEmployeeContractsOrderedByEmployeeSign();
-            
-            // make sure, that admin is in list
-            // if (loginEmployee.getSign().equalsIgnoreCase("adm") &&
-            // loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM))
-            // {
-            // if (!employeesWithContract.contains(loginEmployee)) {
-            // employeesWithContract.add(loginEmployee);
-            // }
-            // }
             
             if (employeeContracts == null || employeeContracts.size() <= 0) {
                 request
@@ -673,12 +617,6 @@ public class ShowMatrixAction extends DailyReportAction {
                 
                 request.getSession().setAttribute("daysofmonth",
                         gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-                // refreshVacationAndOvertime(request,
-                // employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()),
-                // employeeorderDAO, publicholidayDAO, timereportDAO,
-                // overtimeDAO);
-                // String currentMonth = (String)
-                // request.getSession().getAttribute("currentMonth");
             } else {
                 
                 // call from main menu: set current month, year,
@@ -825,10 +763,6 @@ public class ShowMatrixAction extends DailyReportAction {
                         tempReportWrapper.getDayHoursDiff());
                 request.getSession().setAttribute("daysofmonth",
                         gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-                // refreshVacationAndOvertime(request,
-                // employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId()),
-                // employeeorderDAO, publicholidayDAO, timereportDAO,
-                // overtimeDAO);
                 
                 // orders
                 List<Customerorder> orders = null;
@@ -850,10 +784,6 @@ public class ShowMatrixAction extends DailyReportAction {
                             employeeDAO.getEmployeeById(employeeId).getName());
                 }
                 if (orders.size() > 0) {
-                    // List<List> suborderlists = new ArrayList<List>();
-                    // for (Customerorder customerorder : orders) {
-                    // suborderlists.add(customerorder.getSuborders());
-                    // }
                     request.getSession().setAttribute(
                             "suborders",
                             suborderDAO.getSubordersByEmployeeContractId(ec

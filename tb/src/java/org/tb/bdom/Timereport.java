@@ -64,6 +64,13 @@ public class Timereport implements Serializable {
     @Cascade(value = { CascadeType.SAVE_UPDATE })
     private Employeeorder employeeorder;
     
+    /** Ticket*/
+    @ManyToOne
+    @Fetch(FetchMode.SELECT)
+    @JoinColumn(name = "TICKET_ID")
+    @Cascade(value = { CascadeType.SAVE_UPDATE })
+    private Ticket ticket;
+    
     /** Duration */
     private Integer durationhours;
     private Integer durationminutes;
@@ -135,6 +142,14 @@ public class Timereport implements Serializable {
     
     public void setEmployeeorder(Employeeorder employeeorder) {
         this.employeeorder = employeeorder;
+    }
+    
+    public Ticket getTicket() {
+        return ticket;
+    }
+    
+    public void setTicket(Ticket ticket) {
+        this.ticket = ticket;
     }
     
     public Integer getDurationhours() {

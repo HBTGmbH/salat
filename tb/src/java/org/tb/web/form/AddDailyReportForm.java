@@ -20,12 +20,8 @@ import org.tb.util.DateUtils;
  */
 public class AddDailyReportForm extends ActionForm {
     
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L; // -1101951628777959966L;
     private long id;
-    //	private String employeename;
     private String referenceday;
     private String sortOfReport;
     private String comment;
@@ -41,13 +37,12 @@ public class AddDailyReportForm extends ActionForm {
     private int selectedMinuteEnd;
     private int selectedHourDuration;
     private int selectedMinuteDuration;
-    
     private long orderId;
     private long suborderSignId;
     private long suborderDescriptionId;
-    //	private long employeecontractId;
-    //	private Long employeeId;
     private Long employeeContractId;
+    private String jiraTicketKey;
+    private String newJiraTicketKey;
     
     private int numberOfSerialDays;
     
@@ -61,260 +56,191 @@ public class AddDailyReportForm extends ActionForm {
     public long getId() {
         return id;
     }
-    
     public void setId(long id) {
         this.id = id;
     }
-    
     public long getOrderId() {
         return orderId;
     }
-    
     public void setOrderId(long orderId) {
         this.orderId = orderId;
     }
-    
     public String getSuborder() {
         return suborder;
     }
-    
     public void setSuborder(String suborder) {
         this.suborder = suborder;
     }
-    
     public long getSuborderDescriptionId() {
         return suborderDescriptionId;
     }
-    
     public void setSuborderDescriptionId(long suborderDescriptionId) {
         this.suborderDescriptionId = suborderDescriptionId;
     }
-    
     public long getSuborderSignId() {
         return suborderSignId;
     }
-    
     public void setSuborderSignId(long suborderSignId) {
         this.suborderSignId = suborderSignId;
     }
-    
     public String getAction() {
         return action;
     }
-    
     public void setAction(String action) {
         this.action = action;
     }
-    
-    //	public String getEmployeename() {
-    //		return employeename;
-    //	}
-    //
-    //	public void setEmployeename(String employeename) {
-    //		this.employeename = employeename;
-    //	}
-    
     public String getSortOfReport() {
         return sortOfReport;
     }
-    
     public void setSortOfReport(String sortOfReport) {
         this.sortOfReport = sortOfReport;
     }
-    
     public String getComment() {
         return comment;
     }
-    
     public void setComment(String comment) {
         this.comment = comment;
     }
-    
     public Double getCosts() {
         return costs;
     }
-    
     public void setCosts(Double costs) {
         this.costs = costs;
     }
-    
     public Boolean getTraining() {
         return training;
     }
-    
     public void setTraining(Boolean training) {
         this.training = training;
     }
-    
     public Double getHours() {
         return DateUtils.calculateTime(this.selectedHourBegin,
                 this.selectedMinuteBegin,
                 this.selectedHourEnd,
                 this.selectedMinuteEnd);
-        //return hours;
     }
-    
     public void setHours(Double hours) {
         this.hours = hours;
     }
-    
     public int getSelectedHourBegin() {
         return selectedHourBegin;
     }
-    
     public void setSelectedHourBegin(int selectedHourBegin) {
         this.selectedHourBegin = selectedHourBegin;
     }
-    
     public int getSelectedHourEnd() {
         return selectedHourEnd;
     }
-    
     public void setSelectedHourEnd(int selectedHourEnd) {
         this.selectedHourEnd = selectedHourEnd;
     }
-    
     public int getSelectedMinuteBegin() {
         return selectedMinuteBegin;
     }
-    
     public void setSelectedMinuteBegin(int selectedMinuteBegin) {
         this.selectedMinuteBegin = selectedMinuteBegin;
     }
-    
     public int getSelectedMinuteEnd() {
         return selectedMinuteEnd;
     }
-    
     public void setSelectedMinuteEnd(int selectedMinuteEnd) {
         this.selectedMinuteEnd = selectedMinuteEnd;
     }
-    
     public int getSelectedHourDuration() {
         return selectedHourDuration;
     }
-    
     public void setSelectedHourDuration(int selectedHourDuration) {
         this.selectedHourDuration = selectedHourDuration;
     }
-    
     public int getSelectedMinuteDuration() {
         return selectedMinuteDuration;
     }
-    
     public void setSelectedMinuteDuration(int selectedMinuteDuration) {
         this.selectedMinuteDuration = selectedMinuteDuration;
     }
-    
     public Double getHoursDuration() {
         return hours;
     }
-    
     public void setHoursDuration(Double hours) {
         this.hours = hours;
     }
-    
     public String getOrder() {
         return order;
     }
-    
     public void setOrder(String order) {
         this.order = order;
     }
-    
     public String getReferenceday() {
         return referenceday;
     }
-    
     public void setReferenceday(String referenceday) {
         this.referenceday = referenceday;
     }
-    
-    //	public long getEmployeecontractId() {
-    //		return employeecontractId;
-    //	}
-    //
-    //	public void setEmployeecontractId(long employeecontractId) {
-    //		this.employeecontractId = employeecontractId;
-    //	}
-    
     public String getStatus() {
         return status;
     }
-    
     public void setStatus(String status) {
         this.status = status;
     }
-    
     public int getNumberOfSerialDays() {
         return numberOfSerialDays;
     }
-    
     public void setNumberOfSerialDays(int numberOfSerialDays) {
         this.numberOfSerialDays = numberOfSerialDays;
     }
-    
-    //	public long getEmployeeId() {
-    //		return employeeId;
-    //	}
-    //
-    //	public void setEmployeeId(long employeeId) {
-    //		this.employeeId = employeeId;
-    //	}
-    
-    /**
-     * @return the employeeContractId
-     */
     public Long getEmployeeContractId() {
         return employeeContractId;
     }
-    
-    /**
-     * @param employeeContractId the employeeContractId to set
-     */
     public void setEmployeeContractId(Long employeeContractId) {
         this.employeeContractId = employeeContractId;
+    }
+    public String getJiraTicketKey() {
+        return jiraTicketKey;
+    }
+    public void setJiraTicketKey(String jiraTicketKey) {
+        this.jiraTicketKey = jiraTicketKey;
+    }
+    public String getNewJiraTicketKey() {
+        return newJiraTicketKey;
+    }
+    public void setNewJiraTicketKey(String newJiraTicketKey) {
+        this.newJiraTicketKey = newJiraTicketKey;
     }
     
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
-        //		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         try {
             Employeecontract loginEmployeecontract = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
             employeeContractId = loginEmployeecontract.getId();
         } catch (Exception e) {
             mapping.findForward("login");
         }
-        //		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
-        comment = "";
-        order = "";
-        suborder = "";
-        status = "";
-        sortOfReport = "W";
-        //		selectedHourBegin = GlobalConstants.BEGINHOUR;
-        //		selectedMinuteBegin = GlobalConstants.BEGINMINUTE;
-        //		selectedHourEnd = GlobalConstants.ENDHOUR;
-        //		selectedMinuteEnd = GlobalConstants.ENDMINUTE;
-        selectedHourDuration = 0;
-        selectedMinuteDuration = 0;
-        referenceday = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
-        hours = 8.0;
-        costs = 0.0;
-        //        DecimalFormat df = new DecimalFormat("0,00");
-        //        String formattedCost = df.format(costs);
-        //        costs = Double.valueOf(formattedCost);
-        //        System.out.println(df.format(costs));
-        training = false;
-        numberOfSerialDays = 0;
-        //		employeecontractId = (Long) request.getSession().getAttribute("loginEmployeeContractId");
+        
+        reset();
     }
     
     @Override
     public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
         ActionErrors errors = new ActionErrors();
-        
         // actually, no checks here
         return errors;
     }
+
+	public void reset() {
+      jiraTicketKey = "-1";
+      newJiraTicketKey = "";
+      comment = "";
+      order = "";
+      suborder = "";
+      status = "";
+      sortOfReport = "W";
+      selectedHourDuration = 0;
+      selectedMinuteDuration = 0;
+      referenceday = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
+      hours = 8.0;
+      costs = 0.0;
+      training = false;
+      numberOfSerialDays = 0;
+	}
     
 }

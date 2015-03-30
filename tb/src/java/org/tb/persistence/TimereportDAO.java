@@ -14,7 +14,9 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
+import org.tb.bdom.Worklog;
 import org.tb.helper.TimereportHelper;
+
 
 /**
  * DAO class for 'Timereport'
@@ -25,9 +27,13 @@ import org.tb.helper.TimereportHelper;
 public class TimereportDAO extends HibernateDaoSupport {
     
     private SuborderDAO suborderDAO;
+    private WorklogDAO worklogDAO;
     
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
+    }
+    public void setWorklogDAO(WorklogDAO worklogDAO) {
+        this.worklogDAO = worklogDAO;
     }
     
     /**
@@ -878,6 +884,11 @@ public class TimereportDAO extends HibernateDaoSupport {
         }
     }
     
+    public List<Timereport> getTimereportsByTicketID(long ticketID) {
+        return getSession().createQuery("from Timereport t where t.ticket.id = ?")
+                .setLong(0, ticketID).list();
+    }
+    
     /**
      * Calls {@link TimereportDAO#save(Timereport, Employee)} with {@link Employee} = null.
      * @param tr
@@ -919,7 +930,13 @@ public class TimereportDAO extends HibernateDaoSupport {
     public boolean deleteTimereportById(long trId) {
         Timereport timereport = getTimereportById(trId);
         boolean deleted = false;
+        
         if (timereport != null) {
+//        	Worklog worklog = worklogDAO.getWorklogByTimereportID(trId);
+//        	if (worklog != null) {
+//        		worklogDAO.deleteWorklog(worklog);
+//        	}
+        	
             getSession().delete(timereport);
             getSession().flush();
             deleted = true;

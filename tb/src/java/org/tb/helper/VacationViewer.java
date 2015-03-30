@@ -1,5 +1,6 @@
 package org.tb.helper;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,9 @@ import org.tb.bdom.Timereport;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.TimereportDAO;
 
-public class VacationViewer {
+public class VacationViewer implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
     
     private String suborderSign;
     private double budget;

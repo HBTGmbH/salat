@@ -46,115 +46,78 @@ public class AddEmployeeOrderForm extends ActionForm {
 	public long getId() {
 		return id;
 	}
-
 	public void setId(long id) {
 		this.id = id;
 	}
-
 	public String getAction() {
 		return action;
 	}
-
 	public void setAction(String action) {
 		this.action = action;
 	}
-	
 	public String getOrder() {
 		return order;
 	}
-
 	public void setOrder(String order) {
 		this.order = order;
 	}
-
 	public String getSuborder() {
 		return suborder;
 	}
-
 	public void setSuborder(String suborder) {
 		this.suborder = suborder;
 	}
-
 	public Double getDebithours() {
 		return debithours;
 	}
-
 	public void setDebithours(Double debithours) {
 		this.debithours = debithours;
 	}
-
-	/**
-	 * @return the debithoursunit
-	 */
 	public Byte getDebithoursunit() {
 		return debithoursunit;
 	}
-
-	/**
-	 * @param debithoursunit the debithoursunit to set
-	 */
 	public void setDebithoursunit(Byte debithoursunit) {
 		this.debithoursunit = debithoursunit;
 	}
-
 	public String getSign() {
 		return sign;
 	}
-
 	public void setSign(String sign) {
 		this.sign = sign;
 	}
-
 	public String getStatus() {
 		return status;
 	}
-
 	public void setStatus(String status) {
 		this.status = status;
 	}
-	
 	public long getOrderId() {
 		return orderId;
 	}
-
 	public void setOrderId(long orderId) {
 		this.orderId = orderId;
 	}
-
 	public long getSuborderId() {
 		return suborderId;
 	}
-
 	public void setSuborderId(long suborderId) {
 		this.suborderId = suborderId;
 	}
-
 	public String getValidFrom() {
 		return validFrom;
 	}
-
 	public void setValidFrom(String validFrom) {
 		this.validFrom = validFrom;
 	}
-
 	public String getValidUntil() {
 		return validUntil;
 	}
-
 	public void setValidUntil(String validUntil) {
 		this.validUntil = validUntil;
 	}
-
-	/**
-	 * @return the employeeContractId
-	 */
 	public Long getEmployeeContractId() {
 		return employeeContractId;
 	}
-
-	/**
-	 * @param employeeContractId the employeeContractId to set
-	 */
 	public void setEmployeeContractId(Long employeeContractId) {
 		this.employeeContractId = employeeContractId;
 	}
@@ -173,7 +136,6 @@ public class AddEmployeeOrderForm extends ActionForm {
 				mapping.findForward("login");
 			}
 		}
-//		employeename = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
 		
 		sign = "";
 		status = "";

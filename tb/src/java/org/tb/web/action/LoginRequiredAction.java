@@ -19,6 +19,9 @@ public abstract class LoginRequiredAction extends Action {
 
 	@Override
 	public final ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		if(request.getSession().getAttribute("errors") != null) {
+			request.getSession().removeAttribute("errors");
+		}
 		if(request.getSession().getAttribute("loginEmployee") != null) {
 			return executeAuthenticated(mapping, form, request, response);
 		} else {

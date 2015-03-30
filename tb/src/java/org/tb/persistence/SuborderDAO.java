@@ -13,9 +13,9 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
+import org.tb.bdom.Ticket;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
 import org.tb.logging.TbLogger;
@@ -31,18 +31,19 @@ public class SuborderDAO extends HibernateDaoSupport {
     private EmployeeorderDAO employeeorderDAO;
     private TimereportDAO timereportDAO;
     private CustomerorderDAO customerorderDAO;
-    private SuborderDAO suborderDAO;
+    private TicketDAO ticketDAO;
     
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
+    }
+    public void setTicketDAO(TicketDAO ticketDAO) {
+        this.ticketDAO = ticketDAO;
     }
     
     /**
@@ -57,6 +58,10 @@ public class SuborderDAO extends HibernateDaoSupport {
         return (Suborder)getSession().get(Suborder.class, id);
     }
     
+    public Suborder getSuborderBySign(String sign) {
+        return (Suborder)getSession().createQuery("from Suborder so where so.sign = ?").setString(0, sign).uniqueResult();
+    }
+    
     /**
      * Gets a list of Suborders by employee contract id.
      * 
@@ -65,26 +70,21 @@ public class SuborderDAO extends HibernateDaoSupport {
      * @return List<Suborder>
      */
     public List<Suborder> getSubordersByEmployeeContractId(long contractId) {
-        //		List<Employeeorder> employeeOrders = 
-        //			getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign asc, suborder.sign asc").setLong(0, contractId).list();
-        //		
-        //		List<Suborder> allSuborders = new ArrayList();
-        //		for (Iterator iter = employeeOrders.iterator(); iter.hasNext();) {
-        //			Employeeorder eo = (Employeeorder) iter.next();			
-        //			Suborder so = (Suborder) getSession().createQuery("from Suborder s where s.id = ? ").setLong(0, eo.getSuborder().getId()).uniqueResult();
-        //
-        //			allSuborders.add(so);
-        //		}
-        //		Collections.sort(allSuborders, new SubOrderComparator());
-        //		return allSuborders;
-        Employeecontract contract = (Employeecontract)getSession().get(Employeecontract.class, contractId);
-        List<Employeeorder> employeeOrders = contract.getEmployeeorders();
-        List<Suborder> allSuborders = new ArrayList<Suborder>();
-        for (Employeeorder order : employeeOrders) {
-            allSuborders.add(order.getSuborder());
-        }
-        Collections.sort(allSuborders, new SubOrderComparator());
-        return allSuborders;
+    	
+    	//mgo: contract.getEmployeeorders() liefert falsche/kapute Liste. Ersetzt durch getSession().createQuery(...)
+//    	Employeecontract contract = (Employeecontract) getSession().get(Employeecontract.class, contractId);
+//		List<Employeeorder> employeeOrders = contract.getEmployeeorders();
+        
+		List<Employeeorder> employeeOrders = getSession()
+				.createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign asc, suborder.sign asc")
+				.setLong(0, contractId).list();
+
+		List<Suborder> allSuborders = new ArrayList<Suborder>();
+		for (Employeeorder order : employeeOrders) {
+			allSuborders.add(order.getSuborder());
+		}
+		Collections.sort(allSuborders, new SubOrderComparator());
+		return allSuborders;
     }
     
     /**
@@ -441,7 +441,7 @@ public class SuborderDAO extends HibernateDaoSupport {
         for (Object element : allSuborders) {
             Suborder so = (Suborder)element;
             if (so.getId() == soToDelete.getId()) {
-                // check if related timereports, employee orders or suborders exist - if so, no deletion possible
+                // check if related timereports, employee orders, suborders or tickets exist - if so, no deletion possible
                 boolean deleteOk = true;
                 List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
                 for (Object element2 : allEmployeeorders) {
@@ -473,6 +473,14 @@ public class SuborderDAO extends HibernateDaoSupport {
                 }
                 
                 if (deleteOk) {
+                    List<Ticket> tickets = ticketDAO.getTicketsBySuborderID(soId);
+                    if (!tickets.isEmpty()) {
+                        deleteOk = false;
+                    }
+                    
+                }
+                
+                if (deleteOk) {
                     Session session = getSession();
                     session.delete(soToDelete);
                     try {
@@ -487,5 +495,4 @@ public class SuborderDAO extends HibernateDaoSupport {
         
         return soDeleted;
     }
-    
 }

@@ -21,6 +21,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
 import org.tb.helper.TimereportHelper;
+import org.tb.logging.TbLogger;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
@@ -44,23 +45,18 @@ public class ShowReleaseAction extends LoginRequiredAction {
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
     public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
         this.publicholidayDAO = publicholidayDAO;
     }
-    
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
     }
-    
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
     }
@@ -96,9 +92,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
         List<Employeecontract> teamMemberContracts = employeecontractDAO.getTeamContracts(loginEmployee.getId());
         boolean supervisor = !teamMemberContracts.isEmpty();
         request.getSession().setAttribute("isSupervisor", supervisor);
-        
-        String task = request.getParameter("task");
-        System.out.println(task);
         
         Employeecontract employeecontract = null;
         if (releaseForm.getEmployeeContractId() != null) {
@@ -215,34 +208,15 @@ public class ShowReleaseAction extends LoginRequiredAction {
             // contract was saved after RELEASE
             // build recipient for releasemail for BL
             
-            System.out
-                    .println("HURRRAAAAAAAAAAAAAAAAAA------------------------------");
-            System.out.println("DER ANGEMELDETE :" + loginEmployee.getName());
-            System.out.println("DER FREIGEGEBENE :"
-                    + employeecontract.getEmployee().getName());
             if (employeecontract.getSupervisor() != null) {
-                System.out.println("SEIN BL :"
-                        + employeecontract.getSupervisor().getName());
                 Employee recipient = employeecontract.getSupervisor();
                 Employee from = employeecontract.getEmployee();
                 try {
                     MailSender.sendSalatBuchungenReleasedMail(recipient, from);
                 } catch (Exception e) {
-                    System.out.println("sending release mail failed!!!");
+                	TbLogger.error(this.getClass().getName(), "sending release mail failed!!!");
                 }
-            } else {
-                System.out.println("KEIN BL ");
-            }
-            // check supervisor must not be null
-            // if(recipient!=null){
-            // String to = recipient.getName();
-            // String from;
-            // sender
-            // from = loginEmployee.getName();
-            // System.out.println("MAIL GO to:" + to);
-            // System.out.println("Go from:" + from);
-            // MailSender.sendSalatBuchungenToReleaseMail(recipient, from);
-            // }
+            } 
         }
         // End Release Action
         
@@ -272,13 +246,10 @@ public class ShowReleaseAction extends LoginRequiredAction {
             // Contract from Employee
             Employee contEmployee = employeeDAO.getEmployeeBySign(request
                     .getParameter("sign"));
-            System.out.println(contEmployee.getName());
             Employeecontract currentEmployeeContract = employeecontractDAO
                     .getEmployeeContractByEmployeeIdAndDate(contEmployee
                             .getId(), new Date());
             
-            // System.out.println("DER CONTRAKT" +
-            // temp.getSupervisor().getName());
             
             // BL
             Employee recipient = currentEmployeeContract.getSupervisor();
@@ -351,13 +322,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
             reopenDate = th.getDateFormStrings(releaseForm.getReopenDay(),
                     releaseForm.getReopenMonth(), releaseForm.getReopenYear(),
                     false);
-            
-            // SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-            // String reopenDateString = format.format(reopenDate);
-            // String releaseDateString =
-            // format.format(releaseDateFromContract);
-            // String acceptancedateString =
-            // format.format(acceptanceDateFromContract);
             
             if (reopenDate == null) {
                 reopenDate = new Date();
@@ -580,24 +544,12 @@ public class ShowReleaseAction extends LoginRequiredAction {
         }
         request.getSession().setAttribute("releaseDate", date);
         
-        // Employee loginEmployee = (Employee)
-        // request.getSession().getAttribute("loginEmployee");
-        // Employeecontract employeecontract =
-        // employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(),
-        // new Date());
-        
         if (date.before(selectedEmployeecontract.getValidFrom())
                 || selectedEmployeecontract.getValidUntil() != null && date
                         .after(selectedEmployeecontract.getValidUntil())) {
             errors.add("releasedate", new ActionMessage(
                     "form.release.error.date.invalid.foremployeecontract"));
         }
-        
-        // SimpleDateFormat simpleDateFormat = new
-        // SimpleDateFormat("dd.MM.yyyy");
-        // String newReleasedate = simpleDateFormat.format(date);
-        // String oldReleasedate =
-        // simpleDateFormat.format(selectedEmployeecontract.getReportReleaseDate());
         
         if (date.before(selectedEmployeecontract.getReportReleaseDate())) {
             errors.add("releasedate", new ActionMessage(
@@ -640,12 +592,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
             date = new Date();
         }
         request.getSession().setAttribute("acceptanceDate", date);
-        
-        // Employee loginEmployee = (Employee)
-        // request.getSession().getAttribute("loginEmployee");
-        // Employeecontract employeecontract =
-        // employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(),
-        // new Date());
         
         if (date.before(selectedEmployeecontract.getValidFrom())
                 || selectedEmployeecontract.getValidUntil() != null && date
@@ -708,6 +654,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
             days.add(new OptionItem(dayValue, dayLabel));
         }
         return days;
-    }
-    
+	}
+
 }

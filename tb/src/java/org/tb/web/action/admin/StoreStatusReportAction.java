@@ -34,11 +34,9 @@ public class StoreStatusReportAction extends StatusReportAction {
     public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
         this.statusReportDAO = statusReportDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
@@ -107,7 +105,6 @@ public class StoreStatusReportAction extends StatusReportAction {
             // validation 
             ActionMessages errorMessages = validateFormDataForRelease(request, reportForm);
             if (errorMessages.size() > 0) {
-                System.out.println("Errors in REALISE");
                 // set action info
                 request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.notreleased.text"));
                 return mapping.getInputForward();
@@ -544,7 +541,6 @@ public class StoreStatusReportAction extends StatusReportAction {
      */
     private ActionMessages validateFormDataForRelease(HttpServletRequest request,
             AddStatusReportForm reportForm) {
-        System.out.println("Button Freigabe was cklicked!!!");
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();
@@ -745,7 +741,6 @@ public class StoreStatusReportAction extends StatusReportAction {
      */
     private ActionMessages validateFormDataForSave(HttpServletRequest request,
             AddStatusReportForm reportForm) {
-        System.out.println("Button Save was cklicked!!!");
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();

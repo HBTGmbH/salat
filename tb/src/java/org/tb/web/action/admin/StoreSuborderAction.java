@@ -40,26 +40,20 @@ import org.tb.web.form.AddSuborderForm;
  */
 public class StoreSuborderAction extends LoginRequiredAction {
     
-    private CustomerorderDAO customerorderDAO;
-    
-    private SuborderDAO suborderDAO;
-    
-    private TimereportDAO timereportDAO;
-    
+    private CustomerorderDAO customerorderDAO;    
+    private SuborderDAO suborderDAO;    
+    private TimereportDAO timereportDAO;    
     private EmployeeorderDAO employeeorderDAO;
     
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
-    }
-    
+    }    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
-    }
-    
+    }    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
-    }
-    
+    }    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
@@ -68,6 +62,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
     public ActionForward executeAuthenticated(ActionMapping mapping,
             ActionForm form, HttpServletRequest request,
             HttpServletResponse response) {
+    	
         AddSuborderForm addSuborderForm = (AddSuborderForm)form;
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         
@@ -113,10 +108,9 @@ public class StoreSuborderAction extends LoginRequiredAction {
             return mapping.findForward("reset");
         }
         
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("copy")) {
-            long soId = Long.parseLong(request.getSession().getAttribute("soId")
-                    .toString());
+        if (request.getParameter("task") != null && request.getParameter("task").equals("copy")) {
+            
+        	long soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
             Suborder so = suborderDAO.getSuborderById(soId);
             
             if (so != null) {
@@ -128,8 +122,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
                 request.getSession().removeAttribute("soId");
                 
                 // store used customer order id for the next creation of a suborder
-                request.getSession().setAttribute("lastCoId",
-                        so.getCustomerorder().getId());
+                request.getSession().setAttribute("lastCoId", so.getCustomerorder().getId());
             }
             
             refreshForOverview(request);
@@ -137,20 +130,22 @@ public class StoreSuborderAction extends LoginRequiredAction {
             return mapping.findForward("success");
         }
         
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("fitDates")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("fitDates")) {
+        	
             if (request.getSession().getAttribute("soId") != null) {
-                long soId = Long.parseLong(request.getSession().getAttribute("soId")
-                        .toString());
+            	
+                long soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
                 Suborder suborder = suborderDAO.getSuborderById(soId);
+                
                 if (suborder != null) {
+                	
                     Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+                    
                     for (Suborder tempSuborder : suborder.getAllChildren()) {
                         tempSuborder.setFromDate(suborder.getFromDate());
                         tempSuborder.setUntilDate(suborder.getUntilDate());
                     }
                     suborderDAO.save(suborder, loginEmployee);
-                    
                 }
             }
             return mapping.findForward("success");
@@ -200,8 +195,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             return mapping.getInputForward();
         }
         
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("refreshParentProject")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("refreshParentProject")) {
             
             Customerorder parentOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
             
@@ -244,8 +238,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             return mapping.getInputForward();
         }
         
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("refreshHourlyRate")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("refreshHourlyRate")) {
             //first refresh the treestructure-content
             Customerorder customerorder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
             addSuborderForm.setParentDescriptionAndSign(customerorder.getSignAndDescription());
@@ -277,10 +270,10 @@ public class StoreSuborderAction extends LoginRequiredAction {
             long soId = -1;
             Suborder so = null;
             Customerorder customerorder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
+            
             if (request.getSession().getAttribute("soId") != null) {
                 // edited suborder
-                soId = Long.parseLong(request.getSession().getAttribute("soId")
-                        .toString());
+                soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
                 so = suborderDAO.getSuborderById(soId);
                 
                 if (so.getSuborders() != null
@@ -356,33 +349,23 @@ public class StoreSuborderAction extends LoginRequiredAction {
                 so.setDebithours(addSuborderForm.getDebithours());
                 so.setDebithoursunit(addSuborderForm.getDebithoursunit());
             }
-            so.setHide(addSuborderForm.getHide());
-            so.setNoEmployeeOrderContent(addSuborderForm.getNoEmployeeOrderContent());
             
+            so.setHide(addSuborderForm.getHide());
+            so.setNoEmployeeOrderContent(addSuborderForm.getNoEmployeeOrderContent());            
             so.setParentorder(suborderDAO.getSuborderById(addSuborderForm.getParentId()));
             
             suborderDAO.save(so, loginEmployee);
-            
-            //			String filter = (String) request.getSession().getAttribute(
-            //					"suborderFilter");
-            //			if (filter != null && !filter.equalsIgnoreCase("")) {
-            //				request.getSession().setAttribute("suborders",
-            //						suborderDAO.getSubordersByFilter(filter));
-            //			} else {
-            //				request.getSession().setAttribute("suborders",
-            //						suborderDAO.getSubordersOrderedByCustomerorder());
-            //			}
+
             request.getSession().removeAttribute("soId");
             
             // store used customer order id for the next creation of a suborder
             request.getSession().setAttribute("lastCoId",
                     so.getCustomerorder().getId());
             
-            boolean addMoreSuborders = Boolean.parseBoolean(request
-                    .getParameter("continue"));
+            boolean addMoreSuborders = Boolean.parseBoolean(request.getParameter("continue"));
+            
             if (!addMoreSuborders) {
-                refreshForOverview(request);
-                
+                refreshForOverview(request);                
                 return mapping.findForward("success");
             } else {
                 request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
@@ -395,15 +378,13 @@ public class StoreSuborderAction extends LoginRequiredAction {
                 return mapping.findForward("reset");
             }
         }
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("back")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("back")) {
             // go back
             request.getSession().removeAttribute("soId");
             addSuborderForm.reset(mapping, request);
             return mapping.findForward("cancel");
         }
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("reset")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("reset")) {
             // reset form
             doResetActions(mapping, request, addSuborderForm);
             return mapping.getInputForward();
@@ -420,12 +401,12 @@ public class StoreSuborderAction extends LoginRequiredAction {
      * @param request
      * @param reportForm
      */
-    private void doResetActions(ActionMapping mapping,
-            HttpServletRequest request, AddSuborderForm soForm) {
+    private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddSuborderForm soForm) {    	
         soForm.reset(mapping, request);
     }
     
     private ActionMessages valiDate(HttpServletRequest request, AddSuborderForm soForm, String which) {
+    	
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();
@@ -464,10 +445,13 @@ public class StoreSuborderAction extends LoginRequiredAction {
      * @return
      */
     private ActionMessages validateFormData(HttpServletRequest request, AddSuborderForm addSuborderForm) {
+    	
         ActionMessages errors = getErrors(request);
+        
         if (errors == null) {
             errors = new ActionMessages();
         }
+        
         Long suborderId;
         if (request.getSession().getAttribute("soId") != null) {
             // edited suborder
@@ -496,8 +480,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             } else {
                 suborders = suborderDAO.getSuborderChildren(addSuborderForm.getParentId());
                 for (Suborder suborder : suborders) {
-                    if (suborder.getCurrentlyValid()
-                            && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
+                    if (suborder.getCurrentlyValid() && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
                         errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
                         break;
                     }
@@ -507,31 +490,25 @@ public class StoreSuborderAction extends LoginRequiredAction {
         
         // check length of text fields
         if (addSuborderForm.getSign().length() > GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH) {
-            errors.add("sign", new ActionMessage(
-                    "form.suborder.error.sign.toolong"));
+            errors.add("sign", new ActionMessage("form.suborder.error.sign.toolong"));
         }
         if (addSuborderForm.getSign().length() <= 0) {
-            errors.add("sign", new ActionMessage(
-                    "form.suborder.error.sign.required"));
+            errors.add("sign", new ActionMessage("form.suborder.error.sign.required"));
         }
         if (addSuborderForm.getDescription().length() > GlobalConstants.SUBORDER_DESCRIPTION_MAX_LENGTH) {
-            errors.add("description", new ActionMessage(
-                    "form.suborder.error.description.toolong"));
+            errors.add("description", new ActionMessage("form.suborder.error.description.toolong"));
         }
         if ("".equals(addSuborderForm.getDescription().trim())) {
             errors.add("description", new ActionMessage("form.error.description.necessary"));
         }
         if (addSuborderForm.getShortdescription().length() > GlobalConstants.SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
-            errors.add("shortdescription", new ActionMessage(
-                    "form.suborder.error.shortdescription.toolong"));
+            errors.add("shortdescription", new ActionMessage("form.suborder.error.shortdescription.toolong"));
         }
         if (addSuborderForm.getCurrency().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
-            errors.add("currency", new ActionMessage(
-                    "form.suborder.error.currency.toolong"));
+            errors.add("currency", new ActionMessage("form.suborder.error.currency.toolong"));
         }
         if (addSuborderForm.getCurrency().length() <= 0) {
-            errors.add("currency", new ActionMessage(
-                    "form.suborder.error.currency.required"));
+            errors.add("currency", new ActionMessage("form.suborder.error.currency.required"));
         }
         if (addSuborderForm.getSuborder_customer().length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
             errors.add("suborder_customer", new ActionMessage("form.suborder.error.suborder_customer.toolong"));
@@ -540,21 +517,25 @@ public class StoreSuborderAction extends LoginRequiredAction {
         if (addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_YES
                 && addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_NO
                 && addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_UNDEFINED) {
+        	
             errors.add("invoice", new ActionMessage("form.suborder.error.invoice.invalid"));
         }
         // check hourly rate format
-        if (!GenericValidator.isDouble(addSuborderForm.getHourlyRate().toString())
+        if (	!GenericValidator.isDouble(addSuborderForm.getHourlyRate().toString())
                 || !GenericValidator.isInRange(addSuborderForm.getHourlyRate(), 0.0, GlobalConstants.MAX_HOURLY_RATE)) {
+        	
             errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.wrongformat"));
         }
         // check date formats
         Date suborderFromDate = null;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
+        
         try {
             suborderFromDate = new Date(simpleDateFormat.parse(addSuborderForm.getValidFrom()).getTime());
         } catch (ParseException e) {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
+        
         Date suborderUntilDate = null;
         if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
             try {
@@ -569,11 +550,12 @@ public class StoreSuborderAction extends LoginRequiredAction {
             }
         }
         // check debit hours
-        if (!GenericValidator.isDouble(addSuborderForm.getDebithours().toString()) ||
-                !GenericValidator.isInRange(addSuborderForm.getDebithours(),
-                        0.0, GlobalConstants.MAX_DEBITHOURS)) {
+        if (	!GenericValidator.isDouble(addSuborderForm.getDebithours().toString()) ||
+                !GenericValidator.isInRange(addSuborderForm.getDebithours(), 0.0, GlobalConstants.MAX_DEBITHOURS)) {
+        	
             errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat"));
         } else if (addSuborderForm.getDebithours() != null && addSuborderForm.getDebithours() != 0.0) {
+        	
             Double debithours = addSuborderForm.getDebithours() * 100000;
             debithours += 0.5;
             int debithours2 = debithours.intValue();
@@ -586,8 +568,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
         }
         
         if (addSuborderForm.getDebithours() != 0.0) {
-            if (addSuborderForm.getDebithoursunit() == null || !(addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH ||
-                    addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
+            if (	addSuborderForm.getDebithoursunit() == null || 
+            		!(addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH ||
+                    addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || 
+                    addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
+            	
                 errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.nounit"));
             }
         }
@@ -663,25 +648,21 @@ public class StoreSuborderAction extends LoginRequiredAction {
     private boolean refreshHourlyRate(ActionMapping mapping,
             HttpServletRequest request, AddSuborderForm soForm) {
         
-        Customerorder co = customerorderDAO.getCustomerorderById(soForm
-                .getCustomerorderId());
+        Customerorder co = customerorderDAO.getCustomerorderById(soForm.getCustomerorderId());
         
         if (co != null) {
-            request.getSession().setAttribute("currentOrderId",
-                    new Long(co.getId()));
+            request.getSession().setAttribute("currentOrderId",  new Long(co.getId()));
             request.getSession().setAttribute("currentOrder", co);
-            request.getSession()
-                    .setAttribute("hourlyRate", co.getHourly_rate());
+            request.getSession().setAttribute("hourlyRate", co.getHourly_rate());
             request.getSession().setAttribute("currency", co.getCurrency());
             soForm.setHourlyRate(co.getHourly_rate());
             soForm.setCurrency(co.getCurrency());
             
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
             soForm.setValidFrom(simpleDateFormat.format(co.getFromDate()));
+            
             if (co.getUntilDate() != null) {
-                soForm
-                        .setValidUntil(simpleDateFormat.format(co
-                                .getUntilDate()));
+                soForm.setValidUntil(simpleDateFormat.format(co.getUntilDate()));
             } else {
                 soForm.setValidUntil("");
             }
@@ -697,9 +678,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
     }
     
     private void refreshForOverview(HttpServletRequest request) {
+    	
         String filter = null;
         Boolean show = null;
         Long customerOrderId = null;
+        
         if (request.getSession().getAttribute("suborderFilter") != null) {
             filter = (String)request.getSession().getAttribute("suborderFilter");
         }

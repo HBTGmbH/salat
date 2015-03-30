@@ -13,9 +13,10 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
@@ -24,14 +25,12 @@ import org.tb.bdom.Workingday;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
@@ -39,6 +38,13 @@ import org.tb.web.form.ShowDailyReportForm;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
     
+	
+	protected void addErrorAtTheBottom(HttpServletRequest request, ActionMessages errors, ActionMessage message) {
+		errors.add("status", message);
+		request.getSession().setAttribute("errors", true);
+		saveErrors(request, errors);
+	}
+	
     /**
      * 
      * @param request
@@ -67,7 +73,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
      * @param selectedYear
      * @param employeecontract
      */
-    public void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract,
+    protected void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract,
             EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
         TimereportHelper th = new TimereportHelper();
         int[] overtime;
@@ -75,7 +81,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         int overtimeMinutes;
         Double overtimeStatic = employeecontract.getOvertimeStatic();
         int otStaticMinutes = (int)(overtimeStatic * 60);
-        
+
         if (employeecontract.getUseOvertimeOld() != null && employeecontract.getUseOvertimeOld() == false) {
             //use new overtime computation with static + dynamic overtime
             //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
@@ -84,7 +90,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             int minutes = otStaticMinutes + overtimeDynamic[0] * 60 + overtimeDynamic[1];
             overtimeHours = minutes / 60;
             overtimeMinutes = minutes % 60;
-            // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
+            // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation           
         } else {
             overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
             overtimeHours = overtime[0];
@@ -160,47 +166,6 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             throw new RuntimeException("Error occured while parsing date");
         }
         
-        //vacation old version
-        //		Date now = new Date();
-        //
-        //		java.sql.Date sqlNowDate = new java.sql.Date(now.getTime());
-        //		
-        //		List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(), GlobalConstants.CUSTOMERORDER_SIGN_VACATION, sqlNowDate);
-        //		List<Timereport> vacationReports = new ArrayList<Timereport>();
-        //		
-        //		for (Employeeorder employeeorder : employeeOrders) {
-        //			Suborder suborder = employeeorder.getSuborder();
-        //			vacationReports.addAll(timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(suborder.getId(), employeecontract.getId()));
-        //		}
-        //		
-        //		int[] vacationTime = th.calculateLaborTimeAsArray(vacationReports);
-        //		int totalVacation = employeecontract.getVacationEntitlement();
-        //		double dailyWorkingTime = employeecontract.getDailyWorkingTime();
-        //		int dailyWorkingTimeMinutes = new Double(dailyWorkingTime*60).intValue();
-        //		int vacationMinutes = vacationTime[0]*60 + vacationTime[1];
-        //		
-        //		if (vacationMinutes > dailyWorkingTimeMinutes*totalVacation) {
-        //			request.getSession().setAttribute("vacationextended", true);
-        //		} else {
-        //			request.getSession().setAttribute("vacationextended", false);
-        //		}
-        //		
-        //		int usedVacationDays = 0;
-        //		int usedVacationHours = 0;
-        //		int usedVacationMinutes = 0;
-        //		
-        //		if (dailyWorkingTime != 0) {
-        //			usedVacationDays = vacationMinutes/dailyWorkingTimeMinutes;
-        //			vacationMinutes -= dailyWorkingTimeMinutes * usedVacationDays;
-        //			usedVacationHours = vacationMinutes/60;
-        //			usedVacationMinutes = vacationMinutes%60;
-        //		} 
-        //		
-        //		request.getSession().setAttribute("vacationtotal", totalVacation);
-        //		request.getSession().setAttribute("vacationdaysused", usedVacationDays);
-        //		request.getSession().setAttribute("vacationhoursused", usedVacationHours);
-        //		request.getSession().setAttribute("vacationminutesused", usedVacationMinutes);
-        
         //vacation v2 extracted to VacationViewer:
         VacationViewer vw = new VacationViewer(employeecontract);
         vw.computeVacations(request, employeecontract, employeeorderDAO, timereportDAO);
@@ -214,7 +179,6 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         
         request.getSession().setAttribute("releasedUntil", releaseDate);
         request.getSession().setAttribute("acceptedUntil", acceptanceDate);
-        
     }
     
     /**
@@ -237,8 +201,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
     protected boolean refreshTimereports(ActionMapping mapping,
             HttpServletRequest request, ShowDailyReportForm reportForm, CustomerorderDAO customerorderDAO,
             TimereportDAO timereportDAO, EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
-            EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, OvertimeDAO overtimeDAO,
-            VacationDAO vacationDAO, EmployeeDAO employeeDAO) {
+            EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, OvertimeDAO overtimeDAO) {
         
         //selected view and selected dates
         String selectedView = reportForm.getView();
@@ -294,24 +257,23 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         long employeeContractId = reportForm.getEmployeeContractId();
         if (employeeContractId != 0 && employeeContractId != -1) {
             String selectedOrder = reportForm.getOrder();
-            Customerorder order = customerorderDAO
-                    .getCustomerorderBySign(selectedOrder);
+            Customerorder order = customerorderDAO.getCustomerorderBySign(selectedOrder);
             List<Employeeorder> employeeOrders = null;
             if (order != null) {
-                employeeOrders = employeeorderDAO
-                        .getEmployeeordersByOrderIdAndEmployeeContractId(order.getId(),
-                                employeeContractId);
+                employeeOrders = employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(order.getId(), employeeContractId);
             }
             if (employeeOrders == null || employeeOrders.isEmpty()) {
                 reportForm.setOrder(GlobalConstants.ALL_ORDERS);
             }
-        }
+        } 
         
         List<Timereport> timereports = new ArrayList<Timereport>();
         if (reportForm.getEmployeeContractId() == -1) {
             // consider timereports for all employees
             List<Customerorder> orders = customerorderDAO.getCustomerorders();
             request.getSession().setAttribute("orders", orders);
+            
+            request.getSession().setAttribute("overtimeDisabled", true);
             
             if (reportForm.getOrder() == null || reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS)) {
                 // get the timereports for specific date, all employees, all orders
@@ -337,12 +299,14 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             
         } else {
             // consider timereports for specific employee
-            // long employeeId = reportForm.getEmployeeId();
             Employeecontract ec = employeecontractDAO.getEmployeeContractById(employeeContractId);
             if (ec == null) {
                 request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
                 return false;
             }
+            
+            request.getSession().setAttribute("overtimeDisabled", false);
+            
             // also refresh orders/suborders to be displayed for specific employee 
             List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
             request.getSession().setAttribute("orders", orders);
@@ -409,7 +373,6 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         request.getSession().setAttribute("reportForm", reportForm);
         
         return true;
-        
     }
     
     /**
@@ -444,7 +407,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         }
         else {
             
-            //don´t show break time, quitting time and working day ends on the showdailyreport.jsp
+            //donï¿½t show break time, quitting time and working day ends on the showdailyreport.jsp
             request.getSession().setAttribute("visibleworkingday", false);
             
             reportForm.setSelectedWorkHourBegin(0);
@@ -461,15 +424,9 @@ public abstract class DailyReportAction extends LoginRequiredAction {
      * @return
      */
     protected Employeecontract getEmployeeContractFromRequest(HttpServletRequest request, EmployeecontractDAO employeecontractDAO) {
-        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-        Employeecontract ec = null;
-        //		Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+        
+    	Employeecontract ec = null;
         ec = (Employeecontract)request.getSession().getAttribute("currentEmployeeContract");
-        //		if (employeeId != 0 && employeeId != -1) {	
-        //			ec = employeecontractDAO.getEmployeeContractByEmployeeId(employeeId);	
-        //		} else {
-        //			ec = employeecontractDAO.getEmployeeContractByEmployeeId(loginEmployee.getId());
-        //		}
         if (ec == null) {
             ec = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
         }

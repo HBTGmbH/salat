@@ -1,5 +1,6 @@
 package org.tb.web.action;
 
+import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
 
@@ -18,19 +19,24 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.bdom.Worklog;
+import org.tb.helper.AtlassianOAuthClient;
+import org.tb.helper.JiraConnectionOAuthHelper;
+import org.tb.helper.JiraSalatHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.MonthlyreportDAO;
 import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.ProjectIDDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
+import org.tb.persistence.WorklogDAO;
+import org.tb.persistence.WorklogMemoryDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowDailyReportForm;
 import org.tb.web.form.UpdateDailyReportForm;
@@ -47,73 +53,74 @@ public class UpdateDailyReportAction extends DailyReportAction {
     private CustomerorderDAO customerorderDAO;
     private TimereportDAO timereportDAO;
     private PublicholidayDAO publicholidayDAO;
-    private MonthlyreportDAO monthlyreportDAO;
-    private VacationDAO vacationDAO;
     private WorkingdayDAO workingdayDAO;
     private EmployeeorderDAO employeeorderDAO;
     private OvertimeDAO overtimeDAO;
     private EmployeeDAO employeeDAO;
     private EmployeecontractDAO employeecontractDAO;
+    private WorklogDAO worklogDAO;
+    private ProjectIDDAO projectIDDAO;
+    private WorklogMemoryDAO worklogMemoryDAO;
     
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
     }
-    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public TimereportDAO getTimereportDAO() {
         return timereportDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
         this.publicholidayDAO = publicholidayDAO;
     }
-    
-    public void setMonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
-        this.monthlyreportDAO = monthlyreportDAO;
-    }
-    
-    public void setVacationDAO(VacationDAO vacationDAO) {
-        this.vacationDAO = vacationDAO;
-    }
-    
     public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
         this.workingdayDAO = workingdayDAO;
     }
-    
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
+    }
+    public void setWorklogDAO(WorklogDAO worklogDAO) {
+        this.worklogDAO = worklogDAO;
+    }
+    public void setProjectIDDAO(ProjectIDDAO projectIDDAO) {
+        this.projectIDDAO = projectIDDAO;
+    }
+    public void setWorklogMemoryDAO(WorklogMemoryDAO worklogMemoryDAO) {
+        this.worklogMemoryDAO = worklogMemoryDAO;
     }
     
     /* (non-Javadoc)
      * @see org.tb.web.action.LoginRequiredAction#executeAuthenticated(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
         UpdateDailyReportForm reportForm = (UpdateDailyReportForm)form;
         
+        ActionMessages errors = getErrors(request);
+        if (errors == null) {
+            errors = new ActionMessages();
+        }
+        
         if (request.getParameter("trId") != null) {
-            long trId = Long.parseLong(request.getParameter("trId"));;
+            long trId = Long.parseLong(request.getParameter("trId"));
             Timereport tr = timereportDAO.getTimereportById(trId);
             
+            int previousDurationhours = tr.getDurationhours(); 
+            int previousDurationminutes = tr.getDurationminutes();
+            String previousTaskdescription = tr.getTaskdescription();
             Date theDate = tr.getReferenceday().getRefdate();
             Employeecontract ec = tr.getEmployeecontract();
             
@@ -167,6 +174,118 @@ public class UpdateDailyReportAction extends DailyReportAction {
                 timereportDAO.save(tr, loginEmployee, true);
             }
             
+            // check if Durationhours and/or Durationminutes have been adjusted for this save.  
+            boolean newTaskdescription = !previousTaskdescription.equals(tr.getTaskdescription());
+            boolean newTime = tr.getDurationhours() != previousDurationhours || tr.getDurationminutes() != previousDurationminutes;
+
+            
+            if (newTime || newTaskdescription) {
+                // need to check if order of timereport has a jira-project-id attached
+                if (!projectIDDAO.getProjectIDsByCustomerorderID(tr.getSuborder().getCustomerorder().getId()).isEmpty()) {
+                	
+                	
+                	
+                	
+                	
+                	
+                	String jiraAccessToken = loginEmployee.getJira_oauthtoken();
+                	
+                	// if JIRA is accessed for the first time or the access token is invalid
+                	if ( (jiraAccessToken == null && request.getParameter("oauth_verifier") == null) ||
+                		 (jiraAccessToken != null && AtlassianOAuthClient.isValidAccessToken(jiraAccessToken) == false)	) {
+                		// STEP 1: get a request token from JIRA and redirect user to JIRA login page
+                		AtlassianOAuthClient.getRequestTokenAndSetRedirectToJira(response, GlobalConstants.SALAT_URL + "/do/UpdateDailyReport?trId=" + trId);
+                		return null;
+                	} else {
+                		AtlassianOAuthClient.setAccessToken(jiraAccessToken);
+                	}
+                	
+                	// STEP 2: JIRA returned a verifier code. Now swap the request token and the verifier with access token 
+                	String oauthVerifier = request.getParameter("oauth_verifier");
+                	if (oauthVerifier != null) {
+                		if (oauthVerifier.equals("denied")) {
+                			addErrorAtTheBottom(request, errors, new ActionMessage("oauth.error.denied"));
+                			return mapping.getInputForward();
+                		} else {
+                			String accessToken = AtlassianOAuthClient.swapRequestTokenForAccessToken(oauthVerifier, employeeDAO, loginEmployee);
+                    		if (accessToken == null) return mapping.findForward("error");
+                		}
+                	}
+                	
+                	
+                	
+                	
+                	
+                	
+                	
+                	
+             	
+                	JiraConnectionOAuthHelper jcHelper = new JiraConnectionOAuthHelper(loginEmployee.getSign());
+                	
+                    //need to check if worklog already exists (only applies to projects that obtained a jira-project-id after timereports have been stored)
+                    Worklog salatWorklog = worklogDAO.getWorklogByTimereportID(tr.getId());
+                    String jiraKey = tr.getTicket().getJiraTicketKey();
+                    String jiraProjectID = projectIDDAO.getProjectIDsByCustomerorderID(tr.getSuborder().getCustomerorder().getId()).get(0).getJiraProjectID();
+                    jiraKey = jiraProjectID + "-" + jiraKey;
+                    
+                    if (salatWorklog != null) {
+                    		
+                    	int responseUpdateWorklog = jcHelper.updateWorklog(tr, jiraKey, salatWorklog.getJiraWorklogID());
+						
+                    	//if Worklog not found/has been deleted - try to create a new one
+    	            	if (responseUpdateWorklog == 404) {
+    	            		int[] create_status = jcHelper.createWorklog(tr, jiraKey);
+    						if (create_status[0] != 200) {
+//    							request.getSession().setAttribute("updateWorklogFailed", create_status[0]);
+    							addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.updateerror", create_status[0]));
+    							try {
+    								JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
+    		                	} catch (Exception e) {
+//    		                		request.getSession().setAttribute("createWorklogMemoryFailed", true);
+    		                		addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
+    		                	}
+    						} else {
+    							salatWorklog.setJiraWorklogID(create_status[1]);
+    							salatWorklog.setType("updated");
+    							salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
+    						}
+    	            	} else if (responseUpdateWorklog != 200) {
+//    						request.getSession().setAttribute("updateWorklogFailed", responseUpdateWorklog);
+    	            		addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.updateerror", responseUpdateWorklog));
+    	            		try {
+    	            			JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, salatWorklog.getJiraWorklogID(), GlobalConstants.UPDATE_WORKLOG);
+    	                	} catch (Exception e) {
+//    	                		request.getSession().setAttribute("createWorklogMemoryFailed", true);
+    	                		addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
+    	                	}
+    					} 
+                    	
+                    	if (newTime || newTaskdescription) {
+            				salatWorklog.setType("updated");
+            				salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
+						}
+                    } else {
+                    	int[] responseCreateWorklog = jcHelper.createWorklog(tr, jiraKey);
+                    	if (responseCreateWorklog[0] != 200) {
+//                    		request.getSession().setAttribute("createWorklogFailed", responseCreateWorklog[0]);
+                    		addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.createerror", responseCreateWorklog[0]));
+    	                	try {
+    	                		JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
+    	                	} catch (Exception e) {
+//    	                		request.getSession().setAttribute("createWorklogMemoryFailed", true);
+    	                		addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
+    	                	}
+    					}
+        				salatWorklog = new Worklog();
+        				salatWorklog.setJiraWorklogID(responseCreateWorklog[1]);
+        				salatWorklog.setTimereport(tr);
+        				salatWorklog.setType("created");
+        				salatWorklog.setUpdatecounter(0);
+                    }
+                    
+                }
+//                saveErrors(request, errors);
+            }
             TimereportHelper th = new TimereportHelper();
             if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract
@@ -175,18 +294,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
                 ec.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
                 employeecontractDAO.save(ec, loginEmployee);
             }
-            
-            //				if (tr.getSortofreport().equals("W")) {
-            //					// update monthly hour balance...
-            //
-            //					String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());	// yyyy
-            //					String month = DateUtils.getMonthString(tr.getReferenceday().getRefdate()); // MM
-            //					
-            //					Monthlyreport mr = 
-            //						monthlyreportDAO.getMonthlyreportByYearAndMonthAndEmployeecontract
-            //						(ec.getId(), Integer.parseInt(year), Integer.parseInt(month));
-            //					request.getSession().setAttribute("hourbalance", mr.getHourbalance());
-            //				}
             
             // get updated list of timereports from DB
             ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
@@ -217,10 +324,9 @@ public class UpdateDailyReportAction extends DailyReportAction {
                     suborderDAO,
                     employeeorderDAO,
                     publicholidayDAO,
-                    overtimeDAO,
-                    vacationDAO,
-                    employeeDAO);
-            List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
+                    overtimeDAO);
+            @SuppressWarnings("unchecked")
+			List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
             
             request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
@@ -240,7 +346,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
                 showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
             } else {
                 
-                //show´t break time, quitting time and working day ends on the showdailyreport.jsp
+                //showï¿½t break time, quitting time and working day ends on the showdailyreport.jsp
                 request.getSession().setAttribute("visibleworkingday", false);
                 
                 showDailyReportForm.setSelectedWorkHourBegin(0);
@@ -272,9 +378,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
     private ActionMessages validateFormData(HttpServletRequest request,
             UpdateDailyReportForm reportForm,
             Date theDate,
-            Timereport theTimereport
-            
-            ) {
+            Timereport theTimereport) {
         
         ActionMessages errors = getErrors(request);
         if (errors == null) {

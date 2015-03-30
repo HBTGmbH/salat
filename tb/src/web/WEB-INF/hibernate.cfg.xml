@@ -9,6 +9,10 @@
 		<mapping class="org.tb.bdom.Employeeorder" />
 		<mapping class="org.tb.bdom.Employeeordercontent" />
 		<mapping class="org.tb.bdom.Customerorder" />
+		<mapping class="org.tb.bdom.ProjectID"/>
+		<mapping class="org.tb.bdom.Ticket"/>
+		<mapping class="org.tb.bdom.WorklogMemory"/>
+		<mapping class="org.tb.bdom.Worklog"/>
 		<mapping class="org.tb.bdom.Suborder" />
 		<mapping class="org.tb.bdom.Invoice" />	
 		<mapping class="org.tb.bdom.Timereport" />	

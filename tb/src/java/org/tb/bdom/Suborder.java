@@ -50,6 +50,12 @@ public class Suborder implements Serializable {
     @JoinColumn(name = "CUSTOMERORDER_ID")
     private Customerorder customerorder;
     
+    /** list of Tickets, associated to this suborder */
+    @OneToMany(mappedBy = "suborder")
+    @Cascade(value = { CascadeType.SAVE_UPDATE })
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private List<Ticket> tickets;
+    
     /** list of timereports, associated to this suborder */
     @OneToMany(mappedBy = "suborder")
     @Cascade(value = { CascadeType.SAVE_UPDATE })
@@ -172,6 +178,14 @@ public class Suborder implements Serializable {
     
     public void setSuborders(List<Suborder> suborders) {
         this.children = suborders;
+    }
+    
+    public List<Ticket> getTickets() {
+        return tickets;
+    }
+    
+    public void setTickets(List<Ticket> tickets) {
+        this.tickets = tickets;
     }
     
     public String getSuborder_customer() {

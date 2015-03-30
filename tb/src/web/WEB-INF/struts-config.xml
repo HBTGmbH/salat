@@ -56,10 +56,14 @@
 			type="org.tb.web.form.ShowSuborderForm" />
 		<form-bean name="showBudgetForm"
 			type="org.tb.web.form.ShowBudgetForm" />
+		<form-bean name="showTicketsForm"
+			type="org.tb.web.form.ShowTicketsForm" />
 		<form-bean name="addEmployeeOrderForm"
 			type="org.tb.web.form.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm"
 			type="org.tb.web.form.ShowEmployeeOrderForm" />
+		<form-bean name="generateMultipleEmployeeordersForm"
+			type="org.tb.web.form.GenerateMultipleEmployeeordersForm"/>
 		<form-bean name="addEmployeeContractForm"
 			type="org.tb.web.form.AddEmployeeContractForm" />
 		<form-bean name="showEmployeeContractForm"
@@ -281,6 +285,7 @@
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/admin/addCustomerOrder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
+			<forward name="dummy" path="/admin/generateMultipleEmployeeorders.jsp" />
 		</action>
 
 		<!-- Suborder -->
@@ -350,6 +355,15 @@
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
+		<action path="/GenerateMultipleEmployeeorders"
+			input="/admin/generateMultipleEmployeeorders.jsp"
+			name="generateMultipleEmployeeordersForm">
+			<forward name="start" path="/admin/generateMultipleEmployeeorders.jsp"/>
+			<forward name="success" path="/admin/showEmployeeOrder.jsp" 
+				redirect="true"/>
+			<forward name="backtomenu" path="/showWelcome.jsp" />
+		</action>
+		
 		<!-- EmployeeOrderContent -->
 		<action path="/EditEmployeeOrderContent"
 			name="addEmployeeOrderContentForm">
@@ -410,6 +424,14 @@
 		<action path="/ShowBudget" name="showBudgetForm">
 			<forward name="success" path="/admin/showBudget.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
+		</action>
+		
+		<!-- Jira Tickets -->
+		<action path="/ShowTickets" input="/ShowTickets" name="showTicketsForm">
+			<forward name="success" path="/admin/showTickets.jsp" />
+			<forward name="error" path="/admin/error.jsp" />
+			<forward name="cancel" path="/showWelcome.jsp" />
+			<forward name="reset" path="/admin/showTickets.jsp" />
 		</action>
 
 		<!-- Employee -->
@@ -488,7 +510,7 @@
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
 		
-				<!-- Mobile pages  -->
+		<!-- Mobile pages  -->
 		<action path="/mobile/suborder/getSuborders" scope="request" validate="false">
 			<forward name="success" path="/mobile/suborder/getSubordersResponse.jsp" />
 		</action>

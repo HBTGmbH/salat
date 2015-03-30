@@ -44,7 +44,6 @@ import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.persistence.VacationDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowDailyReportForm;
@@ -63,7 +62,6 @@ public class ShowDailyReportAction extends DailyReportAction {
     private EmployeecontractDAO employeecontractDAO;
     private SuborderDAO suborderDAO;
     private EmployeeorderDAO employeeorderDAO;
-    private VacationDAO vacationDAO;
     private PublicholidayDAO publicholidayDAO;
     private WorkingdayDAO workingdayDAO;
     private EmployeeDAO employeeDAO;
@@ -71,50 +69,42 @@ public class ShowDailyReportAction extends DailyReportAction {
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
     public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
         this.workingdayDAO = workingdayDAO;
     }
-    
     public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
         this.publicholidayDAO = publicholidayDAO;
     }
-    
-    public void setVacationDAO(VacationDAO vacationDAO) {
-        this.vacationDAO = vacationDAO;
-    }
-    
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
     }
-    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
     }
     
-    @SuppressWarnings({ "unchecked", "null" })
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws ParseException {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
         
         TimereportHelper th = new TimereportHelper();
         ShowDailyReportForm reportForm = (ShowDailyReportForm)form;
         request.getSession().setAttribute("vacationBudgetOverrun", false);
+        request.getSession().removeAttribute("createWorklogFailed");
+        request.getSession().removeAttribute("updateWorklogFailed");
+        request.getSession().removeAttribute("deleteWorklogFailed");
+        request.getSession().setAttribute("createWorklogMemoryFailed", false);
+        request.getSession().setAttribute("projectIDExists", false);
         Employeecontract ec = getEmployeeContractFromRequest(request, employeecontractDAO);
         Date startdate;
         Date enddate;
@@ -132,7 +122,8 @@ public class ShowDailyReportAction extends DailyReportAction {
         }
         if (request.getParameter("task") != null && request.getParameter("task").equals("sort")) {
             //*** task for sorting the timereports table ***
-            List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
+            @SuppressWarnings("unchecked")
+			List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
             String column = request.getParameter("column");
             Comparator<Timereport> comparator = new TimereportByEmployeeAscComparator();
             if ("employee".equals(column)) {
@@ -202,6 +193,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
             request.getSession().setAttribute("reportForm", reportForm);
             return mapping.findForward("success");
+            
         } else if (request.getParameter("task") != null && request.getParameter("task").equals("refreshTimereports")) {
             //*** task for refreshing timereports table
             // set start and end dates 
@@ -322,11 +314,10 @@ public class ShowDailyReportAction extends DailyReportAction {
                         suborderDAO,
                         employeeorderDAO,
                         publicholidayDAO,
-                        overtimeDAO,
-                        vacationDAO,
-                        employeeDAO);
+                        overtimeDAO);
                 if (refreshSuccessful) {
-                    List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
+                    @SuppressWarnings("unchecked")
+					List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
                     
                     //check if only project based training should be shown
                     if (reportForm.getShowTraining()) {
@@ -343,7 +334,12 @@ public class ShowDailyReportAction extends DailyReportAction {
                             ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                         }
                         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-                        Date date = simpleDateFormat.parse(reportForm.getEnddate());
+                        Date date = new Date();
+                        try {
+                        	date = simpleDateFormat.parse(reportForm.getEnddate());
+	                    } catch (ParseException e) {
+	                        throw new RuntimeException("this should not happen!");
+	                    }
                         if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
                             GregorianCalendar gc = new GregorianCalendar();
                             gc.setTime(date);
@@ -439,10 +435,11 @@ public class ShowDailyReportAction extends DailyReportAction {
             // refresh orders to be displayed in the select menu
             CustomerorderHelper ch = new CustomerorderHelper();
             if (ch.refreshOrders(mapping, request, reportForm,
-                    customerorderDAO, employeeDAO, employeecontractDAO, suborderDAO) != true) {
+                    customerorderDAO, employeecontractDAO, suborderDAO) != true) {
                 return mapping.findForward("error");
             } else {
-                List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
+                @SuppressWarnings("unchecked")
+				List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
                 request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
                 request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
                 request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
@@ -457,7 +454,8 @@ public class ShowDailyReportAction extends DailyReportAction {
                     suborderDAO, employeecontractDAO) != true) {
                 return mapping.findForward("error");
             } else {
-                List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
+                @SuppressWarnings("unchecked")
+				List<Timereport> timereports = (List<Timereport>)request.getSession().getAttribute("timereports");
                 request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
                 request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
                 request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
@@ -472,7 +470,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             monthMap.put("Feb", "main.timereport.select.month.feb.text");
             monthMap.put("Mar", "main.timereport.select.month.mar.text");
             monthMap.put("Apr", "main.timereport.select.month.apr.text");
-            monthMap.put("May", "main.timereport.select.month.mai.text");
+            monthMap.put("May", "main.timereport.select.month.may.text");
             monthMap.put("Jun", "main.timereport.select.month.jun.text");
             monthMap.put("Jul", "main.timereport.select.month.jul.text");
             monthMap.put("Aug", "main.timereport.select.month.aug.text");
@@ -548,8 +546,9 @@ public class ShowDailyReportAction extends DailyReportAction {
             forward = "error";
             return forward;
         }
-        reportForm.setView(GlobalConstants.VIEW_DAILY);
-        request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
+        
+       	reportForm.setView(GlobalConstants.VIEW_DAILY);
+       	request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
         request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
@@ -597,7 +596,8 @@ public class ShowDailyReportAction extends DailyReportAction {
                 request.getSession().setAttribute("workingDayEnds", th.calculateQuittingTime(workingday, request, "workingDayEnds"));
             }
             if (request.getSession().getAttribute("timereportComparator") != null) {
-                Comparator<Timereport> comparator = (Comparator<Timereport>)request.getSession().getAttribute("timereportComparator");
+                @SuppressWarnings("unchecked")
+				Comparator<Timereport> comparator = (Comparator<Timereport>)request.getSession().getAttribute("timereportComparator");
                 Collections.sort(timereports, comparator);
             }
             request.getSession().setAttribute("timereports", timereports);
@@ -659,7 +659,6 @@ public class ShowDailyReportAction extends DailyReportAction {
             request.getSession().setAttribute("enddate", dateString);
             java.sql.Date sqlDate = java.sql.Date.valueOf(dateString);
             
-            String currentEmployeeName = (String)request.getSession().getAttribute("currentEmployee");
             Long employeeId = (Long)request.getSession().getAttribute("currentEmployeeId");
             List<Timereport> timereports;
             if (employeeId != null && employeeId.equals(-1)) {
@@ -672,7 +671,8 @@ public class ShowDailyReportAction extends DailyReportAction {
             request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
             request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
             if (request.getSession().getAttribute("timereportComparator") != null) {
-                Comparator<Timereport> comparator = (Comparator<Timereport>)request.getSession().getAttribute("timereportComparator");
+                @SuppressWarnings("unchecked")
+				Comparator<Timereport> comparator = (Comparator<Timereport>)request.getSession().getAttribute("timereportComparator");
                 Collections.sort(timereports, comparator);
             }
             request.getSession().setAttribute("timereports", timereports);

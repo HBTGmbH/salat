@@ -28,6 +28,7 @@ import org.tb.bdom.Timereport;
 import org.tb.bdom.Warning;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
+import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -62,35 +63,27 @@ public class LoginEmployeeAction extends Action {
     public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
         this.statusReportDAO = statusReportDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
     }
-    
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
     }
-    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
     public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
         this.publicholidayDAO = publicholidayDAO;
     }
@@ -214,15 +207,6 @@ public class LoginEmployeeAction extends Action {
                                 untilDate = soUntilDate;
                             }
                             
-                            // create employeeorder
-                            //							SimpleDateFormat yearFormat = new SimpleDateFormat(
-                            //									"yyyy");
-                            //							String year = yearFormat.format(date);
-                            //							fromDate = simpleDateFormat.parse(year
-                            //									+ "0101");
-                            //							untilDate = simpleDateFormat.parse(year
-                            //									+ "1231");
-                            
                             Employeeorder employeeorder = new Employeeorder();
                             
                             java.sql.Date sqlFromDate = new java.sql.Date(
@@ -234,11 +218,8 @@ public class LoginEmployeeAction extends Action {
                                         untilDate.getTime());
                                 employeeorder.setUntilDate(sqlUntilDate);
                             }
-                            if (suborder
-                                    .getCustomerorder()
-                                    .getSign()
-                                    .equals(
-                                            GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
+                            if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+                                    && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                                 employeeorder.setDebithours(employeecontract
                                         .getDailyWorkingTime()
                                         * employeecontract
@@ -355,9 +336,6 @@ public class LoginEmployeeAction extends Action {
                             employeecontract, employeeorderDAO, publicholidayDAO,
                             timereportDAO, overtimeDAO, false);
                 }
-                //				int[] monthlyOvertime = th.calculateOvertime(start, currentDate,
-                //						employeecontract, employeeorderDAO, publicholidayDAO,
-                //						timereportDAO, overtimeDAO, false);
                 int monthlyOvertimeHours = monthlyOvertime[0];
                 int monthlyOvertimeMinutes = monthlyOvertime[1];
                 boolean monthlyOvertimeIsNegative = false;
@@ -422,7 +400,7 @@ public class LoginEmployeeAction extends Action {
                             throw new RuntimeException("query suboptimal");
                         }
                     } catch (Exception e) {
-                        System.out.println(e);
+                        TbLogger.error(this.getClass().getName(), e.getMessage());
                     }
                 }
             }

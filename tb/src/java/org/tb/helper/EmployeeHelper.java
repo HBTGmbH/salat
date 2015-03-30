@@ -34,7 +34,7 @@ public class EmployeeHelper {
 		List<Employee> employees = ed.getEmployees();
 		List<Employee> optionList = new ArrayList<Employee>();
 		
-		for (Iterator iter = employees.iterator(); iter.hasNext();) {
+		for (Iterator<Employee> iter = employees.iterator(); iter.hasNext();) {
 			Employee emp = (Employee) iter.next();
 			
 			if(emp.getId() == loginEmployee.getId()) {

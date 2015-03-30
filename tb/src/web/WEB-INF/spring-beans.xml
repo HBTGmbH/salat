@@ -15,6 +15,7 @@
 	<!-- Struts Admin Actions -->
 	<bean name="/AddEmployee" class="org.tb.web.action.admin.AddEmployeeAction" />
 	<bean name="/CreateAdminList" class="org.tb.web.action.admin.CreateAdminListAction" />
+	<bean name="/GenerateMultipleEmployeeorders" class="org.tb.web.action.admin.GenerateMultipleEmployeeordersAction"/>
 
 	<!-- Data Access Objects -->
 	<bean name="employeeDAO" class="org.tb.persistence.EmployeeDAO">
@@ -29,7 +30,13 @@
 	</bean>
 	<bean name="customerorderDAO" class="org.tb.persistence.CustomerorderDAO">
 	</bean>
+	<bean name="projectIDDAO" class="org.tb.persistence.ProjectIDDAO">
+	</bean>
 	<bean name="suborderDAO" class="org.tb.persistence.SuborderDAO">
+	</bean>
+	<bean name="ticketDAO" class="org.tb.persistence.TicketDAO">
+	</bean>
+	<bean name="worklogDAO" class="org.tb.persistence.WorklogDAO">
 	</bean>
 	<bean name="invoiceDAO" class="org.tb.persistence.InvoiceDAO">
 	</bean>

@@ -88,7 +88,7 @@ public class ShowInvoiceAction extends DailyReportAction {
         monthMap.put("1", "main.timereport.select.month.feb.text");
         monthMap.put("2", "main.timereport.select.month.mar.text");
         monthMap.put("3", "main.timereport.select.month.apr.text");
-        monthMap.put("4", "main.timereport.select.month.mai.text");
+        monthMap.put("4", "main.timereport.select.month.may.text");
         monthMap.put("5", "main.timereport.select.month.jun.text");
         monthMap.put("6", "main.timereport.select.month.jul.text");
         monthMap.put("7", "main.timereport.select.month.aug.text");

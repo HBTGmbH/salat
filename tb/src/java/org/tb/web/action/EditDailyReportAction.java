@@ -17,11 +17,12 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.helper.JiraSalatHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TicketDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
@@ -40,34 +41,28 @@ public class EditDailyReportAction extends DailyReportAction {
     private SuborderDAO suborderDAO;
     private EmployeecontractDAO employeecontractDAO;
     private WorkingdayDAO workingdayDAO;
-    private EmployeeDAO employeeDAO;
-    
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
+    private TicketDAO ticketDAO;
     
     public TimereportDAO getTimereportDAO() {
         return timereportDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
         this.workingdayDAO = workingdayDAO;
+    }
+    public void setTicketDAO(TicketDAO ticketDAO) {
+        this.ticketDAO = ticketDAO;
     }
     
     @Override
@@ -87,6 +82,9 @@ public class EditDailyReportAction extends DailyReportAction {
                 || request.getSession().getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
             request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
         }
+        
+        // adjust the jsp with entries for Jira-Ticket-Keys, if a timereport for a customerorder with Jira-Project-ID is edited 
+        JiraSalatHelper.setJiraTicketKeysForSuborder(request, ticketDAO, tr.getSuborder().getId());
         
         // fill the form with properties of the timereport to be edited
         setFormEntries(mapping, request, reportForm, tr);
@@ -120,39 +118,28 @@ public class EditDailyReportAction extends DailyReportAction {
             AddDailyReportForm reportForm, Timereport tr) {
         
         Employeecontract ec = tr.getEmployeecontract();
-        //		Employee theEmployee = ec.getEmployee();
-        
         Date utilDate = new Date(tr.getReferenceday().getRefdate().getTime()); // convert to java.util.Date
         
-        //		List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractId(ec.getId());
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
         List<Suborder> theSuborders = new ArrayList<Suborder>();
         if (orders != null && !orders.isEmpty()) {
             reportForm.setOrder(orders.get(0).getSign());
             reportForm.setOrderId(orders.get(0).getId());
-            theSuborders =
-                    suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getEmployeeorder().getSuborder().getCustomerorder().getId(), utilDate);
+            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getEmployeeorder().getSuborder().getCustomerorder().getId(), utilDate);
             if (theSuborders == null || theSuborders.isEmpty()) {
-                request.setAttribute("errorMessage",
-                        "Orders/suborders inconsistent for employee - please call system administrator.");
+                request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator.");
                 mapping.findForward("error");
             }
         } else {
-            request.setAttribute("errorMessage",
-                    "no orders found for employee - please call system administrator.");
+            request.setAttribute("errorMessage", "no orders found for employee - please call system administrator.");
             mapping.findForward("error");
         }
         
-        //		 prepare second collection of suborders sorted by description
-        //		List<Suborder> subordersByDescription = new ArrayList<Suborder>();
-        //		subordersByDescription.addAll(theSuborders);
-        //		Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
-        
-        //		List<Employee> employeeOptionList = employeeDAO.getEmployeesWithContracts();
-        //		request.getSession().setAttribute("employees", employeeOptionList);
-        
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
+        
+        // set isEdit into the Session, so that the order/suborder menu will be disabled if a timereport for a customerorder with Jira-Project-ID is edited
+        request.getSession().setAttribute("isEdit", false);
         
         /* set hours list in session in case of that the dialog is triggered from the welcome page */
         request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
@@ -161,11 +148,9 @@ public class EditDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("orders", orders);
         request.getSession().setAttribute("suborders", theSuborders);
         request.getSession().setAttribute("currentSuborderId", tr.getEmployeeorder().getSuborder().getId());
-        //		request.getSession().setAttribute("subordersByDescription", subordersByDescription);
         request.getSession().setAttribute("serialBookings", getSerialDayList());
         
         reportForm.reset(mapping, request);
-        //		reportForm.setEmployeename(theEmployee.getFirstname() + theEmployee.getLastname());
         reportForm.setEmployeeContractId(ec.getId());
         
         reportForm.setReferenceday(DateUtils.getSqlDateString(utilDate));
@@ -177,7 +162,7 @@ public class EditDailyReportAction extends DailyReportAction {
             workingDayIsAvailable = true;
         }
         
-        //		 workingday should only be available for today
+        // workingday should only be available for today
         java.util.Date today = new java.util.Date();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         String todayString = simpleDateFormat.format(today);
@@ -208,6 +193,7 @@ public class EditDailyReportAction extends DailyReportAction {
         
         reportForm.setSortOfReport(tr.getSortofreport());
         request.getSession().setAttribute("report", tr.getSortofreport());
+        
         if (tr.getSortofreport().equals("W")) {
             if (tr.getSuborder() != null && tr.getSuborder().getCustomerorder() != null) {
                 reportForm.setSuborder(tr.getSuborder().getSign());
@@ -215,23 +201,17 @@ public class EditDailyReportAction extends DailyReportAction {
                 reportForm.setSuborderDescriptionId(tr.getSuborder().getId());
                 reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
                 reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());
-                
-                //				theSuborders = tr.getSuborder().getCustomerorder().getSuborders();
-                
-                //				 prepare second collection of suborders sorted by description
-                //				subordersByDescription.clear();
-                //				subordersByDescription.addAll(theSuborders);
-                //				Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
-                
-                //				request.getSession().setAttribute("currentSuborderId", tr.getSuborder().getId());
-                //				request.getSession().setAttribute("suborders", tr.getSuborder().getCustomerorder().getSuborders());
-                //				request.getSession().setAttribute("subordersByDescription", subordersByDescription);
             }
             reportForm.setCosts(tr.getCosts());
             reportForm.setStatus(tr.getStatus());
         }
         reportForm.setComment(tr.getTaskdescription());
         reportForm.setTraining(tr.getTraining());
+        if (tr.getTicket() != null) {
+        	request.getSession().setAttribute("projectIDExists", true);
+        	request.getSession().setAttribute("isEdit", true);
+            reportForm.setJiraTicketKey(tr.getTicket().getJiraTicketKey());
+            request.getSession().setAttribute("jiraTicketKey", reportForm.getJiraTicketKey());
+        }
     }
-    
 }

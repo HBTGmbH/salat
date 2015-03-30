@@ -16,9 +16,9 @@
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 <% java.text.DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");%>
+
 <script type="text/javascript" language="JavaScript">
- 	var req;
- 		
+
  	function setUpdateOrdersAction(form) {	
  		form.action = "/tb/do/StoreDailyReport?task=refreshOrders";
 		form.submit();
@@ -36,11 +36,6 @@
 	
 	function adjustSuborderSignChangedAction(form) {	
  		form.action = "/tb/do/StoreDailyReport?task=adjustSuborderSignChanged";
-		form.submit();
-	}		
-	
-	function adjustSuborderDescriptionChangedAction(form) {	
- 		form.action = "/tb/do/StoreDailyReport?task=adjustSuborderDescriptionChanged";
 		form.submit();
 	}
 	
@@ -70,12 +65,12 @@
 	}	
 	
 	function setStoreAction(form, actionVal, addMore) {
- 		form.action = "/tb/do/StoreDailyReport?task=" + actionVal + "&continue=" + addMore;
+		form.action = "/tb/do/StoreDailyReport?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 	}	
 			
 	function backToOverview(form) {	
- 		form.action = "/tb/do/ShowDailyReport";
+ 		form.action = "/tb/do/ShowDailyReport?task=refreshTimereports";
 		form.submit();
 	}
 </script>
@@ -125,11 +120,6 @@
 								</html:option>
 							</c:if>							
 						</c:forEach>
-						<%-- 
-						<html:option value="${loginEmployeeContract.id}">
-							<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${loginEmployeeContract.timeString}" />)
-						</html:option>
-						 --%>
 					</c:otherwise>
 				</c:choose>	
 				</html:select> 
@@ -203,7 +193,7 @@
 			</td>
 		</tr>
 		
-
+		<!-- Customerorder and Suborder (drop-down-menues) -->
 		<logic:equal name="report" value="W" scope="session">
 			<tr>
 				<td align="left" class="noBborderStyle" nowrap="nowrap">
@@ -211,11 +201,12 @@
 				</td>
 
 				<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
-					<html:select property="orderId" onchange="setUpdateSubordersAction(this.form)">
+					<html:select property="orderId" onchange="setUpdateSubordersAction(this.form)" disabled="${projectIDExists and isEdit}">
 						<html:options collection="orders" labelProperty="signAndDescription" property="id" />
 					</html:select>
 					<b> / </b>
-					<html:select property="suborderSignId" styleClass="mandatory" value="${currentSuborderId}" onchange="adjustSuborderSignChangedAction(this.form)">
+					<html:select property="suborderSignId" styleClass="mandatory" value="${currentSuborderId}" 
+						onchange="adjustSuborderSignChangedAction(this.form)" disabled="${projectIDExists and isEdit}">
 						<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
 					</html:select>
 					<span style="color:red">
@@ -224,6 +215,45 @@
 					</span>
 				</td>
 			</tr>
+			
+			<!-- Jira Ticket Keys, if chosen Customerorder has Project-ID(s) -->
+			<c:if test="${projectIDExists}">
+				<tr>
+					<td align="left" class="noBborderStyle" nowrap="nowrap">
+						<b><bean:message key="main.timereport.jiraTicketKeys.text" />:</b>
+					</td>
+					<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
+						<html:select property="jiraTicketKey" value="${jiraTicketKey}" >
+							<html:option value="-1">
+								<bean:message key="main.timereport.jiraTicketKey.choose" />
+							</html:option>
+							<c:forEach var="jiraTicketKey" items="${jiraTicketKeys}">
+									<html:option value="${jiraTicketKey}">
+										<c:out value="${jiraTicketKey}" />
+									</html:option>
+								</c:forEach>
+						</html:select>
+						<span style="color:red">
+				 			<html:errors property="noEmployeeOrderForJiraTicketKey" />
+				 			<html:errors property="noTicketWithKeyAndDate" />
+				 	</span>
+					</td>
+				</tr>
+				<tr>	
+					<td align="left" class="noBborderStyle" nowrap="nowrap">
+						<b><bean:message key="main.timereport.newJiraTicketKey.text" />:</b>
+					</td>
+					<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
+					<html:text property="newJiraTicketKey" size="10" maxlength="32" />
+				 	<span style="color:red">
+				 		<html:errors property="nonexistentKey" />
+				 		<html:errors property="noKeySelected" />
+				 		<html:errors property="newJiraTicketKeyErr" />
+				 	</span>
+				 	</td>
+				</tr>
+			</c:if>			
+			
 			<c:if test="${workingDayIsAvailable}">
 				<tr>
 					<td align="left" class="noBborderStyle">
@@ -283,6 +313,9 @@
 					<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${currentSuborderSign eq overtimeCompensation}">
 						<html:options collection="minutes" property="value" labelProperty="label" />
 					</html:select>
+					<span style="color:red">
+           			 	<html:errors property="selectedDuration" />
+           			 </span>
 				</td>
 			</tr>
 
@@ -309,37 +342,23 @@
 					
 			</tr>
 				
-			<%--
-     	   <tr>
-           	  	<td align="left" class="noBborderStyle">
-                	<b><bean:message key="main.timereport.status.text" /></b>
-             	 </td>
-            	<td align="left" class="noBborderStyle">
-                	<html:select property="status">
-						<html:option value="open"><bean:message key="main.timereport.select.status.open.text"/></html:option>
-					</html:select> 
-					 
-                	<html:text property="status" size="30" maxlength="<%=\"\" + org.tb.GlobalConstants.STATUS_MAX_LENGTH %>"/>              
-            		
-            	<span style="color:red"><html:errors property="status"/></span>
-            	</td>
-      	  	</tr> 
-			 --%>
 		</logic:equal>
+		
 		<tr>
 			<td align="left" valign="top" class="noBborderStyle">
 				<b><bean:message key="main.timereport.comment.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:textarea property="comment" cols="30" rows="5" />
+				<html:textarea property="comment" cols="30" rows="5" /> <!-- value="${trComment}" -->
 				<span style="color:red">
 					<html:errors property="comment" />
 				</span>
 			</td>
 		</tr>
-
 	</table>
+	
 	<br>
+	
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
 		<tr>
@@ -365,7 +384,15 @@
 			</td>
 		</tr>
 	</table>
+	
+	<br>
+	
 	<html:hidden property="id" />
+	<span style="color:red">
+		<html:errors property="general" />
+		<html:errors property="status" />
+	</span>
+	
 </html:form>
 </body>
 </html:html>

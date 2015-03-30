@@ -91,14 +91,18 @@ public class TimereportHelper {
     public static double calculateTime(AddDailyReportForm form) {
         double worktime = 0.0;
         
-        int hours = form.getSelectedHourEnd() - form.getSelectedHourBegin();
-        int minutes = form.getSelectedMinuteEnd() - form.getSelectedMinuteBegin();
-        
-        if (minutes < 0) {
-            hours -= 1;
-            minutes += 60;
+        if (form.getSelectedHourDuration() != 0 || form.getSelectedMinuteDuration() != 0) {
+        	worktime = form.getSelectedHourDuration() * 1. + form.getSelectedMinuteDuration() / 60.;
+        } else {        
+	        int hours = form.getSelectedHourEnd() - form.getSelectedHourBegin();
+	        int minutes = form.getSelectedMinuteEnd() - form.getSelectedMinuteBegin();
+	        
+	        if (minutes < 0) {
+	            hours -= 1;
+	            minutes += 60;
+	        }
+	        worktime = hours * 1. + minutes / 60.;
         }
-        worktime = hours * 1. + minutes / 60.;
         
         return worktime;
     }
@@ -294,6 +298,7 @@ public class TimereportHelper {
         // calculate end hour/minute
         double hours = reportForm.getSelectedHourDuration() + reportForm.getSelectedMinuteDuration() / 60.0;
         reportForm.setHoursDuration(new Double(hours));
+        request.getSession().setAttribute("hourDuration", hours);
         
         int hoursEnd = reportForm.getSelectedHourBegin() + reportForm.getHoursDuration().intValue();
         double dMinutes = (reportForm.getHoursDuration().doubleValue() -

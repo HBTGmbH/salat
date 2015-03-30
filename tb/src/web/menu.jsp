@@ -18,21 +18,17 @@ startList = function() {
 			}
 		}
 	}
+	var err = '<%= session.getAttribute("errors") %>';
+	if (err == 'true') {
+		window.scrollTo(0,document.body.scrollHeight);
+	}
 }
 window.onload=startList;
 
 //--><!]]></script>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
-<!--  
-<jsp:include flush="true" page="/version.jsp">
-	<jsp:param name="version" value="Version" />
-</jsp:include>
 
-<center>
-<span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.menu.text" /><br></span>
-</center>
--->
 <table width="100%">
   <tr>
     <td class="noBborderStyle" align="center" width="25%"></td>
@@ -93,6 +89,9 @@ window.onload=startList;
 		</html:link></li>
 		<li><html:link styleClass="menu" action="/ShowSuborder">
 			<bean:message key="main.general.mainmenu.suborders.text" />
+		</html:link></li>
+		<li><html:link styleClass="menu" action="/ShowTickets">
+			<bean:message key="main.general.mainmenu.tickets.text" />
 		</html:link></li>
 		<li><html:link styleClass="menu" action="/ShowStatusReport">
 			<bean:message key="main.general.mainmenu.statusreports.text" />

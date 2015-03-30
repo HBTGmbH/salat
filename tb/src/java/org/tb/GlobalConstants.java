@@ -1,14 +1,17 @@
 package org.tb;
 
+import java.util.Properties;
+import org.tb.util.SalatPropertiesUtil;
+
 /**
- * Global constants for HBT timekeeping system.
+ * Global Salat constants
  * 
  * @author oda
  *
  */
 public class GlobalConstants {
-    
-    public static final int STARTING_YEAR = 2007;
+	
+	public static final int STARTING_YEAR = 2007;
     
     public static final double MIN_HOURS_PER_DAY = 0.01;
     public static final double MAX_HOURS_PER_DAY = 10.0;
@@ -42,6 +45,7 @@ public class GlobalConstants {
     public static final int CUSTOMERADDRESS_MAX_LENGTH = 256;
     
     public static final int CUSTOMERORDER_SIGN_MAX_LENGTH = 16;
+    public static final int CUSTOMERORDER_JIRA_MAX_LENGTH = 32;
     public static final int CUSTOMERORDER_DESCRIPTION_MAX_LENGTH = 256;
     public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 20;
     public static final int CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH = 64;
@@ -54,6 +58,9 @@ public class GlobalConstants {
     public static final int SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH = 40;
     public static final int SUBORDER_CURRENCY_MAX_LENGTH = 64;
     public static final int SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH = 30;
+    public static final String SUBORDER_DUMMY = "_dummy";
+    public static final String SUBORDER_DUMMY_DESCRIPTION = "Dummy-Unterauftrag für Aufträge mit Jira-Projekt-ID";
+    public static final String SUBORDER_DUMMY_SHORTDESCRIPTION = "Dummy";
     
     public static final int SUBORDER_INVOICE_YES = 'Y';
     public static final int SUBORDER_INVOICE_NO = 'N';
@@ -170,7 +177,7 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
     
-    public static final String OVERTIME_COMPENSATION_TEXT = "�berstundenausgleich";
+    public static final String OVERTIME_COMPENSATION_TEXT = "ܜberstundenausgleich";
     
     // pathstrings and iconstrings
     public static final String ICONPATH = "/tb/images/";
@@ -239,11 +246,48 @@ public class GlobalConstants {
     public static final String INVOICE_EXCEL_CONTENT_TYPE = "application/msexcel";
     public static final String INVOICE_DATE_FORMAT = GlobalConstants.DEFAULT_DATE_FORMAT.replace('y', 'J').replace('d', 'T');
     
-    public static final String MAIL_HOST = "***REMOVED***";
     public static final String MAIL_DOMAIN = "hbt.de";
     public static final String MAIL_NOREPLY_ADDRESS = "noreply@" + GlobalConstants.MAIL_DOMAIN;
     
     public static final String ZERO_DHM = "00:00:00";
     public static final String ZERO_HM = "00:00";
     
+    public static final int CREATE_WORKLOG = 1;
+    public static final int UPDATE_WORKLOG = 2;
+    public static final int DELETE_WORKLOG = 3;
+    
+    
+    public static final String SALAT_PROPERTIES_URL_TUX = "/etc/opt/salat.properties";
+    public static final String SALAT_PROPERTIES_URL_WIN = "c:\\salat\\salat.properties";
+    
+    // Constants read from salat.properties
+    public static final String SALAT_URL;
+    public static final String SALAT_LOG;
+    
+    public static final String JIRA_URL;    
+    public static final String JIRA_OAUTH_SIGNING_TYPE;
+    public static final String JIRA_CONSUMER_KEY;
+    public static final String JIRA_CONSUMER_PRIVATE_KEY;
+    
+    public static final int EXECUTE_FAILED_JIRA_WORKLOGS_AT;
+    public static final int EXECUTE_FAILED_JIRA_WORKLOGS_EVERY;
+	
+    public static final String MAIL_HOST;
+    
+    // Static initializer  
+    static {    	
+    	// read the properties
+    	Properties prop = SalatPropertiesUtil.readSalatProperties();
+		
+		// set the constants
+		SALAT_URL = prop.getProperty("salat.url").trim();
+		SALAT_LOG = prop.getProperty("salat.log").trim();
+		JIRA_URL = prop.getProperty("salat.jira.url").trim();
+	    JIRA_OAUTH_SIGNING_TYPE = prop.getProperty("salat.jira.oauth_signing_type").trim();
+	    JIRA_CONSUMER_KEY = prop.getProperty("salat.jira.consumer_key").trim();
+	    JIRA_CONSUMER_PRIVATE_KEY = prop.getProperty("salat.jira.consumer_private_key").trim();
+		EXECUTE_FAILED_JIRA_WORKLOGS_AT = Integer.parseInt(prop.getProperty("salat.jira.executefailedworklogs.at").trim());
+		EXECUTE_FAILED_JIRA_WORKLOGS_EVERY = Integer.parseInt(prop.getProperty("salat.jira.executefailedworklogs.every").trim());
+		MAIL_HOST = prop.getProperty("salat.mail.host").trim();
+	}
 }

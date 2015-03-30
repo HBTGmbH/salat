@@ -14,42 +14,25 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
 import org.tb.persistence.EmployeeDAO;
-import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.util.MD5Util;
 import org.tb.web.action.LoginRequiredAction;
-import org.tb.web.form.ShowAdminOptionsForm;
 
 public class ShowAdminOptionsAction extends LoginRequiredAction {
 
 	private TimereportDAO timereportDAO;
-	private EmployeecontractDAO employeecontractDAO;
-	private SuborderDAO suborderDAO;
 	private EmployeeorderDAO employeeorderDAO;
 	private EmployeeDAO employeeDAO;
 	
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
 	}
-	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
 	}
-	
-	public void setSuborderDAO(SuborderDAO suborderDAO) {
-		this.suborderDAO = suborderDAO;
-	}
-	
-	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-		this.employeecontractDAO = employeecontractDAO;
-	}
-	
 	public void setTimereportDAO(TimereportDAO timereportDAO) {
 		this.timereportDAO = timereportDAO;
 	}
-	
 	
 	@Override
 	protected ActionForward executeAuthenticated(ActionMapping mapping,
@@ -101,16 +84,6 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 						} else {
 							timereport.setEmployeeorder(employeeorders.get(0));
 						
-						// check if selection has no errors
-//						if (timereport.getReferenceday().getRefdate().before(employeeorder.getFromDate())) {
-//							throw new RuntimeException("refdate(tr) before fromdate(eo) trId: "+timereport.getId()+" eoId"+employeeorder.getId()+
-//									" refdate: "+timereport.getReferenceday().getRefdate()+" fromdate: "+employeeorder.getFromDate());
-//						}
-//						if (employeeorder.getUntilDate()!=null && timereport.getReferenceday().getRefdate().after(employeeorder.getUntilDate())) {
-//							throw new RuntimeException("refdate(tr) after untildate(eo) trId: "+timereport.getId()+" eoId"+employeeorder.getId()+
-//									" refdate: "+timereport.getReferenceday().getRefdate()+" untildate: "+employeeorder.getUntilDate());
-//						}
-						
 						// save timereport
 						Employee saveEmployee = new Employee();
 						saveEmployee.setSign("system");
@@ -126,7 +99,6 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 					assigned++;
 				}
 			}
-//			System.out.println("total: "+total+" with: "+withEO+" without: "+withoutEO+" unassigned: "+unassignable );
 			
 			Date end = new Date();
 			Long millis = end.getTime() - start.getTime();
@@ -154,10 +126,8 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 				}
 			}
 			
-			
 			return mapping.findForward("success");
 		}
-		
 		
 		if (request.getParameter("task") == null) {
 			return mapping.findForward("success");

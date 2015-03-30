@@ -15,14 +15,16 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.ProjectID;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Workingday;
 import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
+import org.tb.helper.JiraSalatHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TicketDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
@@ -41,27 +43,25 @@ public class CreateDailyReportAction extends DailyReportAction {
     private SuborderDAO suborderDAO;
     private TimereportDAO timereportDAO;
     private WorkingdayDAO workingdayDAO;
-    
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {}
+    private TicketDAO ticketDAO;
     
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
         this.workingdayDAO = workingdayDAO;
+    }
+    public void setTicketDAO(TicketDAO ticketDAO) {
+        this.ticketDAO = ticketDAO;
     }
     
     @Override
@@ -84,15 +84,14 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("currentEmployeeContract", ec);
         
         if (ec == null) {
-            request.setAttribute("errorMessage",
-                    "No employee contract found for employee - please call system administrator.");
+            request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO
             return mapping.findForward("error");
         }
         
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         
-        //		 get selected date for new report
+        // get selected date for new report
         Date selectedDate = getSelectedDateFromRequest(request);
         
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
@@ -118,7 +117,7 @@ public class CreateDailyReportAction extends DailyReportAction {
             workingDayIsAvailable = true;
         }
         
-        //		 workingday should only be available for today
+        // workingday should only be available for today
         java.util.Date today = new java.util.Date();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         String todayString = simpleDateFormat.format(today);
@@ -169,7 +168,6 @@ public class CreateDailyReportAction extends DailyReportAction {
             reportForm.setSelectedHourDuration(0);
             reportForm.setSelectedMinuteDuration(0);
         }
-        //		TimereportHelper.refreshHours(reportForm);
         
         // init form with selected Date
         reportForm.setReferenceday(simpleDateFormat.format(selectedDate));
@@ -179,16 +177,20 @@ public class CreateDailyReportAction extends DailyReportAction {
         if (orders != null && !orders.isEmpty()) {
             reportForm.setOrder(orders.get(0).getSign());
             reportForm.setOrderId(orders.get(0).getId());
-            theSuborders =
-                    suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(), selectedDate);
+            
+            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(), selectedDate);
+            
             if (theSuborders == null || theSuborders.isEmpty()) {
-                request.setAttribute("errorMessage",
-                        "Orders/suborders inconsistent for employee - please call system administrator.");
+                request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator."); //TODO
                 return mapping.findForward("error");
             }
+            // set isEdit = false into the session, so order/suborder menu will not be disabled
+            request.getSession().setAttribute("isEdit", false);
+            
+            List<ProjectID> projectIDs = customerorderDAO.getCustomerorderById(reportForm.getOrderId()).getProjectIDs();
+            request.getSession().setAttribute("projectIDExists", !projectIDs.isEmpty());
         } else {
-            request.setAttribute("errorMessage",
-                    "no orders found for employee - please call system administrator.");
+            request.setAttribute("errorMessage", "no orders found for employee - please call system administrator."); //TODO
             return mapping.findForward("error");
         }
         // prepare second collection of suborders sorted by description
@@ -199,17 +201,26 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("subordersByDescription", subordersByDescription);
         request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());
         request.getSession().setAttribute("currentSuborderSign", theSuborders.get(0).getSign());
+        
         // get first Suborder to synchronize suborder lists
         Suborder so = theSuborders.get(0);
         request.getSession().setAttribute("currentSuborderId", so.getId());
         
+        JiraSalatHelper.setJiraTicketKeysForSuborder(request, ticketDAO, so.getId());
+        
         // make sure, no cuId still exists in session
         request.getSession().removeAttribute("trId");
+        // make sure that no jiraTicketKey is still set in session
+        request.getSession().removeAttribute("jiraTicketKey");
         
-        if (request.getParameter("task") != null &&
-                request.getParameter("task").equals("matrix")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("matrix")) {
             reportForm.setReferenceday(todayString);
         }
+        
+        // init the rest of the form
+        reportForm.setCosts(0d);
+        reportForm.setTraining(false);
+        reportForm.setComment("");
         
         // store last selected order
         String lastOrder;

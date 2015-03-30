@@ -16,10 +16,11 @@
 		<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
 		<script type="text/javascript" language="JavaScript">
-
+		
+		
 	function afterCalenderClick() {
 		document.forms[0].action = "/tb/do/ShowDailyReport?task=refreshTimereports";
-		document.forms[0].submit();	
+		document.forms[0].submit();
 	}			
 		
 	function changeDateAndUpdateTimereportsAction(form, date, change) {
@@ -45,13 +46,6 @@
 	
 	function printMyFormElement(form) {		
 		alert('element: ' + form.elements['comment'].value);
- 		
-	}	
-	
-	function saveTimereportAction(form, id) {		
-		alert('test');
- 		form.action = "/tb/do/UpdateDailyReport?trId=" + id;
-		form.submit();
 	}	
 	
 	function createNewReportAction(form) {	
@@ -65,25 +59,27 @@
 	}
 	
 	function confirmDelete(form, id) {	
-		//var agree=confirm("Are you sure you want to delete this entry?");
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
 			form.action = "/tb/do/DeleteTimereportFromDailyDisplay?trId=" + id;
 			form.submit();
 		}
-	}					
+	}
+	
+	function submitUpdateDailyReport(form, id) {
+		form.action = "/tb/do/UpdateDailyReport?trId=" + id;
+		form.submit();
+	}
 	
 	function confirmSave(form, id) {
-		if (form.elements['status'].value == 'closed') {
+		
+		if (form.elements['status'] != null && form.elements['status'].value == 'closed') {
 			var agree=confirm("<bean:message key="main.timereport.confirmclose.text" />");
 			if (agree) {
-				form.action = "/tb/do/UpdateDailyReport?trId=" + id;
-				form.submit();
+				submitUpdateDailyReport(form, id);
 			}
-		}
-		else {
-			form.action = "/tb/do/UpdateDailyReport?trId=" + id;
-			form.submit();
+		} else {
+			submitUpdateDailyReport(form, id);
 		}
 	}
 	
@@ -103,13 +99,10 @@
 	}	
 	
 	function showWMTT(Trigger,id) {
-  	  wmtt = document.getElementById(id);
+		wmtt = document.getElementById(id);
     	var hint;
-   	 hint = Trigger.getAttribute("hint");
-   	 //if((hint != null) && (hint != "")){
-   	 	//wmtt.innerHTML = hint;
+		hint = Trigger.getAttribute("hint");
     	wmtt.style.display = "block";
-   	 //}
 	}
 
 	function hideWMTT() {
@@ -124,7 +117,7 @@
 			limitCount.value = limitNum - limitField.value.length;
 		}
 	}
-			</script>
+	</script>
 
 	</head>
 	
@@ -219,19 +212,9 @@
 							<html:option value="day">
 								<bean:message key="main.general.timereport.view.daily.text" />
 							</html:option>
-							<%--
-							<html:option value="week">
-								Wochenansicht
-							</html:option>
-							--%>
 							<html:option value="month">
 								<bean:message key="main.general.timereport.view.monthly.text" />
 							</html:option>
-							<%--  
-							<html:option value="project">
-								Projektansicht
-							</html:option>
-							--%>
 							<html:option value="custom">
 								<bean:message key="main.general.timereport.view.custom.text" />
 							</html:option>
@@ -400,13 +383,22 @@
 				</tr>
 				
 				<!-- compute overtime until chosen Date -->
-				<tr>
+	      		<tr>
 					<td align="left" valign="top" class="noBborderStyle">
 						<b><bean:message key="main.general.timereport.overtimeUntilDate"/>:</b>
 					</td>
-					<td align="left" class="noBborderStyle">
-						<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(this.form)" />
-					</td>
+					<c:choose>
+	      				<c:when test="${overtimeDisabled=='true'}">
+							<td align="left" class="noBborderStyle">
+								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(this.form)" disabled="true"/>
+							</td>
+						</c:when>
+						<c:otherwise>
+							<td align="left" class="noBborderStyle">
+								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(this.form)" />
+							</td>
+						</c:otherwise>
+					</c:choose>
 				</tr>
 				
 				<!-- seperator line -->
@@ -583,20 +575,6 @@
 				<th align="center" title="<bean:message	key="main.headlinedescription.dailyoverview.costs.text" />">
 					<b><bean:message key="main.timereport.monthly.costs.text" /></b>
 				</th>
-				<%--  
-				<th align="left">
-					<b><bean:message key="main.timereport.monthly.status.text"/></b>
-				</th>	
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.save.text' />"><b>
-					<bean:message key="main.timereport.monthly.save.text" /></b>
-				</th>
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.edit.text' />"><b>
-					<bean:message key="main.timereport.monthly.edit.text" /></b>
-				</th>
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.delete.text' />"><b>
-					<bean:message key="main.timereport.monthly.delete.text" /></b>
-				</th>
-				 --%>
 				<th align="center" title="<bean:message	key='main.headlinedescription.dailyoverview.saveeditdelete.text' />">
 					<b><bean:message key="main.timereport.monthly.saveeditdelete.text" /></b>
 				</th>
@@ -735,22 +713,6 @@
 							<c:out value="${timereport.referenceday.refdate}" />
 						</logic:equal>
 					</td>
-		
-					<%--
-					<!-- Typ -->
-					<td align="center">
-						<logic:equal name="timereport" property="sortofreport" value="W">
-							<bean:message key="main.timereport.monthly.sortofreport.work.text" />
-						</logic:equal>
-						<logic:equal name="timereport" property="sortofreport" value="V">
-							<bean:message key="main.timereport.monthly.sortofreport.vacation.text" />
-						</logic:equal>
-						<logic:equal name="timereport" property="sortofreport" value="S">
-							<bean:message key="main.timereport.monthly.sortofreport.sick.text" />
-						</logic:equal>
-					</td>
-					--%>
-					
 					<!-- Auftrag -->
 					<td	title="<c:out value='${timereport.suborder.customerorder.description}' />">
 						<c:out value="${timereport.suborder.customerorder.sign}" />
@@ -773,11 +735,6 @@
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}" 
 									onkeydown="limitText(this.form.comment,this.form.countdown,256);"
 									onkeyup="limitText(this.form.comment,this.form.countdown,256);" />
-								<%--
-									<font size="1">
-										(Maximum characters: 100)<br>You have <input readonly type="text" name="countdown" size="2" value="5"> characters left.
-									</font>
-								 --%>
 							</td>
 							
 							<!-- Fortbildung -->
@@ -799,20 +756,6 @@
 							<td align="center">
 								<html:text property="costs" size="4" value="${timereport.costs}" />
 							</td>
-							<%--
-							<td align="center">
-								<html:image	onclick="confirmSave(this.form, ${timereport.id})"	src="/tb/images/Save.gif" alt="Save Timereport" />
-							</td>
-							<td align="center">
-								<html:link href="/tb/do/EditDailyReport?trId=${timereport.id}">
-									<img src="/tb/images/Edit.gif" alt="Edit Timereport" />
-								</html:link>
-							</td>
-							<td align="center">
-								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="/tb/images/Delete.gif" alt="Delete Timereport" />
-							</td>
-							--%>
-		
 							<!-- Bearbeiten -->
 							<td align="center">
 								<html:image	onclick="confirmSave(this.form, ${timereport.id})" src="/tb/images/Save.gif" alt="Speichern" title="Speichern" />
@@ -842,28 +785,12 @@
 							</td>
 							<!-- Dauer -->
 							<td align="center" nowrap>
-								<%--
-								<fmt:formatNumber value="${timereport.durationhours}" minFractionDigits="2" minIntegerDigits="2" />:<fmt:formatNumber value="${timereport.timereport.durationminutes}" minFractionDigits="2" minIntegerDigits="2" />
-								 --%>
 								<c:if test='${timereport.durationhours < 10}'>0</c:if><c:out value="${timereport.durationhours}" />:<c:if test='${timereport.durationminutes < 10}'>0</c:if><c:out value="${timereport.durationminutes}" />
 							</td>
-		
 							<!-- Kosten -->
 							<td align="center">
 								<fmt:formatNumber value="${timereport.costs}" minFractionDigits="2" />
 							</td>
-	
-							<%--
-							<td align="center">
-								<img width="12px" height="12px" src="/tb/images/verbot.gif"	alt="Save Timereport" />
-							</td>
-							<td align="center">
-								<img width="12px" height="12px" src="/tb/images/verbot.gif" alt="Edit Timereport" />
-							</td>
-							<td align="center">
-								<img width="12px" height="12px" src="/tb/images/verbot.gif"	alt="Delete Timereport" />
-							</td>
-							--%>	
 							<!-- Bearbeiten -->
 							<td align="center">
 								<img width="12px" height="12px"	src="/tb/images/verbot.gif" alt="Delete Timereport" />
@@ -922,6 +849,7 @@
 				<html:errors property="selectedHourEnd" footer="<br>" /> 
 				<html:errors property="costs" footer="<br>" />
 				<html:errors property="status" footer="<br>" />
+				<html:errors property="createWorklogFailed" footer="<br>" />
 				<br>
 				<html:errors property="comment" footer="<br>" />
 			</b>

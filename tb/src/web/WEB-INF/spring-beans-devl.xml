@@ -1,13 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"       
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                           http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-2.5.xsd
+                           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"                           
+       default-autowire="byName" default-lazy-init="false">
+       
+    <tx:annotation-driven transaction-manager="txManager"/>
+    
+    <bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+	    <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
 
-<beans default-autowire="byName" default-lazy-init="false">
-
-
-	<!-- Struts Actions -->
-	<!-- 
-	<bean name="/CreateEmployeeList" class="org.tb.web.action.CreateEmployeeListAction" />
-	 -->
+	<!-- Set a TimerTask Using JDK Timer support -->
+ 	<bean id="executeFailedWorklogsTask" class="org.tb.tasks.ExecuteFailedWorklogsTask" />
+ 	
+ 	<bean id="executeFailedWorklogsScheduledTask" class="org.tb.tasks.ExecuteFailedWorklogsScheduledTimerTask">
+	    <property name="runnable" ref="executeFailedWorklogsTaskInvoker" />
+	</bean>
+	
+	<bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
+	    <property name="scheduledTimerTasks">
+	        <list>
+	            <ref bean="executeFailedWorklogsScheduledTask" />
+	        </list>
+	    </property>
+	</bean>
+	
+	<bean id="executeFailedWorklogsTaskInvoker" class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean">
+	    <property name="targetObject" ref ="executeFailedWorklogsTask" />
+	    <property name="targetMethod" value="run" />
+	</bean>
+	
+	<!-- Struts User Actions -->
 	<bean name="/LoginEmployee" class="org.tb.web.action.LoginEmployeeAction" />
 	<bean name="/LogoutEmployee" class="org.tb.web.action.LogoutEmployeeAction" />
 	<bean name="/CreateDailyReport" class="org.tb.web.action.CreateDailyReportAction" />
@@ -42,6 +71,8 @@
 	<bean name="/ShowSuborder" class="org.tb.web.action.admin.ShowSuborderAction" />
 	<bean name="/StoreSuborder" class="org.tb.web.action.admin.StoreSuborderAction" />
 	
+	<bean name="/ShowTickets" class="org.tb.web.action.admin.ShowTicketsAction" />
+	
 	<bean name="/ShowBudget" class="org.tb.web.action.admin.ShowBudgetAction" />
 	
 	<bean name="/CreateEmployeeorder" class="org.tb.web.action.admin.CreateEmployeeorderAction" />
@@ -49,6 +80,7 @@
 	<bean name="/EditEmployeeorder" class="org.tb.web.action.admin.EditEmployeeorderAction" />
 	<bean name="/ShowEmployeeorder" class="org.tb.web.action.admin.ShowEmployeeorderAction" />
 	<bean name="/StoreEmployeeorder" class="org.tb.web.action.admin.StoreEmployeeorderAction" />
+	<bean name="/GenerateMultipleEmployeeorders" class="org.tb.web.action.admin.GenerateMultipleEmployeeordersAction"/>
 	
 	<bean name="/EditEmployeeOrderContent" class="org.tb.web.action.admin.EditEmployeeOrderContentAction" />
 	<bean name="/StoreEmployeeOrderContent" class="org.tb.web.action.admin.StoreEmployeeOrderContentAction" />
@@ -75,7 +107,7 @@
 	<bean name="/StoreStatusReport" class="org.tb.web.action.admin.StoreStatusReportAction" />
 
 	<!-- Data Access Objects -->
-	<bean name="employeeDAO" class="org.tb.persistence.EmployeeDAO">
+	<bean id="employeeDAO" class="org.tb.persistence.EmployeeDAO">
 		<property name="adminNames">
 			<list>
 				<value>th</value>
@@ -83,59 +115,50 @@
 			</list>
 		</property>
 	</bean>
-	<bean name="customerDAO" class="org.tb.persistence.CustomerDAO">
-	</bean>
-	<bean name="customerorderDAO" class="org.tb.persistence.CustomerorderDAO">
-	</bean>
-	<bean name="suborderDAO" class="org.tb.persistence.SuborderDAO">
-	</bean>
-	<bean name="invoiceDAO" class="org.tb.persistence.InvoiceDAO">
-	</bean>
-	<bean name="employeecontractDAO" class="org.tb.persistence.EmployeecontractDAO">
-	</bean>
-	<bean name="employeeorderDAO" class="org.tb.persistence.EmployeeorderDAO">
-	</bean>
-	<bean name="timereportDAO" class="org.tb.persistence.TimereportDAO">
-	</bean>
-	<bean name="publicholidayDAO" class="org.tb.persistence.PublicholidayDAO">
-	</bean>
-	<bean name="referencedayDAO" class="org.tb.persistence.ReferencedayDAO">
-	</bean>
-	<bean name="vacationDAO" class="org.tb.persistence.VacationDAO">
-	</bean>
-	<bean name="workingdayDAO" class="org.tb.persistence.WorkingdayDAO">
-	</bean>
-	<bean name="overtimeDAO" class="org.tb.persistence.OvertimeDAO">
-	</bean>
-	<bean name="employeeOrderContentDAO" class="org.tb.persistence.EmployeeOrderContentDAO">
-	</bean>
-	<bean name="statusReportDAO" class="org.tb.persistence.StatusReportDAO">
-	</bean>
-	<bean name="trainingDAO" class="org.tb.persistence.TrainingDAO">
-	</bean>
+	<bean id="customerDAO" class="org.tb.persistence.CustomerDAO"></bean>
+	<bean id="customerorderDAO" class="org.tb.persistence.CustomerorderDAO"></bean>
+	<bean id="projectIDDAO" class="org.tb.persistence.ProjectIDDAO"></bean>
+	<bean id="suborderDAO" class="org.tb.persistence.SuborderDAO"></bean>
+	<bean id="ticketDAO" class="org.tb.persistence.TicketDAO"></bean>	
+	<bean id="worklogMemoryDAO" class="org.tb.persistence.WorklogMemoryDAO"></bean>	
+	<bean id="worklogDAO" class="org.tb.persistence.WorklogDAO"></bean>
+	<bean id="invoiceDAO" class="org.tb.persistence.InvoiceDAO"></bean>
+	<bean id="employeecontractDAO" class="org.tb.persistence.EmployeecontractDAO"></bean>
+	<bean id="employeeorderDAO" class="org.tb.persistence.EmployeeorderDAO"></bean>
+	<bean id="timereportDAO" class="org.tb.persistence.TimereportDAO"></bean>
+	<bean id="publicholidayDAO" class="org.tb.persistence.PublicholidayDAO"></bean>
+	<bean id="referencedayDAO" class="org.tb.persistence.ReferencedayDAO"></bean>
+	<bean id="vacationDAO" class="org.tb.persistence.VacationDAO"></bean>
+	<bean id="workingdayDAO" class="org.tb.persistence.WorkingdayDAO"></bean>
+	<bean id="overtimeDAO" class="org.tb.persistence.OvertimeDAO"></bean>
+	<bean id="employeeOrderContentDAO" class="org.tb.persistence.EmployeeOrderContentDAO"></bean>
+	<bean id="statusReportDAO" class="org.tb.persistence.StatusReportDAO"></bean>
+	<bean id="trainingDAO" class="org.tb.persistence.TrainingDAO"></bean>
 	
 	<!-- other classes -->
-	
-		
 		
 	<!-- Business Logic -->
 	
 	<!-- Hibernate Konfiguration -->
-	<bean name="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+	
 		<property name="dataSource" ref="myDataSource" />
+		
 		<property name="configurationClass">
 			<value>org.hibernate.cfg.AnnotationConfiguration</value>
 		</property>
+		
 		<property name="configLocation">
 			<value>/WEB-INF/hibernate.cfg.xml</value>
 		</property>
+		
 		<property name="hibernateProperties">
 			<props>
 				<prop key="hibernate.dialect">org.hibernate.dialect.HSQLDialect</prop>
 				<prop key="hibernate.show_sql">false</prop>
 				<prop key="hibernate.format_sql">true</prop>
-				<prop key="hibernate.hbm2ddl.auto">none</prop>
-				<prop key="hibernate.current_session_context_class">org.hibernate.context.ThreadLocalSessionContext</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<prop key="hibernate.current_session_context_class">thread</prop>
 				<prop key="hibernate.cache.use_second_level_cache">true</prop>
 				<prop key="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</prop>
 				<prop key="hibernate.jdbc.batch_size">0</prop>
@@ -149,32 +172,29 @@
 	</bean>
 
 	<!-- DataSource -->
-	<bean name="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" depends-on="hsqlDriver">
+	<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" depends-on="hsqlDriver">
 		<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
 		<property name="url" value="jdbc:hsqldb:hsql://localhost/taetigkeitsberichte" />
+		
 		<property name="username" value="SA" />
-	 	<!-- <property name="password" value="SA" />
-		-->
- 		<property name="password" value="HBT54147" /> 
- 	
+	 	<property name="password" value="" />
+		 
 	</bean>
 	
 	<!-- JDBC Treiber der HSQL Datenbank -->
-	<bean name="hsqlDriver" class="org.hsqldb.jdbcDriver" depends-on="hsqlDatabase" />
+	<bean id="hsqlDriver" class="org.hsqldb.jdbcDriver" depends-on="hsqlDatabase" />
 
 	<!-- HSQL Datenbank Instanz -->
-	<bean name="hsqlDatabase" class="org.tb.util.HsqlDbWrapper" init-method="start" destroy-method="stop">
+	<bean id="hsqlDatabase" class="org.tb.util.HsqlDbWrapper" init-method="start" destroy-method="stop">
+		
 		<property name="path">
-			
-			<!--  
-			<value>file:d:/jm/taet/taetigkeitsberichte</value>
-			
-			<value>file:d:/sql/salat_db/taetigkeitsberichte</value>
-			-->
 			 
 			<value>file:/var/lib/hsqldb/taetigkeitsberichte</value>
-			
+			<!-- 
+			<value>file:d:/mgo/Salat/hsqldb/taetigkeitsberichte</value>
+			-->
 		</property>
+		
 		<property name="name">
 			<value>taetigkeitsberichte</value>
 		</property>

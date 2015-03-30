@@ -58,7 +58,7 @@ public class WorkingdayDAO extends HibernateDaoSupport{
 		Workingday WorkingdayToDelete = getWorkingdayById(wdId);
 		boolean wdDeleted = false;
 		
-		for (Iterator iter = allWorkingdays.iterator(); iter.hasNext();) {
+		for (Iterator<Workingday> iter = allWorkingdays.iterator(); iter.hasNext();) {
 			Workingday wd = (Workingday) iter.next();
 			if(wd.getId() == WorkingdayToDelete.getId()) {
 				Session session = getSession();

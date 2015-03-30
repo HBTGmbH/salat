@@ -1,3 +1,67 @@
+Branch für Jira-Salat-Verbindung
+
+08.08.2013
+
+create table ProjectID (
+ID bigint not null primary key,
+jira_Project_ID varchar(32) not null,
+customerorder_ID bigint not null
+)
+
+create table Ticket(
+ID bigint not null primary key,
+jira_Ticket_Key varchar(32) not null,
+suborder_ID bigint not null,
+timereport_ID bigint,
+fromDate timestamp not null,
+untilDate timestamp
+)
+
+create table Worklog(
+ID bigint not null primary key,
+jira_Worklog_ID bigint not null,
+jira_Ticket_Key varchar(32) not null,
+type varchar(16) not null,
+timereport_ID bigint not null,
+updateCounter integer
+)
+
+create table WorklogMemory(
+ID bigint not null primary key,
+operation bigint not null,
+issueID bigint,
+worklogID bigint,
+timereportID bigint not null,
+FOREIGN KEY (timereportID) REFERENCES timereport (ID)
+)
+
+alter table ProjectID 
+ADD  FOREIGN KEY (customerorder_ID) 
+REFERENCES customerorder (ID) 
+
+alter table Ticket 
+ADD  FOREIGN KEY (suborder_ID) 
+REFERENCES suborder (ID) 
+
+alter table Worklog 
+ADD  FOREIGN KEY (timereport_ID) 
+REFERENCES timereport (ID) 
+
+
+21.08.2013
+
+alter table timereport add TICKET_ID bigint;
+alter table timereport add foreign key (TICKET_ID) references ticket (ID);
+
+---------------------------------------------------------------------------
+
+Version 1.84.2
+
+10.09.2013
+
+// Änderung: Überstundenausgleich soll keine Sollstunden haben, da für bestehende Mitarbeiter bereits employeeorder dafür angelet, muss der Wert manuell geändert werden
+update employeeorder set debithours = 0.0 where suborder_id = "120600"; 
+
 18.06.2013
 
 alter table SUBORDER alter column DESCRIPTION varchar(2048);
@@ -7,6 +71,7 @@ ALTER TABLE SUBORDER ADD FIXEDPRICE BOOLEAN;
 Update SUBORDER SET FIXEDPRICE = False;
 
 -------------------------------------------
+
 Version 1.82.10 -> 1.83
 
 03.04.2013

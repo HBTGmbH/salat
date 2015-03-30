@@ -163,7 +163,7 @@
 				<html:checkbox property="show" onclick="refresh(this.form)" />
 			</td>
 		</tr>
-		<!-- show expired -->
+		<!-- show actual hours -->
 		<tr>
 			<td align="left" valign="top" class="noBborderStyle">
 				<b><bean:message key="main.general.showactualhoursflag.text" />:</b>
@@ -185,6 +185,13 @@
 							<html:submit styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
 								<bean:message key="main.general.button.createemployeeorder.text" />
 							</html:submit>
+					</html:form>
+				</td>
+				<td class="noBborderStyle">
+					<html:form action="/GenerateMultipleEmployeeorders?task=initialize">
+						<html:submit styleId="button" titleKey="main.general.button.generatemultipleemployeeorders.alttext.text">
+							<bean:message key="main.general.button.generatemultipleemployeeorders.text" />
+						</html:submit>
 					</html:form>
 				</td>
 			</c:if>
@@ -607,6 +614,13 @@
 					<html:form action="/CreateEmployeeorder">
 						<html:submit styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
 							<bean:message key="main.general.button.createemployeeorder.text" />
+						</html:submit>
+					</html:form>
+				</td>
+				<td class="noBborderStyle">
+					<html:form action="/GenerateMultipleEmployeeorders?task=initialize">
+						<html:submit styleId="button" titleKey="main.general.button.generatemultipleemployeeorders.alttext.text">
+							<bean:message key="main.general.button.generatemultipleemployeeorders.text" />
 						</html:submit>
 					</html:form>
 				</td>

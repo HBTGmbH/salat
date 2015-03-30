@@ -26,10 +26,12 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Overtime;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Vacation;
+import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
@@ -50,6 +52,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
     private OvertimeDAO overtimeDAO;
     private TimereportDAO timereportDAO;
     private EmployeeorderDAO employeeorderDAO;
+    private PublicholidayDAO publicholidayDAO;
     
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
@@ -73,6 +76,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
     
     public void setVacationDAO(VacationDAO vacationDAO) {
         this.vacationDAO = vacationDAO;
+    }
+    
+    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
+        this.publicholidayDAO = publicholidayDAO;
     }
     
     @Override
@@ -207,13 +214,24 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
             
             overtimeDAO.save(overtime, loginEmployee);
             
+            // compute overtimeStatic and set it in employee contract 
+//            TimereportHelper th = new TimereportHelper();
+//            int[] otStatic = th.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(),
+//            		ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+//            ec.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+            
+            // set the overtime in employee contract 
+            double newOvertimeStatic = ec.getOvertimeStatic() + overtimeDouble;
+            ec.setOvertimeStatic(newOvertimeStatic); 
+            employeecontractDAO.save(ec, loginEmployee);
+            
             // refresh list of overtime adjustments
             List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
             Double totalOvertime = 0.0;
             for (Overtime ot : overtimes) {
                 totalOvertime += ot.getTime();
             }
-            
+            totalOvertime = Math.rint(totalOvertime*100)/100;
             // optimizing totalOvertime
             String tOString = totalOvertime.toString();
             

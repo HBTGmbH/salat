@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Hibernate;
+import org.hibernate.ObjectNotFoundException;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
@@ -353,6 +354,18 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
                 .setBoolean(0, hide).setDate(1, date).setDate(2, date).list();
     }
     
+    /**
+     * Get a list of all Employeecontracts that are currently valid, ordered by Firstname
+     *      
+     * @return List<Employeecontract>
+     */
+    public List<Employeecontract> getValidEmployeeContractsOrderedByFirstname() {
+        java.util.Date date = new Date();
+        return getSession()
+                .createQuery("from Employeecontract e where validFrom <= ? and (validUntil >= ? or validUntil = null) order by employee.firstname asc, validFrom asc")
+                .setDate(0, date).setDate(1, date).list();
+    }
+    
     //	/**
     //	 * 
     //	 * @param date
@@ -403,7 +416,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
                 }
                 
                 // if ok for deletion, check for monthlyreport and vacation entries and
-                // delete them successively (cannot yet be done via web application)				
+                // delete them successively (cannot yet be done via web application)	
                 if (deleteOk) {
                     List<Monthlyreport> allMonthlyreports = monthlyreportDAO.getMonthlyreports();
                     for (Object element2 : allMonthlyreports) {
@@ -434,7 +447,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
                 // finally, go for deletion of employeecontract
                 if (deleteOk) {
                     Session session = getSession();
-                    session.delete(ecToDelete);
+                    session.delete(ecToDelete); 
                     session.flush();
                     ecDeleted = true;
                 }

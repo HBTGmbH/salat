@@ -25,30 +25,28 @@ import org.tb.web.form.AddCustomerOrderForm;
  */
 public class CreateCustomerorderAction extends LoginRequiredAction {
 	
+	private EmployeeDAO employeeDAO;
 	private CustomerDAO customerDAO;
 	private CustomerorderDAO customerorderDAO;
-	private EmployeeDAO employeeDAO;
 	
 	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
 		this.employeeDAO = employeeDAO;
 	}
-	
 	public void setCustomerDAO(CustomerDAO customerDAO) {
 		this.customerDAO = customerDAO;
 	}
-
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
 	}
 
 
-
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-		
 		// form presettings
-		AddCustomerOrderForm addForm = (AddCustomerOrderForm) form;
 		Long customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
+		request.getSession().setAttribute("projectIDExistsCustomerOrder", false);
+		AddCustomerOrderForm addForm = (AddCustomerOrderForm) form;
+		
 		if (customerId == null) {
 			customerId = 0l;
 		}
@@ -64,8 +62,7 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 		List<Customerorder> customerorders = customerorderDAO.getCustomerorders();
 		
 		if ((customers == null) || (customers.size() <= 0)) {
-			request.setAttribute("errorMessage", 
-					"No customers found - please call system administrator.");
+			request.setAttribute("errorMessage", "No customers found - please call system administrator.");
 			return mapping.findForward("error");
 		}
 	
@@ -85,5 +82,4 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 		// forward to form jsp
 		return mapping.findForward("success");
 	}
-	
 }

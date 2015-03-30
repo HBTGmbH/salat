@@ -1,6 +1,10 @@
 package org.tb.bdom;
 
-public class Warning {
+import java.io.Serializable;
+
+public class Warning implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
 	
 	private String sort;
 	private String text;

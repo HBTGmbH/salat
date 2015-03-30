@@ -42,13 +42,13 @@ while(names.hasMoreElements()) {
 				colspan="1"
 				class="noBborderStyle"
 				height="100px">
-				<!-- 
+				 
 				<img
-				src="/tb/images/hbtlogo_halb.jpg"
+				src="/tb/images/salad.png"
 				width="130"
-				height="60"
+				height="110"
 				border="0">
-				 -->
+				 
 			</td>
 			<td class="noBborderStyle">
 				<b><bean:message key="main.general.loginscreen.text" /> </b>

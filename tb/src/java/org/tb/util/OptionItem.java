@@ -1,11 +1,16 @@
 package org.tb.util;
 
+import java.io.Serializable;
+
 /*
  * Util class to build up a list collection to be used with html:options collection=...
  * in a JSP
  * 
  */
-public class OptionItem {
+public class OptionItem implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
+	
 	private String value;
 	private String label;
 	private Integer intValue;

@@ -187,7 +187,7 @@
 	</c:forEach>
 	<tr class="matrix">
 		<td
-			colspan="<c:if test="${(currentEmployee eq 'ALL EMPLOYEES')}">5</c:if><c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">4</c:if>"
+			colspan="<c:if test="${(currentEmployee eq 'ALL EMPLOYEES')}">6</c:if><c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">5</c:if>"
 			class="noBborderStyle Matrix" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>

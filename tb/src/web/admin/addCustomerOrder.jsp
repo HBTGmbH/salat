@@ -19,8 +19,16 @@
 	}
 	
 	function setStoreAction(form, actionVal, addMore) {	
- 		form.action = "/tb/do/StoreCustomerorder?task=" + actionVal + "&continue=" + addMore;
+		form.action = "/tb/do/StoreCustomerorder?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
+	}
+	
+	function multipleGeneratorAction(form) {
+		var jiraProjectID = form.elements[2].value; 
+		if (jiraProjectID != "") {
+			form.action = "/tb/do/GenerateMultipleEmployeeorders?task=default";
+			form.submit();
+		}
 	}
 		
 	function afterCalenderClick() {
@@ -74,6 +82,15 @@
 				property="sign" size="40"
 				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH %>" />
 			<span style="color:red"><html:errors property="sign" /></span></td>
+		</tr>
+
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.jira.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text 
+				property="jiraProjectID" disabled="${projectIDExistsCustomerOrder}" size="40" 
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_JIRA_MAX_LENGTH %>" />
+			<span style="color:red"><html:errors property="jiraProjectID" /></span></td>
 		</tr>
 
 		<tr>

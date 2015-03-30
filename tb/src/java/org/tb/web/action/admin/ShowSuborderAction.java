@@ -34,19 +34,15 @@ import org.tb.web.form.ShowSuborderForm;
 public class ShowSuborderAction extends LoginRequiredAction {
     
     private SuborderDAO suborderDAO;
-    
     private CustomerorderDAO customerorderDAO;
-    
     private TimereportDAO timereportDAO;
     
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
@@ -302,7 +298,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
                         "form.suborder.error.currency.required"));
             }
             
-            //			 check hourly rate format
+            // check hourly rate format
             if (!GenericValidator.isDouble(suborderForm.getSuborderOptionValue().toString())
                     || !GenericValidator.isInRange(Double.parseDouble(suborderForm.getSuborderOptionValue()), 0.0,
                             GlobalConstants.MAX_HOURLY_RATE)) {
@@ -310,40 +306,6 @@ public class ShowSuborderAction extends LoginRequiredAction {
                         "form.suborder.error.hourlyrate.wrongformat"));
             }
         }
-        //TODO alter dates check
-        //		if(suborderForm.getSuborderOption().equals("altervalidfromdate")){
-        ////			check date formats (must now be 'yyyy-MM-dd')
-        //			Date soFromDate = null;
-        //			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyy-MM-dd");
-        //			
-        //			String dateFromString = suborderForm.getValidFrom().trim();
-        //			
-        //			try {
-        //				soFromDate = new java.sql.Date(simpleDateFormat.parse(dateFromString).getTime());
-        //			} catch (Exception e) {
-        //				errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
-        //			}
-        //			if (suborderForm.getValidUntil() != null && !suborderForm.getValidUntil().trim().equals("")) {
-        //				String dateUntilString = suborderForm.getValidUntil().trim();
-        //				try {
-        //					soUntilDate = new java.sql.Date(simpleDateFormat.parse(dateUntilString).getTime());
-        //				} catch (Exception e) {
-        //					errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
-        //				}
-        //			}
-        //			
-        //			if (soFromDate != null && soUntilDate != null) {
-        //				if (soUntilDate.before(soFromDate)) {
-        //					errors.add("validUntil", new ActionMessage("form.suborder.error.date.untilbeforefrom"));
-        //				}
-        //			}		
-        //		}
-        //		if(suborderForm.getSuborderOption().equals("altervaliduntildate")){
-        //			Date soUntilDate = null;
-        //			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyy-MM-dd");
-        //		}
-        
-        //		saveErrors(request, errors);
         
         return errors;
     }

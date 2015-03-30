@@ -20,8 +20,8 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Statusreport;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Warning;
+import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
@@ -37,38 +37,27 @@ public class ShowWelcomeAction extends DailyReportAction {
     private EmployeecontractDAO employeecontractDAO;
     private EmployeeorderDAO employeeorderDAO;
     private PublicholidayDAO publicholidayDAO;
-    private EmployeeDAO employeeDAO;
     private CustomerorderDAO customerorderDAO;
     private StatusReportDAO statusReportDAO;
     
     public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
         this.statusReportDAO = statusReportDAO;
     }
-    
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
-    
     public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
         this.publicholidayDAO = publicholidayDAO;
     }
-    
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
     }
-    
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
     }
@@ -80,7 +69,6 @@ public class ShowWelcomeAction extends DailyReportAction {
         
         ShowWelcomeForm welcomeForm = (ShowWelcomeForm)form;
         Employeecontract employeecontract;
-        //		Date date = new Date();
         
         // create collection of employeecontracts
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
@@ -103,12 +91,6 @@ public class ShowWelcomeAction extends DailyReportAction {
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", employeecontract);
         }
-        
-        //		String releaseDate = employeecontract.getReportReleaseDateString();
-        //		String acceptanceDate = employeecontract.getReportAcceptanceDateString();
-        //		
-        //		request.getSession().setAttribute("releasedUntil", releaseDate);
-        //		request.getSession().setAttribute("acceptedUntil", acceptanceDate);
         
         refreshVacationAndOvertime(request, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
         
@@ -143,7 +125,7 @@ public class ShowWelcomeAction extends DailyReportAction {
                         throw new RuntimeException("query suboptimal");
                     }
                 } catch (Exception e) {
-                    System.out.println(e);
+                	TbLogger.error(this.getClass().getName(), e.getMessage());
                 }
             }
         }
