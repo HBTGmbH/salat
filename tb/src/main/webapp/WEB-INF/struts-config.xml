@@ -102,11 +102,11 @@
 			end sample -->
 	</global-exceptions>
 
-
 	<!-- =========================================== Global Forward Definitions -->
 
 	<global-forwards>
 		<forward name="login" path="/login.jsp" redirect="true" />
+		<forward name="loginRequiredError" path="/mobile/loginRequired.jsp" />
 	</global-forwards>
 
 	<!-- =========================================== Action Mapping Definitions -->

@@ -59,12 +59,12 @@ $(document).on('pageinit', '#bookingPage', function(event){
 			return URLBASE + url;
 		},
 		//Filling the option of the selector with entries from the response data
-		fillSubordersOptions = function(data){
-			output = [];     
-			data = this;
-			$.each(data, function(index, value) {
-				output.push('<option value="' + value["id"] + '" data-comreq="'+value["commentRequired"]+'" >'
-					+ value["label"] + '<br/>' + '<b>test</b>' +'</option>');
+		fillSubordersOptions = function(){
+			var tempData = this;
+			output = [];            	
+			$.each(tempData, function(key, value) {
+				output.push('<option value="' + key + '" data-comreq="'+value[1]+'" >'
+					+ value[0] + '</option>');
 			});
 			$orderSelect.append(output.join('')).selectmenu('refresh');
 		},

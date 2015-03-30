@@ -105,6 +105,14 @@
 	<bean name="/EditStatusReport" class="org.tb.web.action.admin.EditStatusReportAction" />
 	<bean name="/DeleteStatusReport" class="org.tb.web.action.admin.DeleteStatusReportAction" />
 	<bean name="/StoreStatusReport" class="org.tb.web.action.admin.StoreStatusReportAction" />
+	
+		
+	<!-- mobile actions -->
+	<bean name="/mobile/suborder/getSuborders" class="org.tb.mobile.GetSubordersAction" />
+	<bean name="/mobile/timereport/store" class="org.tb.mobile.StoreTimereportAction" />
+	<bean name="/mobile/timereport/getTimereports" class="org.tb.mobile.GetTimereportsAction" />
+	<bean name="/mobile/timereport/getTimereport" class="org.tb.mobile.GetTimereportAction" />
+	<bean name="/mobile/login" class="org.tb.mobile.LoginMobileAction" />
 
 	<!-- Data Access Objects -->
 	<bean id="employeeDAO" class="org.tb.persistence.EmployeeDAO">
@@ -154,50 +162,32 @@
 		
 		<property name="hibernateProperties">
 			<props>
-				<prop key="hibernate.dialect">org.hibernate.dialect.HSQLDialect</prop>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
 				<prop key="hibernate.show_sql">false</prop>
 				<prop key="hibernate.format_sql">true</prop>
-				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<!-- prop key="hibernate.hbm2ddl.auto">create</prop -->
 				<prop key="hibernate.current_session_context_class">thread</prop>
 				<prop key="hibernate.cache.use_second_level_cache">true</prop>
-				<prop key="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</prop>
+				<prop key="hibernate.cache.region.factory_class">net.sf.ehcache.hibernate.EhCacheRegionFactory</prop>
 				<prop key="hibernate.jdbc.batch_size">0</prop>
 				<prop key="hibernate.jdbc.batch_versioned_data">false</prop>
 				<prop key="hibernate.cache.use_second_level_cache">true"</prop>
 				<prop key="hibernate.cache.use_query_cache">true</prop>
 				<prop key="hibernate.generate_statistics">false</prop>
 				<prop key="hibernate.cache.use_structured_entries">true</prop>				
+				<prop key="hibernate.globally_quoted_identifiers">true</prop>				
 			</props>
 		</property>
 	</bean>
 
 	<!-- DataSource -->
-	<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" depends-on="hsqlDriver">
-		<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
-		<property name="url" value="jdbc:hsqldb:hsql://localhost/taetigkeitsberichte" />
+	<bean id="myDataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/salat?useUnicode=true&amp;characterEncoding=UTF8&amp;zeroDateTimeBehavior=convertToNull" />
 		
-		<property name="username" value="SA" />
+		<property name="username" value="root" />
 	 	<property name="password" value="" />
 		 
-	</bean>
-	
-	<!-- JDBC Treiber der HSQL Datenbank -->
-	<bean id="hsqlDriver" class="org.hsqldb.jdbcDriver" depends-on="hsqlDatabase" />
-
-	<!-- HSQL Datenbank Instanz -->
-	<bean id="hsqlDatabase" class="org.tb.util.HsqlDbWrapper" init-method="start" destroy-method="stop">
-		
-		<property name="path">
-			 
-			<value>file:/var/lib/hsqldb/taetigkeitsberichte</value>
-			<!-- 
-			<value>file:d:/mgo/Salat/hsqldb/taetigkeitsberichte</value>
-			-->
-		</property>
-		
-		<property name="name">
-			<value>taetigkeitsberichte</value>
-		</property>
 	</bean>
 
 </beans>

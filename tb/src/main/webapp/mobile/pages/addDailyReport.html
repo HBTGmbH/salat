@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, target-densitydpi=device-dpi, user-scalable=no"/>
 <title>Log Work</title>
 <link rel="stylesheet"
-	href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
-<link rel="stylesheet" href="addDailyReport.css">
-<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+<!--  <link rel="stylesheet" href="addDailyReport.css">  -->
+<script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
 <script
-	src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
-<script src="addDailyReport1.js"></script>
+	src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<script src="addDailyReport.js"></script>
 </head>
 <body>
 	<!-- 	Booking start -->
@@ -33,7 +33,7 @@
 					<fieldset  data-type="horizontal"
 						data-role="controlgroup">
 						<div class="ui-grid-b">
-							<div class="ui-block-b">
+							<div class="ui-block-a">
 								<input type="radio" name="hours" id="radio-choice-1"
 									value="1" /> <label for="radio-choice-1">1</label>
 							</div>
@@ -41,11 +41,11 @@
 								<input type="radio" name="hours" id="radio-choice-2"
 									value="2" /> <label for="radio-choice-2">2</label>
 							</div>
-							<div class="ui-block-b">
+							<div class="ui-block-c">
 								<input type="radio" name="hours" id="radio-choice-3"
 									value="3" /> <label for="radio-choice-3">3</label>
 							</div>
-							<div class="ui-block-b">
+							<div class="ui-block-a">
 								<input type="radio" name="hours" id="radio-choice-4"
 									value="4" /> <label for="radio-choice-4">4</label>
 							</div>
@@ -53,11 +53,11 @@
 								<input type="radio" name="hours" id="radio-choice-5"
 									value="5" /> <label for="radio-choice-5">5</label>
 							</div>
-							<div class="ui-block-b">
+							<div class="ui-block-c">
 								<input type="radio" name="hours" id="radio-choice-6"
 									value="6" /> <label for="radio-choice-6">6</label>
 							</div>
-							<div class="ui-block-b">
+							<div class="ui-block-a">
 								<input type="radio" name="hours" id="radio-choice-7"
 									value="7" /> <label for="radio-choice-7">7</label>
 							</div>
@@ -65,7 +65,7 @@
 								<input type="radio" name="hours" id="radio-choice-8"
 									value="8" /> <label for="radio-choice-8">8</label>
 							</div>
-							<div class="ui-block-b">
+							<div class="ui-block-c">
 								<input type="radio" name="hours" id="radio-choice-9"
 									value="9" /> <label for="radio-choice-9">9</label>
 							</div>
@@ -75,7 +75,7 @@
 						data-role="controlgroup">
 						<div class="ui-grid-b">
 
-							<div class="ui-block-b">
+							<div class="ui-block-a">
 								<input type="radio" name="minutes" id="radio-choice-15"
 									value="15"> <label for="radio-choice-15">15</label>
 							</div>
@@ -83,7 +83,7 @@
 								<input type="radio" name="minutes" id="radio-choice-30"
 									value="30"> <label for="radio-choice-30">30</label>
 							</div>
-							<div class="ui-block-b">
+							<div class="ui-block-c">
 								<input type="radio" name="minutes" id="radio-choice-45"
 									value="45"> <label for="radio-choice-45">45</label>
 							</div>
@@ -97,11 +97,11 @@
 			</form>
 		
 		</div>
-		<div data-role='footer' id='bookingFooter' class='bookingFooter'>
+		<div data-role='footer' id='bookingFooter'>
 			<div data-role="navbar">
         		<ul>
             		<li><a class='ui-btn-active'>Neue Buchung</a></li>
-            		<li><a href="#bookingOverviewPage"  data-transition='slide'>Übersicht</a></li>
+            		<li><a href="#bookingOverviewPage" data-transition='none'>Übersicht</a></li>
         		</ul>
     		</div>
 		</div>
