@@ -64,7 +64,7 @@ $(document).on('pageinit', '#bookingPage', function(event){
 			data = this;
 			$.each(data, function(index, value) {
 				output.push('<option value="' + value["id"] + '" data-comreq="'+value["commentRequired"]+'" >'
-					+ value["label"] + '<br/>' + '<b>test</b>' +'</option>');
+					+ value["label"] +'</option>');
 			});
 			$orderSelect.append(output.join('')).selectmenu('refresh');
 		},
@@ -130,7 +130,7 @@ $(document).on('pageinit', '#bookingPage', function(event){
 		generateTimereportsListHtml = function(tempData){
 			var output = [];
     		$.each(tempData, function(key, value) {
-    			output.push('<li><a data-id="' + key +'">Auftrag: ' + value[0]+'-- ' + value[1] + ':' + value[2] + '</a></li>');
+    			output.push('<li><a data-id="' + key +'">' + value[0]+' ' + value[1] + ':' + value[2] + '</a></li>');
     		});
     		return output.join('');
 		},

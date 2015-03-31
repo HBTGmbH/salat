@@ -44,11 +44,12 @@ public class StoreTimereportAction extends LoginRequiredAction {
         String description = request.getParameter("comment");
         
         //Check for description existence and if existing  add a preceding space
-        if(description == null){
-            description ="Mobile booking";
-        } else {
-        	description = "Mobile booking " + description;
-        }
+        // for tests
+//        if(description == null){
+//            description ="Mobile booking";
+//        } else {
+//        	description = "Mobile booking " + description;
+//        }
         
         // Setting hours and minutes values
         try {
@@ -67,7 +68,6 @@ public class StoreTimereportAction extends LoginRequiredAction {
         Employeecontract employeecontract = new Employeecontract(); 
         
         //Checking if the timereport has to be updated or created 
-        System.out.println(request.getParameter("hiddenTimereportId"));
         String timereportIdString  = request.getParameter("hiddenTimereportId");
         
         if (timereportIdString != "") {
