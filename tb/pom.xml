@@ -6,6 +6,20 @@
 	<version>2.0.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 
+	<build>
+		<finalName>tb</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 	<dependencies>
 		<dependency>
 			<groupId>struts</groupId>
@@ -192,8 +206,4 @@
 			<url>http://oauth.googlecode.com/svn/code/maven</url>
 		</repository>
 	</repositories>
-
-	<build>
-		<finalName>tb</finalName>
-	</build>
 </project>
