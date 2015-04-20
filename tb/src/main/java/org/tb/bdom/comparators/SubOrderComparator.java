@@ -40,7 +40,7 @@ public class SubOrderComparator implements Comparator<Suborder> {
 //			return 1;
 //		}
 		// both look the same
-		return Long.compare(so1.getId(), so2.getId());
+		return Long.valueOf(so1.getId()).compareTo(Long.valueOf(so2.getId()));
 	}
 
 }
