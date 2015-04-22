@@ -121,7 +121,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Employeeorder> getEmployeeOrdersBySuborderId(long suborderId) {
-        return getSession().createQuery("from Employeeorder e where e.suborder.id = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, suborderId).list();
+        return getSession().createQuery("from Employeeorder eo where eo.suborder.id = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, suborderId).list();
     }
     
     /**
