@@ -262,6 +262,15 @@ public class ShowInvoiceAction extends DailyReportAction {
                 request.getSession().setAttribute("currentSuborder", showInvoiceForm.getSuborder());
                 List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder()).getId());
                 Collections.sort(suborders, new SubOrderComparator());
+                // remove suborders if a flag is set
+                Iterator<Suborder> suborderIterator = suborders.iterator();
+                while (suborderIterator.hasNext()) {
+                    Suborder suborder = suborderIterator.next();
+                    if(showInvoiceForm.getShowOnlyValid() && !suborder.getCurrentlyValid()) {
+                    	suborderIterator.remove();
+                    }
+                }
+                
                 request.getSession().setAttribute("suborders", suborders);
             }
             

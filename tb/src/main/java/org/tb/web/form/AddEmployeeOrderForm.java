@@ -34,7 +34,7 @@ public class AddEmployeeOrderForm extends ActionForm {
 	private String status;
 	private String order;
 	private String suborder;
-	private boolean showOnlyValid;
+	private Boolean showOnlyValid;
 
 	private long orderId;
 	private long suborderId;
@@ -143,6 +143,7 @@ public class AddEmployeeOrderForm extends ActionForm {
 		validUntil = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		debithours = null;
 		debithoursunit = null;
+		showOnlyValid = false;
 	}
 
 	
@@ -176,10 +177,10 @@ public class AddEmployeeOrderForm extends ActionForm {
 		// actually, no checks here
 		return errors;
 	}
-	public boolean isShowOnlyValid() {
+	public Boolean getShowOnlyValid() {
 		return showOnlyValid;
 	}
-	public void setShowOnlyValid(boolean showOnlyValid) {
+	public void setShowOnlyValid(Boolean showOnlyValid) {
 		this.showOnlyValid = showOnlyValid;
 	}
 

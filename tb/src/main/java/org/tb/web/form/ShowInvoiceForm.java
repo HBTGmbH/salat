@@ -41,6 +41,7 @@ public class ShowInvoiceForm extends ActionForm {
     private String titleinvoiceattachment;
     private String customername;
     private String customeraddress;
+    private Boolean showOnlyValid;
     
     public String getTitleinvoiceattachment() {
         return titleinvoiceattachment;
@@ -254,6 +255,7 @@ public class ShowInvoiceForm extends ActionForm {
         invoicebox = false;
         fixedpricebox = false;
         actualhoursbox = false;
+        showOnlyValid = false;
     }
     
     public String[] getSuborderIdArray() {
@@ -319,4 +321,12 @@ public class ShowInvoiceForm extends ActionForm {
     public void setLayerlimit(String layerlimit) {
         this.layerlimit = layerlimit;
     }
+
+	public Boolean getShowOnlyValid() {
+		return showOnlyValid;
+	}
+
+	public void setShowOnlyValid(Boolean showOnlyValid) {
+		this.showOnlyValid = showOnlyValid;
+	}
 }

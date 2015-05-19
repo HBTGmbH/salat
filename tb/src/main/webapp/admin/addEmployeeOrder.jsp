@@ -76,7 +76,7 @@
 	<span style="color:red">
 		<html:errors property="overleap" />
 	</span>
-	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor wide">
+	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 		<colgroup>
 			<col align="left" width="150" />
 			<col align="left" width="750" />
@@ -142,7 +142,7 @@
 						<bean:message key="main.general.select.expired.text"/>				
 					</span>
 				</c:if>
-				<html:checkbox property="showOnlyValid" onchange="setStoreAction(this.form, 'refreshSuborders')">
+				<html:checkbox property="showOnlyValid" onclick="setStoreAction(this.form, 'refreshSuborders')">
 					<bean:message key="main.general.show.only.valid.text"/>
 				</html:checkbox>
 				<span style="color:red">

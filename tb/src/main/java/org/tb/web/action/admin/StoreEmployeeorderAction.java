@@ -136,13 +136,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
                 return mapping.findForward("error");
             } else {
                 List<Suborder> suborders = co.getSuborders();
-                // remove hidden suborders
+                // remove hidden suborders (and invalid suborders, if a flag is set)
                 Iterator<Suborder> suborderIterator = suborders.iterator();
                 while (suborderIterator.hasNext()) {
                     Suborder suborder = suborderIterator.next();
                     if (suborder.getHide() != null && suborder.getHide()) {
                         suborderIterator.remove();
-                    } else if(eoForm.isShowOnlyValid() && !suborder.getCurrentlyValid()) {
+                    } else if(eoForm.getShowOnlyValid() && !suborder.getCurrentlyValid()) {
                     	suborderIterator.remove();
                     }
                 }

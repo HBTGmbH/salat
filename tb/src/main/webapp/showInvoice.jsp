@@ -17,6 +17,9 @@
 		</title>
 		<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
+		<link href="/tb/style/select2.min.css" rel="stylesheet" />
+		<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+		<script src="/tb/scripts/select2.full.min.js"></script>
 		<script type="text/javascript" language="JavaScript">	
 		 	function setUpdateInvoiceAction(form) {	
 		 		form.action = "/tb/do/ShowInvoice?task=refreshInvoiceForm";
@@ -30,6 +33,12 @@
 				form.action = "/tb/do/ShowInvoice?task=print";
 				form.submit();
 			}
+
+			$(document).ready(function() {
+				$(".make-select2").select2({
+					dropdownAutoWidth: true
+				});	
+			});		
 		</script>
 	</head>
 	<body>
@@ -99,7 +108,7 @@
 						<b><bean:message key="main.monthlyreport.suborder.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:select property="suborder" value="<%=(String) request.getSession().getAttribute(\"currentSuborder\")%>" onchange="setUpdateInvoiceAction(this.form)">
+						<html:select property="suborder" value="<%=(String) request.getSession().getAttribute(\"currentSuborder\")%>" onchange="setUpdateInvoiceAction(this.form)" styleClass="make-select2">
 							<html:option value="ALL SUBORDERS">
 								<bean:message key="main.general.allsuborders.text" />
 							</html:option>
@@ -114,6 +123,9 @@
 								</html:option>
 							</c:forEach>
 						</html:select>
+						<html:checkbox property="showOnlyValid" onchange="setUpdateInvoiceAction(this.form)">
+							<bean:message key="main.general.show.only.valid.text"/>
+						</html:checkbox>
 					</td>
 				</tr>
 
