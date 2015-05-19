@@ -249,6 +249,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      */
     public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long customerSuborderId) {
         List<Employeeorder> employeeorders = null;
+        filter = "%" + filter.toUpperCase() + "%";
         if (showInvalid == null || showInvalid == false) {
             Date now = new Date();
             if (filter == null || filter.trim().equals("")) {
@@ -422,9 +423,9 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                                 "or upper(suborder.sign) like ? " +
                                 "or upper(suborder.description) like ? " +
                                 "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
+                                "and eo.fromDate <= ? " +
+                                "and (eo.untilDate = null " +
+                                "or eo.untilDate >= ?) " +
                                 "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                                 .setLong(0, employeeContractId)
                                 .setString(1, filter)
