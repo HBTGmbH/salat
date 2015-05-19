@@ -21,7 +21,7 @@ public class SubOrderComparator implements Comparator<Suborder> {
 		
 		// if both have same signs check description
 		if (so1.getDescription() != null && so2.getDescription() != null) {
-			int comp = so1.getDescription().compareTo(so2.getDescription());
+			int comp = String.CASE_INSENSITIVE_ORDER.compare(so1.getDescription(), so2.getDescription());
 			if(comp != 0) return comp;
 		}
 		
