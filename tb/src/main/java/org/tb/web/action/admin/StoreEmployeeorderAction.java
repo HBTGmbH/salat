@@ -135,11 +135,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
             if (co == null) {
                 return mapping.findForward("error");
             } else {
-                Suborder so = co.getSuborders().get(0);
-                if (so != null) {
-                    eoForm.setSuborderId(so.getId());
-                    request.getSession().setAttribute("selectedsuborder", so);
-                }
                 List<Suborder> suborders = co.getSuborders();
                 // remove hidden suborders
                 Iterator<Suborder> suborderIterator = suborders.iterator();
@@ -147,9 +142,17 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
                     Suborder suborder = suborderIterator.next();
                     if (suborder.getHide() != null && suborder.getHide()) {
                         suborderIterator.remove();
+                    } else if(eoForm.isShowOnlyValid() && !suborder.getCurrentlyValid()) {
+                    	suborderIterator.remove();
                     }
                 }
                 request.getSession().setAttribute("suborders", suborders);
+
+                Suborder so = co.getSuborders().get(0);
+                if (so != null) {
+                	eoForm.setSuborderId(so.getId());
+                	request.getSession().setAttribute("selectedsuborder", so);
+                }
                 
                 request.getSession().setAttribute("selectedcustomerorder", co);
                 eoForm.useDatesFromCustomerOrder(co);

@@ -14,7 +14,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployeeorder.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
-
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 <script type="text/javascript" language="JavaScript">
 	
 	function setDate(which, howMuch) {
@@ -43,7 +45,12 @@
 	function hideWMTT() {
 		wmtt.style.display = "none";
 	}
-			
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true
+		});	
+	});		
 </script>
 
 </head>
@@ -69,7 +76,7 @@
 	<span style="color:red">
 		<html:errors property="overleap" />
 	</span>
-	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
+	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor wide">
 		<colgroup>
 			<col align="left" width="150" />
 			<col align="left" width="750" />
@@ -120,7 +127,7 @@
 				<b><bean:message key="main.employeeorder.suborder.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="suborderId" styleClass="mandatory" onchange="setStoreAction(this.form, 'refreshSuborderDescription')">
+				<html:select property="suborderId" styleClass="mandatory make-select2" onchange="setStoreAction(this.form, 'refreshSuborderDescription')">
 					<c:forEach var="suborder" items="${suborders}">
 						<html:option value="${suborder.id}">
 							<c:out value="${suborder.signAndDescription}"/>
@@ -135,6 +142,9 @@
 						<bean:message key="main.general.select.expired.text"/>				
 					</span>
 				</c:if>
+				<html:checkbox property="showOnlyValid" onchange="setStoreAction(this.form, 'refreshSuborders')">
+					<bean:message key="main.general.show.only.valid.text"/>
+				</html:checkbox>
 				<span style="color:red">
 					<html:errors property="suborderId" />
 				</span>

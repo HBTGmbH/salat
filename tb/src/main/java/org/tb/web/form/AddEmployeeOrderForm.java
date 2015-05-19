@@ -34,7 +34,7 @@ public class AddEmployeeOrderForm extends ActionForm {
 	private String status;
 	private String order;
 	private String suborder;
-	
+	private boolean showOnlyValid;
 
 	private long orderId;
 	private long suborderId;
@@ -175,6 +175,12 @@ public class AddEmployeeOrderForm extends ActionForm {
 
 		// actually, no checks here
 		return errors;
+	}
+	public boolean isShowOnlyValid() {
+		return showOnlyValid;
+	}
+	public void setShowOnlyValid(boolean showOnlyValid) {
+		this.showOnlyValid = showOnlyValid;
 	}
 
 }
