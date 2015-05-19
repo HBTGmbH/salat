@@ -25,10 +25,11 @@ while(names.hasMoreElements()) {
 	href="/tb/tb.css" />
 </head>
 <body>
-<div align="right"> 
-<jsp:include flush="true" page="/version.jsp">
-	<jsp:param name="version" value="Version" />
-</jsp:include>
+<div align="right">
+<font size="1pt"> 
+   	<bean:resource id="versionTxt" name="/WEB-INF/classes/version.txt" />
+   	<bean:write name="versionTxt" />
+</font>
 </div>
 <b>
 <span style="color:red">

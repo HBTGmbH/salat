@@ -5,9 +5,11 @@
 	<artifactId>tb</artifactId>
 	<version>2.0.3-SNAPSHOT</version>
 	<packaging>war</packaging>
-	
+
 	<properties>
 		<project.build.sourceEncoding>Cp1252</project.build.sourceEncoding>
+		<timestamp>${maven.build.timestamp}</timestamp>
+		<maven.build.timestamp.format>dd.MM.yyyy HH:mm</maven.build.timestamp.format>
 	</properties>
 
 	<build>
@@ -22,7 +24,34 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.7</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.tomcat.maven</groupId>
+				<artifactId>tomcat7-maven-plugin</artifactId>
+				<version>2.2</version>
+			</plugin>
 		</plugins>
+
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>version.txt</exclude>
+				</excludes>
+				<filtering>false</filtering>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>version.txt</include>
+				</includes>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 	</build>
 	<dependencies>
 		<dependency>
