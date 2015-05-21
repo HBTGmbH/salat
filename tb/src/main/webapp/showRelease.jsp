@@ -9,6 +9,9 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 
 
 
@@ -99,7 +102,13 @@
 		form.action = "/tb/do/ShowRelease?task=updateSupervisor";
 		form.submit();
 	}
-		
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 </script>
 
 	</head>
@@ -130,7 +139,7 @@
 					
 						<td align="left" class="noBborderStyle">
 							<html:select property="supervisorId" value="${supervisorId}" 
-								onchange="setUpdateSupervisor(this.form)">
+								onchange="setUpdateSupervisor(this.form)" styleClass="make-select2">
 								<html:option value="-1">
 									<bean:message key="main.general.all.text" />
 								</html:option>
@@ -153,7 +162,7 @@
 					<td align="left" class="noBborderStyle">
 						<c:choose>
 							<c:when test="${employeeAuthorized or isSupervisor}">
-								<html:select property="employeeContractId"
+								<html:select property="employeeContractId" styleClass="make-select2"
 									onchange="setUpdateEmployeeContract(this.form)">
 									<html:option value="${loginEmployeeContract.id}">
 										<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
