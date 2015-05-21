@@ -310,7 +310,7 @@ public class TimereportDAO extends HibernateDaoSupport {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByMonthAndYearAndCustomerorder(long coId, String month, String year, String sortOfReport) {
-        List<Suborder> suborders = suborderDAO.getSuborders();
+        List<Suborder> suborders = suborderDAO.getSuborders(false);
         List<Timereport> allTimereports = new ArrayList<Timereport>();
         for (Suborder suborder : suborders) {
             // get all timereports for this suborder...
@@ -342,7 +342,7 @@ public class TimereportDAO extends HibernateDaoSupport {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDateAndCustomerorder(long coId, java.sql.Date dt, String sortOfReport) {
-        List<Suborder> suborders = suborderDAO.getSuborders();
+        List<Suborder> suborders = suborderDAO.getSuborders(false);
         List<Timereport> allTimereports = new ArrayList<Timereport>();
         for (Suborder suborder : suborders) {
             // get all timereports for this suborder...

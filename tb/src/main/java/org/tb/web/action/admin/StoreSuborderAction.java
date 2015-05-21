@@ -155,7 +155,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             //*** task for generating new suborder's sign
             Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
             Customerorder tempOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getParentId());
-            List<Suborder> suborders = suborderDAO.getSuborders();
+            List<Suborder> suborders = suborderDAO.getSuborders(false);
             TbLogger.debug(StoreSuborderAction.class.toString(),
                     " StoreSuborderAction.executeAuthenticated() - three Values: " + tempSubOrder + " / " + tempOrder + " / " + suborders);
             Long soId;
@@ -368,7 +368,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
                 refreshForOverview(request);                
                 return mapping.findForward("success");
             } else {
-                request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
+                request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
                 // reuse form entries and show add-page
                 addSuborderForm.setDescription("");
                 addSuborderForm.setSign("");

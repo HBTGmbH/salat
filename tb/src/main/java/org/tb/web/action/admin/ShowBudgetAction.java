@@ -64,7 +64,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 		
 		List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
 		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
-		request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
+		request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
 		ShowBudgetForm budgetForm = (ShowBudgetForm) form;
 		TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated -request.getParameter(task) : " +request.getParameter("task"));
 		Long orderOrSuborderId = new Long(-1);
@@ -106,7 +106,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 				(request.getParameter("task").equals("calcStructure"))) {
 			
 			request.getSession().setAttribute("showResult", true);
-			ArrayList[] changes = getListWithChanges(request, this.suborderDAO.getSuborders());
+			ArrayList[] changes = getListWithChanges(request, this.suborderDAO.getSuborders(false));
 			request.getSession().setAttribute("changeFrom",changes[0]);
 			request.getSession().setAttribute("changeTo",changes[1]);
 			request.getSession().setAttribute("changeId",changes[2]);
@@ -127,7 +127,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 			
 		}else 	if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("editStructure"))) {
-			List<Suborder> subs = this.suborderDAO.getSuborders();
+			List<Suborder> subs = this.suborderDAO.getSuborders(false);
 			ArrayList changeId = (ArrayList) request.getSession().getAttribute("changeId");
 			ArrayList changeTo = (ArrayList) request.getSession().getAttribute("changeTo");
 			for (int i=0; i<subs.size();i++){
@@ -135,7 +135,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 				
 					Suborder tempSuborder = subs.get(i);
 					if (Long.toString(tempSuborder.getId()).equals(changeId.get(j).toString())){
-						this.suborderDAO.getSuborders().get(i).setSign(changeTo.get(j).toString());
+						this.suborderDAO.getSuborders(false).get(i).setSign(changeTo.get(j).toString());
 					}
 				}
 			}
@@ -146,7 +146,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 		}else{
 			TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated - budgetForm.getCustomerOrderId():  " 
 					+ budgetForm.getCustomerOrderId());
-			request.getSession().setAttribute("suborders", suborderDAO.getSuborders());
+			request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
 			
 			request.getSession().setAttribute("currentOrder", null);
 		}

@@ -343,7 +343,7 @@ public class CustomerorderDAO extends HibernateDaoSupport {
             if (co.getId() == coToDelete.getId()) {
                 // check if related suborders exist - if so, no deletion possible
                 boolean deleteOk = true;
-                List<Suborder> allSuborders = suborderDAO.getSuborders();
+                List<Suborder> allSuborders = suborderDAO.getSuborders(false);
                 for (Object element2 : allSuborders) {
                     Suborder so = (Suborder)element2;
                     if (so.getCustomerorder().getId() == coToDelete.getId()) {

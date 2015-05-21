@@ -178,11 +178,22 @@ public class SuborderDAO extends HibernateDaoSupport {
     
     /**
      * Get a list of all Suborders ordered by their sign.
+     * @param onlyValid return only valid suborders
      * 
      * @return List<Suborder>
      */
-    public List<Suborder> getSuborders() {
-        return getSession().createQuery("from Suborder order by sign").list();
+    public List<Suborder> getSuborders(boolean onlyValid) {
+        @SuppressWarnings("unchecked")
+		List<Suborder> result = getSession().createQuery("from Suborder order by sign").list();
+        
+        Iterator<Suborder> iter = result.iterator();
+        while(iter.hasNext()) {
+        	if(!iter.next().getCurrentlyValid()) {
+        		iter.remove();
+        	}
+        }
+        
+        return result;
     }
     
     /**
@@ -443,8 +454,8 @@ public class SuborderDAO extends HibernateDaoSupport {
      * @return boolean
      */
     public boolean deleteSuborderById(long soId) {
-        List<Suborder> allSuborders = getSuborders();
-        List<Suborder> allSuborders2 = getSuborders();
+        List<Suborder> allSuborders = getSuborders(false);
+        List<Suborder> allSuborders2 = getSuborders(false);
         Suborder soToDelete = getSuborderById(soId);
         boolean soDeleted = false;
         

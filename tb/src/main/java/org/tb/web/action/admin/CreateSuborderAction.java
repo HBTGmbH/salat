@@ -61,7 +61,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		}
 		
 		
-		List<Suborder> suborders = suborderDAO.getSuborders();
+		List<Suborder> suborders = suborderDAO.getSuborders(false);
 		
 		if ((customerorders == null) || (customerorders.size() <= 0)) {
 			request.setAttribute("errorMessage", "No customer orders found - please call system administrator.");
