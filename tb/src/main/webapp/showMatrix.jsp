@@ -17,12 +17,22 @@
 	
 	<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
 	<link rel="stylesheet" type="text/css" href="/tb/print.css"	media="print" />
+	<link href="/tb/style/select2.min.css" rel="stylesheet" />
+	<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+	<script src="/tb/scripts/select2.full.min.js"></script>
 	
 	<script type="text/javascript" language="JavaScript">
 		function setUpdateMergedreportsAction(form) {
 			form.action = "/tb/do/ShowMatrix?task=refreshMergedreports";
 			form.submit();
 		}
+
+		$(document).ready(function() {
+			$(".make-select2").select2({
+				dropdownAutoWidth: true,
+				width: 'element'
+			});	
+		});		
 	</script>
 </head>
 <body>
@@ -44,7 +54,8 @@
 				<td align="left" class="noBborderStyle"><html:select
 						property="employeeContractId"
 						value="${currentEmployeeContract.id}"
-						onchange="setUpdateMergedreportsAction(this.form)">
+						onchange="setUpdateMergedreportsAction(this.form)"
+						styleClass="make-select2">
 
 						<html:option value="-1">
 							<bean:message key="main.general.allemployees.text" />
@@ -74,7 +85,8 @@
 				<td align="left" class="noBborderStyle"><html:select
 						property="order"
 						value="<%=(String) request.getSession().getAttribute(\"currentOrder\")%>"
-						onchange="setUpdateMergedreportsAction(this.form)">
+						onchange="setUpdateMergedreportsAction(this.form)"
+						styleClass="make-select2">
 
 						<html:option value="ALL ORDERS">
 							<bean:message key="main.general.allorders.text" />

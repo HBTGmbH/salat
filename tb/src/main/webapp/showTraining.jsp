@@ -17,11 +17,21 @@
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
 <link rel="stylesheet" type="text/css" href="/tb/print.css"
 	media="print" />
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 <script type="text/javascript" language="JavaScript">
 	function setUpdate(form) {
 		form.action = "/tb/do/ShowTraining?task=refresh";
 		form.submit();
 	}
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 </script>
 </head>
 
@@ -50,7 +60,8 @@
 				<td align="left" class="noBborderStyle" nowrap="nowrap"><html:select
 						property="employeeContractId"
 						value="${currentEmployeeContract.id}"
-						onchange="setUpdate(this.form)">
+						onchange="setUpdate(this.form)"
+						styleClass="make-select2">
 						<html:option value="-1">
 							<bean:message key="main.general.allemployees.text" />
 						</html:option>
