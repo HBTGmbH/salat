@@ -121,7 +121,7 @@ public class AtlassianOAuthClient {
         	if (accessor == null) accessor = getAccessor(url);
         	if (accessor.accessToken == null) throw new RuntimeException("Access Token should not be null");
         	
-        	if (httpMethod == OAuthMessage.GET) {
+        	if (OAuthMessage.GET.equals(httpMethod)) {
 				response = client.invoke(accessor, url, Collections.<Map.Entry<?, ?>>emptySet());
 			} else { // PUT, POST oder DELETE        	
 				OAuthMessage request = null;
