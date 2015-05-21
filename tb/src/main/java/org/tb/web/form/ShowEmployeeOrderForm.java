@@ -1,5 +1,6 @@
 package org.tb.web.form;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -92,8 +93,9 @@ public class ShowEmployeeOrderForm extends ActionForm {
 	/**
 	 * @return the showActualHours
 	 */
+	@Nonnull
 	public Boolean getShowActualHours() {
-		return showActualHours;
+		return showActualHours == null ? false : showActualHours;
 	}
 
 	/**

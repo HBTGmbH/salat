@@ -32,17 +32,17 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 	 */
 
 	protected void refreshEmployeeSubOrders(HttpServletRequest request,
-			ShowEmployeeOrderForm orderForm, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO) {
+			ShowEmployeeOrderForm orderForm, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO, boolean onlyValid) {
 		
 		Long suborderId = orderForm.getSuborderId();
 		
 		if((orderForm.getEmployeeContractId() > -1) && ((Long)request.getSession().getAttribute("currentOrderId")!= -1L)){
 		request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId( orderForm.getEmployeeContractId(),customerorderDAO
 				.getCustomerorderById(orderForm.getOrderId())
-				.getId()));
+				.getId(), onlyValid));
 		}
 		else {
-			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(orderForm.getOrderId()));
+			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(orderForm.getOrderId(), onlyValid));
 		}
 				
 		request.getSession().setAttribute("curretntSuborder", suborderId);
@@ -79,60 +79,60 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 		if (orderId == null || orderId == 0) {
 			orderId = -1l;
 		}
+		
+		request.getSession().setAttribute("currentOrderId", orderId);
 
 		if (orderForm != null) {
 			orderForm.setEmployeeContractId(employeeContractId);
 			orderForm.setOrderId(orderId);
-		}
-
-		request.getSession().setAttribute("currentOrderId", orderId);
-
-		String filter = null;
-		Boolean show = null;
-
-		if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refresh"))) {
-			filter = orderForm.getFilter();
-
-			if (filter != null && !filter.trim().equals("")) {
-				filter = filter.toUpperCase();
-				filter = "%" + filter + "%";
-			}
-			request.getSession().setAttribute("employeeOrderFilter", filter);
-
-			show = orderForm.getShow();
-			request.getSession().setAttribute("employeeOrderShow", show);
-
-		} else {
-			if (request.getSession().getAttribute("employeeOrderFilter") != null) {
-				filter = (String) request.getSession().getAttribute("employeeOrderFilter");
-				orderForm.setFilter(filter);
-			}
-			if (request.getSession().getAttribute("employeeOrderShow") != null) {
-				show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
-				orderForm.setShow(show);
-			}
-		}
-
-		boolean showActualHours = orderForm.getShowActualHours();
-		request.getSession().setAttribute("showActualHours", showActualHours);
-
-		orderForm.setFilter(filter);
-		orderForm.setOrderId(orderId);
-		orderForm.setShow(show);
-		orderForm.setShowActualHours(showActualHours);
-
-		if (showActualHours) {
-			/* show actual hours */
-			List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId);
-			List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
 			
-			for (Employeeorder employeeorder : employeeOrders) {
-				EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
-				decorators.add(decorator);
+			String filter = null;
+			Boolean show = null;
+			
+			if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refresh"))) {
+				filter = orderForm.getFilter();
+				
+				if (filter != null && !filter.trim().equals("")) {
+					filter = filter.toUpperCase();
+					filter = "%" + filter + "%";
+				}
+				request.getSession().setAttribute("employeeOrderFilter", filter);
+				
+				show = orderForm.getShow();
+				request.getSession().setAttribute("employeeOrderShow", show);
+				
+			} else {
+				if (request.getSession().getAttribute("employeeOrderFilter") != null) {
+					filter = (String) request.getSession().getAttribute("employeeOrderFilter");
+					orderForm.setFilter(filter);
+				}
+				if (request.getSession().getAttribute("employeeOrderShow") != null) {
+					show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
+					orderForm.setShow(show);
+				}
 			}
-			request.getSession().setAttribute("employeeorders", decorators);
-		} else {
-			request.getSession().setAttribute("employeeorders",	employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+			
+			boolean showActualHours = orderForm.getShowActualHours();
+			request.getSession().setAttribute("showActualHours", showActualHours);
+			
+			orderForm.setFilter(filter);
+			orderForm.setOrderId(orderId);
+			orderForm.setShow(show);
+			orderForm.setShowActualHours(showActualHours);
+			
+			if (showActualHours) {
+				/* show actual hours */
+				List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId);
+				List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
+				
+				for (Employeeorder employeeorder : employeeOrders) {
+					EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+					decorators.add(decorator);
+				}
+				request.getSession().setAttribute("employeeorders", decorators);
+			} else {
+				request.getSession().setAttribute("employeeorders",	employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+			}
 		}
 
 		if (employeeContractId == -1) {
@@ -148,7 +148,8 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 	
 	protected void refreshEmployeeOrdersAndSuborders(HttpServletRequest request,
 			ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO,
-			EmployeecontractDAO employeecontractDAO, TimereportDAO timereportDAO, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO) {
+			EmployeecontractDAO employeecontractDAO, TimereportDAO timereportDAO, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO,
+			boolean onlyValid) {
 			
 		Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
@@ -179,84 +180,83 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 		if (orderId == null || orderId == 0) {
 			orderId = -1l;
 		}
-			
-		if (orderForm != null) {
-			orderForm.setEmployeeContractId(employeeContractId);
-			orderForm.setOrderId(orderId);
-		}
 		
 		Long currentOrderId = (Long) request.getSession().getAttribute("currentOrderId");
 		if (currentOrderId == null || currentOrderId != -2) { //has been deleted in DeleteCustomerOrderAction
 			request.getSession().setAttribute("currentOrderId", orderId);
 		}
-		
-		if ((Long)request.getSession().getAttribute("currentOrderId") == -1L){
-			orderForm.setSuborderId(-1);
-		}
-		
-        suborderId = orderForm.getSuborderId();
-		
-		if(request.getSession().getAttribute("currentOrderId") != null) {
 			
-			if((orderForm.getEmployeeContractId() > -1) && ((Long)request.getSession().getAttribute("currentOrderId") != -1L)) {
+		if (orderForm != null) {
+			orderForm.setEmployeeContractId(employeeContractId);
+			orderForm.setOrderId(orderId);
+			
+			if ((Long)request.getSession().getAttribute("currentOrderId") == -1L){
+				orderForm.setSuborderId(-1);
+			}
+			
+			suborderId = orderForm.getSuborderId();
+			
+			if(request.getSession().getAttribute("currentOrderId") != null) {
 				
-				request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId( 
-						orderForm.getEmployeeContractId(), customerorderDAO.getCustomerorderById(orderForm.getOrderId()).getId()));
+				if((orderForm.getEmployeeContractId() > -1) && ((Long)request.getSession().getAttribute("currentOrderId") != -1L)) {
+					
+					request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId( 
+							orderForm.getEmployeeContractId(), customerorderDAO.getCustomerorderById(orderForm.getOrderId()).getId(), onlyValid));
+				} else {
+					request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(orderForm.getOrderId(), onlyValid));
+				}
+				// actual suborder 			
+				request.getSession().setAttribute("currentSub", suborderId);
+			}
+			
+			String filter = null;
+			Boolean show = null;
+			
+			if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refresh"))) {
+				filter = orderForm.getFilter();
+				
+				request.getSession().setAttribute("employeeOrderFilter", filter);
+				
+				show = orderForm.getShow();
+				request.getSession().setAttribute("employeeOrderShow", show);
+				
 			} else {
-				request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(orderForm.getOrderId()));
+				if (request.getSession().getAttribute("employeeOrderFilter") != null) {
+					filter = (String) request.getSession().getAttribute("employeeOrderFilter");
+					orderForm.setFilter(filter);
+				}
+				if (request.getSession().getAttribute("employeeOrderShow") != null) {
+					show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
+					orderForm.setShow(show);
+				}
 			}
-			// actual suborder 			
-			request.getSession().setAttribute("currentSub", suborderId);
-		}
-		
 
-		String filter = null;
-		Boolean show = null;
-
-		if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refresh"))) {
-			filter = orderForm.getFilter();
-
-			request.getSession().setAttribute("employeeOrderFilter", filter);
-
-			show = orderForm.getShow();
-			request.getSession().setAttribute("employeeOrderShow", show);
-
-		} else {
-			if (request.getSession().getAttribute("employeeOrderFilter") != null) {
-				filter = (String) request.getSession().getAttribute("employeeOrderFilter");
-				orderForm.setFilter(filter);
-			}
-			if (request.getSession().getAttribute("employeeOrderShow") != null) {
-				show = (Boolean) request.getSession().getAttribute("employeeOrderShow");
-				orderForm.setShow(show);
-			}
-		}
-
-		boolean showActualHours = orderForm.getShowActualHours();
-		request.getSession().setAttribute("showActualHours", showActualHours);
-
-		orderForm.setFilter(filter);
-		orderForm.setOrderId(orderId);
-		orderForm.setSuborderId(suborderId);
-		orderForm.setShow(show);
-		orderForm.setShowActualHours(showActualHours);
-
-		if (showActualHours) {
-			/* show actual hours */
-			List<Employeeorder> employeeOrders = 
-					employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
-			List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
+			boolean showActualHours = orderForm.getShowActualHours();
+			request.getSession().setAttribute("showActualHours", showActualHours);
 			
-			for (Employeeorder employeeorder : employeeOrders) {
-				EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
-				decorators.add(decorator);
+			orderForm.setFilter(filter);
+			orderForm.setOrderId(orderId);
+			orderForm.setSuborderId(suborderId);
+			orderForm.setShow(show);
+			orderForm.setShowActualHours(showActualHours);
+			
+			if (showActualHours) {
+				/* show actual hours */
+				List<Employeeorder> employeeOrders = 
+						employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
+				List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
+				
+				for (Employeeorder employeeorder : employeeOrders) {
+					EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+					decorators.add(decorator);
+				}
+				request.getSession().setAttribute("employeeorders", decorators);
+			} else {
+				
+				List<Employeeorder> leo = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
+				
+				request.getSession().setAttribute("employeeorders",	leo);
 			}
-			request.getSession().setAttribute("employeeorders", decorators);
-		} else {
-			
-			List<Employeeorder> leo = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
-			
-			request.getSession().setAttribute("employeeorders",	leo);
 		}
 
 		if (employeeContractId == -1) {

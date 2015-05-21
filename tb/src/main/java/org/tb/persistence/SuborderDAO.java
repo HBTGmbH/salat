@@ -90,13 +90,14 @@ public class SuborderDAO extends HibernateDaoSupport {
     
     /**
      * Gets a list of Suborders by employee contract id AND customerorder.
+     * @param onlyValid 
      * 
      * @param long contractId
      * @param long coId
      * 
      * @return List<Suborder>
      */
-    public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(long contractId, long coId) {
+    public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(long contractId, long coId, boolean onlyValid) {
         
         List<Suborder> employeeSpecificSuborders = getSubordersByEmployeeContractId(contractId);
         
@@ -104,7 +105,9 @@ public class SuborderDAO extends HibernateDaoSupport {
         for (Object element : employeeSpecificSuborders) {
             Suborder so = (Suborder)element;
             if (so.getCustomerorder().getId() == coId) {
-                allSuborders.add(so);
+            	if(!onlyValid || so.getCurrentlyValid()) {
+            		allSuborders.add(so);
+            	}
             }
         }
         Collections.sort(allSuborders, new SubOrderComparator());
@@ -152,13 +155,25 @@ public class SuborderDAO extends HibernateDaoSupport {
     
     /**
      * Gets a list of Suborders by customer order id.
+     * @param onlyValid 
      * 
      * @param long customerorderId
      * 
      * @return List<Suborder>
      */
-    public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
-        return getSession().createQuery("from Suborder s where s.customerorder.id = ? order by sign").setLong(0, customerorderId).setCacheable(true).list();
+    public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean onlyValid) {
+        @SuppressWarnings("unchecked")
+		List<Suborder> result = getSession().createQuery("from Suborder s where s.customerorder.id = ? order by sign").setLong(0, customerorderId).setCacheable(true).list();
+        if(onlyValid) {
+        	Iterator<Suborder> iter = result.iterator();
+        	while(iter.hasNext()) {
+        		Suborder suborder = iter.next();
+        		if(!suborder.getCurrentlyValid()) {
+        			iter.remove();
+        		}
+        	}
+        }
+        return result;
     }
     
     /**
@@ -350,15 +365,15 @@ public class SuborderDAO extends HibernateDaoSupport {
      * 
      * @return
      */
-    public List<Suborder> getSubordersOrderedByCustomerorder() {
+    public List<Suborder> getSubordersOrderedByCustomerorder(boolean onlyValid) {
         List<Customerorder> customerorders = customerorderDAO.getCustomerorders();
         List<Suborder> suborders = new ArrayList<Suborder>();
         Customerorder customerorder;
-        Iterator it = customerorders.iterator();
+        Iterator<Customerorder> it = customerorders.iterator();
         while (it.hasNext()) {
             customerorder = (Customerorder)it.next();
             long customerorderId = customerorder.getId();
-            suborders.addAll(getSubordersByCustomerorderId(customerorderId));
+            suborders.addAll(getSubordersByCustomerorderId(customerorderId, onlyValid));
         }
         return suborders;
     }

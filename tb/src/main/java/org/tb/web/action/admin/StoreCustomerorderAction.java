@@ -158,7 +158,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
             Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
             
             /* adjust suborders */
-            List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(coId);
+            List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(coId, false);
             if (suborders != null && !suborders.isEmpty()) {
                 for (Suborder so : suborders) {
                     boolean suborderchanged = false;
@@ -552,7 +552,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
         request.getSession().setAttribute("visibleCustomerOrders", customerOrders);
         List<Employeecontract> employeecontracts = employeecontractDAO.getValidEmployeeContractsOrderedByFirstname();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
-        List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(cId);
+        List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(cId, false);
         request.getSession().setAttribute("suborders", suborders);
         request.getSession().setAttribute("currentCustomer", cId);
         request.getSession().setAttribute("currentSuborder", sId);

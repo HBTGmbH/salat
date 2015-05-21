@@ -3,6 +3,8 @@ package org.tb.web.form;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -96,7 +98,8 @@ public class ShowTicketsForm extends ActionForm {
 		return errors;
 	}
 
-	public TicketViewDecorator getTicketDecoratorWithId(Long ticketId) {
+	@Nullable
+	public TicketViewDecorator getTicketDecoratorWithId(@Nonnull Long ticketId) {
 		
 		for (TicketViewDecorator decorator: decorators) {
 			if (ticketId.equals(decorator.getId())) {

@@ -26,12 +26,9 @@ public class SubOrderComparator implements Comparator<Suborder> {
 		}
 		
 		// oldest suborders at the end
-		if (so1.getUntilDate() != null && so2.getUntilDate() != null
-				&& so1.getUntilDate().compareTo(so2.getUntilDate()) < 0) {
-			return 1;
-		} else if (so1.getUntilDate() != null && so2.getUntilDate() != null
-				&& so1.getUntilDate().compareTo(so2.getUntilDate()) > 0) {
-			return -1;
+		if (so1.getUntilDate() != null && so2.getUntilDate() != null) {
+			int comp = so1.getUntilDate().compareTo(so2.getUntilDate());
+			if(comp != 0) return comp;
 		}
 
 		// both look the same

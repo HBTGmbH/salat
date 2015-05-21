@@ -38,6 +38,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
         return (Employeeorder)getSession().createQuery("select eo from Employeeorder eo where eo.id = ?").setLong(0, id).uniqueResult();
     }
     
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersForEmployeeordercontentWarning(Employeecontract ec) {
         //		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo where eo.employeeOrderContent.contactTechHbt.id = ? or eo.employeecontract.id = ?").setLong(0, ec.getEmployee().getId()).setLong(1, ec.getId()).list();
         return getSession()
@@ -62,6 +63,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param date
      * @return
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(long employeecontractId, String customerOrderSign, java.sql.Date date) {
         return getSession().createQuery("select eo from Employeeorder eo " +
                 "where eo.employeecontract.id = ? " +
@@ -109,6 +111,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param employeeContractId
      * @return
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractId(long employeeContractId) {
         return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, employeeContractId)
                 .list();
@@ -120,6 +123,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param suborderId
      * @return
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrdersBySuborderId(long suborderId) {
         return getSession().createQuery("from Employeeorder eo where eo.suborder.id = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, suborderId).list();
     }
@@ -131,6 +135,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param suborderId
      * @return
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId, long suborderId) {
         return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and SUBORDER_ID = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                 .setLong(0, employeeContractId).setLong(1, suborderId).list();
@@ -144,6 +149,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param date
      * @return
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, Date date) {
         return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and " +
                 "SUBORDER_ID = ? and  " +
@@ -160,6 +166,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param date
      * @return
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, Date date) {
         return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and " +
                 "SUBORDER_ID = ? and  " +
@@ -185,6 +192,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeeorder> 
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeorders() {
         return getSession().createQuery("select eo from Employeeorder eo order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").list();
     }
@@ -194,6 +202,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param orderId
      * @return Returns a list of all {@link Employeeorder}s associated to the given orderId.
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersByOrderId(long orderId) {
         return getSession()
                 .createQuery("select eo from Employeeorder eo where eo.suborder.customerorder.id = ? order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
@@ -225,6 +234,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * @param employeeContractId
      * @return Returns a list of all {@link Employeeorder}s associated to the given orderId and employeeContractId.
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeContractId(long orderId, long employeeContractId) {
         return getSession()
                 .createQuery("select eo from Employeeorder eo where eo.suborder.customerorder.id = ? and eo.employeecontract.id = ? order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
@@ -236,6 +246,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeeorder> 
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getSortedEmployeeorders() {
         List<Employeeorder> employeeorders = getSession().createQuery("from Employeeorder").list();
         Collections.sort(employeeorders, employeeOrderComparator);
@@ -247,9 +258,12 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeeorder> 
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long customerSuborderId) {
         List<Employeeorder> employeeorders = null;
-        filter = "%" + filter.toUpperCase() + "%";
+        if(filter != null && !filter.isEmpty()) {
+        	filter = "%" + filter.toUpperCase() + "%";
+        }
         if (showInvalid == null || showInvalid == false) {
             Date now = new Date();
             if (filter == null || filter.trim().equals("")) {
@@ -665,8 +679,12 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeeorder> 
      */
+    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId) {
         List<Employeeorder> employeeorders = null;
+        if(filter != null && !filter.isEmpty()) {
+        	filter = "%" + filter.toUpperCase() + "%";
+        }
         if (showInvalid == null || showInvalid == false) {
             Date now = new Date();
             if (filter == null || filter.trim().equals("")) {

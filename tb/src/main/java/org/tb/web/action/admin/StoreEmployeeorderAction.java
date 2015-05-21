@@ -3,6 +3,7 @@ package org.tb.web.action.admin;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -137,15 +138,17 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
             } else {
                 List<Suborder> suborders = co.getSuborders();
                 // remove hidden suborders (and invalid suborders, if a flag is set)
+                List<Suborder> dummy = new ArrayList<Suborder>(suborders);
                 Iterator<Suborder> suborderIterator = suborders.iterator();
                 while (suborderIterator.hasNext()) {
                     Suborder suborder = suborderIterator.next();
-                    if (suborder.getHide() != null && suborder.getHide()) {
+                    if (suborder.isHide()) {
                         suborderIterator.remove();
                     } else if(eoForm.getShowOnlyValid() && !suborder.getCurrentlyValid()) {
                     	suborderIterator.remove();
                     }
                 }
+                dummy = new ArrayList<Suborder>(suborders);
                 request.getSession().setAttribute("suborders", suborders);
 
                 Suborder so = co.getSuborders().get(0);

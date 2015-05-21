@@ -169,8 +169,8 @@ public class SuborderViewDecorator extends Suborder {
      * @see org.tb.bdom.Suborder#getHide()
      */
     @Override
-    public Boolean getHide() {
-        return suborder.getHide();
+    public boolean isHide() {
+        return suborder.isHide();
     }
     
     /* (non-Javadoc)

@@ -138,19 +138,21 @@ public class ShowTicketsAction extends LoginRequiredAction {
 			//get the newly picked Suborder from the Dropdown list
 			long newSubOrderId = ticketsForm.getNewSuborderId();			
 			//get the Ticket Id
-			Long ticketToSetL = Long.parseLong(ticketId);				
+			long ticketToSetL = Long.parseLong(ticketId);				
 			//get the right Ticket from the Decorators
 			TicketViewDecorator ticketVD = ticketsForm.getTicketDecoratorWithId(ticketToSetL);
 			
-			ticketVD.disableError();
 			
-			//save the picked Suborder to the Decorator
 			if (ticketVD != null) {				
+				ticketVD.disableError();
+
+				//save the picked Suborder to the Decorator
 				ticketVD.setPickedSuborderId(newSubOrderId);
-			}
-			//if NOT the the original suborder was picked
-			if (newSubOrderId != ticketVD.getSuborderId()) {
-				checkEmployeeOrders(ticketVD, messageResources);
+
+				//if NOT the the original suborder was picked
+				if (newSubOrderId != ticketVD.getSuborderId()) {
+					checkEmployeeOrders(ticketVD, messageResources);
+				}
 			}
 			
 //			for(TicketViewDecorator tv: ticketsForm.getTicketDecorators()) {
@@ -310,7 +312,7 @@ public class ShowTicketsAction extends LoginRequiredAction {
 			//if Order Set -> get the Suborders for this order and write to Session	
 			if (currentOrderId != -1L) {
 				long customerOrderId = customerorderDAO.getCustomerorderById(ticketsForm.getOrderId()).getId();
-				List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerOrderId);
+				List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerOrderId, false);
 				request.getSession().setAttribute("suborders", suborders);
 			}
 			//if not -> Set an empty list

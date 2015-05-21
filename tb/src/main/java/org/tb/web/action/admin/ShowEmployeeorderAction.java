@@ -58,6 +58,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		ShowEmployeeOrderForm orderForm = (ShowEmployeeOrderForm) form;
 		
 		if (request.getParameter("task") != null && request.getParameter("task").equalsIgnoreCase("adjustDates")) {
+			@SuppressWarnings("unchecked")
 			List<Employeeorder> employeeOrders = (List<Employeeorder>) request.getSession().getAttribute("employeeorders");			
 			for (Employeeorder employeeorder : employeeOrders) {
 				if (!employeeorder.getFitsToSuperiorObjects()) {
@@ -126,7 +127,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 		}
 		request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);		
 		
-		refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportDAO, suborderDAO, customerorderDAO);
+		refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportDAO, suborderDAO, customerorderDAO, !orderForm.getShow());
 	
 		return mapping.findForward("success");
 			

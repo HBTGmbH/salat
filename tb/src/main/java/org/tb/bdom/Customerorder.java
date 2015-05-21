@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.List;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -285,6 +286,7 @@ public class Customerorder implements Serializable {
         this.hourly_rate = hourly_rate;
     }
     
+    @Nonnull
     public List<Suborder> getSuborders() {
         Collections.sort(suborders, new SubOrderComparator());
         return suborders;

@@ -734,7 +734,8 @@
 							<td>
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}" 
 									onkeydown="limitText(this.form.comment,this.form.countdown,256);"
-									onkeyup="limitText(this.form.comment,this.form.countdown,256);" />
+									onkeyup="limitText(this.form.comment,this.form.countdown,256);" 
+									styleClass="showDailyReport" />
 							</td>
 							
 							<!-- Fortbildung -->

@@ -48,7 +48,8 @@
 
 	$(document).ready(function() {
 		$(".make-select2").select2({
-			dropdownAutoWidth: true
+			dropdownAutoWidth: true,
+			width: 'element'
 		});	
 	});		
 </script>
@@ -105,7 +106,7 @@
 				<b><bean:message key="main.employeeorder.customerorder.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="orderId" onchange="setStoreAction(this.form, 'refreshSuborders')">
+				<html:select property="orderId" onchange="setStoreAction(this.form, 'refreshSuborders')" styleClass="make-select2">
 					<html:options collection="orderswithsuborders" labelProperty="signAndDescription" property="id" />
 				</html:select>
 				<span style="color:red">
@@ -142,8 +143,8 @@
 						<bean:message key="main.general.select.expired.text"/>				
 					</span>
 				</c:if>
-				<html:checkbox property="showOnlyValid" onclick="setStoreAction(this.form, 'refreshSuborders')">
-					<bean:message key="main.general.show.only.valid.text"/>
+				<html:checkbox property="showOnlyValid" onclick="setStoreAction(this.form, 'refreshSuborders')" styleClass="middle-aligned">
+					<span class="middle-aligned"><bean:message key="main.general.show.only.valid.text"/></span>
 				</html:checkbox>
 				<span style="color:red">
 					<html:errors property="suborderId" />

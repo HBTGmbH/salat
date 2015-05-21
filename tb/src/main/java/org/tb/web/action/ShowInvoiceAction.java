@@ -128,7 +128,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                     
                     customerOrder = customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder());
                     if (showInvoiceForm.getSuborder().equals("ALL SUBORDERS")) {
-                        suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId());
+                        suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId(), false);
                     } else {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
@@ -194,7 +194,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                     }
                     customerOrder = customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder());
                     if (showInvoiceForm.getSuborder().equals("ALL SUBORDERS")) {
-                        suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId());
+                        suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId(), false);
                     } else {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
@@ -255,21 +255,13 @@ public class ShowInvoiceAction extends DailyReportAction {
         } else if (request.getParameter("task") != null && request.getParameter("task").equals("refreshInvoiceForm")) {
             // call on InvoiceView with parameter refreshInvoceForm to update
             // request
-            if (showInvoiceForm.getOrder().equals(null) || showInvoiceForm.getOrder().equals("CHOOSE ORDER")) {
+            if (showInvoiceForm.getOrder() == null || showInvoiceForm.getOrder().equals("CHOOSE ORDER")) {
                 request.getSession().setAttribute("currentOrder", "main.invoice.choose.text");
             } else {
                 request.getSession().setAttribute("currentOrder", showInvoiceForm.getOrder());
                 request.getSession().setAttribute("currentSuborder", showInvoiceForm.getSuborder());
-                List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder()).getId());
+                List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder()).getId(), showInvoiceForm.getShowOnlyValid());
                 Collections.sort(suborders, new SubOrderComparator());
-                // remove suborders if a flag is set
-                Iterator<Suborder> suborderIterator = suborders.iterator();
-                while (suborderIterator.hasNext()) {
-                    Suborder suborder = suborderIterator.next();
-                    if(showInvoiceForm.getShowOnlyValid() && !suborder.getCurrentlyValid()) {
-                    	suborderIterator.remove();
-                    }
-                }
                 
                 request.getSession().setAttribute("suborders", suborders);
             }

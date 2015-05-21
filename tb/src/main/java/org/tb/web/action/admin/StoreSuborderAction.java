@@ -468,7 +468,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             // dann die untergeordneten Suboders der Customerorder.
             List<Suborder> suborders;
             if (addSuborderForm.getParentId() == null) {
-                suborders = suborderDAO.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId());
+                suborders = suborderDAO.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false);
                 for (Suborder suborder : suborders) {
                     if (suborder.getCurrentlyValid()
                             && suborder.getParentorder() == null // vergleiche nur Suborder direkt unter der Customerorder

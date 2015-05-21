@@ -129,7 +129,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			final Iterator<Suborder> suborderIterator = suborders.iterator();
 			while (suborderIterator.hasNext()) {
 				final Suborder suborder = suborderIterator.next();
-				if (suborder.getHide() != null && suborder.getHide()) {
+				if (suborder.isHide()) {
 					suborderIterator.remove();
 				}
 			}

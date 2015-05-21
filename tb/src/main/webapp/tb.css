@@ -244,6 +244,7 @@ td#matrixTableLink a:link, td#matrixTableLink a:visited, td#matrixTableLink a:ho
 
 .select2-results__option {
 	padding: 0px;
+	font-family: arial, verdana, sans-serif;
 }
 
 .select2-container--default .select2-selection--single {
@@ -255,12 +256,17 @@ td#matrixTableLink a:link, td#matrixTableLink a:visited, td#matrixTableLink a:ho
 	line-height: 18px;
 	padding-bottom: 1px;
 	padding-left:3px;
+	color: black;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 20px;
 }
 
-textarea {
+textarea.showDailyReport {
 	width: 100%;
+}
+
+.middle-aligned {
+	vertical-align: middle;
 }

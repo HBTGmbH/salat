@@ -14,7 +14,7 @@ import org.tb.bdom.Timereport;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
-public class InvoiceSuborderViewHelper extends Suborder{
+public class InvoiceSuborderViewHelper extends Suborder {
 	
 	private static final long serialVersionUID = 1L;
 
@@ -206,8 +206,8 @@ public class InvoiceSuborderViewHelper extends Suborder{
 		return suborder.getFromDate();
 	}
 
-	public Boolean getHide() {
-		return suborder.getHide();
+	public boolean isHide() {
+		return suborder.isHide();
 	}
 
 	public Double getHourly_rate() {

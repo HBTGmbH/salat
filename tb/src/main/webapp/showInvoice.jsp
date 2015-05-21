@@ -36,7 +36,8 @@
 
 			$(document).ready(function() {
 				$(".make-select2").select2({
-					dropdownAutoWidth: true
+					dropdownAutoWidth: true,
+					width: 'element'
 				});	
 			});		
 		</script>
@@ -87,7 +88,7 @@
 						<b><bean:message key="main.monthlyreport.customerorder.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:select property="order"
+						<html:select property="order" styleClass="make-select2"
 							value="<%=(String) request.getSession().getAttribute(\"currentOrder\")%>"
 							onchange="setUpdateInvoiceAction(this.form)">
 
@@ -123,8 +124,8 @@
 								</html:option>
 							</c:forEach>
 						</html:select>
-						<html:checkbox property="showOnlyValid" onchange="setUpdateInvoiceAction(this.form)">
-							<bean:message key="main.general.show.only.valid.text"/>
+						<html:checkbox property="showOnlyValid" onchange="setUpdateInvoiceAction(this.form)" styleClass="middle-aligned">
+							<span class="middle"><bean:message key="main.general.show.only.valid.text"/></span>
 						</html:checkbox>
 					</td>
 				</tr>

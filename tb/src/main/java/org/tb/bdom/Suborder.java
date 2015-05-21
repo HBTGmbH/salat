@@ -461,7 +461,7 @@ public class Suborder implements Serializable {
     /**
      * @return the hide
      */
-    public Boolean getHide() {
+    public boolean isHide() {
         return hide == null ? false : hide;
     }
     
@@ -603,7 +603,7 @@ public class Suborder implements Serializable {
         SuborderVisitor allChildrenCollector = new SuborderVisitor() {
             
             public void visitSuborder(Suborder suborder) {
-                allChildren.add(suborder);
+           		allChildren.add(suborder);
             }
         };
         

@@ -74,7 +74,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
             Long suborderId = generateMultipleEmployeeordersForm.getSuborderId();
             List<Suborder> sos;
             if (customerOrderId != -1) {
-            	sos = suborderDAO.getSubordersByCustomerorderId(customerOrderId);
+            	sos = suborderDAO.getSubordersByCustomerorderId(customerOrderId, false);
             	request.getSession().setAttribute("showAllSuborders", true);
             	request.getSession().setAttribute("currentSuborder", suborderId);
 			} else if (customerOrderId == -1 && suborderId != -1) {
@@ -135,7 +135,8 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
                         Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
                         
                         if (currentEmployeeId.equals(ec.getEmployee().getId())) {
-                        	List<EmployeeOrderViewDecorator> decorators = (List<EmployeeOrderViewDecorator>) request.getSession().getAttribute("employeeorders");
+                        	@SuppressWarnings("unchecked")
+							List<EmployeeOrderViewDecorator> decorators = (List<EmployeeOrderViewDecorator>) request.getSession().getAttribute("employeeorders");
                         	EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, eo);
                 			decorators.add(decorator);
                 			request.getSession().setAttribute("employeeorders", decorators);
@@ -178,7 +179,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
            	List<Suborder> suborders;
            	if (selectedSuborder != -1 || selectedCustomerOrder != -1) {
            		request.getSession().setAttribute("showAllSuborders", false);
-           		suborders = suborderDAO.getSubordersByCustomerorderId(selectedCustomerOrder);
+           		suborders = suborderDAO.getSubordersByCustomerorderId(selectedCustomerOrder, false);
 			} else {
 				request.getSession().setAttribute("showAllSuborders", true);
 				suborders = suborderDAO.getSuborders();

@@ -156,7 +156,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		Iterator<Suborder> suborderIterator = suborders.iterator();
 		while (suborderIterator.hasNext()) {
 			Suborder suborder = suborderIterator.next();
-			if (suborder.getHide() != null && suborder.getHide()) {
+			if (suborder.isHide()) {
 				suborderIterator.remove();
 			}
 		}

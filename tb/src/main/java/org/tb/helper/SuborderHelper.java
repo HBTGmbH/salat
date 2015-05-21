@@ -61,26 +61,28 @@ public class SuborderHelper {
 
 		// set the first Suborder as current
 		Suborder so = theSuborders.get(0);
-		request.getSession().setAttribute("currentSuborderId", so.getId());
-		
-        JiraSalatHelper.setJiraTicketKeysForSuborder(request, td, so.getId());
-        
-        // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
-        // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
-        if (so != null && so.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-            reportForm.setSelectedHourDuration(0);
-            reportForm.setSelectedMinuteDuration(0);
-            if (	request.getSession().getAttribute("overtimeCompensation") == null || 
-            		request.getSession().getAttribute("overtimeCompensation") 
-                    != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
-                request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-            }
-        }
-        
-        // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
-        if (so != null && so.getTrainingFlag()) {
-            reportForm.setTraining(true);
-        }
+		if(so != null) {
+			request.getSession().setAttribute("currentSuborderId", so.getId());
+			
+	        JiraSalatHelper.setJiraTicketKeysForSuborder(request, td, so.getId());
+	        
+	        // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
+	        // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
+	        if (so.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+	            reportForm.setSelectedHourDuration(0);
+	            reportForm.setSelectedMinuteDuration(0);
+	            if (	request.getSession().getAttribute("overtimeCompensation") == null || 
+	            		request.getSession().getAttribute("overtimeCompensation") 
+	                    != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+	                request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+	            }
+	        }
+	        
+	        // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
+	        if (so.getTrainingFlag()) {
+	            reportForm.setTraining(true);
+	        }
+		}
 		
 		return true;
 	}
@@ -108,7 +110,7 @@ public class SuborderHelper {
 		
 		// get suborders related to employee AND selected customer order...
 		long customerorderId = reportForm.getTrOrderId();
-		request.getSession().setAttribute("suborders", sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId));
+		request.getSession().setAttribute("suborders", sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, false));
 		
 		return true;
 	}
