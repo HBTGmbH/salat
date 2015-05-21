@@ -290,6 +290,17 @@ public class ShowDailyReportAction extends DailyReportAction {
                 } else if (!orders.isEmpty()) {
                     suborders = orders.get(0).getSuborders();
                 }
+                
+                // if <code>reportForm.showOnlyValid == true</code>, remove all invalid suborders
+                if(reportForm.getShowOnlyValid()) {
+                	Iterator<Suborder> iter = suborders.iterator();
+                	while(iter.hasNext()) {
+                		if(!iter.next().getCurrentlyValid()) {
+                			iter.remove();
+                		}
+                	}
+                }
+                
                 request.getSession().setAttribute("orders", orders);
                 request.getSession().setAttribute("suborders", suborders);
                 request.getSession().setAttribute("currentOrder", orderSign);
@@ -548,6 +559,7 @@ public class ShowDailyReportAction extends DailyReportAction {
         }
         
        	reportForm.setView(GlobalConstants.VIEW_DAILY);
+       	reportForm.setShowOnlyValid(true);
        	request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());

@@ -13,6 +13,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.employeecontracts.text" /></title>
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
 <script type="text/javascript" language="JavaScript">
@@ -43,6 +46,13 @@
 	function hideWMTT() {
 		wmtt.style.display = "none";
 	}
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 </script>
 
 </head>
@@ -62,7 +72,7 @@
 		<td class="noBborderStyle" colspan="2"><b><bean:message
 			key="main.employeecontract.employee.text" /></b></td>
 		<td class="noBborderStyle" colspan="9" align="left">
-			<html:select property="employeeId" onchange="refresh(this.form)">
+			<html:select property="employeeId" onchange="refresh(this.form)" styleClass="make-select2">
 				<html:option value="-1">
 					<bean:message key="main.general.allemployees.text" />
 				</html:option>

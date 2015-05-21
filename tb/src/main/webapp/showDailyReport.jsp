@@ -15,6 +15,9 @@
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
 		<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
+		<link href="/tb/style/select2.min.css" rel="stylesheet" />
+		<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+		<script src="/tb/scripts/select2.full.min.js"></script>
 		<script type="text/javascript" language="JavaScript">
 		
 		
@@ -117,6 +120,13 @@
 			limitCount.value = limitNum - limitField.value.length;
 		}
 	}
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 	</script>
 
 	</head>
@@ -144,7 +154,7 @@
 						<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(this.form)">
+						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
 							<html:option value="-1">
 								<bean:message key="main.general.allemployees.text" />
 							</html:option>
@@ -168,7 +178,7 @@
 						<b><bean:message key="main.monthlyreport.customerorder.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<html:select property="order" value="${currentOrder}" onchange="setUpdateTimereportsAction(this.form)">
+						<html:select property="order" value="${currentOrder}" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
 							<html:option value="ALL ORDERS">
 								<bean:message key="main.general.allorders.text" />
 							</html:option>
@@ -180,7 +190,7 @@
 							<c:forEach var="order" items="${orders}">
 								<c:if test="${order.sign == currentOrder}">
 									/ 
-									<html:select property="suborderId" onchange="setUpdateTimereportsAction(this.form)" value="${suborderFilerId}">
+									<html:select property="suborderId" onchange="setUpdateTimereportsAction(this.form)" value="${suborderFilerId}" styleClass="make-select2">
 										<html:option value="-1">
 											<bean:message key="main.general.allsuborders.text" />
 										</html:option>
@@ -198,6 +208,12 @@
 							<span style="font-size: 0.6em">
 								<bean:message key="main.general.select.expired.text" />
 							</span>
+							<html:checkbox property="showOnlyValid" onclick="setUpdateTimereportsAction(this.form)" styleClass="middle-aligned">
+								<span class="middle-aligned"><bean:message key="main.general.show.only.valid.text"/></span>
+							</html:checkbox>
+						</c:if>
+						<c:if test="${currentOrder == 'ALL ORDERS'}">
+							<html:checkbox property="showOnlyValid" onclick="setUpdateTimereportsAction(this.form)" style="display:none;" />
 						</c:if>
 					</td>
 				</tr>

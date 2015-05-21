@@ -244,6 +244,9 @@ td#matrixTableLink a:link, td#matrixTableLink a:visited, td#matrixTableLink a:ho
 
 .select2-results__option {
 	padding: 0px;
+}
+
+.select2-results__option, .select2-selection__rendered {
 	font-family: arial, verdana, sans-serif;
 }
 

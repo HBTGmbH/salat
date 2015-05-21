@@ -1,5 +1,6 @@
 package org.tb.web.form;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -57,6 +58,7 @@ public class ShowDailyReportForm extends ActionForm {
     private String view;
     private Boolean avoidRefresh;
     private Boolean showTraining;
+    private Boolean showOnlyValid;
     
     /**
      * @return the selected startdate yyyy-MM-dd
@@ -488,6 +490,7 @@ public class ShowDailyReportForm extends ActionForm {
         showTraining = false;
         training = false;
         showOvertimeUntil = false;
+        showOnlyValid = false;
     }
     
     @Override
@@ -497,5 +500,14 @@ public class ShowDailyReportForm extends ActionForm {
         // actually, no checks here
         return errors;
     }
+
+    @Nonnull
+	public Boolean getShowOnlyValid() {
+		return showOnlyValid == null ? false : showOnlyValid;
+	}
+
+	public void setShowOnlyValid(Boolean showOnlyValid) {
+		this.showOnlyValid = showOnlyValid;
+	}
     
 }

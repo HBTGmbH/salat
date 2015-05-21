@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -316,7 +317,18 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             } else {
                 Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
                 long orderId = co.getId();
-                request.getSession().setAttribute("suborders", co.getSuborders());
+                
+                List<Suborder> suborders = co.getSuborders();
+                if(reportForm.getShowOnlyValid()) {
+                	Iterator<Suborder> iter = suborders.iterator();
+                	while(iter.hasNext()) {
+                		if(!iter.next().getCurrentlyValid()) {
+                			iter.remove();
+                		}
+                	}
+                }
+                
+                request.getSession().setAttribute("suborders", suborders);
                 Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderId());
                 if (suborder == null || suborder.getCustomerorder().getId() != orderId) {
                     reportForm.setSuborderId(-1l);

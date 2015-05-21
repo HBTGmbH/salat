@@ -15,6 +15,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 <% java.text.DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");%>
 
 <script type="text/javascript" language="JavaScript">
@@ -73,6 +76,13 @@
  		form.action = "/tb/do/ShowDailyReport?task=refreshTimereports";
 		form.submit();
 	}
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 </script>
 
 </head>
@@ -97,7 +107,7 @@
 				<b><bean:message key="main.timereport.employee.fullname.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateOrdersAction(this.form)">				
+				<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateOrdersAction(this.form)" styleClass="make-select2">				
 				<c:choose>
 					<c:when test="${employeeAuthorized}">
 						<c:forEach var="employeecontract" items="${employeecontracts}" >
@@ -201,11 +211,11 @@
 				</td>
 
 				<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
-					<html:select property="orderId" onchange="setUpdateSubordersAction(this.form)" disabled="${projectIDExists and isEdit}">
+					<html:select property="orderId" onchange="setUpdateSubordersAction(this.form)" disabled="${projectIDExists and isEdit}" styleClass="make-select2">
 						<html:options collection="orders" labelProperty="signAndDescription" property="id" />
 					</html:select>
 					<b> / </b>
-					<html:select property="suborderSignId" styleClass="mandatory" value="${currentSuborderId}" 
+					<html:select property="suborderSignId" styleClass="mandatory make-select2" value="${currentSuborderId}" 
 						onchange="adjustSuborderSignChangedAction(this.form)" disabled="${projectIDExists and isEdit}">
 						<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
 					</html:select>

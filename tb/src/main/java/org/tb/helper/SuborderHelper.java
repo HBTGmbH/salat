@@ -110,7 +110,7 @@ public class SuborderHelper {
 		
 		// get suborders related to employee AND selected customer order...
 		long customerorderId = reportForm.getTrOrderId();
-		request.getSession().setAttribute("suborders", sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, false));
+		request.getSession().setAttribute("suborders", sd.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, reportForm.getShowOnlyValid()));
 		
 		return true;
 	}

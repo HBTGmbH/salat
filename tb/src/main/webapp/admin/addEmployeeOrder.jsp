@@ -88,7 +88,7 @@
 				<b><bean:message key="main.employeeorder.employee.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="employeeContractId" onchange="setStoreAction(this.form, 'refreshEmployee')">
+				<html:select property="employeeContractId" onchange="setStoreAction(this.form, 'refreshEmployee')" styleClass="make-select2">
 					<c:forEach var="employeecontract" items="${employeecontracts}" >
 						<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 							<html:option value="${employeecontract.id}">

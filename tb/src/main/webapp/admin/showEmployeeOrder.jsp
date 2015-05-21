@@ -92,7 +92,7 @@
 				<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="employeeContractId" onchange="refresh(this.form)" value="${currentEmployeeContract.id}">
+				<html:select property="employeeContractId" onchange="refresh(this.form)" value="${currentEmployeeContract.id}" styleClass="make-select2">
 					<html:option value="-1">
 						<bean:message key="main.general.allemployees.text" />
 					</html:option>
