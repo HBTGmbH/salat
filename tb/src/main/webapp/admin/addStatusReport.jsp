@@ -14,6 +14,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="statusreport.edit.pagetitle.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 
 <script type="text/javascript" language="JavaScript">
 	
@@ -36,7 +39,13 @@
 			limitField.value = limitField.value.substring(0, limitNum);
 		} 
 	}
-				
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 </script>
 </head>
 <body>
@@ -108,7 +117,7 @@
 				<b><bean:message key="statusreport.order.text" />:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" align="left" colspan="3">
-				<html:select property="customerOrderId" disabled="${!isReportEditable}" onchange="setStoreAction(this.form, 'refresh')">
+				<html:select property="customerOrderId" disabled="${!isReportEditable}" onchange="setStoreAction(this.form, 'refresh')" styleClass="make-select2">
 					<html:options collection="visibleCustomerOrders" labelProperty="signAndDescription" property="id"/>
 				</html:select>
 			</td>
@@ -122,7 +131,7 @@
 				<b><bean:message key="statusreport.sort.text" />:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" align="left" colspan="3">
-				<html:select property="sort" disabled="${!isReportEditable}">
+				<html:select property="sort" disabled="${!isReportEditable}" styleClass="make-select2">
 					<html:options collection="sorts" labelProperty="label" property="value"/>
 				</html:select>
 			</td>
@@ -136,7 +145,7 @@
 				<b><bean:message key="statusreport.from.text" />:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" align="left" colspan="3">
-				<html:select property="senderId" disabled="${!isReportEditable}">
+				<html:select property="senderId" disabled="${!isReportEditable}" styleClass="make-select2">
 					<html:options collection="employees" labelProperty="name" property="id"/>
 				</html:select>
 			</td>
@@ -148,7 +157,7 @@
 				<b><bean:message key="statusreport.to.text" />:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" align="left" colspan="3">
-				<html:select property="recipientId" disabled="${!isReportEditable}">
+				<html:select property="recipientId" disabled="${!isReportEditable}" styleClass="make-select2">
 					<html:options collection="employees" labelProperty="name" property="id"/>
 				</html:select>
 			</td>
@@ -162,7 +171,7 @@
 				<b><bean:message key="statusreport.phase.text" />:</b>
 			</td>
 			<td class="noBborderStyle" valign="top" align="left" colspan="3">
-				<html:select property="phase" disabled="${!isReportEditable}">
+				<html:select property="phase" disabled="${!isReportEditable}" styleClass="make-select2">
 					<html:options collection="phases" labelProperty="label" property="value"/>
 				</html:select>
 			</td>
