@@ -14,6 +14,9 @@
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="statusreport.pagetitle.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 
 <script type="text/javascript" language="JavaScript">	
 	
@@ -49,7 +52,12 @@
 		wmtt.style.display = "none";
 	}
 
-	
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 </script>
 
 </head>
@@ -70,7 +78,7 @@
 			<td class="noBborderStyle" colspan="3"><b><bean:message
 				key="main.suborder.customerorder.text" /></b></td>
 			<td class="noBborderStyle" colspan="8" align="left"><html:select
-				property="customerOrderId" onchange="refresh(this.form)">
+				property="customerOrderId" onchange="refresh(this.form)" styleClass="make-select2">
 				<html:option value="-1">
 					<bean:message key="main.general.allorders.text" />
 				</html:option>
