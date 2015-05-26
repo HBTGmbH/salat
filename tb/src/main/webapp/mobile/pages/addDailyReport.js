@@ -33,6 +33,7 @@ $(document).on('pageinit', '#bookingPage', function(event){
 		//Context and states 
 		var minutesRadioState      = {};
 		var hoursRadioState        = {};
+		var subordersData;
 
 		// Reseting the state of radio buttons,submit button, select menu and comment input
 		var resetBookingForm = function() {
@@ -59,14 +60,34 @@ $(document).on('pageinit', '#bookingPage', function(event){
 			return URLBASE + url;
 		},
 		//Filling the option of the selector with entries from the response data
-		fillSubordersOptions = function(data){
+		fillSubordersOptions = function(){
 			output = [];     
-			data = this;
+			subordersData = this;
+			var data = this;
+			var favs = readRegisteredUsedSuborders().reverse();
+			if(favs && favs.length > 0) {
+				output.push('<optgroup label="Favoriten" id="subordersFavorites">');
+				for(var i = 0; i < favs.length; i++) {
+					for(var j = 0; j < data.length; j++) {
+						var value = data[j];
+						if(value.id == favs[i]) {
+							output.push('<option value="' + value["id"] + '" data-comreq="'+value["commentRequired"]+'" >' + value["label"] +'</option>');
+							break;
+						}
+					}
+				}
+				output.push('</optgroup>');
+				output.push('<optgroup label="Alle">');
+			}
 			$.each(data, function(index, value) {
 				output.push('<option value="' + value["id"] + '" data-comreq="'+value["commentRequired"]+'" >'
 					+ value["label"] +'</option>');
 			});
-			$orderSelect.append(output.join('')).selectmenu('refresh');
+			if(favs) {
+				output.push("</optgroup>");
+			}
+			
+			$orderSelect.html(output.join('')).selectmenu('refresh');
 		},
 		// Getting the list of the suborders
 		getSuborders = function(){
@@ -206,9 +227,52 @@ $(document).on('pageinit', '#bookingPage', function(event){
 	    		return false;
 	    		}
 	    	//When all needed information present fire the ajax request to save the timereport
-	    	ajaxCall(bookingSubmitUrl,'POST',$bookingForm.serialize(), setBookingSuccessPage );	    	
+	    	var selectOrders = document.getElementById('orderSelect');
+	    	if(selectOrders) {
+	    		var id = selectOrders.options[selectOrders.selectedIndex].value;
+	    		registerUsedSuborder(id);
+	    	}
+	    	ajaxCall(bookingSubmitUrl,'POST',$bookingForm.serialize(), setBookingSuccessPage);	    	
 	    	return false;
 	    });
+	    
+	    // write the recently used suborder into the local storage
+	    registerUsedSuborder = function(id) {
+	    	if(typeof(Storage) !== "undefined") {
+	    		var localStorage = window.localStorage;
+	    		if(localStorage.favSuborders) {
+	    			var favSuborders = JSON.parse(localStorage.favSuborders);
+	    			if(favSuborders == null) {
+	    				favSuborders = [];
+	    			}
+	    		} else {
+	    			var favSuborders = [];
+	    		}
+	    		id = Number(id);
+	    		var index = favSuborders.indexOf(id);
+	    		if(index > -1) {
+	    			favSuborders.splice(index, 1);
+	    		}
+	    		favSuborders.push(id);
+	    		favSuborders = favSuborders.slice(-6);
+	    		
+	    		localStorage.favSuborders = JSON.stringify(favSuborders);
+	    		fillSubordersOptions.apply(subordersData);
+	    	}
+	    }
+	    
+	    readRegisteredUsedSuborders = function() {
+	    	if(typeof(Storage) !== "undefined") {
+	    		var localStorage = window.localStorage;
+	    		if(localStorage.favSuborders) {
+	    			var favSuborders = JSON.parse(localStorage.favSuborders);
+	    			if(favSuborders) {
+	    				return favSuborders.map(JSON.parse);
+	    			}
+	    		}
+	    	}
+	    	return null;
+	    }
 	    
 	    // Highlighting the comment input if comments are required.
 	    $orderSelect.change(function(){
