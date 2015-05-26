@@ -180,6 +180,12 @@ public class LoginEmployeeAction extends Action {
                                         employeecontract.getId(), suborder
                                                 .getId(), date);
                         if (employeeorders == null || employeeorders.isEmpty()) {
+                        	
+                        	// do not create an employeeorder for past years "URLAUB" !
+                        	if(suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) 
+                        			&& !dateString.startsWith(suborder.getSign())) {
+                        		break;
+                        	}
                             
                             // calculate time period
                             Date ecFromDate = employeecontract.getValidFrom();
