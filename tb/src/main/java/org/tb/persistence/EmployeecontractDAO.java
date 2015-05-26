@@ -223,9 +223,13 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      */
     public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId) {
         List<Employeecontract> employeeContracts = null;
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
+        if(isFilter) {
+        	filter = "%" + filter.toUpperCase() + "%";
+        }
         if (showInvalid == null || !showInvalid) {
             Date now = new Date();
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (employeeId == null || employeeId == -1) {
                     // case 1
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
@@ -291,7 +295,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
                 }
             }
         } else {
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (employeeId == null || employeeId == -1) {
                     // case 5
                     employeeContracts = getSession().createQuery("from Employeecontract e " +

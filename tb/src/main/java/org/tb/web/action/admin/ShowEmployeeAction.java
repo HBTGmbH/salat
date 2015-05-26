@@ -37,11 +37,6 @@ public class ShowEmployeeAction extends LoginRequiredAction {
 		if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("refresh"))) {
 			filter = employeeForm.getFilter();
-
-			if (filter != null && !filter.trim().equals("")) {
-				filter = filter.toUpperCase();
-				filter = "%" + filter + "%";
-			}			
 			request.getSession().setAttribute("employeeFilter", filter);
 			
 		} else {

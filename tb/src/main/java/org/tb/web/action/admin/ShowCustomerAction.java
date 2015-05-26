@@ -38,10 +38,6 @@ public class ShowCustomerAction extends LoginRequiredAction {
 				(request.getParameter("task").equals("refresh"))) {
 			filter = customerForm.getFilter();
 
-			if (filter != null && !filter.trim().equals("")) {
-				filter = filter.toUpperCase();
-				filter = "%" + filter + "%";
-			}			
 			request.getSession().setAttribute("customerFilter", filter);
 			
 		} else {

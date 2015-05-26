@@ -49,11 +49,6 @@ public class ShowEmployeecontractAction extends LoginRequiredAction {
 		if ((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("refresh"))) {
 			filter = contractForm.getFilter();
-
-			if (filter != null && !filter.trim().equals("")) {
-				filter = filter.toUpperCase();
-				filter = "%" + filter + "%";
-			}			
 			request.getSession().setAttribute("employeeContractFilter", filter);
 			
 			show = contractForm.getShow();

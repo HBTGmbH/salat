@@ -187,6 +187,7 @@ a:hover {
 	padding: 0;
 	margin: 0;
 	list-style: none;
+	z-index:20000;
 }
 
 menu li, .menu li {

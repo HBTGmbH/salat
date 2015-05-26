@@ -88,8 +88,13 @@ public class CustomerorderDAO extends HibernateDaoSupport {
         List<Customerorder> customerorders = new ArrayList<Customerorder>();
         Date now = new Date();
         
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
+        if(isFilter) {
+        	filter = "%" + filter.toUpperCase() + "%";
+        }
+        
         if (showInvalid == null || !showInvalid) {
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (customerId == null || customerId == -1) {
                     // case 1
                     customerorders = getSession().createQuery(
@@ -143,7 +148,7 @@ public class CustomerorderDAO extends HibernateDaoSupport {
                 }
             }
         } else {
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (customerId == null || customerId == -1) {
                     // case 5
                     customerorders = getSession().createQuery(

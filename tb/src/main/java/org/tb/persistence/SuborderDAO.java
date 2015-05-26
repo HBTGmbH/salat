@@ -204,9 +204,13 @@ public class SuborderDAO extends HibernateDaoSupport {
      */
     public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
         List<Suborder> suborders = new ArrayList<Suborder>();
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
+        if(isFilter) {
+        	filter = "%" + filter.toUpperCase() + "%";
+        }
         if (showInvalid == null || !showInvalid) {
             Date now = new Date();
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (customerOrderId == null || customerOrderId == -1) {
                     // case 1
                     suborders = getSession().createQuery("from Suborder s where " +
@@ -304,7 +308,7 @@ public class SuborderDAO extends HibernateDaoSupport {
                 }
             }
         } else {
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (customerOrderId == null || customerOrderId == -1) {
                     // case 5
                     suborders = getSession().createQuery("from Suborder s " +

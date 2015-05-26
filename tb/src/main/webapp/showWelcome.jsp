@@ -11,13 +11,23 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message
 	key="main.general.mainmenu.welcome.title.text" /></title>
+<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
+<script src="/tb/scripts/select2.full.min.js"></script>
 <script type="text/javascript" language="JavaScript">
 	
 	function setUpdate(form) {	
  		form.action = "/tb/do/ShowWelcome?task=refresh";
 		form.submit();
 	}
-	
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
 </script>
 </head>
 <body>
@@ -31,7 +41,7 @@
 <br>
 <html:form action="/ShowWelcome">
 &nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)"
-			 value="${currentEmployeeContract.id}">
+			 value="${currentEmployeeContract.id}" styleClass="make-select2">
 	<c:forEach var="employeecontract" items="${employeecontracts}" >
 		<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 			<html:option value="${employeecontract.id}">

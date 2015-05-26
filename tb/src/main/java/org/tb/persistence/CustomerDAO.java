@@ -37,11 +37,13 @@ public class CustomerDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Customer>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Customer> getCustomersByFilter(String filter) {
 		List<Customer> customers = null;
 		if (filter == null || filter.trim().equals("")) {
 			customers = getSession().createQuery("from Customer order by name asc").list();
 		} else {
+			filter = "%" + filter.toUpperCase() + "%";
 			customers = getSession().createQuery("from Customer where " +
 					"upper(id) like ? " +
 					"or upper(name) like ? " +

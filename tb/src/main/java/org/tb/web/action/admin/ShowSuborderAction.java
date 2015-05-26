@@ -92,11 +92,6 @@ public class ShowSuborderAction extends LoginRequiredAction {
             request.getSession().setAttribute("showStructure", showStructure);
             
             filter = suborderForm.getFilter();
-            
-            if (filter != null && !filter.trim().equals("")) {
-                filter = filter.toUpperCase();
-                filter = "%" + filter + "%";
-            }
             request.getSession().setAttribute("suborderFilter", filter);
             
             show = suborderForm.getShow();

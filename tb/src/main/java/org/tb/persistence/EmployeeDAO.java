@@ -171,6 +171,7 @@ public class EmployeeDAO extends HibernateDaoSupport {
 					"order by upper(p.lastname)")
 					.list();
 		} else {
+			filter = "%" + filter.toUpperCase() + "%";
 			employees = getSession().createQuery("from Employee p where " +
 					"upper(id) like ? " +
 					"or upper(loginname) like ? " +

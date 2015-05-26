@@ -261,12 +261,13 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long customerSuborderId) {
         List<Employeeorder> employeeorders = null;
-        if(filter != null && !filter.isEmpty()) {
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
+        if(isFilter) {
         	filter = "%" + filter.toUpperCase() + "%";
         }
         if (showInvalid == null || showInvalid == false) {
             Date now = new Date();
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 01: only valid, no filter, no employeeContractId, no customerOrderId
@@ -494,7 +495,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                 }
             }
         } else {
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 09: valid + invalid, no filter, no employeeContractId, no customerOrderId  
@@ -682,12 +683,13 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId) {
         List<Employeeorder> employeeorders = null;
-        if(filter != null && !filter.isEmpty()) {
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
+        if(isFilter) {
         	filter = "%" + filter.toUpperCase() + "%";
         }
         if (showInvalid == null || showInvalid == false) {
             Date now = new Date();
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 01: only valid, no filter, no employeeContractId, no customerOrderId
@@ -877,7 +879,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                 }
             }
         } else {
-            if (filter == null || filter.trim().equals("")) {
+            if (!isFilter) {
                 if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 09: valid + invalid, no filter, no employeeContractId, no customerOrderId  
