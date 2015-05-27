@@ -108,7 +108,6 @@ public class TreeTag extends TagSupport {
             if (rand == null)
                 rand = new Random();
             String name = Integer.toString(rand.nextInt()); 
-            String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, mainProject.getId() + "");
             
             //-----------------------------------------------
             //		prepaire entries which are no parents (leafs)
@@ -127,6 +126,7 @@ public class TreeTag extends TagSupport {
 			if (onlySuborders != true 
 					&& this.changeFunctionString!=null 
 					&& !this.changeFunctionString.equals("")){
+				String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, mainProject.getId() + "");
 				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"><b>" + mainProject.getSignAndDescription() + "</b></td>");
 				out.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" " );
 				out.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
