@@ -62,7 +62,8 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      * 
      * @return
      */
-    public List<Customerorder> getCustomerorders() {
+    @SuppressWarnings("unchecked")
+	public List<Customerorder> getCustomerorders() {
         return getSession().createQuery("from Customerorder order by sign").list();
     }
     
@@ -72,7 +73,8 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      * 
      * @return
      */
-    public List<Customerorder> getVisibleCustomerorders() {
+    @SuppressWarnings("unchecked")
+	public List<Customerorder> getVisibleCustomerorders() {
         Date now = new Date();
         return getSession().createQuery("from Customerorder where (hide = null or hide = false) or (fromDate <= ? and (untilDate = null or untilDate >= ? )) order by sign").setDate(0, now)
                 .setDate(1, now).list();
@@ -84,7 +86,8 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      * 
      * @return
      */
-    public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
+    @SuppressWarnings("unchecked")
+	public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
         List<Customerorder> customerorders = new ArrayList<Customerorder>();
         Date now = new Date();
         
@@ -206,7 +209,8 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      * @param responsibleHbtId
      * @return
      */
-    public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
+    @SuppressWarnings("unchecked")
+	public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
         return getSession().createQuery("from Customerorder where RESPONSIBLE_HBT_ID = ? order by sign").setLong(0, responsibleHbtId).list();
     }
     
@@ -216,7 +220,8 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      * @param responsibleHbtId
      * @return
      */
-    public List<Customerorder> getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(long responsibleHbtId) {
+    @SuppressWarnings("unchecked")
+	public List<Customerorder> getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(long responsibleHbtId) {
         return getSession().createQuery("from Customerorder " +
                 "where RESPONSIBLE_HBT_ID = ? " +
                 "and (statusreport = 4 " +
@@ -231,7 +236,8 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      * @param responsibleHbtId
      * @return
      */
-    public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
+    @SuppressWarnings("unchecked")
+	public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
         Date now = new Date();
         return getSession().createQuery("from Customerorder where RESPONSIBLE_HBT_ID = ? " +
                 "and ((hide = null or hide = false) " +
@@ -248,10 +254,11 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      */
     public List<Customerorder> getCustomerordersByEmployeeContractId(long contractId) {
         
-        List<Employeeorder> employeeOrders =
+        @SuppressWarnings("unchecked")
+		List<Employeeorder> employeeOrders =
                 getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by suborder.customerorder.sign").setLong(0, contractId).list();
         
-        List<Suborder> allSuborders = new ArrayList();
+        List<Suborder> allSuborders = new ArrayList<Suborder>();
         for (Object element : employeeOrders) {
             Employeeorder eo = (Employeeorder)element;
             Suborder so = (Suborder)getSession().createQuery("from Suborder s where s.id = ? order by customerorder.sign").setLong(0, eo.getSuborder().getId()).uniqueResult();
@@ -259,7 +266,7 @@ public class CustomerorderDAO extends HibernateDaoSupport {
         }
         
         List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
-        List<Customerorder> allCustomerorders = new ArrayList();
+        List<Customerorder> allCustomerorders = new ArrayList<Customerorder>();
         for (Object element : suborders) {
             Suborder so = (Suborder)element;
             Customerorder co = (Customerorder)getSession().createQuery("from Customerorder c where c.id = ?").setLong(0, so.getCustomerorder().getId()).uniqueResult();
@@ -280,7 +287,8 @@ public class CustomerorderDAO extends HibernateDaoSupport {
         return allCustomerorders;
     }
     
-    public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, Date date) {
+    @SuppressWarnings("unchecked")
+	public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, Date date) {
         return getSession().createSQLQuery("select distinct {co.*} from customerorder co, employeeorder eo, suborder so " +
                 "where so.id = eo.suborder_id " +
                 "and co.id = so.customerorder_id " +
