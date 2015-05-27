@@ -119,14 +119,7 @@ function refresh(form, id) {
 						key="main.general.Budget.result2.text" />"><b><bean:message key="main.general.Budget.result2.text" /></b></th>
 			</tr>
 			<c:forEach items="${changeFrom}" var="entry" varStatus="statusID">
-				<c:choose>
-					<c:when test="${statusID.count%2==0}">
-						<tr class="primarycolor">
-					</c:when>
-					<c:otherwise>
-						<tr class="secondarycolor">
-					</c:otherwise>
-				</c:choose>
+				<tr class="${statusID.count%2==0 ? 'primarycolor' : 'secondarycolor'}">
 					 <td nowrap>
 					 	<c:out  value="${entry}"/>
 					 </td>
