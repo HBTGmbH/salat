@@ -252,8 +252,8 @@ public class DateUtils {
     /*
      * builds up a list of string with months to display (Jan-Dec)
      */
-    public static List getMonthsToDisplay() {
-        List theList = new ArrayList();
+    public static List<OptionItem> getMonthsToDisplay() {
+        List<OptionItem> theList = new ArrayList<OptionItem>();
         String dayValue = "";
         String dayLabel = "";
         for (int i = 1; i <= 12; i++) {
@@ -268,8 +268,8 @@ public class DateUtils {
     /*
      * builds up a list of string with days to display (01-31)
      */
-    public static List getDaysToDisplay() {
-        List theList = new ArrayList();
+    public static List<OptionItem> getDaysToDisplay() {
+        List<OptionItem> theList = new ArrayList<OptionItem>();
         String dayValue = "";
         String dayLabel = "";
         for (int i = 1; i <= 31; i++) {
@@ -291,8 +291,8 @@ public class DateUtils {
     /*
      * builds up a list of string with hour to display (6-21)
      */
-    public static List getHoursToDisplay() {
-        List theList = new ArrayList();
+    public static List<OptionItem> getHoursToDisplay() {
+        List<OptionItem> theList = new ArrayList<OptionItem>();
         String hourValue = "";
         String hourLabel = "";
         for (int i = 6; i < 22; i++) {
@@ -311,8 +311,8 @@ public class DateUtils {
     /*
      * builds up a list of string with hour to display (1-5)
      */
-    public static List getCompleteHoursToDisplay() {
-        List theList = new ArrayList();
+    public static List<OptionItem> getCompleteHoursToDisplay() {
+        List<OptionItem> theList = new ArrayList<OptionItem>();
         String hourValue = "";
         String hourLabel = "";
         for (int i = 0; i <= 5; i++) {
@@ -326,8 +326,8 @@ public class DateUtils {
     /*
      * builds up a list of string with duration hours to display (0-15)
      */
-    public static List getHoursDurationToDisplay() {
-        List theList = new ArrayList();
+    public static List<OptionItem> getHoursDurationToDisplay() {
+        List<OptionItem> theList = new ArrayList<OptionItem>();
         String hourValue = "";
         String hourLabel = "";
         for (int i = 0; i < 16; i++) {
@@ -347,8 +347,8 @@ public class DateUtils {
     /*
      * builds up a list of string with minutes to display (05-55)
      */
-    public static List getMinutesToDisplay() {
-        List theList = new ArrayList();
+    public static List<OptionItem> getMinutesToDisplay() {
+        List<OptionItem> theList = new ArrayList<OptionItem>();
         String minuteValue = "";
         String minuteLabel = "";
         
