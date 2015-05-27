@@ -59,79 +59,76 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
 			request.setAttribute("errorMessage", 
 				"Associated employee order not found - please call system administrator.");
 			mapping.findForward("error");
-		}
-		Employeeordercontent eoContent = employeeorder
-				.getEmployeeordercontent();
-
-		// Store employee order and content in session
-		request.getSession().setAttribute("eoContent", eoContent);
-		request.getSession()
-				.setAttribute("currentEmployeeOrder", employeeorder);
-		request.getSession().setAttribute("currentEmployeeOrderId",
-				employeeorder.getId());
-
-		// content is editable?
-		request.getSession().setAttribute("contentIsEditable",
-				isContentEditable(request, employeeorder, eoContent));
-
-		// release authorization
-		setReleaseAuthorizationInSession(request, employeeorder, eoContent);
-
-		if (eoContent != null) {
-			request.getSession().setAttribute("contentStatus",
-					"id " + eoContent.getId());
-
-			// initialize form with values
-			contentForm.setContact_contract_customer(eoContent
-					.getContact_contract_customer());
-			contentForm.setContact_tech_customer(eoContent
-					.getContact_tech_customer());
-			contentForm.setContact_contract_hbt_emp_id(eoContent
-					.getContactContractHbt().getId());
-			contentForm.setContact_tech_hbt_emp_id(eoContent
-					.getContactTechHbt().getId());
-			contentForm.setAdditional_risks(eoContent.getAdditional_risks());
-			contentForm.setArrangement(eoContent.getArrangement());
-			contentForm.setBoundary(eoContent.getBoundary());
-			contentForm.setDescription(eoContent.getDescription());
-			contentForm.setProcedure(eoContent.getProcedure());
-			contentForm.setQm_process_id(eoContent.getQm_process_id());
-			contentForm.setTask(eoContent.getTask());
 		} else {
-			request.getSession().setAttribute(
-					"contentStatus",
-					getResources(request).getMessage(getLocale(request),
-							"employeeordercontent.newcontent.text"));
-
-			// form presetting for a new eoc
-			contentForm.setContact_contract_customer(employeeorder
-					.getSuborder().getCustomerorder()
-					.getResponsible_customer_contractually());
-			contentForm.setContact_tech_customer(employeeorder.getSuborder()
-					.getCustomerorder().getResponsible_customer_technical());
-			if (employeeorder.getSuborder().getCustomerorder()
-					.getRespEmpHbtContract() != null) {
-				contentForm.setContact_contract_hbt_emp_id(employeeorder
+			Employeeordercontent eoContent = employeeorder.getEmployeeordercontent();
+	
+			// Store employee order and content in session
+			request.getSession().setAttribute("eoContent", eoContent);
+			request.getSession().setAttribute("currentEmployeeOrder", employeeorder);
+			request.getSession().setAttribute("currentEmployeeOrderId",	employeeorder.getId());
+	
+			// content is editable?
+			request.getSession().setAttribute("contentIsEditable", isContentEditable(request, employeeorder, eoContent));
+	
+			// release authorization
+			setReleaseAuthorizationInSession(request, employeeorder, eoContent);
+	
+			if (eoContent != null) {
+				request.getSession().setAttribute("contentStatus",
+						"id " + eoContent.getId());
+	
+				// initialize form with values
+				contentForm.setContact_contract_customer(eoContent
+						.getContact_contract_customer());
+				contentForm.setContact_tech_customer(eoContent
+						.getContact_tech_customer());
+				contentForm.setContact_contract_hbt_emp_id(eoContent
+						.getContactContractHbt().getId());
+				contentForm.setContact_tech_hbt_emp_id(eoContent
+						.getContactTechHbt().getId());
+				contentForm.setAdditional_risks(eoContent.getAdditional_risks());
+				contentForm.setArrangement(eoContent.getArrangement());
+				contentForm.setBoundary(eoContent.getBoundary());
+				contentForm.setDescription(eoContent.getDescription());
+				contentForm.setProcedure(eoContent.getProcedure());
+				contentForm.setQm_process_id(eoContent.getQm_process_id());
+				contentForm.setTask(eoContent.getTask());
+			} else {
+				request.getSession().setAttribute(
+						"contentStatus",
+						getResources(request).getMessage(getLocale(request),
+								"employeeordercontent.newcontent.text"));
+	
+				// form presetting for a new eoc
+				contentForm.setContact_contract_customer(employeeorder
 						.getSuborder().getCustomerorder()
-						.getRespEmpHbtContract().getId());
+						.getResponsible_customer_contractually());
+				contentForm.setContact_tech_customer(employeeorder.getSuborder()
+						.getCustomerorder().getResponsible_customer_technical());
+				if (employeeorder.getSuborder().getCustomerorder()
+						.getRespEmpHbtContract() != null) {
+					contentForm.setContact_contract_hbt_emp_id(employeeorder
+							.getSuborder().getCustomerorder()
+							.getRespEmpHbtContract().getId());
+				}
+				if (employeeorder.getSuborder().getCustomerorder()
+						.getResponsible_hbt() != null) {
+					contentForm.setContact_tech_hbt_emp_id(employeeorder
+							.getSuborder().getCustomerorder().getResponsible_hbt()
+							.getId());
+				}
+	
+				contentForm.setDescription(getResources(request).getMessage(
+						getLocale(request),
+						"employeeordercontent.presetting.description.text"));
+				contentForm.setBoundary(getResources(request).getMessage(
+						getLocale(request),
+						"employeeordercontent.presetting.boundary.text"));
+				contentForm.setProcedure(getResources(request).getMessage(
+						getLocale(request),
+						"employeeordercontent.presetting.procedure.text"));
+	
 			}
-			if (employeeorder.getSuborder().getCustomerorder()
-					.getResponsible_hbt() != null) {
-				contentForm.setContact_tech_hbt_emp_id(employeeorder
-						.getSuborder().getCustomerorder().getResponsible_hbt()
-						.getId());
-			}
-
-			contentForm.setDescription(getResources(request).getMessage(
-					getLocale(request),
-					"employeeordercontent.presetting.description.text"));
-			contentForm.setBoundary(getResources(request).getMessage(
-					getLocale(request),
-					"employeeordercontent.presetting.boundary.text"));
-			contentForm.setProcedure(getResources(request).getMessage(
-					getLocale(request),
-					"employeeordercontent.presetting.procedure.text"));
-
 		}
 
 		// build collection of qm processes
