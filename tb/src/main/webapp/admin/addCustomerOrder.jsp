@@ -370,16 +370,8 @@
 				key="main.timereport.monthly.costs.text" /></b></th>
 		</tr>
 		
-		<c:forEach var="timereport" items="${timereportsOutOfRange}"
-			varStatus="rowID">
-			<c:choose>
-				<c:when test="${rowID.count%2==0}">
-					<tr class="primarycolor">
-				</c:when>
-				<c:otherwise>
-					<tr class="secondarycolor">
-				</c:otherwise>
-			</c:choose>
+		<c:forEach var="timereport" items="${timereportsOutOfRange}" varStatus="rowID">
+			<tr class="${rowID.count % 2 == 0 ? 'primarycolor' : 'secondarycolor'}">
 			
 			<!-- Info -->
 			<td align="center">
