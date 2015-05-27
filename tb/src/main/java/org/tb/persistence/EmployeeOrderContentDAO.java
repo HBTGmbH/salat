@@ -1,6 +1,5 @@
 package org.tb.persistence;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
@@ -34,6 +33,7 @@ public class EmployeeOrderContentDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Employeeordercontent> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Employeeordercontent> getEmployeeOrderContents() {
 		return getSession().createQuery("from Employeeordercontent order by id asc").list();
 	}
@@ -87,8 +87,7 @@ public class EmployeeOrderContentDAO extends HibernateDaoSupport {
 		Employeeordercontent eocToDelete = getEmployeeOrderContentById(eocId);
 		boolean eocDeleted = false;
 		
-		for (Iterator it = allEmployeeOrderContents.iterator(); it.hasNext();) {
-			Employeeordercontent eoc = (Employeeordercontent) it.next();
+		for (Employeeordercontent eoc : allEmployeeOrderContents) {
 			if(eoc.getId() == eocToDelete.getId()) {
 				boolean deleteOk = false;
 				
