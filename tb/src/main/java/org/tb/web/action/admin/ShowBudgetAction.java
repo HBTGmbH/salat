@@ -59,8 +59,8 @@ public class ShowBudgetAction extends LoginRequiredAction{
 		
 		*/
 		request.getSession().setAttribute("showResult", false);
-		Employee loginEmployee = (Employee) request.getSession()
-		.getAttribute("loginEmployee");
+		@SuppressWarnings("unused")
+		Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 		
 		List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
 		request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
@@ -88,66 +88,59 @@ public class ShowBudgetAction extends LoginRequiredAction{
 				request.getSession().setAttribute("orderOrSuborder", co);
 				if (co!=null)
 					request.getSession().setAttribute("orderOrSuborderSignAndDescription", co.getSignAndDescription());
-			}else{
+			} else {
 				request.getSession().setAttribute("orderOrSuborderSignAndDescription", so.getSignAndDescription());
 			}
-		
 		}
 		
-		
-		
-		
-		if ((request.getParameter("task") != null) && 
-				(request.getParameter("task").equals("refresh"))) {
+		if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refresh"))) {
 			request.getSession().setAttribute("currentOrder", customerorderDAO.getCustomerorderById(budgetForm.getCustomerOrderId()));
-			
-			
-		}else 	if ((request.getParameter("task") != null) && 
-				(request.getParameter("task").equals("calcStructure"))) {
-			
+		} else if((request.getParameter("task") != null) &&	(request.getParameter("task").equals("calcStructure"))) {
 			request.getSession().setAttribute("showResult", true);
-			ArrayList[] changes = getListWithChanges(request, this.suborderDAO.getSuborders(false));
-			request.getSession().setAttribute("changeFrom",changes[0]);
-			request.getSession().setAttribute("changeTo",changes[1]);
-			request.getSession().setAttribute("changeId",changes[2]);
+			ArrayList<String> changeFrom = new ArrayList<String>();
+			ArrayList<String> changeTo = new ArrayList<String>();
+			ArrayList<Long> changeId = new ArrayList<Long>();
+
+			createListWithChanges(request, this.suborderDAO.getSuborders(false), changeFrom, changeTo, changeId);
+			request.getSession().setAttribute("changeFrom", changeFrom);
+			request.getSession().setAttribute("changeTo", changeTo);
+			request.getSession().setAttribute("changeId", changeId);
 			
-		}else 	if ((request.getParameter("task") != null) && 
-				(request.getParameter("task").equals("calcBudget"))) {
-			
-			//request.getSession().setAttribute("showResult", true);
-			//ArrayList changes = getListWithChanges(request, this.suborderDAO.getSuborders());
-			request.getSession().setAttribute("toChange",null);
-			
-		}else 	if ((request.getParameter("task") != null) && 
-				(request.getParameter("task").equals("calcDebit"))) {
+		} else if((request.getParameter("task") != null) && (request.getParameter("task").equals("calcBudget"))) {
 			
 			//request.getSession().setAttribute("showResult", true);
 			//ArrayList changes = getListWithChanges(request, this.suborderDAO.getSuborders());
 			request.getSession().setAttribute("toChange",null);
 			
-		}else 	if ((request.getParameter("task") != null) && 
+		} else if((request.getParameter("task") != null) && (request.getParameter("task").equals("calcDebit"))) {
+			
+			//request.getSession().setAttribute("showResult", true);
+			//ArrayList changes = getListWithChanges(request, this.suborderDAO.getSuborders());
+			request.getSession().setAttribute("toChange",null);
+			
+		} else if((request.getParameter("task") != null) && 
 				(request.getParameter("task").equals("editStructure"))) {
 			List<Suborder> subs = this.suborderDAO.getSuborders(false);
-			ArrayList changeId = (ArrayList) request.getSession().getAttribute("changeId");
-			ArrayList changeTo = (ArrayList) request.getSession().getAttribute("changeTo");
+			@SuppressWarnings("unchecked")
+			ArrayList<Long> changeId = (ArrayList<Long>) request.getSession().getAttribute("changeId");
+			@SuppressWarnings("unchecked")
+			ArrayList<String> changeTo = (ArrayList<String>) request.getSession().getAttribute("changeTo");
 			for (int i=0; i<subs.size();i++){
-				for (int j=0;j<changeId.size();j++){
+				for (int j=0; j < changeId.size(); j++){
 				
 					Suborder tempSuborder = subs.get(i);
-					if (Long.toString(tempSuborder.getId()).equals(changeId.get(j).toString())){
-						this.suborderDAO.getSuborders(false).get(i).setSign(changeTo.get(j).toString());
+					if (tempSuborder.getId() == changeId.get(j)){
+						this.suborderDAO.getSuborders(false).get(i).setSign(changeTo.get(j));
 					}
 				}
 			}
 			//request.getSession().setAttribute("showResult", true);
 			//ArrayList changes = getListWithChanges(request, this.suborderDAO.getSuborders());
-			request.getSession().setAttribute("toChange",null);
+			request.getSession().setAttribute("toChange", null);
 			
-		}else{
-			TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated - budgetForm.getCustomerOrderId():  " 
-					+ budgetForm.getCustomerOrderId());
+		} else {
+			TbLogger.debug(ShowBudgetAction.class.toString(),"ShowBudgetAction.executeAuthenticated - budgetForm.getCustomerOrderId():  " + budgetForm.getCustomerOrderId());
 			request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
-			
 			request.getSession().setAttribute("currentOrder", null);
 		}
 		/*Customerorder current = ((Customerorder)request.getSession().getAttribute("currentOrder"));
@@ -165,12 +158,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 	 * @param suborders 
 	 * @return
 	 */
-	private ArrayList[] getListWithChanges(HttpServletRequest request, List<Suborder> suborders){
-		
-		ArrayList changeFrom = new ArrayList();
-		ArrayList changeTo = new ArrayList();
-		ArrayList changeId = new ArrayList();
-		
+	private void createListWithChanges(HttpServletRequest request, List<Suborder> suborders, List<String> changeFrom, List<String> changeTo, List<Long> changeId){
 		Long orderId;
 		String orderSign;
 		
@@ -183,7 +171,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 			orderSign = so.getSign();
 			orderId = so.getId();
 		} else{
-			return null;
+			return;
 		}
 
 		int counter = 1;
@@ -195,26 +183,30 @@ public class ShowBudgetAction extends LoginRequiredAction{
 			}
 		}
 		
-		return new ArrayList[] {changeFrom, changeTo, changeId};
+		return;
 	}
+
 	/**
 	 * helps to generate the signs of the following nodes of one parent node recursivly
-	 * @param list
+	 * 
+	 * @param changeFrom
+	 * @param changeTo
+	 * @param changeId
 	 * @param suborder
 	 * @param suborders
 	 * @param parentSign
 	 */
-	private void fillRecursivly(ArrayList listFrom, ArrayList listTo ,ArrayList listId , Suborder suborder, List<Suborder> suborders, String parentSign){
+	private void fillRecursivly(List<String> changeFrom, List<String> changeTo, List<Long> changeId, Suborder suborder, List<Suborder> suborders, String parentSign) {
 		int counter = 1;
 		for (int i = 0; i<suborders.size();i++){
 			if (suborders.get(i).getParentorder() == suborder){
-				fillRecursivly(listFrom, listTo, listId, suborders.get(i), suborders, parentSign + "." + counter);
+				fillRecursivly(changeFrom, changeTo, changeId, suborders.get(i), suborders, parentSign + "." + counter);
 				counter++;
 			}
 		}
-		listFrom.add(suborder.getSign());
-		listTo.add(parentSign);
-		listId.add(suborder.getId());
+		changeFrom.add(suborder.getSign());
+		changeTo.add(parentSign);
+		changeId.add(suborder.getId());
 	}
 	
 }
