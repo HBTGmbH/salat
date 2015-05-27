@@ -13,6 +13,7 @@ public class WorkingdayDAO extends HibernateDaoSupport{
 	 * 
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Workingday> getWorkingdays() {
 		return getSession().createQuery("from Workingday order by employeecontract.id asc, refday asc").list();
 	}
@@ -24,6 +25,7 @@ public class WorkingdayDAO extends HibernateDaoSupport{
 	 * @return
 	 */
 	public Workingday getWorkingdayByDateAndEmployeeContractId(java.sql.Date refdate, long employeeContractId) {
+		@SuppressWarnings("unchecked")
 		List<Workingday> workingdays = getSession().createQuery("from Workingday w where w.refday = ? and w.employeecontract.id = ? ").setDate(0, refdate).setLong(1, employeeContractId).list();
 		return workingdays != null && workingdays.size() > 0 ? workingdays.iterator().next() : null;
 	}
