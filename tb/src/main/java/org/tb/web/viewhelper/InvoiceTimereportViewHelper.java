@@ -33,10 +33,6 @@ public class InvoiceTimereportViewHelper {
 		this.timereport = timereport;
 		this.visible = true;
 	}
-	
-	public boolean equals(Object obj) {
-		return timereport.equals(obj);
-	}
 
 	public Date getAccepted() {
 		return timereport.getAccepted();
