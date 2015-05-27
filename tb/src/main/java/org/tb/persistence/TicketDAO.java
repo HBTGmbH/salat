@@ -36,7 +36,8 @@ public class TicketDAO extends HibernateDaoSupport {
      * @param long suborder id
      * @return List<Ticket>
      */
-    public List<Ticket> getTicketsBySuborderID(long suborderID) {
+    @SuppressWarnings("unchecked")
+	public List<Ticket> getTicketsBySuborderID(long suborderID) {
         return getSession().createQuery("from Ticket t where t.suborder.id = ? order by jiraTicketKey").setLong(0, suborderID).list();
     }
     
@@ -45,7 +46,8 @@ public class TicketDAO extends HibernateDaoSupport {
      * @param String jiraTicketKey
      * @return List<Ticket>
      */
-    public List<Ticket> getTicketsByJiraTicketKey(String jiraTicketKey) {
+    @SuppressWarnings("unchecked")
+	public List<Ticket> getTicketsByJiraTicketKey(String jiraTicketKey) {
         return getSession().createQuery("from Ticket t where t.jiraTicketKey = ? order by jiraTicketKey").setString(0, jiraTicketKey).list();
     }
     
@@ -54,13 +56,15 @@ public class TicketDAO extends HibernateDaoSupport {
      * @param String jiraProjectID, long customerorderID
      * @return ProjectID
      */
-    public List<Ticket> getTicketsByCustomerorderID(long customerorderId) {
+    @SuppressWarnings("unchecked")
+	public List<Ticket> getTicketsByCustomerorderID(long customerorderId) {
         return getSession().createQuery("from Ticket t where t.suborder.customerorder.id = ? order by jiraTicketKey")
                 .setLong(0, customerorderId).list();
     }
     
     public Ticket getTicketByJiraTicketKeyAndDate(String jiraTicketKey, Date date) {    	
-    	List<Ticket> list = getSession().createQuery("from Ticket t " + 
+    	@SuppressWarnings("unchecked")
+		List<Ticket> list = getSession().createQuery("from Ticket t " + 
     			"where t.jiraTicketKey = ? and t.fromDate <= ? and  (t.untilDate is null or t.untilDate >= ?) order by jiraTicketKey")
                 .setString(0, jiraTicketKey).setDate(1, date).setDate(2, date).list();
     	return !list.isEmpty()?list.get(0):null;
