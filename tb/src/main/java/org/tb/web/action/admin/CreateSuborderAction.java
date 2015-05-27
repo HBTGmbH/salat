@@ -75,7 +75,9 @@ public class CreateSuborderAction extends LoginRequiredAction {
 		
 		// use customer order from filter
 		Long customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
-		suborderForm.setCustomerorderId(customerOrderId);
+		if(customerOrderId != null) {
+			suborderForm.setCustomerorderId(customerOrderId);
+		}
 		
 		// use last customer order als default if present
 		if (request.getSession().getAttribute("lastCoId") != null) {
