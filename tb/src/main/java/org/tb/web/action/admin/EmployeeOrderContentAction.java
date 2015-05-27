@@ -1,5 +1,7 @@
 package org.tb.web.action.admin;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import org.tb.GlobalConstants;
@@ -18,22 +20,17 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 	 * @param eoContent
 	 * @return Returns true, if content is editable, false otherwise
 	 */
-	protected boolean isContentEditable(HttpServletRequest request,
-			Employeeorder employeeorder, Employeeordercontent eoContent) {
+	protected boolean isContentEditable(HttpServletRequest request,	@Nonnull Employeeorder employeeorder, @Nullable Employeeordercontent eoContent) {
 		if (eoContent != null) {
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
+			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 			if (!eoContent.getCommitted_emp() && !eoContent.getCommitted_mgmt()) {
 				return true;
 			} else if ((!eoContent.getCommitted_mgmt() || !eoContent.getCommitted_emp())
 					&& (loginEmployee.equals(employeeorder.getEmployeecontract().getEmployee()) 
 							|| loginEmployee.equals(eoContent.getContactTechHbt()))) {
 				return true;
-			}  else if (loginEmployee.getStatus().equals(
-					GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-				return true;
-			} else {
-				return false;
+			}  else {
+				return GlobalConstants.EMPLOYEE_STATUS_ADM.equals(loginEmployee.getStatus());
 			}
 		} else {
 			// new content is allways editable
