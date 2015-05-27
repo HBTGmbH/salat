@@ -3,7 +3,6 @@ package org.tb.web.action.admin;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -138,7 +137,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
             } else {
                 List<Suborder> suborders = co.getSuborders();
                 // remove hidden suborders (and invalid suborders, if a flag is set)
-                List<Suborder> dummy = new ArrayList<Suborder>(suborders);
                 Iterator<Suborder> suborderIterator = suborders.iterator();
                 while (suborderIterator.hasNext()) {
                     Suborder suborder = suborderIterator.next();
@@ -148,13 +146,19 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
                     	suborderIterator.remove();
                     }
                 }
-                dummy = new ArrayList<Suborder>(suborders);
                 request.getSession().setAttribute("suborders", suborders);
 
+                /* suggest value */
+                eoForm.setDebithoursunit((byte)-1); // default: no unit set
                 Suborder so = co.getSuborders().get(0);
                 if (so != null) {
                 	eoForm.setSuborderId(so.getId());
                 	request.getSession().setAttribute("selectedsuborder", so);
+                	eoForm.setDebithours(so.getDebithours());
+                	if (so.getDebithours() != null && so.getDebithours() > 0.0) {
+                		/* set unit if applicable */
+                		eoForm.setDebithoursunit(so.getDebithoursunit());
+                	}
                 }
                 
                 request.getSession().setAttribute("selectedcustomerorder", co);
@@ -162,16 +166,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
                 eoForm.setOrderId(co.getId());
                 request.getSession().setAttribute("currentOrderId", co.getId());
                 setFormDates(request, eoForm);
-                
-                /* suggest value */
-                eoForm.setDebithours(so.getDebithours());
-                
-                eoForm.setDebithoursunit((byte)-1); // default: no unit set
-                if (so.getDebithours() != null && so.getDebithours() > 0.0) {
-                    /* set unit if applicable */
-                    eoForm.setDebithoursunit(so.getDebithoursunit());
-                }
-                
+
                 return mapping.getInputForward();
             }
         }
@@ -185,19 +180,19 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
             if (so != null) {
                 request.getSession().setAttribute("selectedsuborder", so);
                 eoForm.setSuborderId(so.getId());
+
+                /* suggest value */
+                eoForm.setDebithours(so.getDebithours());
+                
+                eoForm.setDebithoursunit((byte)-1); // default: no unit set
+                if (so.getDebithours() != null && so.getDebithours() > 0.0) {
+                	/* set unit if applicable */
+                	eoForm.setDebithoursunit(so.getDebithoursunit());
+                }
             }
             // checkDatabaseForEmployeeOrder(request, eoForm,
             // employeecontractDAO, employeeorderDAO);
             setFormDates(request, eoForm);
-            
-            /* suggest value */
-            eoForm.setDebithours(so.getDebithours());
-            
-            eoForm.setDebithoursunit((byte)-1); // default: no unit set
-            if (so.getDebithours() != null && so.getDebithours() > 0.0) {
-                /* set unit if applicable */
-                eoForm.setDebithoursunit(so.getDebithoursunit());
-            }
             
             return mapping.getInputForward();
         }
@@ -234,7 +229,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
             
             Date fromDate = Date.valueOf(eoForm.getValidFrom());
             
-            if (eoForm.getValidUntil() == null || eoForm.getValidUntil() == "".trim()) {
+            if (eoForm.getValidUntil() == null || eoForm.getValidUntil().trim().isEmpty()) {
                 eo.setUntilDate(null);
             } else {
                 Date untilDate = Date.valueOf(eoForm.getValidUntil());
