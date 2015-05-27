@@ -29,7 +29,7 @@ window.onload=startList;
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 
-<table width="100%">
+<table style="width:100%;">
   <tr>
     <td class="noBborderStyle" align="center" width="25%"></td>
     <td class="noBborderStyle" align="center" valign="top" width="50%" title="<bean:message key='main.general.mainmenu.menu.subtext' />"><span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.menu.text" /></span></td>
