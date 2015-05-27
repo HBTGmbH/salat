@@ -153,9 +153,9 @@ public class EmployeeDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Employee>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Employee> getEmployees() {
-		return getSession().createQuery(
-				"from Employee p order by upper(p.lastname)").list();
+		return getSession().createQuery("from Employee p order by upper(p.lastname)").list();
 	}
 	
 	
@@ -164,12 +164,11 @@ public class EmployeeDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Employee>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Employee> getEmployeesByFilter(String filter) {
 		List<Employee> employees = null;
 		if (filter == null || filter.trim().equals("")) {
-			employees = getSession().createQuery("from Employee p " +
-					"order by upper(p.lastname)")
-					.list();
+			employees = getSession().createQuery("from Employee p " + "order by upper(p.lastname)").list();
 		} else {
 			filter = "%" + filter.toUpperCase() + "%";
 			employees = getSession().createQuery("from Employee p where " +
