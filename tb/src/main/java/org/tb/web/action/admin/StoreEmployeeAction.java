@@ -1,6 +1,5 @@
 package org.tb.web.action.admin;
 
-import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -161,8 +160,7 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 		// for a new employee, check if name already exists
 		if (request.getSession().getAttribute("emId") == null) {
 			List<Employee> allEmployees = employeeDAO.getEmployees();
-			for (Iterator iter = allEmployees.iterator(); iter.hasNext();) {
-				Employee em = (Employee) iter.next();
+			for (Employee em : allEmployees) {
 				if ((em.getFirstname().equalsIgnoreCase(emForm.getFirstname())) &&
 					(em.getLastname().equalsIgnoreCase(emForm.getLastname()))) {
 					  errors.add("lastname", new ActionMessage("form.employee.error.name.alreadyexists"));		
