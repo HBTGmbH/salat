@@ -113,9 +113,11 @@ public class TreeTag extends TagSupport {
             //		prepaire entries which are no parents (leafs)
             //-----------------------------------------------
             this.internalNodesIDs = new ArrayList<Long>();
-            for (int i=0; i<this.subProjects.size();i++){
-            	if (this.subProjects.get(i).getParentorder()!=null)
-            		this.internalNodesIDs.add(new Long(this.subProjects.get(i).getParentorder().getId()));
+            if(this.subProjects != null) {
+	            for (int i=0; i < this.subProjects.size(); i++){
+	            	if (this.subProjects.get(i).getParentorder()!=null)
+	            		this.internalNodesIDs.add(new Long(this.subProjects.get(i).getParentorder().getId()));
+	            }
             }
             //------------------------------------------------
             // 		print the root of the tree view
