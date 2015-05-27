@@ -82,21 +82,15 @@
 			<!-- 			<td align="center" class="matrix bold"> -->
 			<c:if test="${dayhourcount.satSun==true}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
-					<td
-						title="${dayhourcount.publicHolidayName} / <bean:message
-					key="${dayhourcount.weekDay}" />"
-						class="matrix bold" align="right" style="background-color:c1c1c1;">
+					<td title="${dayhourcount.publicHolidayName} / <bean:message key="${dayhourcount.weekDay}" />" class="matrix bold" align="right" style="background-color:c1c1c1;">
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
-					<td title="<bean:message
-					key="${dayhourcount.weekDay}" />"
-						class="matrix bold" align="right"
-						style="background-color:lightgrey;">
+					<td title="<bean:message key="${dayhourcount.weekDay}" />" class="matrix bold" align="right" style="background-color:lightgrey;">
 				</c:if>
 			</c:if>
 			<c:if test="${dayhourcount.satSun==false}">
 				<c:if test="${dayhourcount.publicHoliday==true}">
-					<td color="c1c1c1"
+					<td style="color:#c1c1c1;"
 						title="${dayhourcount.publicHolidayName} / <bean:message
 					key="${dayhourcount.weekDay}" />"
 						class="matrix bold" align="right" style="background-color:c1c1c1;">
@@ -127,14 +121,10 @@
 			<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">
-						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix"
-							align="right"
-							style="font-size: 6pt;border:1px black solid;background-color:c1c1c1;">
+						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix" align="right" style="font-size: 6pt;border:1px black solid;background-color:c1c1c1;">
 					</c:if>
 					<c:if test="${bookingday.publicHoliday==false}">
-						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix"
-							align="right"
-							style="font-size: 6pt;border:1px black solid;background-color:lightgrey;">
+						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix" align="right" style="font-size: 6pt;border:1px black solid;background-color:lightgrey;">
 					</c:if>
 				</c:if>
 				<c:if test="${bookingday.satSun==false}">
