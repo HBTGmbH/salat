@@ -197,7 +197,8 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getEmployeeContracts() {
+    @SuppressWarnings("unchecked")
+	public List<Employeecontract> getEmployeeContracts() {
         return getSession().createQuery("from Employeecontract e order by employee.lastname asc, validFrom asc").list();
     }
     
@@ -206,7 +207,8 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getTeamContracts(Long supervisorId) {
+    @SuppressWarnings("unchecked")
+	public List<Employeecontract> getTeamContracts(Long supervisorId) {
         Date now = new Date();
         return getSession().createQuery("from Employeecontract ec " +
                 "where supervisor.id = ? " +
@@ -221,7 +223,8 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId) {
+    @SuppressWarnings("unchecked")
+	public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId) {
         List<Employeecontract> employeeContracts = null;
         boolean isFilter = filter != null && !filter.trim().isEmpty();
         if(isFilter) {
@@ -349,7 +352,8 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      * 
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
+    @SuppressWarnings("unchecked")
+	public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
         java.util.Date date = new Date();
         Boolean hide = false;
         return getSession()
@@ -362,7 +366,8 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      *      
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getValidEmployeeContractsOrderedByFirstname() {
+    @SuppressWarnings("unchecked")
+	public List<Employeecontract> getValidEmployeeContractsOrderedByFirstname() {
         java.util.Date date = new Date();
         return getSession()
                 .createQuery("from Employeecontract e where validFrom <= ? and (validUntil >= ? or validUntil = null) order by employee.firstname asc, validFrom asc")
