@@ -174,17 +174,17 @@ public class ShowTrainingAction extends LoginRequiredAction {
         request.getSession().setAttribute("showTrainingForm", trainingForm);
         
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
-        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext();) {
-            Employeecontract c = iterator.next();
-            if (c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null) {
-                iterator.remove();
-            }
-        }
-        
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts that have training entitlement found - please call system administrator.");
             forward = "error";
             return forward;
+        }
+        
+        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext();) {
+        	Employeecontract c = iterator.next();
+        	if (c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null) {
+        		iterator.remove();
+        	}
         }
         
         if (ec == null) {
