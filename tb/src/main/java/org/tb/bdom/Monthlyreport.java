@@ -111,14 +111,4 @@ public class Monthlyreport implements Serializable {
 	public void setOk_ma(Boolean ok_ma) {
 		this.ok_ma = ok_ma;
 	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof Monthlyreport) {
-			Monthlyreport other = (Monthlyreport) obj;
-			return (other.year.equals(year) && other.employeecontract.equals(employeecontract));
-		}
-		return false;
-	}
-
 }

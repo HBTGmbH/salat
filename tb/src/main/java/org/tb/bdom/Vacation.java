@@ -89,14 +89,4 @@ public class Vacation implements Serializable {
 	public void setYear(Integer year) {
 		this.year = year;
 	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof Vacation) {
-			Vacation other = (Vacation) obj;
-			return (other.year.equals(year) && other.employeecontract.equals(employeecontract));
-		}
-		return false;
-	}
-
 }
