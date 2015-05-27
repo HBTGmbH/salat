@@ -1,6 +1,5 @@
 package org.tb.persistence;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
@@ -32,6 +31,7 @@ public class InvoiceDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Invoice> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Invoice> getInvoices() {
 		return getSession().createQuery("from Invoice").list();
 	}	
@@ -81,8 +81,7 @@ public class InvoiceDAO extends HibernateDaoSupport {
 		Invoice inToDelete = getInvoiceById(inId);
 		boolean inDeleted = false;
 		
-		for (Iterator iter = allInvoices.iterator(); iter.hasNext();) {
-			Invoice in = (Invoice) iter.next();
+		for (Invoice in : allInvoices) {
 			if(in.getId() == inToDelete.getId()) {				
 				Session session = getSession();
 				session.delete(inToDelete);
