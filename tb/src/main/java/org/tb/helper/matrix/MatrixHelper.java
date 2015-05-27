@@ -56,7 +56,6 @@ public class MatrixHelper {
         java.sql.Date endSqlDate = new java.sql.Date(dateLast.getTime());
         List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
         int mergedReportIndex = 0;
-        MergedReport tempMergedReport;
         BookingDay tempBookingDay;
         Publicholiday tempPublicHoliday;
         long durationMinutes;
@@ -69,8 +68,6 @@ public class MatrixHelper {
         Calendar gregorianCalendar = GregorianCalendar.getInstance();
         gregorianCalendar.setTime(dateFirst);
         int day = 0;
-        DayAndWorkingHourCount tempDayAndWorkingHourCount;
-        DayAndWorkingHourCount tempDayAndWorkingHourCount2;
         ArrayList<DayAndWorkingHourCount> dayHoursCount = new ArrayList<DayAndWorkingHourCount>();
         Double dayHoursTarget = 0.0;
         List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
@@ -126,7 +123,7 @@ public class MatrixHelper {
             timeReportList.addAll(tempTimeReportList);
         }
         
-        //filling a list with new or merged 'mergedreports'
+		//filling a list with new or merged 'mergedreports'
         for (Object element : timeReportList) {
             tempTimeReport = (Timereport)element;
             taskdescription = tempTimeReport.getTaskdescription() + separator;
@@ -146,14 +143,14 @@ public class MatrixHelper {
             if (!mergedReportList.isEmpty()) {
                 mergedReportAvailable = false;
                 bookingDayAvailable = false;
-                tempMergedReport = null;
+                MergedReport tempMergedReport = null;
                 //search until timereport matching mergedreport; merge bookingdays in case of match
-                for (Object element2 : mergedReportList) {
-                    tempMergedReport = (MergedReport)element2;
+                for (MergedReport element2 : mergedReportList) {
+                    tempMergedReport = element2;
                     mergedReportIndex = mergedReportList.indexOf(tempMergedReport);
                     if ((tempMergedReport.getCustomOrder().getSign() + tempMergedReport.getSubOrder().getSign()).equals(tempTimeReport.getSuborder().getCustomerorder().getSign()
                             + tempTimeReport.getSuborder().getSign())) {
-                        for (Iterator iter3 = tempMergedReport.getBookingDay().iterator(); iter3.hasNext();) {
+                        for (Iterator<BookingDay> iter3 = tempMergedReport.getBookingDay().iterator(); iter3.hasNext();) {
                             tempBookingDay = (BookingDay)iter3.next();
                             if (tempBookingDay.getDate().equals(date)) {
                                 tempMergedReport.mergeBookingDay(tempBookingDay, date, durationHours, durationMinutes, taskdescription);
@@ -182,9 +179,9 @@ public class MatrixHelper {
             }
         }
         
-        //set all empty bookingdays to 0, calculate sum of the bookingdays for each MergedReport and sort them
+		//set all empty bookingdays to 0, calculate sum of the bookingdays for each MergedReport and sort them
         for (Object element : mergedReportList) {
-            tempMergedReport = (MergedReport)element;
+            MergedReport tempMergedReport = (MergedReport)element;
             tempMergedReport.fillBookingDaysWithNull(dateFirst, dateLast);
             tempMergedReport.setSum();
             Collections.sort(tempMergedReport.getBookingDay());
@@ -217,8 +214,7 @@ public class MatrixHelper {
                 }
             }
             //setting publicholidays and weekend for dayhourscount(status and name)
-            for (Object element : dayHoursCount) {
-                tempDayAndWorkingHourCount = (DayAndWorkingHourCount)element;
+            for (DayAndWorkingHourCount tempDayAndWorkingHourCount : dayHoursCount) {
                 if (tempDayAndWorkingHourCount.getDay() == day) {
                     for (Object element2 : publicHolidayList) {
                         tempPublicHoliday = (Publicholiday)element2;
@@ -230,7 +226,7 @@ public class MatrixHelper {
                     if (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY || gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY) {
                         dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setSatSun(true);
                     }
-                    dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setWeekDay(weekDaysMap.get(gregorianCalendar.get(gregorianCalendar.DAY_OF_WEEK)));
+                    dayHoursCount.get(dayHoursCount.indexOf(tempDayAndWorkingHourCount)).setWeekDay(weekDaysMap.get(gregorianCalendar.get(Calendar.DAY_OF_WEEK)));
                 }
             }
             gregorianCalendar.add(Calendar.DAY_OF_MONTH, 1);
@@ -242,19 +238,17 @@ public class MatrixHelper {
         while (gregorianCalendar.getTime().after(dateFirst) && gregorianCalendar.getTime().before(dateLast) || gregorianCalendar.getTime().equals(dateFirst)
                 || gregorianCalendar.getTime().equals(dateLast)) {
             day++;
-            for (Object element : mergedReportList) {
-                tempMergedReport = (MergedReport)element;
-                for (Iterator iter2 = tempMergedReport.getBookingDay().iterator(); iter2.hasNext();) {
-                    tempBookingDay = (BookingDay)iter2.next();
+            for (MergedReport tempMergedReport : mergedReportList) {
+                for (Iterator<BookingDay> iter2 = tempMergedReport.getBookingDay().iterator(); iter2.hasNext();) {
+                    tempBookingDay = iter2.next();
                     if (tempBookingDay.getDate().equals(gregorianCalendar.getTime())) {
                         //                        if (!dayHoursCount.isEmpty()) {
                         if (gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY || gregorianCalendar.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY) {
                             tempBookingDay.setSatSun(true);
                         }
-                        for (Object element2 : dayHoursCount) {
-                            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)element2;
+                        for (DayAndWorkingHourCount tempDayAndWorkingHourCount : dayHoursCount) {
                             if (tempDayAndWorkingHourCount.getDay() == day) {
-                                tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day,
+                                DayAndWorkingHourCount tempDayAndWorkingHourCount2 = new DayAndWorkingHourCount(day,
                                         (tempBookingDay.getDurationHours() * 60 + tempBookingDay.getDurationMinutes() + tempDayAndWorkingHourCount.getWorkingHour() * 60) / 60, tempBookingDay
                                                 .getDate());
                                 tempDayAndWorkingHourCount2.setPublicHoliday(tempDayAndWorkingHourCount.getPublicHoliday());
@@ -282,8 +276,7 @@ public class MatrixHelper {
         Collections.sort(mergedReportList);
         
         //calculate dayhourssum
-        for (Object element : dayHoursCount) {
-            tempDayAndWorkingHourCount = (DayAndWorkingHourCount)element;
+        for (DayAndWorkingHourCount tempDayAndWorkingHourCount : dayHoursCount) {
             dayHoursSum += tempDayAndWorkingHourCount.getWorkingHour();
         }
         dayHoursSum = (dayHoursSum + 0.05) * 10;
