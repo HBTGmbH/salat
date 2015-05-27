@@ -106,19 +106,16 @@ $(document).ready(function() {
 	<html:form action="/GenerateMultipleEmployeeorders">
 	
 	<bean:size id="employeecontractsSize" name="employeecontracts" />
-	<c:if test="${employeecontractsSize>10}">
-		<table>
-			<tr>
-				<td class="noBborderStyle">
-				<html:submit onclick="multipleChange(this.form)" styleId="button" titleKey="main.general.button.generateEmployeeorders.alttext.text">
-					<bean:message key="main.general.button.generateEmployeeorders.text" />
-				</html:submit>
-			</td>
-		</tr>
-	</c:if>
-	
-
-	
+	<table>
+		<c:if test="${employeecontractsSize>10}">
+				<tr>
+					<td class="noBborderStyle">
+					<html:submit onclick="multipleChange(this.form)" styleId="button" titleKey="main.general.button.generateEmployeeorders.alttext.text">
+						<bean:message key="main.general.button.generateEmployeeorders.text" />
+					</html:submit>
+					</td>
+				</tr>
+		</c:if>
 		<tr>
 			<th align="left" title="select">&nbsp;</th>
 			<th align="left"
@@ -133,14 +130,7 @@ $(document).ready(function() {
 		</tr>	
 		
 		<c:forEach var="employeecontract" items="${employeecontracts}" varStatus="statusID">
-			<c:choose>
-				<c:when test="${statusID.count%2==0}">
-					<tr class="primarycolor">
-				</c:when>
-				<c:otherwise>
-					<tr class="secondarycolor">
-				</c:otherwise>
-			</c:choose>
+		<tr class="${statusID.count%2==0 ? 'primarycolor' : 'secondarycolor'}">
 					
 			<!-- Checkbox -->
 			<td align="center"><html:multibox property="employeecontractIdArray"  value="${employeecontract.id}" /></td>
@@ -160,8 +150,6 @@ $(document).ready(function() {
 	
 		</c:forEach>		
 
-	</html:form>
-
 		<tr>
 			<td class="noBborderStyle">
 				<html:submit onclick="multipleChange(this.form)" styleId="button" titleKey="main.general.button.generateEmployeeorders.alttext.text">
@@ -169,6 +157,7 @@ $(document).ready(function() {
 				</html:submit>
 			</td>
 		</tr>
-</table>		
+	</table>		
+	</html:form>
 </body>
 </html:html>
