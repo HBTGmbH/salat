@@ -18,6 +18,12 @@ import java.util.List;
  * @since 02.01.2007
  */
 public class ReportWrapper {
+	
+	private List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
+	private List<DayAndWorkingHourCount> dayAndWorkingHourCountList = new ArrayList<DayAndWorkingHourCount>();
+	private double dayHoursSum;
+	private double dayHoursTarget;
+	private double dayHoursDiff;
 
     /**
      * @param mergedReportList
@@ -26,19 +32,12 @@ public class ReportWrapper {
      * @since 02.01.2007
      */
     public ReportWrapper(List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, double dayHoursSum, double dayHoursTarget, double dayHoursDiff) {
-        super();
         this.mergedReportList = mergedReportList;
         this.dayAndWorkingHourCountList = dayAndWorkingHourCountList;
         this.dayHoursSum = dayHoursSum;
         this.dayHoursTarget = dayHoursTarget;
         this.dayHoursDiff = dayHoursDiff;
     }
-    
-    List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
-    List<DayAndWorkingHourCount> dayAndWorkingHourCountList = new ArrayList<DayAndWorkingHourCount>();
-    double dayHoursSum;
-    double dayHoursTarget;
-    double dayHoursDiff;
     
     public double getDayHoursDiff() {
         return dayHoursDiff;

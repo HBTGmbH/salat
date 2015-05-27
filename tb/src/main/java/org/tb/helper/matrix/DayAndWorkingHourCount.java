@@ -10,14 +10,13 @@
  */
 package org.tb.helper.matrix;
 
-import java.io.Serializable;
 import java.util.Date;
 
 /**
  * @author cb
  * @since 29.12.2006
  */
-public class DayAndWorkingHourCount implements Serializable {
+public class DayAndWorkingHourCount {
     
     /**
      * @param day
@@ -27,7 +26,6 @@ public class DayAndWorkingHourCount implements Serializable {
      * @since 09.02.2007
      */
     public DayAndWorkingHourCount(int day, double workingHour, Date date) {
-        super();
         this.day = day;
         this.date = date;
         this.workingHour = workingHour;
