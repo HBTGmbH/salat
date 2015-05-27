@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
@@ -63,8 +62,8 @@ public class PublicholidayDAO extends HibernateDaoSupport {
 	 * 
 	 */
 	public void checkPublicHolidaysForCurrentYear() {
-		List<Publicholiday> holidays = 
-			getSession().createQuery("from Publicholiday p").list();
+		@SuppressWarnings("unchecked")
+		List<Publicholiday> holidays = getSession().createQuery("from Publicholiday p").list();
 
 		Date currentYearStart = null;
 		try {
@@ -73,9 +72,7 @@ public class PublicholidayDAO extends HibernateDaoSupport {
 			e.printStackTrace();
 		}
 		boolean currentYearEntriesAvailable = false;
-		for (Iterator iter = holidays.iterator(); iter.hasNext();) {
-			Publicholiday ph = (Publicholiday) iter.next();
-			
+		for (Publicholiday ph  : holidays) {
 			if(ph.getRefdate().after(currentYearStart)) {
 				currentYearEntriesAvailable = true;
 				break;
@@ -160,6 +157,7 @@ public class PublicholidayDAO extends HibernateDaoSupport {
 	 * @return Returns the number of holidays between the two given dates.
 	 */
 	public int getNumberOfHolidaysBetween(Date start, Date end) {
+		@SuppressWarnings("unchecked")
 		List<Publicholiday> holidays = getSession().createQuery("from Publicholiday ph where ph.refdate >= ? and ph.refdate <= ? ").setDate(0, start).setDate(1, end).list();
 		return (holidays == null ? 0 : holidays.size());
 	}
@@ -171,6 +169,7 @@ public class PublicholidayDAO extends HibernateDaoSupport {
 	 * @param end
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Publicholiday> getPublicHolidaysBetween(Date start, Date end) {
 		return getSession().createQuery("from Publicholiday ph where ph.refdate >= ? and ph.refdate <= ? ").setDate(0, start).setDate(1, end).list();
 	}
