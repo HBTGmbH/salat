@@ -6,13 +6,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
-import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.MonthlyreportDAO;
-import org.tb.persistence.SuborderDAO;
-import org.tb.persistence.TimereportDAO;
-import org.tb.persistence.VacationDAO;
 
 /**
  * Action class for a timereport to be shown in the monthly display
@@ -21,48 +14,6 @@ import org.tb.persistence.VacationDAO;
  *
  */
 public class ShowMonthlyReportAction extends LoginRequiredAction {
-
-	private EmployeeDAO employeeDAO;
-
-	private EmployeecontractDAO employeecontractDAO;
-
-	private TimereportDAO timereportDAO;
-
-	private CustomerorderDAO customerorderDAO;
-
-	private SuborderDAO suborderDAO;
-
-	private MonthlyreportDAO monthlyreportDAO;
-
-	private VacationDAO vacationDAO;
-
-	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-		this.employeeDAO = employeeDAO;
-	}
-
-	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-		this.employeecontractDAO = employeecontractDAO;
-	}
-
-	public void setTimereportDAO(TimereportDAO timereportDAO) {
-		this.timereportDAO = timereportDAO;
-	}
-
-	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-		this.customerorderDAO = customerorderDAO;
-	}
-
-	public void setSuborderDAO(SuborderDAO suborderDAO) {
-		this.suborderDAO = suborderDAO;
-	}
-
-	public void setMonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
-		this.monthlyreportDAO = monthlyreportDAO;
-	}
-
-	public void setVacationDAO(VacationDAO vacationDAO) {
-		this.vacationDAO = vacationDAO;
-	}
 
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping,
