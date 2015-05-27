@@ -76,6 +76,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 //    	Employeecontract contract = (Employeecontract) getSession().get(Employeecontract.class, contractId);
 //		List<Employeeorder> employeeOrders = contract.getEmployeeorders();
         
+		@SuppressWarnings("unchecked")
 		List<Employeeorder> employeeOrders = getSession()
 				.createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign asc, suborder.sign asc")
 				.setLong(0, contractId).list();
@@ -137,7 +138,8 @@ public class SuborderDAO extends HibernateDaoSupport {
                 .list();
     }
     
-    public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long ecId, long coId, Date date) {
+    @SuppressWarnings("unchecked")
+	public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long ecId, long coId, Date date) {
         Session session = getSession();
 		return session.createQuery("select distinct so from Employeeorder eo inner join eo.suborder so inner join so.customerorder co " +
                 "where " +
@@ -202,7 +204,8 @@ public class SuborderDAO extends HibernateDaoSupport {
      * 
      * @return
      */
-    public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
+    @SuppressWarnings("unchecked")
+	public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
         List<Suborder> suborders = new ArrayList<Suborder>();
         boolean isFilter = filter != null && !filter.trim().isEmpty();
         if(isFilter) {
@@ -371,7 +374,8 @@ public class SuborderDAO extends HibernateDaoSupport {
      * 
      * @return List<Suborder>
      */
-    public List<Suborder> getSuborderChildren(long soId) {
+    @SuppressWarnings("unchecked")
+	public List<Suborder> getSuborderChildren(long soId) {
         return getSession().createQuery("from Suborder so where so.suborder.id = ? order by sign").setLong(0, soId).list();
     }
     
@@ -393,7 +397,8 @@ public class SuborderDAO extends HibernateDaoSupport {
         return suborders;
     }
     
-    public List<Suborder> getSubordersByFilter(String filter) {
+    @SuppressWarnings("unchecked")
+	public List<Suborder> getSubordersByFilter(String filter) {
         return getSession()
                 .createQuery("from Suborder s where upper(sign) like ? or upper(description) like ? or upper(s.customerorder.sign) like ? or upper(s.customerorder.description) like ? or upper(shortdescription) like ?  or upper(s.customerorder.shortdescription) like ? or upper(hourly_rate) like ? order by s.customerorder.sign ,sign")
                 .setString(0, filter).setString(1, filter).setString(2, filter).setString(3, filter).setString(4, filter).setString(5, filter).setString(6, filter).list();
@@ -403,7 +408,8 @@ public class SuborderDAO extends HibernateDaoSupport {
      * 
      * @return Returns all {@link Suborder}s where the standard flag is true and that did not end before today.
      */
-    public List<Suborder> getStandardSuborders() {
+    @SuppressWarnings("unchecked")
+	public List<Suborder> getStandardSuborders() {
         Date date = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         String dateString = dateFormat.format(date);
