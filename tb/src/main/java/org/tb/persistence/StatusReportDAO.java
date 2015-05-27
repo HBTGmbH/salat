@@ -29,6 +29,7 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Statusreport> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Statusreport> getStatusReports() {
 		return getSession().createQuery("from Statusreport sr order by sr.customerorder.sign asc, sr.sort asc, sr.fromdate asc, sr.untildate asc, sr.sender.sign asc").list();
 	}
@@ -38,6 +39,7 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Statusreport> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Statusreport> getVisibleStatusReports() {
 		Date now = new Date();
 		return getSession().createQuery("from Statusreport sr " +
@@ -53,6 +55,7 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Statusreport> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Statusreport> getStatusReportsByCustomerOrderId(long coId) {
 		return getSession().createQuery("from Statusreport sr where customerorder.id = ? " +
 				"order by sr.customerorder.sign asc, sr.sort asc, sr.fromdate asc, sr.untildate asc, sr.sender.sign asc")
@@ -65,6 +68,7 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Statusreport> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Statusreport> getReleasedFinalStatusReportsByCustomerOrderId(long coId) {
 		return getSession().createQuery("from Statusreport sr " +
 				"where sort = 3 " +
@@ -81,6 +85,7 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Statusreport> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Statusreport> getUnreleasedFinalStatusReports(long customerOrderId, long senderId, java.sql.Date date) {
 		return getSession().createQuery("from Statusreport sr " +
 				"where sort = 3 " +
@@ -101,6 +106,7 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Statusreport> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Statusreport> getUnreleasedPeriodicalStatusReports(long customerOrderId, long senderId, java.sql.Date date) {
 		return getSession().createQuery("from Statusreport sr " +
 				"where sort = 1 " +
@@ -120,6 +126,7 @@ public class StatusReportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Statusreport> 
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Statusreport> getReleasedStatusReportsByRecipientId(long employeeId) {
 		return getSession().createQuery("from Statusreport sr " +
 				"where released is not null " +
