@@ -70,7 +70,7 @@ public class StoreTimereportAction extends LoginRequiredAction {
         //Checking if the timereport has to be updated or created 
         String timereportIdString  = request.getParameter("hiddenTimereportId");
         
-        if (timereportIdString != "") {
+        if (!timereportIdString.isEmpty()) {
             Long timereportId = Long.valueOf(timereportIdString);
             timereport = timereportDAO.getTimereportById(timereportId);
             employeecontract = timereport.getEmployeecontract();
