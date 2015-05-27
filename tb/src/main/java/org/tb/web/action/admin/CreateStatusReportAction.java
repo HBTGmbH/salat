@@ -80,7 +80,8 @@ public class CreateStatusReportAction extends StatusReportAction {
         
         // presettings for the selected customer order
         Long customerOrderId = (Long)request.getSession().getAttribute("customerOrderId");
-        List<Customerorder> customerOrders = (List<Customerorder>)request.getSession().getAttribute("visibleCustomerOrders");
+        @SuppressWarnings("unchecked")
+		List<Customerorder> customerOrders = (List<Customerorder>)request.getSession().getAttribute("visibleCustomerOrders");
         if (customerOrders == null || customerOrders.isEmpty()) {
             request.setAttribute("errorMessage",
                     "No customer orders found - please call system administrator.");
@@ -93,7 +94,8 @@ public class CreateStatusReportAction extends StatusReportAction {
             customerOrderId = Long.parseLong(request.getParameter("coId"));
             
             // debug
-            String x = request.getParameter("final");
+            @SuppressWarnings("unused")
+			String x = request.getParameter("final");
             
             if (request.getParameter("final") != null
                     && request.getParameter("final").equals("true")) {
