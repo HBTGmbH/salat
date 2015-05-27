@@ -28,6 +28,7 @@ public class CustomerDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Customer>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Customer> getCustomers() {
 		return getSession().createQuery("from Customer order by name asc").list();
 	}
@@ -63,6 +64,7 @@ public class CustomerDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Customer>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Customer> getCustomersOrderedByShortName() {
 		return getSession().createQuery("from Customer order by shortname asc").list();
 	}
@@ -137,14 +139,12 @@ public class CustomerDAO extends HibernateDaoSupport {
 		Customer cuToDelete = getCustomerById(cuId);
 		boolean cuDeleted = false;
 		
-		for (Iterator iter = allCustomers.iterator(); iter.hasNext();) {
-			Customer cu = (Customer) iter.next();
+		for (Customer cu : allCustomers) {
 			if(cu.getId() == cuToDelete.getId()) {
 				// check if related customerorders exist - if so, no deletion possible
 				boolean deleteOk = true;
 				List<Customerorder> allCustomerorders = customerorderDAO.getCustomerorders();
-				for (Iterator iter2 = allCustomerorders.iterator(); iter2.hasNext();) {
-					Customerorder co = (Customerorder) iter2.next();
+				for (Customerorder co : allCustomerorders) {
 					if (co.getCustomer().getId() == cuToDelete.getId()) {
 						deleteOk = false;
 						break;
