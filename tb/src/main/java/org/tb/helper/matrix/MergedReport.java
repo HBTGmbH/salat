@@ -10,7 +10,6 @@
  */
 package org.tb.helper.matrix;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -24,9 +23,7 @@ import org.tb.bdom.Suborder;
  * @author cb
  * @since 04.12.2006
  */
-public class MergedReport implements Comparable<MergedReport>, Serializable {
-
-	private static final long serialVersionUID = 1L;
+public class MergedReport implements Comparable<MergedReport> {
 
 	/**
      * @param subOrderSign
