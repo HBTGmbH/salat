@@ -1,6 +1,5 @@
 package org.tb.web.action.admin;
 
-import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -132,8 +131,7 @@ public class StoreCustomerAction extends LoginRequiredAction {
 		// for a new customer, check if name already exists
 		if (request.getSession().getAttribute("cuId") == null) {
 			List<Customer> allCustomers = customerDAO.getCustomers();
-			for (Iterator iter = allCustomers.iterator(); iter.hasNext();) {
-				Customer cu = (Customer) iter.next();
+			for (Customer cu : allCustomers) {
 				if (cu.getName().equalsIgnoreCase(cuForm.getName())) {
 					errors.add("name", new ActionMessage("form.customer.error.name.alreadyexists"));		
 					break;
