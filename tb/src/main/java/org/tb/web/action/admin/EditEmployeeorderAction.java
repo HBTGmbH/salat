@@ -18,10 +18,8 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.SuborderDAO;
 import org.tb.web.form.AddEmployeeOrderForm;
 
 /**
@@ -33,27 +31,17 @@ import org.tb.web.form.AddEmployeeOrderForm;
 public class EditEmployeeorderAction extends EmployeeOrderAction {
 	
 	private EmployeeorderDAO employeeorderDAO;
-	private EmployeeDAO employeeDAO;
 	private CustomerorderDAO customerorderDAO;
-	private SuborderDAO suborderDAO;
 	private EmployeecontractDAO employeecontractDAO;
 	
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
 	}
 	
-	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-		this.employeeDAO = employeeDAO;
-	}
-
 	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
 		this.customerorderDAO = customerorderDAO;
 	}
 	
-	public void setSuborderDAO(SuborderDAO suborderDAO) {
-		this.suborderDAO = suborderDAO;
-	}
-
 	public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
 		this.employeecontractDAO = employeecontractDAO;
 	}
@@ -128,11 +116,8 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 		
 		request.getSession().setAttribute("orders", orders);
 		
-		Customerorder customerorder;
 		List<Customerorder> orderswithsuborders= new ArrayList<Customerorder>();
-		Iterator orderiterator = orders.iterator();
-		while (orderiterator.hasNext()) {
-			customerorder = (Customerorder) orderiterator.next();
+		for(Customerorder customerorder : orders) {
 			if (!(customerorder.getSuborders() == null || customerorder.getSuborders().isEmpty())) {
 				orderswithsuborders.add(customerorder);
 			}
