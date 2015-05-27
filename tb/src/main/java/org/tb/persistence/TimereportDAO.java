@@ -26,13 +26,9 @@ import org.tb.helper.TimereportHelper;
 public class TimereportDAO extends HibernateDaoSupport {
     
     private SuborderDAO suborderDAO;
-    private WorklogDAO worklogDAO;
     
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
-    }
-    public void setWorklogDAO(WorklogDAO worklogDAO) {
-        this.worklogDAO = worklogDAO;
     }
     
     /**
@@ -883,7 +879,8 @@ public class TimereportDAO extends HibernateDaoSupport {
         }
     }
     
-    public List<Timereport> getTimereportsByTicketID(long ticketID) {
+    @SuppressWarnings("unchecked")
+	public List<Timereport> getTimereportsByTicketID(long ticketID) {
         return getSession().createQuery("from Timereport t where t.ticket.id = ?")
                 .setLong(0, ticketID).list();
     }
