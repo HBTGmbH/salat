@@ -6,9 +6,9 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%
-java.util.Enumeration names = session.getAttributeNames();
+java.util.Enumeration<String> names = session.getAttributeNames();
 while(names.hasMoreElements()) {
-	String name = (String) names.nextElement();
+	String name = names.nextElement();
 	session.removeAttribute(name);
 }
 %>
