@@ -30,7 +30,6 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
-import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
@@ -51,7 +50,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
     private OvertimeDAO overtimeDAO;
     private TimereportDAO timereportDAO;
     private EmployeeorderDAO employeeorderDAO;
-    private PublicholidayDAO publicholidayDAO;
     
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
@@ -75,10 +73,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
     
     public void setVacationDAO(VacationDAO vacationDAO) {
         this.vacationDAO = vacationDAO;
-    }
-    
-    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
-        this.publicholidayDAO = publicholidayDAO;
     }
     
     @Override
