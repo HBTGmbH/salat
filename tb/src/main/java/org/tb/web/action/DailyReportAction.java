@@ -349,7 +349,8 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         
         // set timereports in session
         if (request.getSession().getAttribute("timereportComparator") != null) {
-            Comparator<Timereport> comparator = (Comparator<Timereport>)request.getSession().getAttribute("timereportComparator");
+            @SuppressWarnings("unchecked")
+			Comparator<Timereport> comparator = (Comparator<Timereport>)request.getSession().getAttribute("timereportComparator");
             Collections.sort(timereports, comparator);
         }
         request.getSession().setAttribute("timereports", timereports);
