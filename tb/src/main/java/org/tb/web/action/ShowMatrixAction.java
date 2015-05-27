@@ -770,7 +770,9 @@ public class ShowMatrixAction extends DailyReportAction {
                     request.getSession().setAttribute("currentEmployee", "ALL EMPLOYEES");
                 } else {
                     orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
-                    request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
+                    if(employeeId != null) {
+                    	request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
+                    }
                 }
                 request.getSession().setAttribute("orders", orders);
                 request.getSession().setAttribute("currentOrder", "ALL ORDERS");

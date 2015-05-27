@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -1004,7 +1005,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 		return ec;
 	}
     
-	private void setSubOrder(Suborder suborder, HttpServletRequest request, AddDailyReportForm reportForm) {
+	private void setSubOrder(@Nonnull Suborder suborder, HttpServletRequest request, AddDailyReportForm reportForm) {
         
         // adjust the jsp with entries for Jira-Ticket-Keys for the chosen suborder
         JiraSalatHelper.setJiraTicketKeysForSuborder(request, ticketDAO, suborder.getId());
