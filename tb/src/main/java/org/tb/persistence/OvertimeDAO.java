@@ -1,6 +1,5 @@
 package org.tb.persistence;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
@@ -15,6 +14,7 @@ public class OvertimeDAO extends HibernateDaoSupport {
 	 * 
 	 * @return Returns a list with all {@link Overtime}s.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Overtime> getOvertimes() {
 		return getSession().createQuery("from Overtime order by employeecontract.id asc, created asc").list();
 	}
@@ -24,6 +24,7 @@ public class OvertimeDAO extends HibernateDaoSupport {
 	 * @param employeeContractId
 	 * @return Returns a list with all {@link Overtime}s associated to the given employeeContractId.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Overtime> getOvertimesByEmployeeContractId(long employeeContractId) {
 		return getSession().createQuery("from Overtime where employeecontract.id = ? order by employeecontract.id asc, created asc").setLong(0, employeeContractId).list();
 	}
@@ -75,8 +76,7 @@ public class OvertimeDAO extends HibernateDaoSupport {
 		Overtime overtimeToDelete = getOvertimeById(overtimeId);
 		boolean overtimeDeleted = false;
 		
-		for (Iterator iter = allOvertimes.iterator(); iter.hasNext();) {
-			Overtime overtime = (Overtime) iter.next();
+		for (Overtime overtime : allOvertimes) {
 			if(overtime.getId() == overtimeToDelete.getId()) {				
 				Session session = getSession();
 				session.delete(overtimeToDelete);
