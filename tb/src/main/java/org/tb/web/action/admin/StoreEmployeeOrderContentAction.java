@@ -275,11 +275,6 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 					&& formEntriesEqualDB(employeeorder
 							.getEmployeeordercontent().getId(), contentForm)) {
 				// get content from db, if it was saved just before
-				if (eoContent == null) {
-					eoContent = employeeOrderContentDAO
-							.getEmployeeOrderContentById(employeeorder
-									.getEmployeeordercontent().getId());
-				}
 				eoContent.setCommitted_mgmt(true);
 				eoContent.setCommittedby_mgmt(employeeDAO
 						.getEmployeeById(loginEmployee.getId()));
