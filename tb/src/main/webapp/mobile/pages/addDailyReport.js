@@ -34,6 +34,19 @@ $(document).on('pageinit', '#bookingPage', function(event){
 		var minutesRadioState      = {};
 		var hoursRadioState        = {};
 		var subordersData;
+	    
+	    readRegisteredUsedSuborders = function() {
+	    	if(typeof(Storage) !== "undefined") {
+	    		var localStorage = window.localStorage;
+	    		if(localStorage.favSuborders) {
+	    			var favSuborders = JSON.parse(localStorage.favSuborders);
+	    			if(favSuborders) {
+	    				return favSuborders.map(JSON.parse);
+	    			}
+	    		}
+	    	}
+	    	return null;
+	    }
 
 		// Reseting the state of radio buttons,submit button, select menu and comment input
 		var resetBookingForm = function() {
@@ -64,9 +77,10 @@ $(document).on('pageinit', '#bookingPage', function(event){
 			output = [];     
 			subordersData = this;
 			var data = this;
-			var favs = readRegisteredUsedSuborders().reverse();
+			var favs = readRegisteredUsedSuborders();
 			if(favs && favs.length > 0) {
-				output.push('<optgroup label="Favoriten" id="subordersFavorites">');
+				favs = favs.reverse();
+				output.push('<optgroup label="K\u00fcrzlich" id="subordersFavorites">');
 				for(var i = 0; i < favs.length; i++) {
 					for(var j = 0; j < data.length; j++) {
 						var value = data[j];
@@ -259,19 +273,6 @@ $(document).on('pageinit', '#bookingPage', function(event){
 	    		localStorage.favSuborders = JSON.stringify(favSuborders);
 	    		fillSubordersOptions.apply(subordersData);
 	    	}
-	    }
-	    
-	    readRegisteredUsedSuborders = function() {
-	    	if(typeof(Storage) !== "undefined") {
-	    		var localStorage = window.localStorage;
-	    		if(localStorage.favSuborders) {
-	    			var favSuborders = JSON.parse(localStorage.favSuborders);
-	    			if(favSuborders) {
-	    				return favSuborders.map(JSON.parse);
-	    			}
-	    		}
-	    	}
-	    	return null;
 	    }
 	    
 	    // Highlighting the comment input if comments are required.

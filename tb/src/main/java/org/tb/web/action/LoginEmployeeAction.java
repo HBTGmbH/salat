@@ -169,13 +169,11 @@ public class LoginEmployeeAction extends Action {
             // auto generate employee orders
             if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
                     !employeecontract.getFreelancer()) {
-                List<Suborder> standardSuborders = suborderDAO
-                        .getStandardSuborders();
+                List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
                 if (standardSuborders != null && standardSuborders.size() > 0) {
                     // test if employeeorder exists
-                    List<Employeeorder> employeeorders;
                     for (Suborder suborder : standardSuborders) {
-                        employeeorders = employeeorderDAO
+                        List<Employeeorder> employeeorders = employeeorderDAO
                                 .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(
                                         employeecontract.getId(), suborder
                                                 .getId(), date);
