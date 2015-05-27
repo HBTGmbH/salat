@@ -1,6 +1,5 @@
 package org.tb.persistence;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
@@ -39,6 +38,7 @@ public class MonthlyreportDAO extends HibernateDaoSupport {
 	 */
 	public List<Monthlyreport> getMonthlyreportsByYearAndMonth(int year, int month) {		
 
+		@SuppressWarnings("unchecked")
 		List<Monthlyreport> specificMonthlyreports = 
 			getSession().createQuery("from Monthlyreport mr where mr.year = ? and mr.month = ?").setInteger(0, year).setInteger(1, month).list();
 
@@ -67,6 +67,7 @@ public class MonthlyreportDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Monthlyreport>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Monthlyreport> getMonthlyreports() {
 		return getSession().createQuery("from Monthlyreport").list();
 	}	
@@ -119,8 +120,7 @@ public class MonthlyreportDAO extends HibernateDaoSupport {
 		Monthlyreport mrToDelete = getMonthlyreportById(mrId);
 		boolean mrDeleted = false;
 		
-		for (Iterator iter = allMonthlyreports.iterator(); iter.hasNext();) {
-			Monthlyreport mr = (Monthlyreport) iter.next();
+		for (Monthlyreport mr : allMonthlyreports) {
 			if(mr.getId() == mrToDelete.getId()) {				
 				Session session = getSession();
 				session.delete(mrToDelete);
