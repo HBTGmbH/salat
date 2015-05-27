@@ -61,7 +61,7 @@ public class DeleteTimereportFromMonthlyDisplayAction extends LoginRequiredActio
 		String trMonth = TimereportHelper.getMonthStringFromTimereport(tr);
 		String trYear = TimereportHelper.getYearStringFromTimereport(tr);
 		
-		boolean deleted = timereportDAO.deleteTimereportById(trId);	
+		timereportDAO.deleteTimereportById(trId);	
 		
 		TimereportHelper th = new TimereportHelper();
 		if (tr.getSortofreport().equals("W")) {
