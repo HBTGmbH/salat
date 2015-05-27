@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.annotation.Nonnull;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -225,7 +226,7 @@ public class ExcelArchivierer {
 		return rowIndex;
 	}
 	
-	private static int addTimereportDataRow(HSSFWorkbook workbook, int rowIndex, InvoiceTimereportViewHelper invoiceTimereportViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
+	private static int addTimereportDataRow(HSSFWorkbook workbook, int rowIndex, @Nonnull InvoiceTimereportViewHelper invoiceTimereportViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
 		HSSFRow row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
 		rowIndex++;
 		int colIndex = 1;
@@ -267,7 +268,7 @@ public class ExcelArchivierer {
 		}
 		if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
 			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_NUMERIC);
-			if (invoiceTimereportViewHelper.getDurationhours() != null && invoiceTimereportViewHelper != null) {
+			if (invoiceTimereportViewHelper.getDurationhours() != null) {
 				double duration = (invoiceTimereportViewHelper.getDurationhours() * 60) + invoiceTimereportViewHelper.getDurationminutes();
 				cell.setCellValue(duration / 1440);
 			} else {
