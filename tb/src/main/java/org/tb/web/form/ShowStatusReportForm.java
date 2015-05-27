@@ -1,5 +1,6 @@
 package org.tb.web.form;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -15,9 +16,9 @@ public class ShowStatusReportForm extends ActionForm {
 	private Long customerOrderId;
 	private Boolean showReleased = true;
 	
-	
+	@Nonnull
 	public Boolean getShowReleased() {
-		return this.showReleased;
+		return this.showReleased == null ? true : this.showReleased;
 	}
 	
 	public void setShowReleased(Boolean showReleased) {
