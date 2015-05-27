@@ -597,7 +597,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
         
         // check time period for hierachical higher suborders
         Suborder parentSuborder = null;
-        if (addSuborderForm.getParentId() != null && !addSuborderForm.getParentId().equals(0) && !addSuborderForm.getParentId().equals(-1)) {
+        if (addSuborderForm.getParentId() != null && addSuborderForm.getParentId() != 0 && addSuborderForm.getParentId() != -1) {
             parentSuborder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
             if (parentSuborder != null) {
                 // check validity period
