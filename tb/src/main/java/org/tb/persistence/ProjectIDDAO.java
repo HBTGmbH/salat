@@ -14,12 +14,6 @@ import org.tb.bdom.ProjectID;
  */
 public class ProjectIDDAO extends HibernateDaoSupport {
     
-    private CustomerorderDAO customerorderDAO;
-    
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-    
     /**
      * Gets the ProjectID for the given id.
      * 
@@ -40,7 +34,8 @@ public class ProjectIDDAO extends HibernateDaoSupport {
      * 
      * @return List<ProjectID>
      */
-    public List<ProjectID> getProjectIDsByCustomerorderID(long customerorderId) {
+    @SuppressWarnings("unchecked")
+	public List<ProjectID> getProjectIDsByCustomerorderID(long customerorderId) {
         return getSession().createQuery("from ProjectID p where p.customerorder.id = ? order by jiraProjectID").setLong(0, customerorderId).list();
     }
     
@@ -53,7 +48,8 @@ public class ProjectIDDAO extends HibernateDaoSupport {
      * 
      * @return List<ProjectID>
      */
-    public List<ProjectID> getProjectIDsByJiraProjectID(String jiraProjectID) {
+    @SuppressWarnings("unchecked")
+	public List<ProjectID> getProjectIDsByJiraProjectID(String jiraProjectID) {
         return getSession().createQuery("from ProjectID p where p.jiraProjectID = ? order by jiraProjectID").setString(0, jiraProjectID).list();
     }
     
