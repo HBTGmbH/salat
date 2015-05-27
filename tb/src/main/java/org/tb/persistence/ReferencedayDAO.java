@@ -64,6 +64,7 @@ public class ReferencedayDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Referenceday>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Referenceday> getReferencedays() {
 		return getSession().createQuery("from Referenceday").list();
 	}
