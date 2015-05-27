@@ -1,6 +1,5 @@
 package org.tb.persistence;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
@@ -51,8 +50,8 @@ public class VacationDAO extends HibernateDaoSupport {
 	 */
 	public List<Vacation> getVacationsByYear(int year) {		
 
-		List<Vacation> specificVacations = 
-			getSession().createQuery("from Vacation va where va.year = ?").setInteger(0, year).list();
+		@SuppressWarnings("unchecked")
+		List<Vacation> specificVacations = getSession().createQuery("from Vacation va where va.year = ?").setInteger(0, year).list();
 
 		return specificVacations;
 	}
@@ -66,8 +65,7 @@ public class VacationDAO extends HibernateDaoSupport {
 	 */
 	public Vacation getVacationByYearAndEmployeecontract(long ecId, int year) {		
 
-		Vacation va = (Vacation)  
-			getSession().createQuery("from Vacation va where va.year = ? and va.employeecontract.id = ?").setInteger(0, year).setLong(1, ecId).uniqueResult();
+		Vacation va = (Vacation)getSession().createQuery("from Vacation va where va.year = ? and va.employeecontract.id = ?").setInteger(0, year).setLong(1, ecId).uniqueResult();
 
 		return va;
 	}
@@ -78,6 +76,7 @@ public class VacationDAO extends HibernateDaoSupport {
 	 * 
 	 * @return List<Vacation>
 	 */
+	@SuppressWarnings("unchecked")
 	public List<Vacation> getVacations() {
 		return getSession().createQuery("from Vacation").list();
 	}	
@@ -112,8 +111,7 @@ public class VacationDAO extends HibernateDaoSupport {
 		Vacation vaToDelete = getVacationById(vaId);
 		boolean vaDeleted = false;
 		
-		for (Iterator iter = allVacations.iterator(); iter.hasNext();) {
-			Vacation va = (Vacation) iter.next();
+		for (Vacation va : allVacations) {
 			if(va.getId() == vaToDelete.getId()) {				
 				Session session = getSession();
 				session.delete(vaToDelete);
