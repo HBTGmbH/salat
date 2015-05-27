@@ -16,7 +16,7 @@ import java.util.Date;
  * @author cb
  * @since 04.12.2006
  */
-public class BookingDay implements Comparable {
+public class BookingDay implements Comparable<BookingDay> {
     /**
      * @param date
      * @param durationHours
@@ -65,11 +65,11 @@ public class BookingDay implements Comparable {
         return date;
     }
 
-    public int compareTo(Object o) {
-        if (o instanceof BookingDay) {
-            return this.date.compareTo(((BookingDay)o).date);
+    public int compareTo(BookingDay o) {
+        if (o != null) {
+            return this.date.compareTo(o.date);
         } else {
-            throw new IllegalArgumentException("Parameter must be a MergedReport");
+            throw new NullPointerException();
         }
 
     }
