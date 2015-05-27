@@ -714,32 +714,30 @@ public class ShowMatrixAction extends DailyReportAction {
                 
                 Employeecontract employeecontract = getEmployeeContractFromRequest(request);
                 Long ecId = -1l;
+                boolean newAcceptance = false;
                 if (employeecontract != null) {
                     ecId = employeecontract.getId();
-                }
-                if (!employeecontract.getAcceptanceWarningByDate(dateLast)) {
-                    if (employeecontract.getReportAcceptanceDate() != null
-                            && !dateLast.after(employeecontract
-                                    .getReportAcceptanceDate())) {
-                        request.getSession().setAttribute("acceptance", true);
-                        Employee tempEmployee = employeeDAO
-                                .getEmployeeBySign(timereportDAO
-                                        .getLastAcceptedTimereportByDateAndEmployeeContractId(
-                                                new java.sql.Date(dateLast
-                                                        .getTime()),
-                                                employeecontract.getId())
-                                        .getAcceptedby());
-                        request.getSession().setAttribute(
-                                "acceptedby",
-                                tempEmployee.getFirstname() + " "
-                                        + tempEmployee.getLastname() + " ("
-                                        + tempEmployee.getStatus() + ")");
-                    } else {
-                        request.getSession().setAttribute("acceptance", false);
+                    if (!employeecontract.getAcceptanceWarningByDate(dateLast)) {
+                    	if (employeecontract.getReportAcceptanceDate() != null
+                    			&& !dateLast.after(employeecontract
+                    					.getReportAcceptanceDate())) {
+                    		newAcceptance = true;
+                    		Employee tempEmployee = employeeDAO
+                    				.getEmployeeBySign(timereportDAO
+                    						.getLastAcceptedTimereportByDateAndEmployeeContractId(
+                    								new java.sql.Date(dateLast
+                    										.getTime()),
+                    										employeecontract.getId())
+                    										.getAcceptedby());
+                    		request.getSession().setAttribute(
+                    				"acceptedby",
+                    				tempEmployee.getFirstname() + " "
+                    						+ tempEmployee.getLastname() + " ("
+                    						+ tempEmployee.getStatus() + ")");
+                    	}
                     }
-                } else {
-                    request.getSession().setAttribute("acceptance", false);
                 }
+                request.getSession().setAttribute("acceptance", newAcceptance);
                 
                 ReportWrapper tempReportWrapper = mh
                         .getEmployeeMatrix(
@@ -766,28 +764,18 @@ public class ShowMatrixAction extends DailyReportAction {
                 
                 // orders
                 List<Customerorder> orders = null;
-                Long employeeId = (Long)request.getSession().getAttribute(
-                        "currentEmployeeId");
+                Long employeeId = (Long)request.getSession().getAttribute("currentEmployeeId");
                 if (employeeId != null && employeeId == -1) {
                     orders = customerorderDAO.getCustomerorders();
+                    request.getSession().setAttribute("currentEmployee", "ALL EMPLOYEES");
                 } else {
-                    orders = customerorderDAO
-                            .getCustomerordersByEmployeeContractId(ec.getId());
+                    orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+                    request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(employeeId).getName());
                 }
                 request.getSession().setAttribute("orders", orders);
                 request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-                if (employeeId == -1) {
-                    request.getSession().setAttribute("currentEmployee",
-                            "ALL EMPLOYEES");
-                } else {
-                    request.getSession().setAttribute("currentEmployee",
-                            employeeDAO.getEmployeeById(employeeId).getName());
-                }
                 if (orders.size() > 0) {
-                    request.getSession().setAttribute(
-                            "suborders",
-                            suborderDAO.getSubordersByEmployeeContractId(ec
-                                    .getId()));
+                    request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
                 }
                 
             }
