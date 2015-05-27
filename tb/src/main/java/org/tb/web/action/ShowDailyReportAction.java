@@ -504,7 +504,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             }
         } else if (request.getParameter("task") == null) {
             //*** initialisation ***
-            String forward = init(mapping, request, th, reportForm);
+            init(mapping, request, th, reportForm);
             //TODO: Hier bitte findForward zurückgeben.
             if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
                 // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
@@ -578,7 +578,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             String sqlDateString = reportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
             java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);
             Long currentEmployeeId = (Long)request.getSession().getAttribute("currentEmployeeId");
-            if (currentEmployeeId == null || currentEmployeeId.equals(0)) {
+            if (currentEmployeeId == null || currentEmployeeId == 0) {
                 currentEmployeeId = loginEmployee.getId();
                 request.getSession().setAttribute("currentEmployeeId", currentEmployeeId);
             }
@@ -673,7 +673,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             
             Long employeeId = (Long)request.getSession().getAttribute("currentEmployeeId");
             List<Timereport> timereports;
-            if (employeeId != null && employeeId.equals(-1)) {
+            if (employeeId != null && employeeId == -1) {
                 timereports = timereportDAO.getTimereportsByDate(sqlDate);
             } else {
                 timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), sqlDate);
