@@ -583,9 +583,9 @@ public class TimereportHelper {
      * @param employeeorderDAO
      * @param publicholidayDAO
      * @param timereportDAO
-     * @return Returns an int[] containing the hours at index 0 and the minutes at index 1.
+     * @return Returns the minutes of overtime, might be negative
      */
-    public int[] calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
+    public int calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
         
         Date today = new Date();
         
@@ -595,12 +595,8 @@ public class TimereportHelper {
         
     }
     
-    public int[] calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO,
+    public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO,
             OvertimeDAO overtimeDAO, boolean useOverTimeAdjustment) {
-        int[] overtime = new int[2];
-        long overtimeHours;
-        long overtimeMinutes;
-        
         SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
         String year = yearFormat.format(start);
         
@@ -647,9 +643,7 @@ public class TimereportHelper {
         
         if (diffDays < 0) {
             // throw new RuntimeException("implementation error while calculating overtime");
-            overtime[0] = 0;
-            overtime[1] = 0;
-            return overtime;
+            return 0;
         }
         long weeks = diffDays / 7; // how many complete weeks?
         long days = diffDays % 7; // days of incomplete week
@@ -686,6 +680,7 @@ public class TimereportHelper {
             }
         }
         
+        int overtimeMinutes;
         if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
             long overtimeAdjustmentMinutes = 0;
             List<Overtime> overtimes = overtimeDAO
@@ -693,24 +688,17 @@ public class TimereportHelper {
             for (Overtime ot : overtimes) {
                 overtimeAdjustmentMinutes += ot.getTime() * 60;
             }
-            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
+            overtimeMinutes = (int) (actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes);
         } else {
-            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
+            overtimeMinutes = (int) (actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes);
         }
-        
-        overtimeHours = overtimeMinutes / 60;
-        overtimeMinutes = overtimeMinutes % 60;
         
         if (end.getTime() >= start.getTime()) {
-            overtime[0] = (int)overtimeHours;
-            overtime[1] = (int)overtimeMinutes;
+        	return overtimeMinutes;
         } else {
             //startdate > enddate, should only happen when reopened on day of contractbegin (because then, enddate is set to (contractbegin - 1))
-            overtime[0] = 0;
-            overtime[1] = 0;
+        	return 0;
         }
-        
-        return overtime;
     }
     
     /**

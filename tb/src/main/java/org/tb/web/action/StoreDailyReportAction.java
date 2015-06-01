@@ -736,9 +736,9 @@ public class StoreDailyReportAction extends DailyReportAction {
             
             if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract
-                int[] otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+                double otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                         employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-                employeecontract.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+                employeecontract.setOvertimeStatic(otStatic / 60.0);
                 employeecontractDAO.save(employeecontract, loginEmployee);
             }
             

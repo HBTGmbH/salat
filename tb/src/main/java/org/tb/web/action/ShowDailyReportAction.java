@@ -47,6 +47,7 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowDailyReportForm;
+import org.tb.web.util.OvertimeString;
 
 /**
  * Action class for a timereport to be shown in the daily display
@@ -359,43 +360,20 @@ public class ShowDailyReportAction extends DailyReportAction {
                             date = gc.getTime();
                         }
                         request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
-                        int overtimeHours;
-                        int overtimeMinutes;
+                        int overtime;
                         if (ec.getReportAcceptanceDate().before(date) && ec.getUseOvertimeOld() == false) {
                             Double overtimeStatic = ec.getOvertimeStatic();
                             int otStaticMinutes = (int)(overtimeStatic * 60);
                             Date dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
-                            int[] overtimeDynamic = th.calculateOvertime(dynamicDate, date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-                            int minutes = otStaticMinutes + overtimeDynamic[0] * 60 + overtimeDynamic[1];
-                            overtimeHours = minutes / 60;
-                            overtimeMinutes = minutes % 60;
+                            int overtimeDynamic = th.calculateOvertime(dynamicDate, date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                            overtime = otStaticMinutes + overtimeDynamic;
                         } else {
-                            int[] overtimeUntil = th.calculateOvertime(ec.getValidFrom(), date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-                            overtimeHours = overtimeUntil[0];
-                            overtimeMinutes = overtimeUntil[1];
+                            overtime = th.calculateOvertime(ec.getValidFrom(), date, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
                         }
-                        boolean overtimeUntilIsNeg = false;
-                        if (overtimeMinutes < 0) {
-                            overtimeUntilIsNeg = true;
-                            overtimeMinutes *= -1;
-                        }
-                        if (overtimeHours < 0) {
-                            overtimeUntilIsNeg = true;
-                            overtimeHours *= -1;
-                        }
+                        boolean overtimeUntilIsNeg = overtime < 0;
                         request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);
                         request.getSession().setAttribute("enddate", simpleDateFormat.format(date));
-                        String overtimeString;
-                        if (overtimeUntilIsNeg) {
-                            overtimeString = "-" + overtimeHours + ":";
-                        } else {
-                            overtimeString = overtimeHours + ":";
-                        }
-                        
-                        if (overtimeMinutes < 10) {
-                            overtimeString += "0";
-                        }
-                        overtimeString += overtimeMinutes;
+                        String overtimeString = OvertimeString.overtimeToString(overtime);
                         request.getSession().setAttribute("overtimeUntil", overtimeString);
                     }
                     

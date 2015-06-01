@@ -36,6 +36,7 @@ import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
 import org.tb.web.form.ShowDailyReportForm;
+import org.tb.web.util.OvertimeString;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
     
@@ -77,9 +78,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
     protected void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract,
             EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
         TimereportHelper th = new TimereportHelper();
-        int[] overtime;
-        int overtimeHours;
-        int overtimeMinutes;
+        int overtime;
         Double overtimeStatic = employeecontract.getOvertimeStatic();
         int otStaticMinutes = (int)(overtimeStatic * 60);
 
@@ -87,32 +86,18 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             //use new overtime computation with static + dynamic overtime
             //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
             Date dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
-            int[] overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-            int minutes = otStaticMinutes + overtimeDynamic[0] * 60 + overtimeDynamic[1];
-            overtimeHours = minutes / 60;
-            overtimeMinutes = minutes % 60;
+            int overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+            overtime = otStaticMinutes + overtimeDynamic;
             // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation           
         } else {
             overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-            overtimeHours = overtime[0];
-            overtimeMinutes = overtime[1];
         }
         
-        boolean overtimeIsNegative = false;
-        if (overtimeMinutes < 0) {
-            overtimeIsNegative = true;
-            overtimeMinutes *= -1;
-        } else if (overtimeHours < 0) {
-            overtimeIsNegative = true;
-        }
+        boolean overtimeIsNegative = overtime < 0;
         request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
         
-        String overtimeString = overtimeHours + ":";
+        String overtimeString = OvertimeString.overtimeToString(overtime);
         
-        if (overtimeMinutes < 10) {
-            overtimeString += "0";
-        }
-        overtimeString += overtimeMinutes;
         request.getSession().setAttribute("overtime", overtimeString);
         
         try {
@@ -129,40 +114,21 @@ public abstract class DailyReportAction extends LoginRequiredAction {
             if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
                 currentDate = employeecontract.getValidUntil();
             }
-            int[] monthlyOvertime;
+            int monthlyOvertime;
             if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate)) {
-                monthlyOvertime = new int[2];
-                monthlyOvertime[0] = 0;
-                monthlyOvertime[1] = 0;
+                monthlyOvertime = 0;
             } else {
                 monthlyOvertime = th.calculateOvertime(start, currentDate,
                         employeecontract, employeeorderDAO, publicholidayDAO,
                         timereportDAO, overtimeDAO, false);
             }
-            int monthlyOvertimeHours = monthlyOvertime[0];
-            int monthlyOvertimeMinutes = monthlyOvertime[1];
-            boolean monthlyOvertimeIsNegative = false;
-            if (monthlyOvertimeMinutes < 0) {
-                monthlyOvertimeIsNegative = true;
-                monthlyOvertimeMinutes *= -1;
-            }
-            if (monthlyOvertimeHours < 0) {
-                monthlyOvertimeIsNegative = true;
-            }
-            request.getSession().setAttribute("monthlyOvertimeIsNegative",
-                    monthlyOvertimeIsNegative);
-            String monthlyOvertimeString = monthlyOvertimeHours + ":";
-            
-            if (monthlyOvertimeMinutes < 10) {
-                monthlyOvertimeString += "0";
-            }
-            monthlyOvertimeString += monthlyOvertimeMinutes;
-            request.getSession().setAttribute("monthlyOvertime",
-                    monthlyOvertimeString);
+            boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;
+            request.getSession().setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
+            String monthlyOvertimeString = OvertimeString.overtimeToString(monthlyOvertime);
+            request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
             
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
-            request.getSession().setAttribute("overtimeMonth",
-                    format.format(start));
+            request.getSession().setAttribute("overtimeMonth", format.format(start));
         } catch (ParseException e) {
             throw new RuntimeException("Error occured while parsing date");
         }

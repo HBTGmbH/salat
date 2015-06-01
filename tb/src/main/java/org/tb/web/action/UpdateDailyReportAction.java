@@ -289,9 +289,9 @@ public class UpdateDailyReportAction extends DailyReportAction {
             TimereportHelper th = new TimereportHelper();
             if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract
-                int[] otStatic = th.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(),
+                double otStatic = th.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(),
                         ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-                ec.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+                ec.setOvertimeStatic(otStatic / 60.0);
                 employeecontractDAO.save(ec, loginEmployee);
             }
             

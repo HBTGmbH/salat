@@ -302,9 +302,9 @@ public class ShowReleaseAction extends LoginRequiredAction {
             // set new acceptance date in employee contract
             employeecontract.setReportAcceptanceDate(sqlAcceptanceDate);
             //compute overtimeStatic and set it in employee contract
-            int[] otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+            double otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                     employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-            employeecontract.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+            employeecontract.setOvertimeStatic(otStatic / 60.0);
             
             //only used the first time a release is accepted after SALAT-Release 1.83:
             if (employeecontract.getUseOvertimeOld() == null || employeecontract.getUseOvertimeOld()) {
@@ -362,9 +362,9 @@ public class ShowReleaseAction extends LoginRequiredAction {
                 releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
                 
                 // recompute overtimeStatic and set it in employeecontract
-                int[] otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+                double otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                         employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-                employeecontract.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
+                employeecontract.setOvertimeStatic(otStatic / 60.0);
             }
             
             request.getSession().setAttribute("reopenDays",
