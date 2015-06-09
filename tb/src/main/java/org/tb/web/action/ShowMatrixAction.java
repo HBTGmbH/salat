@@ -316,7 +316,7 @@ public class ShowMatrixAction extends DailyReportAction {
                         "ALL EMPLOYEES");
                 request.getSession().setAttribute("currentEmployeeContract",
                         null);
-                request.getSession().setAttribute("currentEmployeeId", -1);
+                request.getSession().setAttribute("currentEmployeeId", -1l);
                 List<Employeecontract> ecList = employeecontractDAO
                         .getEmployeeContracts();
                 Employeecontract tempEmployeeContract;

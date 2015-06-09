@@ -134,7 +134,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
-            request.getSession().setAttribute("currentEmployeeId", -1);
+            request.getSession().setAttribute("currentEmployeeId", -1l);
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
             
         } else {
@@ -202,7 +202,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         if (employeeContractId == -1 || ec.getFreelancer() || ec.getDailyWorkingTime() <= 0 || ec.getEmployeeorders() == null) {
             trainingOverview = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
-            request.getSession().setAttribute("currentEmployeeId", -1);
+            request.getSession().setAttribute("currentEmployeeId", -1l);
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
             // get a List of TrainingOverviews with only one entry for the selected Employee
         } else {

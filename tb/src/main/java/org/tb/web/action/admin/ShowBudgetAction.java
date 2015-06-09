@@ -147,7 +147,7 @@ public class ShowBudgetAction extends LoginRequiredAction{
 		if (current != null)
 			request.getSession().setAttribute("currentOrderId", current.getId());
 		else
-			request.getSession().setAttribute("currentOrderId", -1);
+			request.getSession().setAttribute("currentOrderId", -1l);
 		*/
 		return mapping.findForward("success");
 	}

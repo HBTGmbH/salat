@@ -382,7 +382,7 @@ public class ShowDailyReportAction extends DailyReportAction {
                     request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
                     
                     if (reportForm.getEmployeeContractId() == -1) {
-                        request.getSession().setAttribute("currentEmployeeId", -1);
+                        request.getSession().setAttribute("currentEmployeeId", -1l);
                         request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
                         request.getSession().setAttribute("currentEmployeeContract", null);
                     } else {

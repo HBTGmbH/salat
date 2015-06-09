@@ -326,7 +326,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         if (reportForm.getEmployeeContractId() == -1) {
             request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
             request.getSession().setAttribute("currentEmployeeContract", null);
-            request.getSession().setAttribute("currentEmployeeId", -1);
+            request.getSession().setAttribute("currentEmployeeId", -1l);
         } else {
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
             request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());

@@ -84,7 +84,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
 			} else {
 				sos = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
 				request.getSession().setAttribute("showAllSuborders", true);
-				request.getSession().setAttribute("currentSuborder", -1);
+				request.getSession().setAttribute("currentSuborder", -1l);
 			}
             request.getSession().setAttribute("currentCustomer", customerOrderId);
             request.getSession().setAttribute("suborders", sos);
