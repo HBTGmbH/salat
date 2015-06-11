@@ -183,20 +183,42 @@ public class LoginEmployeeAction extends Action {
                         			&& !dateString.startsWith(suborder.getSign())) {
                         		break;
                         	}
+                        	
+                        	// find latest untilDate of all employeeorders for this suborder
+                        	List<Employeeorder> invalidEmployeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(employeecontract.getId(), suborder.getId());
+                        	Date dateUntil = null;
+                        	Date dateFrom = null;
+                        	for(Employeeorder eo : invalidEmployeeorders) {
+                        		
+                        		// employeeorder starts in the future
+                        		if(eo.getFromDate() != null && eo.getFromDate().after(date)) {
+                        			if(dateUntil == null || dateUntil.after(eo.getFromDate())) {
+                        				dateUntil = eo.getFromDate();
+                        				continue;
+                        			}
+                        		}
+                        		
+                        		// employeeorder ends in the past
+                        		if(eo.getUntilDate() != null && eo.getUntilDate().before(date)) {
+                        			if(dateFrom == null || dateFrom.before(eo.getUntilDate())) {
+                        				dateFrom = eo.getUntilDate();
+                        				continue;
+                        			}
+                        		}
+                        	}
                             
                             // calculate time period
                             Date ecFromDate = employeecontract.getValidFrom();
                             Date ecUntilDate = employeecontract.getValidUntil();
                             Date soFromDate = suborder.getFromDate();
                             Date soUntilDate = suborder.getUntilDate();
-                            Date fromDate = null;
-                            Date untilDate = null;
+                            Date fromDate = ecFromDate.before(soFromDate) ? soFromDate : ecFromDate;
                             
-                            if (ecFromDate.before(soFromDate)) {
-                                fromDate = soFromDate;
-                            } else {
-                                fromDate = ecFromDate;
+                            // fromDate should not be before the ending of the most recent contract
+                            if(dateFrom != null && dateFrom.after(fromDate)) {
+                            	fromDate = dateFrom;
                             }
+                            Date untilDate = null;
                             
                             if (ecUntilDate == null && soUntilDate == null) {
                                 //untildate remains null
@@ -212,13 +234,20 @@ public class LoginEmployeeAction extends Action {
                             
                             Employeeorder employeeorder = new Employeeorder();
                             
-                            java.sql.Date sqlFromDate = new java.sql.Date(
-                                    fromDate.getTime());
+                            java.sql.Date sqlFromDate = new java.sql.Date(fromDate.getTime());
                             employeeorder.setFromDate(sqlFromDate);
                             
+                            // untilDate should not overreach a future employee contract
+                            if(untilDate == null) {
+                            	untilDate = dateUntil;
+                            } else {
+                            	if(dateUntil != null && dateUntil.before(untilDate)) {
+                            		untilDate = dateUntil;
+                            	}
+                            }
+                            
                             if (untilDate != null) {
-                                java.sql.Date sqlUntilDate = new java.sql.Date(
-                                        untilDate.getTime());
+                                java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
                                 employeeorder.setUntilDate(sqlUntilDate);
                             }
                             if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
