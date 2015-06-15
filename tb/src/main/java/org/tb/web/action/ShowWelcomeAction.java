@@ -184,6 +184,28 @@ public class ShowWelcomeAction extends DailyReportAction {
                 calendar.add(Calendar.MONTH, 12 / customerorder.getStatusreport());
                 checkDate.setTime(calendar.getTimeInMillis());
                 
+                // final report due warning
+                List<Statusreport> finalReports = statusReportDAO.getReleasedFinalStatusReportsByCustomerOrderId(customerorder.getId());
+                if (customerorder.getStatusreport() > 0
+                		&& customerorder.getUntilDate() != null
+                		&& !customerorder.getUntilDate().after(now)
+                		&& (finalReports == null || finalReports.isEmpty())) {
+                	Warning warning = new Warning();
+                	warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.statusreport.finalreport"));
+                	warning.setText(customerorder.getSign() + " " + customerorder.getShortdescription());
+                	List<Statusreport> unreleasedReports = statusReportDAO.getUnreleasedFinalStatusReports(customerorder.getId(), employeecontract.getEmployee().getId(), maxUntilDate);
+                	if (unreleasedReports != null && !unreleasedReports.isEmpty()) {
+                		if (unreleasedReports.size() == 1) {
+                			warning.setLink("/tb/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId());
+                		} else {
+                			warning.setLink("/tb/do/ShowStatusReport?coId=" + customerorder.getId());
+                		}
+                	} else {
+                		warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=true");
+                	}
+                	warnings.add(warning);
+                }
+                
                 // periodical report due warning
                 if (!checkDate.after(now) && (customerorder.getUntilDate() == null || customerorder.getUntilDate().after(checkDate))) {
                     // show warning
@@ -197,32 +219,13 @@ public class ShowWelcomeAction extends DailyReportAction {
                         } else {
                             warning.setLink("/tb/do/ShowStatusReport?coId=" + customerorder.getId());
                         }
+                        warnings.add(warning);
                     } else {
-                        warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=false");
+                    	if(finalReports.isEmpty()) {
+                    		warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=false");
+                    		warnings.add(warning);
+                    	}
                     }
-                    warnings.add(warning);
-                }
-                
-                // final report due warning
-                List<Statusreport> finalReports = statusReportDAO.getReleasedFinalStatusReportsByCustomerOrderId(customerorder.getId());
-                if (customerorder.getStatusreport() > 0
-                        && customerorder.getUntilDate() != null
-                        && !customerorder.getUntilDate().after(now)
-                        && (finalReports == null || finalReports.isEmpty())) {
-                    Warning warning = new Warning();
-                    warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.statusreport.finalreport"));
-                    warning.setText(customerorder.getSign() + " " + customerorder.getShortdescription());
-                    List<Statusreport> unreleasedReports = statusReportDAO.getUnreleasedFinalStatusReports(customerorder.getId(), employeecontract.getEmployee().getId(), maxUntilDate);
-                    if (unreleasedReports != null && !unreleasedReports.isEmpty()) {
-                        if (unreleasedReports.size() == 1) {
-                            warning.setLink("/tb/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId());
-                        } else {
-                            warning.setLink("/tb/do/ShowStatusReport?coId=" + customerorder.getId());
-                        }
-                    } else {
-                        warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=true");
-                    }
-                    warnings.add(warning);
                 }
             }
         }
