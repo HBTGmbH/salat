@@ -26,6 +26,7 @@ import org.tb.bdom.Statusreport;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Warning;
+import org.tb.helper.StatusReportWarningHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
 import org.tb.logging.TbLogger;
@@ -436,97 +437,9 @@ public class LoginEmployeeAction extends Action {
                 }
                 warnings.add(warning);
             }
-            
+
             // statusreport due warning
-            List<Customerorder> customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(employeecontract.getEmployee().getId());
-            if (customerOrders != null && !customerOrders.isEmpty()) {
-                
-                java.util.Date now = new java.util.Date();
-                
-                for (Customerorder customerorder : customerOrders) {
-                    java.sql.Date maxUntilDate = statusReportDAO.getMaxUntilDateForCustomerOrderId(customerorder.getId());
-                    
-                    if (maxUntilDate == null) {
-                        maxUntilDate = customerorder.getFromDate();
-                    }
-                    
-                    java.sql.Date checkDate = new java.sql.Date(maxUntilDate.getTime());
-                    
-                    GregorianCalendar calendar = new GregorianCalendar();
-                    calendar.setTime(checkDate);
-                    calendar.add(Calendar.MONTH, 12 / customerorder.getStatusreport());
-                    checkDate.setTime(calendar.getTimeInMillis());
-                    
-                    // periodical report due warning
-                    if (!checkDate.after(now) && (customerorder.getUntilDate() == null || customerorder.getUntilDate().after(checkDate))) {
-                        // show warning
-                        Warning warning = new Warning();
-                        warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.statusreport.due"));
-                        warning.setText(customerorder.getSign() + " " + customerorder.getShortdescription() + " (" + simpleDateFormat.format(checkDate) + ")");
-                        List<Statusreport> unreleasedReports = statusReportDAO.getUnreleasedPeriodicalStatusReports(customerorder.getId(), employeecontract.getEmployee().getId(), maxUntilDate);
-                        if (unreleasedReports != null && !unreleasedReports.isEmpty()) {
-                            if (unreleasedReports.size() == 1) {
-                                warning.setLink("/tb/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId());
-                            } else {
-                                warning.setLink("/tb/do/ShowStatusReport?coId=" + customerorder.getId());
-                            }
-                        } else {
-                            warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=false");
-                        }
-                        warnings.add(warning);
-                    }
-                    
-                    // final report due warning
-                    List<Statusreport> finalReports = statusReportDAO.getReleasedFinalStatusReportsByCustomerOrderId(customerorder.getId());
-                    if (customerorder.getStatusreport() > 0
-                            && customerorder.getUntilDate() != null
-                            && !customerorder.getUntilDate().after(now)
-                            && (finalReports == null || finalReports.isEmpty())) {
-                        Warning warning = new Warning();
-                        warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.statusreport.finalreport"));
-                        warning.setText(customerorder.getSign() + " " + customerorder.getShortdescription());
-                        List<Statusreport> unreleasedReports = statusReportDAO.getUnreleasedFinalStatusReports(customerorder.getId(), employeecontract.getEmployee().getId(), maxUntilDate);
-                        if (unreleasedReports != null && !unreleasedReports.isEmpty()) {
-                            if (unreleasedReports.size() == 1) {
-                                warning.setLink("/tb/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId());
-                            } else {
-                                warning.setLink("/tb/do/ShowStatusReport?coId=" + customerorder.getId());
-                            }
-                        } else {
-                            warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=true");
-                        }
-                        warnings.add(warning);
-                    }
-                }
-            }
-            
-            // statusreport acceptance warning
-            List<Statusreport> reportsToBeAccepted = statusReportDAO.getReleasedStatusReportsByRecipientId(employeecontract.getEmployee().getId());
-            if (reportsToBeAccepted != null && !reportsToBeAccepted.isEmpty()) {
-                for (Statusreport statusreport : reportsToBeAccepted) {
-                    Warning warning = new Warning();
-                    warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.statusreport.acceptance"));
-                    warning.setText(statusreport.getCustomerorder().getSign() + " "
-                            + statusreport.getCustomerorder().getShortdescription()
-                            + " (ID:" + statusreport.getId() + " "
-                            + getResources(request).getMessage(getLocale(request), "statusreport.from.text")
-                            + ":" + simpleDateFormat.format(statusreport.getFromdate()) + " "
-                            + getResources(request).getMessage(getLocale(request), "statusreport.until.text")
-                            + ":" + simpleDateFormat.format(statusreport.getUntildate()) + " "
-                            + getResources(request).getMessage(getLocale(request), "statusreport.from.text")
-                            + ":" + statusreport.getSender().getName() + " "
-                            + getResources(request).getMessage(getLocale(request), "statusreport.to.text")
-                            + ":" + statusreport.getRecipient().getName() + ")");
-                    warning.setLink("/tb/do/EditStatusReport?srId=" + statusreport.getId());
-                    warnings.add(warning);
-                }
-            }
-            if (warnings != null && !warnings.isEmpty()) {
-                request.getSession().setAttribute("warnings", warnings);
-                request.getSession().setAttribute("warningsPresent", true);
-            } else {
-                request.getSession().setAttribute("warningsPresent", false);
-            }
+            StatusReportWarningHelper.addWarnings(loginEmployeeContract, request, warnings, statusReportDAO, customerorderDAO);
             
         } else {
             request.getSession().setAttribute("employeeHasValidContract", false);
