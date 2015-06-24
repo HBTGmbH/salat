@@ -50,6 +50,10 @@ public class CustomerorderHelper {
 		}		
 	
 		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
+		Employeecontract matchingTimeEC = ecd.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), date);
+		if(matchingTimeEC != null) {
+			ec = matchingTimeEC;
+		}
 		
 		if (ec == null) {
 			request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO: MessageResources

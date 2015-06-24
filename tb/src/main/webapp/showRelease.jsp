@@ -363,7 +363,7 @@
 
 
 				<!-- reopen -->
-				<c:if test="${loginEmployee.sign == 'adm'}">
+				<c:if test="${loginEmployee.status == 'adm'}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="30"></td>
 					</tr>

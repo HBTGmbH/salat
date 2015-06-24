@@ -160,9 +160,15 @@
                         // cal.select(document.forms[0].referenceday,'anchor1','E yyyy-MM-dd');
                         cal.select(document.forms[0].referenceday,'anchor1','yyyy-MM-dd');
                     }
+                    function hitEnter(e, form) {
+                    	if(e.keyCode == 13 || e.which == 13) {
+                    		adjustBeginTimeAction(form);
+                    	}
+                    }
                 </script>
                 <html:text property="referenceday" onblur="adjustBeginTimeAction(this.form)" 
-                	readonly="false" size="10" maxlength="10" />
+                	readonly="false" size="10" maxlength="10" 
+                	onkeyup="hitEnter(event, this.form);"/>
                 <a href="javascript:calenderPopup()" name="anchor1" ID="anchor1" style="text-decoration:none;">
                 	<img src="/tb/images/popupcalendar.gif" width="22" height="22" 
                 		alt="<bean:message key="main.date.popup.alt.text" />"
@@ -373,24 +379,24 @@
 		class="center backgroundcolor">
 		<tr>
 			<td class="noBborderStyle">
-				<html:submit onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button">
+				<html:button property="save" onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button">
 					<bean:message key="main.general.button.save.text" />
-				</html:submit>
+				</html:button>
 			</td>
 			<td class="noBborderStyle">
-				<html:submit onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button">
+				<html:button property="saveAndContinue" onclick="setStoreAction(this.form, 'save', 'true');return false" styleId="button">
         			<bean:message key="main.general.button.saveandcontinue.text" />
-        		</html:submit>
+        		</html:button>
         	</td>
 			<td class="noBborderStyle">
-				<html:submit onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button">
+				<html:button property="reset" onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button">
 					<bean:message key="main.general.button.reset.text" />
-				</html:submit>
+				</html:button>
 			</td>
 			<td class="noBborderStyle">
-				<html:submit onclick="backToOverview(this.form)" styleId="button">
+				<html:button property="back" onclick="backToOverview(this.form)" styleId="button">
 					<bean:message key="main.general.button.back.text" />
-				</html:submit>
+				</html:button>
 			</td>
 		</tr>
 	</table>

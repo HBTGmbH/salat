@@ -79,9 +79,18 @@ public class CreateDailyReportAction extends DailyReportAction {
         } else {
             ec = loginEmployeeContract;
         }
+        
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO
             return mapping.findForward("error");
+        }
+        
+        // get selected date for new report
+        Date selectedDate = getSelectedDateFromRequest(request);
+        
+        Employeecontract matchingEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), selectedDate);
+        if(matchingEC != null) {
+        	ec = matchingEC;
         }
         
         request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
@@ -90,9 +99,6 @@ public class CreateDailyReportAction extends DailyReportAction {
         
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
-        
-        // get selected date for new report
-        Date selectedDate = getSelectedDateFromRequest(request);
         
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
         
