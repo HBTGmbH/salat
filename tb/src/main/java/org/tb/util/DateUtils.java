@@ -3,8 +3,11 @@ package org.tb.util;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
@@ -23,6 +26,8 @@ public class DateUtils {
     private static String[] monthShortStrings = GlobalConstants.MONTH_SHORTFORMS;
     
     private static String[] monthLongStrings = GlobalConstants.MONTH_LONGFORMS;
+    
+    private static Map<Integer, List<OptionItem>> mapCalendarWeeks = Collections.synchronizedMap(new HashMap<Integer, List<OptionItem>>());
     
     /**
      * Gets the date without the time value.
@@ -263,6 +268,50 @@ public class DateUtils {
         }
         
         return theList;
+    }
+    
+    /**
+     * builds up a list of calendar weeks for a certain year
+     * 
+     * @param yearString
+     * @return
+     */
+    public static List<OptionItem> getWeeksToDisplay(String yearString) {
+    	try {
+    		Calendar calendar = Calendar.getInstance();
+    		Integer year = null;
+    		if(yearString != null) {
+	    		year = Integer.parseInt(yearString);
+	    		calendar.set(year, 11, 31);
+    		} else {
+    			calendar.set(Calendar.MONTH, 11);
+    			calendar.set(Calendar.DAY_OF_MONTH, 31);
+    			year = calendar.get(Calendar.YEAR);
+    		}
+    		
+    		List<OptionItem> theList = mapCalendarWeeks.get(year);
+    		if(theList == null) {
+	    		int lastWeekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
+	    		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+	    		
+	    		theList = new ArrayList<OptionItem>();
+	    		for(int i = 1; i <= lastWeekOfYear; i++) {
+	    			calendar.set(Calendar.WEEK_OF_YEAR, i);
+	    			calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+	    			StringBuilder sb = new StringBuilder();
+	    			sb.append("KW").append(i).append(" (").append(sdf.format(calendar.getTime()));
+	    			calendar.add(Calendar.DATE, 6);
+	    			sb.append("-").append(sdf.format(calendar.getTime()));
+	    			theList.add(new OptionItem(i, sb.toString()));
+	    		}
+	    		
+	    		mapCalendarWeeks.put(year, theList);
+    		}
+    		return theList;
+    	} catch(NumberFormatException e) {
+    		return Collections.emptyList();
+    	} 
+    	
     }
     
     /*
@@ -513,5 +562,4 @@ public class DateUtils {
         
         return date;
     }
-    
 }

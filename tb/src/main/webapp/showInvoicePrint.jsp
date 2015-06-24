@@ -65,6 +65,11 @@
 							<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
 						</td>
 					</c:when>
+					<c:when test="${invoiceview eq 'week'}">
+						<td align="left" class="matrix" style="border: 0px;">
+							<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" /> (KW<c:out value="${currentWeek}" />)
+						</td>
+					</c:when>
 					<c:otherwise>
 						<td align="left" class="matrix" style="border: 0px;">
 							&nbsp;

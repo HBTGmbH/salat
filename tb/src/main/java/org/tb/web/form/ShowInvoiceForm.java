@@ -28,6 +28,7 @@ public class ShowInvoiceForm extends ActionForm {
     private boolean employeesignbox;
     private boolean invoicebox;
     private boolean fixedpricebox;
+    private int     fromWeek;
     private String[] suborderIdArray;
     private String[] timereportIdArray;
     private String titleprinttext;
@@ -328,5 +329,13 @@ public class ShowInvoiceForm extends ActionForm {
 
 	public void setShowOnlyValid(Boolean showOnlyValid) {
 		this.showOnlyValid = showOnlyValid;
+	}
+
+	public int getFromWeek() {
+		return fromWeek;
+	}
+
+	public void setFromWeek(int fromWeek) {
+		this.fromWeek = fromWeek;
 	}
 }

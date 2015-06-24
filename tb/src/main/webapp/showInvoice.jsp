@@ -141,6 +141,9 @@
 							<html:option value="month">
 								<bean:message key="main.general.timereport.view.monthly.text" />
 							</html:option>
+							<html:option value="week">
+								<bean:message key="main.general.timereport.view.weekly.text" />
+							</html:option>
 							<html:option value="custom">
 								<bean:message key="main.general.timereport.view.custom.text" />
 							</html:option>
@@ -156,6 +159,11 @@
 								<b><bean:message key="main.monthlyreport.monthyear.text" />:</b>
 							</td>
 						</c:when>
+						<c:when test="${invoiceview eq 'week'}">
+							<td align="left" class="noBborderStyle">
+								<b><bean:message key="main.monthlyreport.weekyear.text" />:</b>
+							</td>
+						</c:when>
 						<c:otherwise>
 							<td align="left" class="noBborderStyle">
 								<b><bean:message key="main.monthlyreport.daymonthyear.text" />:</b>
@@ -164,57 +172,68 @@
 					</c:choose>
 
 					<td align="left" class="noBborderStyle">
-						<c:if test="${!(invoiceview eq 'month')}">
+					
+						<c:if test="${!(invoiceview eq 'week')}">
 							<html:select property="fromDay" value="${currentDay}"
 								onchange="setUpdateInvoiceAction(this.form)">
 								<html:options collection="days" property="value"
 									labelProperty="label" />
 							</html:select>
+							<html:select property="fromMonth" value="${currentMonth}"
+								onchange="setUpdateInvoiceAction(this.form)">
+								<html:option value="Jan">
+									<bean:message key="main.timereport.select.month.jan.text" />
+								</html:option>
+								<html:option value="Feb">
+									<bean:message key="main.timereport.select.month.feb.text" />
+								</html:option>
+								<html:option value="Mar">
+									<bean:message key="main.timereport.select.month.mar.text" />
+								</html:option>
+								<html:option value="Apr">
+									<bean:message key="main.timereport.select.month.apr.text" />
+								</html:option>
+								<html:option value="May">
+									<bean:message key="main.timereport.select.month.may.text" />
+								</html:option>
+								<html:option value="Jun">
+									<bean:message key="main.timereport.select.month.jun.text" />
+								</html:option>
+								<html:option value="Jul">
+									<bean:message key="main.timereport.select.month.jul.text" />
+								</html:option>
+								<html:option value="Aug">
+									<bean:message key="main.timereport.select.month.aug.text" />
+								</html:option>
+								<html:option value="Sep">
+									<bean:message key="main.timereport.select.month.sep.text" />
+								</html:option>
+								<html:option value="Oct">
+									<bean:message key="main.timereport.select.month.oct.text" />
+								</html:option>
+								<html:option value="Nov">
+									<bean:message key="main.timereport.select.month.nov.text" />
+								</html:option>
+								<html:option value="Dec">
+									<bean:message key="main.timereport.select.month.dec.text" />
+								</html:option>
+							</html:select>
+							<html:select property="fromYear" value="${currentYear}"
+								onchange="setUpdateInvoiceAction(this.form)">
+								<html:options collection="years" property="value"
+									labelProperty="label" />
+							</html:select>
 						</c:if>
-						<html:select property="fromMonth" value="${currentMonth}"
-							onchange="setUpdateInvoiceAction(this.form)">
-							<html:option value="Jan">
-								<bean:message key="main.timereport.select.month.jan.text" />
-							</html:option>
-							<html:option value="Feb">
-								<bean:message key="main.timereport.select.month.feb.text" />
-							</html:option>
-							<html:option value="Mar">
-								<bean:message key="main.timereport.select.month.mar.text" />
-							</html:option>
-							<html:option value="Apr">
-								<bean:message key="main.timereport.select.month.apr.text" />
-							</html:option>
-							<html:option value="May">
-								<bean:message key="main.timereport.select.month.may.text" />
-							</html:option>
-							<html:option value="Jun">
-								<bean:message key="main.timereport.select.month.jun.text" />
-							</html:option>
-							<html:option value="Jul">
-								<bean:message key="main.timereport.select.month.jul.text" />
-							</html:option>
-							<html:option value="Aug">
-								<bean:message key="main.timereport.select.month.aug.text" />
-							</html:option>
-							<html:option value="Sep">
-								<bean:message key="main.timereport.select.month.sep.text" />
-							</html:option>
-							<html:option value="Oct">
-								<bean:message key="main.timereport.select.month.oct.text" />
-							</html:option>
-							<html:option value="Nov">
-								<bean:message key="main.timereport.select.month.nov.text" />
-							</html:option>
-							<html:option value="Dec">
-								<bean:message key="main.timereport.select.month.dec.text" />
-							</html:option>
-						</html:select>
-						<html:select property="fromYear" value="${currentYear}"
-							onchange="setUpdateInvoiceAction(this.form)">
-							<html:options collection="years" property="value"
-								labelProperty="label" />
-						</html:select>
+						<c:if test="${invoiceview eq 'week'}">
+							<html:select property="fromWeek" value="${currentWeek}" onchange="setUpdateInvoiceAction(this.form)" styleClass="make-select2">
+								<html:options collection="weeks" property="value" labelProperty="label" />
+							</html:select>
+							<html:select property="fromYear" value="${currentYear}"
+								onchange="setUpdateInvoiceAction(this.form)">
+								<html:options collection="years" property="value"
+									labelProperty="label" />
+							</html:select>
+						</c:if>
 					</td>
 				</tr>
 
