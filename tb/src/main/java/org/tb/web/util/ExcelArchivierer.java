@@ -14,17 +14,18 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFDataFormat;
 import org.apache.poi.hssf.usermodel.HSSFDataFormatter;
-import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.tb.GlobalConstants;
 import org.tb.web.form.ShowInvoiceForm;
 import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
@@ -41,10 +42,10 @@ public class ExcelArchivierer {
 	
 	private static final String CONTENT_DISPOSITION = "attachment; filename=\"" + GlobalConstants.INVOICE_EXCEL_EXPORT_FILENAME + "\"";
 	private static final Map<String, Short> cellStyleIndexes = new HashMap<String, Short>();
-	private static final HSSFDataFormatter dataFormatter = new HSSFDataFormatter();
+	private static final DataFormatter dataFormatter = new HSSFDataFormatter();
 	
 	public static void exportInvoice(ShowInvoiceForm showInvoiceForm, HttpServletRequest request, HttpServletResponse response) {
-		HSSFWorkbook workbook = createInvoiceExcel(showInvoiceForm, request);
+		Workbook workbook = createInvoiceExcel(showInvoiceForm, request);
 		response.setHeader("Content-disposition", CONTENT_DISPOSITION);
 		response.setContentType(GlobalConstants.INVOICE_EXCEL_CONTENT_TYPE);
 		try {
@@ -57,8 +58,8 @@ public class ExcelArchivierer {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static HSSFWorkbook createInvoiceExcel(ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
-		HSSFWorkbook workbook = new HSSFWorkbook();
+	private static Workbook createInvoiceExcel(ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
+		Workbook workbook = new HSSFWorkbook();
 		createCellStyles(workbook);
 		workbook.createSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME);
 		addTitleRow(workbook, showInvoiceForm, request);
@@ -92,83 +93,79 @@ public class ExcelArchivierer {
 		return workbook;
 	}
 
-	private static void createCellStyles(HSSFWorkbook workbook) {
+	private static void createCellStyles(Workbook workbook) {
 		// title-Style
-		HSSFCellStyle titleCellStyle = workbook.createCellStyle();
-		HSSFFont boldItalicFont = workbook.createFont();
-		boldItalicFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+		CellStyle titleCellStyle = workbook.createCellStyle();
+		Font boldItalicFont = workbook.createFont();
+		boldItalicFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
 		boldItalicFont.setItalic(true);
 		titleCellStyle.setFont(boldItalicFont);
-		titleCellStyle.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-		titleCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+		titleCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+		titleCellStyle.setAlignment(CellStyle.ALIGN_CENTER);
 		cellStyleIndexes.put("title", titleCellStyle.getIndex());
 		// italic-Style
-		HSSFCellStyle italicCellStyle = workbook.createCellStyle();
-		HSSFFont italicFont = workbook.createFont();
-		italicFont.setBoldweight(HSSFFont.BOLDWEIGHT_NORMAL);
+		CellStyle italicCellStyle = workbook.createCellStyle();
+		Font italicFont = workbook.createFont();
+		italicFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
 		italicFont.setItalic(true);
 		italicCellStyle.setFont(italicFont);
-		italicCellStyle.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-		italicCellStyle.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+		italicCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+		italicCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
 		cellStyleIndexes.put("italic", italicCellStyle.getIndex());
 		// textwrap-Style
-		HSSFCellStyle textwrapCellStyle = workbook.createCellStyle();
-		HSSFFont normalFont = workbook.createFont();
-		normalFont.setBoldweight(HSSFFont.BOLDWEIGHT_NORMAL);
+		CellStyle textwrapCellStyle = workbook.createCellStyle();
+		Font normalFont = workbook.createFont();
+		normalFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
 		textwrapCellStyle.setFont(normalFont);
 		textwrapCellStyle.setWrapText(true);
-		textwrapCellStyle.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-		textwrapCellStyle.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+		textwrapCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+		textwrapCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
 		cellStyleIndexes.put("textwrap", textwrapCellStyle.getIndex());
 		// hourMinute-Style
-		HSSFCellStyle hourMinuteCellStyle = workbook.createCellStyle();
+		CellStyle hourMinuteCellStyle = workbook.createCellStyle();
 		hourMinuteCellStyle.setFont(normalFont);
-		hourMinuteCellStyle.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-		hourMinuteCellStyle.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-		HSSFDataFormat hhmmFormat = workbook.createDataFormat();
+		hourMinuteCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+		hourMinuteCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
+		DataFormat hhmmFormat = workbook.createDataFormat();
 		hourMinuteCellStyle.setDataFormat(hhmmFormat.getFormat("[hh]:mm"));
 		cellStyleIndexes.put("hourMinute", hourMinuteCellStyle.getIndex());
 		// hourMinuteItalic-Style
-		HSSFCellStyle hourMinuteItalicCellStyle = workbook.createCellStyle();
+		CellStyle hourMinuteItalicCellStyle = workbook.createCellStyle();
 		hourMinuteItalicCellStyle.cloneStyleFrom(hourMinuteCellStyle);
 		hourMinuteItalicCellStyle.setFont(italicFont);
 		cellStyleIndexes.put("hourMinuteItalic", hourMinuteItalicCellStyle.getIndex());
 		// hourMinuteBold-Style
-		HSSFCellStyle hourMinuteBoldCellStyle = workbook.createCellStyle();
+		CellStyle hourMinuteBoldCellStyle = workbook.createCellStyle();
 		hourMinuteBoldCellStyle.cloneStyleFrom(hourMinuteCellStyle);
-		HSSFFont boldFont = workbook.createFont();
-		boldFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+		Font boldFont = workbook.createFont();
+		boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
 		hourMinuteBoldCellStyle.setFont(boldFont);
 		cellStyleIndexes.put("hourMinuteBold", hourMinuteBoldCellStyle.getIndex());
 		// date-Style
-		HSSFCellStyle dateCellStyle = workbook.createCellStyle();
+		CellStyle dateCellStyle = workbook.createCellStyle();
 		dateCellStyle.setFont(normalFont);
-		dateCellStyle.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-		dateCellStyle.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-		HSSFDataFormat dateFormat = workbook.createDataFormat();
+		dateCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+		dateCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
+		DataFormat dateFormat = workbook.createDataFormat();
 		dateCellStyle.setDataFormat(dateFormat.getFormat(GlobalConstants.INVOICE_DATE_FORMAT));
 //		dateCellStyle.setDataFormat(HSSFDataFormat.getBuiltinFormat("d-mmm-yy"));
 		cellStyleIndexes.put("date", dateCellStyle.getIndex());
 	}
 	
-	private static int addSuborderDataRow(HSSFWorkbook workbook, int rowIndex, InvoiceSuborderViewHelper invoiceSuborderViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
-		HSSFRow row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
+	private static RichTextString createRTS(String str) {
+		return new HSSFRichTextString(str != null ? str : "");
+	}
+	
+	private static int addSuborderDataRow(Workbook workbook, int rowIndex, InvoiceSuborderViewHelper invoiceSuborderViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
+		Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
 		rowIndex++;
 		int colIndex = 0;
-		HSSFCell cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-		if (invoiceSuborderViewHelper.getSign() != null) {
-			cell.setCellValue(new HSSFRichTextString(invoiceSuborderViewHelper.getSign()));
-		} else {
-			cell.setCellValue(new HSSFRichTextString(""));
-		}
+		Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+		cell.setCellValue(createRTS(invoiceSuborderViewHelper.getSign()));
 		colIndex++;
 		if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (invoiceSuborderViewHelper.getSuborder_customer() != null) {
-				cell.setCellValue(new HSSFRichTextString(invoiceSuborderViewHelper.getSuborder_customer()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(invoiceSuborderViewHelper.getSuborder_customer()));
 			colIndex++;
 		}
 		if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
@@ -177,23 +174,19 @@ public class ExcelArchivierer {
 		if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))) {
 			colIndex++;
 		}
-		cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
+		cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
 		cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
 		if ("longdescription".equals(showInvoiceForm.getSuborderdescription())) {
-			if (invoiceSuborderViewHelper.getDescription() != null) {
-				cell.setCellValue(new HSSFRichTextString(invoiceSuborderViewHelper.getDescription()));	
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell.setCellValue(createRTS(invoiceSuborderViewHelper.getDescription()));	
 		} else if ("shortdescription".equals(showInvoiceForm.getSuborderdescription())) {
-			cell.setCellValue(new HSSFRichTextString(invoiceSuborderViewHelper.getShortdescription()));
+			cell.setCellValue(createRTS(invoiceSuborderViewHelper.getShortdescription()));
 		} else {
 			// should be unreachable, see selectbox in showInvoice.jsp:266ff
 			assert false;
 		}
 		colIndex++;
 		if (request.getSession().getAttribute("targethoursbox") != null && ((Boolean) request.getSession().getAttribute("targethoursbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_NUMERIC);
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
 			if (invoiceSuborderViewHelper.getDebithours() != null) {
 				cell.setCellValue(invoiceSuborderViewHelper.getDebithours() / 24);
 			} else {
@@ -203,7 +196,7 @@ public class ExcelArchivierer {
 			colIndex++;
 		}
 		if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_NUMERIC);
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
 			int layerlimit;
 			try {
 				layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
@@ -226,14 +219,14 @@ public class ExcelArchivierer {
 		return rowIndex;
 	}
 	
-	private static int addTimereportDataRow(HSSFWorkbook workbook, int rowIndex, @Nonnull InvoiceTimereportViewHelper invoiceTimereportViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
-		HSSFRow row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
+	private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereportViewHelper invoiceTimereportViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
+		Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
 		rowIndex++;
 		int colIndex = 1;
 		if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
 			colIndex++;
 		}
-		HSSFCell cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_NUMERIC);
+		Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
 		if (invoiceTimereportViewHelper.getReferenceday().getRefdate() != null) {
 			cell.setCellValue(invoiceTimereportViewHelper.getReferenceday().getRefdate());
 		} else {
@@ -243,21 +236,13 @@ public class ExcelArchivierer {
 		colIndex++;
 		if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))
 				&& request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (invoiceTimereportViewHelper.getEmployeecontract().getEmployee().getSign() != null) {
-				cell.setCellValue(new HSSFRichTextString(invoiceTimereportViewHelper.getEmployeecontract().getEmployee().getSign()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(invoiceTimereportViewHelper.getEmployeecontract().getEmployee().getSign()));
 			colIndex++;
 		}
 		if (request.getSession().getAttribute("timereportdescriptionbox") != null && ((Boolean) request.getSession().getAttribute("timereportdescriptionbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (invoiceTimereportViewHelper.getTaskdescription() != null) {
-				cell.setCellValue(new HSSFRichTextString(invoiceTimereportViewHelper.getTaskdescription()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(invoiceTimereportViewHelper.getTaskdescription()));
 			cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
 			colIndex++;
 		} else {
@@ -267,7 +252,7 @@ public class ExcelArchivierer {
 			colIndex++;
 		}
 		if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_NUMERIC);
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
 			if (invoiceTimereportViewHelper.getDurationhours() != null) {
 				double duration = (invoiceTimereportViewHelper.getDurationhours() * 60) + invoiceTimereportViewHelper.getDurationminutes();
 				cell.setCellValue(duration / 1440);
@@ -279,75 +264,51 @@ public class ExcelArchivierer {
 		return rowIndex;
 	}
 	
-	private static void addTitleRow(HSSFWorkbook workbook, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
+	private static void addTitleRow(Workbook workbook, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
 		int colIndex = 0;
-		HSSFRow row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(0);
-		HSSFCell cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-		cell.setCellValue(new HSSFRichTextString(showInvoiceForm.getTitlesubordertext()));
+		Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(0);
+		Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+		cell.setCellValue(createRTS(showInvoiceForm.getTitlesubordertext()));
 		cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
 		colIndex++;
 		if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (showInvoiceForm.getTitlecustomersigntext() != null) {
-				cell.setCellValue(new HSSFRichTextString(showInvoiceForm.getTitlecustomersigntext()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(showInvoiceForm.getTitlecustomersigntext()));
 			cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
 			colIndex++;
 		}
 		if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (showInvoiceForm.getTitledatetext() != null) {
-				cell.setCellValue(new HSSFRichTextString(showInvoiceForm.getTitledatetext()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(showInvoiceForm.getTitledatetext()));
 			cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
 			colIndex++;
 		}
 		if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (showInvoiceForm.getTitleemployeesigntext() != null) {
-				cell.setCellValue(new HSSFRichTextString(showInvoiceForm.getTitleemployeesigntext()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(showInvoiceForm.getTitleemployeesigntext()));
 			cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
 			colIndex++;
 		}
-		cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-		if (showInvoiceForm.getTitledescriptiontext() != null) {
-			cell.setCellValue(new HSSFRichTextString(showInvoiceForm.getTitledescriptiontext()));
-		} else {
-			cell.setCellValue(new HSSFRichTextString(""));
-		}
+		cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+		cell.setCellValue(createRTS(showInvoiceForm.getTitledescriptiontext()));
 		cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
 		colIndex++;
 		if (request.getSession().getAttribute("targethoursbox") != null && ((Boolean) request.getSession().getAttribute("targethoursbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (showInvoiceForm.getTitletargethourstext() != null) {
-				cell.setCellValue(new HSSFRichTextString(showInvoiceForm.getTitletargethourstext()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(showInvoiceForm.getTitletargethourstext()));
 			cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
 			colIndex++;
 		}
 		if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-			cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-			if (showInvoiceForm.getTitleactualhourstext() != null) {
-				cell.setCellValue(new HSSFRichTextString(showInvoiceForm.getTitleactualhourstext()));
-			} else {
-				cell.setCellValue(new HSSFRichTextString(""));
-			}
+			cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+			cell.setCellValue(createRTS(showInvoiceForm.getTitleactualhourstext()));
 			cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
 			colIndex++;
 		}
 	}
 	
-	private static void addSumRow(HSSFWorkbook workbook, int rowIndex, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
-		HSSFRow row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
+	private static void addSumRow(Workbook workbook, int rowIndex, ShowInvoiceForm showInvoiceForm, HttpServletRequest request) {
+		Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
 		int colIndex = 2;
 		if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
 			colIndex++;
@@ -358,44 +319,44 @@ public class ExcelArchivierer {
 		if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))) {
 			colIndex++;
 		}
-		HSSFCell cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_STRING);
-		HSSFRichTextString overall;
+		Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+		RichTextString overall;
 		if (request.getSession().getAttribute("overall") != null) {
-			overall = new HSSFRichTextString((String) request.getSession().getAttribute("overall") + ":");
+			overall = createRTS((String) request.getSession().getAttribute("overall") + ":");
 		} else {
-			overall = new HSSFRichTextString("Gesamt:");
+			overall = createRTS("Gesamt:");
 		}
 		cell.setCellValue(overall);
 		cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("italic")));
 		colIndex++;
-		cell = row.createCell(colIndex, HSSFCell.CELL_TYPE_NUMERIC);
+		cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
 		cell.setCellValue((Double) request.getSession().getAttribute("actualminutessum") / 1440);
 		cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
 	}
 	
-	private static void setColumnWidths(HSSFSheet sheet) {
+	private static void setColumnWidths(Sheet sheet) {
 		// get the highest width per column and set the column width for sheet
 		Map<Integer, Integer> widthMap = new HashMap<Integer, Integer>();
 		for (Iterator<Row> rowIter = sheet.rowIterator(); rowIter.hasNext();) {
-			HSSFRow row = (HSSFRow) rowIter.next();
+			Row row = rowIter.next();
 			for (Iterator<Cell> cellIter = row.cellIterator(); cellIter.hasNext();) {
-				HSSFCell cell = (HSSFCell) cellIter.next();
+				Cell cell = cellIter.next();
 				Integer widthFromMap = widthMap.get(cell.getColumnIndex());
 				Integer width;
 				switch (cell.getCellType()) {
-				case HSSFCell.CELL_TYPE_NUMERIC:
+				case Cell.CELL_TYPE_NUMERIC:
 					width = (dataFormatter.formatCellValue(cell).length() + 3) * 256;
 					break;
-				case HSSFCell.CELL_TYPE_STRING:
+				case Cell.CELL_TYPE_STRING:
 					width = (cell.getRichStringCellValue().length() + 3) * 256;
 					break;
-				case HSSFCell.CELL_TYPE_FORMULA:
+				case Cell.CELL_TYPE_FORMULA:
 					// nothing -> fall through
-				case HSSFCell.CELL_TYPE_BLANK:
+				case Cell.CELL_TYPE_BLANK:
 					// nothing -> fall through
-				case HSSFCell.CELL_TYPE_BOOLEAN:
+				case Cell.CELL_TYPE_BOOLEAN:
 					// nothing -> fall through
-				case HSSFCell.CELL_TYPE_ERROR:
+				case Cell.CELL_TYPE_ERROR:
 					// nothing -> fall through
 				default:
 					width = sheet.getColumnWidth(cell.getColumnIndex()); 
