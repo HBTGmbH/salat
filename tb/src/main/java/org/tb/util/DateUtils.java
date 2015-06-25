@@ -301,7 +301,7 @@ public class DateUtils {
 	    			StringBuilder sb = new StringBuilder();
 	    			sb.append("KW").append(i).append(" (").append(sdf.format(calendar.getTime()));
 	    			calendar.add(Calendar.DATE, 6);
-	    			sb.append("-").append(sdf.format(calendar.getTime()));
+	    			sb.append("-").append(sdf.format(calendar.getTime())).append(")");
 	    			theList.add(new OptionItem(i, sb.toString()));
 	    		}
 	    		
