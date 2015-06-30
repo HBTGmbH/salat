@@ -352,7 +352,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
      */
     private void doResetActions(ActionMapping mapping,
             HttpServletRequest request, AddEmployeeOrderForm eoForm) {
-        eoForm.reset(mapping, request);
+        eoForm.reset(mapping, request, true);
         long coId = eoForm.getOrderId();
         Customerorder co = customerorderDAO.getCustomerorderById(coId);
         eoForm.useDatesFromCustomerOrder(co);

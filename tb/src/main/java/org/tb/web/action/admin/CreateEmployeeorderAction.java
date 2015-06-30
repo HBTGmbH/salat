@@ -118,7 +118,9 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			request.getSession().setAttribute("selectedcustomerorder", selectedCustomerorder);
 
 			// reset/init form entries
-			employeeOrderForm.reset(mapping, request);
+			Boolean showOnlyValid = true;
+			employeeOrderForm.reset(mapping, request, true);
+			employeeOrderForm.setShowOnlyValid(showOnlyValid);
 			employeeOrderForm.useDatesFromCustomerOrder(selectedCustomerorder);
 
 			employeeOrderForm.setOrder(selectedCustomerorder.getSign());
@@ -131,6 +133,8 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 				final Suborder suborder = suborderIterator.next();
 				if (suborder.isHide()) {
 					suborderIterator.remove();
+                } else if(showOnlyValid && !suborder.getCurrentlyValid()) {
+                	suborderIterator.remove();
 				}
 			}
 

@@ -3,6 +3,7 @@ package org.tb.web.form;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionErrors;
@@ -121,9 +122,8 @@ public class AddEmployeeOrderForm extends ActionForm {
 	public void setEmployeeContractId(Long employeeContractId) {
 		this.employeeContractId = employeeContractId;
 	}
-
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {	
+	
+	public void reset(ActionMapping mapping, HttpServletRequest request, boolean extraCall) {	
 		Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 		if (currentEmployeeContract != null) {
 			employeeContractId = currentEmployeeContract.getId();
@@ -143,7 +143,14 @@ public class AddEmployeeOrderForm extends ActionForm {
 		validUntil = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
 		debithours = null;
 		debithoursunit = null;
-		showOnlyValid = false;
+		if(!extraCall) {
+			showOnlyValid = false;
+		}
+	}
+
+	@Override
+	public void reset(ActionMapping mapping, HttpServletRequest request) {
+		reset(mapping, request, false);
 	}
 
 	
@@ -177,8 +184,10 @@ public class AddEmployeeOrderForm extends ActionForm {
 		// actually, no checks here
 		return errors;
 	}
+	
+	@Nonnull
 	public Boolean getShowOnlyValid() {
-		return showOnlyValid;
+		return showOnlyValid == null ? false : showOnlyValid;
 	}
 	public void setShowOnlyValid(Boolean showOnlyValid) {
 		this.showOnlyValid = showOnlyValid;
