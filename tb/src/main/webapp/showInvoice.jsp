@@ -29,6 +29,10 @@
 				form.action = "/tb/do/ShowInvoice?task=export";
 				form.submit();
 			}
+			function exportExcelNew(form) {
+				form.action = "/tb/do/ShowInvoice?task=exportNew";
+				form.submit();
+			}
 			function showPrint(form) {
 				form.action = "/tb/do/ShowInvoice?task=print";
 				form.submit();
@@ -530,7 +534,7 @@
 						</td>
 					</tr>
 					<tr>
-						<td class="noBborderStyle" align="left">
+						<td class="noBborderStyle" align="left" colspan="3">
 							<html:submit
 								onclick="window.open('','fenster','width=800,height=400,resizable=yes'); showPrint(this.form)"
 								styleId="button"
@@ -540,8 +544,13 @@
 
 							<html:submit onclick="exportExcel(this.form)" styleId="button"
 								titleKey="main.invoice.button.excel.text">
-					<bean:message key="main.general.button.excelexport.text" />
-				</html:submit>
+								<bean:message key="main.general.button.excelexport.text" />
+							</html:submit>
+
+							<html:submit onclick="exportExcelNew(this.form)" styleId="button"
+								titleKey="main.invoice.button.excel.new.text">
+								<bean:message key="main.general.button.excelexport.new.text" />
+							</html:submit>
 
 						</td>
 						<td class="noBborderStyle"></td>

@@ -375,7 +375,7 @@ public class ShowInvoiceAction extends DailyReportAction {
             request.getSession().setAttribute("customeraddress", customeraddress);
             return mapping.findForward("success");
         } else if (request.getParameter("task") != null
-                && (request.getParameter("task").equals("print") || request.getParameter("task").equals("export"))) {
+                && (request.getParameter("task").equals("print") || request.getParameter("task").equals("export") || request.getParameter("task").equals("exportNew"))) {
             // call on InvoiceView with parameter print
             List<InvoiceSuborderViewHelper> suborderViewhelperList = (List<InvoiceSuborderViewHelper>)request.getSession().getAttribute("viewhelpers");
             // reset visibility to false
@@ -437,12 +437,19 @@ public class ShowInvoiceAction extends DailyReportAction {
             customeraddress = customeraddress.replace("\n", "<br/>");
             customeraddress = customeraddress.replace("\r", "<br/>");
             request.getSession().setAttribute("customeraddress", customeraddress);
-            if (request.getParameter("task").equals("print")) {
+            String task = request.getParameter("task");
+            if (task.equals("print")) {
                 return mapping.findForward("print");
-            } else {
+            } else if (task.equals("export")) {
                 MessageResources messageResources = getResources(request);
                 request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
-                ExcelArchivierer.exportInvoice(showInvoiceForm, request, response);
+                ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getHSSFFactory());
+                request.getSession().removeAttribute("overall");
+                return mapping.getInputForward();
+            } else if (task.equals("exportNew")) {
+                MessageResources messageResources = getResources(request);
+                request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
+                ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getXSSFFactory());
                 request.getSession().removeAttribute("overall");
                 return mapping.getInputForward();
             }
