@@ -522,9 +522,9 @@ public class TimereportHelper {
      * @return Returns a string with the calculated quitting time (hh:mm). If something fails (may happen for missing workingday, etc.), "n/a" will be returned.
      */
     public String calculateQuittingTime(Workingday workingday, HttpServletRequest request, String timeSwitch) {
-        String quittingTime;
+    	String N_A = "n/a";
+    	if(workingday == null) return N_A;
         try {
-            
             int timeHoursInt = 0;
             int timeMinutesInt = 0;
             
@@ -561,7 +561,7 @@ public class TimereportHelper {
                 }
             }
             // format return string
-            quittingTime = "";
+            String quittingTime = "";
             if (quittingtimeHours < 10) {
                 quittingTime = quittingTime + "0";
             }
@@ -570,11 +570,10 @@ public class TimereportHelper {
                 quittingTime = quittingTime + "0";
             }
             
-            quittingTime = quittingTime + quittingtimeMinutes;
+            return quittingTime + quittingtimeMinutes;
         } catch (Exception e) {
-            quittingTime = "n/a";
+            return N_A;
         }
-        return quittingTime;
     }
     
     /**
@@ -597,6 +596,11 @@ public class TimereportHelper {
     
     public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO,
             OvertimeDAO overtimeDAO, boolean useOverTimeAdjustment) {
+    	
+    	// do not consider invalid(outside of the validity of the contract) days
+    	if(employeecontract.getValidUntil() != null && end.after(employeecontract.getValidUntil())) end = employeecontract.getValidUntil();
+    	if(employeecontract.getValidFrom() != null && start.before(employeecontract.getValidFrom())) start = employeecontract.getValidFrom();
+    	
         SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
         String year = yearFormat.format(start);
         
