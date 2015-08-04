@@ -50,6 +50,15 @@ public class MatrixHelper {
     public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, int method,
             long customerOrderId,
             boolean invoice) {
+    	
+        Employeecontract employeecontract = employeeContractId != -1 ? ecDAO.getEmployeeContractById(employeeContractId) : null;
+        Date validFrom = dateFirst;
+        Date validUntil = dateLast;
+        if(employeecontract != null) {
+        	if(employeecontract.getValidFrom() != null && dateFirst.before(employeecontract.getValidFrom())) validFrom = employeecontract.getValidFrom();
+        	if(employeecontract.getValidUntil() != null && dateLast.after(employeecontract.getValidUntil())) validUntil = employeecontract.getValidUntil();
+        }
+        
         List<Timereport> timeReportList;
         List<Timereport> tempTimeReportList;
         java.sql.Date beginSqlDate = new java.sql.Date(dateFirst.getTime());
@@ -209,7 +218,11 @@ public class MatrixHelper {
                         dayIsPublicHoliday = true;
                     }
                 }
-                if (!dayIsPublicHoliday) {
+                if (!dayIsPublicHoliday && ( 
+                		gregorianCalendar.getTime().after(validFrom) && 
+                		gregorianCalendar.getTime().before(validUntil) || 
+                		gregorianCalendar.getTime().equals(validFrom) || 
+                		gregorianCalendar.getTime().equals(validUntil))) {
                     dayHoursTarget++;
                 }
             }
@@ -286,15 +299,12 @@ public class MatrixHelper {
         //calculate dayhourstarget
         if (employeeContractId == -1) {
             List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
-            Employeecontract tempEmployeeContract;
             tempDailyWorkingTime = 0.0;
-            for (Object element : employeeContractList) {
-                tempEmployeeContract = (Employeecontract)element;
+            for (Employeecontract tempEmployeeContract : employeeContractList) {
                 tempDailyWorkingTime += tempEmployeeContract.getDailyWorkingTime();
             }
             dayHoursTarget = dayHoursTarget * tempDailyWorkingTime;
         } else {
-            Employeecontract employeecontract = ecDAO.getEmployeeContractById(employeeContractId);
             dayHoursTarget = dayHoursTarget * employeecontract.getDailyWorkingTime();
         }
         dayHoursTarget = (dayHoursTarget + 0.05) * 10;

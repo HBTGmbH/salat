@@ -366,14 +366,11 @@ public class ShowMatrixAction extends DailyReportAction {
                         employeecontract.getEmployee().getId());
                 
                 //testing availability of the shown month
-                if ((dateFirst.after(employeecontract.getValidFrom()) || dateFirst
-                        .equals(employeecontract.getValidFrom()))
-                        && (employeecontract.getValidUntil() == null || dateLast
-                                .equals(employeecontract.getValidUntil()) || dateLast
-                                    .before(employeecontract.getValidUntil()))) {
-                    request.getSession().setAttribute("invalid", false);
-                } else {
+                if ((employeecontract.getValidUntil() != null && dateFirst.after(employeecontract.getValidUntil())) || 
+                		(employeecontract.getValidFrom() != null) && dateLast.before(employeecontract.getValidFrom())) {
                     request.getSession().setAttribute("invalid", true);
+                } else {
+                    request.getSession().setAttribute("invalid", false);
                 }
                 
                 if (!employeecontract.getAcceptanceWarningByDate(dateLast)) {
