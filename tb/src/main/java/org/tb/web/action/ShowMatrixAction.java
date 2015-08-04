@@ -580,12 +580,13 @@ public class ShowMatrixAction extends DailyReportAction {
                 request.getSession().setAttribute("acceptance",
                         isAcceptanceWarning);
                 if (isAcceptanceWarning) {
+                	Timereport tr = timereportDAO
+                            .getLastAcceptedTimereportByDateAndEmployeeContractId(
+                                    new java.sql.Date(dateLast
+                                            .getTime()),
+                                    employeecontract.getId()); 
                     Employee tempEmployee = employeeDAO
-                            .getEmployeeBySign(timereportDAO
-                                    .getLastAcceptedTimereportByDateAndEmployeeContractId(
-                                            new java.sql.Date(dateLast
-                                                    .getTime()),
-                                            employeecontract.getId())
+                            .getEmployeeBySign(tr
                                     .getAcceptedby());
                     request.getSession().setAttribute(
                             "acceptedby",
