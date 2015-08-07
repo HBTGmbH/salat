@@ -177,12 +177,14 @@
 
 					<td align="left" class="noBborderStyle">
 					
-						<c:if test="${!(invoiceview eq 'week')}">
+						<c:if test="${(invoiceview eq 'custom')}">
 							<html:select property="fromDay" value="${currentDay}"
 								onchange="setUpdateInvoiceAction(this.form)">
 								<html:options collection="days" property="value"
 									labelProperty="label" />
 							</html:select>
+						</c:if>
+						<c:if test="${!(invoiceview eq 'week')}">
 							<html:select property="fromMonth" value="${currentMonth}"
 								onchange="setUpdateInvoiceAction(this.form)">
 								<html:option value="Jan">
