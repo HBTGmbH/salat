@@ -103,7 +103,7 @@ public class StoreStatusReportAction extends StatusReportAction {
             }
             // Andreas 		
             // validation 
-            ActionMessages errorMessages = validateFormDataForRelease(request, reportForm);
+            ActionMessages errorMessages = validateFormData(request, reportForm, true);
             if (errorMessages.size() > 0) {
                 // set action info
                 request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.notreleased.text"));
@@ -399,7 +399,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         }
         
         // validate
-        ActionMessages errorMessages = validateFormDataForSave(request, reportForm);
+        ActionMessages errorMessages = validateFormData(request, reportForm, false);
         if (errorMessages.size() > 0) {
             // set action info
             request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.notsaved.text"));
@@ -532,6 +532,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         return errors;
     }
     
+    
     /**
      * Validates the form data.
      * 
@@ -539,8 +540,7 @@ public class StoreStatusReportAction extends StatusReportAction {
      * @param reportForm
      * @return Returns the errors as {@link ActionMessages}.
      */
-    private ActionMessages validateFormDataForRelease(HttpServletRequest request,
-            AddStatusReportForm reportForm) {
+    private ActionMessages validateFormData(HttpServletRequest request, AddStatusReportForm reportForm, boolean validateAll) {
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();
@@ -574,7 +574,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         }
         
         // check trend
-        if (reportForm.getTrend() == null || reportForm.getTrend() == (byte)0) {
+        if (validateAll && (reportForm.getTrend() == null || reportForm.getTrend() == (byte)0)) {
             errors.add("trend", new ActionMessage("form.statusreport.error.trend.notselected.text"));
         }
         
@@ -588,7 +588,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
             errors.add("needforaction_text", new ActionMessage("form.error.toomanychars.2048.text"));
         }
-        if (text.trim().equals("")) {
+        if (validateAll && text.trim().equals("")) {
             errors.add("needforaction_text", new ActionMessage("form.error.mandatoryfield.text"));
         }
         if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
@@ -602,7 +602,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
             errors.add("aim_text", new ActionMessage("form.error.toomanychars.2048.text"));
         }
-        if (text.trim().equals("")) {
+        if (validateAll && text.trim().equals("")) {
             errors.add("aim_text", new ActionMessage("form.error.mandatoryfield.text"));
         }
         if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
@@ -619,7 +619,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
             errors.add("budget_resources_date_text", new ActionMessage("form.error.toomanychars.2048.text"));
         }
-        if (text.trim().equals("")) {
+        if (validateAll && text.trim().equals("")) {
             errors.add("budget_resources_date_text", new ActionMessage("form.error.mandatoryfield.text"));
         }
         if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
@@ -636,7 +636,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
             errors.add("riskmonitoring_text", new ActionMessage("form.error.toomanychars.2048.text"));
         }
-        if (text.trim().equals("")) {
+        if (validateAll && text.trim().equals("")) {
             errors.add("riskmonitoring_text", new ActionMessage("form.error.mandatoryfield.text"));
         }
         if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
@@ -653,7 +653,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
             errors.add("changedirective_text", new ActionMessage("form.error.toomanychars.2048.text"));
         }
-        if (text.trim().equals("")) {
+        if (validateAll &&text.trim().equals("")) {
             errors.add("changedirective_text", new ActionMessage("form.error.mandatoryfield.text"));
         }
         if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
@@ -670,7 +670,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
             errors.add("communication_text", new ActionMessage("form.error.toomanychars.2048.text"));
         }
-        if (text.trim().equals("")) {
+        if (validateAll && text.trim().equals("")) {
             errors.add("communication_text", new ActionMessage("form.error.mandatoryfield.text"));
         }
         if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
@@ -687,211 +687,9 @@ public class StoreStatusReportAction extends StatusReportAction {
         if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
             errors.add("improvement_text", new ActionMessage("form.error.toomanychars.2048.text"));
         }
-        if (text.trim().equals("")) {
+        if (validateAll && text.trim().equals("")) {
             errors.add("improvement_text", new ActionMessage("form.error.mandatoryfield.text"));
         }
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("improvement_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("improvement_action", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check customerfeedback
-        text = reportForm.getCustomerfeedback_text();
-        source = reportForm.getCustomerfeedback_source();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("customerfeedback_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("customerfeedback_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check miscellaneous
-        text = reportForm.getMiscellaneous_text();
-        source = reportForm.getMiscellaneous_source();
-        action = reportForm.getMiscellaneous_action();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("miscellaneous_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("miscellaneous_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("miscellaneous_action", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check notes
-        text = reportForm.getNotes();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("notes", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        
-        saveErrors(request, errors);
-        
-        return errors;
-    }
-    
-    /**
-     * Validates the form data only for save button
-     * 
-     * @param request
-     * @param reportForm
-     * @return Returns the errors as {@link ActionMessages}.
-     */
-    private ActionMessages validateFormDataForSave(HttpServletRequest request,
-            AddStatusReportForm reportForm) {
-        ActionMessages errors = getErrors(request);
-        if (errors == null) {
-            errors = new ActionMessages();
-        }
-        
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        
-        // check dates
-        String fromDateString = reportForm.getValidFrom();
-        java.util.Date fromDate = null;
-        try {
-            fromDate = simpleDateFormat.parse(fromDateString);
-        } catch (java.text.ParseException exception) {
-            errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.invalid.text"));
-        }
-        String untilDateString = reportForm.getValidUntil();
-        java.util.Date untilDate = null;
-        try {
-            untilDate = simpleDateFormat.parse(untilDateString);
-        } catch (java.text.ParseException exception) {
-            errors.add("untildate", new ActionMessage("form.statusreport.error.untildate.invalid.text"));
-        }
-        if (fromDate != null && untilDate != null && !fromDate.before(untilDate)) {
-            errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.notbefore.untildate.text"));
-        }
-        
-        // check allocator
-        String allocator = reportForm.getAllocator();
-        if (allocator.length() > GlobalConstants.FORM_MAX_CHAR_TEXTFIELD) {
-            errors.add("allocator", new ActionMessage("form.error.toomanychars.64.text"));
-        }
-        
-        // check trend
-        /*if (reportForm.getTrend() == null || reportForm.getTrend() == (byte)0) {
-        	errors.add("trend", new ActionMessage("form.statusreport.error.trend.notselected.text"));
-        }*/
-        
-        String text;
-        String source;
-        String action;
-        
-        // check need for action
-        text = reportForm.getNeedforaction_text();
-        source = reportForm.getNeedforaction_source();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("needforaction_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        /*if (text.trim().equals("")) {
-        	errors.add("needforaction_text", new ActionMessage("form.error.mandatoryfield.text"));
-        }*/
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("needforaction_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check aim
-        text = reportForm.getAim_text();
-        source = reportForm.getAim_source();
-        action = reportForm.getAim_action();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("aim_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        /*if (text.trim().equals("")) {
-        	errors.add("aim_text", new ActionMessage("form.error.mandatoryfield.text"));
-        }*/
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("aim_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("aim_action", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check budget resources date
-        text = reportForm.getBudget_resources_date_text();
-        source = reportForm.getBudget_resources_date_source();
-        action = reportForm.getBudget_resources_date_action();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("budget_resources_date_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        /*if (text.trim().equals("")) {
-        	errors.add("budget_resources_date_text", new ActionMessage("form.error.mandatoryfield.text"));
-        }*/
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("budget_resources_date_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("budget_resources_date_action", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check risk monitoring
-        text = reportForm.getRiskmonitoring_text();
-        source = reportForm.getRiskmonitoring_source();
-        action = reportForm.getRiskmonitoring_action();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("riskmonitoring_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        /*
-        if (text.trim().equals("")) {
-        	errors.add("riskmonitoring_text", new ActionMessage("form.error.mandatoryfield.text"));
-        }*/
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("riskmonitoring_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("riskmonitoring_action", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check change directive
-        text = reportForm.getChangedirective_text();
-        source = reportForm.getChangedirective_source();
-        action = reportForm.getChangedirective_action();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("changedirective_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        /*if (text.trim().equals("")) {
-        	errors.add("changedirective_text", new ActionMessage("form.error.mandatoryfield.text"));
-        }*/
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("changedirective_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("changedirective_action", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check communication
-        text = reportForm.getCommunication_text();
-        source = reportForm.getCommunication_source();
-        action = reportForm.getCommunication_action();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("communication_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        /*
-        	if (text.trim().equals("")) {
-        		errors.add("communication_text", new ActionMessage("form.error.mandatoryfield.text"));
-        	}*/
-        if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("communication_source", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        if (action.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
-            errors.add("communication_action", new ActionMessage("form.error.toomanychars.256.text"));
-        }
-        
-        // check improvement
-        text = reportForm.getImprovement_text();
-        source = reportForm.getImprovement_source();
-        action = reportForm.getImprovement_action();
-        if (text.length() > GlobalConstants.FORM_MAX_CHAR_BIG_TEXTAREA) {
-            errors.add("improvement_text", new ActionMessage("form.error.toomanychars.2048.text"));
-        }
-        /*if (text.trim().equals("")) {
-        	errors.add("improvement_text", new ActionMessage("form.error.mandatoryfield.text"));
-        }*/
         if (source.length() > GlobalConstants.FORM_MAX_CHAR_TEXTAREA) {
             errors.add("improvement_source", new ActionMessage("form.error.toomanychars.256.text"));
         }
