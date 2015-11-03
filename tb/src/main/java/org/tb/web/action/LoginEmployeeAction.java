@@ -152,8 +152,8 @@ public class LoginEmployeeAction extends Action {
         // check if employee has an employee contract and is has employee orders for all standard suborders
         //		Date date = new Date();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
-        String dateString = simpleDateFormat.format(date);
-        date = simpleDateFormat.parse(dateString);
+        String dateString2 = simpleDateFormat.format(date);
+        date = simpleDateFormat.parse(dateString2);
         //		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
         
         if (employeecontract != null) {
@@ -174,7 +174,7 @@ public class LoginEmployeeAction extends Action {
                         	
                         	// do not create an employeeorder for past years "URLAUB" !
                         	if(suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) 
-                        			&& !dateString.startsWith(suborder.getSign())) {
+                        			&& !dateString2.startsWith(suborder.getSign())) {
                         		break;
                         	}
                         	
@@ -301,67 +301,7 @@ public class LoginEmployeeAction extends Action {
             request.getSession().setAttribute("releasedUntil", releaseDate);
             request.getSession().setAttribute("acceptedUntil", acceptanceDate);
             
-            TimereportHelper th = new TimereportHelper();
-            Double overtimeStatic = employeecontract.getOvertimeStatic();
-            int otStaticMinutes = (int)(overtimeStatic * 60);
-            
-            if (employeecontract.getUseOvertimeOld() != null && !employeecontract.getUseOvertimeOld()) {
-                //use new overtime computation with static + dynamic overtime
-                //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
-                Date dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
-                int overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-                overtime = otStaticMinutes + overtimeDynamic;
-                // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
-            } else {
-                overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-            }
-            
-            boolean overtimeIsNegative = overtime < 0;
-            
-            request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
-            
-            String overtimeString = OvertimeString.overtimeToString(overtime);
-            request.getSession().setAttribute("overtime", overtimeString);
-            
-            try {
-                //overtime this month
-                Date currentDate = new Date();
-                SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyyyy");
-                String dateString2 = dateFormat.format(currentDate);
-                String monthYearString = dateString2.substring(2);
-                Date start = dateFormat.parse("01" + monthYearString);
-                
-                if (employeecontract.getValidFrom().after(start) && !employeecontract.getValidFrom().after(currentDate)) {
-                    start = employeecontract.getValidFrom();
-                }
-                if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
-                    currentDate = employeecontract.getValidUntil();
-                }
-                int monthlyOvertime;
-                if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate)) {
-                    monthlyOvertime = 0;
-                } else {
-                    monthlyOvertime = th.calculateOvertime(start, currentDate,
-                            employeecontract, employeeorderDAO, publicholidayDAO,
-                            timereportDAO, overtimeDAO, false);
-                }
-                boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;
-                request.getSession().setAttribute("monthlyOvertimeIsNegative",
-                        monthlyOvertimeIsNegative);
-                String monthlyOvertimeString = OvertimeString.overtimeToString(monthlyOvertime);
-                request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
-                
-                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
-                request.getSession().setAttribute("overtimeMonth", format.format(start));
-            } catch (ParseException e) {
-                throw new RuntimeException("Error occured while parsing date");
-            }
-            
-            simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-            
-            //vacation v2 extracted to VacationViewer:
-            VacationViewer vw = new VacationViewer(employeecontract);
-            vw.computeVacations(request, employeecontract, employeeorderDAO, timereportDAO);
+            AfterLogin.handleOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, request.getSession());
 
             // get warnings			
             Employeecontract loginEmployeeContract = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");

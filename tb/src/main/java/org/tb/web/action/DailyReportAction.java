@@ -23,6 +23,7 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
@@ -77,65 +78,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
      */
     protected void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract,
             EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
-        TimereportHelper th = new TimereportHelper();
-        int overtime;
-        Double overtimeStatic = employeecontract.getOvertimeStatic();
-        int otStaticMinutes = (int)(overtimeStatic * 60);
-
-        if (employeecontract.getUseOvertimeOld() != null && employeecontract.getUseOvertimeOld() == false) {
-            //use new overtime computation with static + dynamic overtime
-            //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
-            Date dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
-            int overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-            overtime = otStaticMinutes + overtimeDynamic;
-            // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation           
-        } else {
-            overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
-        }
-        
-        boolean overtimeIsNegative = overtime < 0;
-        request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
-        
-        String overtimeString = OvertimeString.overtimeToString(overtime);
-        
-        request.getSession().setAttribute("overtime", overtimeString);
-        
-        try {
-            //overtime this month
-            Date currentDate = new Date();
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("ddMMyyyy");
-            String dateString = simpleDateFormat.format(currentDate);
-            String monthYearString = dateString.substring(2);
-            Date start = simpleDateFormat.parse("01" + monthYearString);
-            
-            if (employeecontract.getValidFrom().after(start) && !employeecontract.getValidFrom().after(currentDate)) {
-                start = employeecontract.getValidFrom();
-            }
-            if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
-                currentDate = employeecontract.getValidUntil();
-            }
-            int monthlyOvertime;
-            if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate)) {
-                monthlyOvertime = 0;
-            } else {
-                monthlyOvertime = th.calculateOvertime(start, currentDate,
-                        employeecontract, employeeorderDAO, publicholidayDAO,
-                        timereportDAO, overtimeDAO, false);
-            }
-            boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;
-            request.getSession().setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
-            String monthlyOvertimeString = OvertimeString.overtimeToString(monthlyOvertime);
-            request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
-            
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
-            request.getSession().setAttribute("overtimeMonth", format.format(start));
-        } catch (ParseException e) {
-            throw new RuntimeException("Error occured while parsing date");
-        }
-        
-        //vacation v2 extracted to VacationViewer:
-        VacationViewer vw = new VacationViewer(employeecontract);
-        vw.computeVacations(request, employeecontract, employeeorderDAO, timereportDAO);
+    	AfterLogin.handleOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, request.getSession());
         
         // release
         request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());

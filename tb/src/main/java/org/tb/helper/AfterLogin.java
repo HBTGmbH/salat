@@ -1,14 +1,17 @@
 package org.tb.helper;
 
-import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 
+import javax.servlet.http.HttpSession;
+
 import org.apache.struts.util.MessageResources;
+import org.joda.time.LocalDate;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
@@ -19,12 +22,16 @@ import org.tb.bdom.Warning;
 import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.util.DateUtils;
+import org.tb.web.util.OvertimeString;
 
 public class AfterLogin {
 
-	public static List<Warning> checkEmployeeorders(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, MessageResources resources, Locale locale) {
+	private static List<Warning> checkEmployeeorders(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, MessageResources resources, Locale locale) {
 		List<Warning> warnings = new ArrayList<Warning>();
 		
         for (Employeeorder employeeorder : employeeorderDAO.getEmployeeordersForEmployeeordercontentWarning(employeecontract)) {
@@ -111,13 +118,13 @@ public class AfterLogin {
             java.util.Date now = new java.util.Date();
             
             for (Customerorder customerorder : customerOrders) {
-                Date maxUntilDate = statusReportDAO.getMaxUntilDateForCustomerOrderId(customerorder.getId());
+            	java.sql.Date maxUntilDate = statusReportDAO.getMaxUntilDateForCustomerOrderId(customerorder.getId());
                 
                 if (maxUntilDate == null) {
                     maxUntilDate = customerorder.getFromDate();
                 }
                 
-                Date checkDate = new Date(maxUntilDate.getTime());
+                java.sql.Date checkDate = new java.sql.Date(maxUntilDate.getTime());
                 
                 GregorianCalendar calendar = new GregorianCalendar();
                 calendar.setTime(checkDate);
@@ -192,4 +199,55 @@ public class AfterLogin {
             }
         }
 	}
+    
+    public static void handleOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO, HttpSession session) {
+        TimereportHelper th = new TimereportHelper();
+        Double overtimeStatic = employeecontract.getOvertimeStatic();
+        int otStaticMinutes = (int)(overtimeStatic * 60);
+        
+        int overtime;
+        if (employeecontract.getUseOvertimeOld() != null && !employeecontract.getUseOvertimeOld()) {
+            //use new overtime computation with static + dynamic overtime
+            //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
+            Date dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
+            int overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+            overtime = otStaticMinutes + overtimeDynamic;
+            // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
+        } else {
+            overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+        }
+        
+        boolean overtimeIsNegative = overtime < 0;
+        
+        session.setAttribute("overtimeIsNegative", overtimeIsNegative);
+        
+        String overtimeString = OvertimeString.overtimeToString(overtime);
+        session.setAttribute("overtime", overtimeString);
+        
+        //overtime this month
+		Date start = new LocalDate().withDayOfMonth(1).toDate();
+		Date currentDate = new Date();
+		
+		if (employeecontract.getValidFrom().after(start) && !employeecontract.getValidFrom().after(currentDate)) {
+		    start = employeecontract.getValidFrom();
+		}
+		if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
+		    currentDate = employeecontract.getValidUntil();
+		}
+		int monthlyOvertime = 0;
+		if (!(employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate))) {
+		    monthlyOvertime = th.calculateOvertime(start, currentDate, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, false);
+		}
+		boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;
+		session.setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
+		String monthlyOvertimeString = OvertimeString.overtimeToString(monthlyOvertime);
+		session.setAttribute("monthlyOvertime", monthlyOvertimeString);
+		
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
+		session.setAttribute("overtimeMonth", format.format(start));
+        
+        //vacation v2 extracted to VacationViewer:
+        VacationViewer vw = new VacationViewer(employeecontract);
+        vw.computeVacations(session, employeecontract, employeeorderDAO, timereportDAO);
+    }
 }

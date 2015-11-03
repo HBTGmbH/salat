@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
@@ -186,7 +186,7 @@ public class VacationViewer implements Serializable {
      * @param employeeorderDAO
      * @param timereportDAO
      */
-    public void computeVacations(HttpServletRequest request, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO) {
+    public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO) {
         
         java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
         
@@ -226,7 +226,7 @@ public class VacationViewer implements Serializable {
             }
             vacations.add(vacationView);
         }
-        request.getSession().setAttribute("vacations", vacations);
+        session.setAttribute("vacations", vacations);
     }
     
 }
