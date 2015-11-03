@@ -104,24 +104,38 @@ public class ShowInvoiceAction extends DailyReportAction {
             List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList = new LinkedList<InvoiceSuborderViewHelper>();
             List<Suborder> suborderList;
             Customerorder customerOrder;
+            List<Suborder> suborderListTemp = new LinkedList<Suborder>();
             Date dateFirst;
             Date dateLast;
+            java.sql.Date sqlDateFirst;
+            java.sql.Date sqlDateLast;
             if (!showInvoiceForm.getOrder().equals("CHOOSE ORDER")) {
-                if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
+                if (selectedView.equals(GlobalConstants.VIEW_MONTHLY) || selectedView.equals(GlobalConstants.VIEW_WEEKLY)) {
                     // generate dates for monthly view mode
                     try {
-                        // request.getSession().setAttribute("invoiceview",
-                        // GlobalConstants.VIEW_MONTHLY);
-                        dateFirst = th.getDateFormStrings("1", showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
-                        GregorianCalendar gc = new GregorianCalendar();
-                        gc.setTime(dateFirst);
-                        int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
-                        String maxDayString = "";
-                        if (maxday < 10) {
-                            maxDayString += "0";
-                        }
-                        maxDayString += maxday;
-                        dateLast = th.getDateFormStrings(maxDayString, showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                    	if(selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
+	                        // request.getSession().setAttribute("invoiceview",
+	                        // GlobalConstants.VIEW_MONTHLY);
+	                        dateFirst = th.getDateFormStrings("1", showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+	                        GregorianCalendar gc = new GregorianCalendar();
+	                        gc.setTime(dateFirst);
+	                        int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
+	                        String maxDayString = "";
+	                        if (maxday < 10) {
+	                            maxDayString += "0";
+	                        }
+	                        maxDayString += maxday;
+	                        dateLast = th.getDateFormStrings(maxDayString, showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                    	} else {
+                        	int kw = showInvoiceForm.getFromWeek();
+                        	Calendar cal = Calendar.getInstance();
+                        	cal.set(Calendar.YEAR, Integer.parseInt(showInvoiceForm.getFromYear()));
+                        	cal.set(Calendar.WEEK_OF_YEAR, kw);
+                        	cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                        	dateFirst = cal.getTime();
+                        	cal.add(Calendar.DATE, 6);
+                        	dateLast = cal.getTime();
+                    	}
                     } catch (Exception e) {
                         throw new RuntimeException("date cannot be parsed from form");
                     }
@@ -133,9 +147,8 @@ public class ShowInvoiceAction extends DailyReportAction {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
                     Collections.sort(suborderList, new SubOrderComparator());
-                    java.sql.Date sqlDateFirst = new java.sql.Date(dateFirst.getTime());
-                    java.sql.Date sqlDateLast = new java.sql.Date(dateLast.getTime());
-                    List<Suborder> suborderListTemp = new LinkedList<Suborder>();
+                    sqlDateFirst = new java.sql.Date(dateFirst.getTime());
+                    sqlDateLast = new java.sql.Date(dateLast.getTime());
                     // remove suborders that are not valid sometime between dateFirst and dateLast
                     for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
                         Suborder so = iterator.next();
@@ -143,90 +156,6 @@ public class ShowInvoiceAction extends DailyReportAction {
                             iterator.remove();
                         }
                     }
-                    // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
-                    if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else if (showInvoiceForm.isFixedpricebox()) {
-                        for (Suborder suborder : suborderList) {
-                            if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else if (showInvoiceForm.isInvoicebox()) {
-                        for (Suborder suborder : suborderList) {
-                            if (!suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else {
-                        for (Suborder suborder : suborderList) {
-                            if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    }
-                    request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
-                } else if (selectedView.equals(GlobalConstants.VIEW_WEEKLY)) {
-                    // generate dates for weekly view mode
-                    try {
-                    	int kw = showInvoiceForm.getFromWeek();
-                    	Calendar cal = Calendar.getInstance();
-                    	cal.set(Calendar.YEAR, Integer.parseInt(showInvoiceForm.getFromYear()));
-                    	cal.set(Calendar.WEEK_OF_YEAR, kw);
-                    	cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                    	dateFirst = cal.getTime();
-                    	cal.add(Calendar.DATE, 6);
-                    	dateLast = cal.getTime();
-                    } catch (Exception e) {
-                        throw new RuntimeException("date cannot be parsed from form");
-                    }
-                    
-                    customerOrder = customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder());
-                    if (showInvoiceForm.getSuborder().equals("ALL SUBORDERS")) {
-                        suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId(), false);
-                    } else {
-                        suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
-                    }
-                    Collections.sort(suborderList, new SubOrderComparator());
-                    java.sql.Date sqlDateFirst = new java.sql.Date(dateFirst.getTime());
-                    java.sql.Date sqlDateLast = new java.sql.Date(dateLast.getTime());
-                    List<Suborder> suborderListTemp = new LinkedList<Suborder>();
-                    // remove suborders that are not valid sometime between dateFirst and dateLast
-                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
-                        Suborder so = iterator.next();
-                        if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
-                            iterator.remove();
-                        }
-                    }
-                    // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
-                    if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else if (showInvoiceForm.isFixedpricebox()) {
-                        for (Suborder suborder : suborderList) {
-                            if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else if (showInvoiceForm.isInvoicebox()) {
-                        for (Suborder suborder : suborderList) {
-                            if (!suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else {
-                        for (Suborder suborder : suborderList) {
-                            if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    }
-                    request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
                     // generate dates for a period of time in custom view mode
                     try {
@@ -264,38 +193,37 @@ public class ShowInvoiceAction extends DailyReportAction {
                         }
                     }
                     Collections.sort(suborderList, new SubOrderComparator());
-                    java.sql.Date sqlDateFirst = new java.sql.Date(dateFirst.getTime());
-                    java.sql.Date sqlDateLast = new java.sql.Date(dateLast.getTime());
-                    List<Suborder> suborderListTemp = new LinkedList<Suborder>();
-                    // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
-                    if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else if (showInvoiceForm.isFixedpricebox()) {
-                        for (Suborder suborder : suborderList) {
-                            if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else if (showInvoiceForm.isInvoicebox()) {
-                        for (Suborder suborder : suborderList) {
-                            if (!suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    } else {
-                        for (Suborder suborder : suborderList) {
-                            if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
-                                suborderListTemp.add(suborder);
-                            }
-                        }
-                        request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
-                    }
-                    request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
+                    sqlDateFirst = new java.sql.Date(dateFirst.getTime());
+                    sqlDateLast = new java.sql.Date(dateLast.getTime());
                 } else {
                     throw new RuntimeException("no view type selected");
                 }
+                // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
+                if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
+                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                } else if (showInvoiceForm.isFixedpricebox()) {
+                	for (Suborder suborder : suborderList) {
+                		if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
+                			suborderListTemp.add(suborder);
+                		}
+                	}
+                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                } else if (showInvoiceForm.isInvoicebox()) {
+                	for (Suborder suborder : suborderList) {
+                		if (!suborder.getFixedPrice()) {
+                			suborderListTemp.add(suborder);
+                		}
+                	}
+                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                } else {
+                	for (Suborder suborder : suborderList) {
+                		if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
+                			suborderListTemp.add(suborder);
+                		}
+                	}
+                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                }
+                request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
                 request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
                 request.getSession().setAttribute("customeraddress", customerOrder.getCustomer().getAddress());
                 GregorianCalendar gc = new GregorianCalendar();
