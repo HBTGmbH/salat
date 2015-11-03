@@ -2,10 +2,7 @@ package org.tb.web.action;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,18 +15,14 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
-import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Statusreport;
 import org.tb.bdom.Suborder;
-import org.tb.bdom.Timereport;
 import org.tb.bdom.Warning;
-import org.tb.helper.StatusReportWarningHelper;
+import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
-import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -364,82 +357,22 @@ public class LoginEmployeeAction extends Action {
                 throw new RuntimeException("Error occured while parsing date");
             }
             
-            // get warnings			
-            List<Warning> warnings = new ArrayList<Warning>();
             simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-            
-            // eoc warning
-            List<Employeeorder> employeeorders = new ArrayList<Employeeorder>();
-            employeeorders.addAll(employeeorderDAO.getEmployeeordersForEmployeeordercontentWarning(employeecontract));
-            
-            for (Employeeorder employeeorder : employeeorders) {
-                if (!employeecontract.getFreelancer() && !employeeorder.getSuborder().getNoEmployeeOrderContent()) {
-                    try {
-                        if (employeeorder.getEmployeeordercontent() == null) {
-                            throw new RuntimeException("null content");
-                        } else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_emp() != true
-                                && employeeorder.getEmployeecontract().getEmployee().equals(employeecontract.getEmployee())) {
-                            Warning warning = new Warning();
-                            warning.setSort(getResources(request).getMessage(getLocale(request), "employeeordercontent.thumbdown.text"));
-                            warning.setText(employeeorder.getEmployeeOrderAsString());
-                            warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
-                            warnings.add(warning);
-                        } else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_mgmt() != true
-                                && employeeorder.getEmployeeordercontent().getContactTechHbt().equals(employeecontract.getEmployee())) {
-                            Warning warning = new Warning();
-                            warning.setSort(getResources(request).getMessage(getLocale(request), "employeeordercontent.thumbdown.text"));
-                            warning.setText(employeeorder.getEmployeeOrderAsString());
-                            warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
-                            warnings.add(warning);
-                        } else {
-                            throw new RuntimeException("query suboptimal");
-                        }
-                    } catch (Exception e) {
-                        TbLogger.error(this.getClass().getName(), e.getMessage());
-                    }
-                }
-            }
             
             //vacation v2 extracted to VacationViewer:
             VacationViewer vw = new VacationViewer(employeecontract);
             vw.computeVacations(request, employeecontract, employeeorderDAO, timereportDAO);
-            
-            // timereport warning
-            List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
-            for (Timereport timereport : timereports) {
-                Warning warning = new Warning();
-                warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.timereportnotinrange"));
-                warning.setText(timereport.getTimeReportAsString());
-                warnings.add(warning);
-            }
-            
-            // timereport warning 2
-            timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontract);
-            for (Timereport timereport : timereports) {
-                Warning warning = new Warning();
-                warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.timereportnotinrangeforeo"));
-                warning.setText(timereport.getTimeReportAsString() + " " + timereport.getEmployeeorder().getEmployeeOrderAsString());
-                warnings.add(warning);
-            }
-            
-            // timereport warning 3: no duration
-            Employeecontract loginEmployeeContract = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
-            timereports = timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
-            for (Timereport timereport : timereports) {
-                Warning warning = new Warning();
-                warning.setSort(getResources(request).getMessage(getLocale(request), "main.info.warning.timereport.noduration"));
-                warning.setText(timereport.getTimeReportAsString());
-                if (loginEmployeeContract.equals(employeecontract)
-                        || loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
-                        || loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
-                        || loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-                    warning.setLink("/tb/do/EditDailyReport?trId=" + timereport.getId());
-                }
-                warnings.add(warning);
-            }
 
-            // statusreport due warning
-            StatusReportWarningHelper.addWarnings(loginEmployeeContract, request, warnings, statusReportDAO, customerorderDAO);
+            // get warnings			
+            Employeecontract loginEmployeeContract = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
+            List<Warning> warnings = AfterLogin.createWarnings(employeecontract, loginEmployeeContract, employeeorderDAO, timereportDAO, statusReportDAO, customerorderDAO, getResources(request), getLocale(request));
+            
+            if (warnings != null && !warnings.isEmpty()) {
+                request.getSession().setAttribute("warnings", warnings);
+                request.getSession().setAttribute("warningsPresent", true);
+            } else {
+                request.getSession().setAttribute("warningsPresent", false);
+            }
             
         } else {
             request.getSession().setAttribute("employeeHasValidContract", false);
