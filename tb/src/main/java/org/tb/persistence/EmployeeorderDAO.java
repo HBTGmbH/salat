@@ -359,140 +359,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                     }
                 }
             } else {
-                if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 05: only valid, filter, no employeeContractId, no customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "(upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setString(0, filter)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setDate(10, now)
-                                .setDate(11, now)
-                                .list();
-                    } else {
-                        // case 06: only valid, filter, no employeeContractId, customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and fromdate <= ? " +
-                                "and (untildate = null " +
-                                "or untildate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setDate(11, now)
-                                .setDate(12, now)
-                                .list();
-                    }
-                } else {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 07: only valid, filter, employeeContractId, no customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and eo.fromDate <= ? " +
-                                "and (eo.untilDate = null " +
-                                "or eo.untilDate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, employeeContractId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setDate(11, now)
-                                .setDate(12, now)
-                                .list();
-                    } else {
-                        // case 08: only valid, filter, employeeContractId, customerOrderId  
-                        
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and eo.fromDate <= ? " +
-                                "and (eo.untilDate = null " +
-                                "or eo.untilDate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setLong(1, employeeContractId)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setString(11, filter)
-                                .setDate(12, now)
-                                .setDate(13, now)
-                                .list();
-                    }
-                }
+                employeeorders = queryValidFilter(filter, employeeContractId, customerOrderId, now);
             }
         } else {
             if (!isFilter) {
@@ -557,123 +424,267 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                     }
                 }
             } else {
-                if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 13: valid + invalid, filter, no employeeContractId, no customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ? " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setString(0, filter)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .list();
-                    } else {
-                        // case 14: valid + invalid, filter, no employeeContractId, customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .list();
-                    }
-                } else {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 15: valid + invalid, filter, employeeContractId, no customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, employeeContractId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .list();
-                    } else {
-                        // case 16: valid + invalid, filter, employeeContractId, customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setLong(1, employeeContractId)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setString(11, filter)
-                                .list();
-                    }
-                }
+                employeeorders = queryValidInvalidFilter(filter, employeeContractId, customerOrderId);
             }
         }
         return employeeorders;
     }
+
+	@SuppressWarnings("unchecked")
+	private List<Employeeorder> queryValidFilter(String filter, Long employeeContractId, Long customerOrderId,
+			Date now) {
+		if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
+		    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
+		        // case 05: only valid, filter, no employeeContractId, no customerOrderId  
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "(upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ?) " +
+		                "and eo.fromDate <= ? " +
+		                "and (eo.untilDate = null " +
+		                "or eo.untilDate >= ?) " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setString(0, filter)
+		                .setString(1, filter)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .setDate(10, now)
+		                .setDate(11, now)
+		                .list();
+		    } else {
+		        // case 06: only valid, filter, no employeeContractId, customerOrderId  
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "suborder.customerorder.id = ? " +
+		                "and (upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ?) " +
+		                "and eo.fromDate <= ? " +
+		                "and (eo.untilDate = null " +
+		                "or eo.untilDate >= ?) " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setLong(0, customerOrderId)
+		                .setString(1, filter)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .setString(10, filter)
+		                .setDate(11, now)
+		                .setDate(12, now)
+		                .list();
+		    }
+		} else {
+		    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
+		        // case 07: only valid, filter, employeeContractId, no customerOrderId  
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "employeecontract.id = ? " +
+		                "and (upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ?) " +
+		                "and eo.fromDate <= ? " +
+		                "and (eo.untilDate = null " +
+		                "or eo.untilDate >= ?) " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setLong(0, employeeContractId)
+		                .setString(1, filter)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .setString(10, filter)
+		                .setDate(11, now)
+		                .setDate(12, now)
+		                .list();
+		    } else {
+		        // case 08: only valid, filter, employeeContractId, customerOrderId  
+		        
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "suborder.customerorder.id = ? " +
+		                "and employeecontract.id = ? " +
+		                "and (upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ?) " +
+		                "and eo.fromDate <= ? " +
+		                "and (eo.untilDate = null " +
+		                "or eo.untilDate >= ?) " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setLong(0, customerOrderId)
+		                .setLong(1, employeeContractId)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .setString(10, filter)
+		                .setString(11, filter)
+		                .setDate(12, now)
+		                .setDate(13, now)
+		                .list();
+		    }
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<Employeeorder> queryValidInvalidFilter(String filter, Long employeeContractId, Long customerOrderId) {
+		if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
+		    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
+		        // case 13: valid + invalid, filter, no employeeContractId, no customerOrderId   
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ? " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setString(0, filter)
+		                .setString(1, filter)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .list();
+		    } else {
+		        // case 14: valid + invalid, filter, no employeeContractId, customerOrderId   
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "suborder.customerorder.id = ? " +
+		                "and (upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ?) " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setLong(0, customerOrderId)
+		                .setString(1, filter)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .setString(10, filter)
+		                .list();
+		    }
+		} else {
+		    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
+		        // case 15: valid + invalid, filter, employeeContractId, no customerOrderId   
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "employeecontract.id = ? " +
+		                "and (upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ?) " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setLong(0, employeeContractId)
+		                .setString(1, filter)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .setString(10, filter)
+		                .list();
+		    } else {
+		        // case 16: valid + invalid, filter, employeeContractId, customerOrderId   
+		        return getSession().createQuery("from Employeeorder eo where " +
+		                "suborder.customerorder.id = ? " +
+		                "and employeecontract.id = ? " +
+		                "and (upper(id) like ? " +
+		                "or upper(employeecontract.employee.sign) like ? " +
+		                "or upper(employeecontract.employee.firstname) like ? " +
+		                "or upper(employeecontract.employee.lastname) like ? " +
+		                "or upper(suborder.customerorder.sign) like ? " +
+		                "or upper(suborder.customerorder.description) like ? " +
+		                "or upper(suborder.customerorder.shortdescription) like ? " +
+		                "or upper(suborder.sign) like ? " +
+		                "or upper(suborder.description) like ? " +
+		                "or upper(suborder.shortdescription) like ?) " +
+		                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+		                .setLong(0, customerOrderId)
+		                .setLong(1, employeeContractId)
+		                .setString(2, filter)
+		                .setString(3, filter)
+		                .setString(4, filter)
+		                .setString(5, filter)
+		                .setString(6, filter)
+		                .setString(7, filter)
+		                .setString(8, filter)
+		                .setString(9, filter)
+		                .setString(10, filter)
+		                .setString(11, filter)
+		                .list();
+		    }
+		}
+	}
     
     /**
      * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, suborder.
@@ -744,139 +755,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                     }
                 }
             } else {
-                if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 05: only valid, filter, no employeeContractId, no customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "(upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and eo.fromDate <= ? " +
-                                "and (eo.untilDate = null " +
-                                "or eo.untilDate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setString(0, filter)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setDate(10, now)
-                                .setDate(11, now)
-                                .list();
-                    } else {
-                        // case 06: only valid, filter, no employeeContractId, customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and eo.fromDate <= ? " +
-                                "and (eo.untilDate = null " +
-                                "or eo.untilDate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setDate(11, now)
-                                .setDate(12, now)
-                                .list();
-                    }
-                } else {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 07: only valid, filter, employeeContractId, no customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and eo.fromDate <= ? " +
-                                "and (eo.untilDate = null " +
-                                "or eo.untilDate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, employeeContractId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setDate(11, now)
-                                .setDate(12, now)
-                                .list();
-                    } else {
-                        // case 08: only valid, filter, employeeContractId, customerOrderId  
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "and eo.fromDate <= ? " +
-                                "and (eo.untilDate = null " +
-                                "or eo.untilDate >= ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setLong(1, employeeContractId)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setString(11, filter)
-                                .setDate(12, now)
-                                .setDate(13, now)
-                                .list();
-                    }
-                }
+                employeeorders = queryValidFilter(filter, employeeContractId, customerOrderId, now);
             }
         } else {
             if (!isFilter) {
@@ -914,119 +793,7 @@ public class EmployeeorderDAO extends HibernateDaoSupport {
                     }
                 }
             } else {
-                if (employeeContractId == null || employeeContractId == 0 || employeeContractId == -1) {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 13: valid + invalid, filter, no employeeContractId, no customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ? " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setString(0, filter)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .list();
-                    } else {
-                        // case 14: valid + invalid, filter, no employeeContractId, customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .list();
-                    }
-                } else {
-                    if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
-                        // case 15: valid + invalid, filter, employeeContractId, no customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, employeeContractId)
-                                .setString(1, filter)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .list();
-                    } else {
-                        // case 16: valid + invalid, filter, employeeContractId, customerOrderId   
-                        employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                "suborder.customerorder.id = ? " +
-                                "and employeecontract.id = ? " +
-                                "and (upper(id) like ? " +
-                                "or upper(employeecontract.employee.sign) like ? " +
-                                "or upper(employeecontract.employee.firstname) like ? " +
-                                "or upper(employeecontract.employee.lastname) like ? " +
-                                "or upper(suborder.customerorder.sign) like ? " +
-                                "or upper(suborder.customerorder.description) like ? " +
-                                "or upper(suborder.customerorder.shortdescription) like ? " +
-                                "or upper(suborder.sign) like ? " +
-                                "or upper(suborder.description) like ? " +
-                                "or upper(suborder.shortdescription) like ?) " +
-                                "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                                .setLong(0, customerOrderId)
-                                .setLong(1, employeeContractId)
-                                .setString(2, filter)
-                                .setString(3, filter)
-                                .setString(4, filter)
-                                .setString(5, filter)
-                                .setString(6, filter)
-                                .setString(7, filter)
-                                .setString(8, filter)
-                                .setString(9, filter)
-                                .setString(10, filter)
-                                .setString(11, filter)
-                                .list();
-                    }
-                }
+                employeeorders = queryValidInvalidFilter(filter, employeeContractId, customerOrderId);
             }
         }
         return employeeorders;
