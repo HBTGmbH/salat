@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.tb.GlobalConstants;
-import org.tb.bdom.Employeecontract;
 
 /**
  * @author oda
@@ -242,10 +241,10 @@ public class DateUtils {
     /*
      * builds up a list of string with current and previous years since startyear of contract
      */
-    public static List<OptionItem> getYearsSinceContractStartToDisplay(Employeecontract ec) {
+    public static List<OptionItem> getYearsSinceContractStartToDisplay(Date validFrom) {
         List<OptionItem> theList = new ArrayList<OptionItem>();
         
-        int startyear = Integer.parseInt(getYearString(ec.getValidFrom()));
+        int startyear = Integer.parseInt(getYearString(validFrom));
         for (int i = startyear; i <= getCurrentYear() + 1; i++) {
             String yearString = "" + i;
             theList.add(new OptionItem(yearString, yearString));

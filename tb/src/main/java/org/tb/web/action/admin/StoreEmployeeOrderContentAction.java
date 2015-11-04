@@ -1,13 +1,17 @@
 package org.tb.web.action.admin;
 
+import java.util.Locale;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.apache.struts.util.MessageResources;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -157,7 +161,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 					"id " + eoContent.getId());
 
 			// release authorization
-			setReleaseAuthorizationInSession(request, employeeorder, eoContent);
+			setReleaseAuthorizationInSession(request.getSession(), employeeorder, eoContent);
 
 			// set action info
 			request.getSession().setAttribute(
@@ -194,45 +198,27 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 							.getEmployeeordercontent().getId(), contentForm)) {
 				// get content from db, if it was saved just before
 				if (eoContent == null) {
-					eoContent = employeeOrderContentDAO
-							.getEmployeeOrderContentById(employeeorder
-									.getEmployeeordercontent().getId());
+					eoContent = employeeOrderContentDAO.getEmployeeOrderContentById(employeeorder.getEmployeeordercontent().getId());
 				}
 				eoContent.setCommitted_emp(true);
-				eoContent.setCommittedby_emp(employeeDAO
-						.getEmployeeById(loginEmployee.getId()));
+				eoContent.setCommittedby_emp(employeeDAO.getEmployeeById(loginEmployee.getId()));
 				employeeOrderContentDAO.save(eoContent, loginEmployee);
 
 				// set action info
-				request
-						.getSession()
-						.setAttribute(
-								"actionInfo",
-								getResources(request)
-										.getMessage(getLocale(request),
-												"employeeordercontent.actioninfo.released.text"));
+				request.getSession().setAttribute("actionInfo",	getResources(request).getMessage(getLocale(request), "employeeordercontent.actioninfo.released.text"));
 
 				// set updated employeeorder in session
 				employeeorder.setEmployeeordercontent(eoContent);
-				request.getSession().setAttribute("currentEmployeeOrder",
-						employeeorder);
+				request.getSession().setAttribute("currentEmployeeOrder", employeeorder);
 
 				// content is editable?
-				request.getSession().setAttribute("contentIsEditable",
-						isContentEditable(request, employeeorder, eoContent));
+				request.getSession().setAttribute("contentIsEditable", isContentEditable(request.getSession(), employeeorder, eoContent));
 
 				// release authorization
-				setReleaseAuthorizationInSession(request, employeeorder,
-						eoContent);
+				setReleaseAuthorizationInSession(request.getSession(), employeeorder, eoContent);
 
 			} else {
-				request
-						.getSession()
-						.setAttribute(
-								"actionInfo",
-								getResources(request)
-										.getMessage(getLocale(request),
-												"employeeordercontent.actioninfo.notreleased.text"));
+				request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "employeeordercontent.actioninfo.notreleased.text"));
 			}
 
 			return mapping.findForward("success");
@@ -276,40 +262,24 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 							.getEmployeeordercontent().getId(), contentForm)) {
 				// get content from db, if it was saved just before
 				eoContent.setCommitted_mgmt(true);
-				eoContent.setCommittedby_mgmt(employeeDAO
-						.getEmployeeById(loginEmployee.getId()));
+				eoContent.setCommittedby_mgmt(employeeDAO.getEmployeeById(loginEmployee.getId()));
 				employeeOrderContentDAO.save(eoContent, loginEmployee);
 
 				// set action info
-				request
-						.getSession()
-						.setAttribute(
-								"actionInfo",
-								getResources(request)
-										.getMessage(getLocale(request),
-												"employeeordercontent.actioninfo.released.text"));
+				request.getSession().setAttribute("actionInfo",	getResources(request).getMessage(getLocale(request), "employeeordercontent.actioninfo.released.text"));
 
 				// set updated employeeorder in session
 				employeeorder.setEmployeeordercontent(eoContent);
-				request.getSession().setAttribute("currentEmployeeOrder",
-						employeeorder);
+				request.getSession().setAttribute("currentEmployeeOrder", employeeorder);
 
 				// content is editable?
-				request.getSession().setAttribute("contentIsEditable",
-						isContentEditable(request, employeeorder, eoContent));
+				request.getSession().setAttribute("contentIsEditable", isContentEditable(request.getSession(), employeeorder, eoContent));
 
 				// release authorization
-				setReleaseAuthorizationInSession(request, employeeorder,
-						eoContent);
+				setReleaseAuthorizationInSession(request.getSession(), employeeorder, eoContent);
 
 			} else {
-				request
-						.getSession()
-						.setAttribute(
-								"actionInfo",
-								getResources(request)
-										.getMessage(getLocale(request),
-												"employeeordercontent.actioninfo.notreleased.text"));
+				request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "employeeordercontent.actioninfo.notreleased.text"));
 			}
 
 			return mapping.findForward("success");
@@ -342,89 +312,71 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 		} // action delete end
 
 		// action removeRelease (for admin only!!!)
-		if ((request.getParameter("action") != null)
-				&& (request.getParameter("action").equals("removeRelease"))) {
-
-			if (loginEmployee.getStatus().equals(
-					GlobalConstants.EMPLOYEE_STATUS_ADM)
-					&& eoContent != null) {
-				eoContent.setCommitted_emp(false);
-				eoContent.setCommitted_mgmt(false);
-				employeeOrderContentDAO.save(eoContent, loginEmployee);
-
-				// set action info
-				request
-						.getSession()
-						.setAttribute(
-								"actionInfo",
-								getResources(request)
-										.getMessage(getLocale(request),
-												"employeeordercontent.actioninfo.removedrelease.text"));
-
-				final Employeeorder employeeorder = employeeorderDAO
-						.getEmployeeOrderByContentId(eoContent.getId());
-
-				// set current employeeorder in session
-				request.getSession().setAttribute("currentEmployeeOrder",
-						employeeorder);
-
-				// content is editable?
-				request.getSession().setAttribute("contentIsEditable",
-						isContentEditable(request, employeeorder, eoContent));
-
-				// release authorization
-				setReleaseAuthorizationInSession(request, employeeorder,
-						eoContent);
-
-				return mapping.findForward("success");
-			}
-
-			// set action info
-			request.getSession().setAttribute(
-					"actionInfo",
-					getResources(request).getMessage(getLocale(request),
-							"employeeordercontent.actioninfo.error.text"));
-
-			return mapping.findForward("success");
+		if ((request.getParameter("action") != null) && (request.getParameter("action").equals("removeRelease"))) {
+			return actionRemoveRelease(request.getSession(), mapping, eoContent, loginEmployee, getResources(request), getLocale(request));
 		} // action delete end
 
 		// action back
-		if (((request.getParameter("action") != null) && (request
-				.getParameter("action").equals("back")))
-				|| backAction) {
-
-			// get filter settings from session and refresh list of
-			// employeeorders for overview
-			final Employeecontract employeecontract = (Employeecontract) request
-					.getSession().getAttribute("currentEmployeeContract");
-			long employeeContractId = -1;
-			if (employeecontract != null) {
-				employeeContractId = employeecontract.getId();
-			}
-
-			String filter = null;
-			Boolean show = null;
-
-			final long orderId = (Long) request.getSession().getAttribute(
-					"currentOrderId");
-			if (request.getSession().getAttribute("employeeOrderFilter") != null) {
-				filter = (String) request.getSession().getAttribute(
-						"employeeOrderFilter");
-			}
-			if (request.getSession().getAttribute("employeeOrderShow") != null) {
-				show = (Boolean) request.getSession().getAttribute(
-						"employeeOrderShow");
-			}
-			request.getSession().setAttribute(
-					"employeeorders",
-					employeeorderDAO.getEmployeeordersByFilters(show, filter,
-							employeeContractId, orderId));
-
-			return mapping.findForward("back");
+		if (((request.getParameter("action") != null) && (request.getParameter("action").equals("back"))) || backAction) {
+			return actionBack(request.getSession(), mapping);
 		} // action back end
 
 		// no action selected - show page again
 		return mapping.findForward("success");
+	}
+	
+	private ActionForward actionRemoveRelease(HttpSession session, ActionMapping mapping, Employeeordercontent eoContent, Employee loginEmployee, MessageResources resources, Locale locale) {
+		if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM) && eoContent != null) {
+			eoContent.setCommitted_emp(false);
+			eoContent.setCommitted_mgmt(false);
+			employeeOrderContentDAO.save(eoContent, loginEmployee);
+
+			// set action info
+			session.setAttribute("actionInfo", resources.getMessage(locale, "employeeordercontent.actioninfo.removedrelease.text"));
+
+			final Employeeorder employeeorder = employeeorderDAO.getEmployeeOrderByContentId(eoContent.getId());
+
+			// set current employeeorder in session
+			session.setAttribute("currentEmployeeOrder", employeeorder);
+
+			// content is editable?
+			session.setAttribute("contentIsEditable", isContentEditable(session, employeeorder, eoContent));
+
+			// release authorization
+			setReleaseAuthorizationInSession(session, employeeorder, eoContent);
+
+			return mapping.findForward("success");
+		}
+
+		// set action info
+		session.setAttribute("actionInfo", resources.getMessage(locale, "employeeordercontent.actioninfo.error.text"));
+
+		return mapping.findForward("success");
+	}
+	
+	private ActionForward actionBack(HttpSession session, ActionMapping mapping) {
+		// get filter settings from session and refresh list of
+		// employeeorders for overview
+		final Employeecontract employeecontract = (Employeecontract) session.getAttribute("currentEmployeeContract");
+		long employeeContractId = -1;
+		if (employeecontract != null) {
+			employeeContractId = employeecontract.getId();
+		}
+
+		String filter = null;
+		if (session.getAttribute("employeeOrderFilter") != null) {
+			filter = (String) session.getAttribute("employeeOrderFilter");
+		}
+
+		Boolean show = null;
+		if (session.getAttribute("employeeOrderShow") != null) {
+			show = (Boolean) session.getAttribute("employeeOrderShow");
+		}
+
+		final long orderId = (Long) session.getAttribute("currentOrderId");
+		session.setAttribute("employeeorders",	employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+
+		return mapping.findForward("back");
 	}
 
 	/**

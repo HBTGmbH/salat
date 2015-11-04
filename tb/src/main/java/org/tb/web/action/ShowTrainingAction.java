@@ -143,7 +143,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
                     enddate, employeecontract, orderID, year);
             
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
-            request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(employeecontract));
+            request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(employeecontract.getValidFrom()));
         }
         request.getSession().setAttribute("trainingOverview", trainingOverviews);
         request.getSession().setAttribute("year", year);
@@ -209,7 +209,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
             trainingOverview = getTrainingOverviewByEmployeecontract(startdate,
                     enddate, ec, orderID, year);
             request.getSession().setAttribute("currentEmployeeId", employeeContractId);
-            request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(ec));
+            request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(ec.getValidFrom()));
         }
         request.getSession().setAttribute("trainingOverview", trainingOverview);
         return forward;

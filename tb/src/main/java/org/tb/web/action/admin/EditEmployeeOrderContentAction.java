@@ -68,10 +68,10 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
 			request.getSession().setAttribute("currentEmployeeOrderId",	employeeorder.getId());
 	
 			// content is editable?
-			request.getSession().setAttribute("contentIsEditable", isContentEditable(request, employeeorder, eoContent));
+			request.getSession().setAttribute("contentIsEditable", isContentEditable(request.getSession(), employeeorder, eoContent));
 	
 			// release authorization
-			setReleaseAuthorizationInSession(request, employeeorder, eoContent);
+			setReleaseAuthorizationInSession(request.getSession(), employeeorder, eoContent);
 	
 			if (eoContent != null) {
 				request.getSession().setAttribute("contentStatus",

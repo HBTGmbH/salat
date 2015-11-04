@@ -2,7 +2,7 @@ package org.tb.web.action.admin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
@@ -20,9 +20,9 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 	 * @param eoContent
 	 * @return Returns true, if content is editable, false otherwise
 	 */
-	protected boolean isContentEditable(HttpServletRequest request,	@Nonnull Employeeorder employeeorder, @Nullable Employeeordercontent eoContent) {
+	protected boolean isContentEditable(HttpSession session, @Nonnull Employeeorder employeeorder, @Nullable Employeeordercontent eoContent) {
 		if (eoContent != null) {
-			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+			Employee loginEmployee = (Employee) session.getAttribute("loginEmployee");
 			if (!eoContent.getCommitted_emp() && !eoContent.getCommitted_mgmt()) {
 				return true;
 			} else if ((!eoContent.getCommitted_mgmt() || !eoContent.getCommitted_emp())
@@ -46,40 +46,35 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
 	 * @param employeeorder
 	 * @param eoContent
 	 */
-	protected void setReleaseAuthorizationInSession(HttpServletRequest request,
-			Employeeorder employeeorder, Employeeordercontent eoContent) {
+	protected void setReleaseAuthorizationInSession(HttpSession session, Employeeorder employeeorder, Employeeordercontent eoContent) {
 		if (eoContent != null) {
-			Employee loginEmployee = (Employee) request.getSession()
-					.getAttribute("loginEmployee");
-			if (loginEmployee.equals(employeeorder.getEmployeecontract()
-					.getEmployee())) {
-				request.getSession().setAttribute("releaseEmpPossible", true);
-				request.getSession().setAttribute("releaseMgmtPossible", false);
+			Employee loginEmployee = (Employee) session.getAttribute("loginEmployee");
+			if (loginEmployee.equals(employeeorder.getEmployeecontract().getEmployee())) {
+				session.setAttribute("releaseEmpPossible", true);
+				session.setAttribute("releaseMgmtPossible", false);
 			} else if (loginEmployee.equals(eoContent.getContactTechHbt())) {
-				request.getSession().setAttribute("releaseMgmtPossible", true);
-				request.getSession().setAttribute("releaseEmpPossible", false);
-			} else if (loginEmployee.getStatus().equals(
-					GlobalConstants.EMPLOYEE_STATUS_PV)) {
-				request.getSession().setAttribute("releaseEmpPossible", false);
-				request.getSession().setAttribute("releaseMgmtPossible", true);
-			} else if (loginEmployee.getStatus().equals(
-					GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-				request.getSession().setAttribute("releaseEmpPossible", true);
-				request.getSession().setAttribute("releaseMgmtPossible", true);
+				session.setAttribute("releaseMgmtPossible", true);
+				session.setAttribute("releaseEmpPossible", false);
+			} else if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)) {
+				session.setAttribute("releaseEmpPossible", false);
+				session.setAttribute("releaseMgmtPossible", true);
+			} else if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+				session.setAttribute("releaseEmpPossible", true);
+				session.setAttribute("releaseMgmtPossible", true);
 			} else {
-				request.getSession().setAttribute("releaseEmpPossible", false);
-				request.getSession().setAttribute("releaseMgmtPossible", false);
+				session.setAttribute("releaseEmpPossible", false);
+				session.setAttribute("releaseMgmtPossible", false);
 			}
 			if (eoContent.getCommitted_emp()) {
-				request.getSession().setAttribute("releaseEmpPossible", false);
+				session.setAttribute("releaseEmpPossible", false);
 			}
 			if (eoContent.getCommitted_mgmt()) {
-				request.getSession().setAttribute("releaseMgmtPossible", false);
+				session.setAttribute("releaseMgmtPossible", false);
 			}
 		} else {
 			// a new one cannot be released (not stored in db yet)
-			request.getSession().setAttribute("releaseEmpPossible", false);
-			request.getSession().setAttribute("releaseMgmtPossible", false);
+			session.setAttribute("releaseEmpPossible", false);
+			session.setAttribute("releaseMgmtPossible", false);
 		}
 	}
 
