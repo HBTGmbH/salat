@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
@@ -19,7 +21,6 @@ import org.tb.bdom.Suborder;
 import org.tb.bdom.Ticket;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
-import org.tb.logging.TbLogger;
 
 /**
  * DAO class for 'Suborder'
@@ -28,6 +29,7 @@ import org.tb.logging.TbLogger;
  *
  */
 public class SuborderDAO extends HibernateDaoSupport {
+	private static final Logger LOG = LoggerFactory.getLogger(SuborderDAO.class);
     
     private EmployeeorderDAO employeeorderDAO;
     private TimereportDAO timereportDAO;
@@ -521,7 +523,7 @@ public class SuborderDAO extends HibernateDaoSupport {
                     try {
                         session.flush();
                     } catch (Throwable th) {}
-                    TbLogger.debug(SuborderDAO.class.toString(), "SuborderDAO.deleteSuborderById - deleted object " + soToDelete + " and flushed!");
+                    LOG.debug("SuborderDAO.deleteSuborderById - deleted object {} and flushed!", soToDelete);
                     soDeleted = true;
                 }
                 break;

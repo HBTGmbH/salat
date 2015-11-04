@@ -17,6 +17,8 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -24,7 +26,6 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.SuborderViewDecorator;
 import org.tb.bdom.Timereport;
-import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
@@ -39,6 +40,7 @@ import org.tb.web.form.AddSuborderForm;
  * 
  */
 public class StoreSuborderAction extends LoginRequiredAction {
+	private static final Logger LOG = LoggerFactory.getLogger(StoreSuborderAction.class);
     
     private CustomerorderDAO customerorderDAO;    
     private SuborderDAO suborderDAO;    
@@ -156,8 +158,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
             Customerorder tempOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getParentId());
             List<Suborder> suborders = suborderDAO.getSuborders(false);
-            TbLogger.debug(StoreSuborderAction.class.toString(),
-                    " StoreSuborderAction.executeAuthenticated() - three Values: " + tempSubOrder + " / " + tempOrder + " / " + suborders);
+            LOG.debug("StoreSuborderAction.executeAuthenticated() - three Values: " + tempSubOrder + " / " + tempOrder + " / " + suborders);
             Long soId;
             try {
                 soId = new Long(request.getSession().getAttribute("soId").toString());

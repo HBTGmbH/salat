@@ -12,6 +12,8 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.struts.util.MessageResources;
 import org.joda.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
@@ -19,7 +21,6 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Statusreport;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Warning;
-import org.tb.logging.TbLogger;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
@@ -30,6 +31,7 @@ import org.tb.util.DateUtils;
 import org.tb.web.util.OvertimeString;
 
 public class AfterLogin {
+	private static final Logger LOG = LoggerFactory.getLogger(AfterLogin.class);
 
 	private static List<Warning> checkEmployeeorders(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, MessageResources resources, Locale locale) {
 		List<Warning> warnings = new ArrayList<Warning>();
@@ -57,7 +59,7 @@ public class AfterLogin {
                         throw new RuntimeException("query suboptimal");
                     }
                 } catch (Exception e) {
-                    TbLogger.error(Thread.currentThread().getStackTrace()[2].getClassName(), e.getMessage());
+                    LOG.error(e.getMessage(), e);
                 }
             }
         }

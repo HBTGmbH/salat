@@ -16,12 +16,13 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
 import org.tb.helper.TimereportHelper;
-import org.tb.logging.TbLogger;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
@@ -34,6 +35,7 @@ import org.tb.web.form.ShowReleaseForm;
 import org.tb.web.util.MailSender;
 
 public class ShowReleaseAction extends LoginRequiredAction {
+	private static final Logger LOG = LoggerFactory.getLogger(ShowReleaseAction.class);
     
     private EmployeecontractDAO employeecontractDAO;
     private TimereportDAO timereportDAO;
@@ -214,7 +216,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
                 try {
                     MailSender.sendSalatBuchungenReleasedMail(recipient, from);
                 } catch (Exception e) {
-                	TbLogger.error(this.getClass().getName(), "sending release mail failed!!!");
+                	LOG.error("sending release mail failed!!!");
                 }
             } 
         }
@@ -224,70 +226,46 @@ public class ShowReleaseAction extends LoginRequiredAction {
                 && request.getParameter("task").equals("sendreleasemail")) {
             
             // build recipient for releasemail
-            Employee recipient = employeeDAO.getEmployeeBySign(request
-                    .getParameter("sign"));
+            Employee recipient = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
             
             // * revipient = Empfaenger, loginEmployee = Absender
-            MailSender
-                    .sendSalatBuchungenToReleaseMail(recipient, loginEmployee);
+            MailSender.sendSalatBuchungenToReleaseMail(recipient, loginEmployee);
             
-            request
-                    .setAttribute(
-                            "actionInfo",
-                            getResources(request)
-                                    .getMessage(getLocale(request),
-                                            "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
+            request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
         }
         
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("sendacceptancemail")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("sendacceptancemail")) {
             
             // build recipient for acceptancemail
             // Contract from Employee
-            Employee contEmployee = employeeDAO.getEmployeeBySign(request
-                    .getParameter("sign"));
-            Employeecontract currentEmployeeContract = employeecontractDAO
-                    .getEmployeeContractByEmployeeIdAndDate(contEmployee
-                            .getId(), new Date());
-            
+            Employee contEmployee = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
+            Employeecontract currentEmployeeContract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(contEmployee.getId(), new Date());
             
             // BL
             Employee recipient = currentEmployeeContract.getSupervisor();
             // sender of the mail
             if (recipient != null) {
                 Employee from = loginEmployee;
-                MailSender.sendSalatBuchungenToAcceptanceMail(recipient,
-                        contEmployee, from);
-                request
-                        .setAttribute(
-                                "actionInfo",
-                                getResources(request)
-                                        .getMessage(getLocale(request),
-                                                "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
+                MailSender.sendSalatBuchungenToAcceptanceMail(recipient, contEmployee, from);
+                request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
             } else {
                 // do nothing, Supervisor must not be null
             }
         }
         
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("accept")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("accept")) {
             
             // validate form data
-            ActionMessages errorMessages = validateFormDataForAcceptance(
-                    request, releaseForm, employeecontract);
+            ActionMessages errorMessages = validateFormDataForAcceptance(request, releaseForm, employeecontract);
             if (errorMessages.size() > 0) {
                 return mapping.getInputForward();
             }
             
-            java.util.Date acceptanceDate = (java.util.Date)request
-                    .getSession().getAttribute("acceptanceDate");
-            java.sql.Date sqlAcceptanceDate = new java.sql.Date(acceptanceDate
-                    .getTime());
+            java.util.Date acceptanceDate = (java.util.Date)request.getSession().getAttribute("acceptanceDate");
+            java.sql.Date sqlAcceptanceDate = new java.sql.Date(acceptanceDate.getTime());
             
             // set status in timereports
-            List<Timereport> timereports = timereportDAO
-                    .getCommitedTimereportsByEmployeeContractIdBeforeDate(
-                            employeecontract.getId(), sqlAcceptanceDate);
+            List<Timereport> timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontract.getId(), sqlAcceptanceDate);
             for (Timereport timereport : timereports) {
                 timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
                 timereport.setAcceptedby(loginEmployee.getSign());
@@ -296,8 +274,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
             }
             acceptanceDateFromContract = acceptanceDate;
             
-            request.getSession().setAttribute("acceptanceDays",
-                    getDayList(acceptanceDateFromContract));
+            request.getSession().setAttribute("acceptanceDays", getDayList(acceptanceDateFromContract));
             
             // set new acceptance date in employee contract
             employeecontract.setReportAcceptanceDate(sqlAcceptanceDate);
@@ -314,8 +291,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
             employeecontractDAO.save(employeecontract, loginEmployee);
         }
         
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("reopen")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
             
             Date reopenDate = null;
             
@@ -326,13 +302,10 @@ public class ShowReleaseAction extends LoginRequiredAction {
             if (reopenDate == null) {
                 reopenDate = new Date();
             }
-            java.sql.Date sqlReopenDate = new java.sql.Date(reopenDate
-                    .getTime());
+            java.sql.Date sqlReopenDate = new java.sql.Date(reopenDate.getTime());
             
             // set status in timereports
-            List<Timereport> timereports = timereportDAO
-                    .getTimereportsByEmployeeContractIdAfterDate(
-                            employeecontract.getId(), sqlReopenDate);
+            List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontract.getId(), sqlReopenDate);
             for (Timereport timereport : timereports) {
                 timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
                 timereportDAO.save(timereport, loginEmployee, false);

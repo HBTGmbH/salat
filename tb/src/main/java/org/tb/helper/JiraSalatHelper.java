@@ -7,13 +7,14 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.NullArgumentException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Ticket;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Worklog;
 import org.tb.bdom.WorklogMemory;
-import org.tb.logging.TbLogger;
 import org.tb.persistence.TicketDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorklogDAO;
@@ -25,6 +26,7 @@ import org.tb.persistence.WorklogMemoryDAO;
  *
  */
 public class JiraSalatHelper {
+	private static final Logger LOG = LoggerFactory.getLogger(JiraSalatHelper.class);
 	
 	/**
 	 * check if for the given orderID, one or more ProjectIDs exist. 
@@ -109,7 +111,7 @@ public class JiraSalatHelper {
 										worklog.setUpdatecounter(0);
 									}
 									worklogDAO.save(worklog);
-									TbLogger.info(JiraSalatHelper.class.getName(), "Successfully created Jira-Worklog - " + worklog.getJiraWorklogID());
+									LOG.info("Successfully created Jira-Worklog - " + worklog.getJiraWorklogID());
 									deleteWorklogMemory(worklogMemoryDAO, worklogMemory);
 								} else {
 									throw new RuntimeException("Create Jira-Worklog failed: status code " + responseCreate[0]);
@@ -119,7 +121,7 @@ public class JiraSalatHelper {
 							case GlobalConstants.UPDATE_WORKLOG: //2
 								int responseUpdate = jcHelper.updateWorklog(timereport, worklogMemory.getIssueID(), worklogMemory.getWorklogID());
 								if (responseUpdate == 404) {
-									TbLogger.info(JiraSalatHelper.class.getName(), "Update Jira-Worklog failed: Worklog not found. Trying to create new Worklog..");
+									LOG.debug("Update Jira-Worklog failed: Worklog not found. Trying to create new Worklog..");
 									responseCreate = jcHelper.createWorklog(timereport, worklogMemory.getIssueID());
 									if (responseCreate[0] == 200) {
 										Worklog worklog = getWorklog(worklogMemory, worklogDAO);
@@ -134,17 +136,17 @@ public class JiraSalatHelper {
 											worklog.setUpdatecounter(1);
 										}
 										worklogDAO.save(worklog);
-										TbLogger.info(JiraSalatHelper.class.getName(), "Successfully updated Jira-Worklog - " + worklog.getJiraWorklogID());
+										LOG.debug("Successfully updated Jira-Worklog - " + worklog.getJiraWorklogID());
 										deleteWorklogMemory(worklogMemoryDAO, worklogMemory);
 									}
 									else {
-										TbLogger.info(JiraSalatHelper.class.getName(), "New Worklog could not be created: status code " + responseCreate[0]);
+										LOG.error("New Worklog could not be created: status code " + responseCreate[0]);
 										throw new RuntimeException(""); //no more infos needed
 									}
 								}
 								else if (responseUpdate == 200) {
 									worklogMemoryDAO.delete(worklogMemory);
-									TbLogger.info(JiraSalatHelper.class.getName(), "Successfully updated Worklog - " + worklogMemory.getWorklogID());
+									LOG.debug("Successfully updated Worklog - " + worklogMemory.getWorklogID());
 								} else {
 									throw new RuntimeException("Update Jira-Worklog failed: status code " + responseUpdate);
 								}
@@ -155,7 +157,7 @@ public class JiraSalatHelper {
 									int responseDelete = jcHelper.deleteWorklog(worklogMemory.getWorklogID(), worklogMemory.getIssueID());
 									if (responseDelete == 200) {
 										deleteWorklogMemory(worklogMemoryDAO, worklogMemory);
-										TbLogger.info(JiraSalatHelper.class.getName(), "Successfully deleted Worklog - " + worklogMemory.getWorklogID());
+										LOG.debug("Successfully deleted Worklog - " + worklogMemory.getWorklogID());
 									} else {
 										throw new RuntimeException("Delete Worklog from Jira failed: status code " + responseDelete);
 									}
@@ -168,7 +170,7 @@ public class JiraSalatHelper {
 								break;
 							}
 						} catch (IOException e) {
-							TbLogger.error(JiraSalatHelper.class.getSimpleName(), "Failed to " + operationNames[operation-1] + " worklog.WorklogMemoryId: " + worklogMemory.getId() + "\n -> " + e.getMessage());
+							LOG.error("Failed to " + operationNames[operation-1] + " worklog.WorklogMemoryId: " + worklogMemory.getId() + "\n -> " + e.getMessage());
 						}
 					
 					
@@ -176,7 +178,7 @@ public class JiraSalatHelper {
 					
 				}
 			} else {
-				TbLogger.info(JiraSalatHelper.class.getName(), "WorklogMemory is empty. Thats a good thing! ;-)");
+				LOG.debug(JiraSalatHelper.class.getName(), "WorklogMemory is empty. Thats a good thing! ;-)");
 			}
 		} else {
 			throw new NullArgumentException("Passed arguments");

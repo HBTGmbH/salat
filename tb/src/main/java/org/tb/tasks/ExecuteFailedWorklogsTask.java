@@ -2,9 +2,10 @@ package org.tb.tasks;
 
 import java.util.TimerTask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.helper.JiraSalatHelper;
-import org.tb.logging.TbLogger;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorklogDAO;
 import org.tb.persistence.WorklogMemoryDAO;
@@ -17,6 +18,7 @@ import org.tb.persistence.WorklogMemoryDAO;
  */
 
 public class ExecuteFailedWorklogsTask extends TimerTask {
+	private static final Logger LOG = LoggerFactory.getLogger(ExecuteFailedWorklogsTask.class);
 
 	private WorklogMemoryDAO worklogMemoryDAO;
 	private TimereportDAO timereportDAO;
@@ -34,11 +36,11 @@ public class ExecuteFailedWorklogsTask extends TimerTask {
 
 	@Transactional
 	public void run() {
-		TbLogger.info(this.getClass().getName(), "Starting execution of failed Worklogs...");
+		LOG.info("Starting execution of failed Worklogs...");
 		try {
 			JiraSalatHelper.executeFailedWorklogs(worklogMemoryDAO, timereportDAO, worklogDAO);
 		} catch (RuntimeException e) {
-			TbLogger.error(this.getClass().getName(), "executeFailedWorklogs has failed:\n" + e.getMessage());
+			LOG.error("executeFailedWorklogs has failed:\n" + e.getMessage());
 			throw e;
 		}
 	}

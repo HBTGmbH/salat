@@ -10,9 +10,11 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
-import org.tb.logging.TbLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PerformanceLoggingFilter implements Filter {
+	private static final Logger LOG = LoggerFactory.getLogger(PerformanceLoggingFilter.class);
 
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
@@ -21,7 +23,7 @@ public class PerformanceLoggingFilter implements Filter {
 		chain.doFilter(request, response);
 		long duration = System.currentTimeMillis() - starttime;
 		HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-		TbLogger.debug(this.getClass().getSimpleName(), httpServletRequest.getRequestURL() + " took " + duration + "ms.");
+		LOG.debug(httpServletRequest.getRequestURL() + " took " + duration + "ms.");
 	}
 
 	public void init(FilterConfig config) throws ServletException {

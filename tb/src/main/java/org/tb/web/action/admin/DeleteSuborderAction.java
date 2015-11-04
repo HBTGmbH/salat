@@ -12,9 +12,10 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.SuborderViewDecorator;
-import org.tb.logging.TbLogger;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
@@ -27,6 +28,7 @@ import org.tb.web.form.ShowSuborderForm;
  *
  */
 public class DeleteSuborderAction extends LoginRequiredAction {
+	private static final Logger LOG = LoggerFactory.getLogger(DeleteSuborderAction.class);
 	
 	private SuborderDAO suborderDAO;
 	private TimereportDAO timereportDAO;
@@ -95,7 +97,7 @@ public class DeleteSuborderAction extends LoginRequiredAction {
 			request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
 		}
 		
-		TbLogger.debug(DeleteSuborderAction.class.toString(),"DeleteSuborderAction.executeAuthenticated - after deletion");
+		LOG.debug("DeleteSuborderAction.executeAuthenticated - after deletion");
 		
 		// back to suborder display jsp
 		return mapping.getInputForward();

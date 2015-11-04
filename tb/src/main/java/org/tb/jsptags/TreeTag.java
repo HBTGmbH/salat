@@ -8,10 +8,11 @@ import java.util.Random;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.TagSupport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;
-import org.tb.logging.TbLogger;
 
 	/**
 	 * This class generates a tree view for jsp-Pages.  
@@ -23,6 +24,7 @@ import org.tb.logging.TbLogger;
 	 * @author ts
 	 */
 public class TreeTag extends TagSupport {
+	private static final Logger LOG = LoggerFactory.getLogger(TreeTag.class);
 	
 	/**
 		 * 
@@ -148,7 +150,7 @@ public class TreeTag extends TagSupport {
 			} 
 			out.print("</span>");
         } catch(Exception ioe) {
-        	TbLogger.debug(TreeTag.class.toString(), "Error in Tree Tag!");
+        	LOG.error("Error in Tree Tag!");
         }
         return(EVAL_BODY_INCLUDE);
     }
@@ -251,8 +253,8 @@ public class TreeTag extends TagSupport {
 		  			outPut.println("<span id=\"span" + name + "\" class=\"clsHide\">\n");
 		  			generateTreeRecursivly(tempOrder.getId(), thisLevel, outPut, tempBoolean );
 		  			outPut.println("</span>");
-				}catch (IOException ioe){	
-					TbLogger.debug(TreeTag.class.toString(),"Error in Tree Tag!");
+				} catch (IOException ioe){	
+					LOG.error("Error in Tree Tag!");
 				} 
 			}
 		}
