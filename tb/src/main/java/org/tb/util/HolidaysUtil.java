@@ -14,12 +14,23 @@ import org.slf4j.LoggerFactory;
 import org.tb.bdom.Publicholiday;
 import org.tb.persistence.PublicholidayDAO;
 
+/**
+ * Tool class for easier handling of new holidays
+ * 
+ * @author kd
+ *
+ */
 public class HolidaysUtil {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PublicholidayDAO.class); 
 	private static final String EASTERN_SUNDAYS_RESOURCE_NAME = "/eastern.csv";
 	private static final String DATE_FORMAT = "dd.MM.yyyy";
 	
+	/**
+	 * Loads the dates of the eastern sundays from <code>EASTERN_SUNDAYS_RESOURCE_NAME</code>
+	 * 
+	 * @return
+	 */
 	public static Collection<LocalDate> loadEasterSundayDates() {
 		InputStream is = PublicholidayDAO.class.getClassLoader().getResourceAsStream(EASTERN_SUNDAYS_RESOURCE_NAME);
 		if(is == null) {
