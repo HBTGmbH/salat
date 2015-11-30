@@ -1,17 +1,15 @@
 package org.tb.persistence;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 import org.hibernate.Session;
+import org.joda.time.LocalDate;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
-import org.tb.util.DateUtils;
+import org.tb.util.HolidaysUtil;
 
 /**
  * DAO class for 'Publicholiday'
@@ -20,7 +18,6 @@ import org.tb.util.DateUtils;
  *
  */
 public class PublicholidayDAO extends HibernateDaoSupport {
-
 	
 	/**
 	 * Saves the given public holiday.
@@ -64,89 +61,21 @@ public class PublicholidayDAO extends HibernateDaoSupport {
 	public void checkPublicHolidaysForCurrentYear() {
 		@SuppressWarnings("unchecked")
 		List<Publicholiday> holidays = getSession().createQuery("from Publicholiday p").list();
-
-		Date currentYearStart = null;
-		try {
-			currentYearStart = new SimpleDateFormat("yyyy-MM-dd").parse(DateUtils.getCurrentYearString() + "-01-01");
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
-		boolean currentYearEntriesAvailable = false;
-		for (Publicholiday ph  : holidays) {
-			if(ph.getRefdate().after(currentYearStart)) {
-				currentYearEntriesAvailable = true;
-				break;
-			}
+		
+		int maxYear = 0;
+		for(Publicholiday holiday : holidays) {
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(holiday.getRefdate());
+			
+			maxYear = Math.max(maxYear, cal.get(Calendar.YEAR));
 		}
 		
-		if (!currentYearEntriesAvailable) {
-			// add public holidays to DB
-			
-			Calendar cal = new GregorianCalendar();
-			int[] easter = DateUtils.getEaster(currentYearStart); // year, month, day
-			
-			Publicholiday ph = null;
-			
-			// Neujahr
-			cal.set(DateUtils.getCurrentYear(),0,1);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Neujahr");
-			save(ph);
-			
-			// Karfreitag			
-			cal.set(DateUtils.getCurrentYear(),easter[1]-1,easter[2]-2);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Karfreitag");
-			save(ph);
-			
-			// Ostersonntag			
-			cal.set(DateUtils.getCurrentYear(),easter[1]-1,easter[2]);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Ostersonntag");
-			save(ph);
-			
-			// Ostermontag			
-			cal.set(DateUtils.getCurrentYear(),easter[1]-1,easter[2]+1);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Ostermontag");
-			save(ph);
-			
-			// Maifeiertag
-			cal.set(DateUtils.getCurrentYear(),4,1);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Maifeiertag");
-			save(ph);
-			
-			// Christi Himmelfahrt			
-			cal.set(DateUtils.getCurrentYear(),easter[1]-1,easter[2]+39);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Christi Himmelfahrt");
-			save(ph);
-
-			// Pfingstsonntag			
-			cal.set(DateUtils.getCurrentYear(),easter[1]-1,easter[2]+49);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Pfingstsonntag");
-			save(ph);
-			
-			// Pfingstsonntag			
-			cal.set(DateUtils.getCurrentYear(),easter[1]-1,easter[2]+50);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Pfingstsonntag");
-			save(ph);
-			
-			// Heiligabend			
-			cal.set(DateUtils.getCurrentYear(),11,24);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Heiligabend");
-			save(ph);
-			
-			// 1. Weihnachtstag			
-			cal.set(DateUtils.getCurrentYear(),11,25);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "1. Weihnachtstag");
-			save(ph);
-			
-			// 2. Weihnachtstag			
-			cal.set(DateUtils.getCurrentYear(),11,26);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "2. Weihnachtstag");
-			save(ph);
-
-			// Heiligabend			
-			cal.set(DateUtils.getCurrentYear(),11,31);
-			ph = new Publicholiday(new java.sql.Date(cal.getTimeInMillis()), "Silvester");
-			save(ph);
-
+		for(LocalDate easterSunday : HolidaysUtil.loadEasterSundayDates()) {
+			if(maxYear < easterSunday.getYear()) {
+				for(Publicholiday newHoliday : HolidaysUtil.generateHolidays(easterSunday)) {
+					save(newHoliday);
+				}
+			}
 		}
 	}
 	
