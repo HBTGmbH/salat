@@ -1,6 +1,5 @@
 package org.tb.web.action;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -21,8 +20,6 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Warning;
 import org.tb.helper.AfterLogin;
-import org.tb.helper.TimereportHelper;
-import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -32,10 +29,8 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.util.DateUtils;
 import org.tb.util.MD5Util;
 import org.tb.web.form.LoginEmployeeForm;
-import org.tb.web.util.OvertimeString;
 
 /**
  * Action class for the login of an employee
