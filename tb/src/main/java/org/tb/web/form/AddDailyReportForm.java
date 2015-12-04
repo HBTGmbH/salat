@@ -236,6 +236,10 @@ public class AddDailyReportForm extends ActionForm {
       sortOfReport = "W";
       selectedHourDuration = 0;
       selectedMinuteDuration = 0;
+      selectedHourBegin = 0;
+      selectedMinuteBegin = 0;
+      selectedHourEnd = 0;
+      selectedMinuteEnd = 0;
       referenceday = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
       hours = 8.0;
       costs = 0.0;

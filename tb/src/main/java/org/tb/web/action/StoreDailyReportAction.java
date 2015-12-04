@@ -1168,6 +1168,10 @@ public class StoreDailyReportAction extends DailyReportAction {
         
         Boolean workingDayIsAvailable = (Boolean)request.getSession().getAttribute("workingDayIsAvailable");
         
+        if(hours == 0.0) {
+        	errors.add("selectedDuration", new ActionMessage("form.timereport.error.hours.unset"));
+        }
+        
         if (workingDayIsAvailable) {
             // end time must be later than begin time
             int begin = reportForm.getSelectedHourBegin() * 100
