@@ -1,7 +1,6 @@
 package org.tb.web.action;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -25,7 +24,6 @@ import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
-import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
@@ -34,10 +32,8 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
-import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
 import org.tb.web.form.ShowDailyReportForm;
-import org.tb.web.util.OvertimeString;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
     

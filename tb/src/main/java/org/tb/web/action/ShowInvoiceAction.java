@@ -437,6 +437,7 @@ public class ShowInvoiceAction extends DailyReportAction {
             request.getSession().setAttribute("lastMonth", showInvoiceForm.getUntilMonth());
             request.getSession().setAttribute("lastYear", showInvoiceForm.getUntilYear());
             request.getSession().removeAttribute("viewhelpers");
+            showInvoiceForm.setShowOnlyValid(true);
         }
         return mapping.findForward("success");
     }

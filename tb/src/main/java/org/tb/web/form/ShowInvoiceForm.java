@@ -324,7 +324,7 @@ public class ShowInvoiceForm extends ActionForm {
     }
 
 	public Boolean getShowOnlyValid() {
-		return showOnlyValid;
+		return showOnlyValid == null ? false : showOnlyValid;
 	}
 
 	public void setShowOnlyValid(Boolean showOnlyValid) {
