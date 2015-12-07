@@ -21,7 +21,6 @@ public class UpdateDailyReportForm extends ActionForm {
     private String day;
     private String month;
     private String year;
-    private String employeename;
     private String action;
     
     private String comment;
@@ -59,14 +58,6 @@ public class UpdateDailyReportForm extends ActionForm {
     
     public void setYear(String year) {
         this.year = year;
-    }
-    
-    public String getEmployeename() {
-        return employeename;
-    }
-    
-    public void setEmployeename(String employeename) {
-        this.employeename = employeename;
     }
     
     public String getOrder() {
@@ -168,7 +159,6 @@ public class UpdateDailyReportForm extends ActionForm {
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         month = null;
-        employeename = null;
         training = false;
     }
     

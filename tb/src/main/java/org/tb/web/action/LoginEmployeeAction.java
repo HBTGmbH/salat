@@ -82,8 +82,6 @@ public class LoginEmployeeAction extends Action {
     public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         LoginEmployeeForm loginEmployeeForm = (LoginEmployeeForm)form;
         
-        int overtime;
-        
         Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname(), MD5Util.makeMD5(loginEmployeeForm.getPassword()));
         if (loginEmployee == null) {
             ActionMessages errors = getErrors(request);
