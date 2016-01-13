@@ -44,7 +44,9 @@ public class ShowSettingsAction extends LoginRequiredAction {
 				// set new password and save
 				Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
 				em.changePassword(settingsForm.getNewpassword());
+				loginEmployee.changePassword(settingsForm.getNewpassword());
 				employeeDAO.save(em, loginEmployee);
+				
 				
 				request.getSession().setAttribute("passwordchanged", true);
 				return mapping.findForward("success");
