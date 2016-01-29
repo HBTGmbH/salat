@@ -1,5 +1,7 @@
 package org.tb.restful;
 
+import java.util.Date;
+
 public class Booking {
 
 	private long employeeorderId;
@@ -11,6 +13,8 @@ public class Booking {
 	private boolean isTraining;
 	private String suborderSign;
 	private String orderSign;
+	private String date;
+	private double costs;
 
 	public long getEmployeeorderId() {
 		return employeeorderId;
@@ -65,5 +69,17 @@ public class Booking {
 	}
 	public void setOrderSign(String orderSign) {
 		this.orderSign = orderSign;
+	}
+	public String getDate() {
+		return date;
+	}
+	public void setDate(String date) {
+		this.date = date;
+	}
+	public double getCosts() {
+		return costs;
+	}
+	public void setCosts(double costs) {
+		this.costs = costs;
 	}
 }
