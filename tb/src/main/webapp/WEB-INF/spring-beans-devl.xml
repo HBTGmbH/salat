@@ -150,6 +150,7 @@
 	<bean id="authenticationService" class="org.tb.restful.AuthenticationService"></bean>
 	<bean id="subordersService" class="org.tb.restful.SubordersService"></bean>
 	<bean id="bookingsService" class="org.tb.restful.BookingsService"></bean>
+	<bean id="employeeOrdersService" class="org.tb.restful.EmployeeOrdersService"></bean>
 	
 	<!-- Hibernate Konfiguration -->
 	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">

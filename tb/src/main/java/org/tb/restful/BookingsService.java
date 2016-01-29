@@ -1,15 +1,15 @@
 package org.tb.restful;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.jboss.resteasy.spi.BadRequestException;
@@ -43,20 +43,20 @@ public class BookingsService {
 	@GET
 	@Path("list")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Booking> getBookings(@QueryParam("datum") String dateStr, @QueryParam("mitarbeiter") String employeeStr) {
-		if(employeeStr == null) throw new BadRequestException("'mitarbeiter' is not set!");
-		if(dateStr == null) throw new BadRequestException("'datum' is not set!");
-		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
-		Date date = null;
-		try {
-			date = sdf.parse(dateStr);
-		} catch (ParseException e) {
-			throw new BadRequestException(e);
+	public List<Booking> getBookings(@Context HttpServletRequest request, @QueryParam("datum") Date date, @QueryParam("mitarbeiter") String employeeStr) {
+		Long employeeId = null;
+		Employee employee;
+		if(employeeStr != null) {
+			employee = employeeDAO.getEmployeeBySign(employeeStr);
+			if(employee == null) throw new BadRequestException("Could not find employee '"+employeeStr+"'!");
+			employeeId = employee.getId();
 		}
+		if(employeeId == null) {
+			employeeId = (Long) request.getSession().getAttribute("employeeId");
+		}
+		if(date == null) date = new Date();
 		
-		Employee employee = employeeDAO.getEmployeeBySign(employeeStr);
-		if(employee == null) throw new BadRequestException("Could not find employee '"+employeeStr+"'!");
-		Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employee.getId(), date);
+		Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
 		List<Timereport> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), new java.sql.Date(date.getTime()));
 		
 		List<Booking> results = new ArrayList<Booking>();
