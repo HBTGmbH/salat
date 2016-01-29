@@ -145,7 +145,10 @@
 	
 	<!-- other classes -->
 		
-	<!-- Business Logic -->
+	<!-- Restful Webservices -->
+	<bean id="helloSalatWebservice" class="org.tb.restful.HelloSalatWebservice"></bean>
+	<bean id="authenticationService" class="org.tb.restful.AuthenticationService"></bean>
+	<bean id="subordersService" class="org.tb.restful.SubordersService"></bean>
 	
 	<!-- Hibernate Konfiguration -->
 	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
@@ -181,17 +184,18 @@
 	</bean>
 
 	<!-- DataSource -->
-	<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+	<bean id="myDataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
-		<property name="url" value="jdbc:mysql://localhost:3306/salat" />
-
-		<property name="username" value="root" />
-	 	<property name="password" value="" />
+		<property name="url" value="jdbc:mysql://***REMOVED***:3306/salattest" />
+		<property name="connectionProperties" value="autoReconnect=true;characterEncoding=UTF8;zeroDateTimeBehavior=convertToNull;useUnicode=true" />
+		
+		<property name="username" value="salatTest" />
+	 	<property name="password" value="***REMOVED***" />
 	 	
-		<property name="validationQuery" value="SELECT 1" />
+	 	<property name="validationQuery" value="SELECT 1" />
 		<property name="testWhileIdle" value="true" />
 		<property name="testOnBorrow" value="true" />
-		<property name="connectionProperties" value="autoReconnect=true;characterEncoding=UTF8;zeroDateTimeBehavior=convertToNull;useUnicode=true" />
+		 
 	</bean>
 
 </beans>
