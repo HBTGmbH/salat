@@ -36,10 +36,9 @@ public class SalatPropertiesUtil {
 		}
 		InputStream property = null;
     	File file = null;
-    	try {
-    		// check if the the external properies file exists and readable
-    		new FileInputStream(properties_url);
-    	} catch (FileNotFoundException e) {
+    	
+    	if(!new File(properties_url).exists()) {
+    
     		// if the external properties file not found - create a new file and write the properties from the internal file
 			property = JiraConnectionOAuthHelper.class.getClassLoader().getResourceAsStream("/org/tb/props/salat.properties");
 			file = new File(properties_url);
@@ -68,8 +67,6 @@ public class SalatPropertiesUtil {
 				System.err.println("Please configure Salat: " + properties_url + ", and start Salat again!");
 				System.exit(0);
 			}
-    	} catch (SecurityException e) {
-			e.printStackTrace();
 		}
     	
     	return readProps(properties_url);
