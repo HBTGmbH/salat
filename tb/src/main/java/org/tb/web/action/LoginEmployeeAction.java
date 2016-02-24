@@ -168,7 +168,7 @@ public class LoginEmployeeAction extends Action {
                         	// do not create an employeeorder for past years "URLAUB" !
                         	if(suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) 
                         			&& !dateString2.startsWith(suborder.getSign())) {
-                        		break;
+                        		continue;
                         	}
                         	
                         	// find latest untilDate of all employeeorders for this suborder

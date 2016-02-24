@@ -318,21 +318,9 @@ public class DateUtils {
      */
     public static List<OptionItem> getDaysToDisplay() {
         List<OptionItem> theList = new ArrayList<OptionItem>();
-        String dayValue = "";
-        String dayLabel = "";
         for (int i = 1; i <= 31; i++) {
-            
-            if (i < 10) {
-                dayLabel = "0" + i;
-                dayValue = "0" + i;
-            }
-            if (i >= 10) {
-                dayLabel = "" + i;
-                dayValue = "" + i;
-            }
-            theList.add(new OptionItem(dayValue, dayLabel));
+        	theList.add(intToOptionitem(i));
         }
-        
         return theList;
     }
     
@@ -341,17 +329,8 @@ public class DateUtils {
      */
     public static List<OptionItem> getHoursToDisplay() {
         List<OptionItem> theList = new ArrayList<OptionItem>();
-        String hourValue = "";
-        String hourLabel = "";
         for (int i = 6; i < 22; i++) {
-            hourValue = "" + i;
-            if (i < 10) {
-                hourLabel = "0" + i;
-            }
-            if (i >= 10) {
-                hourLabel = "" + i;
-            }
-            theList.add(new OptionItem(hourValue, hourLabel));
+        	theList.add(intToOptionitem(i));
         }
         return theList;
     }
@@ -361,12 +340,8 @@ public class DateUtils {
      */
     public static List<OptionItem> getCompleteHoursToDisplay() {
         List<OptionItem> theList = new ArrayList<OptionItem>();
-        String hourValue = "";
-        String hourLabel = "";
         for (int i = 0; i <= 5; i++) {
-            hourValue = "" + i;
-            hourLabel = "0" + i;
-            theList.add(new OptionItem(hourValue, hourLabel));
+        	theList.add(intToOptionitem(i));
         }
         return theList;
     }
@@ -376,19 +351,9 @@ public class DateUtils {
      */
     public static List<OptionItem> getHoursDurationToDisplay() {
         List<OptionItem> theList = new ArrayList<OptionItem>();
-        String hourValue = "";
-        String hourLabel = "";
-        for (int i = 0; i < 16; i++) {
-            hourValue = "" + i;
-            if (i < 10) {
-                hourLabel = "0" + i;
-            }
-            if (i >= 10) {
-                hourLabel = "" + i;
-            }
-            theList.add(new OptionItem(hourValue, hourLabel));
+        for (int i = 0; i <= 24; i++) {
+        	theList.add(intToOptionitem(i));
         }
-        
         return theList;
     }
     
@@ -397,21 +362,16 @@ public class DateUtils {
      */
     public static List<OptionItem> getMinutesToDisplay() {
         List<OptionItem> theList = new ArrayList<OptionItem>();
-        String minuteValue = "";
-        String minuteLabel = "";
-        
         for (int i = 0; i < 60; i += 5) {
-            minuteValue = "" + i;
-            if (i < 10) {
-                minuteLabel = "0" + i;
-            }
-            if (i >= 10) {
-                minuteLabel = "" + i;
-            }
-            theList.add(new OptionItem(minuteValue, minuteLabel));
+        	theList.add(intToOptionitem(i));
         }
-        
         return theList;
+    }
+    
+    private static OptionItem intToOptionitem(int i) {
+    	String value = Integer.toString(i);
+        String label = i < 10 ? "0" + i : Integer.toString(i);
+        return new OptionItem(value, label);
     }
     
     /**

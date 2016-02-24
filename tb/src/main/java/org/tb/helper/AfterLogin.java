@@ -211,12 +211,17 @@ public class AfterLogin {
         if (employeecontract.getUseOvertimeOld() != null && !employeecontract.getUseOvertimeOld()) {
             //use new overtime computation with static + dynamic overtime
             //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
-            Date dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
+        	Date dynamicDate;
+        	if(employeecontract.getReportAcceptanceDate() == null || employeecontract.getReportAcceptanceDate().equals(employeecontract.getValidFrom())) {
+        		dynamicDate = employeecontract.getValidFrom();
+        	} else {
+        		dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
+        	}
             int overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
             overtime = otStaticMinutes + overtimeDynamic;
             // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
         } else {
-            overtime = th.calculateOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+            overtime = th.calculateOvertimeTotal(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
         }
         
         boolean overtimeIsNegative = overtime < 0;

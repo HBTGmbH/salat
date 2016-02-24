@@ -584,7 +584,7 @@ public class TimereportHelper {
      * @param timereportDAO
      * @return Returns the minutes of overtime, might be negative
      */
-    public int calculateOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
+    public int calculateOvertimeTotal(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
         
         Date today = new Date();
         
