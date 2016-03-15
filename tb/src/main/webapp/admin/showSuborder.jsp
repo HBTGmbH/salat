@@ -107,12 +107,7 @@
 	
 	function selectDropdownOption(element,wert)	{
 		for (var i=0; i<element.options.length; i++) {
-			if (element.options[i].value == wert) {
-				element.options[i].selected = true;		
-			}
-			else {
-				element.options[i].selected = false;	
-			}
+			element.options[i].selected = (element.options[i].value == wert);
 		}
 	}
 	
