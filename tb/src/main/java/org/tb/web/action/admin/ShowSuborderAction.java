@@ -1,8 +1,10 @@
 package org.tb.web.action.admin;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -64,6 +66,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
         
         String filter = null;
         Boolean show = null;
+        Boolean ignoreAlreadyInvoiced = null;
         Long customerOrderId = null;
         
         LOG.debug("suborderForm.getShowStructure()" + suborderForm.getShowstructure());
@@ -85,6 +88,9 @@ public class ShowSuborderAction extends LoginRequiredAction {
             
             show = suborderForm.getShow();
             request.getSession().setAttribute("suborderShow", show);
+            
+            ignoreAlreadyInvoiced = suborderForm.getIgnoreAlreadyInvoiced();
+            request.getSession().setAttribute("ignoreAlreadyInvoiced", ignoreAlreadyInvoiced);
             
             customerOrderId = suborderForm.getCustomerOrderId();
             request.getSession().setAttribute("suborderCustomerOrderId",
@@ -109,6 +115,10 @@ public class ShowSuborderAction extends LoginRequiredAction {
                 show = (Boolean)request.getSession().getAttribute(
                         "suborderShow");
                 suborderForm.setShow(show);
+            }
+            if (request.getSession().getAttribute("ignoreAlreadyInvoiced") != null) {
+                ignoreAlreadyInvoiced = (Boolean)request.getSession().getAttribute("ignoreAlreadyInvoiced");
+                suborderForm.setIgnoreAlreadyInvoiced(ignoreAlreadyInvoiced);
             }
             if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
                 customerOrderId = (Long)request.getSession().getAttribute(
@@ -189,6 +199,17 @@ public class ShowSuborderAction extends LoginRequiredAction {
                             suborderDAO.save(so, loginEmployee);
                         }
                     }
+                    if (suborderForm.getSuborderOption().equals("alterWasInvoiced")) {
+                    	Boolean wasInvoiced = textToBoolean(suborderForm.getSuborderOptionValue());
+                    	if(wasInvoiced != null) {
+	                        for (String soID : suborderIdArray) {
+	                            Suborder so = suborderDAO.getSuborderById(Long.parseLong(soID));
+	                            
+	                            so.setWasInvoiced(wasInvoiced);
+	                            suborderDAO.save(so, loginEmployee);
+	                        }
+                    	}
+                    }
                 }
             }
             suborderForm.setSuborderOption("");
@@ -200,30 +221,23 @@ public class ShowSuborderAction extends LoginRequiredAction {
         
         boolean showActualHours = suborderForm.getShowActualHours();
         request.getSession().setAttribute("showActualHours", showActualHours);
-        
+
         if (showActualHours) {
             /* show actual hours */
-            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show,
-                    filter, customerOrderId);
-            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+            List<Suborder> suborderViewDecorators = new LinkedList<Suborder>();
             for (Suborder suborder : suborders) {
-                SuborderViewDecorator decorator = new SuborderViewDecorator(
-                        timereportDAO, suborder);
+                SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
                 suborderViewDecorators.add(decorator);
             }
-            request.getSession().setAttribute("suborders",
-                    suborderViewDecorators);
+            request.getSession().setAttribute("suborders", suborderViewDecorators);
         } else {
-            request.getSession().setAttribute(
-                    "suborders",
-                    suborderDAO.getSubordersByFilters(show, filter,
-                            customerOrderId));
+        	List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+            request.getSession().setAttribute("suborders", suborders);
         }
-        
+
         // check if loginEmployee has responsibility for some orders
-        List<Customerorder> orders = customerorderDAO
-                .getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee
-                        .getId());
+        List<Customerorder> orders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         boolean employeeIsResponsible = false;
         
         if (orders != null && orders.size() > 0) {
@@ -238,8 +252,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
         if (orders != null && !orders.isEmpty()) {
             visibleOrdersPresent = true;
         }
-        request.getSession().setAttribute("visibleOrdersPresent",
-                visibleOrdersPresent);
+        request.getSession().setAttribute("visibleOrdersPresent", visibleOrdersPresent);
         
         if (request.getParameter("task") != null) {
             if (request.getParameter("task").equalsIgnoreCase("back")) {
@@ -253,6 +266,15 @@ public class ShowSuborderAction extends LoginRequiredAction {
             // forward to show suborders jsp
             return mapping.findForward("success");
         }
+    }
+    
+    private Boolean textToBoolean(String text) {
+    	String prepared = text.trim().toLowerCase();
+    	if("1".equals(prepared) || prepared.startsWith("j") || prepared.startsWith("y") || prepared.startsWith("t")) return true;
+    	
+    	if("0".equals(prepared) || prepared.startsWith("n") || prepared.startsWith("f")) return false;
+    	
+    	return null;
     }
     
     private ActionMessages validateFormData(HttpServletRequest request, ShowSuborderForm suborderForm) {

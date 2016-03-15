@@ -43,6 +43,7 @@ public class ShowInvoiceForm extends ActionForm {
     private String customername;
     private String customeraddress;
     private Boolean showOnlyValid;
+    private Boolean ignoreAlreadyInvoiced;
     
     public String getTitleinvoiceattachment() {
         return titleinvoiceattachment;
@@ -257,6 +258,7 @@ public class ShowInvoiceForm extends ActionForm {
         fixedpricebox = false;
         actualhoursbox = false;
         showOnlyValid = false;
+        ignoreAlreadyInvoiced = false;
     }
     
     public String[] getSuborderIdArray() {
@@ -337,5 +339,13 @@ public class ShowInvoiceForm extends ActionForm {
 
 	public void setFromWeek(int fromWeek) {
 		this.fromWeek = fromWeek;
+	}
+
+	public Boolean getIgnoreAlreadyInvoiced() {
+		return ignoreAlreadyInvoiced;
+	}
+
+	public void setIgnoreAlreadyInvoiced(Boolean ignoreAlreadyInvoiced) {
+		this.ignoreAlreadyInvoiced = ignoreAlreadyInvoiced;
 	}
 }
