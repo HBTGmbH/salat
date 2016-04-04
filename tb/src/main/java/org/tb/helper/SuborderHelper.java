@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
@@ -62,26 +63,8 @@ public class SuborderHelper {
 		// set the first Suborder as current
 		Suborder so = theSuborders.get(0);
 		if(so != null) {
-			request.getSession().setAttribute("currentSuborderId", so.getId());
-			
-	        JiraSalatHelper.setJiraTicketKeysForSuborder(request, td, so.getId());
-	        
-	        // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
-	        // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
-	        if (so.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-	            reportForm.setSelectedHourDuration(0);
-	            reportForm.setSelectedMinuteDuration(0);
-	            if (	request.getSession().getAttribute("overtimeCompensation") == null || 
-	            		request.getSession().getAttribute("overtimeCompensation") 
-	                    != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
-	                request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-	            }
-	        }
-	        
-	        // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
-	        if (so.getTrainingFlag()) {
-	            reportForm.setTraining(true);
-	        }
+			assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
+			JiraSalatHelper.setJiraTicketKeysForSuborder(request, td, so.getId());
 		}
 		
 		return true;
@@ -115,15 +98,35 @@ public class SuborderHelper {
 		return true;
 	}
 	
-	public void adjustSuborderSignChanged(HttpServletRequest request, AddDailyReportForm reportForm, SuborderDAO sd) {
-
+	public void adjustSuborderSignChanged(HttpSession session, AddDailyReportForm reportForm, SuborderDAO sd) {
 		Suborder so = sd.getSuborderById(reportForm.getSuborderSignId());
-		request.getSession().setAttribute("currentSuborderId", so.getId()); 
+		assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(session, so, reportForm);
 	}
 	
-	public void adjustSuborderDescriptionChanged(HttpServletRequest request, AddDailyReportForm reportForm, SuborderDAO sd) {
-
+	public void adjustSuborderDescriptionChanged(HttpSession session, AddDailyReportForm reportForm, SuborderDAO sd) {
 		Suborder so = sd.getSuborderById(reportForm.getSuborderDescriptionId());
-		request.getSession().setAttribute("currentSuborderId", so.getId()); 
+		assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(session, so, reportForm);
+	}
+	
+	private void assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(HttpSession session, Suborder so, AddDailyReportForm reportForm) {
+		session.setAttribute("currentSuborderId", so.getId()); 
+        
+        // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
+        // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
+        if (so.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+            reportForm.setSelectedHourDuration(0);
+            reportForm.setSelectedMinuteDuration(0);
+            if (session.getAttribute("overtimeCompensation") == null || 
+            	session.getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+                session.setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+            }
+        } else {
+        	session.removeAttribute("overtimeCompensation");
+        }
+        
+        // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
+        if (so.getTrainingFlag()) {
+            reportForm.setTraining(true);
+        }
 	}
 }

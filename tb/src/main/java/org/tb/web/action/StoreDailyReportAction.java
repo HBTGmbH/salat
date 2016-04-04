@@ -326,7 +326,7 @@ public class StoreDailyReportAction extends DailyReportAction {
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustSuborderSignChanged")) {
         	
         	// refresh suborder sign/description select menus
-            soHelper.adjustSuborderSignChanged(request, reportForm, suborderDAO);
+            soHelper.adjustSuborderSignChanged(request.getSession(), reportForm, suborderDAO);
             Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
             request.getSession().setAttribute("currentSuborderSign", suborder.getSign());
         	setSubOrder(suborder, request, reportForm);
@@ -1167,8 +1167,9 @@ public class StoreDailyReportAction extends DailyReportAction {
         }
         
         Boolean workingDayIsAvailable = (Boolean)request.getSession().getAttribute("workingDayIsAvailable");
+        Object overtimeCompensation = request.getSession().getAttribute("overtimeCompensation");
         
-        if(hours == 0.0) {
+        if(hours == 0.0 && !GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION.equals(overtimeCompensation)) {
         	errors.add("selectedDuration", new ActionMessage("form.timereport.error.hours.unset"));
         }
         
