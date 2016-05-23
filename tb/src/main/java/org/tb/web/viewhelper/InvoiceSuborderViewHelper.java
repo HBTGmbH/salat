@@ -225,10 +225,6 @@ public class InvoiceSuborderViewHelper extends Suborder {
 	public Character getInvoiceChar() {
 		return suborder.getInvoiceChar();
 	}
-	
-	public Boolean getWasInvoiced() {
-		return suborder.getWasInvoiced();
-	}
 
 	public String getInvoiceString() {
 		return suborder.getInvoiceString();

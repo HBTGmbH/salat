@@ -11,12 +11,6 @@
 		<param-value>/WEB-INF/spring-beans-devl.xml</param-value>
 	</context-param>
 
-	<!-- comment the next listener out, when activating the RESTeasy part -->
-	<listener>
-		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-	</listener>
-
-	<!-- 
 	<context-param>
 		<param-name>resteasy.providers</param-name>
 		<param-value>org.tb.restful.AuthenticationInterceptor</param-value>
@@ -37,7 +31,6 @@
 		<servlet-name>Resteasy</servlet-name>
 		<url-pattern>/rest/*</url-pattern>
 	</servlet-mapping>
-	-->
 
 	<filter>
 		<filter-name>HibernateFilter</filter-name>

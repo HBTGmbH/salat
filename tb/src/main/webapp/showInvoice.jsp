@@ -341,11 +341,6 @@
 								onchange="setUpdateInvoiceAction(this.form)" />
 					</td>
 				</tr>
-				<!-- ignore already invoiced -->
-				<tr>
-					<td align="left" class="noBborderStyle"><b><bean:message key="main.invoice.ignore.already.invoiced.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><html:checkbox property="ignoreAlreadyInvoiced"	onchange="setUpdateInvoiceAction(this.form)" /></td>
-				</tr>
 				
 				<tr>
 					<td colspan="2" align="left" class="noBborderStyle">
@@ -605,7 +600,6 @@
 								<html:text property="titleactualhourstext" />
 							</th>
 						</c:if>
-						<th><bean:message key="main.headlinedescription.suborders.wasInvoiced.text"/></th>
 					</tr>
 					<c:forEach var="suborderviewhelper" items="${viewhelpers}">
 						<c:if test="${(suborderviewhelper.layer <= layerlimit) || (layerlimit eq -1)}">
@@ -657,19 +651,6 @@
 									<c:if test="${suborderviewhelper.layer eq layerlimit && !(layerlimit eq -1)}"><c:if test="${!(suborderviewhelper.duration eq '00:00') && !(suborderviewhelper.duration eq suborderviewhelper.actualhours)}">*</c:if> <c:out value="${suborderviewhelper.duration}"></c:out></c:if>
 								</td>
 							</c:if>
-							<!-- has suborder been invoiced ? -->
-							<td align="center">
-								<c:if test="${suborderviewhelper.invoiceString == 'Y'}">
-									<c:choose>
-										<c:when test="${suborderviewhelper.wasInvoiced}">
-											<bean:message key="main.general.yes" />
-										</c:when>
-										<c:otherwise>
-											<bean:message key="main.general.no" />
-										</c:otherwise>
-									</c:choose>
-								</c:if>
-							</td>
 						</tr>
 						<bean:size id="invoiceTimereportViewHelperListSize"
 							name="suborderviewhelper"

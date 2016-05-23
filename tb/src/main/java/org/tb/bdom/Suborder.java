@@ -141,9 +141,6 @@ public class Suborder extends EditDetails implements Serializable {
     /** Flag for fixed price proposal */
     private Boolean fixedPrice;
     
-    /** flag for invoiced suborder */
-    private Boolean wasInvoiced;
-    
     public void addSuborder(Suborder child) {
         if (children == null) {
             children = new LinkedList<Suborder>();
@@ -668,13 +665,5 @@ public class Suborder extends EditDetails implements Serializable {
         }
         return copy;
     }
-
-	public Boolean getWasInvoiced() {
-		return wasInvoiced != null ? wasInvoiced : false;
-	}
-
-	public void setWasInvoiced(Boolean wasInvoiced) {
-		this.wasInvoiced = wasInvoiced;
-	}
     
 }

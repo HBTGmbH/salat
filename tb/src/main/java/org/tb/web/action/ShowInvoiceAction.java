@@ -21,7 +21,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
-import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -153,9 +152,8 @@ public class ShowInvoiceAction extends DailyReportAction {
                     // remove suborders that are not valid sometime between dateFirst and dateLast
                     for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
                         Suborder so = iterator.next();
-                        if ((so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) ||
-                        	 (showInvoiceForm.getIgnoreAlreadyInvoiced() && so.getWasInvoiced())) {
-                        		iterator.remove();
+                        if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
+                            iterator.remove();
                         }
                     }
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
@@ -190,9 +188,8 @@ public class ShowInvoiceAction extends DailyReportAction {
                     // remove suborders that are not valid sometime between dateFirst and dateLast
                     for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
                         Suborder so = iterator.next();
-                        if ((so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) ||
-                        	(showInvoiceForm.getIgnoreAlreadyInvoiced() && so.getWasInvoiced())) {
-                        		iterator.remove();
+                        if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
+                            iterator.remove();
                         }
                     }
                     Collections.sort(suborderList, new SubOrderComparator());
@@ -228,9 +225,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                 }
                 request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
                 request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
-                showInvoiceForm.setCustomername(customerOrder.getCustomer().getName());
                 request.getSession().setAttribute("customeraddress", customerOrder.getCustomer().getAddress());
-                showInvoiceForm.setCustomeraddress(customerOrder.getCustomer().getAddress());
                 GregorianCalendar gc = new GregorianCalendar();
                 gc.setTime(dateFirst);
                 request.getSession().setAttribute("dateMonth", monthMap.get(String.valueOf(gc.get(Calendar.MONTH))));
@@ -304,7 +299,6 @@ public class ShowInvoiceAction extends DailyReportAction {
             request.getSession().setAttribute("optionsuborderdescription", showInvoiceForm.getSuborderdescription());
             request.getSession().setAttribute("layerlimit", showInvoiceForm.getLayerlimit());
             request.getSession().setAttribute("customername", showInvoiceForm.getCustomername());
-            request.getSession().setAttribute("ignoreAlreadyInvoiced", showInvoiceForm.getIgnoreAlreadyInvoiced());
             String customeraddress = showInvoiceForm.getCustomeraddress();
             request.getSession().setAttribute("customeraddress", customeraddress);
             return mapping.findForward("success");
@@ -379,13 +373,13 @@ public class ShowInvoiceAction extends DailyReportAction {
                 request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
                 ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getHSSFFactory());
                 request.getSession().removeAttribute("overall");
-                return null;
+                return mapping.getInputForward();
             } else if (task.equals("exportNew")) {
                 MessageResources messageResources = getResources(request);
                 request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
                 ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getXSSFFactory());
                 request.getSession().removeAttribute("overall");
-                return null;
+                return mapping.getInputForward();
             }
         } else if (request.getParameter("task") != null) {
             // END
@@ -444,7 +438,6 @@ public class ShowInvoiceAction extends DailyReportAction {
             request.getSession().setAttribute("lastYear", showInvoiceForm.getUntilYear());
             request.getSession().removeAttribute("viewhelpers");
             showInvoiceForm.setShowOnlyValid(true);
-            showInvoiceForm.setIgnoreAlreadyInvoiced(false);
         }
         return mapping.findForward("success");
     }

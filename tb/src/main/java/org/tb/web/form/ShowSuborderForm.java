@@ -30,7 +30,6 @@ public class ShowSuborderForm extends ActionForm {
     private Boolean showActualHours = false;
     private Boolean noResetChoice;
     private Boolean fixedPrice;
-    private Boolean ignoreAlreadyInvoiced = false;
     
     /**
      * @return the showActualHours
@@ -136,15 +135,7 @@ public class ShowSuborderForm extends ActionForm {
         this.suborderOptionValue = suborderOptionValue;
     }
     
-	public Boolean getIgnoreAlreadyInvoiced() {
-		return ignoreAlreadyInvoiced;
-	}
-
-	public void setIgnoreAlreadyInvoiced(Boolean ignoreAlreadyInvoiced) {
-		this.ignoreAlreadyInvoiced = ignoreAlreadyInvoiced;
-	}
-
-	@Override
+    @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         filter = "";
         show = false;
@@ -153,7 +144,6 @@ public class ShowSuborderForm extends ActionForm {
         showActualHours = false;
         noResetChoice = false;
         fixedPrice = false;
-        ignoreAlreadyInvoiced = false;
     }
     
     @Override

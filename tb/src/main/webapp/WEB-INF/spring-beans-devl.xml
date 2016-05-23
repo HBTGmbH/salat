@@ -146,13 +146,11 @@
 	<!-- other classes -->
 		
 	<!-- Restful Webservices -->
-	<!--
 	<bean id="helloSalatWebservice" class="org.tb.restful.HelloSalatWebservice"></bean>
 	<bean id="authenticationService" class="org.tb.restful.AuthenticationService"></bean>
 	<bean id="subordersService" class="org.tb.restful.SubordersService"></bean>
 	<bean id="bookingsService" class="org.tb.restful.BookingsService"></bean>
 	<bean id="employeeOrdersService" class="org.tb.restful.EmployeeOrdersService"></bean>
-	-->
 	
 	<!-- Hibernate Konfiguration -->
 	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
@@ -192,14 +190,14 @@
 		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
 		<property name="url" value="jdbc:mysql://***REMOVED***:3306/salattest" />
 		<property name="connectionProperties" value="autoReconnect=true;characterEncoding=UTF8;zeroDateTimeBehavior=convertToNull;useUnicode=true" />
-
+		
 		<property name="username" value="salatTest" />
 	 	<property name="password" value="***REMOVED***" />
 	 	
-		<property name="validationQuery" value="SELECT 1" />
+	 	<property name="validationQuery" value="SELECT 1" />
 		<property name="testWhileIdle" value="true" />
 		<property name="testOnBorrow" value="true" />
-
+		 
 	</bean>
 
 </beans>

@@ -55,13 +55,15 @@ public class ShowSuborderAction extends LoginRequiredAction {
             HttpServletResponse response) {
         
         ShowSuborderForm suborderForm = (ShowSuborderForm)form;
-        List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
-        request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
-        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+        List<Customerorder> visibleCustomerOrders = customerorderDAO
+                .getVisibleCustomerorders();
+        request.getSession().setAttribute("visibleCustomerOrders",
+                visibleCustomerOrders);
+        Employee loginEmployee = (Employee)request.getSession().getAttribute(
+                "loginEmployee");
         
         String filter = null;
         Boolean show = null;
-        Boolean ignoreAlreadyInvoiced = null;
         Long customerOrderId = null;
         
         LOG.debug("suborderForm.getShowStructure()" + suborderForm.getShowstructure());
@@ -84,13 +86,12 @@ public class ShowSuborderAction extends LoginRequiredAction {
             show = suborderForm.getShow();
             request.getSession().setAttribute("suborderShow", show);
             
-            ignoreAlreadyInvoiced = suborderForm.getIgnoreAlreadyInvoiced();
-            request.getSession().setAttribute("ignoreAlreadyInvoiced", ignoreAlreadyInvoiced);
-            
             customerOrderId = suborderForm.getCustomerOrderId();
-            request.getSession().setAttribute("suborderCustomerOrderId", customerOrderId);
+            request.getSession().setAttribute("suborderCustomerOrderId",
+                    customerOrderId);
             
-            Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
+            Customerorder co = customerorderDAO
+                    .getCustomerorderById(suborderForm.getCustomerOrderId());
             LOG.debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
             request.getSession().setAttribute("currentOrder", co);
             if (customerOrderId == -1) {
@@ -100,29 +101,31 @@ public class ShowSuborderAction extends LoginRequiredAction {
             
         } else {
             if (request.getSession().getAttribute("suborderFilter") != null) {
-                filter = (String)request.getSession().getAttribute("suborderFilter");
+                filter = (String)request.getSession().getAttribute(
+                        "suborderFilter");
                 suborderForm.setFilter(filter);
             }
             if (request.getSession().getAttribute("suborderShow") != null) {
-                show = (Boolean)request.getSession().getAttribute("suborderShow");
+                show = (Boolean)request.getSession().getAttribute(
+                        "suborderShow");
                 suborderForm.setShow(show);
             }
-            if (request.getSession().getAttribute("ignoreAlreadyInvoiced") != null) {
-                ignoreAlreadyInvoiced = (Boolean)request.getSession().getAttribute("ignoreAlreadyInvoiced");
-                suborderForm.setIgnoreAlreadyInvoiced(ignoreAlreadyInvoiced);
-            }
             if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
-                customerOrderId = (Long)request.getSession().getAttribute("suborderCustomerOrderId");
+                customerOrderId = (Long)request.getSession().getAttribute(
+                        "suborderCustomerOrderId");
                 suborderForm.setCustomerOrderId(customerOrderId);
-                Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
+                Customerorder co = customerorderDAO
+                        .getCustomerorderById(suborderForm.getCustomerOrderId());
                 LOG.debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
                 request.getSession().setAttribute("currentOrder", co);
             } else {
-                request.getSession().setAttribute("suborderCustomerOrderId", new Long(-1));
+                request.getSession().setAttribute("suborderCustomerOrderId",
+                        new Long(-1));
                 suborderForm.setCustomerOrderId(customerOrderId);
             }
             if (request.getSession().getAttribute("showStructure") != null) {
-                Boolean showStructure = (Boolean)request.getSession().getAttribute("showStructure");
+                Boolean showStructure = (Boolean)request.getSession()
+                        .getAttribute("showStructure");
                 suborderForm.setShowstructure(showStructure);
             } else {
                 request.getSession().setAttribute("showStructure", false);
@@ -130,7 +133,8 @@ public class ShowSuborderAction extends LoginRequiredAction {
             }
         }
         
-        if (request.getParameter("task") != null && request.getParameter("task").equals("setflag")) {
+        if (request.getParameter("task") != null
+                && request.getParameter("task").equals("setflag")) {
             Long coID = suborderForm.getCustomerOrderId();
             
             if (coID != -1) {
@@ -153,7 +157,8 @@ public class ShowSuborderAction extends LoginRequiredAction {
             }
         }
         
-        if (request.getParameter("task") != null && request.getParameter("task").equals("multiplechange")) {
+        if (request.getParameter("task") != null
+                && request.getParameter("task").equals("multiplechange")) {
             ActionMessages errorMessages = validateFormData(request, suborderForm);
             if (errorMessages.size() == 0) {
                 String[] suborderIdArray = suborderForm.getSuborderIdArray();
@@ -184,17 +189,6 @@ public class ShowSuborderAction extends LoginRequiredAction {
                             suborderDAO.save(so, loginEmployee);
                         }
                     }
-                    if (suborderForm.getSuborderOption().equals("alterWasInvoiced")) {
-                    	Boolean wasInvoiced = textToBoolean(suborderForm.getSuborderOptionValue());
-                    	if(wasInvoiced != null) {
-	                        for (String soID : suborderIdArray) {
-	                            Suborder so = suborderDAO.getSuborderById(Long.parseLong(soID));
-	                            
-	                            so.setWasInvoiced(wasInvoiced);
-	                            suborderDAO.save(so, loginEmployee);
-	                        }
-                    	}
-                    }
                 }
             }
             suborderForm.setSuborderOption("");
@@ -206,32 +200,37 @@ public class ShowSuborderAction extends LoginRequiredAction {
         
         boolean showActualHours = suborderForm.getShowActualHours();
         request.getSession().setAttribute("showActualHours", showActualHours);
-
-        Boolean isShowHierachy = (Boolean) request.getSession().getAttribute("showStructure");
-        isShowHierachy = isShowHierachy != null && isShowHierachy;
         
         if (showActualHours) {
             /* show actual hours */
-            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, isShowHierachy ? null : filter, customerOrderId);
-            List<Suborder> suborderViewDecorators = new LinkedList<Suborder>();
+            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show,
+                    filter, customerOrderId);
+            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
             for (Suborder suborder : suborders) {
-                SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+                SuborderViewDecorator decorator = new SuborderViewDecorator(
+                        timereportDAO, suborder);
                 suborderViewDecorators.add(decorator);
             }
-            request.getSession().setAttribute("suborders", suborderViewDecorators);
+            request.getSession().setAttribute("suborders",
+                    suborderViewDecorators);
         } else {
-        	List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, isShowHierachy ? null : filter, customerOrderId);
-            request.getSession().setAttribute("suborders", suborders);
+            request.getSession().setAttribute(
+                    "suborders",
+                    suborderDAO.getSubordersByFilters(show, filter,
+                            customerOrderId));
         }
-
+        
         // check if loginEmployee has responsibility for some orders
-        List<Customerorder> orders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+        List<Customerorder> orders = customerorderDAO
+                .getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee
+                        .getId());
         boolean employeeIsResponsible = false;
         
         if (orders != null && orders.size() > 0) {
             employeeIsResponsible = true;
         }
-        request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
+        request.getSession().setAttribute("employeeIsResponsible",
+                employeeIsResponsible);
         
         // check if there are visible customer orders
         orders = customerorderDAO.getVisibleCustomerorders();
@@ -239,7 +238,8 @@ public class ShowSuborderAction extends LoginRequiredAction {
         if (orders != null && !orders.isEmpty()) {
             visibleOrdersPresent = true;
         }
-        request.getSession().setAttribute("visibleOrdersPresent", visibleOrdersPresent);
+        request.getSession().setAttribute("visibleOrdersPresent",
+                visibleOrdersPresent);
         
         if (request.getParameter("task") != null) {
             if (request.getParameter("task").equalsIgnoreCase("back")) {
@@ -255,15 +255,6 @@ public class ShowSuborderAction extends LoginRequiredAction {
         }
     }
     
-    private Boolean textToBoolean(String text) {
-    	String prepared = text.trim().toLowerCase();
-    	if("1".equals(prepared) || prepared.startsWith("j") || prepared.startsWith("y") || prepared.startsWith("t")) return true;
-    	
-    	if("0".equals(prepared) || prepared.startsWith("n") || prepared.startsWith("f")) return false;
-    	
-    	return null;
-    }
-    
     private ActionMessages validateFormData(HttpServletRequest request, ShowSuborderForm suborderForm) {
         ActionMessages errors = getErrors(request);
         if (errors == null) {
@@ -272,22 +263,27 @@ public class ShowSuborderAction extends LoginRequiredAction {
         
         if (suborderForm.getSuborderOption().equals("altersubordercustomer")) {
             if (suborderForm.getSuborderOptionValue().length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
-                errors.add("suborderOption", new ActionMessage("form.suborder.error.suborder_customer.toolong"));
+                errors.add("suborderOption", new ActionMessage(
+                        "form.suborder.error.suborder_customer.toolong"));
             }
         }
         
         if (suborderForm.getSuborderOption().equals("alterhourlyrate")) {
             if (suborderForm.getSuborderOptionValue().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
-                errors.add("suborderOption", new ActionMessage("form.suborder.error.currency.toolong"));
+                errors.add("suborderOption", new ActionMessage(
+                        "form.suborder.error.currency.toolong"));
             }
             if (suborderForm.getSuborderOptionValue().length() <= 0) {
-                errors.add("suborderOption", new ActionMessage("form.suborder.error.currency.required"));
+                errors.add("suborderOption", new ActionMessage(
+                        "form.suborder.error.currency.required"));
             }
             
             // check hourly rate format
-            if (!GenericValidator.isDouble(suborderForm.getSuborderOptionValue().toString()) 
-            		|| !GenericValidator.isInRange(Double.parseDouble(suborderForm.getSuborderOptionValue()), 0.0, GlobalConstants.MAX_HOURLY_RATE)) {
-                errors.add("suborderOption", new ActionMessage("form.suborder.error.hourlyrate.wrongformat"));
+            if (!GenericValidator.isDouble(suborderForm.getSuborderOptionValue().toString())
+                    || !GenericValidator.isInRange(Double.parseDouble(suborderForm.getSuborderOptionValue()), 0.0,
+                            GlobalConstants.MAX_HOURLY_RATE)) {
+                errors.add("suborderOption", new ActionMessage(
+                        "form.suborder.error.hourlyrate.wrongformat"));
             }
         }
         
