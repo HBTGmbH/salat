@@ -225,21 +225,11 @@
 					<br>
 					<%
 						String browser = request.getHeader("User-Agent");
-					%>
-					<%
 						org.apache.struts.util.PropertyMessageResources myMessages = (org.apache.struts.util.PropertyMessageResources) request
 												.getAttribute("org.apache.struts.action.MESSAGE");
-					%>
-					<%
 						String key = "main.employeeorder.openend.text";
-					%>
-					<%
-						java.util.Locale myLocale = (java.util.Locale) session
-												.getAttribute("org.apache.struts.action.LOCALE");
-					%>
-					<%
-						String message = (String) myMessages.getMessage(
-												myLocale, key);
+						java.util.Locale myLocale = (java.util.Locale) session.getAttribute("org.apache.struts.action.LOCALE");
+						String message = (String) myMessages.getMessage(myLocale, key);
 					%>
 
 					<tr>

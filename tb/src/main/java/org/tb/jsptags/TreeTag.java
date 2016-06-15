@@ -2,6 +2,8 @@ package org.tb.jsptags;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -58,7 +60,7 @@ public class TreeTag extends TagSupport {
     // The string represents the text for open dates.
     private String endlessDate = "-";
     // Random number needed for imag-label-generating.
-    private static Random rand = null;
+    private static Random rand = new Random();
     
     // ------------------------------------------------
     // All set-methods for communicating with the jsp!
@@ -107,30 +109,38 @@ public class TreeTag extends TagSupport {
     public int doStartTag(JspWriter out) {
         try {
             printScript(out);
-            if (rand == null)
-                rand = new Random();
             String name = Integer.toString(rand.nextInt()); 
             
             //-----------------------------------------------
-            //		prepaire entries which are no parents (leafs)
+            //		prepare entries which are no parents (leafs)
             //-----------------------------------------------
             this.internalNodesIDs = new ArrayList<Long>();
             if(this.subProjects != null) {
-	            for (int i=0; i < this.subProjects.size(); i++){
-	            	if (this.subProjects.get(i).getParentorder()!=null)
-	            		this.internalNodesIDs.add(new Long(this.subProjects.get(i).getParentorder().getId()));
+	            for (Suborder suborder : this.subProjects) {
+	            	if (suborder.getParentorder() != null) {
+	            		this.internalNodesIDs.add(new Long(suborder.getParentorder().getId()));
+	            	}
 	            }
             }
             //------------------------------------------------
             // 		print the root of the tree view
             //------------------------------------------------
             out.println("<TABLE BORDER=0 cellspacing=\"0\" cellpadding=\"0\"><tr>");
- 			out.println( "<td class=\"noBborderStyle\" nowrap width=\"30\" align=\"left\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" " );
-			out.println( " onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '"+ GlobalConstants.OPENICON + "');\"></td>");
-			if (onlySuborders != true 
-					&& this.changeFunctionString!=null 
-					&& !this.changeFunctionString.equals("")){
-				String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, mainProject.getId() + "");
+ 			out.print("<td class=\"noBborderStyle\" nowrap width=\"30\" align=\"left\"> <img id=\"img");
+ 			out.print(name);
+ 			out.print("\" src=\"");
+ 			out.print(GlobalConstants.ICONPATH);
+ 			out.print(GlobalConstants.CLOSEICON);
+ 			out.println("\" border=\"0\" " );
+			out.print(" onClick=\"nodeClick(event, this, '");
+			out.print(name);
+			out.print("', '");
+			out.print(GlobalConstants.CLOSEICON);
+			out.print("', '");
+			out.print(GlobalConstants.OPENICON);
+			out.println("');\"></td>");
+			if (!onlySuborders 	&& this.changeFunctionString != null && !this.changeFunctionString.isEmpty()) {
+				String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, Long.toString(mainProject.getId()));
 				out.print( "<td class=\"noBborderStyle\" nowrap align=\"left\"><b>" + mainProject.getSignAndDescription() + "</b></td>");
 				out.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" " );
 				out.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
@@ -159,8 +169,28 @@ public class TreeTag extends TagSupport {
      */
     public int doStartTag() {
         JspWriter out = pageContext.getOut();
-        return (doStartTag(out));
+        return doStartTag(out);
     }
+    
+    /**
+     * SALAT-614
+     * for a filtered list of suborders, produces one with the parent suborders included
+     * 
+     * @param input
+     * @return
+     */
+    private Collection<Suborder> fillFilteredHierarchy(Collection<Suborder> input) {
+    	Collection<Suborder> result = new LinkedHashSet<Suborder>();
+    	for(Suborder suborder : input) {
+    		Suborder parent = suborder;
+    		while(parent != null) {
+    			result.add(parent);
+    			parent = parent.getParentorder();
+    		}
+    	}
+    	return result;
+    }
+    
 	/**
 	 *  This methode generates the treestructure of the object recursivly.
 	 *  Normaly this methode should be called with a toplevel order ID for the parentID.
@@ -176,47 +206,45 @@ public class TreeTag extends TagSupport {
     private void generateTreeRecursivly(long parentID, int lastLevel, JspWriter outPut, boolean enabled) {
 		int thisLevel = lastLevel + 1;  // thisLevel is the level for all children
 		
-    	for (int i=0;i<subProjects.size();i++){
-			Suborder tempOrder = subProjects.get(i);
+    	for (Suborder suborder : fillFilteredHierarchy(subProjects)) {
 			// testing, if there are any children for this node:
-			if ((tempOrder.getParentorder() != null 
-					&& tempOrder.getParentorder().getId() == parentID)  // -->  This case is a leaf which has a suborder as parent
-					|| (tempOrder.getParentorder() == null
-							&& tempOrder.getCustomerorder().getId() == parentID  // -->  This case is leaf which has the main project as parent
-							&& thisLevel == 1)){
+			if ((suborder.getParentorder() != null 
+					&& suborder.getParentorder().getId() == parentID)  // -->  This case is a leaf which has a suborder as parent
+					|| (suborder.getParentorder() == null
+							&& suborder.getCustomerorder().getId() == parentID  // -->  This case is leaf which has the main project as parent
+							&& thisLevel == 1)) {
 				// some things must be prepaired
-				String colorForInvalidSubs = "";
+				String colorForInvalidSubs = suborder.getCurrentlyValid() ? "" : " style=\"color:gray\" ";
 				//--------------------------------------------------------------------------------
 				//
 				//     This is the part which must changed to realize different views for valid 
 				//     and deprecated suborders!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 				//
 				//--------------------------------------------------------------------------------
-				if (!(tempOrder.getCurrentlyValid()))
-					colorForInvalidSubs = " style=\"color:gray\" ";
-				boolean tempBoolean = true;
-				if (enabled == false || this.currentSuborderID == tempOrder.getId())
-						tempBoolean = false; 
-//				TbLogger.debug(TreeTag.class.toString(),"Logging for enabled:  " + enabled + " "+this.currentSuborderID +" " + " "+   tempOrder.getId());
+				boolean editable = enabled && this.currentSuborderID != suborder.getId();
 				String name = Integer.toString(rand.nextInt());  
-				String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");
-				String tempDeleteFunctionString = deleteFunctionString.replaceFirst(this.defaultString, tempOrder.getId() + "");
+				String workingChangeFunctionStr = changeFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));
+				String workingDeleteFunctionStr = deleteFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));
 				
 				StringBuffer sb = new StringBuffer();
-				sb.append(tempOrder.getSignAndDescription() + "; [");
-				if (tempOrder.getFromDate()!=null)
-					sb.append(tempOrder.getFromDate() + ", ");
-				else
-					sb.append(" " + endlessDate + ", ");
-				if (tempOrder.getUntilDate()!=null)
-					sb.append(tempOrder.getUntilDate() + "]; ");
-				else
-					sb.append(" " + endlessDate + "]; ");
-				sb.append(tempOrder.getHourly_rate() + " " + tempOrder.getCurrency()  + "; ");
-				if (tempOrder.getDebithours()!=null)
-					sb.append(tempOrder.getDebithours() );
-				else
+				sb.append(suborder.getSignAndDescription()).append("; [");
+				if (suborder.getFromDate() != null) {
+					sb.append(suborder.getFromDate());
+				} else {
+					sb.append(" ").append(endlessDate);
+				}
+				sb.append(", ");
+				if (suborder.getUntilDate() != null) {
+					sb.append(suborder.getUntilDate());
+				} else {
+					sb.append(" ").append(endlessDate);
+				}
+				sb.append("]; ").append(suborder.getHourly_rate()).append(" ").append(suborder.getCurrency()).append("; ");
+				if (suborder.getDebithours() != null) {
+					sb.append(suborder.getDebithours());
+				} else {
 					sb.append("-" );
+				}
 				String buttonText = sb.toString();
 				
 				// prepaire all nodes for the way from root to actual subproject			
@@ -224,34 +252,33 @@ public class TreeTag extends TagSupport {
 					outPut.println("<TABLE BORDER=0 cellspacing=\"0\" cellpadding=\"0\"><tr>");
 					outPut.println("<td class=\"noBborderStyle\" nowrap width=\"" + (30+ 37 * lastLevel) + "\">&nbsp;</td>" );
 					//check, if the (+/-)-Sign must be printed or if this node is a leaf node
-					if (this.internalNodesIDs.contains(new Long(tempOrder.getId()))){
+					if (this.internalNodesIDs.contains(new Long(suborder.getId()))){
 						outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" " );
 						outPut.println("onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '"+ GlobalConstants.OPENICON + "');\"></td>");
 					} else {
 						outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\">&nbsp;</td>" );
 					}
 		  			outPut.println("<td class=\"noBborderStyle\"  " + colorForInvalidSubs + " nowrap align=\"left\"><b>" +  buttonText + "</b></td>");
-					if (tempChangeFunctionString.length() > 0
-							&& tempBoolean
-							&& tempDeleteFunctionString.length() >0 ){
+					if (workingChangeFunctionStr.length() > 0
+							&& editable
+							&& workingDeleteFunctionStr.length() >0 ){
 						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.EDITICON + "\" border=\"0\" " );
-						outPut.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
-					} else if (tempChangeFunctionString.length() > 0
-							&& tempBoolean
-							&& tempDeleteFunctionString.length() == 0 ){
+						outPut.println(" onclick=\"" + workingChangeFunctionStr + "\";></td>");
+					} else if (workingChangeFunctionStr.length() > 0
+							&& editable
+							&& workingDeleteFunctionStr.length() == 0 ){
 						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" " );
-						outPut.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
+						outPut.println(" onclick=\"" + workingChangeFunctionStr + "\";></td>");
 					} else{
 						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <img id=\"img1\" height=\"12px\" width=\"12px\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.NOTALLOWED + "\" border=\"0\" </td>");
 					}
-					if (tempDeleteFunctionString.length() >0 
-							&& tempBoolean){	
+					if (workingDeleteFunctionStr.length() > 0 && editable){	
 						outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.DELETEICON + "\" border=\"0\" " );
-						outPut.println(" onclick=\"" + tempDeleteFunctionString + "\";></td>");
+						outPut.println(" onclick=\"" + workingDeleteFunctionStr + "\";></td>");
 					}
 		  			outPut.println("\n</tr></TABLE>\n" );  
 		  			outPut.println("<span id=\"span" + name + "\" class=\"clsHide\">\n");
-		  			generateTreeRecursivly(tempOrder.getId(), thisLevel, outPut, tempBoolean );
+		  			generateTreeRecursivly(suborder.getId(), thisLevel, outPut, editable );
 		  			outPut.println("</span>");
 				} catch (IOException ioe){	
 					LOG.error("Error in Tree Tag!");
@@ -278,7 +305,7 @@ public class TreeTag extends TagSupport {
 	 */
 	public int doEndTag() {
         JspWriter out = pageContext.getOut();
-        return (doEndTag(out));
+        return doEndTag(out);
     }
 
     /**

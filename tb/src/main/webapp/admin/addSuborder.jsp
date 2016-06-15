@@ -79,7 +79,7 @@
 	<table class="center backgroundcolor">
 		<colgroup>
 			<col width="195" align="left"/>
-			<col width="750" align="left"/>
+			<col width="auto" align="left"/>
 		</colgroup>
 		<!-- select customerorder -->
 		<tr>
