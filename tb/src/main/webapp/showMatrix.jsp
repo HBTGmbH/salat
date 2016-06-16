@@ -40,12 +40,10 @@
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
-	<span style="font-size: 14pt; font-weight: bold;"><br> <bean:message
-			key="main.general.mainmenu.matrix.text" /><br> </span>
+		<span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.general.mainmenu.matrix.text" /><br></span>
 	<br>
 	<html:form action="/ShowMatrix">
 		<table class="center backgroundcolor">
-
 			<!-- select employee -->
 			<tr>
 				<td align="left" class="noBborderStyle">
@@ -297,11 +295,8 @@
 		</tr>
 
 		<tr>
-			<td class="matrix bold">
-				<bean:message key="main.matrixoverview.table.order" />
-			</td>
-			<td class="matrix bold"><bean:message
-					key="main.matrixoverview.table.orderdescription" /></td>
+			<td class="matrix bold"><bean:message key="main.matrixoverview.table.order" /></td>
+			<td class="matrix bold"><bean:message key="main.matrixoverview.table.orderdescription" /></td>
 
 			<!-- <td>AuftragsBezeichnung</td> -->
 
@@ -342,19 +337,13 @@
 				<%-- ?task=refreshTimereports&day=${dayhourcount.dayString}&month=${currentMonth}&year=${currentYear} --%>
 				</td>
 			</c:forEach>
-			<td class="matrix bold"><bean:message
-					key="main.matrixoverview.table.sum.text" /></td>
+			<td class="matrix bold"><bean:message key="main.matrixoverview.table.sum.text" /></td>
 		</tr>
 
 		<c:forEach var="mergedreport" items="${mergedreports}">
 			<tr class="matrix">
-				<td class="matrix"><c:out
-						value="${mergedreport.customOrder.sign}"></c:out><br> <c:out
-						value="${mergedreport.subOrder.sign}" /></td>
-				<td class="matrix"><c:out
-						value="${mergedreport.customOrder.shortdescription}"></c:out><br>
-					<c:out value="${mergedreport.subOrder.shortdescription}" /></td>
-				</td>
+				<td class="matrix"><c:out value="${mergedreport.customOrder.sign}"></c:out><br><c:out value="${mergedreport.subOrder.sign}" /></td>
+				<td class="matrix"><c:out value="${mergedreport.customOrder.shortdescription}"></c:out><br><c:out value="${mergedreport.subOrder.shortdescription}" /></td>
 				<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
 					<c:if test="${bookingday.satSun==true}">
 						<c:if test="${bookingday.publicHoliday==true}">
@@ -385,7 +374,7 @@
 						<c:when
 							test="${(mergedreport.subOrder.sign eq overtimeCompensation and (not empty bookingday.taskdescription) 
 						and bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-							<c:out value="0.0"></c:out>
+							<c:out value="0:00"></c:out>
 						</c:when>
 						<c:otherwise>
 							<c:if
@@ -399,17 +388,13 @@
 					</c:choose>
 					</td>
 				</c:forEach>
-				<td class="matrix" align="right"><c:out
-						value="${mergedreport.roundSum}"></c:out></td>
+				<td class="matrix" align="right"><c:out	value="${mergedreport.roundSum}"></c:out></td>
 			</tr>
 		</c:forEach>
 
 		<tr class="matrix">
-			<td colspan="2" class="matrix bold"
-				style="border-top: 2px black solid;" align="right"><bean:message
-					key="main.matrixoverview.table.overall.text" /></td>
+			<td colspan="2" class="matrix bold"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.overall.text" /></td>
 			<c:forEach var="dayhourcount" items="${dayhourcounts}">
-
 				<c:if test="${dayhourcount.satSun==true}">
 					<c:if test="${dayhourcount.publicHoliday==true}">
 						<td class="matrix"
@@ -452,32 +437,23 @@
 				</c:if>
 
 			</c:forEach>
-			<td class="matrix bold" style="border-top: 2px black solid;"
-				align="right"><c:out value="${dayhourssum}"></c:out></td>
+			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${dayhourssum}"></c:out></td>
 		</tr>
 
 		<tr class="matrix">
 			<td class="matrix" colspan="${daysofmonth+3}">
 				<table>
 					<tr class="matrix">
-						<td class="matrix" style="border-style: none;"><bean:message
-								key="main.matrixoverview.headline.actualtime.text" /></td>
-						<td class="matrix underline" style="border-style: none;"><c:out
-								value="${dayhourssum}"></c:out></td>
+						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.actualtime.text" /></td>
+						<td class="matrix underline" style="border-style: none;"><c:out	value="${dayhourssum}"></c:out></td>
 					</tr>
 					<tr class="matrix">
-						<td class="matrix" style="border-style: none;"><bean:message
-								key="main.matrixoverview.headline.targettime.text" /></td>
-						<td class="matrix underline" style="border-style: none;"><c:out
-								value="${dayhourstarget}" /></td>
+						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
+						<td class="matrix underline" style="border-style: none;"><c:out	value="${dayhourstarget}" /></td>
 					</tr>
 					<tr class="matrix">
-						<td class="matrix" style="border-style: none;"><bean:message
-								key="main.matrixoverview.headline.difference.text" /></td>
-						<td class="matrix underline"
-							style="border-style:none;<c:if test="${dayhoursdiff < 0}">color:#FF0000;</c:if>">
-							<c:out value="${dayhoursdiff}" />
-						</td>
+						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
+						<td class="matrix underline" style="border-style:none;<c:if test="${dayhoursdiff < 0}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiff}" /></td>
 					</tr>
 				</table>
 			</td>

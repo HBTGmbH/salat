@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;
@@ -24,7 +23,11 @@ import org.tb.bdom.Suborder;
  * @since 04.12.2006
  */
 public class MergedReport implements Comparable<MergedReport> {
-
+	private Suborder subOrder;
+	private Customerorder customOrder;
+	private double sum;
+	private ArrayList<BookingDay> bookingDay = new ArrayList<BookingDay>();
+	
 	/**
      * @param subOrderSign
      * * @param customOrderSign
@@ -34,16 +37,10 @@ public class MergedReport implements Comparable<MergedReport> {
      * @since 04.12.2006
      */
     public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, Date date, long durationHours, long durationMinutes) {
-        super();
         this.subOrder = subOrder;
         this.customOrder = customOrder;
         addBookingDay(date, durationHours, durationMinutes, taskdescription);
     }
-
-    private Suborder subOrder;
-    private Customerorder customOrder;
-    private double sum;
-    private ArrayList<BookingDay> bookingDay = new ArrayList<BookingDay>();
 
     public int getCountOfDays() {
         return bookingDay.size();
@@ -54,22 +51,13 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     public void addBookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
-        /*BookingDay tempBookingDay = null;
-         for(Iterator iter = bookingDay.iterator();iter.hasNext();){
-         tempBookingDay = (BookingDay)iter.next();
-         if(tempBookingDay.getDate().equals(date)){
-         bookingDay.set(bookingDay.indexOf(tempBookingDay), new BookingDay(date, durationHours, durationMinutes));
-         }
-         }*/
         bookingDay.add(new BookingDay(date, durationHours, durationMinutes, taskdescription));
     }
 
     public void setSum() {
-        BookingDay tempBookingDay;
         double tempMinutes = 0;
-        for (Iterator<BookingDay> iter = bookingDay.iterator(); iter.hasNext();) {
-            tempBookingDay = iter.next();
-            tempMinutes = tempMinutes + ((tempBookingDay.getDurationHours() * 60) + tempBookingDay.getDurationMinutes());
+        for (BookingDay tempBookingDay : bookingDay) {
+            tempMinutes += tempBookingDay.getDurationHours() * 60 + tempBookingDay.getDurationMinutes();
         }
         sum = (tempMinutes / 60);
     }
@@ -81,14 +69,12 @@ public class MergedReport implements Comparable<MergedReport> {
     public void fillBookingDaysWithNull(Date dateFirst, Date dateLast) {
         Calendar gc = GregorianCalendar.getInstance();
         gc.setTime(dateFirst);
-        BookingDay tempBookingDay;
-        boolean dateAvailable;
         while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
-            dateAvailable = false;
-            for (Iterator<BookingDay> iter = bookingDay.iterator(); iter.hasNext();) {
-                tempBookingDay = iter.next();
+            boolean dateAvailable = false;
+            for (BookingDay tempBookingDay : bookingDay) {
                 if (tempBookingDay.getDate().equals(gc.getTime())) {
                     dateAvailable = true;
+                    break;
                 }
             }
             if (!dateAvailable) {
@@ -104,13 +90,20 @@ public class MergedReport implements Comparable<MergedReport> {
 
     @Override
 	public String toString() {
-        String test = "";
-        BookingDay temp;
-        for (Iterator<BookingDay> iter = bookingDay.iterator(); iter.hasNext();) {
-            temp = iter.next();
-            test = test + temp.getDate() + "-" + temp.getDurationHours() + "/" + temp.getDurationMinutes() + " // ";
+    	StringBuilder sb = new StringBuilder();
+    	sb.append("<br>")
+	    	.append(customOrder.getSign())
+	    	.append(subOrder.getSign())
+	    	.append(" - ");
+        for (BookingDay temp : bookingDay) {
+            sb.append(temp.getDate())
+            	.append("-")
+            	.append(temp.getDurationHours())
+            	.append("/")
+            	.append(temp.getDurationMinutes())
+            	.append(" // ");
         }
-        return "<br>" + customOrder.getSign() + subOrder.getSign() + " - " + test;
+        return sb.toString(); 
     }
 
     public int compareTo(MergedReport o) {
@@ -118,9 +111,8 @@ public class MergedReport implements Comparable<MergedReport> {
     }
     
     public Double getRoundSum(){
-        Double duration=(sum+0.05)*10;
-        int temp = duration.intValue();
-        return temp/10.0;
+    	long duration = (long)(sum * 100);
+        return (double)duration / 100.0;
     }
 
     public Customerorder getCustomOrder() {

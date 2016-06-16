@@ -17,7 +17,14 @@ import java.util.Date;
  * @since 04.12.2006
  */
 public class BookingDay implements Comparable<BookingDay> {
-    /**
+	private boolean satSun;
+	private boolean publicHoliday;
+	private Date date;
+	private long durationHours;
+	private long durationMinutes;
+	private String taskdescription;
+
+	/**
      * @param date
      * @param durationHours
      * @param durationMinutes
@@ -25,7 +32,6 @@ public class BookingDay implements Comparable<BookingDay> {
      * @since 04.12.2006
      */
     public BookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
-        super();
         this.date = date;
         this.durationHours = durationHours;
         this.durationMinutes = durationMinutes;
@@ -33,13 +39,6 @@ public class BookingDay implements Comparable<BookingDay> {
         this.publicHoliday = false;
         this.taskdescription = taskdescription;
     }
-
-    private boolean satSun;
-    private boolean publicHoliday;
-    private Date date;
-    private long durationHours;
-    private long durationMinutes;
-    private String taskdescription;
 
     public long getDurationHours() {
         return durationHours;
@@ -66,12 +65,8 @@ public class BookingDay implements Comparable<BookingDay> {
     }
 
     public int compareTo(BookingDay o) {
-        if (o != null) {
-            return this.date.compareTo(o.date);
-        } else {
-            throw new NullPointerException();
-        }
-
+        if (o == null) throw new NullPointerException();
+        return this.date.compareTo(o.date);
     }
 
     public boolean getSatSun() {
@@ -83,10 +78,8 @@ public class BookingDay implements Comparable<BookingDay> {
     }
 
     public double getRoundHours() {
-        Double duration = (((durationHours * 60) + (durationMinutes)) / 60.0);
-        duration = (duration + 0.05) * 10;
-        int temp = duration.intValue();
-        return temp / 10.0;
+    	long duration = (durationHours * 60 + durationMinutes) * 100 / 60;
+    	return (double)duration / 100;
     }
 
     public boolean getPublicHoliday() {

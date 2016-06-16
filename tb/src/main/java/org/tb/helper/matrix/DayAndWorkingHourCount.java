@@ -17,6 +17,13 @@ import java.util.Date;
  * @since 29.12.2006
  */
 public class DayAndWorkingHourCount {
+	private int day;
+	private Date date;
+	private double workingHour;
+	private boolean publicHoliday;
+	private boolean satSun;
+	private String weekDay;
+	private String publicHolidayName;
     
     /**
      * @param day
@@ -34,14 +41,6 @@ public class DayAndWorkingHourCount {
         this.weekDay = null;
         this.publicHolidayName = null;
     }
-    
-    private int day;
-    private Date date;
-    private double workingHour;
-    private boolean publicHoliday;
-    private boolean satSun;
-    private String weekDay;
-    private String publicHolidayName;
     
     public boolean getSatSun() {
         return satSun;
@@ -68,17 +67,12 @@ public class DayAndWorkingHourCount {
     }
     
     public double getRoundWorkingHour() {
-        Double duration = (workingHour + 0.05) * 10;
-        int temp = duration.intValue();
-        return temp / 10.0;
+    	long duration = (long) (workingHour * 100);
+    	return (double)duration / 100.0;
     }
     
     public String getDayString() {
-        String dayString = "";
-        if (day < 10) {
-            dayString += "0";
-        }
-        dayString = dayString + day;
+        String dayString = day < 10 ? "0" + day : Integer.toString(day);
         return dayString;
     }
     
