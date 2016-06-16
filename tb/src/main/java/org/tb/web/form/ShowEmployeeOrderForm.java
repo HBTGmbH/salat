@@ -17,18 +17,13 @@ import org.tb.bdom.Employeecontract;
  *
  */
 public class ShowEmployeeOrderForm extends ActionForm {
-
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L; // -6415687265295197319L;
+
 	private long employeeContractId;
 	private long orderId;
 	private long suborderId;
 	private String filter;
 	private Boolean show;
-	
 	private Boolean showActualHours = false;
 	
 	
@@ -46,8 +41,6 @@ public class ShowEmployeeOrderForm extends ActionForm {
 		this.employeeContractId = employeeContractId;
 	}
 	
-	
-
 	/**
 	 * @return the orderId
 	 */
@@ -104,6 +97,14 @@ public class ShowEmployeeOrderForm extends ActionForm {
 	public void setShowActualHours(Boolean showActualHours) {
 		this.showActualHours = showActualHours;
 	}
+	
+	public long getSuborderId() {
+		return suborderId;
+	}
+	
+	public void setSuborderId(long subOrderId) {
+		this.suborderId = subOrderId;
+	}
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -122,9 +123,7 @@ public class ShowEmployeeOrderForm extends ActionForm {
 		
 		filter = "";
 		show = false;
-		showActualHours = false;
-		
-		
+//		showActualHours = false;
 	}
 
 	@Override
@@ -134,14 +133,4 @@ public class ShowEmployeeOrderForm extends ActionForm {
 		// actually, no checks here
 		return errors;
 	}
-
-	public long getSuborderId() {
-		return suborderId;
-	}
-
-	public void setSuborderId(long subOrderId) {
-		this.suborderId = subOrderId;
-	}
-	
-
 }

@@ -42,23 +42,17 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 
 	@Override
 	public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
-		if ((GenericValidator.isBlankOrNull(request.getParameter("eoId"))) ||
-				(!GenericValidator.isLong(request.getParameter("eoId")))) 
-					return mapping.getInputForward();
+		if (!GenericValidator.isLong(request.getParameter("eoId"))) return mapping.getInputForward();
 		
-		ActionMessages errors = new ActionMessages();
 		long eoId = Long.parseLong(request.getParameter("eoId"));
 		Employeeorder eo = employeeorderDAO.getEmployeeorderById(eoId);
-		if (eo == null) 
-			return mapping.getInputForward();
+		if (eo == null) return mapping.getInputForward();
 		
 		boolean deleted = employeeorderDAO.deleteEmployeeorderById(eoId);	
-		
+		ActionMessages errors = new ActionMessages();
 		if (!deleted) {
 			errors.add(null, new ActionMessage("form.employeeorder.error.hasstatusreports"));	
 		}
-		
 		saveErrors(request, errors);
 		
 		// create form with necessary values
@@ -72,6 +66,10 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
 		Long orderId = (Long)request.getSession().getAttribute("currentOrderId");
 		employeeOrderForm.setOrderId(orderId);
 		
+		if(form instanceof ShowEmployeeOrderForm) {
+			ShowEmployeeOrderForm oldEmployeeOrderForm = (ShowEmployeeOrderForm) form;
+			employeeOrderForm.setShowActualHours(oldEmployeeOrderForm.getShowActualHours());
+		}
 		
 		refreshEmployeeOrders(request, employeeOrderForm, employeeorderDAO, employeecontractDAO, timereportDAO);	
 				

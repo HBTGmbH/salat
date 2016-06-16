@@ -334,7 +334,7 @@
 
 		<action path="/DeleteEmployeeorder"
 			input="/admin/showEmployeeOrder.jsp" 
-			name="addEmployeeOrderForm">
+			name="showEmployeeOrderForm">
 			<forward name="success" path="/admin/showEmployeeOrder.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
