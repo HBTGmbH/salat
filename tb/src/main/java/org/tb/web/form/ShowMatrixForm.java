@@ -21,10 +21,6 @@ import org.apache.struts.action.ActionMapping;
  * @since 29.11.2006
  */
 public class ShowMatrixForm extends ActionForm {
-
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L; // -5141807789236654602L;
 	private String fromDay;
     private String untilDay;
@@ -32,7 +28,6 @@ public class ShowMatrixForm extends ActionForm {
     private String untilMonth;
     private String fromYear;
     private String untilYear;
-//    private long employeeId;
     private Long employeeContractId;
 
     private String order;
@@ -41,19 +36,8 @@ public class ShowMatrixForm extends ActionForm {
     private String matrixview;
     private long orderId;
     
-    private boolean invoice;
-
-    
-    
-
-
-//	public long getEmployeeId() {
-//        return employeeId;
-//    }
-//
-//    public void setEmployeeId(long employeeId) {
-//        this.employeeId = employeeId;
-//    }
+    private Boolean invoice;
+    private Boolean nonInvoice;
 
     public String getFromDay() {
         return fromDay;
@@ -154,6 +138,7 @@ public class ShowMatrixForm extends ActionForm {
         // TODO Auto-generated method stub
         super.reset(arg0, arg1);
         invoice = false;
+        nonInvoice = false;
     }
 
     @Override
@@ -170,6 +155,13 @@ public class ShowMatrixForm extends ActionForm {
 		this.invoice = invoice;
 	}
 
+	public boolean isNonInvoice() {
+		return nonInvoice;
+	}
+
+	public void setNonInvoice(boolean nonInvoice) {
+		this.nonInvoice = nonInvoice;
+	}
 }
 
 /*

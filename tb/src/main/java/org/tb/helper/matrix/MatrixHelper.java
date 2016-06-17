@@ -92,7 +92,7 @@ public class MatrixHelper {
      * @author cb
      * @since 08.02.2007
      */
-    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId, boolean invoice) {
+    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
         Employeecontract employeecontract = employeeContractId != -1 ? ecDAO.getEmployeeContractById(employeeContractId) : null;
         Date validFrom = dateFirst;
         Date validUntil = dateLast;
@@ -101,10 +101,15 @@ public class MatrixHelper {
         	if(employeecontract.getValidUntil() != null && dateLast.after(employeecontract.getValidUntil())) validUntil = employeecontract.getValidUntil();
         }
         
-        List<Timereport> timeReportList = queryTimereports(dateFirst, dateLast, employeeContractId, method,	customerOrderId);
-        
-        //filter billable orders if necessary
-        if (invoice) filterInvoiceable(timeReportList);
+        List<Timereport> timeReportList;
+        if(invoiceable || nonInvoiceable) {
+	        timeReportList = queryTimereports(dateFirst, dateLast, employeeContractId, method,	customerOrderId);
+	        
+	        //filter billable orders if necessary
+	        filterInvoiceable(timeReportList, invoiceable, nonInvoiceable);
+        } else {
+        	timeReportList = new ArrayList<Timereport>();
+        }
         
         List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
 		//filling a list with new or merged 'mergedreports'
@@ -316,10 +321,13 @@ public class MatrixHelper {
 		mergedReportList.add(new MergedReport(timeReport.getSuborder().getCustomerorder(), timeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
 	}
 
-	private void filterInvoiceable(List<Timereport> timeReportList) {
+	private void filterInvoiceable(List<Timereport> timeReportList, boolean invoiceable, boolean nonInvoiceable) {
+		if(invoiceable && nonInvoiceable) return;
+		
 		ArrayList<Timereport> tempTimeReportList = new ArrayList<Timereport>();
 		for (Timereport timeReport : timeReportList) {
-		    if (timeReport.getSuborder().getInvoice() == 'Y') {
+			boolean invoice = timeReport.getSuborder().getInvoice() == 'Y';
+		    if ((invoiceable && invoice) || (nonInvoiceable && !invoice)) {
 		        tempTimeReportList.add(timeReport);
 		    }
 		}
@@ -385,6 +393,8 @@ public class MatrixHelper {
 		Long ecId = reportForm.getEmployeeContractId();
 		boolean isAcceptanceWarning = false;
 		String acceptedBy = null;
+		boolean isInvoiceable = reportForm.isInvoice();
+		boolean isNonInvoiceable = reportForm.isNonInvoice();
 		if (ecId == -1) {
 			// consider timereports for all employees
 			List<Customerorder> orders = coDAO.getCustomerorders();
@@ -393,11 +403,11 @@ public class MatrixHelper {
 			if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
 				// get the timereports for specific date, all employees, all
 				// orders
-				reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, reportForm.isInvoice());
+				reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
 			} else {
 				// get the timereports for specific date, all employees,
 				// specific order
-				reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), reportForm.isInvoice());
+				reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
 			}
 
 			results.put("currentEmployee", "ALL EMPLOYEES");
@@ -434,15 +444,15 @@ public class MatrixHelper {
 			if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
 				// get the timereports for specific date, specific employee,
 				// all orders
-				reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, reportForm.isInvoice());
+				reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
 			} else {
 				// get the timereports for specific date, specific employee,
 				// specific order
 				List<Customerorder> customerOrder = coDAO.getCustomerordersByEmployeeContractId(ecId);
 				if (customerOrder.contains(order)) {
-					reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), reportForm.isInvoice());
+					reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
 				} else {
-					reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, reportForm.isInvoice());
+					reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
 				}
 			}
 
@@ -513,6 +523,11 @@ public class MatrixHelper {
 		results.put("days", DateUtils.getDaysToDisplay());
 		results.put("years", DateUtils.getYearsToDisplay());
 
+		boolean isInvoiceable = reportForm.isInvoice();
+		boolean isNonInvoiceable = reportForm.isNonInvoice();
+		
+		ReportWrapper reportWrapper;
+		int maxDays;
 		if (reportForm.getFromMonth() != null) {
 			// call from list select change
 			results.put("currentDay", reportForm.getFromDay());
@@ -521,7 +536,8 @@ public class MatrixHelper {
 			results.put("currentYear", reportForm.getFromYear());
 
 			Date dateFirst = initStartEndDate(th, "01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
-			int maxDays = getMaxDays(dateFirst);
+			
+			maxDays = getMaxDays(dateFirst);
 			String maxDayString = getTwoDigitStr(maxDays);
 			Date dateLast = initStartEndDate(th, maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
@@ -549,15 +565,7 @@ public class MatrixHelper {
 				results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
 			}
 
-			ReportWrapper reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(),
-					reportForm.isInvoice());
-			results.put("mergedreports", reportWrapper.getMergedReportList());
-			results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
-			results.put("dayhourssum", reportWrapper.getDayHoursSum());
-			results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
-			results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
-
-			results.put("daysofmonth", maxDays);
+			reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable);
 		} else {
 
 			// call from main menu: set current month, year,
@@ -599,10 +607,9 @@ public class MatrixHelper {
 			results.put("lastMonth", monthString);
 			results.put("lastYear", yearString);
 
-			// test
 			Date dateFirst = initStartEndDate(th, "01", currMonth, currYear, monthString, yearString);
 
-			int maxDays = getMaxDays(dateFirst);
+			maxDays = getMaxDays(dateFirst);
 			String maxDayString = getTwoDigitStr(maxDays);
 			Date dateLast = initStartEndDate(th, maxDayString, currMonth, currYear, monthString, yearString);
 
@@ -613,32 +620,22 @@ public class MatrixHelper {
 				if (!ec.getAcceptanceWarningByDate(dateLast)) {
 					if (ec.getReportAcceptanceDate() != null && !dateLast.after(ec.getReportAcceptanceDate())) {
 						newAcceptance = true;
-						Employee employee = eDAO.getEmployeeBySign(
-								trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), ec.getId()).getAcceptedby());
+						Employee employee = eDAO.getEmployeeBySign(trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), ec.getId()).getAcceptedby());
 						results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
 					}
 				}
 			}
 			results.put("acceptance", newAcceptance);
 
-			ReportWrapper reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, reportForm.isInvoice());
-			results.put("mergedreports", reportWrapper.getMergedReportList());
-			results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
-			results.put("dayhourssum", reportWrapper.getDayHoursSum());
-			results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
-			results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
-			results.put("daysofmonth", maxDays);
-
 			// orders
-			List<Customerorder> orders = null;
-			Long employeeId = currentEmployeeId;
-			if (employeeId != null && employeeId == -1) {
+			List<Customerorder> orders;
+			if (currentEmployeeId != null && currentEmployeeId == -1) {
 				orders = coDAO.getCustomerorders();
 				results.put("currentEmployee", "ALL EMPLOYEES");
 			} else {
 				orders = coDAO.getCustomerordersByEmployeeContractId(ec.getId());
-				if (employeeId != null) {
-					results.put("currentEmployee", eDAO.getEmployeeById(employeeId).getName());
+				if (currentEmployeeId != null) {
+					results.put("currentEmployee", eDAO.getEmployeeById(currentEmployeeId).getName());
 				}
 			}
 			results.put("orders", orders);
@@ -646,7 +643,15 @@ public class MatrixHelper {
 			if (orders.size() > 0) {
 				results.put("suborders", soDAO.getSubordersByEmployeeContractId(ec.getId()));
 			}
+			
+			reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
 		}
+		results.put("mergedreports", reportWrapper.getMergedReportList());
+		results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
+		results.put("dayhourssum", reportWrapper.getDayHoursSum());
+		results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
+		results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
+		results.put("daysofmonth", maxDays);
 		return results;
 	}
 

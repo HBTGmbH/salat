@@ -218,11 +218,13 @@
 			</c:if>
 			<!-- select invoice -->
 			<tr>
-				<td align="left" class="noBborderStyle"><b><bean:message
-							key="main.monthlyreport.invoice.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><html:checkbox
-						property="invoice"
-						onclick="setUpdateMergedreportsAction(this.form)" /></td>
+				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.invoice.text" />:</b></td>
+				<td align="left" class="noBborderStyle"><html:checkbox property="invoice" onclick="setUpdateMergedreportsAction(this.form)" /></td>
+			</tr>
+			<!-- select invoice -->
+			<tr>
+				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.non.invoice.text" />:</b></td>
+				<td align="left" class="noBborderStyle"><html:checkbox property="nonInvoice" onclick="setUpdateMergedreportsAction(this.form)" /></td>
 			</tr>
 		</table>
 	</html:form>

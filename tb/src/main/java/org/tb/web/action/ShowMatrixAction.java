@@ -105,6 +105,8 @@ public class ShowMatrixAction extends DailyReportAction {
 			// just go back to main menu
 			return mapping.findForward(task.equalsIgnoreCase("back") ? "backtomenu" : "success");
 		} else {
+			reportForm.setInvoice(true);
+			reportForm.setNonInvoice(true);
 			// call on MatrixView without a parameter
 			
 			// no special task - prepare everything to show reports

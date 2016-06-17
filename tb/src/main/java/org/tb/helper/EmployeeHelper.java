@@ -132,18 +132,12 @@ public class EmployeeHelper {
 		List<Employee> employeeWithContractList = ed.getEmployeesWithContracts();
 		List<Employeecontract> employeeContracts = ecd.getVisibleEmployeeContractsOrderedByEmployeeSign();
 			
-		request.getSession().setAttribute("employeeswithcontract", 
-				employeeWithContractList);
-		request.getSession().setAttribute("employees",
-				employeeOptionList);
-		request.getSession().setAttribute("employeecontracts",
-				employeeContracts);
-		request.getSession().setAttribute("currentEmployee",
-				currentEmployeeContract.getEmployee().getName());
-		request.getSession().setAttribute("currentEmployeeId", 
-				currentEmployeeContract.getEmployee().getId());
+		request.getSession().setAttribute("employeeswithcontract", employeeWithContractList);
+		request.getSession().setAttribute("employees", employeeOptionList);
+		request.getSession().setAttribute("employeecontracts", employeeContracts);
+		request.getSession().setAttribute("currentEmployee", currentEmployeeContract.getEmployee().getName());
+		request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
 		request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-			
 		
 		return currentEmployeeContract;
 	}
