@@ -22,7 +22,6 @@ public class WeekAndWorkinghourCount {
      * @since 29.12.2006
      */
     public WeekAndWorkinghourCount(int week, double workingHour) {
-        super();
         this.week = week;
         this.workingHour = workingHour;
     }
