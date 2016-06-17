@@ -42,12 +42,26 @@ import org.tb.web.form.ShowMatrixForm;
 public class MatrixHelper {
 
 	private static final String HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE = "HANDLING_ERROR_MESSAGE";
-	// conversion and localization of day values
+	/** conversion and localization of day values */
 	private static final Map<String, String> MONTH_MAP = new HashMap<String, String>();
+	/**conversion and localization of weekday values */
+	private static final Map<Integer, String> WEEK_DAYS_MAP = new HashMap<Integer, String>();
+	
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+	
 	static {
 		for(String mon : new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}) {
 			MONTH_MAP.put(mon, "main.timereport.select.month." + mon.toLowerCase() + ".text");
 		}
+
+		WEEK_DAYS_MAP.put(2, "main.matrixoverview.weekdays.monday.text");
+		WEEK_DAYS_MAP.put(3, "main.matrixoverview.weekdays.tuesday.text");
+		WEEK_DAYS_MAP.put(4, "main.matrixoverview.weekdays.wednesday.text");
+		WEEK_DAYS_MAP.put(5, "main.matrixoverview.weekdays.thursday.text");
+		WEEK_DAYS_MAP.put(6, "main.matrixoverview.weekdays.friday.text");
+		WEEK_DAYS_MAP.put(7, "main.matrixoverview.weekdays.saturday.text");
+		WEEK_DAYS_MAP.put(1, "main.matrixoverview.weekdays.sunday.text");
 	}
 	
 	private final TimereportDAO trDAO;
@@ -92,11 +106,10 @@ public class MatrixHelper {
         //filter billable orders if necessary
         if (invoice) filterInvoiceable(timeReportList);
         
-        String separator = System.getProperty("line.separator");
         List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
 		//filling a list with new or merged 'mergedreports'
         for (Timereport timeReport : timeReportList) {
-            String taskdescription = timeReport.getTaskdescription() + separator;
+            String taskdescription = extendedTaskDescription(timeReport, employeecontract == null);
             Date date = timeReport.getReferenceday().getRefdate();
             long durationHours = timeReport.getDurationhours();
             long durationMinutes = timeReport.getDurationminutes();
@@ -164,19 +177,26 @@ public class MatrixHelper {
         
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
+    
+    private String extendedTaskDescription(Timereport tr, boolean withSign) {
+    	StringBuilder sb = new StringBuilder();
+    	if(withSign) {
+	    	sb.append(tr.getEmployeecontract().getEmployee().getSign());
+	    	sb.append(": ");
+    	}
+    	sb.append(tr.getTaskdescription());
+    	sb.append(" (");
+    	sb.append(tr.getDurationhours());
+    	sb.append(":");
+    	if(tr.getDurationminutes() < 10) sb.append("0");
+    	sb.append(tr.getDurationminutes());
+    	sb.append(")");
+    	sb.append(LINE_SEPARATOR);
+    	return sb.toString();
+    }
 
 	private double fillDayHoursCount(Date dateFirst, Date dateLast, Date validFrom, Date validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
 		//fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
-
-        //conversion and localization of weekday values
-        Map<Integer, String> weekDaysMap = new HashMap<Integer, String>();
-        weekDaysMap.put(2, "main.matrixoverview.weekdays.monday.text");
-        weekDaysMap.put(3, "main.matrixoverview.weekdays.tuesday.text");
-        weekDaysMap.put(4, "main.matrixoverview.weekdays.wednesday.text");
-        weekDaysMap.put(5, "main.matrixoverview.weekdays.thursday.text");
-        weekDaysMap.put(6, "main.matrixoverview.weekdays.friday.text");
-        weekDaysMap.put(7, "main.matrixoverview.weekdays.saturday.text");
-        weekDaysMap.put(1, "main.matrixoverview.weekdays.sunday.text");
 
 		Calendar cal = GregorianCalendar.getInstance();
         cal.setTime(dateFirst);
@@ -223,7 +243,7 @@ public class MatrixHelper {
                     if (cal.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY || cal.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY) {
                         dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setSatSun(true);
                     }
-                    dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setWeekDay(weekDaysMap.get(cal.get(Calendar.DAY_OF_WEEK)));
+                    dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setWeekDay(WEEK_DAYS_MAP.get(cal.get(Calendar.DAY_OF_WEEK)));
                 }
             }
             cal.add(Calendar.DAY_OF_MONTH, 1);
