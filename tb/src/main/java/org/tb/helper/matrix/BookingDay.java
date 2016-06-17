@@ -65,7 +65,6 @@ public class BookingDay implements Comparable<BookingDay> {
     }
 
     public int compareTo(BookingDay o) {
-        if (o == null) throw new NullPointerException();
         return this.date.compareTo(o.date);
     }
 
