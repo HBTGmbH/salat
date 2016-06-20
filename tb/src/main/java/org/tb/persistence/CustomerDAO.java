@@ -136,30 +136,24 @@ public class CustomerDAO extends HibernateDaoSupport {
 	public boolean deleteCustomerById(long cuId) {
 		List<Customer> allCustomers = getCustomers();
 		Customer cuToDelete = getCustomerById(cuId);
-		boolean cuDeleted = false;
 		
 		for (Customer cu : allCustomers) {
-			if(cu.getId() == cuToDelete.getId()) {
+			if(cu.getId() == cuId) {
 				// check if related customerorders exist - if so, no deletion possible
-				boolean deleteOk = true;
 				List<Customerorder> allCustomerorders = customerorderDAO.getCustomerorders();
 				for (Customerorder co : allCustomerorders) {
-					if (co.getCustomer().getId() == cuToDelete.getId()) {
-						deleteOk = false;
-						break;
+					if (co.getCustomer().getId() == cuId) {
+						return false;
 					}
 				}
 				
-				if (deleteOk) {
-					Session session = getSession();
-					session.delete(cuToDelete);
-					session.flush();
-					cuDeleted = true;
-				}
-				break;
+				Session session = getSession();
+				session.delete(cuToDelete);
+				session.flush();
+				return true;
 			}
 		}
 		
-		return cuDeleted;
+		return false;
 	}
 }
