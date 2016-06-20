@@ -1,18 +1,21 @@
 package org.tb.persistence;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -81,7 +84,8 @@ public class SuborderDAO extends HibernateDaoSupport {
 		@SuppressWarnings("unchecked")
 		List<Employeeorder> employeeOrders = getSession()
 				.createQuery("from Employeeorder e where e.employeecontract.id = ? order by sign asc, suborder.sign asc")
-				.setLong(0, contractId).list();
+				.setLong(0, contractId)
+				.list();
 
 		List<Suborder> allSuborders = new ArrayList<Suborder>();
 		for (Employeeorder order : employeeOrders) {
@@ -105,8 +109,7 @@ public class SuborderDAO extends HibernateDaoSupport {
         List<Suborder> employeeSpecificSuborders = getSubordersByEmployeeContractId(contractId);
         
         List<Suborder> allSuborders = new ArrayList<Suborder>();
-        for (Object element : employeeSpecificSuborders) {
-            Suborder so = (Suborder)element;
+        for (Suborder so : employeeSpecificSuborders) {
             if (so.getCustomerorder().getId() == coId) {
             	if(!onlyValid || so.getCurrentlyValid()) {
             		allSuborders.add(so);
@@ -167,7 +170,11 @@ public class SuborderDAO extends HibernateDaoSupport {
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean onlyValid) {
         @SuppressWarnings("unchecked")
-		List<Suborder> result = getSession().createQuery("from Suborder s where s.customerorder.id = ? order by sign").setLong(0, customerorderId).setCacheable(true).list();
+		List<Suborder> result = getSession()
+			.createQuery("from Suborder s where s.customerorder.id = ? order by sign")
+			.setLong(0, customerorderId)
+			.setCacheable(true)
+			.list();
         if(onlyValid) {
         	Iterator<Suborder> iter = result.iterator();
         	while(iter.hasNext()) {
@@ -200,175 +207,78 @@ public class SuborderDAO extends HibernateDaoSupport {
         return result;
     }
     
+    private List<Suborder> createSuborderQuery(Long customerOrderId, String filter, Date dateFrom, Date dateTill) {
+    	Map<String, Object> args = new HashMap<String, Object>();
+    	List<String> terms = new ArrayList<String>();
+
+    	if(customerOrderId != null) {
+    		terms.add("s.customerorder.id = :custormerOrderId");
+            args.put("custormerOrderId", customerOrderId);
+    	}
+    	
+    	if(filter != null) {
+    		terms.add("(upper(sign) like :filter "
+    				+ "or upper(description) like :filter "
+					+ "or upper(s.customerorder.sign) like :filter "
+					+ "or upper(s.customerorder.description) like :filter "
+    				+ "or upper(shortdescription) like :filter "
+    				+ "or upper(s.customerorder.shortdescription) like :filter "
+    				+ "or upper(hourly_rate) like :filter)");
+    		args.put("filter", filter);
+    	}
+
+    	if(dateFrom != null) {
+	    	terms.add("(fromDate <= :fromDate "
+	    			+ "or (fromDate = null "
+	    			+ "and s.customerorder.fromDate <= :fromDate ))");
+	    	args.put("fromDate", dateFrom);
+    	}
+    	
+    	if(dateTill != null) {
+	    	terms.add("(untilDate >= :untilDate "
+	    			+ "or (untilDate = null "
+	    			+ "and (s.customerorder.untilDate = null "
+	    			+ "and s.customerorder.untilDate <= :untilDate )))");
+	    	args.put("untilDate", dateTill);
+    	}
+
+    	StringBuilder sb = new StringBuilder();
+    	sb.append("from Suborder s ");
+    	if(!terms.isEmpty()) {
+    		String termsStr = StringUtils.join(terms, " and ");
+    		sb.append(" where (");
+    		sb.append(termsStr);
+    		sb.append(") ");
+    	}
+    	sb.append(" order by s.customerorder.sign ,sign");
+    	
+    	Query query = getSession().createQuery(sb.toString());
+    	for(Entry<String, Object> entry : args.entrySet()) {
+    		query = query.setParameter(entry.getKey(), entry.getValue());
+    	}
+    	
+    	@SuppressWarnings("unchecked")
+		List<Suborder> suborders = query.list();
+    	return suborders;
+    }
+    
     /**
      * Get a list of all suborders fitting to the given filters ordered by their sign.
      * 
      * 
      * @return
      */
-    @SuppressWarnings("unchecked")
 	public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
-        List<Suborder> suborders = new ArrayList<Suborder>();
         boolean isFilter = filter != null && !filter.trim().isEmpty();
         if(isFilter) {
         	filter = "%" + filter.toUpperCase() + "%";
-        }
-        if (showInvalid == null || !showInvalid) {
-            Date now = new Date();
-            if (!isFilter) {
-                if (customerOrderId == null || customerOrderId == -1) {
-                    // case 1
-                    suborders = getSession().createQuery("from Suborder s where " +
-                            "(fromDate <= ? " +
-                            "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? )) " +
-                            "and (untilDate >= ? " +
-                            "or (untilDate = null " +
-                            "and (s.customerorder.untilDate = null " +
-                            "or s.customerorder.untilDate >= ?))) " +
-                            "order by s.customerorder.sign ,sign")
-                            .setDate(0, now)
-                            .setDate(1, now)
-                            .setDate(2, now)
-                            .setDate(3, now).list();
-                } else {
-                    // case 2
-                    suborders = getSession().createQuery("from Suborder s where " +
-                            "s.customerorder.id = ? " +
-                            "and (fromDate <= ? " +
-                            "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? )) " +
-                            "and (untilDate >= ? " +
-                            "or (untilDate = null " +
-                            "and (s.customerorder.untilDate = null " +
-                            "or s.customerorder.untilDate >= ?))) " +
-                            "order by s.customerorder.sign ,sign")
-                            .setLong(0, customerOrderId)
-                            .setDate(1, now)
-                            .setDate(2, now)
-                            .setDate(3, now)
-                            .setDate(4, now).list();
-                }
-            } else {
-                if (customerOrderId == null || customerOrderId == -1) {
-                    // case 3
-                    suborders = getSession().createQuery("from Suborder s where (" +
-                            "upper(sign) like ? " +
-                            "or upper(description) like ? " +
-                            "or upper(s.customerorder.sign) like ? " +
-                            "or upper(s.customerorder.description) like ? " +
-                            "or upper(shortdescription) like ?  " +
-                            "or upper(s.customerorder.shortdescription) like ? " +
-                            "or upper(hourly_rate) like ?) " +
-                            "and (fromDate <= ? " +
-                            "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? )) " +
-                            "and (untilDate >= ? " +
-                            "or (untilDate = null " +
-                            "and (s.customerorder.untilDate = null " +
-                            "or s.customerorder.untilDate >= ?))) " +
-                            "order by s.customerorder.sign ,sign")
-                            .setString(0, filter)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .setString(4, filter)
-                            .setString(5, filter)
-                            .setString(6, filter)
-                            .setDate(7, now)
-                            .setDate(8, now)
-                            .setDate(9, now)
-                            .setDate(10, now).list();
-                } else {
-                    // case 4
-                    suborders = getSession().createQuery("from Suborder s where " +
-                            "s.customerorder.id = ? " +
-                            "and (upper(sign) like ? " +
-                            "or upper(description) like ? " +
-                            "or upper(s.customerorder.sign) like ? " +
-                            "or upper(s.customerorder.description) like ? " +
-                            "or upper(shortdescription) like ?  " +
-                            "or upper(s.customerorder.shortdescription) like ? " +
-                            "or upper(hourly_rate) like ?) " +
-                            "and (fromDate <= ? " +
-                            "or (fromDate = null " +
-                            "and s.customerorder.fromDate <= ? )) " +
-                            "and (untilDate >= ? " +
-                            "or (untilDate = null " +
-                            "and (s.customerorder.untilDate = null " +
-                            "or s.customerorder.untilDate >= ?))) " +
-                            "order by s.customerorder.sign ,sign")
-                            .setLong(0, customerOrderId)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .setString(4, filter)
-                            .setString(5, filter)
-                            .setString(6, filter)
-                            .setString(7, filter)
-                            .setDate(8, now)
-                            .setDate(9, now)
-                            .setDate(10, now)
-                            .setDate(11, now).list();
-                }
-            }
         } else {
-            if (!isFilter) {
-                if (customerOrderId == null || customerOrderId == -1) {
-                    // case 5
-                    suborders = getSession().createQuery("from Suborder s " +
-                            "order by s.customerorder.sign ,sign")
-                            .list();
-                } else {
-                    // case 6
-                    suborders = getSession().createQuery("from Suborder s where " +
-                            "s.customerorder.id = ? " +
-                            "order by s.customerorder.sign ,sign")
-                            .setLong(0, customerOrderId).list();
-                }
-            } else {
-                if (customerOrderId == null || customerOrderId == -1) {
-                    // case 7
-                    suborders = getSession().createQuery("from Suborder s where " +
-                            "upper(sign) like ? " +
-                            "or upper(description) like ? " +
-                            "or upper(s.customerorder.sign) like ? " +
-                            "or upper(s.customerorder.description) like ? " +
-                            "or upper(shortdescription) like ?  " +
-                            "or upper(s.customerorder.shortdescription) like ? " +
-                            "or upper(hourly_rate) like ? " +
-                            "order by s.customerorder.sign ,sign")
-                            .setString(0, filter)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .setString(4, filter)
-                            .setString(5, filter)
-                            .setString(6, filter).list();
-                } else {
-                    // case 8
-                    suborders = getSession().createQuery("from Suborder s where " +
-                            "s.customerorder.id = ? " +
-                            "and (upper(sign) like ? " +
-                            "or upper(description) like ? " +
-                            "or upper(s.customerorder.sign) like ? " +
-                            "or upper(s.customerorder.description) like ? " +
-                            "or upper(shortdescription) like ?  " +
-                            "or upper(s.customerorder.shortdescription) like ? " +
-                            "or upper(hourly_rate) like ?) " +
-                            "order by s.customerorder.sign ,sign")
-                            .setLong(0, customerOrderId)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .setString(4, filter)
-                            .setString(5, filter)
-                            .setString(6, filter)
-                            .setString(7, filter).list();
-                }
-            }
+        	filter = null;
         }
-        return suborders;
+        if(customerOrderId != null && customerOrderId == -1) customerOrderId = null;
+        
+        Date now = showInvalid == null || !showInvalid ? new Date() : null;
+        return createSuborderQuery(customerOrderId, filter, now, now);
     }
     
     /**
@@ -389,21 +299,11 @@ public class SuborderDAO extends HibernateDaoSupport {
     public List<Suborder> getSubordersOrderedByCustomerorder(boolean onlyValid) {
         List<Customerorder> customerorders = customerorderDAO.getCustomerorders();
         List<Suborder> suborders = new ArrayList<Suborder>();
-        Customerorder customerorder;
-        Iterator<Customerorder> it = customerorders.iterator();
-        while (it.hasNext()) {
-            customerorder = (Customerorder)it.next();
+        for(Customerorder customerorder : customerorders) {
             long customerorderId = customerorder.getId();
             suborders.addAll(getSubordersByCustomerorderId(customerorderId, onlyValid));
         }
         return suborders;
-    }
-    
-    @SuppressWarnings("unchecked")
-	public List<Suborder> getSubordersByFilter(String filter) {
-        return getSession()
-                .createQuery("from Suborder s where upper(sign) like ? or upper(description) like ? or upper(s.customerorder.sign) like ? or upper(s.customerorder.description) like ? or upper(shortdescription) like ?  or upper(s.customerorder.shortdescription) like ? or upper(hourly_rate) like ? order by s.customerorder.sign ,sign")
-                .setString(0, filter).setString(1, filter).setString(2, filter).setString(3, filter).setString(4, filter).setString(5, filter).setString(6, filter).list();
     }
     
     /**
@@ -412,16 +312,16 @@ public class SuborderDAO extends HibernateDaoSupport {
      */
     @SuppressWarnings("unchecked")
 	public List<Suborder> getStandardSuborders() {
-        Date date = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        String dateString = dateFormat.format(date);
-        try {
-            date = dateFormat.parse(dateString);
-        } catch (ParseException e) {
-            // absurd error
-            throw new RuntimeException("horrible exception - this should never happen ;D");
-        }
-        return getSession().createQuery("from Suborder where standard = ? and (untilDate = null or untilDate >= ? ) order by sign").setBoolean(0, true).setDate(1, date).list();
+    	Calendar cal = Calendar.getInstance();
+    	cal.set(Calendar.HOUR_OF_DAY, 0);
+    	cal.set(Calendar.MINUTE, 0);
+    	cal.set(Calendar.SECOND, 0);
+    	cal.set(Calendar.MILLISECOND, 0);
+        return getSession()
+        		.createQuery("from Suborder where standard = ? and (untilDate = null or untilDate >= ? ) order by sign")
+        		.setBoolean(0, true)
+        		.setDate(1, cal.getTime())
+        		.list();
     }
     
     /**
@@ -466,70 +366,50 @@ public class SuborderDAO extends HibernateDaoSupport {
      * @return boolean
      */
     public boolean deleteSuborderById(long soId) {
-        List<Suborder> allSuborders = getSuborders(false);
-        List<Suborder> allSuborders2 = getSuborders(false);
-        Suborder soToDelete = getSuborderById(soId);
-        boolean soDeleted = false;
-        
+    	Suborder soToDelete = getSuborderById(soId);
         if (soToDelete == null) {
-            return soDeleted;
+            return false;
         }
         
-        for (Object element : allSuborders) {
-            Suborder so = (Suborder)element;
-            if (so.getId() == soToDelete.getId()) {
+        List<Suborder> allSuborders = getSuborders(false);
+        for (Suborder so : allSuborders) {
+            if (so.getId() == soId) {
                 // check if related timereports, employee orders, suborders or tickets exist - if so, no deletion possible
-                boolean deleteOk = true;
                 List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
-                for (Object element2 : allEmployeeorders) {
-                    Employeeorder eo = (Employeeorder)element2;
-                    if (eo.getSuborder().getId() == soToDelete.getId()) {
-                        deleteOk = false;
-                        break;
+                for (Employeeorder eo : allEmployeeorders) {
+                    if (eo.getSuborder().getId() == soId) {
+                        return false;
                     }
                 }
                 
-                if (deleteOk) {
-                    List<Timereport> allTimereports = timereportDAO.getTimereports();
-                    for (Object element2 : allTimereports) {
-                        Timereport tr = (Timereport)element2;
-                        if (tr.getSuborder() != null && tr.getSuborder().getId() == soToDelete.getId()) {
-                            deleteOk = false;
-                            break;
-                        }
+                List<Timereport> allTimereports = timereportDAO.getTimereports();
+                for (Timereport tr : allTimereports) {
+                    if (tr.getSuborder() != null && tr.getSuborder().getId() == soId) {
+                    	return false;
                     }
                 }
-                if (deleteOk) {
-                    for (Object element2 : allSuborders2) {
-                        Suborder tr = (Suborder)element2;
-                        if (tr.getParentorder() != null && tr.getParentorder().getId() == soToDelete.getId()) {
-                            deleteOk = false;
-                            break;
-                        }
+
+                for (Suborder otherSo : allSuborders) {
+                    if (otherSo.getParentorder() != null && otherSo.getParentorder().getId() == soId) {
+                    	return false;
                     }
                 }
                 
-                if (deleteOk) {
-                    List<Ticket> tickets = ticketDAO.getTicketsBySuborderID(soId);
-                    if (!tickets.isEmpty()) {
-                        deleteOk = false;
-                    }
+                List<Ticket> tickets = ticketDAO.getTicketsBySuborderID(soId);
+                if (!tickets.isEmpty()) {
+                	return false;
+                }
                     
-                }
-                
-                if (deleteOk) {
-                    Session session = getSession();
-                    session.delete(soToDelete);
-                    try {
-                        session.flush();
-                    } catch (Throwable th) {}
-                    LOG.debug("SuborderDAO.deleteSuborderById - deleted object {} and flushed!", soToDelete);
-                    soDeleted = true;
-                }
-                break;
+                Session session = getSession();
+                session.delete(soToDelete);
+                try {
+                    session.flush();
+                } catch (Throwable th) {}
+                LOG.debug("SuborderDAO.deleteSuborderById - deleted object {} and flushed!", soToDelete);
+                return true;
             }
         }
         
-        return soDeleted;
+        return false;
     }
 }
