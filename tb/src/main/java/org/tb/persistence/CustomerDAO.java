@@ -5,7 +5,6 @@ import java.util.List;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customer;
-import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 
 /**
@@ -15,12 +14,6 @@ import org.tb.bdom.Employee;
  *
  */
 public class CustomerDAO extends HibernateDaoSupport {
-
-	private CustomerorderDAO customerorderDAO;
-	
-	public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-		this.customerorderDAO = customerorderDAO;
-	}
 
 	/**
 	 * Get a list of all Customers ordered by name.
@@ -39,12 +32,11 @@ public class CustomerDAO extends HibernateDaoSupport {
 	 */
 	@SuppressWarnings("unchecked")
 	public List<Customer> getCustomersByFilter(String filter) {
-		List<Customer> customers = null;
 		if (filter == null || filter.trim().equals("")) {
-			customers = getSession().createQuery("from Customer order by name asc").list();
+			return getSession().createQuery("from Customer order by name asc").list();
 		} else {
 			filter = "%" + filter.toUpperCase() + "%";
-			customers = getSession().createQuery("from Customer where " +
+			return getSession().createQuery("from Customer where " +
 					"upper(id) like ? " +
 					"or upper(name) like ? " +
 					"or upper(address) like ? " +
@@ -55,7 +47,6 @@ public class CustomerDAO extends HibernateDaoSupport {
 					.setString(2, filter)
 					.setString(3, filter).list();
 		}
-		return customers;
 	}
 	
 	/**
@@ -134,24 +125,16 @@ public class CustomerDAO extends HibernateDaoSupport {
 	 * @return boolean
 	 */
 	public boolean deleteCustomerById(long cuId) {
-		List<Customer> allCustomers = getCustomers();
-		Customer cuToDelete = getCustomerById(cuId);
-		
-		for (Customer cu : allCustomers) {
-			if(cu.getId() == cuId) {
-				// check if related customerorders exist - if so, no deletion possible
-				List<Customerorder> allCustomerorders = customerorderDAO.getCustomerorders();
-				for (Customerorder co : allCustomerorders) {
-					if (co.getCustomer().getId() == cuId) {
-						return false;
-					}
-				}
-				
-				Session session = getSession();
-				session.delete(cuToDelete);
-				session.flush();
-				return true;
-			}
+		Customer cu = getCustomerById(cuId);
+
+		if(cu != null) {
+			// check if related customerorders exist - if so, no deletion possible
+			if(cu.getCustomerorders() != null && !cu.getCustomerorders().isEmpty()) return false;
+			
+			Session session = getSession();
+			session.delete(cu);
+			session.flush();
+			return true;
 		}
 		
 		return false;
