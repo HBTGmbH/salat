@@ -3,13 +3,17 @@ package org.tb.persistence;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
-import org.tb.bdom.Employeeorder;
 import org.tb.bdom.ProjectID;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.comparators.CustomerOrderComparator;
@@ -80,127 +84,75 @@ public class CustomerorderDAO extends HibernateDaoSupport {
                 .setDate(1, now).list();
     }
     
+    private List<Customerorder> createQuery(Long customerId, String filter, Date fromDate, Date untilDate) {
+    	Map<String, Object> args = new HashMap<String, Object>();
+    	List<String> clauses = new ArrayList<String>();
+    	
+    	if(customerId != null) {
+    		clauses.add("(co.customer.id = :customerId)");
+    		args.put("customerId", customerId);
+    	}
+    	
+    	if(fromDate != null) {
+    		clauses.add("(fromDate <= :fromDate)");
+    		args.put("fromDate", fromDate);
+    	}
+    	
+    	if(untilDate != null) {
+    		clauses.add("(untilDate = null or untilDate >= :untilDate)");
+    		args.put("untilDate", untilDate);
+    	}
+    	
+    	if(filter != null) {
+            clauses.add("(upper(sign) like :filter " +
+	            "or upper(description) like :filter " +
+	            "or upper(responsible_customer_contractually) like :filter " +
+	            "or upper(responsible_customer_technical) like :filter " +
+	            "or upper(order_customer) like :filter " +
+	            "or upper(customer.name) like :filter " +
+	            "or upper(customer.shortname) like :filter " +
+	            "or upper(responsible_hbt.firstname) like :filter " +
+	            "or upper(responsible_hbt.lastname) like :filter)");
+            args.put("filter", filter);
+    	}
+    	
+    	StringBuilder sb = new StringBuilder("from Customerorder co ");
+    	if(!clauses.isEmpty()) {
+    		sb.append("where (");
+    		sb.append(StringUtils.join(clauses, " and "));
+    		sb.append(")");
+    	}
+    	sb.append(" order by sign");
+    	
+    	Query query = getSession().createQuery(sb.toString());
+    	for(Entry<String, Object> entry : args.entrySet()) {
+    		query = query.setParameter(entry.getKey(), entry.getValue());
+    	}
+    	
+    	@SuppressWarnings("unchecked")
+		List<Customerorder> result = query.list();
+    	return result;
+    }
+    
     /**
      * Get a list of all Customerorders fitting to the given filters ordered by their sign.
      * 
      * 
      * @return
      */
-    @SuppressWarnings("unchecked")
 	public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
-        List<Customerorder> customerorders = new ArrayList<Customerorder>();
-        Date now = new Date();
+        Date now = (showInvalid == null || !showInvalid) ? new Date() : null;
+        
+        if(customerId != null && customerId == -1) customerId = null;
         
         boolean isFilter = filter != null && !filter.trim().isEmpty();
         if(isFilter) {
         	filter = "%" + filter.toUpperCase() + "%";
-        }
-        
-        if (showInvalid == null || !showInvalid) {
-            if (!isFilter) {
-                if (customerId == null || customerId == -1) {
-                    // case 1
-                    customerorders = getSession().createQuery(
-                            "from Customerorder where fromdate <= ? " +
-                                    "and (untildate = null or untildate >= ?) " +
-                                    "order by sign").setDate(0, now).setDate(1, now).list();
-                } else {
-                    // case 2
-                    customerorders = getSession().createQuery(
-                            "from Customerorder co where co.customer.id = ? " +
-                                    "and fromdate <= ? " +
-                                    "and (untildate = null or untildate >= ?) " +
-                                    "order by sign").setLong(0, customerId).setDate(1, now).setDate(2, now).list();
-                }
-            } else {
-                if (customerId == null || customerId == -1) {
-                    // case 3
-                    customerorders = getSession().createQuery(
-                            "from Customerorder where fromdate <= ? " +
-                                    "and (untildate = null or untildate >= ?) " +
-                                    "and (upper(sign) like ? " +
-                                    "or upper(description) like ? " +
-                                    "or upper(responsible_customer_contractually) like ? " +
-                                    "or upper(responsible_customer_technical) like ? " +
-                                    "or upper(order_customer) like ? " +
-                                    "or upper(customer.name) like ? " +
-                                    "or upper(customer.shortname) like ? " +
-                                    "or upper(responsible_hbt.firstname) like ? " +
-                                    "or upper(responsible_hbt.lastname) like ?)" +
-                                    "order by sign").setDate(0, now).setDate(1, now).setString(2, filter).setString(3, filter)
-                            .setString(4, filter).setString(5, filter).setString(6, filter).setString(7, filter)
-                            .setString(8, filter).setString(9, filter).setString(10, filter).list();
-                } else {
-                    // case 4
-                    customerorders = getSession().createQuery(
-                            "from Customerorder co where co.customer.id = ? " +
-                                    "and fromdate <= ? " +
-                                    "and (untildate = null or untildate >= ?) " +
-                                    "and (upper(sign) like ? " +
-                                    "or upper(description) like ? " +
-                                    "or upper(responsible_customer_contractually) like ? " +
-                                    "or upper(responsible_customer_technical) like ? " +
-                                    "or upper(order_customer) like ? " +
-                                    "or upper(customer.name) like ? " +
-                                    "or upper(customer.shortname) like ? " +
-                                    "or upper(responsible_hbt.firstname) like ? " +
-                                    "or upper(responsible_hbt.lastname) like ?)" +
-                                    "order by sign").setLong(0, customerId).setDate(1, now).setDate(2, now).setString(3, filter)
-                            .setString(4, filter).setString(5, filter).setString(6, filter).setString(7, filter)
-                            .setString(8, filter).setString(9, filter).setString(10, filter).setString(11, filter).list();
-                }
-            }
         } else {
-            if (!isFilter) {
-                if (customerId == null || customerId == -1) {
-                    // case 5
-                    customerorders = getSession().createQuery(
-                            "from Customerorder " +
-                                    "order by sign").list();
-                } else {
-                    // case 6
-                    customerorders = getSession().createQuery(
-                            "from Customerorder co where co.customer.id = ? " +
-                                    "order by sign").setLong(0, customerId).list();
-                }
-            } else {
-                if (customerId == null || customerId == -1) {
-                    // case 7
-                    customerorders = getSession().createQuery(
-                            "from Customerorder where " +
-                                    "upper(sign) like ? " +
-                                    "or upper(description) like ? " +
-                                    "or upper(responsible_customer_contractually) like ? " +
-                                    "or upper(responsible_customer_technical) like ? " +
-                                    "or upper(order_customer) like ? " +
-                                    "or upper(customer.name) like ? " +
-                                    "or upper(customer.shortname) like ? " +
-                                    "or upper(responsible_hbt.firstname) like ? " +
-                                    "or upper(responsible_hbt.lastname) like ?" +
-                                    "order by sign").setString(0, filter).setString(1, filter)
-                            .setString(2, filter).setString(3, filter).setString(4, filter).setString(5, filter)
-                            .setString(6, filter).setString(7, filter).setString(8, filter).list();
-                } else {
-                    // case 8
-                    customerorders = getSession().createQuery(
-                            "from Customerorder co where co.customer.id = ? " +
-                                    "and (upper(sign) like ? " +
-                                    "or upper(description) like ? " +
-                                    "or upper(responsible_customer_contractually) like ? " +
-                                    "or upper(responsible_customer_technical) like ? " +
-                                    "or upper(order_customer) like ? " +
-                                    "or upper(customer.name) like ? " +
-                                    "or upper(customer.shortname) like ? " +
-                                    "or upper(responsible_hbt.firstname) like ? " +
-                                    "or upper(responsible_hbt.lastname) like ?)" +
-                                    "order by sign").setLong(0, customerId).setString(1, filter)
-                            .setString(2, filter).setString(3, filter).setString(4, filter).setString(5, filter)
-                            .setString(6, filter).setString(7, filter).setString(8, filter).setString(9, filter).list();
-                }
-            }
+        	filter = null;
         }
         
-        return customerorders;
+        return createQuery(customerId, filter, now, now);
     }
     
     /**
@@ -253,35 +205,17 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      * @return
      */
     public List<Customerorder> getCustomerordersByEmployeeContractId(long contractId) {
-        
-        @SuppressWarnings("unchecked")
-		List<Employeeorder> employeeOrders =
-                getSession().createQuery("from Employeeorder e where e.employeecontract.id = ? order by suborder.customerorder.sign").setLong(0, contractId).list();
-        
-        List<Suborder> allSuborders = new ArrayList<Suborder>();
-        for (Object element : employeeOrders) {
-            Employeeorder eo = (Employeeorder)element;
-            Suborder so = (Suborder)getSession().createQuery("from Suborder s where s.id = ? order by customerorder.sign").setLong(0, eo.getSuborder().getId()).uniqueResult();
-            allSuborders.add(so);
-        }
-        
         List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
         List<Customerorder> allCustomerorders = new ArrayList<Customerorder>();
-        for (Object element : suborders) {
-            Suborder so = (Suborder)element;
-            Customerorder co = (Customerorder)getSession().createQuery("from Customerorder c where c.id = ?").setLong(0, so.getCustomerorder().getId()).uniqueResult();
+        outer: for (Suborder so : suborders) {
+        	Customerorder co = so.getCustomerorder();
             // check if order was already added to list with other suborder
-            boolean inList = false;
-            for (Object element2 : allCustomerorders) {
-                Customerorder coInList = (Customerorder)element2;
+            for (Customerorder coInList : allCustomerorders) {
                 if (coInList.getId() == co.getId()) {
-                    inList = true;
-                    break;
+                	continue outer;
                 }
             }
-            if (!inList) {
-                allCustomerorders.add(co);
-            }
+            allCustomerorders.add(co);
         }
         Collections.sort(allCustomerorders, new CustomerOrderComparator());
         return allCustomerorders;
@@ -348,40 +282,31 @@ public class CustomerorderDAO extends HibernateDaoSupport {
      */
     public boolean deleteCustomerorderById(long coId) {
         List<Customerorder> allCustomerorders = getCustomerorders();
-        Customerorder coToDelete = getCustomerorderById(coId);
-        boolean coDeleted = false;
         
-        for (Object element : allCustomerorders) {
-            Customerorder co = (Customerorder)element;
-            if (co.getId() == coToDelete.getId()) {
+        for (Customerorder co : allCustomerorders) {
+            if (co.getId() == coId) {
                 // check if related suborders exist - if so, no deletion possible
-                boolean deleteOk = true;
                 List<Suborder> allSuborders = suborderDAO.getSuborders(false);
-                for (Object element2 : allSuborders) {
-                    Suborder so = (Suborder)element2;
-                    if (so.getCustomerorder().getId() == coToDelete.getId()) {
-                        deleteOk = false;
-                        break;
+                for (Suborder so : allSuborders) {
+                    if (so.getCustomerorder().getId() == coId) {
+                        return false;
                     }
                 }
                 
                 // check if related ProjectIDs exist - if so, no deletion possible
                 List<ProjectID> projectIDs = projectIDDAO.getProjectIDsByCustomerorderID(coId);
                 if (!projectIDs.isEmpty()) {
-                    deleteOk = false;
+                    return false;
                 }
                 
-                if (deleteOk) {
-                    Session session = getSession();
-                    session.delete(coToDelete);
-                    session.flush();
-                    coDeleted = true;
-                }
-                break;
+                Session session = getSession();
+                session.delete(co);
+                session.flush();
+                return true;
             }
         }
         
-        return coDeleted;
+        return false;
     }
     
 }
