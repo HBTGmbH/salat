@@ -22,18 +22,12 @@ import org.tb.bdom.Vacation;
  */
 public class EmployeecontractDAO extends HibernateDaoSupport {
     
-    private EmployeeorderDAO employeeorderDAO;
     private MonthlyreportDAO monthlyreportDAO;
     private VacationDAO vacationDAO;
-    private TimereportDAO timereportDAO;
     private OvertimeDAO overtimeDAO;
     
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
-    }
-    
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
     }
     
     public void setMonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
@@ -44,22 +38,6 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
         this.vacationDAO = vacationDAO;
     }
     
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-    
-    //	/**
-    //	 * Gets the EmployeeContract with the given employee id.
-    //	 * 
-    //	 * @param long employeeId
-    //	 * 
-    //	 * @return Employeecontract
-    //	 */
-    //	public Employeecontract getEmployeeContractByEmployeeId(long employeeId) {
-    //		return (Employeecontract) getSession().createQuery
-    //				("from Employeecontract e where e.employee.id = ?").setLong(0, employeeId).uniqueResult();
-    //	}
-    
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
      * 
@@ -68,55 +46,13 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      * @return Employeecontract
      */
     public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
-        return (Employeecontract)getSession().createQuery
-                ("from Employeecontract e where e.employee.id = ? and validfrom <= ? and (validuntil >= ? or validuntil = null)").setLong(0, employeeId).setDate(1, date).setDate(2, date)
-                .uniqueResult();
+        return (Employeecontract)getSession()
+        			.createQuery("from Employeecontract e where e.employee.id = ? and validfrom <= ? and (validuntil >= ? or validuntil = null)")
+        			.setLong(0, employeeId)
+        			.setDate(1, date)
+        			.setDate(2, date)
+        			.uniqueResult();
     }
-    
-    //	/**
-    //	 * Gets the EmployeeContract with the given employee contract id, that is valid for the given date.
-    //	 * 
-    //	 * @param employeeContractId
-    //	 * @param date 
-    //	 * @return Employeecontract
-    //	 */
-    //	public Employeecontract getEmployeeContractByIdAndDate(long employeeContractId, Date date) {
-    //		return (Employeecontract) getSession().createQuery
-    //				("from Employeecontract e where id = ? and validfrom <= ? and validuntil >= ? ").setLong(0, employeeContractId).setDate(1, date).setDate(2, date).uniqueResult();
-    //	}
-    
-    //	/**
-    //	 * Gets the EmployeeContracts with the given employee id, that are valid for the given dates.
-    //	 * 
-    //	 * @param long employeeId
-    //	 * @param date1
-    //	 * @param date2
-    //	 * 
-    //	 * @return Employeecontract
-    //	 */
-    //	public List<Employeecontract> getEmployeeContractsByEmployeeIdAndDates(long employeeId, Date date1, Date date2) {
-    //		return (List<Employeecontract>) getSession().createQuery
-    //				("from Employeecontract e where e.employee.id = ? and ((validfrom <= ? and validuntil >= ? ) or (e.employee.id = ? and validfrom <= ? and validuntil >= ? )) order by validfrom").setLong(0, employeeId).setDate(1, date1).setDate(2, date1).setDate(3, date2).setDate(4, date2).list();
-    //	}
-    
-    //	/**
-    //	 * Gets the EmployeeContract with the given employee name.
-    //	 * 
-    //	 * @param String first
-    //	 * @param String last
-    //	 * 
-    //	 * @return Employeecontract
-    //	 */
-    //	public Employeecontract getEmployeeContractByEmployeeName(String first, String last) {
-    //		Employee emp = (Employee) getSession().createQuery
-    //			("from Employee e where e.firstname = ? and e.lastname = ?").setString(0, first).setString(1, last).uniqueResult();
-    //		if (emp == null) return null;
-    //		
-    //		Employeecontract ec = (Employeecontract) getSession().createQuery
-    //			("from Employeecontract e where e.employee.id = ?").setLong(0, emp.getId()).uniqueResult();
-    //		
-    //		return ec;
-    //	}
     
     /**
      * Gets the EmployeeContract with the given id.
@@ -126,7 +62,10 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      * @return Employeecontract
      */
     public Employeecontract getEmployeeContractById(long id) {
-        return (Employeecontract)getSession().createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
+        return (Employeecontract)getSession()
+        			.createQuery("from Employeecontract ec where ec.id = ?")
+        			.setLong(0, id)
+        			.uniqueResult();
     }
     
     /**
@@ -138,7 +77,10 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      */
     public Employeecontract getEmployeeContractByIdInitializeEager(long id) {
         Session session = getSession();
-        Employeecontract ec = (Employeecontract)session.createQuery("from Employeecontract ec where ec.id = ?").setLong(0, id).uniqueResult();
+        Employeecontract ec = (Employeecontract)session
+        		.createQuery("from Employeecontract ec where ec.id = ?")
+        		.setLong(0, id)
+        		.uniqueResult();
         Hibernate.initialize(ec.getVacations());
         return ec;
     }
@@ -188,8 +130,6 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
         }
         
         session.flush();
-        
-        //		session.clear();
     }
     
     /**
@@ -199,7 +139,9 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      */
     @SuppressWarnings("unchecked")
 	public List<Employeecontract> getEmployeeContracts() {
-        return getSession().createQuery("from Employeecontract e order by employee.lastname asc, validFrom asc").list();
+        return getSession()
+        		.createQuery("from Employeecontract e order by employee.lastname asc, validFrom asc")
+        		.list();
     }
     
     /**
@@ -210,12 +152,17 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
     @SuppressWarnings("unchecked")
 	public List<Employeecontract> getTeamContracts(Long supervisorId) {
         Date now = new Date();
-        return getSession().createQuery("from Employeecontract ec " +
-                "where supervisor.id = ? " +
-                "and validFrom <= ? " +
-                "and (validUntil = null " +
-                "or validUntil >= ?) " +
-                "order by employee.lastname asc, validFrom asc").setLong(0, supervisorId).setDate(1, now).setDate(2, now).list();
+        return getSession()
+        		.createQuery("from Employeecontract ec " +
+        				"where supervisor.id = ? " +
+        				"and validFrom <= ? " +
+        				"and (validUntil = null " +
+        				"or validUntil >= ?) " +
+        				"order by employee.lastname asc, validFrom asc")
+        		.setLong(0, supervisorId)
+        		.setDate(1, now)
+        		.setDate(2, now)
+        		.list();
     }
     
     /**
@@ -358,7 +305,10 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
         Boolean hide = false;
         return getSession()
                 .createQuery("from Employeecontract e where hide = ? or hide = null or (validFrom <= ? and (validUntil >= ? or validUntil = null)) order by employee.sign asc, validFrom asc")
-                .setBoolean(0, hide).setDate(1, date).setDate(2, date).list();
+                .setBoolean(0, hide)
+                .setDate(1, date)
+                .setDate(2, date)
+                .list();
     }
     
     /**
@@ -371,7 +321,9 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
         java.util.Date date = new Date();
         return getSession()
                 .createQuery("from Employeecontract e where validFrom <= ? and (validUntil >= ? or validUntil = null) order by employee.firstname asc, validFrom asc")
-                .setDate(0, date).setDate(1, date).list();
+                .setDate(0, date)
+                .setDate(1, date)
+                .list();
     }
     
     //	/**
@@ -391,79 +343,46 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
      * @return boolean
      */
     public boolean deleteEmployeeContractById(long ecId) {
-        List<Employeecontract> allEmployeecontracts = getEmployeeContracts();
-        Employeecontract ecToDelete = getEmployeeContractById(ecId);
-        boolean ecDeleted = false;
+        Employeecontract ec = getEmployeeContractById(ecId);
         
-        for (Object element : allEmployeecontracts) {
-            Employeecontract ec = (Employeecontract)element;
-            if (ec.getId() == ecToDelete.getId()) {
-                // check if related employeeorders/timereports exist 
-                // if so, no deletion possible				
-                
-                boolean deleteOk = true;
-                List<Employeeorder> allEmployeeorders = employeeorderDAO.getEmployeeorders();
-                for (Object element2 : allEmployeeorders) {
-                    Employeeorder eo = (Employeeorder)element2;
-                    if (eo.getEmployeecontract().getId() == ecToDelete.getId()) {
-                        deleteOk = false;
-                        break;
-                    }
-                }
-                
-                if (deleteOk) {
-                    List<Timereport> allTimereports = timereportDAO.getTimereports();
-                    for (Object element2 : allTimereports) {
-                        Timereport tr = (Timereport)element2;
-                        if (tr.getEmployeecontract() != null &&
-                                tr.getEmployeecontract().getId() == ecToDelete.getId()) {
-                            deleteOk = false;
-                            break;
-                        }
-                    }
-                }
-                
-                // if ok for deletion, check for monthlyreport and vacation entries and
-                // delete them successively (cannot yet be done via web application)	
-                if (deleteOk) {
-                    List<Monthlyreport> allMonthlyreports = monthlyreportDAO.getMonthlyreports();
-                    for (Object element2 : allMonthlyreports) {
-                        Monthlyreport mr = (Monthlyreport)element2;
-                        if (mr.getEmployeecontract().getId() == ecToDelete.getId()) {
-                            monthlyreportDAO.deleteMonthlyreportById(mr.getId());
-                        }
-                    }
-                }
-                
-                if (deleteOk) {
-                    List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecToDelete.getId());
-                    for (Overtime overtime : overtimes) {
-                        overtimeDAO.deleteOvertimeById(overtime.getId());
-                    }
-                }
-                
-                if (deleteOk) {
-                    List<Vacation> allVacations = vacationDAO.getVacations();
-                    for (Object element2 : allVacations) {
-                        Vacation va = (Vacation)element2;
-                        if (va.getEmployeecontract().getId() == ecToDelete.getId()) {
-                            vacationDAO.deleteVacationById(va.getId());
-                        }
-                    }
-                }
-                
-                // finally, go for deletion of employeecontract
-                if (deleteOk) {
-                    Session session = getSession();
-                    session.delete(ecToDelete); 
-                    session.flush();
-                    ecDeleted = true;
-                }
-                break;
-            }
+        if(ec != null) {
+        	// check if related employeeorders/timereports exist 
+        	// if so, no deletion possible				
+        	
+        	List<Employeeorder> employeeorders = ec.getEmployeeorders();
+        	if(employeeorders != null && !employeeorders.isEmpty()) {
+        		return false;
+        	}
+        	
+        	List<Timereport> timereports = ec.getTimereports();
+        	if(timereports != null && !timereports.isEmpty()) {
+        		return false;
+        	}
+        	
+        	// if ok for deletion, check for monthlyreport and vacation entries and
+        	// delete them successively (cannot yet be done via web application)	
+        	List<Monthlyreport> allMonthlyreports = ec.getMonthlyreports();
+        	for (Monthlyreport mr : allMonthlyreports) {
+        		monthlyreportDAO.deleteMonthlyreportById(mr.getId());
+        	}
+        	
+        	List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
+        	for (Overtime overtime : overtimes) {
+        		overtimeDAO.deleteOvertimeById(overtime.getId());
+        	}
+        	
+        	List<Vacation> allVacations = ec.getVacations();
+        	for (Vacation va : allVacations) {
+        		vacationDAO.deleteVacationById(va.getId());
+        	}
+        	
+        	// finally, go for deletion of employeecontract
+        	Session session = getSession();
+        	session.delete(ec); 
+        	session.flush();
+        	return true;
         }
-        
-        return ecDeleted;
+        return false;
     }
     
 }
