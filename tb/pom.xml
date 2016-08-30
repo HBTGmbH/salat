@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.hbt.salat</groupId>
 	<artifactId>tb</artifactId>
-	<version>2.1.14-SNAPSHOT</version>
+	<version>2.1.15-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<properties>
@@ -137,9 +137,9 @@
 			<version>2.0.8</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-dbcp2</artifactId>
-			<version>2.1</version>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>

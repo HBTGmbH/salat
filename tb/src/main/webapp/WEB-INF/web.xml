@@ -11,10 +11,10 @@
 		<param-value>/WEB-INF/spring-beans-devl.xml</param-value>
 	</context-param>
 
-	<context-param>
+	<!-- context-param>
 		<param-name>resteasy.providers</param-name>
 		<param-value>org.tb.restful.AuthenticationInterceptor</param-value>
-	</context-param>
+	</context-param-->
 
 	<listener>
 		<listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
@@ -23,14 +23,14 @@
 		<listener-class>org.jboss.resteasy.plugins.spring.SpringContextLoaderListener</listener-class>
 	</listener>
 
-	<servlet>
+	<!--servlet>
 		<servlet-name>Resteasy</servlet-name>
 		<servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>Resteasy</servlet-name>
 		<url-pattern>/rest/*</url-pattern>
-	</servlet-mapping>
+	</servlet-mapping-->
 
 	<filter>
 		<filter-name>HibernateFilter</filter-name>

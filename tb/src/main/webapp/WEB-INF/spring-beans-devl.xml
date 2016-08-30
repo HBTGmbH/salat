@@ -186,7 +186,7 @@
 	</bean>
 
 	<!-- DataSource -->
-	<bean id="myDataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+	<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
 		<property name="url" value="jdbc:mysql://***REMOVED***:3306/salattest" />
 		<property name="connectionProperties" value="autoReconnect=true;characterEncoding=UTF8;zeroDateTimeBehavior=convertToNull;useUnicode=true" />
