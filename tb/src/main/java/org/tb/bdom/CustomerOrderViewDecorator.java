@@ -36,10 +36,9 @@ public class CustomerOrderViewDecorator extends Customerorder {
 	}
 	
     public double getDuration() {
-		Long durationHours = timereportDAO.getTotalDurationHoursForCustomerOrder(customerOrder.getId());
 		Long durationMinutes = timereportDAO.getTotalDurationMinutesForCustomerOrder(customerOrder.getId());	
 		
-		double totalTime = durationHours.doubleValue() + (durationMinutes.doubleValue() / GlobalConstants.MINUTES_PER_HOUR);
+		double totalTime = durationMinutes.doubleValue() / GlobalConstants.MINUTES_PER_HOUR;
 		
 		/* round totalTime */
 		totalTime *= 100.0;

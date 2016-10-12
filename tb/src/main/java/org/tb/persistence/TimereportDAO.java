@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -191,30 +192,17 @@ public class TimereportDAO extends HibernateDaoSupport {
     }
     
     /**
-     * Gets the sum of all duration hours without considering the minutes.
-     * 
-     * @param coId
-     * @return
-     */
-    public Long getTotalDurationHoursForCustomerOrder(long coId) {
-        BigInteger hours = (BigInteger)getSession().createSQLQuery("select sum(durationhours) from Timereport tr, Employeeorder eo, Suborder so " +
-                "where tr.employeeorder_id = eo.id and eo.suborder_id = so.id and so.customerorder_id = ?")
-                .setLong(0, coId).uniqueResult();
-        return hours == null ? 0l : hours.longValue();
-    }
-    
-    /**
-     * Gets the sum of all duration minutes without considering the hours.
+     * Gets the sum of all duration minutes WITH consideration of the hours.
      * 
      * @param coId
      * @return
      */
     public Long getTotalDurationMinutesForCustomerOrder(long coId) {
-        BigInteger minutes = (BigInteger)getSession().createSQLQuery("select sum(durationminutes) from Timereport tr, Employeeorder eo, Suborder so " +
+    	BigDecimal totalMinutes = (BigDecimal)getSession().createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo, Suborder so " +
                 "where tr.employeeorder_id = eo.id and eo.suborder_id = so.id and so.customerorder_id = ?")
                 .setLong(0, coId)
                 .uniqueResult();
-        return minutes == null ? 0l : minutes.longValue();
+        return totalMinutes == null ? 0l : totalMinutes.longValue();
     }
     
     /**
