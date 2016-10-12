@@ -7,7 +7,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.hibernate.SessionFactory;
+import org.hibernate.classic.Session;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -24,12 +25,21 @@ import org.tb.helper.TimereportHelper;
  * @author oda
  *
  */
-public class TimereportDAO extends HibernateDaoSupport {
+public class TimereportDAO {
     
     private SuborderDAO suborderDAO;
+    private SessionFactory sessionFactory;
     
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
+    }
+    
+    public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+    
+    private Session getSession() {
+    	return this.sessionFactory.getCurrentSession();
     }
     
     /**
