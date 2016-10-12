@@ -12,6 +12,10 @@
        
     <tx:annotation-driven transaction-manager="txManager"/>
     
+    <bean id="isTestDatabase" class="java.lang.Boolean">
+    	<constructor-arg value="true"></constructor-arg>
+    </bean>
+    
     <bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
 	    <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
