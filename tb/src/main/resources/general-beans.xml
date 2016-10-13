@@ -12,10 +12,6 @@
        
     <tx:annotation-driven transaction-manager="txManager"/>
     
-    <bean id="isTestDatabase" class="java.lang.Boolean">
-    	<constructor-arg value="false"></constructor-arg>
-    </bean>
-    
     <bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
 	    <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
@@ -149,7 +145,12 @@
 	
 	<!-- other classes -->
 		
-	<!-- Business Logic -->
+	<!-- Restful Webservices -->
+	<!--bean id="helloSalatWebservice" class="org.tb.restful.HelloSalatWebservice"></bean>
+	<bean id="authenticationService" class="org.tb.restful.AuthenticationService"></bean>
+	<bean id="subordersService" class="org.tb.restful.SubordersService"></bean>
+	<bean id="bookingsService" class="org.tb.restful.BookingsService"></bean>
+	<bean id="employeeOrdersService" class="org.tb.restful.EmployeeOrdersService"></bean-->
 	
 	<!-- Hibernate Konfiguration -->
 	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
@@ -161,7 +162,7 @@
 		</property>
 		
 		<property name="configLocation">
-			<value>/WEB-INF/hibernate.cfg.xml</value>
+			<value>classpath:/hibernate.cfg.xml</value>
 		</property>
 		
 		<property name="hibernateProperties">
@@ -181,20 +182,6 @@
 				<prop key="hibernate.globally_quoted_identifiers">true</prop>				
 			</props>
 		</property>
-	</bean>
-
-	<!-- DataSource -->
-	<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
-		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
-		<property name="url" value="jdbc:mysql://***REMOVED***:3306/salat" />
-		
-		<property name="username" value="salat" />
-	 	<property name="password" value="***REMOVED***" />
-		 
-		<property name="validationQuery" value="SELECT 1" />
-		<property name="testWhileIdle" value="true" />
-		<property name="testOnBorrow" value="true" />
-		<property name="connectionProperties" value="autoReconnect=true;characterEncoding=UTF8;zeroDateTimeBehavior=convertToNull;useUnicode=true" />
 	</bean>
 
 </beans>
