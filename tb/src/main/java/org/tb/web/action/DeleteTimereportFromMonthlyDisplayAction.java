@@ -77,9 +77,9 @@ public class DeleteTimereportFromMonthlyDisplayAction extends LoginRequiredActio
 		String currentEmployeeName = (String) request.getSession().getAttribute("currentEmployee");
 		Employeecontract ec = tr.getEmployeecontract();
 		if (currentEmployeeName.equalsIgnoreCase("ALL EMPLOYEES")) {
-			request.getSession().setAttribute("timereports", timereportDAO.getTimereportsByMonthAndYear(trMonth, trYear));
+			request.getSession().setAttribute("timereports", timereportDAO.getTimereportsByMonthAndYear(tr.getReferenceday().getRefdate()));
 		} else {
-			request.getSession().setAttribute("timereports", timereportDAO.getTimereportsByMonthAndYearAndEmployeeContractId(ec.getId(), trMonth, trYear));
+			request.getSession().setAttribute("timereports", timereportDAO.getTimereportsByMonthAndYearAndEmployeeContractId(ec.getId(), tr.getReferenceday().getRefdate()));
 		}
 		
 		request.getSession().setAttribute("currentMonth", trMonth);
