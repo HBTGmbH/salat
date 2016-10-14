@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"       
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                           http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-2.5.xsd
+                           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"                           
+       default-autowire="byName" default-lazy-init="false">
+       
+    <bean id="isTestDatabase" class="java.lang.Boolean">
+    	<constructor-arg value="true"></constructor-arg>
+    </bean>
+    
+    <bean id="myDataSource" class="org.tb.persistence.mysql.EmbeddedMySQLDatabase" init-method="init" destroy-method="shutdown">
+    	<property name="script" value="/dump.2016.10.11.sql" />
+    </bean> 
+
+	<!-- DataSource -->
+	<!-- bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" depends-on="mysqlDb">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3307/salatunittests" />
+		<property name="connectionProperties" value="autoReconnect=true;characterEncoding=UTF8;zeroDateTimeBehavior=convertToNull;useUnicode=true" />
+		
+		<property name="username" value="root" />
+	 	<property name="password" value="" />
+	 	
+	 	<property name="validationQuery" value="SELECT 1" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="true" />
+	</bean-->
+
+	<import resource="classpath:general-beans.xml" />
+
+</beans>

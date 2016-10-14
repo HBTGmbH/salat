@@ -13,7 +13,6 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.helper.TimereportHelper;
@@ -50,7 +49,11 @@ public class TimereportDAO {
      * @return Timereport
      */
     public Timereport getTimereportById(long id) {
-        return (Timereport)getSession().createQuery("from Timereport t where t.id = ?").setLong(0, id).setCacheable(true).uniqueResult();
+        return (Timereport)getSession()
+        		.createQuery("from Timereport t where t.id = ?")
+        		.setLong(0, id)
+        		.setCacheable(true)
+        		.uniqueResult();
     }
     
     /**
@@ -60,8 +63,10 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereports() {
-        return getSession().createQuery("from Timereport " +
-                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").setCacheable(true).list();
+        return getSession()
+        		.createQuery("from Timereport order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
+        		.setCacheable(true)
+        		.list();
     }
     
     /**
@@ -71,8 +76,10 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getOrderedTimereports() {
-        return getSession().createQuery("from Timereport " +
-                "order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, referenceday.refdate asc").setCacheable(true).list();
+        return getSession()
+        		.createQuery("from Timereport order by employeecontract.employee.sign asc, suborder.customerorder.sign asc, suborder.sign asc, referenceday.refdate asc")
+        		.setCacheable(true)
+        		.list();
     }
     
     /**
@@ -82,8 +89,11 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsWithoutEmployeeOrderKey() {
-        return getSession().createQuery("from Timereport where employeeorder_id <= ? " +
-                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").setBigInteger(0, new BigInteger("0")).setCacheable(true).list();
+        return getSession()
+        		.createQuery("from Timereport where employeeorder_id <= ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
+        		.setBigInteger(0, new BigInteger("0"))
+        		.setCacheable(true)
+        		.list();
     }
     
     /**
@@ -93,112 +103,43 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsBySuborderId(long suborderId) {
-        return getSession().createQuery("from Timereport tr where tr.suborder.id = ? " +
-                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").setLong(0, suborderId).setCacheable(true).list();
+        return getSession()
+        		.createQuery("from Timereport tr where tr.suborder.id = ? " +
+                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
+        		.setLong(0, suborderId)
+        		.setCacheable(true)
+        		.list();
     }
     
     /**
-     * Gets the sum of all duration hours without considering the minutes.
+     * Gets the sum of all duration minutes WITH considering the hours.
      * 
      * @param soId
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public Long getTotalDurationHoursForSuborder(long soId) {
-        //		BigInteger hours = (BigInteger) getSession().createSQLQuery("select sum(durationhours) from Timereport tr, Employeeorder eo " +
-        //				"where tr.employeeorder_id = eo.id and eo.suborder_id = ?")
-        //		.setLong(0, soId).uniqueResult();
-        //		return hours == null ? 0l : hours.longValue();
-        List<Employeeorder> employeeorders = getSession().createQuery("FROM Employeeorder eo WHERE eo.suborder.id = ?").setLong(0, soId).setCacheable(true).list();
-        long hours = 0l;
-        for (Employeeorder employeeorder : employeeorders) {
-            List<Timereport> timereports = employeeorder.getSuborder().getTimereports();
-            for (Timereport timereport : timereports) {
-                if (timereport.getEmployeeorder().getId() == employeeorder.getId()) {
-                    hours += timereport.getDurationhours();
-                }
-            }
-        }
-        return hours;
+    public long getTotalDurationMinutesForSuborder(long soId) {
+        Object totalMinutes = getSession()
+        		.createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo where tr.employeeorder_id = eo.id and eo.suborder_id = ?")
+        		.setLong(0, soId)
+        		.uniqueResult();
+        return objectToLong(totalMinutes);
     }
     
     /**
-     * Gets the sum of all duration minutes without considering the hours.
+     * Gets the sum of all duration minutes within a range of time WITH considering the hours.
      * 
      * @param soId
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public Long getTotalDurationMinutesForSuborder(long soId) {
-        //		BigInteger minutes = (BigInteger) getSession().createSQLQuery("select sum(durationminutes) from Timereport tr, Employeeorder eo " +
-        //				"where tr.employeeorder_id = eo.id and eo.suborder_id = ?")
-        //		.setLong(0, soId).uniqueResult();
-        //		return minutes == null ? 0l : minutes.longValue();
-        List<Employeeorder> employeeorders = getSession().createQuery("FROM Employeeorder eo WHERE eo.suborder.id = ?").setLong(0, soId).setCacheable(true).list();
-        long minutes = 0l;
-        for (Employeeorder employeeorder : employeeorders) {
-            List<Timereport> timereports = employeeorder.getSuborder().getTimereports();
-            for (Timereport timereport : timereports) {
-                if (timereport.getEmployeeorder().getId() == employeeorder.getId()) {
-                    minutes += timereport.getDurationminutes();
-                }
-            }
-        }
-        return minutes;
-    }
-    
-    /**
-     * Gets the sum of all duration hours within a range of time without considering the minutes.
-     * 
-     * @param soId
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public Long getTotalDurationHoursForSuborder(long soId, java.sql.Date fromDate, java.sql.Date untilDate) {
-        //		BigInteger hours = (BigInteger) getSession().createSQLQuery("select sum(durationhours) from Timereport tr, Employeeorder eo, Referenceday rd " +
-        //				"where rd.refdate >= ? and rd.refdate <= ? and tr.employeeorder_id = eo.id and eo.suborder_id = ? and rd.id = tr.referenceday_id")
-        //		.setDate(0,fromDate).setDate(1, untilDate).setLong(2, soId).uniqueResult();
-        //		return hours == null ? 0l : hours.longValue();
-        List<Employeeorder> employeeorders = getSession().createQuery("FROM Employeeorder eo WHERE eo.suborder.id = ?").setLong(0, soId).setCacheable(true).list();
-        long hours = 0l;
-        for (Employeeorder employeeorder : employeeorders) {
-            List<Timereport> timereports = employeeorder.getSuborder().getTimereports();
-            for (Timereport timereport : timereports) {
-                java.sql.Date refDate = timereport.getReferenceday().getRefdate();
-                if (timereport.getEmployeeorder().getId() == employeeorder.getId()
-                        && !refDate.before(fromDate) && !refDate.after(untilDate)) {
-                    hours += timereport.getDurationhours();
-                }
-            }
-        }
-        return hours;
-    }
-    
-    /**
-     * Gets the sum of all duration minutes within a range of time without considering the hours.
-     * 
-     * @param soId
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public Long getTotalDurationMinutesForSuborder(long soId, java.sql.Date fromDate, java.sql.Date untilDate) {
-        //		BigInteger minutes = (BigInteger) getSession().createSQLQuery("select sum(durationminutes) from Timereport tr, Employeeorder eo, Referenceday rd " +
-        //				"where rd.refdate >= ? and rd.refdate <= ? and tr.employeeorder_id = eo.id and eo.suborder_id = ? and rd.id = tr.referenceday_id")
-        //		.setDate(0,fromDate).setDate(1, untilDate).setLong(2, soId).uniqueResult();
-        //		return minutes == null ? 0l : minutes.longValue();
-        List<Employeeorder> employeeorders = getSession().createQuery("FROM Employeeorder eo WHERE eo.suborder.id = ?").setLong(0, soId).setCacheable(true).list();
-        long minutes = 0l;
-        for (Employeeorder employeeorder : employeeorders) {
-            List<Timereport> timereports = employeeorder.getSuborder().getTimereports();
-            for (Timereport timereport : timereports) {
-                java.sql.Date refDate = timereport.getReferenceday().getRefdate();
-                if (timereport.getEmployeeorder().getId() == employeeorder.getId()
-                        && !refDate.before(fromDate) && !refDate.after(untilDate)) {
-                    minutes += timereport.getDurationminutes();
-                }
-            }
-        }
-        return minutes;
+    public long getTotalDurationMinutesForSuborder(long soId, java.sql.Date fromDate, java.sql.Date untilDate) {
+    	Object minutes = getSession()
+    			.createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo, Referenceday rd " +
+        				"where rd.refdate >= ? and rd.refdate <= ? and tr.employeeorder_id = eo.id and eo.suborder_id = ? and rd.id = tr.referenceday_id")
+        		.setDate(0,fromDate)
+        		.setDate(1, untilDate)
+        		.setLong(2, soId)
+        		.uniqueResult();
+        return objectToLong(minutes);
     }
     
     /**
@@ -207,44 +148,38 @@ public class TimereportDAO {
      * @param coId
      * @return
      */
-    public Long getTotalDurationMinutesForCustomerOrder(long coId) {
-    	BigDecimal totalMinutes = (BigDecimal)getSession().createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo, Suborder so " +
-                "where tr.employeeorder_id = eo.id and eo.suborder_id = so.id and so.customerorder_id = ?")
+    public long getTotalDurationMinutesForCustomerOrder(long coId) {
+    	Object totalMinutes = getSession()
+    			.createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo, Suborder so " +
+    					"where tr.employeeorder_id = eo.id and eo.suborder_id = so.id and so.customerorder_id = ?")
                 .setLong(0, coId)
                 .uniqueResult();
-        return totalMinutes == null ? 0l : totalMinutes.longValue();
+        return objectToLong(totalMinutes);
     }
     
     /**
-     * Gets the sum of all duration hours without considering the minutes.
+     * Gets the sum of all duration minutes WITH considering the hours.
      * 
      * @param eoId
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public Long getTotalDurationHoursForEmployeeOrder(long eoId) {
-        List<Timereport> timereports = getSession().createQuery("FROM Timereport tr WHERE tr.employeeorder.id = ?").setLong(0, eoId).setCacheable(true).list();
-        long hours = 0l;
-        for (Timereport timereport : timereports) {
-            hours += timereport.getDurationhours();
-        }
-        return hours;
+    public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
+    	Object totalMinutes = getSession()
+        		.createQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr WHERE tr.employeeorder.id = ?")
+        		.setLong(0, eoId)
+        		.setCacheable(true)
+        		.uniqueResult();
+    	return objectToLong(totalMinutes);
     }
     
-    /**
-     * Gets the sum of all duration minutes without considering the hours.
-     * 
-     * @param eoId
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public Long getTotalDurationMinutesForEmployeeOrder(long eoId) {
-        List<Timereport> timereports = getSession().createQuery("FROM Timereport tr WHERE tr.employeeorder.id = ?").setLong(0, eoId).setCacheable(true).list();
-        long minutes = 0l;
-        for (Timereport timereport : timereports) {
-            minutes += timereport.getDurationminutes();
-        }
-        return minutes;
+    private long objectToLong(Object o) {
+    	if(o instanceof Long) {
+    		return (Long)o;
+    	} else if(o instanceof BigDecimal) {
+    		return ((BigDecimal)o).longValue();
+    	} else {
+    		return 0;
+    	}
     }
     
     /**
@@ -255,8 +190,13 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsBySuborderIdAndEmployeeContractId(long suborderId, long ecId) {
-        return getSession().createQuery("from Timereport tr where tr.suborder.id = ? and tr.employeecontract.id = ? " +
-                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").setLong(0, suborderId).setLong(1, ecId).setCacheable(true).list();
+        return getSession()
+        		.createQuery("from Timereport tr where tr.suborder.id = ? and tr.employeecontract.id = ? " +
+                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
+        		.setLong(0, suborderId)
+        		.setLong(1, ecId)
+        		.setCacheable(true)
+        		.list();
     }
     
     /**
@@ -266,8 +206,11 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByEmployeeContractId(long employeeContractId) {
-        return getSession().createQuery("from Timereport where employeecontract.id = ? " +
-                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc").setLong(0, employeeContractId).setCacheable(true).list();
+        return getSession()
+        		.createQuery("from Timereport where employeecontract.id = ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
+        		.setLong(0, employeeContractId)
+        		.setCacheable(true)
+        		.list();
     }
     
     /**

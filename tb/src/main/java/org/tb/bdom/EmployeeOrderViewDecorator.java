@@ -13,10 +13,9 @@ public class EmployeeOrderViewDecorator extends Employeeorder {
 	private Employeeorder employeeOrder;
 	
 	public double getDuration() {
-		Long durationHours = timereportDAO.getTotalDurationHoursForEmployeeOrder(employeeOrder.getId());
 		Long durationMinutes = timereportDAO.getTotalDurationMinutesForEmployeeOrder(employeeOrder.getId());	
 		
-		double totalTime = durationHours.doubleValue() + (durationMinutes.doubleValue() / GlobalConstants.MINUTES_PER_HOUR);
+		double totalTime = durationMinutes.doubleValue() / GlobalConstants.MINUTES_PER_HOUR;
 		
 		/* round totalTime */
 		totalTime *= 100.0;
