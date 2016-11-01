@@ -221,7 +221,7 @@ public class TreeTag extends TagSupport {
 				//     and deprecated suborders!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 				//
 				//--------------------------------------------------------------------------------
-				boolean editable = enabled && this.currentSuborderID != suborder.getId();
+				boolean editable = enabled && (this.currentSuborderID == null || this.currentSuborderID != suborder.getId());
 				String name = Integer.toString(rand.nextInt());  
 				String workingChangeFunctionStr = changeFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));
 				String workingDeleteFunctionStr = deleteFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));

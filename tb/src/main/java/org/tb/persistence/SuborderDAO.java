@@ -238,7 +238,7 @@ public class SuborderDAO extends HibernateDaoSupport {
 	    	terms.add("(untilDate >= :untilDate "
 	    			+ "or (untilDate = null "
 	    			+ "and (s.customerorder.untilDate = null "
-	    			+ "and s.customerorder.untilDate <= :untilDate )))");
+	    			+ "or s.customerorder.untilDate <= :untilDate )))");
 	    	args.put("untilDate", dateTill);
     	}
 

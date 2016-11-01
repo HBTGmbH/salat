@@ -554,7 +554,13 @@ public class StoreDailyReportAction extends DailyReportAction {
             }
             
             java.util.Date releaseDate = employeecontract.getReportReleaseDate();
+            if(releaseDate == null) {
+            	releaseDate = employeecontract.getValidFrom();
+            }
             java.util.Date acceptanceDate = employeecontract.getReportAcceptanceDate();
+            if(acceptanceDate == null) {
+            	acceptanceDate = employeecontract.getValidFrom();
+            }
             java.util.Date refDate = tr.getReferenceday().getRefdate();
             
             boolean firstday = false;
@@ -1320,7 +1326,13 @@ public class StoreDailyReportAction extends DailyReportAction {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         java.util.Date refDate = null;
         Date releaseDate = employeecontract.getReportReleaseDate();
+        if(releaseDate == null) {
+        	releaseDate = employeecontract.getValidFrom();
+        }
         Date acceptanceDate = employeecontract.getReportAcceptanceDate();
+        if(acceptanceDate == null) {
+        	acceptanceDate = employeecontract.getValidFrom();
+        }
         try {
             refDate = simpleDateFormat.parse(reportForm.getReferenceday());
         } catch (Exception e) {
@@ -1329,7 +1341,7 @@ public class StoreDailyReportAction extends DailyReportAction {
         
         // check, if refDate is first day
         boolean firstday = false;
-        if (!employeecontract.getReportReleaseDate().after(employeecontract.getValidFrom()) &&
+        if (!releaseDate.after(employeecontract.getValidFrom()) &&
                 !refDate.after(employeecontract.getValidFrom())) {
             firstday = true;
         }
