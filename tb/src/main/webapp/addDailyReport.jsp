@@ -192,7 +192,7 @@
                     	}
                     }
                 </script>
-                <html:text property="referenceday" onblur="adjustBeginTimeAction(this.form)" 
+                <html:text property="referenceday" onchange="adjustBeginTimeAction(this.form)" 
                 	readonly="false" size="10" maxlength="10" 
                 	onkeyup="hitEnter(event, this.form);"/>
                 <a href="javascript:calenderPopup()" name="anchor1" ID="anchor1" style="text-decoration:none;">
