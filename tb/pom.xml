@@ -37,7 +37,10 @@
 				<version>2.19.1</version>
 				<configuration>
 					<excludes>
-						<exclude>**/TimereportDAOTest.java</exclude>
+						<!-- Die Tests mit dem MySQL-Plugin sollten nur
+						     explicit manuell durchgeführt werden, da das MySQL
+						     plugin im Fall eines Abbruchs im Hintergrund weiterläuft -->
+						<exclude>**/TimereportDAOTest.java</exclude>  
 					</excludes>
 				</configuration>
 			</plugin>
