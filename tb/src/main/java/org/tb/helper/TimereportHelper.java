@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -144,27 +143,27 @@ public class TimereportHelper {
      * 
      * @return int
      */
-    public int countDaysInMonthWithTimereports(long ecId, String year, String month,
-            List<Timereport> trList, TimereportDAO td) {
-        int numberOfDays = 0;
-        String dateString = "";
-        
-        for (int i = 1; i <= DateUtils.getLastDayOfMonth(year, month); i++) {
-            if (i < 10) {
-                dateString = year + "-" + month + "-0" + i;
-            } else {
-                dateString = year + "-" + month + "-" + i;
-            }
-            java.sql.Date theDate = java.sql.Date.valueOf(dateString);
-            List<Timereport> dailyTimereports =
-                    td.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-            if (dailyTimereports.size() > 0) {
-                numberOfDays++;
-            }
-        }
-        
-        return numberOfDays;
-    }
+//    public int countDaysInMonthWithTimereports(long ecId, String year, String month,
+//            List<Timereport> trList, TimereportDAO td) {
+//        int numberOfDays = 0;
+//        String dateString = "";
+//        
+//        for (int i = 1; i <= DateUtils.getLastDayOfMonth(year, month); i++) {
+//            if (i < 10) {
+//                dateString = year + "-" + month + "-0" + i;
+//            } else {
+//                dateString = year + "-" + month + "-" + i;
+//            }
+//            java.sql.Date theDate = java.sql.Date.valueOf(dateString);
+//            List<Timereport> dailyTimereports =
+//                    td.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
+//            if (dailyTimereports.size() > 0) {
+//                numberOfDays++;
+//            }
+//        }
+//        
+//        return numberOfDays;
+//    }
     
     /**
      * counts the working days in month with timereports for a given employee 
@@ -177,30 +176,30 @@ public class TimereportHelper {
      * 
      * @return int
      */
-    public int countWorkDaysInMonthWithTimereports(long ecId, String year, String month,
-            List<Timereport> trList, TimereportDAO td) {
-        int numberOfDays = 0;
-        String dateString = "";
-        
-        for (int i = 1; i <= DateUtils.getLastDayOfMonth(year, month); i++) {
-            if (i < 10) {
-                dateString = year + "-" + month + "-0" + i;
-            } else {
-                dateString = year + "-" + month + "-" + i;
-            }
-            java.sql.Date theDate = java.sql.Date.valueOf(dateString);
-            List<Timereport> dailyTimereports =
-                    td.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-            if (dailyTimereports.size() > 0) {
-                Timereport tr = dailyTimereports.get(0);
-                if (tr.getReferenceday().getWorkingday()) {
-                    numberOfDays++;
-                }
-            }
-        }
-        
-        return numberOfDays;
-    }
+//    public int countWorkDaysInMonthWithTimereports(long ecId, String year, String month,
+//            List<Timereport> trList, TimereportDAO td) {
+//        int numberOfDays = 0;
+//        String dateString = "";
+//        
+//        for (int i = 1; i <= DateUtils.getLastDayOfMonth(year, month); i++) {
+//            if (i < 10) {
+//                dateString = year + "-" + month + "-0" + i;
+//            } else {
+//                dateString = year + "-" + month + "-" + i;
+//            }
+//            java.sql.Date theDate = java.sql.Date.valueOf(dateString);
+//            List<Timereport> dailyTimereports =
+//                    td.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
+//            if (dailyTimereports.size() > 0) {
+//                Timereport tr = dailyTimereports.get(0);
+//                if (tr.getReferenceday().getWorkingday()) {
+//                    numberOfDays++;
+//                }
+//            }
+//        }
+//        
+//        return numberOfDays;
+//    }
     
     /**
      * checks the overlap
@@ -383,47 +382,44 @@ public class TimereportHelper {
      */
     public int[] determineTimesToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday, Timereport tr) {
         List<Timereport> timereports = td.getTimereportsByDateAndEmployeeContractId(ecId, date);
-        int[] displayTimes = new int[4];
         if (workingday != null) {
-            displayTimes[0] = workingday.getStarttimehour();
-            displayTimes[1] = workingday.getStarttimeminute();
-            displayTimes[0] += workingday.getBreakhours();
-            displayTimes[1] += workingday.getBreakminutes();
-            Iterator<Timereport> it = timereports.iterator();
-            Timereport timereport;
-            while (it.hasNext()) {
-                timereport = it.next();
+            int hourBegin = workingday.getStarttimehour();
+            int minuteBegin = workingday.getStarttimeminute();
+            hourBegin += workingday.getBreakhours();
+            minuteBegin += workingday.getBreakminutes();
+            for(Timereport timereport : timereports) {
                 if (timereport.getId() == tr.getId()) {
                     break;
                 }
-                displayTimes[0] += timereport.getDurationhours();
-                displayTimes[1] += timereport.getDurationminutes();
+                hourBegin += timereport.getDurationhours();
+                minuteBegin += timereport.getDurationminutes();
             }
-            displayTimes[2] = displayTimes[0] + tr.getDurationhours();
-            displayTimes[3] = displayTimes[1] + tr.getDurationminutes();
-            displayTimes[0] += displayTimes[1] / 60;
-            displayTimes[1] = displayTimes[1] % 60;
-            displayTimes[2] += displayTimes[3] / 60;
-            displayTimes[3] = displayTimes[3] % 60;
+            int hourEnd = hourBegin + tr.getDurationhours();
+            int minuteEnd = minuteBegin + tr.getDurationminutes();
+            hourBegin += minuteBegin / 60;
+            minuteBegin = minuteBegin % 60;
+            hourEnd += minuteEnd / 60;
+            minuteEnd = minuteEnd % 60;
             
             //			// clean possible truncation errors
-            if (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT != 0) {
-                if (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                    displayTimes[1] += 5 - displayTimes[1] % GlobalConstants.MINUTE_INCREMENT;
-                } else if (displayTimes[1] % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                    displayTimes[1] -= displayTimes[1] % GlobalConstants.MINUTE_INCREMENT;
+            if (minuteBegin % GlobalConstants.MINUTE_INCREMENT != 0) {
+                if (minuteBegin % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+                    minuteBegin += 5 - minuteBegin % GlobalConstants.MINUTE_INCREMENT;
+                } else if (minuteBegin % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+                    minuteBegin -= minuteBegin % GlobalConstants.MINUTE_INCREMENT;
                 }
             }
-            if (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT != 0) {
-                if (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                    displayTimes[3] += 5 - displayTimes[3] % GlobalConstants.MINUTE_INCREMENT;
-                } else if (displayTimes[3] % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                    displayTimes[3] -= displayTimes[3] % GlobalConstants.MINUTE_INCREMENT;
+            if (minuteEnd % GlobalConstants.MINUTE_INCREMENT != 0) {
+                if (minuteEnd % GlobalConstants.MINUTE_INCREMENT > 2.5) {
+                    minuteEnd += 5 - minuteEnd % GlobalConstants.MINUTE_INCREMENT;
+                } else if (minuteEnd % GlobalConstants.MINUTE_INCREMENT < 2.5) {
+                    minuteEnd -= minuteEnd % GlobalConstants.MINUTE_INCREMENT;
                 }
             }
-            
+            return new int[]{ hourBegin, minuteBegin, hourEnd, minuteEnd };
+        } else {
+        	return new int[4];
         }
-        return displayTimes;
     }
     
     /**

@@ -271,6 +271,6 @@ textarea.showDailyReport {
 	width: 100%;
 }
 
-.middle-aligned {
+.middle-aligned, .favOrderBtn {
 	vertical-align: middle;
 }

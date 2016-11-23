@@ -204,7 +204,13 @@ public class StoreDailyReportAction extends DailyReportAction {
         
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshSuborders")) {
             // refresh suborders to be displayed in the select menu
-            if (soHelper.refreshSuborders(mapping, request, reportForm, suborderDAO, ticketDAO, employeecontractDAO) != true) {
+        	String defaultSuborderIndexStr;
+        	if(request.getParameter("continue") == null) {
+        		defaultSuborderIndexStr = request.getParameter("defaultSuborderIndex");
+        	} else {
+        		defaultSuborderIndexStr = null;
+        	}
+            if (soHelper.refreshSuborders(mapping, request, reportForm, suborderDAO, ticketDAO, employeecontractDAO, defaultSuborderIndexStr) != true) {
                 return mapping.findForward("error");
             } else {
                 Customerorder selectedOrder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());

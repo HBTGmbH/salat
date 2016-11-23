@@ -33,11 +33,12 @@ public class SuborderHelper {
 	 * @param reportForm - AddDailyReportForm
 	 * @param sd - SuborderDAO being used
 	 * @param ecd - EmployeecontractDAO being used
+	 * @param defaultSuborderIndexStr 
 	 * 
 	 * @return boolean
 	 */
 	public boolean refreshSuborders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
-			SuborderDAO sd, TicketDAO td, EmployeecontractDAO ecd) {
+			SuborderDAO sd, TicketDAO td, EmployeecontractDAO ecd, String defaultSuborderIndexStr) {
 		
 		Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 		
@@ -59,9 +60,17 @@ public class SuborderHelper {
 		long customerorderId = reportForm.getOrderId();
 		List<Suborder> theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorderId,date);		
 		request.getSession().setAttribute("suborders", theSuborders);
+		Suborder so = null;
+		if(defaultSuborderIndexStr != null) {
+			try {
+				Long currentSuborderId = Long.parseLong(defaultSuborderIndexStr);
+				request.getSession().setAttribute("currentSuborderId", currentSuborderId);
+				so = sd.getSuborderById(currentSuborderId);
+			} catch(NumberFormatException e){} // do nothing
+		}
 
 		// set the first Suborder as current
-		Suborder so = theSuborders.get(0);
+		so = so != null ? so : theSuborders.get(0);
 		if(so != null) {
 			assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
 			JiraSalatHelper.setJiraTicketKeysForSuborder(request, td, so.getId());

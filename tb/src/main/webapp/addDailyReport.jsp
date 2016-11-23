@@ -16,19 +16,42 @@
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
 <link href="/tb/style/select2.min.css" rel="stylesheet" />
-<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
-<script src="/tb/scripts/select2.full.min.js"></script>
+<script src="/tb/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script src="/tb/scripts/select2.full.min.js" type="text/javascript"></script>
+<script>
+	var currentUser = "${currentEmployeeContract.employee.sign}";
+</script>
+<script src="/tb/scripts/favouriteOrder.js" type="text/javascript"></script>
 <% java.text.DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");%>
+<script type="text/javascript">
+	if(typeof Storage !== "undefined") HBT.Salat.FavouriteOrders.initialize({
+		thisIsTheDefaultOrder: '<bean:message key="add.report.this.default.order" />',
+		otherIsTheDefaultOrder: '<bean:message key="add.report.other.default.order" arg0="{0}" />',
+		thisIsTheDefaultSuborder: '<bean:message key="add.report.this.default.suborder" />',
+		otherIsTheDefaultSuborder: '<bean:message key="add.report.other.default.suborder" arg0="{0}" />',
+		noDefaultOrder: '<bean:message key="add.report.no.default.order" />',
+		noDefaultSuborder: '<bean:message key="add.report.no.default.suborder" />',
+		localStorageMsg: '<bean:message key="add.report.default.localStorage.msg" />'
+	});
 
-<script type="text/javascript" language="JavaScript">
-
- 	function setUpdateOrdersAction(form) {	
+ 	function setUpdateOrdersAction(form) {
  		form.action = "/tb/do/StoreDailyReport?task=refreshOrders";
 		form.submit();
 	}	
 	
-	function setUpdateSubordersAction(form) {	
- 		form.action = "/tb/do/StoreDailyReport?task=refreshSuborders";
+	function setUpdateSubordersAction(select) {	
+ 		var form = select.form;
+ 		
+ 		var orderIndex = select.options[select.selectedIndex].value;
+ 		var paramToAdd = "";
+ 		if(orderIndex && orderIndex != "0") {
+	 		var suborderIndex = HBT.Salat.FavouriteOrders.getDefaultSuborder(orderIndex);
+	 		if(suborderIndex && suborderIndex != "0") {
+	 			paramToAdd = "&defaultSuborderIndex=" + suborderIndex;
+	 		}
+ 		}
+		
+		form.action = "/tb/do/StoreDailyReport?task=refreshSuborders" + paramToAdd;
 		form.submit();
 	}			
 	
@@ -78,10 +101,13 @@
 	}
 
 	$(document).ready(function() {
-		$(".make-select2").select2({
+		$(".ecCls").select2({
 			dropdownAutoWidth: true,
 			width: 'element'
 		});	
+		
+		HBT.Salat.FavouriteOrders.initializeOrderSelection();
+		HBT.Salat.FavouriteOrders.initializeSuborderSelection();
 	});		
 </script>
 
@@ -107,7 +133,7 @@
 				<b><bean:message key="main.timereport.employee.fullname.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateOrdersAction(this.form)" styleClass="make-select2">				
+				<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateOrdersAction(this.form)" styleClass="make-select2 ecCls">				
 				<c:choose>
 					<c:when test="${employeeAuthorized}">
 						<c:forEach var="employeecontract" items="${employeecontracts}" >
@@ -217,14 +243,16 @@
 				</td>
 
 				<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
-					<html:select property="orderId" onchange="setUpdateSubordersAction(this.form)" disabled="${projectIDExists and isEdit}" styleClass="make-select2">
+					<html:select property="orderId" onchange="setUpdateSubordersAction(this)" disabled="${projectIDExists and isEdit}" styleClass="make-select2 orderCls">
 						<html:options collection="orders" labelProperty="signAndDescription" property="id" />
 					</html:select>
+					<img id="favOrderBtn" class="favOrderBtn" src="/tb/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
 					<b> / </b>
-					<html:select property="suborderSignId" styleClass="mandatory make-select2" value="${currentSuborderId}" 
+					<html:select property="suborderSignId" styleClass="mandatory make-select2 suborderCls" value="${currentSuborderId}" 
 						onchange="adjustSuborderSignChangedAction(this.form)" disabled="${projectIDExists and isEdit}">
 						<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
 					</html:select>
+					<img id="favSuborderBtn" class="favOrderBtn" src="/tb/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
 					<span style="color:red">
 						<html:errors property="orderId" />
 						<html:errors property="suborderId" />
