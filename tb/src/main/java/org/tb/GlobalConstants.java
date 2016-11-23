@@ -23,7 +23,7 @@ public class GlobalConstants {
     public static final double MAX_OVERTIME = 10000.0;
     public static final double MIN_OVERTIME = -10000.0;
     
-    public static final int COMMENT_MAX_LENGTH = 256;
+    public static final int COMMENT_MAX_LENGTH = 32000;
     public static final int STATUS_MAX_LENGTH = 64;
     
     public static final String DEFAULT_CURRENCY = "EUR";
