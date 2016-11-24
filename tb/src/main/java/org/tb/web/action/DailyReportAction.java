@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -172,83 +171,52 @@ public abstract class DailyReportAction extends LoginRequiredAction {
                 reportForm.setOrder(GlobalConstants.ALL_ORDERS);
             }
         } 
+
+        Employeecontract ec;
+        if(reportForm.getEmployeeContractId() != -1) {
+        	// consider timereports for specific employee
+	        ec = employeecontractDAO.getEmployeeContractById(employeeContractId);
+	        if (ec == null) {
+	            request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
+	            return false;
+	        }
+	        request.getSession().setAttribute("overtimeDisabled", false);
+        } else {
+        	// consider timereports for all employees
+        	ec = null;
+        	request.getSession().setAttribute("overtimeDisabled", true);
+        }
+
         
         List<Timereport> timereports = new ArrayList<Timereport>();
-        if (reportForm.getEmployeeContractId() == -1) {
-            // consider timereports for all employees
-            List<Customerorder> orders = customerorderDAO.getCustomerorders();
-            request.getSession().setAttribute("orders", orders);
-            
-            request.getSession().setAttribute("overtimeDisabled", true);
-            
-            if (reportForm.getOrder() == null || reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS)) {
-                // get the timereports for specific date, all employees, all orders
-                timereports = timereportDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
-                
-            } else {
-                Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
-                long orderId = co.getId();
-                request.getSession().setAttribute("suborders", co.getSuborders());
-                
-                Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderId());
-                if (suborder == null || suborder.getCustomerorder().getId() != orderId) {
-                    reportForm.setSuborderId(-1l);
-                }
-                
-                if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {
-                    // get the timereports for specific date, all employees, specific order
-                    timereports = timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, orderId);
-                } else {
-                    timereports = timereportDAO.getTimereportsByDatesAndSuborderId(beginSqlDate, endSqlDate, reportForm.getSuborderId());
-                }
-            }
+        List<Customerorder> orders = ec == null ? customerorderDAO.getCustomerorders() : customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+        request.getSession().setAttribute("orders", orders);
+        
+        if (reportForm.getOrder() == null || reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS)) {
+            // get the timereports for specific date, all orders
+            timereports = ec == null 
+            		? timereportDAO.getTimereportsByDates(beginSqlDate, endSqlDate)  // all employees
+            		: timereportDAO.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate); // specific employee
             
         } else {
-            // consider timereports for specific employee
-            Employeecontract ec = employeecontractDAO.getEmployeeContractById(employeeContractId);
-            if (ec == null) {
-                request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
-                return false;
+            Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
+            long orderId = co.getId();
+            List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(orderId, reportForm.getShowOnlyValid());
+            request.getSession().setAttribute("suborders", suborders);
+            
+            if(suborders.stream().noneMatch( suborder -> suborder.getId() == reportForm.getSuborderId() )) {
+            	reportForm.setSuborderId(-1);
             }
             
-            request.getSession().setAttribute("overtimeDisabled", false);
-            
-            // also refresh orders/suborders to be displayed for specific employee 
-            List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
-            request.getSession().setAttribute("orders", orders);
-            if (reportForm.getOrder() == null || reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS)) {
-                // get the timereports for specific date, specific employee, all orders
-                timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate);
+            if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {
+                // get the timereports for specific date, specific order
+                timereports = ec == null
+                		? timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, orderId) //all employees 
+                		: timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ec.getId(), beginSqlDate, endSqlDate, orderId); // specific employee
             } else {
-                Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
-                long orderId = co.getId();
-                
-                List<Suborder> suborders = co.getSuborders();
-                if(reportForm.getShowOnlyValid()) {
-                	Iterator<Suborder> iter = suborders.iterator();
-                	while(iter.hasNext()) {
-                		if(!iter.next().getCurrentlyValid()) {
-                			iter.remove();
-                		}
-                	}
-                }
-                
-                request.getSession().setAttribute("suborders", suborders);
-                Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderId());
-                if (suborder == null || suborder.getCustomerorder().getId() != orderId) {
-                    reportForm.setSuborderId(-1l);
-                }
-                // get the timereports for specific date, specific employee, specific order
-                // fill up order-specific list with 'working' reports only...
-                if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {
-                    timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ec.getId(), beginSqlDate, endSqlDate, orderId);
-                } else {
-                    timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), beginSqlDate, endSqlDate, reportForm.getSuborderId());
-                }
-            }
-            // refresh overtime and vacation
-            if (reportForm.getEmployeeContractId() != -1) {
-                refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+                timereports = ec == null 
+                		? timereportDAO.getTimereportsByDatesAndSuborderId(beginSqlDate, endSqlDate, reportForm.getSuborderId()) //all employees 
+                		: timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), beginSqlDate, endSqlDate, reportForm.getSuborderId()); // specific employee
             }
         }
         

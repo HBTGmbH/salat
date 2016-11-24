@@ -169,21 +169,40 @@ public class SuborderDAO extends HibernateDaoSupport {
      * @return List<Suborder>
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean onlyValid) {
+    	if(onlyValid) {
+    		return getSubordersByCustomerorderId(customerorderId, new java.util.Date());
+    	} else {
+	        @SuppressWarnings("unchecked")
+			List<Suborder> result = getSession()
+				.createQuery("from Suborder s where s.customerorder.id = ? order by sign")
+				.setLong(0, customerorderId)
+				.setCacheable(true)
+				.list();
+	        return result;
+    	}
+    }
+    
+    /**
+     * Gets a list of Suborders by customer order id.
+     * @param onlyValid 
+     * 
+     * @param long customerorderId
+     * 
+     * @return List<Suborder>
+     */
+    public List<Suborder> getSubordersByCustomerorderId(long customerorderId, java.util.Date date) {
         @SuppressWarnings("unchecked")
+        
 		List<Suborder> result = getSession()
-			.createQuery("from Suborder s where s.customerorder.id = ? order by sign")
-			.setLong(0, customerorderId)
+			.createQuery("from Suborder s where s.customerorder.id = :coId " +
+	                "and s.fromDate <= :refDate " +
+	                "and (s.untilDate is null " +
+	                "or s.untilDate >= :refDate) " +
+					"order by sign")
+			.setParameter("coId", customerorderId)
+			.setParameter("refDate", date)
 			.setCacheable(true)
 			.list();
-        if(onlyValid) {
-        	Iterator<Suborder> iter = result.iterator();
-        	while(iter.hasNext()) {
-        		Suborder suborder = iter.next();
-        		if(!suborder.getCurrentlyValid()) {
-        			iter.remove();
-        		}
-        	}
-        }
         return result;
     }
     
@@ -194,15 +213,39 @@ public class SuborderDAO extends HibernateDaoSupport {
      * @return List<Suborder>
      */
     public List<Suborder> getSuborders(boolean onlyValid) {
+    	if(onlyValid) {
+    		return getSuborders(new java.util.Date());
+    	} else {
+	    	
+	        @SuppressWarnings("unchecked")
+			List<Suborder> result = getSession().createQuery("from Suborder order by sign").list();
+	        
+	        Iterator<Suborder> iter = result.iterator();
+	        while(iter.hasNext()) {
+	        	if(!iter.next().getCurrentlyValid()) {
+	        		iter.remove();
+	        	}
+	        }
+	        
+	        return result;
+    	}
+    }
+    
+    /**
+     * Get a list of all Suborders ordered by their sign.
+     * @param onlyValid return only valid suborders
+     * 
+     * @return List<Suborder>
+     */
+    public List<Suborder> getSuborders(java.util.Date date) {
         @SuppressWarnings("unchecked")
-		List<Suborder> result = getSession().createQuery("from Suborder order by sign").list();
-        
-        Iterator<Suborder> iter = result.iterator();
-        while(iter.hasNext()) {
-        	if(!iter.next().getCurrentlyValid()) {
-        		iter.remove();
-        	}
-        }
+		List<Suborder> result = getSession().createQuery("from Suborder " +
+                "and s.fromDate <= :refDate " +
+                "and (s.untilDate is null " +
+                "or s.untilDate >= :refDate) " +
+				"order by sign")
+			.setParameter("refDate", date)
+			.list();
         
         return result;
     }
