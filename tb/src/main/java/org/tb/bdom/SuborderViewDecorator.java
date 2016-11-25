@@ -1,6 +1,7 @@
 package org.tb.bdom;
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.tb.GlobalConstants;
@@ -13,6 +14,8 @@ public class SuborderViewDecorator extends Suborder {
     
     private final TimereportDAO timereportDAO;
     private final Suborder suborder;
+    private Double duration = null;
+    private Double durationNotInvoiceable = null;
     
     public SuborderViewDecorator(TimereportDAO timereportDAO, Suborder suborder) {
         this.timereportDAO = timereportDAO;
@@ -34,15 +37,44 @@ public class SuborderViewDecorator extends Suborder {
         }
     }
     
+    private static void generateListOfDescendants(Suborder so, boolean isInvoiceable, List<Long> listOfDescendents) {
+    	if(isInvoiceable != (so.getInvoice() == 'y' || so.getInvoice() == 'Y') ) {
+    		return;
+    	}
+    	listOfDescendents.add(so.getId());
+    	if(so.getSuborders() != null) {
+    		for(Suborder child : so.getSuborders()) {
+    			generateListOfDescendants(child, isInvoiceable, listOfDescendents);
+    		}
+    	}
+    }
+    
     public double getDuration() {
-        
-        CustomerOrderActualHoursVisitor visitor = new CustomerOrderActualHoursVisitor(timereportDAO);
-        
-        /* start visiting */
-        acceptVisitor(visitor);
-        
-        /* return result */
-        return visitor.getTotalTime();
+    	if(this.duration == null) {
+	    	if(suborder.getInvoice() == 'n' || suborder.getInvoice() == 'N') {
+	    		return 0;
+	    	}
+	    	
+	    	List<Long> descendants = new ArrayList<>();
+	    	generateListOfDescendants(suborder, true, descendants);
+	
+	    	this.duration = (double)(timereportDAO.getTotalDurationMinutesForSuborders(descendants) * 100 / GlobalConstants.MINUTES_PER_HOUR) / 100;
+    	}
+    	return this.duration;
+    }
+    
+    public double getDurationNotInvoiceable() {
+    	if(this.durationNotInvoiceable == null) {
+	    	if(suborder.getInvoice() == 'y' || suborder.getInvoice() == 'Y') {
+	    		return 0;
+	    	}
+	    	
+	    	List<Long> descendants = new ArrayList<>();
+	    	generateListOfDescendants(suborder, false, descendants);
+	
+	    	this.durationNotInvoiceable = (double)(timereportDAO.getTotalDurationMinutesForSuborders(descendants) * 100 / GlobalConstants.MINUTES_PER_HOUR) / 100;
+    	}
+    	return this.durationNotInvoiceable;
     }
     
     /* (non-Javadoc)

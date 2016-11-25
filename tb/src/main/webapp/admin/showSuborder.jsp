@@ -319,6 +319,8 @@
 										key="main.general.showactualhours.text" /></b></th>
 							<th align="left"><b><bean:message
 										key="main.general.difference.text" /></b></th>
+							<th align="left"><b><bean:message
+										key="main.general.showactualhours.not.invoiceable.text" /></b></th>
 						</c:if>
 						<th align="left"
 							title="<bean:message
@@ -603,6 +605,8 @@
 												&nbsp;
 											</c:otherwise>
 										</c:choose></td>
+									<td align="right"><fmt:formatNumber
+											value="${suborder.durationNotInvoiceable}" minFractionDigits="2" /></td>
 								</c:if>
 							</c:when>
 							<c:otherwise>

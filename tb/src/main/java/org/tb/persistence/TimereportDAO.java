@@ -85,32 +85,17 @@ public class TimereportDAO {
     }
     
     /**
-     * Get a list of all Timereports where the employeeorder_id is null.
+     * Gets the sum of all duration minutes WITH considering the hours.
      * 
-     * @return List<Timereport>
-     */
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsWithoutEmployeeOrderKey() {
-        return getSession()
-        		.createQuery("from Timereport where employeeorder_id <= ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-        		.setBigInteger(0, new BigInteger("0"))
-        		.setCacheable(true)
-        		.list();
-    }
-    
-    /**
-     * 
-     * @param suborderId
+     * @param soId
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsBySuborderId(long suborderId) {
-        return getSession()
-        		.createQuery("from Timereport tr where tr.suborder.id = ? " +
-                "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-        		.setLong(0, suborderId)
-        		.setCacheable(true)
-        		.list();
+    public long getTotalDurationMinutesForSuborder(long soId) {
+        Object totalMinutes = getSession()
+        		.createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr where tr.employeeorder.suborder.id = ?")
+        		.setLong(0, soId)
+        		.uniqueResult();
+        return objectToLong(totalMinutes);
     }
     
     /**
@@ -119,10 +104,21 @@ public class TimereportDAO {
      * @param soId
      * @return
      */
-    public long getTotalDurationMinutesForSuborder(long soId) {
+    public long getTotalDurationMinutesForSuborders(List<Long> ids) {
+    	if(ids == null || ids.isEmpty()) return 0;
+    	
+    	StringBuilder sb = new StringBuilder();
+    	sb.append("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr where tr.employeeorder.suborder.id in (");
+    	boolean isFirst = true;
+    	for(Long id : ids) {
+    		if(!isFirst) sb.append(",");
+    		isFirst = false;
+    		sb.append(id);
+    	}
+    	sb.append(")");
+    	
         Object totalMinutes = getSession()
-        		.createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo where tr.employeeorder_id = eo.id and eo.suborder_id = ?")
-        		.setLong(0, soId)
+        		.createQuery(sb.toString())
         		.uniqueResult();
         return objectToLong(totalMinutes);
     }
@@ -134,14 +130,14 @@ public class TimereportDAO {
      * @return
      */
     public long getTotalDurationMinutesForSuborder(long soId, java.sql.Date fromDate, java.sql.Date untilDate) {
-    	Object minutes = getSession()
-    			.createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo, Referenceday rd " +
-        				"where rd.refdate >= ? and rd.refdate <= ? and tr.employeeorder_id = eo.id and eo.suborder_id = ? and rd.id = tr.referenceday_id")
+    	long minutes = objectToLong(getSession()
+    			.createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr " +
+        				"where tr.referenceday.refdate >= ? and tr.referenceday.refdate <= ? and tr.employeeorder.suborder.id = ? ")
         		.setDate(0,fromDate)
         		.setDate(1, untilDate)
         		.setLong(2, soId)
-        		.uniqueResult();
-        return objectToLong(minutes);
+        		.uniqueResult());
+        return minutes;
     }
     
     /**
@@ -151,12 +147,12 @@ public class TimereportDAO {
      * @return
      */
     public long getTotalDurationMinutesForCustomerOrder(long coId) {
-    	Object totalMinutes = getSession()
-    			.createSQLQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr, Employeeorder eo, Suborder so " +
-    					"where tr.employeeorder_id = eo.id and eo.suborder_id = so.id and so.customerorder_id = ?")
+    	long totalMinutes = objectToLong(getSession()
+    			.createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr " +
+    					"where tr.employeeorder.suborder.customerorder.id = ?")
                 .setLong(0, coId)
-                .uniqueResult();
-        return objectToLong(totalMinutes);
+                .uniqueResult());
+        return totalMinutes;
     }
     
     /**
