@@ -201,7 +201,9 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         } else {
             Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
             long orderId = co.getId();
-            List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(orderId, reportForm.getShowOnlyValid());
+            List<Suborder> suborders = ec == null 
+            		? suborderDAO.getSubordersByCustomerorderId(orderId, reportForm.getShowOnlyValid())
+            		: suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orderId, reportForm.getShowOnlyValid());
             request.getSession().setAttribute("suborders", suborders);
             
             if(suborders.stream().noneMatch( suborder -> suborder.getId() == reportForm.getSuborderId() )) {
