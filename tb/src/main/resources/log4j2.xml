@@ -3,7 +3,7 @@
 		<Console name="console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%5p %d{dd.MM.yyyy HH:mm:ss.SSS} [%t] (%F:%L) %m%n" />
 		</Console>
-		<File name="file" fileName="log/salat.log" ignoreExceptions="false">
+		<File name="file" fileName="d:/kd/workspace-salat/tb/log/salat.log" ignoreExceptions="false" append="false">
 			<PatternLayout pattern="%5p %d{dd.MM.yyyy HH:mm:ss.SSS} (%F:%L) %m%n" />
 		</File>
 		<Async name="async" includeLocation="true" blocking="true" bufferSize="128">
@@ -13,6 +13,7 @@
 	</Appenders>
 	<Loggers>
 		<Logger name="org.tb.web.action" level="info"></Logger>
+		<Logger name="org.tb.persistence" level="info"></Logger>
 		<Root level="info">
 			<AppenderRef ref="async" />
 		</Root>
