@@ -154,8 +154,7 @@ public class MatrixHelper {
         for (DayAndWorkingHourCount dayAndWorkingHourCount : dayHoursCount) {
             dayHoursSum += dayAndWorkingHourCount.getWorkingHour();
         }
-        dayHoursSum = (dayHoursSum + 0.05) * 10;
-        dayHoursSum = (int)dayHoursSum / 10.0;
+        dayHoursSum = ((double)Math.round(dayHoursSum*100))/100;
         
         //calculate dayhourstarget
         if (employeeContractId == -1) {
@@ -168,17 +167,11 @@ public class MatrixHelper {
         } else {
             dayHoursTarget = dayHoursTarget * employeecontract.getDailyWorkingTime();
         }
-        dayHoursTarget = (dayHoursTarget + 0.05) * 10;
-        dayHoursTarget = (int)dayHoursTarget / 10.0;
+        dayHoursTarget = ((double)Math.round(dayHoursTarget*100)) / 100;
         
         //calculate dayhoursdiff
         double dayHoursDiff = dayHoursSum - dayHoursTarget;
-        if (dayHoursDiff < 0) {
-            dayHoursDiff = (dayHoursDiff - 0.05) * 10;
-        } else {
-            dayHoursDiff = (dayHoursDiff + 0.05) * 10;
-        }
-        dayHoursDiff = (int)dayHoursDiff / 10.0;
+        dayHoursDiff = ((double)Math.round(dayHoursDiff*100)) / 100;
         
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
