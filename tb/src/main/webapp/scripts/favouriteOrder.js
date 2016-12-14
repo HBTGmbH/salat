@@ -137,7 +137,11 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 			var defaultOrder = getOrder(combo[0]);
 			if(defaultOrder == null) return;
 			
-			var isSamePage = document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue") > -1;
+			if(document.URL.endsWith("CreateDailyReport")) {
+				var isSamePage = false;
+			} else {
+				var isSamePage = document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue") > -1;
+			}
 			
 			if(combo[0]) {
 				var selected = combo[0].options[combo[0].selectedIndex].value;
@@ -164,7 +168,11 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 			
 			if(defaultSuborder == null) return;
 			
-			var isSamePage = document.referrer.endsWith("addDailyReport.jsp");
+			if(document.URL.endsWith("CreateDailyReport")) {
+				var isSamePage = false;
+			} else {
+				var isSamePage = document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue") > -1;
+			}
 			
 			if(comboSuborder[0]) {
 				var selectedSuborder = comboSuborder[0].options[comboSuborder[0].selectedIndex].value;
