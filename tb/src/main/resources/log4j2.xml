@@ -3,9 +3,9 @@
 		<Console name="console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%5p %d{dd.MM.yyyy HH:mm:ss.SSS} [%t] (%F:%L) %m%n" />
 		</Console>
-		<File name="file" fileName="d:/kd/workspace-salat/tb/log/salat.log" ignoreExceptions="false" append="false">
+		<!-- File name="file" fileName="d:/kd/workspace-salat/tb/log/salat.log" ignoreExceptions="false" append="false">
 			<PatternLayout pattern="%5p %d{dd.MM.yyyy HH:mm:ss.SSS} (%F:%L) %m%n" />
-		</File>
+		</File-->
 		<Async name="async" includeLocation="true" blocking="true" bufferSize="128">
 			<!-- AppenderRef ref="file" /-->
 			<AppenderRef ref="console" />
