@@ -107,22 +107,15 @@ public class VacationDAO extends HibernateDaoSupport {
 	 * @param long vaId
 	 */
 	public boolean deleteVacationById(long vaId) {
-		List<Vacation> allVacations = getVacations();
-		Vacation vaToDelete = getVacationById(vaId);
-		boolean vaDeleted = false;
-		
-		for (Vacation va : allVacations) {
-			if(va.getId() == vaToDelete.getId()) {				
-				Session session = getSession();
-				session.delete(vaToDelete);
-				session.flush();
-				vaDeleted = true;
-				
-				break;
-			}
+		Session session = getSession();
+		Vacation vaToDelete = (Vacation) session.createQuery("from Vacation va where va.id = ?").setLong(0, vaId).uniqueResult();
+		if(vaToDelete != null) {
+			session.delete(vaToDelete);
+			session.flush();
+			return true;
+		} else {
+			return false;
 		}
-		
-		return vaDeleted;
 	}
 
 }

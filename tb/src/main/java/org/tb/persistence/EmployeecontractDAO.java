@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -372,6 +373,7 @@ public class EmployeecontractDAO extends HibernateDaoSupport {
         	}
         	
         	List<Vacation> allVacations = ec.getVacations();
+        	ec.setVacations(Collections.emptyList());
         	for (Vacation va : allVacations) {
         		vacationDAO.deleteVacationById(va.getId());
         	}
