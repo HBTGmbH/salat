@@ -78,6 +78,14 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 		return work;
 	}
 	
+	var isSamePage = function() {
+		if(document.URL.endsWith("CreateDailyReport")) {
+			return false;
+		} else {
+			return document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue=true") > -1 || document.referrer.indexOf("task=reset") > -1;
+		}
+	}
+	
 	return {
 		initialize: function(langRes) {
 			lang = langRes;
@@ -137,15 +145,9 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 			var defaultOrder = getOrder(combo[0]);
 			if(defaultOrder == null) return;
 			
-			if(document.URL.endsWith("CreateDailyReport")) {
-				var isSamePage = false;
-			} else {
-				var isSamePage = document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue") > -1;
-			}
-			
 			if(combo[0]) {
 				var selected = combo[0].options[combo[0].selectedIndex].value;
-				if(!isSamePage && selected != defaultOrder) {
+				if(!isSamePage() && selected != defaultOrder) {
 					elem.val(defaultOrder).trigger("change.select2");
 				} else if(selected == defaultOrder) {
 					$("#favOrderBtn").attr("src", "/tb/images/Button/goldStar.svg");
@@ -168,15 +170,9 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 			
 			if(defaultSuborder == null) return;
 			
-			if(document.URL.endsWith("CreateDailyReport")) {
-				var isSamePage = false;
-			} else {
-				var isSamePage = document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue") > -1;
-			}
-			
 			if(comboSuborder[0]) {
 				var selectedSuborder = comboSuborder[0].options[comboSuborder[0].selectedIndex].value;
-				if(!isSamePage && selectedSuborder != defaultSuborder) {
+				if(!isSamePage() && selectedSuborder != defaultSuborder) {
 					elem.val(defaultSuborder).trigger("change.select2");
 				} else if(selectedSuborder == defaultSuborder) {
 					$("#favSuborderBtn").attr("src", "/tb/images/Button/goldStar.svg");
