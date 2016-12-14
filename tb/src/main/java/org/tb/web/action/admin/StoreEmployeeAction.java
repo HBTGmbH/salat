@@ -93,6 +93,7 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 					return mapping.findForward("success");
 				} else {
 					emForm.reset(mapping, request);
+					request.getSession().setAttribute("emId", null);
 					return mapping.findForward("reset");
 				}
 				
