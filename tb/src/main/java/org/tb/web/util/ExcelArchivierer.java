@@ -441,7 +441,7 @@ public class ExcelArchivierer {
 			}
 		}
 		for (Entry<Integer, Integer> entry : widthMap.entrySet()) {
-			sheet.setColumnWidth(entry.getKey(), entry.getValue());
+			sheet.setColumnWidth(entry.getKey(), Math.min(entry.getValue(), 255*255));
 		}
 	}
 }
