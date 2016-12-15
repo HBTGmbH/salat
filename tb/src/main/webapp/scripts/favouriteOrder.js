@@ -79,7 +79,7 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 	}
 	
 	var isSamePage = function() {
-		if(document.URL.endsWith("CreateDailyReport")) {
+		if(document.URL.endsWith("CreateDailyReport") || document.URL.indexOf("task=reset") > -1) {
 			return false;
 		} else {
 			return document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue=true") > -1 || document.referrer.indexOf("task=reset") > -1;
