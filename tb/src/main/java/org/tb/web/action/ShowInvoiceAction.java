@@ -373,13 +373,13 @@ public class ShowInvoiceAction extends DailyReportAction {
                 request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
                 ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getHSSFFactory());
                 request.getSession().removeAttribute("overall");
-                return mapping.getInputForward();
+                return null;
             } else if (task.equals("exportNew")) {
                 MessageResources messageResources = getResources(request);
                 request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
                 ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getXSSFFactory());
                 request.getSession().removeAttribute("overall");
-                return mapping.getInputForward();
+                return null;
             }
         } else if (request.getParameter("task") != null) {
             // END
