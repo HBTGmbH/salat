@@ -82,7 +82,11 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 		if(document.URL.endsWith("CreateDailyReport") || document.URL.indexOf("task=reset") > -1) {
 			return false;
 		} else {
-			return document.referrer.endsWith("addDailyReport.jsp") || document.referrer.indexOf("continue=true") > -1 || document.referrer.indexOf("task=reset") > -1;
+			return document.referrer.endsWith("addDailyReport.jsp") 
+				|| document.referrer.indexOf("continue=true") > -1 
+				|| document.referrer.indexOf("task=reset") > -1
+				|| document.URL.indexOf("EditDailyReport") > -1
+				|| document.referrer.indexOf("EditDailyReport") > -1;
 		}
 	}
 	
