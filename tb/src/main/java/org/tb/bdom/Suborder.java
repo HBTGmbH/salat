@@ -141,8 +141,6 @@ public class Suborder extends EditDetails implements Serializable {
     /** Flag for fixed price proposal */
     private Boolean fixedPrice;
     
-    private transient int hashcode = 0;
-    
     public void addSuborder(Suborder child) {
         if (children == null) {
             children = new LinkedList<Suborder>();
