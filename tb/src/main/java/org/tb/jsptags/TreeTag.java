@@ -156,7 +156,7 @@ public class TreeTag extends TagSupport {
 			// 		the tree view with all the children
 			//------------------------------------------------
 			if (this.subProjects != null){
-				generateTreeRecursivly(mainProject.getId(), 0, out, true); 
+				generateTreeRecursivly(mainProject.getId(), 0, out, true, fillFilteredHierarchy(subProjects)); 
 			} 
 			out.print("</span>");
         } catch(Exception ioe) {
@@ -203,10 +203,10 @@ public class TreeTag extends TagSupport {
 	 * 					 (This is to prevent cyclic dependencies, e.g. when a node is edited and his 
 	 * 					 position in the tree changes, the new parent must not be a child, else we have a deadlock)
 	 */
-    private void generateTreeRecursivly(long parentID, int lastLevel, JspWriter outPut, boolean enabled) {
+    private void generateTreeRecursivly(long parentID, int lastLevel, JspWriter outPut, boolean enabled, Collection<Suborder> filteredHierarchy) {
 		int thisLevel = lastLevel + 1;  // thisLevel is the level for all children
 		
-    	for (Suborder suborder : fillFilteredHierarchy(subProjects)) {
+    	for (Suborder suborder : filteredHierarchy) {
 			// testing, if there are any children for this node:
 			if ((suborder.getParentorder() != null 
 					&& suborder.getParentorder().getId() == parentID)  // -->  This case is a leaf which has a suborder as parent
@@ -278,7 +278,7 @@ public class TreeTag extends TagSupport {
 					}
 		  			outPut.println("\n</tr></TABLE>\n" );  
 		  			outPut.println("<span id=\"span" + name + "\" class=\"clsHide\">\n");
-		  			generateTreeRecursivly(suborder.getId(), thisLevel, outPut, editable );
+		  			generateTreeRecursivly(suborder.getId(), thisLevel, outPut, editable, filteredHierarchy);
 		  			outPut.println("</span>");
 				} catch (IOException ioe){	
 					LOG.error("Error in Tree Tag!");

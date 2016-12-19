@@ -141,6 +141,8 @@ public class Suborder extends EditDetails implements Serializable {
     /** Flag for fixed price proposal */
     private Boolean fixedPrice;
     
+    private transient int hashcode = 0;
+    
     public void addSuborder(Suborder child) {
         if (children == null) {
             children = new LinkedList<Suborder>();
@@ -611,14 +613,14 @@ public class Suborder extends EditDetails implements Serializable {
     public boolean equals(Object obj) {
         if (obj instanceof Suborder) {
             Suborder other = (Suborder)obj;
-            return other.getSign().equals(getSign());
+            return other.getId() == this.id;
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return getSign().hashCode();
+        return Long.valueOf(this.getId()).hashCode();
     }
     
     /* (non-Javadoc)
