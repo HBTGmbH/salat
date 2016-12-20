@@ -32,7 +32,9 @@ public class InvoiceSuborderViewHelper extends Suborder {
 
 	private int layer;
 
-	private boolean invoicebox ;
+	private boolean invoicebox;
+	
+	private InvoiceSuborderActualHoursVisitor visitor = null;
 
 	public int getLayer() {
 		return layer;
@@ -55,18 +57,18 @@ public class InvoiceSuborderViewHelper extends Suborder {
 	}
 
 	public String getDuration() {
-		InvoiceSuborderActualHoursVisitor visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
-		/* start visiting */
-		acceptVisitor(visitor);
-		/* return result */
+		if(this.visitor == null) {
+			visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
+			acceptVisitor(visitor);
+		}
 		return visitor.getTotalTime();
 	}
 	
 	public long getDurationInMinutes() {
-		InvoiceSuborderActualHoursVisitor visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
-		/* start visiting */
-		acceptVisitor(visitor);
-		/* return result */
+		if(this.visitor == null) {
+			visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
+			acceptVisitor(visitor);
+		}
 		return visitor.getTotalMinutes();
 	}
 
