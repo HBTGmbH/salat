@@ -18,6 +18,7 @@
 		<link href="/tb/style/select2.min.css" rel="stylesheet" />
 		<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
 		<script src="/tb/scripts/select2.full.min.js"></script>
+		<script src="/tb/scripts/massedit.js"></script>
 		<script type="text/javascript" language="JavaScript">
 		
 		
@@ -126,7 +127,9 @@
 			dropdownAutoWidth: true,
 			width: 'element'
 		});	
-	});		
+	});	
+	
+	var confirmMassDelete = '<bean:message key="main.general.confirmMassDelete.text" />';
 	</script>
 
 	</head>
@@ -782,6 +785,8 @@
 								</html:link>
 								&nbsp;
 								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="/tb/images/Delete.gif" alt="Löschen" title="Löschen" />
+								&nbsp;
+								<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 							</td>
 						</c:when>
 						<c:otherwise>
@@ -816,29 +821,35 @@
 					</c:choose>
 				</html:form>
 			</c:forEach>
-			<tr>
-				<td colspan="6" class="noBborderStyle">
-					&nbsp;
-				</td>
-				<td class="noBborderStyle" align="right">
-					<b><bean:message key="main.timereport.total.text" />:</b>
-				</td>
-				<c:choose>
-					<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
-						<th align="center" color="red">
-							<b><font color="red"><c:out	value="${labortime}"></c:out></font></b>
-						</th>
-					</c:when>
-					<c:otherwise>
-						<th align="center">
-							<b><c:out value="${labortime}"></c:out></b>
-						</th>
-					</c:otherwise>
-				</c:choose>
-				<th align="center">
-					<b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2" /></b>
-				</th>
-			</tr>
+			<html:form action="/ShowDailyReport">
+				<tr>
+					<td colspan="6" class="noBborderStyle">
+						&nbsp;
+					</td>
+					<td class="noBborderStyle" align="right">
+						<b><bean:message key="main.timereport.total.text" />:</b>
+					</td>
+					<c:choose>
+						<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
+							<th align="center" color="red">
+								<b><font color="red"><c:out	value="${labortime}"></c:out></font></b>
+							</th>
+						</c:when>
+						<c:otherwise>
+							<th align="center">
+								<b><c:out value="${labortime}"></c:out></b>
+							</th>
+						</c:otherwise>
+					</c:choose>
+					<th align="center">
+						<b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2" /></b>
+					</th>
+					<td class="massedit invisible" align="center">
+						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
+						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="/tb/images/Delete.gif" alt="Löschen" title="Löschen" />
+					</td>
+				</tr>
+			</html:form>
 		</table>
 		<table>
 			<tr>

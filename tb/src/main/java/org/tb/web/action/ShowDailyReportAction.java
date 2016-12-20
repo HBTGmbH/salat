@@ -2,6 +2,7 @@ package org.tb.web.action;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,6 +21,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.hibernate.HibernateException;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -96,9 +98,44 @@ public class ShowDailyReportAction extends DailyReportAction {
         this.overtimeDAO = overtimeDAO;
     }
     
+    private Long safeParse(String sValue) {
+    	try {
+    		return Long.parseLong(sValue);
+    	} catch(NumberFormatException e) {
+    		return null;
+    	}
+    }
+    
+    /**
+     * 
+     * @param ids
+     * @return true, if deleting was successful, false otherwise
+     */
+    private boolean massDelete(String[] ids) {
+    	try {
+    		Arrays.stream(ids)
+	    		.map(this::safeParse)
+	    		.filter(longOrNull -> longOrNull != null)
+	    		.forEach(timereportDAO::deleteTimereportById);
+    		return true;
+    	} catch(HibernateException e) {
+    		return false;
+    	}
+    }
+    
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+        String task = request.getParameter("task");
         
+        // delete the selected ids from the database and the continue as if this was a refreshTimereports task
+        if("massdelete".equalsIgnoreCase(task)) {
+        	String sIds = request.getParameter("ids");
+
+        	if(!massDelete(sIds.split(","))) {
+	            return mapping.findForward("error");
+        	}
+        	task = "refreshTimereports";
+        }
         TimereportHelper th = new TimereportHelper();
         ShowDailyReportForm reportForm = (ShowDailyReportForm)form;
         request.getSession().setAttribute("vacationBudgetOverrun", false);
@@ -120,7 +157,6 @@ public class ShowDailyReportAction extends DailyReportAction {
             sortColumn = "employee";
             request.getSession().setAttribute("timereportSortColumn", sortColumn);
         }
-        String task = request.getParameter("task");
         if(task != null) {
 	        if ("sort".equals(task)) {
 	            return doSort(mapping, request, sortModus, sortColumn);

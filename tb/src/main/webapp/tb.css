@@ -274,3 +274,7 @@ textarea.showDailyReport {
 .middle-aligned, .favOrderBtn {
 	vertical-align: middle;
 }
+
+.invisible {
+	display:none;
+}
