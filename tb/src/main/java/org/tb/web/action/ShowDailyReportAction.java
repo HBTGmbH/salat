@@ -2,8 +2,11 @@ package org.tb.web.action;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -13,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,11 +25,13 @@ import javax.servlet.http.HttpSession;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessages;
 import org.hibernate.HibernateException;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
@@ -45,6 +51,7 @@ import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
@@ -69,6 +76,7 @@ public class ShowDailyReportAction extends DailyReportAction {
     private PublicholidayDAO publicholidayDAO;
     private WorkingdayDAO workingdayDAO;
     private EmployeeDAO employeeDAO;
+    private ReferencedayDAO referencedayDAO;
     
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
@@ -97,7 +105,17 @@ public class ShowDailyReportAction extends DailyReportAction {
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
     }
+    public void setReferencedayDAO(ReferencedayDAO referencedayDAO) {
+        this.referencedayDAO = referencedayDAO;
+    }
     
+    /**
+     * parses a string to a long value and returns its value
+     * returns null if there is an error
+     * 
+     * @param sValue
+     * @return
+     */
     private Long safeParse(String sValue) {
     	try {
     		return Long.parseLong(sValue);
@@ -107,8 +125,9 @@ public class ShowDailyReportAction extends DailyReportAction {
     }
     
     /**
+     * deletes many timereports at once
      * 
-     * @param ids
+     * @param ids ids of the timereports
      * @return true, if deleting was successful, false otherwise
      */
     private boolean massDelete(String[] ids) {
@@ -123,21 +142,115 @@ public class ShowDailyReportAction extends DailyReportAction {
     	}
     }
     
+    /**
+     * shifts a timereport by days
+     * 
+     * @param trId
+     * @param days
+     * @param ecId
+     * @param loginEmployee
+     */
+    private void shiftDays(long trId, int days, long ecId, Employee loginEmployee) {
+    	Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
+    	if(ec != null) {
+	    	Timereport tr = timereportDAO.getTimereportById(trId);
+	    	Referenceday refDay = tr.getReferenceday();
+	    	LocalDate newLocalDate = refDay.getRefdate().toLocalDate().plusDays(days);
+	    	java.sql.Date newDate = java.sql.Date.valueOf(newLocalDate);
+	    	
+	    	Referenceday newRefDay = referencedayDAO.getReferencedayByDate(newDate);
+	    	if (newRefDay == null) {
+	    		// new referenceday to be added in database
+	    		referencedayDAO.addReferenceday(newDate);
+	    		newRefDay = referencedayDAO.getReferencedayByDate(newDate);
+	    	}
+	        tr.setReferenceday(newRefDay);
+	        timereportDAO.save(tr, loginEmployee, true);
+    	}        
+    }
+    
+    /**
+     * checks, if timereports may be shifted by days
+     * 
+     * @param ids
+     * @param days
+     * @param loginEmployeeContract
+     * @param authorized
+     * @return
+     */
+    private Collection<Long> checkShiftedDays(Collection<Long> ids, int days, Employeecontract loginEmployeeContract, boolean authorized) {
+    	Collection<Long> errors = new ArrayList<>();
+    	ids.stream().forEach(id -> {
+    		Timereport timereport = timereportDAO.getTimereportById(id);
+    		LocalDate shiftedDate = timereport.getReferenceday().getRefdate().toLocalDate().plusDays(days);
+    		ActionMessages actionErrors = TimereportHelper.validateNewDate(new ActionMessages(), java.sql.Date.valueOf(shiftedDate), timereport, timereportDAO, employeeorderDAO, publicholidayDAO, loginEmployeeContract, authorized);
+    		if(!actionErrors.isEmpty()) {
+    			errors.add(id);
+    		}
+    	});
+    	
+    	return errors;
+    }
+    
+    /**
+     * shifts timereports by days, does some checking
+     * 
+     * @param ids
+     * @return null if successful, else a list of problematic timereports  
+     */
+    private Collection<Long> massShiftDays(String[] sIds, String byDays, long ecId, Employeecontract loginEmployeeContract, boolean authorized) {
+    	try {
+    		int days = Integer.parseInt(byDays);
+    		
+    		List<Long> ids = Arrays.stream(sIds)
+	    		.map(this::safeParse)
+	    		.filter(longOrNull -> longOrNull != null)
+	    		.collect(Collectors.toList());
+
+    		Collection<Long> errors = checkShiftedDays(ids, days, loginEmployeeContract, authorized);
+    		if(!errors.isEmpty()) {
+    			return errors;
+    		}
+    		
+    		ids.stream().forEach(id -> shiftDays(id, days, ecId, loginEmployeeContract.getEmployee()));
+    		return null;
+    	} catch(HibernateException | NumberFormatException e) {
+    		return Collections.emptyList();
+    	}
+    }
+    
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
         String task = request.getParameter("task");
+        ShowDailyReportForm reportForm = (ShowDailyReportForm)form;
         
-        // delete the selected ids from the database and the continue as if this was a refreshTimereports task
         if("massdelete".equalsIgnoreCase(task)) {
+        	// delete the selected ids from the database and continue as if this was a refreshTimereports task
         	String sIds = request.getParameter("ids");
 
         	if(!massDelete(sIds.split(","))) {
 	            return mapping.findForward("error");
         	}
         	task = "refreshTimereports";
+        } else if("massshiftdays".equalsIgnoreCase(task)) {
+        	// shift the selected ids by "byDays" and continue as if this was a refreshTimereports task
+        	String sIds = request.getParameter("ids");
+        	String days = request.getParameter("byDays");
+
+        	long employeeContractId = reportForm.getEmployeeContractId();
+            Employeecontract loginEmployeecontract = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
+            Boolean authorized = (Boolean)request.getSession().getAttribute("employeeAuthorized");
+        	Collection<Long> errors = massShiftDays(sIds.split(","), days, employeeContractId, loginEmployeecontract, authorized);
+        	if(errors != null){
+        		if(!errors.isEmpty()) {
+        			request.setAttribute("failedMassEditIds", errors);
+        		}
+	            return mapping.findForward("success");
+        	}
+        	task = "refreshTimereports";
         }
+
         TimereportHelper th = new TimereportHelper();
-        ShowDailyReportForm reportForm = (ShowDailyReportForm)form;
         request.getSession().setAttribute("vacationBudgetOverrun", false);
         request.getSession().removeAttribute("createWorklogFailed");
         request.getSession().removeAttribute("updateWorklogFailed");

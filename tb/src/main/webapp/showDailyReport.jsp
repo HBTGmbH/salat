@@ -18,6 +18,12 @@
 		<link href="/tb/style/select2.min.css" rel="stylesheet" />
 		<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
 		<script src="/tb/scripts/select2.full.min.js"></script>
+		<script type="text/javascript" language="JavaScript">
+			var failedMassEditIds = '${failedMassEditIds.toString()}';
+			if(failedMassEditIds != "") {
+				failedMassEditIds = JSON.parse(failedMassEditIds);
+			}
+		</script>
 		<script src="/tb/scripts/massedit.js"></script>
 		<script type="text/javascript" language="JavaScript">
 		
@@ -130,6 +136,7 @@
 	});	
 	
 	var confirmMassDelete = '<bean:message key="main.general.confirmMassDelete.text" />';
+	var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
 	</script>
 
 	</head>
@@ -276,7 +283,7 @@
 				                        cal.select(document.forms[0].startdate,'anchor1','yyyy-MM-dd');
 				                    }
 				                </script>
-								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" />
+								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" onkeydown="if(event.keyCode=13)setUpdateTimereportsAction(this.form)"/>
 								<a href="javascript:calenderPopupStartdate()" name="anchor1" ID="anchor1" style="text-decoration: none;">
 									<img src="/tb/images/popupcalendar.gif" width="22" height="22" alt='<bean:message key="main.date.popup.alt.text" />' style="border: 0; vertical-align: top">
 								</a>
@@ -786,7 +793,9 @@
 								&nbsp;
 								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="/tb/images/Delete.gif" alt="Löschen" title="Löschen" />
 								&nbsp;
-								<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
+								<span id="span-massedit-${timereport.id}">
+									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
+								</span>
 							</td>
 						</c:when>
 						<c:otherwise>
@@ -821,35 +830,48 @@
 					</c:choose>
 				</html:form>
 			</c:forEach>
-			<html:form action="/ShowDailyReport">
-				<tr>
-					<td colspan="6" class="noBborderStyle">
-						&nbsp;
-					</td>
-					<td class="noBborderStyle" align="right">
-						<b><bean:message key="main.timereport.total.text" />:</b>
-					</td>
-					<c:choose>
-						<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
-							<th align="center" color="red">
-								<b><font color="red"><c:out	value="${labortime}"></c:out></font></b>
-							</th>
-						</c:when>
-						<c:otherwise>
-							<th align="center">
-								<b><c:out value="${labortime}"></c:out></b>
-							</th>
-						</c:otherwise>
-					</c:choose>
-					<th align="center">
-						<b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2" /></b>
-					</th>
-					<td class="massedit invisible" align="center">
+			<tr>
+				<td colspan="6" class="noBborderStyle">
+					&nbsp;
+				</td>
+				<td class="noBborderStyle" align="right">
+					<b><bean:message key="main.timereport.total.text" />:</b>
+				</td>
+				<c:choose>
+					<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
+						<th align="center" color="red">
+							<b><font color="red"><c:out	value="${labortime}"></c:out></font></b>
+						</th>
+					</c:when>
+					<c:otherwise>
+						<th align="center">
+							<b><c:out value="${labortime}"></c:out></b>
+						</th>
+					</c:otherwise>
+				</c:choose>
+				<th align="center">
+					<b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2" /></b>
+				</th>
+				<td class="massedit invisible" align="center">
+					<html:form action="/ShowDailyReport" style="margin-bottom:0">
 						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
 						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="/tb/images/Delete.gif" alt="Löschen" title="Löschen" />
-					</td>
-				</tr>
-			</html:form>
+						&nbsp;&nbsp;
+						<div class="massedit-time-shift-dropdown">
+							<img class="dropdown-btn" height="11" src="/tb/images/Button/backwards.svg" title="Um Tage Verschieben" alt="Um Tage verschieben" onclick="$('.dropdown-content').focus()"/>
+							<div class="dropdown-content" tabindex="1">
+								<table>
+									<tr><th colspan="2"><bean:message key="main.timereport.mass.edit.shift.days.text" /></th></tr>
+									<c:forEach begin="1" end="7" varStatus="loop">
+										<tr><td><span title='<bean:message key="main.timereport.mass.edit.shift.days.tooltip" arg0='-${loop.index}' />' onclick='return HBT.MassEdit.confirmShiftDays(this, "<bean:message key="main.timereport.mass.edit.shift.days.confirm.msg" arg0='-${loop.index}' />", -${loop.index});'>-${loop.index}</span></td>
+										    <td><span title='<bean:message key="main.timereport.mass.edit.shift.days.tooltip" arg0='+${loop.index}' />' onclick='return HBT.MassEdit.confirmShiftDays(this, "<bean:message key="main.timereport.mass.edit.shift.days.confirm.msg" arg0='+${loop.index}' />", ${loop.index});'>+${loop.index}</span></td></tr>
+									</c:forEach>
+								</table>
+							</div>
+						</div>
+					</html:form>	
+				</td>
+			</tr>
 		</table>
 		<table>
 			<tr>

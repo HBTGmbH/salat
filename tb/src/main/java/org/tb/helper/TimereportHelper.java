@@ -2,6 +2,7 @@ package org.tb.helper;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -10,9 +11,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Overtime;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
@@ -857,4 +860,111 @@ public class TimereportHelper {
         return dates;
     }
     
+	public static ActionMessages validateNewDate(
+            ActionMessages errors,
+            java.sql.Date theNewDate,
+            Timereport timereport,
+            TimereportDAO timereportDAO,
+            EmployeeorderDAO employeeorderDAO,
+            PublicholidayDAO publicholidayDAO,
+            Employeecontract loginEmployeeContract,
+            boolean authorized) {
+    	LocalDate localDate = theNewDate.toLocalDate();
+
+        // check date range (must be in current or previous year)
+        if (DateUtils.getCurrentYear() - localDate.getYear() >= 2) {
+            errors.add("referenceday", new ActionMessage("form.timereport.error.date.invalidyear"));
+        }
+        
+        // check if report types for one day are unique and if there is no time overlap with other work reports
+        List<Timereport> dailyReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(timereport.getEmployeecontract().getId(), theNewDate);
+        if (dailyReports != null && dailyReports.size() > 0) {
+            for (Timereport tr : dailyReports) {
+                if (tr.getId() != timereport.getId()) { // do not check report against itself in case of edit
+                    // uniqueness of types
+                    // actually not checked - e.g., combination of sickness and work on ONE day should be valid
+                    // but: vacation or sickness MUST occur only once per day
+                    if (!timereport.getSortofreport().equals("W") && !tr.getSortofreport().equals("W")) {
+                        errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.special.alreadyexisting"));
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // if sort of report is not 'W' reports are only allowed for workdays
+        // e.g., vacation cannot be set on a Sunday
+        if (!timereport.getSortofreport().equals("W")) {
+            boolean valid = true;
+            String dow = DateUtils.getDow(theNewDate);
+            if (dow.equalsIgnoreCase("Sat") || dow.equalsIgnoreCase("Sun")) {
+                valid = false;
+            }
+            
+            // checks for public holidays
+            if (valid) {
+                String publicHoliday = publicholidayDAO.getPublicHoliday(theNewDate);
+                if (publicHoliday != null && publicHoliday.length() > 0) {
+                    valid = false;
+                }
+            }
+            
+            if (!valid) {
+                errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.invalidday"));
+            } else {
+                // for new report, check if other reports already exist for selected day
+                if (timereport.getId() == -1) {
+                    List<Timereport> allReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(timereport.getEmployeecontract().getId(), theNewDate);
+                    if (allReports.size() > 0) {
+                        valid = false;
+                        errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.othersexisting"));
+                    }
+                }
+            }
+            
+        }
+        
+        // check date vs release status
+        Employeecontract employeecontract = timereport.getEmployeecontract();
+        Date releaseDate = employeecontract.getReportReleaseDate();
+        if(releaseDate == null) {
+        	releaseDate = employeecontract.getValidFrom();
+        }
+        Date acceptanceDate = employeecontract.getReportAcceptanceDate();
+        if(acceptanceDate == null) {
+        	acceptanceDate = employeecontract.getValidFrom();
+        }
+
+        // check, if refDate is first day
+        boolean firstday = false;
+        if (!releaseDate.after(employeecontract.getValidFrom()) &&
+                !theNewDate.after(employeecontract.getValidFrom())) {
+            firstday = true;
+        }
+
+        if (!loginEmployeeContract.getEmployee().getSign().equals("adm")) {
+            if (authorized && loginEmployeeContract.getId() != timereport.getEmployeecontract().getId()) {
+                if (releaseDate.before(theNewDate) || firstday) {
+                    errors.add("release", new ActionMessage("form.timereport.error.not.released"));
+                }
+            } else {
+                if (!releaseDate.before(theNewDate) && !firstday) {
+                    errors.add("release", new ActionMessage("form.timereport.error.released"));
+                }
+            }
+            if (!theNewDate.after(acceptanceDate) && !firstday) {
+                errors.add("release", new ActionMessage("form.timereport.error.accepted"));
+            }
+        }
+
+        // check for adequate employee order
+        List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(timereport.getEmployeecontract().getId(), timereport.getSuborder().getId(), theNewDate);
+        if (employeeorders == null || employeeorders.isEmpty()) {
+            errors.add("employeeorder", new ActionMessage("form.timereport.error.employeeorder.notfound"));
+        } else if (employeeorders.size() > 1) {
+            errors.add("employeeorder", new ActionMessage("form.timereport.error.employeeorder.multiplefound"));
+        }
+        
+        return errors;
+    }
 }
