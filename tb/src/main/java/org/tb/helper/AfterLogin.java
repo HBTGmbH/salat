@@ -1,6 +1,7 @@
 package org.tb.helper;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -11,7 +12,6 @@ import java.util.Locale;
 import javax.servlet.http.HttpSession;
 
 import org.apache.struts.util.MessageResources;
-import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
@@ -232,17 +232,19 @@ public class AfterLogin {
         session.setAttribute("overtime", overtimeString);
         
         //overtime this month
-		Date start = new LocalDate().withDayOfMonth(1).toDate();
-		Date currentDate = new Date();
+		Date start = java.sql.Date.valueOf(LocalDate.now().withDayOfMonth(1));
+		Date currentDate = java.sql.Date.valueOf(LocalDate.now());
 		
-		if (employeecontract.getValidFrom().after(start) && !employeecontract.getValidFrom().after(currentDate)) {
-		    start = employeecontract.getValidFrom();
+		java.sql.Date validFrom = employeecontract.getValidFrom();
+		if (validFrom.after(start) && !validFrom.after(currentDate)) {
+		    start = validFrom;
 		}
-		if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(currentDate) && !employeecontract.getValidUntil().before(start)) {
-		    currentDate = employeecontract.getValidUntil();
+		java.sql.Date validUntil = employeecontract.getValidUntil();
+		if (validUntil != null && validUntil.before(currentDate) && !validUntil.before(start)) {
+		    currentDate = validUntil;
 		}
 		int monthlyOvertime = 0;
-		if (!(employeecontract.getValidUntil() != null && employeecontract.getValidUntil().before(start) || employeecontract.getValidFrom().after(currentDate))) {
+		if (!(validUntil != null && validUntil.before(start) || validFrom.after(currentDate))) {
 		    monthlyOvertime = th.calculateOvertime(start, currentDate, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, false);
 		}
 		boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;

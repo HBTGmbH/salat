@@ -1,16 +1,16 @@
 package org.tb.util;
 
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Scanner;
 
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.tb.bdom.Publicholiday;
 import org.tb.persistence.PublicholidayDAO;
 
@@ -38,14 +38,14 @@ public class HolidaysUtil {
 			return Collections.emptyList();
 		}
 		
-		DateTimeFormatter dtf = DateTimeFormat.forPattern(DATE_FORMAT);
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(DATE_FORMAT);
 		Scanner scanner = new Scanner(is);
 		Collection<LocalDate> result = new ArrayList<LocalDate>();
 		while(scanner.hasNextLine()) {
 			String line = scanner.nextLine().trim();
 			if(line.isEmpty() || line.startsWith("#")) continue;
 			try {
-				LocalDate eastern = dtf.parseLocalDate(line);
+				LocalDate eastern = LocalDate.parse(line, dtf);
 				result.add(eastern);
 			} catch (IllegalArgumentException e) {
 				LOG.error("Could not parse '{}' to date from resource/file '{}'", line, EASTERN_SUNDAYS_RESOURCE_NAME);
@@ -66,16 +66,16 @@ public class HolidaysUtil {
 		LocalDate newYear = easterSunday.withDayOfYear(1);
 		LocalDate goodFriday = easterSunday.minusDays(2);
 		LocalDate easterMonday = easterSunday.plusDays(1);
-		LocalDate mayTheFirst = easterSunday.withMonthOfYear(5).withDayOfMonth(1);
+		LocalDate mayTheFirst = easterSunday.withMonth(5).withDayOfMonth(1);
 		LocalDate ascension = easterSunday.plusDays(39);
 		
 		LocalDate whitSunday = easterSunday.plusDays(49);
 		LocalDate whitMonday = easterSunday.plusDays(50);
-		LocalDate reunification = easterSunday.withMonthOfYear(10).withDayOfMonth(3);
-		LocalDate firstChristmasDay = easterSunday.withMonthOfYear(12).withDayOfMonth(25);
-		LocalDate secondChristmasDay = easterSunday.withMonthOfYear(12).withDayOfMonth(26);
-		LocalDate christmasEve = easterSunday.withMonthOfYear(12).withDayOfMonth(24);
-		LocalDate newYearsEve = easterSunday.withMonthOfYear(12).withDayOfMonth(31);
+		LocalDate reunification = easterSunday.withMonth(10).withDayOfMonth(3);
+		LocalDate firstChristmasDay = easterSunday.withMonth(12).withDayOfMonth(25);
+		LocalDate secondChristmasDay = easterSunday.withMonth(12).withDayOfMonth(26);
+		LocalDate christmasEve = easterSunday.withMonth(12).withDayOfMonth(24);
+		LocalDate newYearsEve = easterSunday.withMonth(12).withDayOfMonth(31);
 		
 		Collection<Publicholiday> holidays = new ArrayList<Publicholiday>();
 		holidays.add(new Publicholiday(localDateToSQLDate(newYear), "Neujahr"));
@@ -96,6 +96,6 @@ public class HolidaysUtil {
 	}
 	
 	private static java.sql.Date localDateToSQLDate(LocalDate input) {
-		return new java.sql.Date(input.toDate().getTime());
+		return java.sql.Date.valueOf(input);
 	}
 }

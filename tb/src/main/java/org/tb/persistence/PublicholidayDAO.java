@@ -1,11 +1,11 @@
 package org.tb.persistence;
 
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.joda.time.LocalDate;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
