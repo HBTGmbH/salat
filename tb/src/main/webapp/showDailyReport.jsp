@@ -283,7 +283,7 @@
 				                        cal.select(document.forms[0].startdate,'anchor1','yyyy-MM-dd');
 				                    }
 				                </script>
-								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" onkeydown="if(event.keyCode=13)setUpdateTimereportsAction(this.form)"/>
+								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" onkeydown="if(event.keyCode=13){setUpdateTimereportsAction(this.form);return false;}"/>
 								<a href="javascript:calenderPopupStartdate()" name="anchor1" ID="anchor1" style="text-decoration: none;">
 									<img src="/tb/images/popupcalendar.gif" width="22" height="22" alt='<bean:message key="main.date.popup.alt.text" />' style="border: 0; vertical-align: top">
 								</a>
