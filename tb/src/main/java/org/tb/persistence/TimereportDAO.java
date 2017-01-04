@@ -1,11 +1,9 @@
 package org.tb.persistence;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import org.hibernate.SessionFactory;
@@ -26,12 +24,7 @@ import org.tb.bdom.Timereport;
  */
 public class TimereportDAO {
     
-    private SuborderDAO suborderDAO;
     private SessionFactory sessionFactory;
-    
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
     
     public void setSessionFactory(SessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
@@ -127,7 +120,7 @@ public class TimereportDAO {
      * @param soId
      * @return
      */
-    public long getTotalDurationMinutesForSuborder(long soId, java.sql.Date fromDate, java.sql.Date untilDate) {
+    public long getTotalDurationMinutesForSuborder(long soId, Date fromDate, Date untilDate) {
     	long minutes = objectToLong(getSession()
     			.createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr " +
         				"where tr.referenceday.refdate >= ? and tr.referenceday.refdate <= ? and tr.employeeorder.suborder.id = ? ")
@@ -220,13 +213,13 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
 	public List<Timereport> getTimereportsByMonthAndYear(Date dateOfMonthAndYear) {
-    	LocalDate localDateStartOfMonth = dateToLocalDate(dateOfMonthAndYear).withDayOfMonth(1);
-    	java.sql.Date startOfMonth = java.sql.Date.valueOf(localDateStartOfMonth);
+    	LocalDate localDateStartOfMonth = dateOfMonthAndYear.toLocalDate().withDayOfMonth(1);
+    	Date startOfMonth = Date.valueOf(localDateStartOfMonth);
     	
     	LocalDate localDateEndOfMonth = localDateStartOfMonth
     			.plusMonths(1)
     			.minusDays(1);
-    	java.sql.Date endOfMonth = java.sql.Date.valueOf(localDateEndOfMonth);
+    	Date endOfMonth = Date.valueOf(localDateEndOfMonth);
     	
         return getSession()
         		.createQuery("from Timereport where referenceday.refdate >= ? and referenceday.refdate <= ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
@@ -234,17 +227,6 @@ public class TimereportDAO {
         		.setDate(1, endOfMonth)
         		.setCacheable(true)
         		.list();
-    }
-    
-    private static LocalDate dateToLocalDate(Date date) {
-    	if(date instanceof java.sql.Date) {
-    		return ((java.sql.Date)date).toLocalDate();
-    	} else {
-    		return date
-    				.toInstant()
-        			.atZone(ZoneId.systemDefault())
-        			.toLocalDate();
-    	}
     }
     
     /**
@@ -284,13 +266,13 @@ public class TimereportDAO {
      * Gets a list of Timereports by month/year and customerorder.
      * 
      * @param long coId
-     * @param java.sql.Date dt
+     * @param Date dt
      * @param String sortOfReport
      * 
      * @return List<Timereport>
      */
 //    @SuppressWarnings("unchecked")
-//    public List<Timereport> getTimereportsByDateAndCustomerorder(long coId, java.sql.Date dt, String sortOfReport) {
+//    public List<Timereport> getTimereportsByDateAndCustomerorder(long coId, Date dt, String sortOfReport) {
 //        List<Suborder> suborders = suborderDAO.getSuborders(false);
 //        List<Timereport> allTimereports = new ArrayList<Timereport>();
 //        for (Suborder suborder : suborders) {
@@ -320,13 +302,13 @@ public class TimereportDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByMonthAndYearAndEmployeeContractId(long contractId, Date dateOfMonthAndYear) {
-    	LocalDate localDateStartOfMonth = dateToLocalDate(dateOfMonthAndYear).withDayOfMonth(1);
-    	java.sql.Date startOfMonth = java.sql.Date.valueOf(localDateStartOfMonth);
+    	LocalDate localDateStartOfMonth = dateOfMonthAndYear.toLocalDate().withDayOfMonth(1);
+    	Date startOfMonth = Date.valueOf(localDateStartOfMonth);
     	
     	LocalDate localDateEndOfMonth = localDateStartOfMonth
     			.plusMonths(1)
     			.minusDays(1);
-    	java.sql.Date endOfMonth = java.sql.Date.valueOf(localDateEndOfMonth);
+    	Date endOfMonth = Date.valueOf(localDateEndOfMonth);
     	
         return getSession()
         		.createQuery("from Timereport where employeecontract.id = ? and referenceday.refdate >= ? and referenceday.refdate <= ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
@@ -342,12 +324,12 @@ public class TimereportDAO {
      * Gets a list of Timereports by employee contract id and date.
      * 
      * @param long contractId
-     * @param java.sql.Date date
+     * @param Date date
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDateAndEmployeeContractId(long contractId, java.sql.Date date) {
+    public List<Timereport> getTimereportsByDateAndEmployeeContractId(long contractId, Date date) {
         List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate = ? " +
                 "order by employeecontract.employee.sign asc, sequencenumber asc")
@@ -409,7 +391,7 @@ public class TimereportDAO {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsWithoutDurationForEmployeeContractId(long ecId, java.sql.Date releaseDate) {
+    public List<Timereport> getTimereportsWithoutDurationForEmployeeContractId(long ecId, Date releaseDate) {
         /*  sql: function changed to just get zero-duration-timereports that were made after the last releasedate, since only those can be changed by the employee himself and therefore the earlier ones should not be shown as warning */
         return getSession()
                 .createQuery("from Timereport t where t.employeecontract.id = ?  and t.referenceday.refdate >= ?"
@@ -429,7 +411,7 @@ public class TimereportDAO {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getOpenTimereportsByEmployeeContractIdBeforeDate(long contractId, java.sql.Date date) {
+    public List<Timereport> getOpenTimereportsByEmployeeContractIdBeforeDate(long contractId, Date date) {
         List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate <= ? and status = ?")
                 .setLong(0, contractId).setDate(1, date).setString(2, GlobalConstants.TIMEREPORT_STATUS_OPEN).setCacheable(true).list();
@@ -447,7 +429,7 @@ public class TimereportDAO {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getCommitedTimereportsByEmployeeContractIdBeforeDate(long contractId, java.sql.Date date) {
+    public List<Timereport> getCommitedTimereportsByEmployeeContractIdBeforeDate(long contractId, Date date) {
         List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate <= ? and status = ?")
                 .setLong(0, contractId).setDate(1, date).setString(2, GlobalConstants.TIMEREPORT_STATUS_COMMITED).setCacheable(true).list();
@@ -465,7 +447,7 @@ public class TimereportDAO {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByEmployeeContractIdAfterDate(long contractId, java.sql.Date dt) {
+    public List<Timereport> getTimereportsByEmployeeContractIdAfterDate(long contractId, Date dt) {
         List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate >= ? ")
                 .setLong(0, contractId).setDate(1, dt).setCacheable(true).list();
@@ -476,13 +458,13 @@ public class TimereportDAO {
      * Gets a list of Timereports by employee contract id and two dates.
      * 
      * @param long contractId
-     * @param java.sql.Date begin
-     * @param java.sql.Date end
+     * @param Date begin
+     * @param Date end
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDatesAndEmployeeContractId(long contractId, java.sql.Date begin, java.sql.Date end) {
+    public List<Timereport> getTimereportsByDatesAndEmployeeContractId(long contractId, Date begin, Date end) {
         List<Timereport> allTimereports;
         if (begin.equals(end)) {
             allTimereports = getSession().createQuery("from Timereport t " +
@@ -502,14 +484,14 @@ public class TimereportDAO {
      * Gets a list of Timereports by associated to the given employee contract id, customer order id and the time period between the two given dates.
      * 
      * @param long contractId
-     * @param java.sql.Date begin
-     * @param java.sql.Date end
+     * @param Date begin
+     * @param Date end
      * @param customerOrderId
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long contractId, java.sql.Date begin, java.sql.Date end, long customerOrderId) {
+    public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long contractId, Date begin, Date end, long customerOrderId) {
         List<Timereport> allTimereports;
         if (begin.equals(end)) {
             allTimereports = getSession().createQuery("from Timereport t " +
@@ -529,14 +511,14 @@ public class TimereportDAO {
      * Gets a list of Timereports by associated to the given employee contract id, suborder id and the time period between the two given dates.
      * 
      * @param long suborderId
-     * @param java.sql.Date begin
-     * @param java.sql.Date end
+     * @param Date begin
+     * @param Date end
      * @param customerOrderId
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long contractId, java.sql.Date begin, java.sql.Date end, long suborderId) {
+    public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long contractId, Date begin, Date end, long suborderId) {
         List<Timereport> allTimereports;
         if (end == null) {
             allTimereports = getSession().createQuery("from Timereport t " +
@@ -576,12 +558,12 @@ public class TimereportDAO {
     /**
      * Gets a list of Timereports by date.
      * 
-     * @param java.sql.Date dt
+     * @param Date dt
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDate(java.sql.Date date) {
+    public List<Timereport> getTimereportsByDate(Date date) {
         return getSession().createQuery("from Timereport t where t.referenceday.refdate = ? " +
                 "order by employeecontract.employee.sign asc, sequencenumber asc")
                 .setDate(0, date).setCacheable(true).list();
@@ -590,13 +572,13 @@ public class TimereportDAO {
     /**
      * Gets a list of timereports, which lay between two dates.
      * 
-     * @param java.sql.Date begin
-     * @param java.sql.Date end
+     * @param Date begin
+     * @param Date end
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDates(java.sql.Date begin, java.sql.Date end) {
+    public List<Timereport> getTimereportsByDates(Date begin, Date end) {
         List<Timereport> allTimereports;
         if (begin.equals(end)) {
             allTimereports = getSession().createQuery("from Timereport t where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? " +
@@ -613,14 +595,14 @@ public class TimereportDAO {
     /**
      * Gets a list of timereports, which lay between two dates and belong to the given {@link Customerorder} id.
      * 
-     * @param java.sql.Date begin
-     * @param java.sql.Date end
+     * @param Date begin
+     * @param Date end
      * @param coId
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDatesAndCustomerOrderId(java.sql.Date begin, java.sql.Date end, long coId) {
+    public List<Timereport> getTimereportsByDatesAndCustomerOrderId(Date begin, Date end, long coId) {
         List<Timereport> allTimereports;
         if (begin.equals(end)) {
             allTimereports = getSession().createQuery("from Timereport t " +
@@ -639,14 +621,14 @@ public class TimereportDAO {
     /**
      * Gets a list of timereports, which lay between two dates and belong to the given {@link Suborder} id.
      * 
-     * @param java.sql.Date begin
-     * @param java.sql.Date end
+     * @param Date begin
+     * @param Date end
      * @param suborderId
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDatesAndSuborderId(java.sql.Date begin, java.sql.Date end, long suborderId) {
+    public List<Timereport> getTimereportsByDatesAndSuborderId(Date begin, Date end, long suborderId) {
         List<Timereport> allTimereports;
         if (begin.equals(end)) {
             allTimereports = getSession().createQuery("from Timereport t " +
@@ -665,14 +647,14 @@ public class TimereportDAO {
     /**
      * Gets a list of timereports, which lay between two dates and belong to the given {@link Suborder} id.
      * 
-     * @param java.sql.Date begin
-     * @param java.sql.Date end
+     * @param Date begin
+     * @param Date end
      * @param suborderId
      * 
      * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(java.sql.Date begin, java.sql.Date end, long suborderId) {
+    public List<Timereport> getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(Date begin, Date end, long suborderId) {
         List<Timereport> allTimereports;
         if (begin.equals(end)) {
             allTimereports = getSession().createQuery("from Timereport t " +
@@ -726,30 +708,30 @@ public class TimereportDAO {
      * 
      * @param long contractId
      * @param long coId
-     * @param java.sql.Date dt
+     * @param Date dt
      * @param String sortOfReport
      * 
      * @return List<Timereport>
      */
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDateAndEmployeeContractIdAndCustomerorderId(long contractId, long coId, java.sql.Date dt, String sortOfReport) {
-        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
-        List<Timereport> allTimereports = new ArrayList<Timereport>();
-        for (Suborder suborder : suborders) {
-            // get all timereports for this suborder...
-            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
-                    "where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? " +
-                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-                    .setDate(0, dt).setLong(1, suborder.getId()).setLong(2, coId).setCacheable(true).list();
-            for (Timereport specificTimereport : specificTimereports) {
-                // if timereport belongs to reference month/year, add it to result list...
-                if (sortOfReport != null && specificTimereport.getSortofreport().equals("W")) {
-                    allTimereports.add(specificTimereport);
-                }
-            }
-        }
-        return allTimereports;
-    }
+//    @SuppressWarnings("unchecked")
+//    public List<Timereport> getTimereportsByDateAndEmployeeContractIdAndCustomerorderId(long contractId, long coId, Date dt, String sortOfReport) {
+//        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
+//        List<Timereport> allTimereports = new ArrayList<Timereport>();
+//        for (Suborder suborder : suborders) {
+//            // get all timereports for this suborder...
+//            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
+//                    "where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? " +
+//                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
+//                    .setDate(0, dt).setLong(1, suborder.getId()).setLong(2, coId).setCacheable(true).list();
+//            for (Timereport specificTimereport : specificTimereports) {
+//                // if timereport belongs to reference month/year, add it to result list...
+//                if (sortOfReport != null && specificTimereport.getSortofreport().equals("W")) {
+//                    allTimereports.add(specificTimereport);
+//                }
+//            }
+//        }
+//        return allTimereports;
+//    }
     
     /**
      * 
@@ -758,12 +740,12 @@ public class TimereportDAO {
      * @param customerOrderSign
      * @return Returns a list of all timereports that are associated to the given customer order sign and are valid between the given dates. 
      */
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDatesAndCustomerOrderSign(java.sql.Date begin, java.sql.Date end, String customerOrderSign) {
-        return getSession().createQuery("from Timereport t " +
-                "where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.customerorder.sign = ? ")
-                .setDate(0, begin).setDate(1, end).setString(2, customerOrderSign).setCacheable(true).list();
-    }
+//    @SuppressWarnings("unchecked")
+//    public List<Timereport> getTimereportsByDatesAndCustomerOrderSign(Date begin, Date end, String customerOrderSign) {
+//        return getSession().createQuery("from Timereport t " +
+//                "where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.customerorder.sign = ? ")
+//                .setDate(0, begin).setDate(1, end).setString(2, customerOrderSign).setCacheable(true).list();
+//    }
     
     /**
      * @param end
@@ -771,13 +753,10 @@ public class TimereportDAO {
      * @return Returns a timereport thats valid between the first and the last day of the given date and belonging to employeecontractid 
      */
     @SuppressWarnings("unchecked")
-    public Timereport getLastAcceptedTimereportByDateAndEmployeeContractId(java.sql.Date end, long ecId) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(end);
-        cal.set(Calendar.DAY_OF_MONTH, 1);
-        Date firstDay = cal.getTime();
-        cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
-        Date lastDay = cal.getTime();
+    public Timereport getLastAcceptedTimereportByDateAndEmployeeContractId(Date end, long ecId) {
+    	LocalDate localDate = end.toLocalDate();
+    	Date firstDay = Date.valueOf(localDate.withDayOfMonth(1));
+    	Date lastDay = Date.valueOf(localDate.withDayOfMonth(localDate.lengthOfMonth()));
         List<Timereport> timereportList = getSession().createQuery("from Timereport t " +
                 "where t.accepted is not null and t.employeeorder.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? " +
                 "order by t.referenceday.refdate desc")
@@ -790,7 +769,7 @@ public class TimereportDAO {
     }
     
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByEmployeeorderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long employeeOrderId) {
+    public List<Timereport> getTimereportsByEmployeeorderIdInvalidForDates(Date begin, Date end, Long employeeOrderId) {
         if (end == null) {
             return getSession().createQuery("from Timereport t " +
                     "where t.employeeorder.id = ? and t.referenceday.refdate < ? " +
@@ -805,7 +784,7 @@ public class TimereportDAO {
     }
     
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsBySuborderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long suborderId) {
+    public List<Timereport> getTimereportsBySuborderIdInvalidForDates(Date begin, Date end, Long suborderId) {
         return getSession().createQuery("from Timereport t " +
                 "where t.employeeorder.suborder.id = ? and (t.referenceday.refdate < ? or t.referenceday.refdate > ?) " +
                 "order by t.employeeorder.employeecontract.employee.sign asc, t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc")
@@ -813,7 +792,7 @@ public class TimereportDAO {
     }
     
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByCustomerOrderIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long customerOrderId) {
+    public List<Timereport> getTimereportsByCustomerOrderIdInvalidForDates(Date begin, Date end, Long customerOrderId) {
         return getSession().createQuery("from Timereport t " +
                 "where t.employeeorder.suborder.customerorder.id = ? and (t.referenceday.refdate < ? or t.referenceday.refdate > ?) " +
                 "order by t.employeeorder.employeecontract.employee.sign asc, t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc")
@@ -821,7 +800,7 @@ public class TimereportDAO {
     }
     
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByEmployeeContractIdInvalidForDates(java.sql.Date begin, java.sql.Date end, Long employeeContractId) {
+    public List<Timereport> getTimereportsByEmployeeContractIdInvalidForDates(Date begin, Date end, Long employeeContractId) {
         if (end != null) {
             return getSession().createQuery("from Timereport t " +
                     "where t.employeeorder.employeecontract.id = ? and (t.referenceday.refdate < ? or t.referenceday.refdate > ?) " +
@@ -859,11 +838,12 @@ public class TimereportDAO {
         if (loginEmployee == null) {
             throw new RuntimeException("the login-user must be passed to the db");
         }
+        java.util.Date now = new java.util.Date();
         if (tr.getCreated() == null) {
-            tr.setCreated(new java.util.Date());
+            tr.setCreated(now);
             tr.setCreatedby(loginEmployee.getSign());
         } else if (changeUpdateDate) {
-            tr.setLastupdate(new java.util.Date());
+            tr.setLastupdate(now);
             tr.setLastupdatedby(loginEmployee.getSign());
             Integer updateCounter = tr.getUpdatecounter();
             updateCounter = updateCounter == null ? 1 : updateCounter + 1;
