@@ -313,9 +313,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
      * @return
      */
     protected Employeecontract getEmployeeContractFromRequest(HttpServletRequest request, EmployeecontractDAO employeecontractDAO) {
-        
-    	Employeecontract ec = null;
-        ec = (Employeecontract)request.getSession().getAttribute("currentEmployeeContract");
+    	Employeecontract ec = (Employeecontract)request.getSession().getAttribute("currentEmployeeContract");
         if (ec == null) {
             ec = (Employeecontract)request.getSession().getAttribute("loginEmployeeContract");
         }
