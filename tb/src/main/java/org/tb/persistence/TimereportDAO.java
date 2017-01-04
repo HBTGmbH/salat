@@ -1,7 +1,6 @@
 package org.tb.persistence;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -17,7 +16,6 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
-import org.tb.helper.TimereportHelper;
 
 
 /**
@@ -701,27 +699,27 @@ public class TimereportDAO {
      * 
      * @return List<Timereport>
      */
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByMonthAndYearAndEmployeeContractIdAndCustomerorderId(long contractId, long coId, String month, String year, String sortOfReport) {
-        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
-        List<Timereport> allTimereports = new ArrayList<Timereport>();
-        for (Suborder suborder : suborders) {
-            // get all timereports for this suborder AND employee contract...
-            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
-                    "where t.employeecontract.id = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? " +
-                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-                    .setLong(0, contractId).setLong(1, suborder.getId()).setLong(2, coId).setCacheable(true).list();
-            for (Timereport specificTimereport : specificTimereports) {
-                // if timereport belongs to reference month/year, add it to result list...
-                if (sortOfReport != null && specificTimereport.getSortofreport().equals("W")
-                        && TimereportHelper.getMonthStringFromTimereport(specificTimereport).equalsIgnoreCase(month)
-                        && TimereportHelper.getYearStringFromTimereport(specificTimereport).equalsIgnoreCase(year)) {
-                    allTimereports.add(specificTimereport);
-                }
-            }
-        }
-        return allTimereports;
-    }
+//    @SuppressWarnings("unchecked")
+//    public List<Timereport> getTimereportsByMonthAndYearAndEmployeeContractIdAndCustomerorderId(long contractId, long coId, String month, String year, String sortOfReport) {
+//        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
+//        List<Timereport> allTimereports = new ArrayList<Timereport>();
+//        for (Suborder suborder : suborders) {
+//            // get all timereports for this suborder AND employee contract...
+//            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
+//                    "where t.employeecontract.id = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? " +
+//                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
+//                    .setLong(0, contractId).setLong(1, suborder.getId()).setLong(2, coId).setCacheable(true).list();
+//            for (Timereport specificTimereport : specificTimereports) {
+//                // if timereport belongs to reference month/year, add it to result list...
+//                if (sortOfReport != null && specificTimereport.getSortofreport().equals("W")
+//                        && TimereportHelper.getMonthStringFromTimereport(specificTimereport).equalsIgnoreCase(month)
+//                        && TimereportHelper.getYearStringFromTimereport(specificTimereport).equalsIgnoreCase(year)) {
+//                    allTimereports.add(specificTimereport);
+//                }
+//            }
+//        }
+//        return allTimereports;
+//    }
     
     /**
      * Gets a list of Timereports by employee contract id and customer id and date.

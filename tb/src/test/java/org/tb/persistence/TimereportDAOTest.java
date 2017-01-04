@@ -17,11 +17,11 @@ import org.springframework.test.context.junit4.AbstractTransactionalJUnit4Spring
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
-import org.tb.helper.TimereportHelper;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"classpath:spring-beans-cfg-test.xml"})
@@ -48,6 +48,34 @@ public class TimereportDAOTest extends AbstractTransactionalJUnit4SpringContextT
 		return this.sessionFactory.getCurrentSession();
 	}
 	
+    /**
+     * returns a string like 'Jan' from '2006-01-01'
+     * 
+     * @param Timereport tr
+     * 
+     * @return String
+     */
+    public static String getMonthStringFromTimereport(Timereport tr) {
+        Date dt = tr.getReferenceday().getRefdate();
+        String trMonth = dt.toString().substring(5, 7);
+        int trMonthI = Integer.parseInt(trMonth);
+        return GlobalConstants.MONTH_SHORTFORMS[trMonthI - 1];
+    }
+    
+    /**
+     * returns a string like '2006'
+     * 
+     * @param Timereport tr
+     * 
+     * @return String
+     */
+    public static String getYearStringFromTimereport(Timereport tr) {
+        Date dt = tr.getReferenceday().getRefdate();
+        String yearString = dt.toString().substring(0, 4);
+        
+        return yearString;
+    }
+    
 	
 	private static Date getBrokenDate(int plusDays) {
 		Calendar cal = Calendar.getInstance();
@@ -117,8 +145,8 @@ public class TimereportDAOTest extends AbstractTransactionalJUnit4SpringContextT
 		        List<Timereport> specificTimereports = new ArrayList<Timereport>();
 		        for (Timereport timereport : allTimereports) {
 		            // if timereport belongs to reference month/year, add it to result list...
-		            if (TimereportHelper.getMonthStringFromTimereport(timereport).equalsIgnoreCase(month) &&
-		                    TimereportHelper.getYearStringFromTimereport(timereport).equalsIgnoreCase(year)) {
+		            if (getMonthStringFromTimereport(timereport).equalsIgnoreCase(month) &&
+		                    getYearStringFromTimereport(timereport).equalsIgnoreCase(year)) {
 		                specificTimereports.add(timereport);
 		            }
 		        }
@@ -161,8 +189,8 @@ public class TimereportDAOTest extends AbstractTransactionalJUnit4SpringContextT
 			        for (Timereport specificTimereport : specificTimereports) {
 			            // if timereport belongs to reference month/year, add it to result list...
 			            // month has format EEE, e.g., 'Jan'
-			            if (TimereportHelper.getMonthStringFromTimereport(specificTimereport).equalsIgnoreCase(month)
-			                    && TimereportHelper.getYearStringFromTimereport(specificTimereport).equalsIgnoreCase(year)) {
+			            if (getMonthStringFromTimereport(specificTimereport).equalsIgnoreCase(month)
+			                    && getYearStringFromTimereport(specificTimereport).equalsIgnoreCase(year)) {
 			                allTimereports.add(specificTimereport);
 			            }
 			        }

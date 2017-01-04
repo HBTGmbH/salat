@@ -19,13 +19,11 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Overtime;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
-import org.tb.bdom.Vacation;
 import org.tb.bdom.Workingday;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.persistence.VacationDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.AddDailyReportForm;
 
@@ -42,46 +40,18 @@ public class TimereportHelper {
     }
     
     /**
-     * returns a string like 'Jan' from '2006-01-01'
-     * 
-     * @param Timereport tr
-     * 
-     * @return String
-     */
-    public static String getMonthStringFromTimereport(Timereport tr) {
-        Date dt = tr.getReferenceday().getRefdate();
-        String trMonth = dt.toString().substring(5, 7);
-        int trMonthI = Integer.parseInt(trMonth);
-        return GlobalConstants.MONTH_SHORTFORMS[trMonthI - 1];
-    }
-    
-    /**
-     * returns a string like '2006'
-     * 
-     * @param Timereport tr
-     * 
-     * @return String
-     */
-    public static String getYearStringFromTimereport(Timereport tr) {
-        Date dt = tr.getReferenceday().getRefdate();
-        String yearString = dt.toString().substring(0, 4);
-        
-        return yearString;
-    }
-    
-    /**
      * returns a day string like '02'
      * 
      * @param Timereport tr
      * 
      * @return String
      */
-    public static String getDayStringFromTimereport(Timereport tr) {
-        Date dt = tr.getReferenceday().getRefdate();
-        String dayString = dt.toString().substring(8, 10);
-        
-        return dayString;
-    }
+//    public static String getDayStringFromTimereport(Timereport tr) {
+//        Date dt = tr.getReferenceday().getRefdate();
+//        String dayString = dt.toString().substring(8, 10);
+//        
+//        return dayString;
+//    }
     
     /**
      * calculates worktime from begin/end times in form
@@ -118,22 +88,22 @@ public class TimereportHelper {
      * 
      * @return void
      */
-    public void updateVacation(Timereport tr, int action, VacationDAO vd) {
-        String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());
-        long ecId = tr.getEmployeecontract().getId();
-        
-        // update entry in vacation...
-        Vacation va = vd.getVacationByYearAndEmployeecontract(ecId, Integer.parseInt(year));
-        
-        if (va == null) {
-            // should not be the case!
-            vd.setNewVacation(tr.getEmployeecontract(), Integer.parseInt(year));
-        } else {
-            int used = va.getUsed().intValue() + action;
-            va.setUsed(new Integer(used));
-        }
-        vd.save(va);
-    }
+//    public void updateVacation(Timereport tr, int action, VacationDAO vd) {
+//        String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());
+//        long ecId = tr.getEmployeecontract().getId();
+//        
+//        // update entry in vacation...
+//        Vacation va = vd.getVacationByYearAndEmployeecontract(ecId, Integer.parseInt(year));
+//        
+//        if (va == null) {
+//            // should not be the case!
+//            vd.setNewVacation(tr.getEmployeecontract(), Integer.parseInt(year));
+//        } else {
+//            int used = va.getUsed().intValue() + action;
+//            va.setUsed(new Integer(used));
+//        }
+//        vd.save(va);
+//    }
     
     /**
      * counts the days in month with timereports for a given employee 
@@ -214,37 +184,37 @@ public class TimereportHelper {
      * 
      * @return boolean
      */
-    public static boolean checkOverlap(int begin, int end, int refbegin, int refend) {
-        
-        boolean overlap = false;
-        
-        //	total overlap
-        if (begin < refbegin && end > refend) {
-            overlap = true;
-        }
-        
-        // partial overlap left
-        if (!overlap) {
-            if (begin <= refbegin && end > refbegin) {
-                overlap = true;
-            }
-        }
-        
-        // partial overlap right
-        if (!overlap) {
-            if (begin < refend && end >= refend) {
-                overlap = true;
-            }
-        }
-        
-        // "inside" overlap
-        if (!overlap) {
-            if (begin >= refbegin && end <= refend) {
-                overlap = true;
-            }
-        }
-        return overlap;
-    }
+//    public static boolean checkOverlap(int begin, int end, int refbegin, int refend) {
+//        
+//        boolean overlap = false;
+//        
+//        //	total overlap
+//        if (begin < refbegin && end > refend) {
+//            overlap = true;
+//        }
+//        
+//        // partial overlap left
+//        if (!overlap) {
+//            if (begin <= refbegin && end > refbegin) {
+//                overlap = true;
+//            }
+//        }
+//        
+//        // partial overlap right
+//        if (!overlap) {
+//            if (begin < refend && end >= refend) {
+//                overlap = true;
+//            }
+//        }
+//        
+//        // "inside" overlap
+//        if (!overlap) {
+//            if (begin >= refbegin && end <= refend) {
+//                overlap = true;
+//            }
+//        }
+//        return overlap;
+//    }
     
     /**
      * refreshes hours after change of begin/end times
