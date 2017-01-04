@@ -76,11 +76,8 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 			orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 		}
 
-		Customerorder customerorder;
-		final List<Customerorder> orderswithsuborders = new ArrayList<Customerorder>();
-		final Iterator<Customerorder> orderiterator = orders.iterator();
-		while (orderiterator.hasNext()) {
-			customerorder = (Customerorder) orderiterator.next();
+		List<Customerorder> orderswithsuborders = new ArrayList<Customerorder>();
+		for (Customerorder customerorder : orders) {
 			if (!(customerorder.getSuborders() == null || customerorder.getSuborders().isEmpty())) {
 				orderswithsuborders.add(customerorder);
 			}
