@@ -3,7 +3,6 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.ProjectID;
 
 /**
@@ -12,7 +11,7 @@ import org.tb.bdom.ProjectID;
  * @author sql
  *
  */
-public class ProjectIDDAO extends HibernateDaoSupport {
+public class ProjectIDDAO extends AbstractDAO {
     
     /**
      * Gets the ProjectID for the given id.

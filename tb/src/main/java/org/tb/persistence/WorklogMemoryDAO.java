@@ -3,7 +3,6 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.WorklogMemory;
 
 /**
@@ -11,7 +10,7 @@ import org.tb.bdom.WorklogMemory;
  * @author jh
  *
  */
-public class WorklogMemoryDAO extends HibernateDaoSupport {
+public class WorklogMemoryDAO extends AbstractDAO {
 		
 	@SuppressWarnings("unchecked")
 	public List<WorklogMemory> getAllWorklogMemory() {

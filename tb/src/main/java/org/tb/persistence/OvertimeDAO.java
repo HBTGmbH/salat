@@ -3,11 +3,10 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Overtime;
 
-public class OvertimeDAO extends HibernateDaoSupport {
+public class OvertimeDAO extends AbstractDAO {
 	
 	
 	/**

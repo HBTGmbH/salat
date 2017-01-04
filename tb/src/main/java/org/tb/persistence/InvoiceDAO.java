@@ -3,7 +3,6 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Invoice;
 
@@ -13,7 +12,7 @@ import org.tb.bdom.Invoice;
  * @author oda
  *
  */
-public class InvoiceDAO extends HibernateDaoSupport {
+public class InvoiceDAO extends AbstractDAO {
 
 	/**
 	 * Gets the Invoice for the given id.

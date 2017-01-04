@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Ticket;
 import org.tb.bdom.Timereport;
 
@@ -14,7 +13,7 @@ import org.tb.bdom.Timereport;
 * @author sql
 *
  */
-public class TicketDAO extends HibernateDaoSupport {
+public class TicketDAO extends AbstractDAO {
     
     private TimereportDAO timereportDAO;
     

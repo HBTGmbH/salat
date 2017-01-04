@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -21,7 +20,7 @@ import org.tb.bdom.Vacation;
  * @author oda
  *
  */
-public class EmployeecontractDAO extends HibernateDaoSupport {
+public class EmployeecontractDAO extends AbstractDAO {
     
     private MonthlyreportDAO monthlyreportDAO;
     private VacationDAO vacationDAO;

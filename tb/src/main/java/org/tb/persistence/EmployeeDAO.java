@@ -7,7 +7,6 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.criterion.Restrictions;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.util.Assert;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -18,7 +17,7 @@ import org.tb.bdom.Employeecontract;
  * @author oda
  *
  */
-public class EmployeeDAO extends HibernateDaoSupport {
+public class EmployeeDAO extends AbstractDAO {
 
 	private EmployeecontractDAO employeecontractDAO;
 	private List<String> adminNames;

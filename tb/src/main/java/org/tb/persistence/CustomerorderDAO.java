@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.ProjectID;
@@ -24,7 +23,7 @@ import org.tb.bdom.comparators.CustomerOrderComparator;
 	 * @author oda
 	 *
 	 */
-public class CustomerorderDAO extends HibernateDaoSupport {
+public class CustomerorderDAO extends AbstractDAO {
     
     private SuborderDAO suborderDAO;
     private ProjectIDDAO projectIDDAO;

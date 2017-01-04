@@ -3,12 +3,11 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Employeeordercontent;
 
-public class EmployeeOrderContentDAO extends HibernateDaoSupport {
+public class EmployeeOrderContentDAO extends AbstractDAO {
 	
 	private EmployeeorderDAO employeeorderDAO;
 	

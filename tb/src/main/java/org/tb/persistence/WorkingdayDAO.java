@@ -4,10 +4,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Workingday;
 
-public class WorkingdayDAO extends HibernateDaoSupport{
+public class WorkingdayDAO extends AbstractDAO {
 
 	/**
 	 * 

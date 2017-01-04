@@ -3,7 +3,6 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Vacation;
@@ -14,7 +13,7 @@ import org.tb.bdom.Vacation;
  * @author oda
  *
  */
-public class VacationDAO extends HibernateDaoSupport {
+public class VacationDAO extends AbstractDAO {
 
 	
 	/**

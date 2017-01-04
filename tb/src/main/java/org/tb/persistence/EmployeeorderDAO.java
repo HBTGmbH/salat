@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -18,7 +17,7 @@ import org.tb.bdom.comparators.EmployeeOrderComparator;
  * @author oda
  *
  */
-public class EmployeeorderDAO extends HibernateDaoSupport {
+public class EmployeeorderDAO extends AbstractDAO {
     
     private final EmployeeOrderComparator employeeOrderComparator = new EmployeeOrderComparator();
     private TimereportDAO timereportDAO;

@@ -6,8 +6,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.classic.Session;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -22,17 +20,7 @@ import org.tb.bdom.Timereport;
  * @author oda
  *
  */
-public class TimereportDAO {
-    
-    private SessionFactory sessionFactory;
-    
-    public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
-	}
-    
-    private Session getSession() {
-    	return this.sessionFactory.getCurrentSession();
-    }
+public class TimereportDAO extends AbstractDAO {
     
     /**
      * Gets the timereport for the given id.

@@ -4,13 +4,12 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeordercontent;
 import org.tb.bdom.Statusreport;
 
-public class StatusReportDAO extends HibernateDaoSupport {
+public class StatusReportDAO extends AbstractDAO {
 
 	
 	/**

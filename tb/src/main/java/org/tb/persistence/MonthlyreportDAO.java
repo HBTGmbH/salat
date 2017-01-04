@@ -3,7 +3,6 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Monthlyreport;
 
@@ -13,7 +12,7 @@ import org.tb.bdom.Monthlyreport;
  * @author oda
  *
  */
-public class MonthlyreportDAO extends HibernateDaoSupport {
+public class MonthlyreportDAO extends AbstractDAO {
 
 	
 	

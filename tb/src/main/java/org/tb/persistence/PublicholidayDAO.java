@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
 import org.tb.util.HolidaysUtil;
@@ -17,7 +16,7 @@ import org.tb.util.HolidaysUtil;
  * @author oda
  *
  */
-public class PublicholidayDAO extends HibernateDaoSupport {
+public class PublicholidayDAO extends AbstractDAO {
 	
 	/**
 	 * Saves the given public holiday.

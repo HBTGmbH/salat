@@ -3,7 +3,6 @@ package org.tb.persistence;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customer;
 import org.tb.bdom.Employee;
 
@@ -13,7 +12,7 @@ import org.tb.bdom.Employee;
  * @author oda
  *
  */
-public class CustomerDAO extends HibernateDaoSupport {
+public class CustomerDAO extends AbstractDAO {
 
 	/**
 	 * Get a list of all Customers ordered by name.

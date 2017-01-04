@@ -1,7 +1,6 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Worklog;
 
 /**
@@ -10,7 +9,7 @@ import org.tb.bdom.Worklog;
 * @author sql
 *
  */
-public class WorklogDAO extends HibernateDaoSupport {
+public class WorklogDAO extends AbstractDAO {
     
     /**
      * Gets the WorklogAction for the given id.

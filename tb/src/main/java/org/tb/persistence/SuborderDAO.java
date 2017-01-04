@@ -14,7 +14,6 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -28,7 +27,7 @@ import org.tb.bdom.comparators.SubOrderComparator;
  * @author oda
  *
  */
-public class SuborderDAO extends HibernateDaoSupport {
+public class SuborderDAO extends AbstractDAO {
 	private static final Logger LOG = LoggerFactory.getLogger(SuborderDAO.class);
     
     /**

@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Referenceday;
 import org.tb.util.DateUtils;
 
@@ -14,7 +13,7 @@ import org.tb.util.DateUtils;
  * @author oda
  *
  */
-public class ReferencedayDAO extends HibernateDaoSupport {
+public class ReferencedayDAO extends AbstractDAO {
 
 	private PublicholidayDAO publicholidayDAO;
 	

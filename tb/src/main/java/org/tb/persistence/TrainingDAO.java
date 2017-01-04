@@ -3,7 +3,6 @@ package org.tb.persistence;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.tb.bdom.Employeecontract;
 
 /**
@@ -12,7 +11,7 @@ import org.tb.bdom.Employeecontract;
  * @author sql
  *
  */
-public class TrainingDAO extends HibernateDaoSupport {
+public class TrainingDAO extends AbstractDAO {
     
     @SuppressWarnings("unchecked")
     public List<Object[]> getProjectTrainingTimesByDates(EmployeecontractDAO employeecontractDAO, Date begin, Date end) {
