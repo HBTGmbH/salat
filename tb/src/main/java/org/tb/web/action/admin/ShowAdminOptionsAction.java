@@ -113,22 +113,6 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 			return mapping.findForward("success");
 		}
 		
-		if ((request.getParameter("task") != null)
-				&& (request.getParameter("task").equals("convertPasswordsToMD5"))) {
-			
-			List<Employee> employees = employeeDAO.getEmployees();
-			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-			
-			for (Employee employee : employees) {
-				if (!employee.equals(loginEmployee)) {
-					employee.changePassword(employee.getPassword());
-					employeeDAO.save(employee, loginEmployee);
-				}
-			}
-			
-			return mapping.findForward("success");
-		}
-		
 		if (request.getParameter("task") == null) {
 			return mapping.findForward("success");
 		}
