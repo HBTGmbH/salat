@@ -444,15 +444,13 @@ public class ShowInvoiceAction extends DailyReportAction {
     
     private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList, java.sql.Date dateFirst, java.sql.Date dateLast,
             ShowInvoiceForm invoiceForm) {
-        List<Timereport> timereportList;
-        InvoiceTimereportViewHelper invoiceTimereportViewHelper;
         List<String> suborderIdList = new ArrayList<String>(suborderList.size());
         List<String> timereportIdList = new ArrayList<String>();
         for (Suborder suborder : suborderList) {
             List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList = new LinkedList<InvoiceTimereportViewHelper>();
-            timereportList = timereportDAO.getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(dateFirst, dateLast, suborder.getId());
+            List<Timereport> timereportList = timereportDAO.getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(dateFirst, dateLast, suborder.getId());
             for (Timereport timereport : timereportList) {
-                invoiceTimereportViewHelper = new InvoiceTimereportViewHelper(timereport);
+                InvoiceTimereportViewHelper invoiceTimereportViewHelper = new InvoiceTimereportViewHelper(timereport);
                 invoiceTimereportViewHelperList.add(invoiceTimereportViewHelper);
                 timereportIdList.add(String.valueOf(invoiceTimereportViewHelper.getId()));
             }

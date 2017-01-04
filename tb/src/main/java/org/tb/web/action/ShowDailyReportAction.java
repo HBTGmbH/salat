@@ -771,15 +771,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             }
             request.getSession().setAttribute("timereports", timereports);
         } else {
-            Date today = new Date();
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
-            String todayString = simpleDateFormat.format(today);
-            try {
-                today = simpleDateFormat.parse(todayString);
-            } catch (ParseException e) {
-                throw new RuntimeException("this should not happen!");
-            }
-            java.sql.Date refDate = new java.sql.Date(today.getTime());
+            java.sql.Date refDate = java.sql.Date.valueOf(LocalDate.now());
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
             if (workingday != null) {
                 // show break time, quitting time and working day ends on
