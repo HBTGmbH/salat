@@ -13,7 +13,6 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
@@ -22,11 +21,7 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
 
 	private TimereportDAO timereportDAO;
 	private EmployeeorderDAO employeeorderDAO;
-	private EmployeeDAO employeeDAO;
 	
-	public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-		this.employeeDAO = employeeDAO;
-	}
 	public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
 		this.employeeorderDAO = employeeorderDAO;
 	}
