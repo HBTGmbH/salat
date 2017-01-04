@@ -77,10 +77,10 @@ public class CustomerDAO extends HibernateDaoSupport {
 	 * 
 	 * @return Customer
 	 */
-	public Customer getCustomerBySign(String name) {
-		Customer cu = (Customer) getSession().createQuery("from Customer c where c.name = ?").setString(0, name).uniqueResult();
-		return cu;
-	}
+//	public Customer getCustomerBySign(String name) {
+//		Customer cu = (Customer) getSession().createQuery("from Customer c where c.name = ?").setString(0, name).uniqueResult();
+//		return cu;
+//	}
 	
 	/**
 	 * Calls {@link CustomerDAO#save(Customer, Employee)} with {@link Employee} = null.
