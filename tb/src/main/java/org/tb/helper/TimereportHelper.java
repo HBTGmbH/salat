@@ -1,7 +1,7 @@
 package org.tb.helper;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -685,7 +685,7 @@ public class TimereportHelper {
      * @param yearString
      * @return Returns the date associated to the given Strings.
      */
-    public Date getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) throws Exception {
+    public java.sql.Date getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) throws Exception {
         int day = new Integer(dayString);
         int year = new Integer(yearString);
         int month = 0;
@@ -716,14 +716,13 @@ public class TimereportHelper {
             month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
         }
         
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        Date selectedDate;
+        java.sql.Date selectedDate;
         try {
-            selectedDate = simpleDateFormat.parse(year + "-" + month + "-" + day);
-        } catch (ParseException e) {
+            selectedDate = java.sql.Date.valueOf(LocalDate.of(year, month, day));
+        } catch (DateTimeException e) {
             //no date could be constructed - use current date instead
             if (useCurrentDateForFailure) {
-                selectedDate = new Date();
+                selectedDate = java.sql.Date.valueOf(LocalDate.now());
             } else {
                 throw new IllegalArgumentException("construction of the date failed");
             }

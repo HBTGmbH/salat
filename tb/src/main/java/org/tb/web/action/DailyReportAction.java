@@ -1,6 +1,7 @@
 package org.tb.web.action;
 
 import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -48,18 +49,18 @@ public abstract class DailyReportAction extends LoginRequiredAction {
      * @param request
      * @return Returns the date associated the request. If parsing fails, the current date is returned.
      */
-    protected Date getSelectedDateFromRequest(HttpServletRequest request) {
+    protected java.sql.Date getSelectedDateFromRequest(HttpServletRequest request) {
         String dayString = (String)request.getSession().getAttribute("currentDay");
         String monthString = (String)request.getSession().getAttribute("currentMonth");
         String yearString = (String)request.getSession().getAttribute("currentYear");
         
-        Date date;
+        java.sql.Date date;
         try {
             TimereportHelper th = new TimereportHelper();
             date = th.getDateFormStrings(dayString, monthString, yearString, true);
         } catch (Exception e) {
             // if parsing fails, return current date
-            date = new Date();
+            date = java.sql.Date.valueOf(LocalDate.now());
         }
         
         return date;
@@ -353,17 +354,14 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         int maxDays = GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
         List<OptionItem> days = new ArrayList<OptionItem>();
         days.add(new OptionItem("0", "--"));
-        String dayValue = "";
-        String dayLabel = "";
         for (int i = 1; i <= maxDays; i++) {
+        	String dayLabel;
             if (i < 10) {
                 dayLabel = "0" + i;
-                //				dayValue = "0" + i;
-            } else if (i >= 10) {
+            } else {
                 dayLabel = "" + i;
-                //				dayValue = "" + i;
             }
-            dayValue = "" + i;
+            String dayValue = "" + i;
             days.add(new OptionItem(dayValue, dayLabel));
         }
         return days;
