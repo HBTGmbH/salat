@@ -33,6 +33,7 @@ window.onload=startList;
 //--><!]]></script>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
 
 <table style="width:100%;">
   <tr>
