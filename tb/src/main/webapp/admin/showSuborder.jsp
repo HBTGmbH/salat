@@ -670,9 +670,9 @@
 
 								<!-- is hourly rate for billable suborders set? -->
 								<c:choose>
-									<c:when
-										test="${suborder.invoiceString == 'Y' && suborder.hourly_rate == 0.0}">
-										<td align="center" style="color: red"><c:choose>
+									<c:when	test="${suborder.invoiceString == 'Y' && suborder.hourly_rate == 0.0}">
+										<td align="center" style="color: red">
+											<c:choose>
 												<c:when test="${suborder.invoiceString == 'Y'}">
 													<bean:message key="main.suborder.invoice.yes.text" />
 												</c:when>
@@ -682,13 +682,15 @@
 												<c:when test="${suborder.invoiceString == 'U'}">
 													<bean:message key="main.suborder.invoice.undefined.text" />
 												</c:when>
-											</c:choose></td>
+											</c:choose>
+										</td>
 										<td style="color: red"><fmt:formatNumber
 												value="${suborder.hourly_rate}" minFractionDigits="2" /> <c:out
 												value="${suborder.currency}" /></td>
 									</c:when>
 									<c:otherwise>
-										<td align="center" style="color: gray"><c:choose>
+										<td align="center" style="color: gray">
+											<c:choose>
 												<c:when test="${suborder.invoiceString == 'Y'}">
 													<bean:message key="main.suborder.invoice.yes.text" />
 												</c:when>
@@ -698,7 +700,8 @@
 												<c:when test="${suborder.invoiceString == 'U'}">
 													<bean:message key="main.suborder.invoice.undefined.text" />
 												</c:when>
-											</c:choose></td>
+											</c:choose>
+										</td>
 										<td style="color: gray"><c:choose>
 												<c:when test="${suborder.hourly_rate == 0.0}">
 													&nbsp;
@@ -712,7 +715,8 @@
 									</c:otherwise>
 								</c:choose>
 
-								<td style="color: gray"><c:choose>
+								<td style="color: gray">
+									<c:choose>
 										<c:when test="${suborder.debithours == null}">
 											&nbsp;
 										</c:when>
@@ -734,12 +738,13 @@
 												</c:otherwise>
 											</c:choose>
 										</c:otherwise>
-									</c:choose></td>
+									</c:choose>
+								</td>
 
 								<c:if test="${showActualHours}">
-									<td align="right" style="color: gray"><fmt:formatNumber
-											value="${suborder.duration}" minFractionDigits="2" /></td>
-									<td align="right" style="color: gray"><c:choose>
+									<td align="right" style="color: gray"><fmt:formatNumber	value="${suborder.duration}" minFractionDigits="2" /></td>
+									<td align="right" style="color: gray">
+										<c:choose>
 											<c:when
 												test="${suborder.difference != null && (suborder.difference < 0.0 || suborder.difference >= 0.0)&&(suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12)}">
 												<font color="#0000FF"><fmt:formatNumber
@@ -758,7 +763,9 @@
 											<c:otherwise>
 												&nbsp;
 											</c:otherwise>
-										</c:choose></td>
+										</c:choose>
+									</td>
+									<td align="right" style="color: gray"><fmt:formatNumber value="${suborder.durationNotInvoiceable}" minFractionDigits="2" /></td>
 								</c:if>
 							</c:otherwise>
 						</c:choose>
