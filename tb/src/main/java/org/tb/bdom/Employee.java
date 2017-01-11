@@ -5,6 +5,7 @@ import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -56,6 +57,8 @@ public class Employee implements Serializable {
 	private Boolean passwordchange;
 	/** Jira OAuth Token */
 	private String jira_oauthtoken;
+	
+	private transient Boolean restricted = null;
 
 	public String getJira_oauthtoken() {
 		return jira_oauthtoken;
@@ -201,6 +204,14 @@ public class Employee implements Serializable {
 	public void changePassword(final String newPassword) {
 		passwordchange = false;
 		password = MD5Util.makeMD5(newPassword);
+	}
+	
+	@Transient
+	public boolean isRestricted() {
+		if(this.restricted == null) {
+			this.restricted = GlobalConstants.EMPLOYEE_STATUS_RESTRICTED.equalsIgnoreCase(this.status);
+		}
+		return this.restricted;
 	}
 
 }
