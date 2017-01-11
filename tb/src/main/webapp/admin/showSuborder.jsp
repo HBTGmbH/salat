@@ -14,6 +14,9 @@
 <title><bean:message key="main.general.application.title" /> -
 	<bean:message key="main.general.mainmenu.suborders.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link href="/tb/style/select2.min.css" rel="stylesheet" />
+<script src="/tb/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script src="/tb/scripts/select2.full.min.js" type="text/javascript"></script>
 
 <script type="text/javascript" language="JavaScript">
 
@@ -119,7 +122,14 @@
 		form.action = "/tb/do/EditSuborder?soId=" + soId;
 		form.submit();
 	}
-		
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'element'
+		});	
+	});		
+
 </script>
 
 </head>
@@ -139,7 +149,7 @@
 				<td class="noBborderStyle" colspan="2"><b><bean:message
 							key="main.suborder.customerorder.text" /></b></td>
 				<td class="noBborderStyle" colspan="9" align="left"><html:select
-						property="customerOrderId" onchange="refresh(this.form)">
+						property="customerOrderId" onchange="refresh(this.form)" styleClass="make-select2">
 						<html:option value="-1">
 							<bean:message key="main.general.allorders.text" />
 						</html:option>
