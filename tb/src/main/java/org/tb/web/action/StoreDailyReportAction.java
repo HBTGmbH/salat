@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -234,18 +237,19 @@ public class StoreDailyReportAction extends DailyReportAction {
             // refresh begin time to be displayed
             refreshTime = false;
             TimereportHelper th = new TimereportHelper();
-            java.util.Date selectedDate;
+            java.sql.Date selectedDate;
             
             try {
-                selectedDate = simpleDateFormat.parse(reportForm.getReferenceday());
-            } catch (ParseException e) {
+            	DateTimeFormatter dtf = DateTimeFormatter.ofPattern(GlobalConstants.DEFAULT_DATE_FORMAT);
+                selectedDate = java.sql.Date.valueOf(LocalDate.parse(reportForm.getReferenceday(), dtf));
+            } catch (DateTimeParseException e) {
                 // error occured while parsing date - use current date instead
-                selectedDate = new java.util.Date();
+                selectedDate = java.sql.Date.valueOf(LocalDate.now());
             }
             request.getSession().setAttribute("referenceday", selectedDate);
             
             // search for adequate workingday and set status in session
-            java.sql.Date currentDate = DateUtils.getSqlDate(selectedDate);
+            java.sql.Date currentDate = selectedDate;
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(currentDate, employeeContract.getId());
             
             boolean workingDayIsAvailable = false;
@@ -879,7 +883,7 @@ public class StoreDailyReportAction extends DailyReportAction {
                 
             } else { // Continue = true
                 
-                java.util.Date selectedDate = getSelectedDateFromRequest(request);
+                java.sql.Date selectedDate = getSelectedDateFromRequest(request);
                 
                 //deleting comment, costs and days of serialBookings in the addDailyReport-Form
                 reportForm.setComment("");

@@ -305,10 +305,9 @@ public class TimereportHelper {
      * @param timereportDAO
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1]. 
      */
-    public int[] getWorkingTimeForDateAndEmployeeContract(Date date, long employeeContractId, TimereportDAO timereportDAO) {
+    public int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId, TimereportDAO timereportDAO) {
         int[] workingTime = new int[2];
-        java.sql.Date currentDate = DateUtils.getSqlDate(date);
-        List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, currentDate);
+        List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         int hours = 0;
         int minutes = 0;
         for (Timereport timereport : timereports) {
@@ -331,7 +330,7 @@ public class TimereportHelper {
      * @param workingday
      * @return Returns int[]  0=hours 1=minutes
      */
-    public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, Date date, Workingday workingday) {
+    public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday) {
         int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId, td);
         if (workingday != null) {
             beginTime[0] += workingday.getStarttimehour();

@@ -170,22 +170,6 @@ public class DateUtils {
         return sqlDateString;
     }
     
-    public static java.sql.Date getSqlDate(String eeeyyyymmdd) {
-        // gets sql date in format yyyy-mm-dd from string eee yyyy-mm-dd
-        java.sql.Date theDate = java.sql.Date.valueOf(getSqlDateString(eeeyyyymmdd));
-        return theDate;
-    }
-    
-    public static java.sql.Date getSqlDate(java.util.Date utilDate) {
-        // gets sql date in format yyyy-mm-dd from java.util.Date
-        int length = utilDate.toString().length();
-        String sqlDateString = utilDate.toString().substring(length - 4, length) + "-" +
-                getMonthMMStringFromShortstring(utilDate.toString().substring(4, 7)) + "-" +
-                utilDate.toString().substring(8, 10);
-        java.sql.Date theDate = java.sql.Date.valueOf(sqlDateString);
-        return theDate;
-    }
-    
     /**
      * validates if date string has correct sql date format 'yyyy-mm-dd'
      * 

@@ -86,7 +86,7 @@ public class CreateDailyReportAction extends DailyReportAction {
         }
         
         // get selected date for new report
-        Date selectedDate = getSelectedDateFromRequest(request);
+        java.sql.Date selectedDate = getSelectedDateFromRequest(request);
         
         Employeecontract matchingEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), selectedDate);
         if(matchingEC != null) {
@@ -115,7 +115,7 @@ public class CreateDailyReportAction extends DailyReportAction {
         TimereportHelper th = new TimereportHelper();
         
         // search for adequate workingday and set status in session
-        java.sql.Date currentDate = DateUtils.getSqlDate(selectedDate);
+        java.sql.Date currentDate = selectedDate;
         Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(currentDate, ec.getId());
         
         boolean workingDayIsAvailable = false;
