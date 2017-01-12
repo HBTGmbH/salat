@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.hibernate.Session;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -74,6 +75,24 @@ public class EmployeeorderDAO extends AbstractDAO {
                 .setString(1, customerOrderSign)
                 .setDate(2, date)
                 .setDate(3, date)
+                .list();
+        
+    }
+    
+    @SuppressWarnings("unchecked")
+    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, java.sql.Date date) {
+        return getSession().createQuery("select eo from Employeeorder eo " +
+                "where eo.employeecontract.id = :ecId " +
+                "and ((eo.suborder.customerorder.sign in (:remVacation,:extraVacation)) or (eo.suborder.customerorder.sign = :vacation and eo.suborder.sign != :overtime))" +
+                "and eo.fromDate <= :date " +
+                "and (eo.untilDate is null " +
+                "or eo.untilDate >= :date )")
+        		.setParameter("ecId", employeecontractId)
+        		.setParameter("remVacation", GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION)
+        		.setParameter("extraVacation", GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION)
+        		.setParameter("vacation", GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+        		.setParameter("overtime", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)
+        		.setParameter("date", date)
                 .list();
         
     }

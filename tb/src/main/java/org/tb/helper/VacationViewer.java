@@ -1,15 +1,14 @@
 package org.tb.helper;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpSession;
 
-import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Timereport;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.TimereportDAO;
 
@@ -19,7 +18,6 @@ public class VacationViewer implements Serializable {
     
     private String suborderSign;
     private double budget;
-    private int usedVacationHours;
     private int usedVacationMinutes;
     
     private final Employeecontract employeecontract;
@@ -44,14 +42,6 @@ public class VacationViewer implements Serializable {
         this.suborderSign = suborderSign;
     }
     
-    public int getUsedVacationHours() {
-        return usedVacationHours;
-    }
-    
-    public void setUsedVacationHours(int usedVacationHours) {
-        this.usedVacationHours = usedVacationHours;
-    }
-    
     public int getUsedVacationMinutes() {
         return usedVacationMinutes;
     }
@@ -64,16 +54,12 @@ public class VacationViewer implements Serializable {
         this.usedVacationMinutes += minutes;
     }
     
-    public void addVacationHours(int hours) {
-        this.usedVacationHours += hours;
-    }
-    
     public boolean getExtended() {
         return getTime() > budget;
     }
     
     public double getTime() {
-        int totalVacationMinutes = usedVacationHours * 60 + usedVacationMinutes;
+        int totalVacationMinutes = usedVacationMinutes;
         int hours = totalVacationMinutes / 60;
         int minutes = totalVacationMinutes % 60;
         Double usedTime = minutes / 60.0 + hours;
@@ -85,7 +71,7 @@ public class VacationViewer implements Serializable {
     }
     
     public String getVacationString() {
-        int totalVacationMinutes = usedVacationHours * 60 + usedVacationMinutes;
+        int totalVacationMinutes = usedVacationMinutes;
         
         int dailyWorkingTimeMinutes = getMinutesForHourDouble(employeecontract.getDailyWorkingTime());
         
@@ -105,7 +91,7 @@ public class VacationViewer implements Serializable {
     }
     
     public String getUsedVacationString() {
-        int totalVacationMinutes = usedVacationHours * 60 + usedVacationMinutes;
+        int totalVacationMinutes = usedVacationMinutes;
         
         int dailyWorkingTimeMinutes = getMinutesForHourDouble(employeecontract.getDailyWorkingTime());
         
@@ -188,29 +174,11 @@ public class VacationViewer implements Serializable {
      */
     public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO) {
         
-        java.sql.Date today = new java.sql.Date(new java.util.Date().getTime());
-        
-        List<Employeeorder> orders = new ArrayList<Employeeorder>();
-        
-        List<Employeeorder> specialVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(),
-                GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION,
-                today);
-        List<Employeeorder> vacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(),
-                GlobalConstants.CUSTOMERORDER_SIGN_VACATION,
-                today);
-        List<Employeeorder> extraVacationOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(employeecontract.getId(),
-                GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION,
-                today);
-        
-        orders.addAll(specialVacationOrders);
-        for (Employeeorder vacation : vacationOrders) {
-            if (!vacation.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                orders.add(vacation);
-            }
-        }
-        orders.addAll(extraVacationOrders);
+        java.sql.Date today = java.sql.Date.valueOf(LocalDate.now());
         
         List<VacationViewer> vacations = new ArrayList<VacationViewer>();
+        
+        List<Employeeorder> orders = employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontract.getId(), today);
         
         for (Employeeorder employeeorder : orders) {
             VacationViewer vacationView = new VacationViewer(employeecontract);
@@ -219,11 +187,9 @@ public class VacationViewer implements Serializable {
                 vacationView.setBudget(employeeorder.getDebithours());
             }
             
-            List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(employeeorder.getSuborder().getId(), employeecontract.getId());
-            for (Timereport timereport : timereports) {
-                vacationView.addVacationHours(timereport.getDurationhours());
-                vacationView.addVacationMinutes(timereport.getDurationminutes());
-            }
+            int vacationMinutes = (int) timereportDAO.getTotalDurationMinutesForSuborderAndEmployeeContract(employeeorder.getSuborder().getId(), employeecontract.getId());
+            
+            vacationView.addVacationMinutes(vacationMinutes);
             vacations.add(vacationView);
         }
         session.setAttribute("vacations", vacations);

@@ -605,13 +605,13 @@ public class StoreDailyReportAction extends DailyReportAction {
                 List<Timereport> timereps = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(vacationOrder.getSuborder().getId(), employeecontract.getId());
                 for (Timereport timereport : timereps) {
                     if (tr.getId() != timereport.getId()) {
-                        vacationView.addVacationHours(timereport.getDurationhours());
+                        vacationView.addVacationMinutes(60*timereport.getDurationhours());
                         vacationView.addVacationMinutes(timereport.getDurationminutes());
                     }
                 }
                 
                 numberOfLaborDays = Math.max(numberOfLaborDays, 1);
-                vacationView.addVacationHours(numberOfLaborDays * tr.getDurationhours());
+                vacationView.addVacationMinutes(60 * numberOfLaborDays * tr.getDurationhours());
                 vacationView.addVacationMinutes(numberOfLaborDays * tr.getDurationminutes());
                 
                 //check if current timereport/serial reports would overrun vacation budget of corresponding year of suborder

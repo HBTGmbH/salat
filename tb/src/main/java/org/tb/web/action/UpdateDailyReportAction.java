@@ -153,11 +153,11 @@ public class UpdateDailyReportAction extends DailyReportAction {
                 List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(vacationOrder.getSuborder().getId(), ec.getId());
                 for (Timereport timereport : timereports) {
                     if (tr.getId() != timereport.getId()) {
-                        vacationView.addVacationHours(timereport.getDurationhours());
+                        vacationView.addVacationMinutes(60*timereport.getDurationhours());
                         vacationView.addVacationMinutes(timereport.getDurationminutes());
                     }
                 }
-                vacationView.addVacationHours(tr.getDurationhours());
+                vacationView.addVacationMinutes(60*tr.getDurationhours());
                 vacationView.addVacationMinutes(tr.getDurationminutes());
                 //check if current timereport would overrun vacation budget of corresponding year of suborder
                 if (vacationView.getExtended()) {
