@@ -64,54 +64,62 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowMatrix">
 			<bean:message key="main.general.mainmenu.matrixmenu.text" />
 		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowTraining">
+		<c:if test="${not loginEmployee.restricted}"><li><html:link styleClass="menu" action="/ShowTraining">
 			<bean:message key="main.general.mainmenu.training.text" />
-		</html:link></li>
+		</html:link></li></c:if>
 		<li><html:link styleClass="menu" action="/ShowRelease">
 			<bean:message key="main.general.mainmenu.release.title.text" />
 		</html:link></li>
 	</ul>
 	</li>
-	<li><bean:message key="main.general.mainmenu.employees.text" />
-	<ul>
-		<li class="first"><html:link styleClass="menu"
-			action="/ShowEmployee">
-			<bean:message key="main.general.mainmenu.employees.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowEmployeecontract">
-			<bean:message key="main.general.mainmenu.employeecontracts.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowEmployeeorder">
-			<bean:message key="main.general.mainmenu.employeeorders.text" />
-		</html:link></li>
-	</ul>
-	</li>
-	<li><bean:message key="main.general.mainmenu.orders.text" />
-	<ul>
-		<li class="first"><html:link styleClass="menu"
-			action="/ShowCustomer">
-			<bean:message key="main.general.mainmenu.customers.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowCustomerorder">
-			<bean:message key="main.general.mainmenu.customerorders.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowSuborder">
-			<bean:message key="main.general.mainmenu.suborders.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowTickets">
-			<bean:message key="main.general.mainmenu.tickets.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowStatusReport">
-			<bean:message key="main.general.mainmenu.statusreports.text" />
-		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowInvoice">
-			<bean:message key="main.general.mainmenu.invoice.title.text" />
-		</html:link></li>
-		<!--  <li><html:link styleClass="menu" action="/ShowBudget">
-			<bean:message key="main.general.mainmenu.budget.text" />
-		</html:link></li>-->
-	</ul>
-	</li>
+	<c:choose>
+	<c:when test="${not loginEmployee.restricted}">
+		<li><bean:message key="main.general.mainmenu.employees.text" />
+		<ul>
+			<li class="first"><html:link styleClass="menu"
+				action="/ShowEmployee">
+				<bean:message key="main.general.mainmenu.employees.text" />
+			</html:link></li>
+			<li><html:link styleClass="menu" action="/ShowEmployeecontract">
+				<bean:message key="main.general.mainmenu.employeecontracts.text" />
+			</html:link></li>
+			<li><html:link styleClass="menu" action="/ShowEmployeeorder">
+				<bean:message key="main.general.mainmenu.employeeorders.text" />
+			</html:link></li>
+		</ul>
+		</li>
+		<li><bean:message key="main.general.mainmenu.orders.text" />
+		<ul>
+			<li class="first"><html:link styleClass="menu"
+				action="/ShowCustomer">
+				<bean:message key="main.general.mainmenu.customers.text" />
+			</html:link></li>
+			<li><html:link styleClass="menu" action="/ShowCustomerorder">
+				<bean:message key="main.general.mainmenu.customerorders.text" />
+			</html:link></li>
+			<li><html:link styleClass="menu" action="/ShowSuborder">
+				<bean:message key="main.general.mainmenu.suborders.text" />
+			</html:link></li>
+			<li><html:link styleClass="menu" action="/ShowTickets">
+				<bean:message key="main.general.mainmenu.tickets.text" />
+			</html:link></li>
+			<li><html:link styleClass="menu" action="/ShowStatusReport">
+				<bean:message key="main.general.mainmenu.statusreports.text" />
+			</html:link></li>
+			<li><html:link styleClass="menu" action="/ShowInvoice">
+				<bean:message key="main.general.mainmenu.invoice.title.text" />
+			</html:link></li>
+			<!--  <li><html:link styleClass="menu" action="/ShowBudget">
+				<bean:message key="main.general.mainmenu.budget.text" />
+			</html:link></li>-->
+		</ul>
+		</li>
+	</c:when>
+	<c:otherwise>
+		<li>&nbsp;</li>
+		<li>&nbsp;</li>
+	</c:otherwise>
+	</c:choose>
 	<li><bean:message key="main.general.mainmenu.management.text" />
 	<ul>
 		<li class="first"><html:link styleClass="menu"

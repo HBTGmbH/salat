@@ -106,4 +106,8 @@ public class ShowSettingsAction extends LoginRequiredAction {
 		return errors;
 	}
 
+	@Override
+	protected boolean isAllowedForRestrictedUsers() {
+		return true;
+	}
 }

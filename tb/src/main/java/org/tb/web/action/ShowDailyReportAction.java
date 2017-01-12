@@ -423,7 +423,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 		    reportForm.setMonth(month);
 		    reportForm.setYear("" + startdate.getYear());
 		    reportForm.setStartdate(dtf.format(startdate));
-		    if (GlobalConstants.VIEW_DAILY.equals(view)) {
+		    if (view == null || GlobalConstants.VIEW_DAILY.equals(view)) {
 		        // daily view -> synchronize enddate and fields with startdate
 		        reportForm.setLastday(reportForm.getDay());
 		        reportForm.setLastmonth(reportForm.getMonth());
@@ -446,8 +446,6 @@ public class ShowDailyReportAction extends DailyReportAction {
 		            reportForm.setLastyear(reportForm.getYear());
 		            reportForm.setEnddate(reportForm.getEnddate());
 		        }
-		    } else {
-		        return mapping.findForward("error");
 		    }
 		}
 		
@@ -708,7 +706,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             forward = "error";
             return forward;
         }
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             forward = "error";
@@ -861,4 +859,8 @@ public class ShowDailyReportAction extends DailyReportAction {
         return forward;
     }
     
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+    	return true;
+    }
 }

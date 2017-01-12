@@ -2,7 +2,6 @@ package org.tb.web.action;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -771,12 +770,13 @@ public class StoreDailyReportAction extends DailyReportAction {
                 // set new ShowDailyReportForm with saved filter settings
                 ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
 
-                java.util.Date referenceDate;
+                java.sql.Date referenceDate;
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern(GlobalConstants.DEFAULT_DATE_FORMAT);
                 try {
-                    referenceDate = simpleDateFormat.parse(reportForm.getReferenceday());
-                } catch (ParseException e) {
+                    referenceDate = java.sql.Date.valueOf(LocalDate.parse(reportForm.getReferenceday(), dtf));
+                } catch (DateTimeParseException e) {
                     // error occured while parsing date - use current date instead
-                    referenceDate = new java.util.Date();
+                    referenceDate = java.sql.Date.valueOf(LocalDate.now());
                 }
                 showDailyReportForm.setDay(DateUtils.getDayString(referenceDate));
                 showDailyReportForm.setMonth(DateUtils.getMonthShortString(referenceDate));
@@ -789,10 +789,10 @@ public class StoreDailyReportAction extends DailyReportAction {
                     showDailyReportForm.setLastyear((String)request.getSession().getAttribute("lastLastYear"));
                 } else {
                     try {
-                        referenceDate = simpleDateFormat.parse(reportForm.getReferenceday());
-                    } catch (ParseException e) {
+                        referenceDate = java.sql.Date.valueOf(LocalDate.parse(reportForm.getReferenceday(), dtf));
+                    } catch (DateTimeParseException e) {
                         // error occured while parsing date - use current date instead
-                        referenceDate = new java.util.Date();
+                        referenceDate = java.sql.Date.valueOf(LocalDate.now());
                     }
                     showDailyReportForm.setLastday(DateUtils.getDayString(referenceDate));
                     showDailyReportForm.setLastmonth(DateUtils.getMonthShortString(referenceDate));
@@ -1061,7 +1061,7 @@ public class StoreDailyReportAction extends DailyReportAction {
         
         ec = loginEmployeeContract;
         
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         
         request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
@@ -1231,11 +1231,7 @@ public class StoreDailyReportAction extends DailyReportAction {
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
         if (!reportForm.getSortOfReport().equals("W")) {
-            boolean valid = true;
-            String dow = DateUtils.getDow(theDate);
-            if (dow.equalsIgnoreCase("Sat") || dow.equalsIgnoreCase("Sun")) {
-                valid = false;
-            }
+            boolean valid = !DateUtils.isSatOrSun(theDate);
             
             // checks for public holidays
             if (valid) {
@@ -1401,5 +1397,10 @@ public class StoreDailyReportAction extends DailyReportAction {
         
         saveErrors(request, errors);
         return errors;
+    }
+    
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+    	return true;
     }
 }

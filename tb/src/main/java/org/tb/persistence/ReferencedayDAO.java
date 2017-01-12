@@ -79,8 +79,7 @@ public class ReferencedayDAO extends AbstractDAO {
 		rd.setRefdate(dt);
 		
 		// set day of week
-		Date utilDate = new Date(dt.getTime()); // convert to java.util.Date
-		String dow = DateUtils.getDateString(utilDate).substring(0,3);	
+		String dow = DateUtils.getDoW(dt);	
 		rd.setDow(dow);
 				
 		// checks for public holidays		

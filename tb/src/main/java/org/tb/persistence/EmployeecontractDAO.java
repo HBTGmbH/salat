@@ -311,6 +311,20 @@ public class EmployeecontractDAO extends AbstractDAO {
                 .list();
     }
     
+    @SuppressWarnings("unchecked")
+	public List<Employeecontract> getVisibleEmployeeContractsForEmployee(Employee loginEmployee) {
+        if(loginEmployee != null && loginEmployee.isRestricted()) {
+        	java.util.Date date = new Date();
+	        return getSession()
+	                .createQuery("from Employeecontract e where (validFrom <= :date and (validUntil >= :date or validUntil = null) and employee.id = :eId) order by employee.sign asc, validFrom asc")
+	                .setParameter("date", date)
+	                .setParameter("eId", loginEmployee.getId())
+	                .list();
+        } else {
+        	return getVisibleEmployeeContractsOrderedByEmployeeSign();
+        }
+    }
+    
     /**
      * Get a list of all Employeecontracts that are currently valid, ordered by Firstname
      *      

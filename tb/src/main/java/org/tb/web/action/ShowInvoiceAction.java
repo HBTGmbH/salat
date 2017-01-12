@@ -1,6 +1,7 @@
 package org.tb.web.action;
 
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -410,11 +411,11 @@ public class ShowInvoiceAction extends DailyReportAction {
             // selected view and selected dates
             if (showInvoiceForm.getFromDay() == null || showInvoiceForm.getFromMonth() == null || showInvoiceForm.getFromYear() == null) {
                 // set standard dates and view
-                Date today = new Date();
+                java.sql.Date today = java.sql.Date.valueOf(LocalDate.now());
                 showInvoiceForm.setFromDay("01");
                 showInvoiceForm.setFromMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setFromYear(DateUtils.getYearString(today));
-                showInvoiceForm.setUntilDay(new Integer(DateUtils.getLastDayOfMonth(DateUtils.getYearString(today), DateUtils.getMonthString(today))).toString());
+                showInvoiceForm.setUntilDay(new Integer(DateUtils.getLastDayOfMonth(today)).toString());
                 showInvoiceForm.setUntilMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setUntilYear(DateUtils.getYearString(today));
                 request.getSession().setAttribute("invoiceview", GlobalConstants.VIEW_MONTHLY);

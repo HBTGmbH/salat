@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
@@ -135,7 +136,8 @@ public class EditDailyReportAction extends DailyReportAction {
             mapping.findForward("error");
         }
         
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         
         // set isEdit into the Session, so that the order/suborder menu will be disabled if a timereport for a customerorder with Jira-Project-ID is edited
@@ -213,5 +215,10 @@ public class EditDailyReportAction extends DailyReportAction {
             reportForm.setJiraTicketKey(tr.getTicket().getJiraTicketKey());
             request.getSession().setAttribute("jiraTicketKey", reportForm.getJiraTicketKey());
         }
+    }
+    
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+    	return true;
     }
 }

@@ -628,5 +628,10 @@ public class ShowReleaseAction extends LoginRequiredAction {
         }
         return days;
 	}
+    
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+    	return true;
+    }
 
 }

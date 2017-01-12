@@ -1,13 +1,18 @@
 package org.tb.util;
 
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.tb.GlobalConstants;
 
@@ -28,124 +33,88 @@ public class DateUtils {
     
     private static Map<Integer, List<OptionItem>> mapCalendarWeeks = Collections.synchronizedMap(new HashMap<Integer, List<OptionItem>>());
     
-    /**
-     * Gets the date without the time value.
-     */
-    public static Date stripTime(java.util.Date timestamp) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(timestamp);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-    
-    public static String getCurrentDateString() {
-        // returns date as EEEE yyyy-MM-dd
-        Date dt = new Date();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String currentDate = dt.toString().substring(0, 4) + df.format(dt);
-        return currentDate;
-    }
-    
     public static String getCurrentYearString() {
-        // returns yyyy
-        Date dt = new Date();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        return df.format(dt).substring(0, 4);
+        return Integer.toString(getCurrentYear());
     }
     
     public static int getCurrentYear() {
-        // returns yyyy as int
-        return Integer.parseInt(getCurrentYearString());
+        return LocalDate.now().getYear();
     }
     
     public static String getCurrentMonthString() {
-        // returns MM as string
-        Date dt = new Date();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        return df.format(dt).substring(5, 7);
+    	int month = getCurrentMonth();
+    	if(month < 10) {
+    		return "0" + month;
+    	} else {
+    		return Integer.toString(month);
+    	}
     }
     
     public static int getCurrentMonth() {
-        // returns MM as int
-        return Integer.parseInt(getCurrentMonthString());
+    	return LocalDate.now().getMonthValue();
     }
     
-    public static String getDateString(java.util.Date dt) {
-        // returns date as EEEE yyyy-MM-dd from java.util.Date !!
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String currentDate = dt.toString().substring(0, 4) + df.format(dt);
-        return currentDate;
+    public static String getDoW(java.sql.Date date) {
+    	LocalDate localDate = date.toLocalDate();
+    	return localDate.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
     }
     
-    public static String getYearString(java.util.Date dt) {
-        // returns yyyy
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        return df.format(dt).substring(0, 4);
+    public static String getYearString(java.sql.Date dt) {
+    	return Integer.toString(dt.toLocalDate().getYear());
     }
     
-    public static String getMonthString(java.util.Date dt) {
-        // returns MM as string
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        return df.format(dt).substring(5, 7);
+    public static String getMonthString(java.sql.Date dt) {
+    	int month = dt.toLocalDate().getMonthValue();
+    	if(month >= 10) {
+    		return Integer.toString(month);
+    	} else {
+    		return "0" + month;
+    	}
     }
     
-    public static int getMonth(java.util.Date dt) {
+    public static int getMonth(java.sql.Date dt) {
         // returns MM as int
         return Integer.parseInt(getMonthString(dt));
-    }
-    
-    public static String getMonthShortString(java.util.Date dt) {
-        // returns EEE from date (e.g., 'Jan')
-        return dt.toString().substring(4, 7);
-        //		return (getDateString(dt).substring(4,7));
     }
     
     public static String getMonthShortString(java.sql.Date dt) {
-        // returns EEE from date (e.g., 'Jan')
-        Date utilDate = new Date(dt.getTime()); // convert to java.util.Date
-        return utilDate.toString().substring(4, 7);
+    	return dt.toLocalDate().getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
     }
     
-    public static String getDayString(java.util.Date dt) {
-        // returns dd as string
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        return df.format(dt).substring(8, 10);
+    public static String getDayString(java.sql.Date dt) {
+    	int day = dt.toLocalDate().getDayOfMonth();
+    	if(day >= 10) {
+    		return Integer.toString(day);
+    	} else {
+    		return "0" + day;
+    	}
     }
     
-    public static int getDay(java.util.Date dt) {
-        // returns dd as int
-        return Integer.parseInt(getMonthString(dt));
-    }
-    
-    public static int getMonthMMFromShortstring(String st) {
+    private static int getMonthMMFromShortstring(String st) {
         // returns MM as int from short string (e.g., '01' from 'Jan')
-        int index = 0;
         for (int i = 0; i < monthShortStrings.length; i++) {
             if (st.equals(monthShortStrings[i])) {
-                index = i + 1;
-                return index;
+                return i+1;
             }
         }
-        return index;
+        
+        return -1;
     }
     
     public static String getMonthMMStringFromShortstring(String st) {
         // returns MM as string from short string (e.g., '01' from 'Jan')
         int index = getMonthMMFromShortstring(st);
-        String mmString = "";
-        if (index > 0 && index < 10) {
-            mmString = "0" + index;
-        } else {
-            mmString = "" + index;
+        if(index == -1) { // st might already be in its correct form
+        	return st;
         }
-        
-        return mmString;
+        if (index > 0 && index < 10) {
+            return "0" + index;
+        } else {
+            return Integer.toString(index);
+        }
     }
     
-    public static int getYear(java.util.Date dt) {
+    public static int getYear(java.sql.Date dt) {
         // returns yyyy as int from date
         return Integer.parseInt(getYearString(dt));
     }
@@ -200,12 +169,10 @@ public class DateUtils {
         return dateError;
     }
     
-    public static String getDow(java.sql.Date dt) {
-        // get weekday
-        Date utilDate = new Date(dt.getTime()); // convert to java.util.Date
-        String dow = utilDate.toString().substring(0, 3);
-        
-        return dow;
+    public static boolean isSatOrSun(java.sql.Date dt) {
+    	LocalDate date = dt.toLocalDate();
+    	DayOfWeek dayOfWeek = date.getDayOfWeek();
+    	return DayOfWeek.SATURDAY.equals(dayOfWeek) || DayOfWeek.SUNDAY.equals(dayOfWeek);
     }
     
     /*
@@ -215,7 +182,7 @@ public class DateUtils {
         List<OptionItem> theList = new ArrayList<OptionItem>();
         
         for (int i = GlobalConstants.STARTING_YEAR; i <= getCurrentYear() + 1; i++) {
-            String yearString = "" + i;
+            String yearString = Integer.toString(i);
             theList.add(new OptionItem(yearString, yearString));
         }
         
@@ -225,7 +192,7 @@ public class DateUtils {
     /*
      * builds up a list of string with current and previous years since startyear of contract
      */
-    public static List<OptionItem> getYearsSinceContractStartToDisplay(Date validFrom) {
+    public static List<OptionItem> getYearsSinceContractStartToDisplay(java.sql.Date validFrom) {
         List<OptionItem> theList = new ArrayList<OptionItem>();
         
         int startyear = Integer.parseInt(getYearString(validFrom));
@@ -242,11 +209,9 @@ public class DateUtils {
      */
     public static List<OptionItem> getMonthsToDisplay() {
         List<OptionItem> theList = new ArrayList<OptionItem>();
-        String dayValue = "";
-        String dayLabel = "";
         for (int i = 1; i <= 12; i++) {
-            dayValue = monthShortStrings[i - 1];
-            dayLabel = monthLongStrings[i - 1];
+            String dayValue = monthShortStrings[i - 1];
+            String dayLabel = monthLongStrings[i - 1];
             theList.add(new OptionItem(dayValue, dayLabel));
         }
         
@@ -301,11 +266,7 @@ public class DateUtils {
      * builds up a list of string with days to display (01-31)
      */
     public static List<OptionItem> getDaysToDisplay() {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
-        for (int i = 1; i <= 31; i++) {
-        	theList.add(intToOptionitem(i));
-        }
-        return theList;
+        return IntStream.rangeClosed(1, 31).mapToObj( i -> DateUtils.intToOptionitem(i) ).collect(Collectors.toList());
     }
     
     /*
@@ -366,7 +327,7 @@ public class DateUtils {
      * 
      * @return int[] easter
      */
-    public static int[] getEaster(Date dt) {
+    public static int[] getEaster(java.sql.Date dt) {
         
         int[] easter = new int[3];
         int year = getYear(dt);
@@ -415,51 +376,9 @@ public class DateUtils {
      * @param month
      * @return
      */
-    public static int getLastDayOfMonth(String year, String month) {
-        int result = -1;
-        int imonth = Integer.parseInt(month);
-        
-        if (imonth == 1 || imonth == 3 || imonth == 5 ||
-                imonth == 7 || imonth == 8) {
-            result = 31;
-        }
-        if (imonth == 4 || imonth == 6 || imonth == 9 ||
-                imonth == 11) {
-            result = 30;
-        }
-        if (imonth == 2) {
-            if (isLeapYear(year)) {
-                result = 29;
-            } else {
-                result = 28;
-            }
-        }
-        
-        return result;
-    }
-    
-    /**
-     * checks if given year is a leap year
-     * 
-     * @param String year
-     * 
-     * @return boolean
-     */
-    public static boolean isLeapYear(String year) {
-        boolean leapYear = false;
-        int iyear = Integer.parseInt(year);
-        
-        if (iyear % 4 == 0) {
-            leapYear = true;
-        }
-        if (iyear % 100 == 0) {
-            leapYear = false;
-        }
-        if (iyear % 400 == 0) {
-            leapYear = true;
-        }
-        
-        return leapYear;
+    public static int getLastDayOfMonth(java.sql.Date date) {
+    	LocalDate localDate = date.toLocalDate();
+    	return localDate.lengthOfMonth();
     }
     
     /**
@@ -495,14 +414,9 @@ public class DateUtils {
      * @param changeDays
      * @return Date
      */
-    public static Date addDays(Date originalDate, int changeDays) {
+    public static java.sql.Date addDays(java.sql.Date originalDate, int changeDays) {
+    	LocalDate localDate = originalDate.toLocalDate().plusDays(changeDays);
         
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(originalDate);
-        calendar.add(Calendar.DATE, changeDays);
-        
-        Date date = calendar.getTime();
-        
-        return date;
+        return java.sql.Date.valueOf(localDate);
     }
 }

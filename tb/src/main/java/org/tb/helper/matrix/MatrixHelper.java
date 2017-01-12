@@ -494,7 +494,7 @@ public class MatrixHelper {
 		return results;
 	}
 	
-	public Map<String, Object> handleNoArgs(ShowMatrixForm reportForm, Employeecontract ec, Employeecontract currentEc, Long currentEmployeeId, String currentMonth) {
+	public Map<String, Object> handleNoArgs(ShowMatrixForm reportForm, Employeecontract ec, Employeecontract currentEc, Long currentEmployeeId, String currentMonth, Employee loginEmployee) {
 		// selected view and selected dates
 		Map<String, Object> results = new HashMap<String, Object>();
 		// set daily view as standard
@@ -506,7 +506,7 @@ public class MatrixHelper {
 			return results;
 		}
 
-		List<Employeecontract> employeeContracts = ecDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeeContracts = ecDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
 
 		if (employeeContracts == null || employeeContracts.size() <= 0) {
 			results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employees with valid contracts found - please call system administrator.");

@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Warning;
 import org.tb.helper.AfterLogin;
@@ -61,7 +62,9 @@ public class ShowWelcomeAction extends DailyReportAction {
         Employeecontract employeecontract;
         
         // create collection of employeecontracts
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
+
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         
         if (request.getParameter("task") != null &&
@@ -98,4 +101,8 @@ public class ShowWelcomeAction extends DailyReportAction {
         return mapping.findForward("success");
     }
     
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+    	return true;
+    }
 }

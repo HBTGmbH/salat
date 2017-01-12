@@ -388,11 +388,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
         if (!theTimereport.getSortofreport().equals("W")) {
-            boolean valid = true;
-            String dow = DateUtils.getDow(theDate);
-            if (dow.equalsIgnoreCase("Sat") || dow.equalsIgnoreCase("Sun")) {
-                valid = false;
-            }
+            boolean valid = !DateUtils.isSatOrSun(theDate);
             
             // checks for public holidays
             if (valid) {
@@ -430,5 +426,10 @@ public class UpdateDailyReportAction extends DailyReportAction {
         saveErrors(request, errors);
         
         return errors;
+    }
+    
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+    	return true;
     }
 }

@@ -119,7 +119,8 @@ public class ShowMatrixAction extends DailyReportAction {
 					ec, 
 					(Employeecontract) request.getSession().getAttribute("currentEmployeeContract"),
 					(Long) request.getSession().getAttribute("currentEmployeeId"),
-					(String)request.getSession().getAttribute("currentMonth")); 
+					(String)request.getSession().getAttribute("currentMonth"),
+					loginEmployee); 
 			return finishHandling(results, request, mh, mapping);
 		}
 	}
@@ -140,5 +141,10 @@ public class ShowMatrixAction extends DailyReportAction {
 		request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
 		request.getSession().setAttribute("oTCText", GlobalConstants.OVERTIME_COMPENSATION_TEXT);
 		return mapping.findForward("success");
+	}
+	
+	@Override
+	protected boolean isAllowedForRestrictedUsers() {
+		return true;
 	}
 }

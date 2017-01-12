@@ -27,8 +27,10 @@ public class LogoutEmployeeAction extends LoginRequiredAction {
 	protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-		loginEmployee.setJira_oauthtoken(null);
-		employeeDAO.save(loginEmployee, loginEmployee);
+		if(loginEmployee != null) {
+			loginEmployee.setJira_oauthtoken(null);
+			employeeDAO.save(loginEmployee, loginEmployee);
+		}
 		
 		request.getSession().invalidate();
 		request.getSession().removeAttribute("currentEmployee");
@@ -39,4 +41,8 @@ public class LogoutEmployeeAction extends LoginRequiredAction {
 		return mapping.findForward("success");
 	}
 
+	@Override
+	protected boolean isAllowedForRestrictedUsers() {
+		return true;
+	}
 }

@@ -165,9 +165,11 @@
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
 						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
-							<html:option value="-1">
-								<bean:message key="main.general.allemployees.text" />
-							</html:option>
+							<c:if test="${not loginEmployee.restricted}">
+								<html:option value="-1">
+									<bean:message key="main.general.allemployees.text" />
+								</html:option>
+							</c:if>
 							<c:forEach var="employeecontract" items="${employeecontracts}">
 								<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 									<html:option value="${employeecontract.id}">

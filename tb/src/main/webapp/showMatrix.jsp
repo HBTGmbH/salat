@@ -54,10 +54,11 @@
 						value="${currentEmployeeContract.id}"
 						onchange="setUpdateMergedreportsAction(this.form)"
 						styleClass="make-select2">
-
-						<html:option value="-1">
-							<bean:message key="main.general.allemployees.text" />
-						</html:option>
+						<c:if test="${not loginEmployee.restricted}">
+							<html:option value="-1">
+								<bean:message key="main.general.allemployees.text" />
+							</html:option>
+						</c:if>
 
 						<c:forEach var="employeecontract" items="${employeecontracts}">
 							<c:if

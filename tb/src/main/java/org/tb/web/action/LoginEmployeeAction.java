@@ -322,7 +322,7 @@ public class LoginEmployeeAction extends Action {
 	        }
 	        
 	        // create collection of employeecontracts
-	        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+	        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
 	        request.getSession().setAttribute("employeecontracts", employeecontracts);
 	        
 	        return mapping.findForward("success");

@@ -97,7 +97,7 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", ec);
         
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployeeContract.getEmployee());
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
@@ -256,5 +256,10 @@ public class CreateDailyReportAction extends DailyReportAction {
         }
         
         return mapping.findForward("success");
+    }
+    
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+    	return true;
     }
 }

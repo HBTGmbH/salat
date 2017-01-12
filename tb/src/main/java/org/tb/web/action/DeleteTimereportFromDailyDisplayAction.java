@@ -222,4 +222,8 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 		}
 	}
     
+	@Override
+	protected boolean isAllowedForRestrictedUsers() {
+		return true;
+	}
 }

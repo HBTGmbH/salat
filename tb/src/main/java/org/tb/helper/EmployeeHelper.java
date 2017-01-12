@@ -130,7 +130,7 @@ public class EmployeeHelper {
 		
 		List<Employee> employeeOptionList = getEmployeeOptions(loginEmployee, ed);
 		List<Employee> employeeWithContractList = ed.getEmployeesWithContracts();
-		List<Employeecontract> employeeContracts = ecd.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeeContracts = ecd.getVisibleEmployeeContractsForEmployee(loginEmployee);
 			
 		request.getSession().setAttribute("employeeswithcontract", employeeWithContractList);
 		request.getSession().setAttribute("employees", employeeOptionList);

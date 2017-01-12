@@ -107,6 +107,7 @@
 	<global-forwards>
 		<forward name="login" path="/login.jsp" redirect="true" />
 		<forward name="loginRequiredError" path="/mobile/loginRequired.jsp" />
+		<forward name="showWelcome" path="/showWelcome.jsp" redirect="true" />
 	</global-forwards>
 
 	<!-- =========================================== Action Mapping Definitions -->

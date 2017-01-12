@@ -444,6 +444,7 @@
 			<br>
 <%--	Benachrichtigung über emailvesand		--%>
 			<div style="font-size: 12pt;"><i><c:out value="${actionInfo}" />&nbsp;</i></div>
+			<c:if test="${not loginEmployee.restricted}">
 			<br>
 
 			<table class="center backgroundcolor">
@@ -561,7 +562,7 @@
 					</c:if>
 				</c:forEach>
 			</table>
-
+			</c:if>
 		</html:form>
 	</body>
 </html>
