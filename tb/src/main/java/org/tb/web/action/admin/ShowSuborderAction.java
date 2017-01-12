@@ -55,12 +55,9 @@ public class ShowSuborderAction extends LoginRequiredAction {
             HttpServletResponse response) {
         
         ShowSuborderForm suborderForm = (ShowSuborderForm)form;
-        List<Customerorder> visibleCustomerOrders = customerorderDAO
-                .getVisibleCustomerorders();
-        request.getSession().setAttribute("visibleCustomerOrders",
-                visibleCustomerOrders);
-        Employee loginEmployee = (Employee)request.getSession().getAttribute(
-                "loginEmployee");
+        List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
+        request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
+        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
         
         String filter = null;
         Boolean show = null;
@@ -90,8 +87,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
             request.getSession().setAttribute("suborderCustomerOrderId",
                     customerOrderId);
             
-            Customerorder co = customerorderDAO
-                    .getCustomerorderById(suborderForm.getCustomerOrderId());
+            Customerorder co = customerorderDAO.getCustomerorderById(suborderForm.getCustomerOrderId());
             LOG.debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
             request.getSession().setAttribute("currentOrder", co);
             if (customerOrderId == -1) {
