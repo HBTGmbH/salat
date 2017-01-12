@@ -12,7 +12,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.Provider;
 
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;

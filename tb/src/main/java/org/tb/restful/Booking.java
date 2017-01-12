@@ -1,7 +1,5 @@
 package org.tb.restful;
 
-import java.util.Date;
-
 public class Booking {
 
 	private long employeeorderId;
