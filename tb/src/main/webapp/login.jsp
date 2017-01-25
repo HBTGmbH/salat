@@ -25,7 +25,7 @@ java.lang.Boolean isTestDB = (java.lang.Boolean)context.getBean("isTestDatabase"
 	rel="stylesheet"
 	type="text/css"
 	href="/tb/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 </head>
 <body>
 <div align="right">
