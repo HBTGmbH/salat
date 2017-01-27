@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -34,6 +36,8 @@ import org.tb.web.form.AddDailyReportForm;
  *
  */
 public class TimereportHelper {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(TimereportHelper.class);
     
     public TimereportHelper() {
         // no actions
@@ -713,6 +717,12 @@ public class TimereportHelper {
             month = GlobalConstants.MONTH_INTVALUE_NOVEMBER;
         } else if (GlobalConstants.MONTH_SHORTFORM_DECEMBER.equals(monthString)) {
             month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
+        } else {
+        	try {
+        		month = new Integer(monthString);
+        	} catch(NumberFormatException e) {
+        		LOG.error("monthString is in wrong format", e);
+        	}
         }
         
         java.sql.Date selectedDate;
