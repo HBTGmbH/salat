@@ -18,6 +18,7 @@
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.customers.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
  

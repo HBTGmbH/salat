@@ -8,6 +8,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.settings.title.text" /></title>
+<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
 	

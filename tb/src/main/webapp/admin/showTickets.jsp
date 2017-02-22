@@ -18,7 +18,7 @@
 	</title>
 	
 	<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
-
+	<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 
 	<script	type="text/javascript" language="JavaScript" src="/tb/CalendarPopup.js"></script>
 	<script type="text/javascript" language="JavaScript">document.write(getCalendarStyles());</script> 
