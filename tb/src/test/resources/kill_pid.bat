@@ -1,1 +1,0 @@
-kill.exe -f %1
