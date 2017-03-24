@@ -9,7 +9,7 @@ public class EmployeeDAOTest extends AbstractDAOTest {
 
 	@Test
 	public void testSaveAndDelete() {
-		Employee employee = TestUtilsEmployee.createEmployee("testy");
+		Employee employee = TestUtilsEmployee.createEmployee(TESTY_SIGN);
 		
 		employeeDAO.save(employee, employee);
 		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employee.getId());

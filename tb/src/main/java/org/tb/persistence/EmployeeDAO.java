@@ -233,36 +233,19 @@ public class EmployeeDAO extends AbstractDAO {
 	 * @return boolean
 	 */
 	public boolean deleteEmployeeById(long emId) {
-		List<Employee> allEmployees = getEmployees();
 		Employee emToDelete = getEmployeeById(emId);
-		boolean emDeleted = false;
 		
-		for (Employee em: allEmployees) {
+		List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsByFilters(true, null, emId);
+		
+		if(employeeContracts == null || employeeContracts.isEmpty()) {
+			Session session = getSession();
+			session.delete(emToDelete);
+			session.flush();
 			
-			if(em.getId() == emToDelete.getId()) {	
-				// check if related employeecontract exists 
-				// if so, no deletion possible
-				boolean deleteOk = true;
-
-				for (Employeecontract ec: employeecontractDAO.getEmployeeContracts()) {
-					if (ec.getEmployee().getId() == emToDelete.getId()) {
-						deleteOk = false;
-						break;
-					}
-				}
-				
-				if (deleteOk) {
-					Session session = getSession();
-					session.delete(emToDelete);
-					session.flush();
-					emDeleted = true;
-				}
-				
-				break;
-			}
+			return true;
 		}
 		
-		return emDeleted;
+		return false;
 	}
 
 }

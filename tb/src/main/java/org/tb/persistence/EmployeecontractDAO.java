@@ -376,8 +376,10 @@ public class EmployeecontractDAO extends AbstractDAO {
         	// if ok for deletion, check for monthlyreport and vacation entries and
         	// delete them successively (cannot yet be done via web application)	
         	List<Monthlyreport> allMonthlyreports = ec.getMonthlyreports();
-        	for (Monthlyreport mr : allMonthlyreports) {
-        		monthlyreportDAO.deleteMonthlyreportById(mr.getId());
+        	if(allMonthlyreports != null) {
+	        	for (Monthlyreport mr : allMonthlyreports) {
+	        		monthlyreportDAO.deleteMonthlyreportById(mr.getId());
+	        	}
         	}
         	
         	List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
@@ -386,9 +388,11 @@ public class EmployeecontractDAO extends AbstractDAO {
         	}
         	
         	List<Vacation> allVacations = ec.getVacations();
-        	ec.setVacations(Collections.emptyList());
-        	for (Vacation va : allVacations) {
-        		vacationDAO.deleteVacationById(va.getId());
+        	if(allVacations != null) {
+	        	ec.setVacations(Collections.emptyList());
+	        	for (Vacation va : allVacations) {
+	        		vacationDAO.deleteVacationById(va.getId());
+	        	}
         	}
         	
         	// finally, go for deletion of employeecontract
