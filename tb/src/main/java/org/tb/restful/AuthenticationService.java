@@ -27,30 +27,23 @@ public class AuthenticationService {
 	@GET
 	@Path("authenticate")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response authenticate(@Context HttpServletRequest request,
-			@QueryParam("username") String username,
-			@QueryParam("password") String password) {
+	public Response authenticate(@Context HttpServletRequest request, @QueryParam("username") String username, @QueryParam("password") String password) {
 
-		Employee employee = employeeDAO.getLoginEmployee(username,
-				MD5Util.makeMD5(password));
+		Employee employee = employeeDAO.getLoginEmployee(username, MD5Util.makeMD5(password));
 
 		if (employee != null) {
 			Long employeeId = employee.getId();
 			Date date = new Date();
-			Long employeecontractId = employeecontractDAO
-					.getEmployeeContractByEmployeeIdAndDate(employeeId, date)
-					.getId();
+			Long employeecontractId = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date).getId();
 			request.getSession().setAttribute("employeeId", employeeId);
-			request.getSession().setAttribute("employeecontractId",
-					employeecontractId);
+			request.getSession().setAttribute("employeecontractId", employeecontractId);
 
 			String salt = UUID.randomUUID().toString();
 			request.getSession().setAttribute("jaxrs.salt", salt);
 
 			// XSRF-TOKEN must be read from Client and be put into a HTTP-header
 			// X-XSRF-TOKEN or as a query param named XSRF_TOKEN
-			NewCookie xsrfCookie = new NewCookie("XSRF-TOKEN",
-					MD5Util.makeMD5(employeeId + "." + salt));
+			NewCookie xsrfCookie = new NewCookie("XSRF-TOKEN", MD5Util.makeMD5(employeeId + "." + salt));
 
 			return Response.noContent().cookie(xsrfCookie).status(200).build();
 		}
