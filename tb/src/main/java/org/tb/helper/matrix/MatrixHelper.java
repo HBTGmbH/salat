@@ -46,13 +46,23 @@ public class MatrixHelper {
 	private static final Map<String, String> MONTH_MAP = new HashMap<String, String>();
 	/**conversion and localization of weekday values */
 	private static final Map<Integer, String> WEEK_DAYS_MAP = new HashMap<Integer, String>();
+	/** conversion and localization of day values */
+	private static final Map<String, String> NUMBER_TO_SHORT_MONTH = new HashMap<String, String>();
 	
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
 	
 	static {
-		for(String mon : new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}) {
+		String[] SHORT_MONTH = new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+		String[] NUMBER_MONTH = new String[]{"01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"};
+		for(int i = 0; i < SHORT_MONTH.length; i++) {
+			String mon = SHORT_MONTH[i];
 			MONTH_MAP.put(mon, "main.timereport.select.month." + mon.toLowerCase() + ".text");
+
+			String num_mon = NUMBER_MONTH[i];
+			MONTH_MAP.put(num_mon, "main.timereport.select.month." + mon.toLowerCase() + ".text");
+			
+			NUMBER_TO_SHORT_MONTH.put(num_mon, mon);
 		}
 
 		WEEK_DAYS_MAP.put(2, "main.matrixoverview.weekdays.monday.text");
@@ -571,6 +581,10 @@ public class MatrixHelper {
 			// get year string (e.g., '2006') from java.util.Date
 			int length = dt.toString().length();
 			String yearString = dt.toString().substring(length - 4, length);
+			
+			if(currentMonth != null && NUMBER_TO_SHORT_MONTH.containsKey(currentMonth)) {
+				currentMonth = NUMBER_TO_SHORT_MONTH.get(currentMonth);
+			}
 
 			// set Month for first call
 			if (reportForm.getFromMonth() == null || reportForm.getFromMonth().trim().equalsIgnoreCase("")) {
