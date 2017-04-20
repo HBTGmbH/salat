@@ -207,17 +207,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
             
             overtimeDAO.save(overtime, loginEmployee);
             
-            // compute overtimeStatic and set it in employee contract 
-//            TimereportHelper th = new TimereportHelper();
-//            int[] otStatic = th.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(),
-//            		ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
-//            ec.setOvertimeStatic(otStatic[0] + otStatic[1] / 60.0);
-            
-            // set the overtime in employee contract 
-            double newOvertimeStatic = ec.getOvertimeStatic() + overtimeDouble;
-            ec.setOvertimeStatic(newOvertimeStatic); 
-            employeecontractDAO.save(ec, loginEmployee);
-            
             // refresh list of overtime adjustments
             List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
             Double totalOvertime = 0.0;
