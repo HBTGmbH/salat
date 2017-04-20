@@ -33,7 +33,7 @@ public class OvertimeDAO extends AbstractDAO {
 	 * @param overtimeId
 	 * @return Returns the {@link Overtime} associated to the given id.
 	 */
-	public Overtime getOvertimeById(long overtimeId) {
+	private Overtime getOvertimeById(long overtimeId) {
 		return (Overtime) getSession().createQuery("from Overtime where id = ? ").setLong(0, overtimeId).uniqueResult();
 	}
 	
