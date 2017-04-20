@@ -1,4 +1,4 @@
-package org.tb.restful;
+package org.tb.restful.hello;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

@@ -1,4 +1,4 @@
-package org.tb.restful;
+package org.tb.restful.bookings;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

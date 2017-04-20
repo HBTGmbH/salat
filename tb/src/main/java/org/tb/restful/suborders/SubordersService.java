@@ -1,4 +1,4 @@
-package org.tb.restful;
+package org.tb.restful.suborders;
 
 import java.util.ArrayList;
 import java.util.Date;

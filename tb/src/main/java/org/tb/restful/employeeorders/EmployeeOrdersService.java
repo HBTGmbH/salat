@@ -1,4 +1,4 @@
-package org.tb.restful;
+package org.tb.restful.employeeorders;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,6 +18,7 @@ import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.restful.suborders.SuborderData;
 
 @Path("/rest/employeeorders")
 public class EmployeeOrdersService {

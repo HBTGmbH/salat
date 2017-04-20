@@ -1,4 +1,4 @@
-package org.tb.restful;
+package org.tb.restful.hello;
 
 public class Person {
 	

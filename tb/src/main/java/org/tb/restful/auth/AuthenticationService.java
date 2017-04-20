@@ -1,4 +1,4 @@
-package org.tb.restful;
+package org.tb.restful.auth;
 
 import java.util.Date;
 import java.util.UUID;

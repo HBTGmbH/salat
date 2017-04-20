@@ -1,4 +1,4 @@
-package org.tb.restful;
+package org.tb.restful.auth;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -16,6 +16,7 @@ import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.interception.AcceptedByMethod;
 import org.jboss.resteasy.spi.interception.PreProcessInterceptor;
+import org.tb.restful.suborders.SubordersService;
 import org.tb.util.MD5Util;
 
 @Provider

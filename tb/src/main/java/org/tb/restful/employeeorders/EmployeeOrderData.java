@@ -1,4 +1,6 @@
-package org.tb.restful;
+package org.tb.restful.employeeorders;
+
+import org.tb.restful.suborders.SuborderData;
 
 public class EmployeeOrderData {
 	private SuborderData suborder;
