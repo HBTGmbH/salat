@@ -16,7 +16,7 @@ import javax.ws.rs.core.Response;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
-import org.tb.util.MD5Util;
+import org.tb.util.SecureHashUtils;
 
 @Path("/rest/AuthenticationService")
 public class AuthenticationService {
@@ -29,7 +29,7 @@ public class AuthenticationService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response authenticate(@Context HttpServletRequest request, @QueryParam("username") String username, @QueryParam("password") String password) {
 
-		Employee employee = employeeDAO.getLoginEmployee(username, MD5Util.makeMD5(password));
+		Employee employee = employeeDAO.getLoginEmployee(username, SecureHashUtils.makeMD5(password));
 
 		if (employee != null) {
 			Long employeeId = employee.getId();
@@ -43,7 +43,7 @@ public class AuthenticationService {
 
 			// XSRF-TOKEN must be read from Client and be put into a HTTP-header
 			// X-XSRF-TOKEN or as a query param named XSRF_TOKEN
-			NewCookie xsrfCookie = new NewCookie("XSRF-TOKEN", MD5Util.makeMD5(employeeId + "." + salt));
+			NewCookie xsrfCookie = new NewCookie("XSRF-TOKEN", SecureHashUtils.makeMD5(employeeId + "." + salt));
 
 			return Response.noContent().cookie(xsrfCookie).status(200).build();
 		}

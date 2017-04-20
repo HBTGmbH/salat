@@ -14,7 +14,7 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
-import org.tb.util.MD5Util;
+import org.tb.util.SecureHashUtils;
 
 import com.google.gson.Gson;
 
@@ -30,7 +30,7 @@ public class LoginMobileAction extends Action {
         boolean isValid = false;
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-        Employee employee = employeeDAO.getLoginEmployee(username, MD5Util.makeMD5(password));
+        Employee employee = employeeDAO.getLoginEmployee(username, SecureHashUtils.makeMD5(password));
         
         if (employee != null) {
             Long employeeId = employee.getId();

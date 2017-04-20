@@ -3,7 +3,7 @@ package org.tb.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class MD5Util {
+public class SecureHashUtils {
 
 	/**
 	 * Makes a md5-hash for a given string.

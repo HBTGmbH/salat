@@ -10,7 +10,7 @@ import javax.persistence.Transient;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.GlobalConstants;
-import org.tb.util.MD5Util;
+import org.tb.util.SecureHashUtils;
 
 /**
  * Bean for table 'Employee'.
@@ -197,13 +197,13 @@ public class Employee implements Serializable {
 	}
 
 	public void resetPassword() {
-		password = MD5Util.makeMD5(sign);
+		password = SecureHashUtils.makeMD5(sign);
 		passwordchange = true;
 	}
 	
 	public void changePassword(final String newPassword) {
 		passwordchange = false;
-		password = MD5Util.makeMD5(newPassword);
+		password = SecureHashUtils.makeMD5(newPassword);
 	}
 	
 	@Transient

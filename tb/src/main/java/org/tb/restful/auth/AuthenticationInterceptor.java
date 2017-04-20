@@ -17,7 +17,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.interception.AcceptedByMethod;
 import org.jboss.resteasy.spi.interception.PreProcessInterceptor;
 import org.tb.restful.suborders.SubordersService;
-import org.tb.util.MD5Util;
+import org.tb.util.SecureHashUtils;
 
 @Provider
 @ServerInterceptor
@@ -34,7 +34,7 @@ public class AuthenticationInterceptor implements PreProcessInterceptor, Accepte
 			String xsrfToken = xsrfHeader.get(0);
 			Long employeeId = (Long) servletRequest.getSession().getAttribute("employeeId");
 			String salt = (String) servletRequest.getSession().getAttribute("jaxrs.salt");
-			String compareToken = MD5Util.makeMD5(employeeId + "." + salt);
+			String compareToken = SecureHashUtils.makeMD5(employeeId + "." + salt);
 			if(xsrfToken.equals(compareToken)) {
 				return null;
 			}

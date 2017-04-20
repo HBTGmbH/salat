@@ -31,7 +31,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.util.MD5Util;
+import org.tb.util.SecureHashUtils;
 import org.tb.web.form.LoginEmployeeForm;
 
 /**
@@ -87,7 +87,7 @@ public class LoginEmployeeAction extends Action {
     	try {
 	        LoginEmployeeForm loginEmployeeForm = (LoginEmployeeForm)form;
 	        
-	        Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname(), MD5Util.makeMD5(loginEmployeeForm.getPassword()));
+	        Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname(), SecureHashUtils.makeMD5(loginEmployeeForm.getPassword()));
 	        if (loginEmployee == null) {
 	            ActionMessages errors = getErrors(request);
 	            if (errors == null) {
