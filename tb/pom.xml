@@ -70,7 +70,7 @@
 				<version>2.5.3</version>
 				<configuration>
 					<tagNameFormat>@{project.version}</tagNameFormat>
-					<scmCommentPrefix>NOJIRA [maven-release-plugin]</scmCommentPrefix>
+					<scmCommentPrefix>NOJIRA [maven-release-plugin] </scmCommentPrefix>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 				</configuration>
 			</plugin>
