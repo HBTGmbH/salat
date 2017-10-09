@@ -28,6 +28,7 @@ public class GlobalConstants {
     
     public static final String DEFAULT_CURRENCY = "EUR";
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
+    public static final String DEFAULT_DATE_FORMAT_GERMAN = "dd.MM.yyyy";
     
     public static final int BEGINHOUR = 9;
     public static final int BEGINMINUTE = 0;

@@ -223,8 +223,7 @@ public class ExcelArchivierer {
 		dateCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
 		dateCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
 		DataFormat dateFormat = workbook.createDataFormat();
-		dateCellStyle.setDataFormat(dateFormat.getFormat(GlobalConstants.INVOICE_DATE_FORMAT));
-//		dateCellStyle.setDataFormat(HSSFDataFormat.getBuiltinFormat("d-mmm-yy"));
+		dateCellStyle.setDataFormat(dateFormat.getFormat(GlobalConstants.DEFAULT_DATE_FORMAT_GERMAN));
 		cellStyleIndexes.put("date", dateCellStyle.getIndex());
 	}
 	
