@@ -81,6 +81,6 @@
 		<welcome-file>login.jsp</welcome-file>
 	</welcome-file-list>
 	<session-config>
-		<session-timeout>960</session-timeout>
+		<session-timeout>660</session-timeout>
 	</session-config>
 </web-app>
