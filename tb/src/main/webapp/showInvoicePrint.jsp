@@ -203,7 +203,7 @@
 											</c:if>
 											<c:if test="${timereportdescriptionbox eq 'true'}">
 												<td class="matrix">
-													<c:out value="${timereportviewhelper.taskdescription}" />
+													<c:out escapeXml="false" value="${timereportviewhelper.taskdescriptionHtml}" />
 												</td>
 											</c:if>
 											<c:if test="${timereportdescriptionbox eq 'false'}">

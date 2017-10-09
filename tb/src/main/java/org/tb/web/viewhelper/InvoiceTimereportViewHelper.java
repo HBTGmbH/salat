@@ -2,6 +2,7 @@ package org.tb.web.viewhelper;
 
 import java.util.Date;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Referenceday;
@@ -116,6 +117,14 @@ public class InvoiceTimereportViewHelper {
 
 	public String getTaskdescription() {
 		return timereport.getTaskdescription();
+	}
+
+	public String getTaskdescriptionHtml() {
+		if(timereport.getTaskdescription() != null) {
+			return StringEscapeUtils.escapeHtml(timereport.getTaskdescription()).replaceAll("\n", "<br>");
+		} else {
+			return null;
+		}
 	}
 
 	public String getTimeReportAsString() {

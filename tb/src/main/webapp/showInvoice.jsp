@@ -545,11 +545,6 @@
 								<bean:message key="main.general.button.printpreview.text" />
 							</html:submit>
 
-							<html:submit onclick="exportExcel(this.form)" styleId="button"
-								titleKey="main.invoice.button.excel.text">
-								<bean:message key="main.general.button.excelexport.text" />
-							</html:submit>
-
 							<html:submit onclick="exportExcelNew(this.form)" styleId="button"
 								titleKey="main.invoice.button.excel.new.text">
 								<bean:message key="main.general.button.excelexport.new.text" />

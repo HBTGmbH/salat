@@ -65,7 +65,11 @@ public class ExcelArchivierer {
 
 			@Override
 			public RichTextString createRichTextString(String str) {
-				return new HSSFRichTextString(str);
+				if(str.length() <= 255) {
+					return new HSSFRichTextString(str);
+				} else {
+					return new HSSFRichTextString(str.substring(0, 255));
+				}
 			}
 
 			@Override
@@ -226,8 +230,7 @@ public class ExcelArchivierer {
 	
 	private static RichTextString createRTS(String str, InstanceFactory factory) {
 		if(str == null) return factory.createRichTextString("");
-		if(str.length() <= 255) return factory.createRichTextString(str);
-		return factory.createRichTextString(str.substring(0, 255));
+		return factory.createRichTextString(str);
 	}
 	
 	private static int addSuborderDataRow(Workbook workbook, int rowIndex, InvoiceSuborderViewHelper invoiceSuborderViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
