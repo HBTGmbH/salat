@@ -240,6 +240,12 @@ public class DateUtils {
     		List<OptionItem> theList = mapCalendarWeeks.get(year);
     		if(theList == null) {
 	    		int lastWeekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
+	    		
+	    		while (lastWeekOfYear == 1) {
+	    			calendar.add(Calendar.DATE, -1);
+	    			lastWeekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
+	    		}
+	    		
 	    		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
 	    		
 	    		theList = new ArrayList<OptionItem>();
