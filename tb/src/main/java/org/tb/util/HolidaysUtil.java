@@ -87,7 +87,9 @@ public class HolidaysUtil {
 		holidays.add(new Publicholiday(localDateToSQLDate(whitSunday), "Pfingstsonntag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(whitMonday), "Pfingstmontag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(reunification), "Tag der Deutschen Einheit"));
-		holidays.add(new Publicholiday(localDateToSQLDate(reformationDay), "Reformationstag"));
+		if (easterSunday.getYear() >= 2017) {
+			holidays.add(new Publicholiday(localDateToSQLDate(reformationDay), "Reformationstag"));
+		}
 		holidays.add(new Publicholiday(localDateToSQLDate(firstChristmasDay), "1. Weihnachtstag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(secondChristmasDay), "2. Weihnachtstag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(christmasEve), "Heiligabend"));
