@@ -75,6 +75,7 @@ public class HolidaysUtil {
 		LocalDate secondChristmasDay = easterSunday.withMonth(12).withDayOfMonth(26);
 		LocalDate christmasEve = easterSunday.withMonth(12).withDayOfMonth(24);
 		LocalDate newYearsEve = easterSunday.withMonth(12).withDayOfMonth(31);
+		LocalDate reformationDay = easterSunday.withMonth(10).withDayOfMonth(31);
 		
 		Collection<Publicholiday> holidays = new ArrayList<Publicholiday>();
 		holidays.add(new Publicholiday(localDateToSQLDate(newYear), "Neujahr"));
@@ -86,6 +87,7 @@ public class HolidaysUtil {
 		holidays.add(new Publicholiday(localDateToSQLDate(whitSunday), "Pfingstsonntag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(whitMonday), "Pfingstmontag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(reunification), "Tag der Deutschen Einheit"));
+		holidays.add(new Publicholiday(localDateToSQLDate(reformationDay), "Reformationstag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(firstChristmasDay), "1. Weihnachtstag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(secondChristmasDay), "2. Weihnachtstag"));
 		holidays.add(new Publicholiday(localDateToSQLDate(christmasEve), "Heiligabend"));
