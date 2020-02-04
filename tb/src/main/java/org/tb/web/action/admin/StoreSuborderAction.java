@@ -155,7 +155,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
         
         if (request.getParameter("task") != null && request.getParameter("task").equals("generateSign")) {
             //*** task for generating new suborder's sign
-            Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
+        	Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
             Customerorder tempOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getParentId());
             List<Suborder> suborders = suborderDAO.getSuborders(false);
             LOG.debug("StoreSuborderAction.executeAuthenticated() - three Values: " + tempSubOrder + " / " + tempOrder + " / " + suborders);
@@ -166,7 +166,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
                 soId = -1l;
             }
             if (suborders != null) {
-                if (tempSubOrder != null) {
+                if (tempSubOrder != null && (tempOrder == null || tempSubOrder.getCustomerorder().getId() == tempOrder.getId())) {
                     int version = 1;
                     DecimalFormat df = new DecimalFormat("00");
                     for (Suborder suborder : suborders) {
@@ -352,8 +352,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
             }
             
             so.setHide(addSuborderForm.getHide());
-            so.setNoEmployeeOrderContent(addSuborderForm.getNoEmployeeOrderContent());            
-            so.setParentorder(suborderDAO.getSuborderById(addSuborderForm.getParentId()));
+            so.setNoEmployeeOrderContent(addSuborderForm.getNoEmployeeOrderContent());       
+            Suborder parentOrderCandidate = suborderDAO.getSuborderById(addSuborderForm.getParentId());
+            if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() == addSuborderForm.getCustomerorderId()) {
+            	so.setParentorder(parentOrderCandidate);
+            }
             
             suborderDAO.save(so, loginEmployee);
 
@@ -600,7 +603,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
         Suborder parentSuborder = null;
         if (addSuborderForm.getParentId() != null && addSuborderForm.getParentId() != 0 && addSuborderForm.getParentId() != -1) {
             parentSuborder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
-            if (parentSuborder != null) {
+            if (parentSuborder != null && parentSuborder.getCustomerorder().getId() == addSuborderForm.getCustomerorderId()) {
                 // check validity period
                 Date parentFromDate = parentSuborder.getFromDate();
                 Date parentUntilDate = parentSuborder.getUntilDate();

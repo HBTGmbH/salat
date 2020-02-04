@@ -96,10 +96,11 @@ public class EditSuborderAction extends LoginRequiredAction {
         }
         try {
             Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
-            if (tempSubOrder != null) {
+            if (tempSubOrder != null && tempSubOrder.getCustomerorder().getId() == so.getCustomerorder().getId()) {
                 soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
                 request.getSession().setAttribute("suborderParent", tempSubOrder);
             } else {
+            	tempSubOrder = null;
                 Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
                 soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
                 request.getSession().setAttribute("suborderParent", tempOrder);
