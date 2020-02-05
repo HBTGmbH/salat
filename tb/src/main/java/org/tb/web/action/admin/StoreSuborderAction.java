@@ -210,6 +210,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
                 try {
                     addSuborderForm.setParentId(Long.parseLong(request.getParameter("continue")));
                     Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
+                    if (tempSubOrder != null && tempSubOrder.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {
+                    	LOG.info("Suborder does not match customerorder. Reset to null");
+                    	tempSubOrder = null;
+                    }
+                    
                     if (tempSubOrder != null) {
                         addSuborderForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
                         
@@ -354,9 +359,14 @@ public class StoreSuborderAction extends LoginRequiredAction {
             so.setHide(addSuborderForm.getHide());
             so.setNoEmployeeOrderContent(addSuborderForm.getNoEmployeeOrderContent());       
             Suborder parentOrderCandidate = suborderDAO.getSuborderById(addSuborderForm.getParentId());
-            if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() == addSuborderForm.getCustomerorderId()) {
-            	so.setParentorder(parentOrderCandidate);
+            // Falls die Suborder nicht zum Customerorder passt (Kollision der IDs), ist sie kein geeigneter Kandidat (HACK, da UI die ID manchmal auch mit CustomerOrderID besetzt)
+            if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {
+            	if (!addSuborderForm.getParentId().equals(addSuborderForm.getCustomerorderId())) {
+            		throw new IllegalStateException("parentId is neither a valid suborderId nor the customerorderId, but: " + addSuborderForm.getParentId());
+            	}
+            	parentOrderCandidate = null;
             }
+            so.setParentorder(parentOrderCandidate);
             
             suborderDAO.save(so, loginEmployee);
 

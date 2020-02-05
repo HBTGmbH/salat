@@ -153,6 +153,11 @@ public class Suborder extends EditDetails implements Serializable {
     }
     
     public void setParentorder(Suborder parentorder) {
+    	if (parentorder != null && parentorder.getCustomerorder() != customerorder) {
+			String msg = "parentorder must have same customerorder. Expected customerorderId=" 
+						+ customerorder.getId() + ", but was " + parentorder.getCustomerorder().getId();
+			throw new IllegalArgumentException(msg);
+    	}
         this.suborder = parentorder;
     }
     
