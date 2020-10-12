@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:web="http://xmlns.jcp.org/xml/ns/javaee"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
+	id="WebApp_ID" version="2.4">
+
+	<display-name>tb</display-name>
+
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:/spring-beans-cfg-devl.xml</param-value>
+	</context-param>
+
+	<!-- context-param>
+		<param-name>resteasy.providers</param-name>
+		<param-value>org.tb.restful.AuthenticationInterceptor</param-value>
+	</context-param-->
+
+	<listener>
+		<listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
+	</listener>
+	<listener>
+		<listener-class>org.jboss.resteasy.plugins.spring.SpringContextLoaderListener</listener-class>
+	</listener>
+
+	<!--servlet>
+		<servlet-name>Resteasy</servlet-name>
+		<servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>Resteasy</servlet-name>
+		<url-pattern>/rest/*</url-pattern>
+	</servlet-mapping-->
+
+	<filter>
+		<filter-name>HibernateFilter</filter-name>
+		<filter-class>
+			org.springframework.orm.hibernate3.support.OpenSessionInViewFilter
+		</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>HibernateFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<filter>
+		<display-name>LoginMobileFilter</display-name>
+		<filter-name>LoginMobileFilter</filter-name>
+		<filter-class>org.tb.mobile.LoginMobileFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>LoginMobileFilter</filter-name>
+		<url-pattern>/mobile/pages/addDailyReport.html</url-pattern>
+		<dispatcher>REQUEST</dispatcher>
+	</filter-mapping>
+	<filter>
+		<filter-name>PerformanceLoggingFilter</filter-name>
+		<filter-class>org.tb.web.util.PerformanceLoggingFilter</filter-class>
+		<init-param>
+			<param-name>log_category</param-name>
+			<param-value>DurationLog</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>PerformanceLoggingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<servlet>
+		<servlet-name>action</servlet-name>
+		<servlet-class>org.apache.struts.action.ActionServlet</servlet-class>
+		<init-param>
+			<param-name>config</param-name>
+			<param-value>/WEB-INF/struts-config.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>action</servlet-name>
+		<url-pattern>/do/*</url-pattern>
+	</servlet-mapping>
+	<welcome-file-list>
+		<welcome-file>login.jsp</welcome-file>
+	</welcome-file-list>
+	<session-config>
+		<session-timeout>660</session-timeout>
+	</session-config>
+</web-app>

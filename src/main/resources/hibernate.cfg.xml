@@ -1,0 +1,27 @@
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+	<session-factory>
+		<mapping class="org.tb.bdom.Customer" />
+		<mapping class="org.tb.bdom.Employee" />
+		<mapping class="org.tb.bdom.Employeecontract" />
+		<mapping class="org.tb.bdom.Employeeorder" />
+		<mapping class="org.tb.bdom.Employeeordercontent" />
+		<mapping class="org.tb.bdom.Customerorder" />
+		<mapping class="org.tb.bdom.ProjectID"/>
+		<mapping class="org.tb.bdom.Ticket"/>
+		<mapping class="org.tb.bdom.WorklogMemory"/>
+		<mapping class="org.tb.bdom.Worklog"/>
+		<mapping class="org.tb.bdom.Suborder" />
+		<mapping class="org.tb.bdom.Invoice" />	
+		<mapping class="org.tb.bdom.Timereport" />	
+		<mapping class="org.tb.bdom.Publicholiday" />	
+		<mapping class="org.tb.bdom.Referenceday" />
+		<mapping class="org.tb.bdom.Monthlyreport" />	
+		<mapping class="org.tb.bdom.Vacation" />
+		<mapping class="org.tb.bdom.Workingday" />	
+		<mapping class="org.tb.bdom.Overtime" />
+		<mapping class="org.tb.bdom.Statusreport" />
+	</session-factory>
+</hibernate-configuration>
