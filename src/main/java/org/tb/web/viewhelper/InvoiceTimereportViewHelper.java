@@ -1,235 +1,231 @@
 package org.tb.web.viewhelper;
 
+import org.apache.commons.lang.StringEscapeUtils;
+import org.tb.bdom.*;
+
 import java.util.Date;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Referenceday;
-import org.tb.bdom.Suborder;
-import org.tb.bdom.Timereport;
-
 public class InvoiceTimereportViewHelper {
-	
-	private Timereport timereport;
-	private boolean visible;
 
-	public Timereport getTimereport() {
-		return timereport;
-	}
+    private Timereport timereport;
+    private boolean visible;
 
-	public void setTimereport(Timereport timereport) {
-		this.timereport = timereport;
-	}
+    public InvoiceTimereportViewHelper(Timereport timereport) {
+        this.timereport = timereport;
+        this.visible = true;
+    }
 
-	public boolean isVisible() {
-		return visible;
-	}
+    public Timereport getTimereport() {
+        return timereport;
+    }
 
-	public void setVisible(boolean visible) {
-		this.visible = visible;
-	}
-	
-	public InvoiceTimereportViewHelper(Timereport timereport) {
-		this.timereport = timereport;
-		this.visible = true;
-	}
+    public void setTimereport(Timereport timereport) {
+        this.timereport = timereport;
+    }
 
-	public Date getAccepted() {
-		return timereport.getAccepted();
-	}
+    public boolean isVisible() {
+        return visible;
+    }
 
-	public String getAcceptedby() {
-		return timereport.getAcceptedby();
-	}
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
 
-	public Double getCosts() {
-		return timereport.getCosts();
-	}
+    public Date getAccepted() {
+        return timereport.getAccepted();
+    }
 
-	public Date getCreated() {
-		return timereport.getCreated();
-	}
+    public void setAccepted(Date accepted) {
+        timereport.setAccepted(accepted);
+    }
 
-	public String getCreatedby() {
-		return timereport.getCreatedby();
-	}
+    public String getAcceptedby() {
+        return timereport.getAcceptedby();
+    }
 
-	public Integer getDurationhours() {
-		return timereport.getDurationhours();
-	}
+    public void setAcceptedby(String acceptedby) {
+        timereport.setAcceptedby(acceptedby);
+    }
 
-	public Integer getDurationminutes() {
-		return timereport.getDurationminutes();
-	}
+    public Double getCosts() {
+        return timereport.getCosts();
+    }
 
-	public Employeecontract getEmployeecontract() {
-		return timereport.getEmployeecontract();
-	}
+    public void setCosts(Double costs) {
+        timereport.setCosts(costs);
+    }
 
-	public Employeeorder getEmployeeorder() {
-		return timereport.getEmployeeorder();
-	}
+    public Date getCreated() {
+        return timereport.getCreated();
+    }
 
-	public boolean getFitsToContract() {
-		return timereport.getFitsToContract();
-	}
+    public void setCreated(Date created) {
+        timereport.setCreated(created);
+    }
 
-	public long getId() {
-		return timereport.getId();
-	}
+    public String getCreatedby() {
+        return timereport.getCreatedby();
+    }
 
-	public Date getLastupdate() {
-		return timereport.getLastupdate();
-	}
+    public void setCreatedby(String createdby) {
+        timereport.setCreatedby(createdby);
+    }
 
-	public String getLastupdatedby() {
-		return timereport.getLastupdatedby();
-	}
+    public Integer getDurationhours() {
+        return timereport.getDurationhours();
+    }
 
-	public Referenceday getReferenceday() {
-		return timereport.getReferenceday();
-	}
+    public void setDurationhours(Integer durationhours) {
+        timereport.setDurationhours(durationhours);
+    }
 
-	public Date getReleased() {
-		return timereport.getReleased();
-	}
+    public Integer getDurationminutes() {
+        return timereport.getDurationminutes();
+    }
 
-	public String getReleasedby() {
-		return timereport.getReleasedby();
-	}
+    public void setDurationminutes(Integer durationminutes) {
+        timereport.setDurationminutes(durationminutes);
+    }
 
-	public int getSequencenumber() {
-		return timereport.getSequencenumber();
-	}
+    public Employeecontract getEmployeecontract() {
+        return timereport.getEmployeecontract();
+    }
 
-	public String getSortofreport() {
-		return timereport.getSortofreport();
-	}
+    public void setEmployeecontract(Employeecontract employeecontract) {
+        timereport.setEmployeecontract(employeecontract);
+    }
 
-	public String getStatus() {
-		return timereport.getStatus();
-	}
+    public Employeeorder getEmployeeorder() {
+        return timereport.getEmployeeorder();
+    }
 
-	public Suborder getSuborder() {
-		return timereport.getSuborder();
-	}
+    public void setEmployeeorder(Employeeorder employeeorder) {
+        timereport.setEmployeeorder(employeeorder);
+    }
 
-	public String getTaskdescription() {
-		return timereport.getTaskdescription();
-	}
+    public boolean getFitsToContract() {
+        return timereport.getFitsToContract();
+    }
 
-	public String getTaskdescriptionHtml() {
-		if(timereport.getTaskdescription() != null) {
-			return StringEscapeUtils.escapeHtml(timereport.getTaskdescription()).replaceAll("\n", "<br>");
-		} else {
-			return null;
-		}
-	}
+    public long getId() {
+        return timereport.getId();
+    }
 
-	public String getTimeReportAsString() {
-		return timereport.getTimeReportAsString();
-	}
+    public void setId(long id) {
+        timereport.setId(id);
+    }
 
-	public Timereport getTwin() {
-		return timereport.getTwin();
-	}
+    public Date getLastupdate() {
+        return timereport.getLastupdate();
+    }
 
-	public Integer getUpdatecounter() {
-		return timereport.getUpdatecounter();
-	}
+    public void setLastupdate(Date lastupdate) {
+        timereport.setLastupdate(lastupdate);
+    }
 
-	public int hashCode() {
-		return timereport.hashCode();
-	}
+    public String getLastupdatedby() {
+        return timereport.getLastupdatedby();
+    }
 
-	public void setAccepted(Date accepted) {
-		timereport.setAccepted(accepted);
-	}
+    public void setLastupdatedby(String lastupdatedby) {
+        timereport.setLastupdatedby(lastupdatedby);
+    }
 
-	public void setAcceptedby(String acceptedby) {
-		timereport.setAcceptedby(acceptedby);
-	}
+    public Referenceday getReferenceday() {
+        return timereport.getReferenceday();
+    }
 
-	public void setCosts(Double costs) {
-		timereport.setCosts(costs);
-	}
+    public void setReferenceday(Referenceday referenceday) {
+        timereport.setReferenceday(referenceday);
+    }
 
-	public void setCreated(Date created) {
-		timereport.setCreated(created);
-	}
+    public Date getReleased() {
+        return timereport.getReleased();
+    }
 
-	public void setCreatedby(String createdby) {
-		timereport.setCreatedby(createdby);
-	}
+    public void setReleased(Date released) {
+        timereport.setReleased(released);
+    }
 
-	public void setDurationhours(Integer durationhours) {
-		timereport.setDurationhours(durationhours);
-	}
+    public String getReleasedby() {
+        return timereport.getReleasedby();
+    }
 
-	public void setDurationminutes(Integer durationminutes) {
-		timereport.setDurationminutes(durationminutes);
-	}
+    public void setReleasedby(String releasedby) {
+        timereport.setReleasedby(releasedby);
+    }
 
-	public void setEmployeecontract(Employeecontract employeecontract) {
-		timereport.setEmployeecontract(employeecontract);
-	}
+    public int getSequencenumber() {
+        return timereport.getSequencenumber();
+    }
 
-	public void setEmployeeorder(Employeeorder employeeorder) {
-		timereport.setEmployeeorder(employeeorder);
-	}
+    public void setSequencenumber(int sequencenumber) {
+        timereport.setSequencenumber(sequencenumber);
+    }
 
-	public void setId(long id) {
-		timereport.setId(id);
-	}
+    public String getSortofreport() {
+        return timereport.getSortofreport();
+    }
 
-	public void setLastupdate(Date lastupdate) {
-		timereport.setLastupdate(lastupdate);
-	}
+    public void setSortofreport(String sortofreport) {
+        timereport.setSortofreport(sortofreport);
+    }
 
-	public void setLastupdatedby(String lastupdatedby) {
-		timereport.setLastupdatedby(lastupdatedby);
-	}
+    public String getStatus() {
+        return timereport.getStatus();
+    }
 
-	public void setReferenceday(Referenceday referenceday) {
-		timereport.setReferenceday(referenceday);
-	}
+    public void setStatus(String status) {
+        timereport.setStatus(status);
+    }
 
-	public void setReleased(Date released) {
-		timereport.setReleased(released);
-	}
+    public Suborder getSuborder() {
+        return timereport.getSuborder();
+    }
 
-	public void setReleasedby(String releasedby) {
-		timereport.setReleasedby(releasedby);
-	}
+    public void setSuborder(Suborder order) {
+        timereport.setSuborder(order);
+    }
 
-	public void setSequencenumber(int sequencenumber) {
-		timereport.setSequencenumber(sequencenumber);
-	}
+    public String getTaskdescription() {
+        return timereport.getTaskdescription();
+    }
 
-	public void setSortofreport(String sortofreport) {
-		timereport.setSortofreport(sortofreport);
-	}
+    public void setTaskdescription(String taskdescription) {
+        timereport.setTaskdescription(taskdescription);
+    }
 
-	public void setStatus(String status) {
-		timereport.setStatus(status);
-	}
+    public String getTaskdescriptionHtml() {
+        if (timereport.getTaskdescription() != null) {
+            return StringEscapeUtils.escapeHtml(timereport.getTaskdescription()).replaceAll("\n", "<br>");
+        } else {
+            return null;
+        }
+    }
 
-	public void setSuborder(Suborder order) {
-		timereport.setSuborder(order);
-	}
+    public String getTimeReportAsString() {
+        return timereport.getTimeReportAsString();
+    }
 
-	public void setTaskdescription(String taskdescription) {
-		timereport.setTaskdescription(taskdescription);
-	}
+    public Timereport getTwin() {
+        return timereport.getTwin();
+    }
 
-	public void setUpdatecounter(Integer updatecounter) {
-		timereport.setUpdatecounter(updatecounter);
-	}
+    public Integer getUpdatecounter() {
+        return timereport.getUpdatecounter();
+    }
 
-	public String toString() {
-		return timereport.toString();
-	}
-	
-	
+    public void setUpdatecounter(Integer updatecounter) {
+        timereport.setUpdatecounter(updatecounter);
+    }
+
+    public int hashCode() {
+        return timereport.hashCode();
+    }
+
+    public String toString() {
+        return timereport.toString();
+    }
+
+
 }

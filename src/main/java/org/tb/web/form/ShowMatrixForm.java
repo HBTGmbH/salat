@@ -1,28 +1,28 @@
 /*
  * File:          $RCSfile$
  * Version:       $Revision$
- * 
+ *
  * Created:       29.11.2006 by cb
  * Last changed:  $Date$ by $Author$
- * 
+ *
  * Copyright (C) 2006 by HBT GmbH, www.hbt.de
  *
  */
 package org.tb.web.form;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author cb
  * @since 29.11.2006
  */
 public class ShowMatrixForm extends ActionForm {
-	private static final long serialVersionUID = 1L; // -5141807789236654602L;
-	private String fromDay;
+    private static final long serialVersionUID = 1L; // -5141807789236654602L;
+    private String fromDay;
     private String untilDay;
     private String fromMonth;
     private String untilMonth;
@@ -35,7 +35,7 @@ public class ShowMatrixForm extends ActionForm {
 
     private String matrixview;
     private long orderId;
-    
+
     private Boolean invoice;
     private Boolean nonInvoice;
 
@@ -120,20 +120,20 @@ public class ShowMatrixForm extends ActionForm {
     }
 
     /**
-	 * @return the employeeContractId
-	 */
-	public Long getEmployeeContractId() {
-		return employeeContractId;
-	}
+     * @return the employeeContractId
+     */
+    public Long getEmployeeContractId() {
+        return employeeContractId;
+    }
 
-	/**
-	 * @param employeeContractId the employeeContractId to set
-	 */
-	public void setEmployeeContractId(Long employeeContractId) {
-		this.employeeContractId = employeeContractId;
-	}
+    /**
+     * @param employeeContractId the employeeContractId to set
+     */
+    public void setEmployeeContractId(Long employeeContractId) {
+        this.employeeContractId = employeeContractId;
+    }
 
-	@Override
+    @Override
     public void reset(ActionMapping arg0, HttpServletRequest arg1) {
         // TODO Auto-generated method stub
         super.reset(arg0, arg1);
@@ -147,21 +147,21 @@ public class ShowMatrixForm extends ActionForm {
         return super.validate(arg0, arg1);
     }
 
-	public boolean isInvoice() {
-		return invoice;
-	}
+    public boolean isInvoice() {
+        return invoice;
+    }
 
-	public void setInvoice(boolean invoice) {
-		this.invoice = invoice;
-	}
+    public void setInvoice(boolean invoice) {
+        this.invoice = invoice;
+    }
 
-	public boolean isNonInvoice() {
-		return nonInvoice;
-	}
+    public boolean isNonInvoice() {
+        return nonInvoice;
+    }
 
-	public void setNonInvoice(boolean nonInvoice) {
-		this.nonInvoice = nonInvoice;
-	}
+    public void setNonInvoice(boolean nonInvoice) {
+        this.nonInvoice = nonInvoice;
+    }
 }
 
 /*

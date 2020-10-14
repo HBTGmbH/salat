@@ -1,10 +1,10 @@
 /*
  * File:          $RCSfile$
  * Version:       $Revision$
- * 
+ *
  * Created:       29.12.2006 by cb
  * Last changed:  $Date$ by $Author$
- * 
+ *
  * Copyright (C) 2006 by HBT GmbH, www.hbt.de
  *
  */
@@ -15,6 +15,9 @@ package org.tb.helper.matrix;
  * @since 29.12.2006
  */
 public class WeekAndWorkinghourCount {
+    public int week;
+    public double workingHour;
+
     /**
      * @param week
      * @param workingHour
@@ -25,19 +28,19 @@ public class WeekAndWorkinghourCount {
         this.week = week;
         this.workingHour = workingHour;
     }
-    
-    public int week;
-    public double workingHour;
-    
+
     public int getWeek() {
         return week;
     }
+
     public void setWeek(int week) {
         this.week = week;
     }
+
     public double getWorkingHour() {
         return workingHour;
     }
+
     public void setWorkingHour(double workingHour) {
         this.workingHour = workingHour;
     }

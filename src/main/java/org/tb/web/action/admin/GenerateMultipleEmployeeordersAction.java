@@ -1,111 +1,100 @@
 package org.tb.web.action.admin;
 
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
+import org.apache.struts.action.*;
 import org.tb.GlobalConstants;
-import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employee;
-import org.tb.bdom.EmployeeOrderViewDecorator;
-import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Suborder;
-import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.SuborderDAO;
-import org.tb.persistence.TimereportDAO;
+import org.tb.bdom.*;
+import org.tb.persistence.*;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.GenerateMultipleEmployeeordersForm;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+
 /**
  * Class for generating multiple Employeeorders for one suborder at once
- * 
- * @author sql
  *
+ * @author sql
  */
 public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
-    
+
     private SuborderDAO suborderDAO;
     private CustomerorderDAO customerorderDAO;
     private EmployeecontractDAO employeecontractDAO;
     private EmployeeorderDAO employeeorderDAO;
     private TimereportDAO timereportDAO;
-    
+
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
+
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
+
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
     }
+
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
+
     public void setTimereportDAO(TimereportDAO timereportDAO) {
-		this.timereportDAO = timereportDAO;
-	}
-    
+        this.timereportDAO = timereportDAO;
+    }
+
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-            ActionForm form, HttpServletRequest request,
-            HttpServletResponse response) {
-        
-        GenerateMultipleEmployeeordersForm generateMultipleEmployeeordersForm = (GenerateMultipleEmployeeordersForm)form;
-        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
-        
+                                              ActionForm form, HttpServletRequest request,
+                                              HttpServletResponse response) {
+
+        GenerateMultipleEmployeeordersForm generateMultipleEmployeeordersForm = (GenerateMultipleEmployeeordersForm) form;
+        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();
         }
-        
+
         if (request.getParameter("task") != null && request.getParameter("task").equals("refresh")) {
-        	
+
             Long customerOrderId = generateMultipleEmployeeordersForm.getCustomerOrderId();
             Long suborderId = generateMultipleEmployeeordersForm.getSuborderId();
             List<Suborder> sos;
             if (customerOrderId != -1) {
-            	sos = suborderDAO.getSubordersByCustomerorderId(customerOrderId, generateMultipleEmployeeordersForm.getShowOnlyValid());
-            	request.getSession().setAttribute("showAllSuborders", true);
-            	request.getSession().setAttribute("currentSuborder", suborderId);
-			} else if (customerOrderId == -1 && suborderId != -1) {
-				sos = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
-				request.getSession().setAttribute("showAllSuborders", false);
-				request.getSession().setAttribute("currentSuborder", suborderId);
-			} else {
-				sos = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
-				request.getSession().setAttribute("showAllSuborders", true);
-				request.getSession().setAttribute("currentSuborder", -1l);
-			}
+                sos = suborderDAO.getSubordersByCustomerorderId(customerOrderId, generateMultipleEmployeeordersForm.getShowOnlyValid());
+                request.getSession().setAttribute("showAllSuborders", true);
+                request.getSession().setAttribute("currentSuborder", suborderId);
+            } else if (customerOrderId == -1 && suborderId != -1) {
+                sos = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
+                request.getSession().setAttribute("showAllSuborders", false);
+                request.getSession().setAttribute("currentSuborder", suborderId);
+            } else {
+                sos = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
+                request.getSession().setAttribute("showAllSuborders", true);
+                request.getSession().setAttribute("currentSuborder", -1l);
+            }
             request.getSession().setAttribute("currentCustomer", customerOrderId);
             request.getSession().setAttribute("suborders", sos);
             return mapping.findForward("start");
         }
-        
+
         if (request.getParameter("task") != null && request.getParameter("task").equals("multiplechange")) {
-            
-        	if (request.getSession().getAttribute("suborderId") != null) {
-                Long suborderId = (Long)request.getSession().getAttribute("suborderId");
+
+            if (request.getSession().getAttribute("suborderId") != null) {
+                Long suborderId = (Long) request.getSession().getAttribute("suborderId");
                 generateMultipleEmployeeordersForm.setSuborderId(suborderId);
             }
             String[] employeecontractIdArray = generateMultipleEmployeeordersForm.getEmployeecontractIdArray();
             Suborder so = suborderDAO.getSuborderById((Long) request.getSession().getAttribute("currentSuborder"));
-            
+
             if (so == null) {
-            	errors.add("footer", new ActionMessage("form.multipleEmployeeorders.error.notSelectedSuborder"));
-            	saveErrors(request, errors);
-            	return mapping.getInputForward();
-			}
-            
+                errors.add("footer", new ActionMessage("form.multipleEmployeeorders.error.notSelectedSuborder"));
+                saveErrors(request, errors);
+                return mapping.getInputForward();
+            }
+
             if (employeecontractIdArray != null) {
                 // for every employeecontract that was chosen via multibox
                 for (String ecID : employeecontractIdArray) {
@@ -128,67 +117,65 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
                             eo.setUntilDate(ec.getValidUntil());
                         }
                         eo.setSign("");
-                        eo.setDebithours(so.getDebithours()); 
+                        eo.setDebithours(so.getDebithours());
                         eo.setDebithoursunit(so.getDebithoursunit());
                         employeeorderDAO.save(eo, loginEmployee);
-                        
+
                         Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-                        
+
                         if (currentEmployeeId.equals(ec.getEmployee().getId())) {
-                        	@SuppressWarnings("unchecked")
-							List<EmployeeOrderViewDecorator> decorators = (List<EmployeeOrderViewDecorator>) request.getSession().getAttribute("employeeorders");
-                        	EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, eo);
-                			decorators.add(decorator);
-                			request.getSession().setAttribute("employeeorders", decorators);
+                            @SuppressWarnings("unchecked")
+                            List<EmployeeOrderViewDecorator> decorators = (List<EmployeeOrderViewDecorator>) request.getSession().getAttribute("employeeorders");
+                            EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, eo);
+                            decorators.add(decorator);
+                            request.getSession().setAttribute("employeeorders", decorators);
                         }
                     }
                 }
             } else {
-            	generateMultipleEmployeeordersForm.setEmployeecontractIdArray(null);
-            	errors.add("footer", new ActionMessage("form.multipleEmployeeorders.error.notSelectedEmployee"));
-            	saveErrors(request, errors);
-            	return mapping.getInputForward();
+                generateMultipleEmployeeordersForm.setEmployeecontractIdArray(null);
+                errors.add("footer", new ActionMessage("form.multipleEmployeeorders.error.notSelectedEmployee"));
+                saveErrors(request, errors);
+                return mapping.getInputForward();
             }
             generateMultipleEmployeeordersForm.setEmployeecontractIdArray(null);
-            
-//            ActionRedirect ar = new ActionRedirect(mapping.findForwardConfig("success"));
-//            return ar;
+
             return mapping.findForward("success");
         }
-        
+
         if (request.getParameter("task") != null) {
             if (request.getParameter("task").equalsIgnoreCase("back")) {
                 // back to main menu
                 return mapping.findForward("backtomenu");
             }
-        } 
-        
-       if (request.getParameter("task") != null && request.getParameter("task").equals("initialize")) {
-    	   generateMultipleEmployeeordersForm.setShowOnlyValid(true);
-    	   List<Customerorder> customerOrders;
-           if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV) 
-           		|| loginEmployee.getStatus().equals( GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-           	customerOrders = customerorderDAO.getCustomerorders();
-   			} else {
-   				customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
-   			}
-           	request.getSession().setAttribute("visibleCustomerOrders", customerOrders);
-           	List<Employeecontract> employeecontracts = employeecontractDAO.getValidEmployeeContractsOrderedByFirstname();
-           	request.getSession().setAttribute("employeecontracts", employeecontracts);
-           	long selectedCustomerOrder = (Long) request.getSession().getAttribute("currentOrderId");
-           	long selectedSuborder = (Long) request.getSession().getAttribute("currentSub");
-           	List<Suborder> suborders;
-           	if (selectedSuborder != -1 || selectedCustomerOrder != -1) {
-           		request.getSession().setAttribute("showAllSuborders", false);
-           		suborders = suborderDAO.getSubordersByCustomerorderId(selectedCustomerOrder, generateMultipleEmployeeordersForm.getShowOnlyValid());
-			} else {
-				request.getSession().setAttribute("showAllSuborders", true);
-				suborders = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
-			}
-           	request.getSession().setAttribute("suborders", suborders);  
-           	request.getSession().setAttribute("currentCustomer", selectedCustomerOrder);
-           	request.getSession().setAttribute("currentSuborder", selectedSuborder);
-           	return mapping.findForward("start");
+        }
+
+        if (request.getParameter("task") != null && request.getParameter("task").equals("initialize")) {
+            generateMultipleEmployeeordersForm.setShowOnlyValid(true);
+            List<Customerorder> customerOrders;
+            if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
+                    || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+                customerOrders = customerorderDAO.getCustomerorders();
+            } else {
+                customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+            }
+            request.getSession().setAttribute("visibleCustomerOrders", customerOrders);
+            List<Employeecontract> employeecontracts = employeecontractDAO.getValidEmployeeContractsOrderedByFirstname();
+            request.getSession().setAttribute("employeecontracts", employeecontracts);
+            long selectedCustomerOrder = (Long) request.getSession().getAttribute("currentOrderId");
+            long selectedSuborder = (Long) request.getSession().getAttribute("currentSub");
+            List<Suborder> suborders;
+            if (selectedSuborder != -1 || selectedCustomerOrder != -1) {
+                request.getSession().setAttribute("showAllSuborders", false);
+                suborders = suborderDAO.getSubordersByCustomerorderId(selectedCustomerOrder, generateMultipleEmployeeordersForm.getShowOnlyValid());
+            } else {
+                request.getSession().setAttribute("showAllSuborders", true);
+                suborders = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
+            }
+            request.getSession().setAttribute("suborders", suborders);
+            request.getSession().setAttribute("currentCustomer", selectedCustomerOrder);
+            request.getSession().setAttribute("currentSuborder", selectedSuborder);
+            return mapping.findForward("start");
         }
         return mapping.findForward("start");
     }

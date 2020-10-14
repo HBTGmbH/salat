@@ -1,17 +1,5 @@
 package org.tb.web.action;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -29,54 +17,59 @@ import org.tb.persistence.TrainingDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowTrainingForm;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
 /**
- * 
  * Action class for trainings to be shown on separate page
  */
 public class ShowTrainingAction extends LoginRequiredAction {
-    
+
     private final static String TRAINING_ID = "i976";
     private EmployeecontractDAO employeecontractDAO;
     private TrainingDAO trainingDAO;
     private EmployeeDAO employeeDAO;
     private CustomerorderDAO customerorderDAO;
-    
+
     public EmployeecontractDAO getEmployeecontractDAO() {
         return employeecontractDAO;
     }
-    
+
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
+
     public TrainingDAO getTrainingDAO() {
         return trainingDAO;
     }
-    
+
     public void setTrainingDAO(TrainingDAO trainingDAO) {
         this.trainingDAO = trainingDAO;
     }
-    
+
     public EmployeeDAO getEmployeeDAO() {
         return employeeDAO;
     }
-    
+
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
+
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
+
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws ParseException {
-        
-        ShowTrainingForm trainingForm = (ShowTrainingForm)form;
+
+        ShowTrainingForm trainingForm = (ShowTrainingForm) form;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         Date startdate = simpleDateFormat.parse(trainingForm.getStartdate());
         Date enddate = simpleDateFormat.parse(trainingForm.getEnddate());
-        
+
         //check for refresh
         if (request.getParameter("task") != null && request.getParameter("task").equals("refresh")) {
             boolean refreshSuccessful = refreshTraining(mapping, request, trainingForm, trainingDAO,
@@ -107,10 +100,10 @@ public class ShowTrainingAction extends LoginRequiredAction {
         request.getSession().setAttribute("showTrainingForm", trainingForm);
         return mapping.findForward("success");
     }
-    
+
     protected boolean refreshTraining(ActionMapping mapping,
-            HttpServletRequest request, ShowTrainingForm trainingForm, TrainingDAO trainingDAO, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO,
-            EmployeeDAO employeeDAO, Date startdate, Date enddate) {
+                                      HttpServletRequest request, ShowTrainingForm trainingForm, TrainingDAO trainingDAO, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO,
+                                      EmployeeDAO employeeDAO, Date startdate, Date enddate) {
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
         request.getSession().setAttribute("showTrainingForm", trainingForm);
@@ -118,16 +111,16 @@ public class ShowTrainingAction extends LoginRequiredAction {
         Customerorder trainingOrder = customerorderDAO.getCustomerorderBySign(TRAINING_ID);
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverviews;
-        
+
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
-        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext();) {
+        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext(); ) {
             Employeecontract c = iterator.next();
             if (c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null) {
                 iterator.remove();
             }
         }
         request.getSession().setAttribute("employeecontracts", employeecontracts);
-        
+
         // refresh all relevant attributes
         if (trainingForm.getEmployeeContractId() == -1 || employeecontract.getFreelancer() || employeecontract.getDailyWorkingTime() <= 0
                 || employeecontract.getEmployeeorders() == null) {
@@ -136,67 +129,67 @@ public class ShowTrainingAction extends LoginRequiredAction {
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1l);
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
-            
+
         } else {
             // get the training times for specific year, specific employee, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewByEmployeecontract(startdate,
                     enddate, employeecontract, orderID, year);
-            
+
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
             request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(employeecontract.getValidFrom()));
         }
         request.getSession().setAttribute("trainingOverview", trainingOverviews);
         request.getSession().setAttribute("year", year);
-        
+
         return true;
-        
+
     }
-    
+
     /**
      * Called if no special task is given, called from menu eg. Prepares everything to show trainings of current year of
      * logged-in user.
-     * 
+     *
      * @param mapping
      * @param request
      * @param trainingForm
-     * @throws ParseException 
+     * @throws ParseException
      */
     private String init(ActionMapping mapping, HttpServletRequest request, ShowTrainingForm trainingForm, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO, Date startdate,
-            Date enddate) throws ParseException {
+                        Date enddate) throws ParseException {
         String forward = "success";
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
-        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeHelper().setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
         long orderID = customerorderDAO.getCustomerorderBySign(TRAINING_ID).getId();
         List<TrainingOverview> trainingOverview;
-        
+
         request.getSession().setAttribute("showTrainingForm", trainingForm);
-        
+
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts that have training entitlement found - please call system administrator.");
             forward = "error";
             return forward;
         }
-        
-        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext();) {
-        	Employeecontract c = iterator.next();
-        	if (c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null) {
-        		iterator.remove();
-        	}
+
+        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext(); ) {
+            Employeecontract c = iterator.next();
+            if (c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null) {
+                iterator.remove();
+            }
         }
-        
+
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
             forward = "error";
             return forward;
         }
-        
+
         // set all relevant attributes
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         request.getSession().setAttribute("year", year);
-        
+
         // If all Employees are to be shown, get a list of TrainingOverviews with an entry for each Employeecontract.
         // Is the case if All Employees preselected on other page or current logged-in employee has no training, e.g. as admin.
         if (employeeContractId == -1 || ec.getFreelancer() || ec.getDailyWorkingTime() <= 0 || ec.getEmployeeorders() == null) {
@@ -214,15 +207,15 @@ public class ShowTrainingAction extends LoginRequiredAction {
         request.getSession().setAttribute("trainingOverview", trainingOverview);
         return forward;
     }
-    
+
     private List<TrainingOverview> getTrainingOverviewsForAll(Date startdate,
-            Date enddate, EmployeecontractDAO employeecontractDAO, Long orderID, List<Employeecontract> employeecontracts, String year) {
+                                                              Date enddate, EmployeecontractDAO employeecontractDAO, Long orderID, List<Employeecontract> employeecontracts, String year) {
         List<TrainingOverview> trainingOverviews = new LinkedList<TrainingOverview>();
         List<Object[]> cTrain = trainingDAO.getCommonTrainingTimesByDates(employeecontractDAO, startdate, enddate, orderID);
         List<Object[]> pTrain = trainingDAO.getProjectTrainingTimesByDates(employeecontractDAO, startdate, enddate);
         Map<Long, Object[]> projTrain = createMap(pTrain);
         Map<Long, Object[]> comTrain = createMap(cTrain);
-        
+
         for (Employeecontract empCon : employeecontracts) {
             TrainingOverview to;
             Object[] commonTraining = comTrain.get(empCon.getId());
@@ -230,23 +223,23 @@ public class ShowTrainingAction extends LoginRequiredAction {
             if (commonTraining == null && projectTraining == null) {
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_HM, GlobalConstants.ZERO_HM);
             } else if (commonTraining == null) {
-                Object[] t = { projectTraining[1], projectTraining[2] };
+                Object[] t = {projectTraining[1], projectTraining[2]};
                 int[] ti = TrainingHelper.getHoursMin(t);
                 String time = TrainingHelper.fromDBtimeToString(empCon, ti[0], ti[1]);
                 String hoursMin = TrainingHelper.hoursMinToString(ti);
                 to = new TrainingOverview(year, empCon, time, GlobalConstants.ZERO_DHM, hoursMin, GlobalConstants.ZERO_HM);
             } else if (projectTraining == null) {
-                Object[] t = { commonTraining[1], commonTraining[2] };
+                Object[] t = {commonTraining[1], commonTraining[2]};
                 int[] ti = TrainingHelper.getHoursMin(t);
                 String time = TrainingHelper.fromDBtimeToString(empCon, ti[0], ti[1]);
                 String hoursMin = TrainingHelper.hoursMinToString(ti);
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, time, GlobalConstants.ZERO_HM, hoursMin);
             } else {
-                Object[] cT = { commonTraining[1], commonTraining[2] };
+                Object[] cT = {commonTraining[1], commonTraining[2]};
                 int[] tcT = TrainingHelper.getHoursMin(cT);
                 String commonTime = TrainingHelper.fromDBtimeToString(empCon, tcT[0], tcT[1]);
                 String cHoursMin = TrainingHelper.hoursMinToString(tcT);
-                Object[] pT = { projectTraining[1], projectTraining[2] };
+                Object[] pT = {projectTraining[1], projectTraining[2]};
                 int[] tpT = TrainingHelper.getHoursMin(pT);
                 String projectTime = TrainingHelper.fromDBtimeToString(empCon, tpT[0], tpT[1]);
                 String pHoursMin = TrainingHelper.hoursMinToString(tpT);
@@ -256,7 +249,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         }
         return trainingOverviews;
     }
-    
+
     /**
      * @param pTrain
      * @return
@@ -265,26 +258,26 @@ public class ShowTrainingAction extends LoginRequiredAction {
         Map<Long, Object[]> projTrain = new HashMap<Long, Object[]>();
         for (Object[] o : objectList) {
             if (o[0] != null && o[0] instanceof Long) {
-                projTrain.put((Long)o[0], o);
+                projTrain.put((Long) o[0], o);
             }
         }
         return projTrain;
     }
-    
+
     private List<TrainingOverview> getTrainingOverviewByEmployeecontract(Date startdate,
-            Date enddate, Employeecontract ec, Long orderID, String year) {
+                                                                         Date enddate, Employeecontract ec, Long orderID, String year) {
         List<TrainingOverview> result = new LinkedList<TrainingOverview>();
-        
+
         Object[] cTT = trainingDAO.getCommonTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate, orderID);
         Object[] pTT = trainingDAO.getProjectTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate);
-        
+
         int[] cTime = TrainingHelper.getHoursMin(cTT);
         String commonTrainingTime = TrainingHelper.fromDBtimeToString(ec, cTime[0], cTime[1]);
         String cHoursMin = TrainingHelper.hoursMinToString(cTime);
         int[] pTime = TrainingHelper.getHoursMin(pTT);
         String projectTrainingTime = TrainingHelper.fromDBtimeToString(ec, pTime[0], pTime[1]);
         String pHoursMin = TrainingHelper.hoursMinToString(pTime);
-        
+
         TrainingOverview to = new TrainingOverview(year, ec, projectTrainingTime, commonTrainingTime, pHoursMin, cHoursMin);
         result.add(to);
         return result;

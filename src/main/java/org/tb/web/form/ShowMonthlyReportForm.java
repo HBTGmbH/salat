@@ -1,82 +1,81 @@
 package org.tb.web.form;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Form for showing timereports in 'monthly' display.
- * 
- * @author oda
  *
+ * @author oda
  */
 public class ShowMonthlyReportForm extends ActionForm {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L; // -7694572231721775229L;
-	private String month;
-	private String year;
-	private String employeename;
-	private String order;
-	
-	private long orderId;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L; // -7694572231721775229L;
+    private String month;
+    private String year;
+    private String employeename;
+    private String order;
 
-	public String getMonth() {
-		return month;
-	}
+    private long orderId;
 
-	public void setMonth(String month) {
-		this.month = month;
-	}
-	
-	public String getYear() {
-		return year;
-	}
+    public String getMonth() {
+        return month;
+    }
 
-	public void setYear(String year) {
-		this.year = year;
-	}
+    public void setMonth(String month) {
+        this.month = month;
+    }
 
-	public String getEmployeename() {
-		return employeename;
-	}
+    public String getYear() {
+        return year;
+    }
 
-	public void setEmployeename(String employeename) {
-		this.employeename = employeename;
-	}
-	
-	public String getOrder() {
-		return order;
-	}
+    public void setYear(String year) {
+        this.year = year;
+    }
 
-	public void setOrder(String order) {
-		this.order = order;
-	}
+    public String getEmployeename() {
+        return employeename;
+    }
 
-	public long getOrderId() {
-		return orderId;
-	}
+    public void setEmployeename(String employeename) {
+        this.employeename = employeename;
+    }
 
-	public void setOrderId(long orderId) {
-		this.orderId = orderId;
-	}
+    public String getOrder() {
+        return order;
+    }
 
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		month = null;
-		employeename = null;
-	}
+    public void setOrder(String order) {
+        this.order = order;
+    }
 
-	@Override
-	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-		ActionErrors errors = new ActionErrors();
-		
-		// actually, no checks here
-		return errors;
-	}
+    public long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(long orderId) {
+        this.orderId = orderId;
+    }
+
+    @Override
+    public void reset(ActionMapping mapping, HttpServletRequest request) {
+        month = null;
+        employeename = null;
+    }
+
+    @Override
+    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
+        ActionErrors errors = new ActionErrors();
+
+        // actually, no checks here
+        return errors;
+    }
 
 }

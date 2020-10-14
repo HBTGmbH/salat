@@ -1,10 +1,10 @@
 /*
  * File:          $RCSfile$
  * Version:       $Revision$
- * 
+ *
  * Created:       04.12.2006 by cb
  * Last changed:  $Date$ by $Author$
- * 
+ *
  * Copyright (C) 2006 by HBT GmbH, www.hbt.de
  *
  */
@@ -17,14 +17,14 @@ import java.util.Date;
  * @since 04.12.2006
  */
 public class BookingDay implements Comparable<BookingDay> {
-	private boolean satSun;
-	private boolean publicHoliday;
-	private Date date;
-	private long durationHours;
-	private long durationMinutes;
-	private String taskdescription;
+    private boolean satSun;
+    private boolean publicHoliday;
+    private Date date;
+    private long durationHours;
+    private long durationMinutes;
+    private String taskdescription;
 
-	/**
+    /**
      * @param date
      * @param durationHours
      * @param durationMinutes
@@ -56,12 +56,12 @@ public class BookingDay implements Comparable<BookingDay> {
         this.durationMinutes = durationMinutes;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
-    }
-
     public Date getDate() {
         return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
     }
 
     public int compareTo(BookingDay o) {
@@ -77,8 +77,8 @@ public class BookingDay implements Comparable<BookingDay> {
     }
 
     public double getRoundHours() {
-    	long duration = (durationHours * 60 + durationMinutes) * 100 / 60;
-    	return (double)duration / 100;
+        long duration = (durationHours * 60 + durationMinutes) * 100 / 60;
+        return (double) duration / 100;
     }
 
     public boolean getPublicHoliday() {

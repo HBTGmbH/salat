@@ -1,11 +1,5 @@
 package org.tb.web.action.admin;
 
-import java.text.SimpleDateFormat;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -18,41 +12,45 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddSuborderForm;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.text.SimpleDateFormat;
+import java.util.List;
+
 /**
  * action class for editing a suborder
- * 
- * @author oda
  *
+ * @author oda
  */
 public class EditSuborderAction extends LoginRequiredAction {
-    
+
     private SuborderDAO suborderDAO;
     private CustomerorderDAO customerorderDAO;
-    
+
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
+
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
+
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        
+
         //		 remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
-        
-        AddSuborderForm soForm = (AddSuborderForm)form;
+
+        AddSuborderForm soForm = (AddSuborderForm) form;
         long soId = Long.parseLong(request.getParameter("soId"));
         Suborder so = suborderDAO.getSuborderById(soId);
         request.getSession().setAttribute("soId", so.getId());
-        
+
         // fill the form with properties of suborder to be edited
         setFormEntries(mapping, request, soForm, so);
-        
+
         // make sure all customer orders are available in form
-        Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         List<Customerorder> customerorders;
         if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
                 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV) ||
@@ -62,21 +60,21 @@ public class EditSuborderAction extends LoginRequiredAction {
             customerorders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         }
         request.getSession().setAttribute("customerorders", customerorders);
-        
+
         // forward to suborder add/edit form
         return mapping.findForward("success");
     }
-    
+
     /**
      * fills suborder form with properties of given suborder
-     * 
+     *
      * @param mapping
      * @param request
      * @param soForm
-     * @param so - the suborder
+     * @param so      - the suborder
      */
     private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-            AddSuborderForm soForm, Suborder so) {
+                                AddSuborderForm soForm, Suborder so) {
         soForm.setCurrency(so.getCurrency());
         soForm.setCustomerorderId(so.getCustomerorder().getId());
         soForm.setHourlyRate(so.getHourly_rate());
@@ -100,14 +98,15 @@ public class EditSuborderAction extends LoginRequiredAction {
                 soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
                 request.getSession().setAttribute("suborderParent", tempSubOrder);
             } else {
-            	tempSubOrder = null;
+                tempSubOrder = null;
                 Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
                 soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
                 request.getSession().setAttribute("suborderParent", tempOrder);
             }
             request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
-        } catch (Throwable th) {}
-        
+        } catch (Throwable th) {
+        }
+
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         soForm.setValidFrom(simpleDateFormat.format(so.getFromDate()));
         if (so.getUntilDate() != null) {
@@ -115,7 +114,7 @@ public class EditSuborderAction extends LoginRequiredAction {
         } else {
             soForm.setValidUntil("");
         }
-        
+
         if (so.getDebithours() != null) {
             soForm.setDebithours(so.getDebithours());
             soForm.setDebithoursunit(so.getDebithoursunit());
@@ -125,7 +124,7 @@ public class EditSuborderAction extends LoginRequiredAction {
         }
         soForm.setHide(so.isHide());
         soForm.setNoEmployeeOrderContent(so.getNoEmployeeOrderContent());
-        
+
         //request.getSession().setAttribute("currentSuborderID", new Long(so.getId()));
         request.getSession().setAttribute("currentOrderId", new Long(so.getCustomerorder().getId()));
         request.getSession().setAttribute("currentOrder", so.getCustomerorder());
@@ -133,5 +132,5 @@ public class EditSuborderAction extends LoginRequiredAction {
         request.getSession().setAttribute("currency", so.getCurrency());
         request.getSession().setAttribute("hourlyRate", so.getHourly_rate());
     }
-    
+
 }

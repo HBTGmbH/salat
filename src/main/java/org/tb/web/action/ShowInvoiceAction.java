@@ -1,89 +1,71 @@
 package org.tb.web.action;
 
-import java.text.DecimalFormat;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.tb.GlobalConstants;
-import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Suborder;
-import org.tb.bdom.Timereport;
+import org.tb.bdom.*;
 import org.tb.bdom.comparators.SubOrderComparator;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
-import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeDAO;
-import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.SuborderDAO;
-import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.*;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowInvoiceForm;
 import org.tb.web.util.ExcelArchivierer;
 import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
 import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class ShowInvoiceAction extends DailyReportAction {
-    
+
     private CustomerorderDAO customerorderDAO;
-    
+
     private TimereportDAO timereportDAO;
-    
+
     private EmployeecontractDAO employeecontractDAO;
-    
+
     private SuborderDAO suborderDAO;
-    
+
     private EmployeeDAO employeeDAO;
-    
+
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
+
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-    
+
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
-    
+
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-    
+
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        
+
         // check if special tasks initiated from the daily display need to be
         // carried out...
-        
-        ShowInvoiceForm showInvoiceForm = (ShowInvoiceForm)form;
+
+        ShowInvoiceForm showInvoiceForm = (ShowInvoiceForm) form;
         TimereportHelper th = new TimereportHelper();
-        
+
         Map<String, String> monthMap = new HashMap<String, String>();
         monthMap.put("0", "main.timereport.select.month.jan.text");
         monthMap.put("1", "main.timereport.select.month.feb.text");
@@ -97,7 +79,7 @@ public class ShowInvoiceAction extends DailyReportAction {
         monthMap.put("9", "main.timereport.select.month.oct.text");
         monthMap.put("10", "main.timereport.select.month.nov.text");
         monthMap.put("11", "main.timereport.select.month.dec.text");
-        
+
         // call on InvoiceView with parameter refreshInvoiceForm to update
         // request
         if (request.getParameter("task") != null && request.getParameter("task").equals("generateMaximumView")) {
@@ -114,33 +96,31 @@ public class ShowInvoiceAction extends DailyReportAction {
                 if (selectedView.equals(GlobalConstants.VIEW_MONTHLY) || selectedView.equals(GlobalConstants.VIEW_WEEKLY)) {
                     // generate dates for monthly view mode
                     try {
-                    	if(selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
-	                        // request.getSession().setAttribute("invoiceview",
-	                        // GlobalConstants.VIEW_MONTHLY);
-	                        dateFirst = th.getDateFormStrings("1", showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
-	                        GregorianCalendar gc = new GregorianCalendar();
-	                        gc.setTime(dateFirst);
-	                        int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
-	                        String maxDayString = "";
-	                        if (maxday < 10) {
-	                            maxDayString += "0";
-	                        }
-	                        maxDayString += maxday;
-	                        dateLast = th.getDateFormStrings(maxDayString, showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
-                    	} else {
-                        	int kw = showInvoiceForm.getFromWeek();
-                        	Calendar cal = Calendar.getInstance();
-                        	cal.set(Calendar.YEAR, Integer.parseInt(showInvoiceForm.getFromYear()));
-                        	cal.set(Calendar.WEEK_OF_YEAR, kw);
-                        	cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                        	dateFirst = cal.getTime();
-                        	cal.add(Calendar.DATE, 6);
-                        	dateLast = cal.getTime();
-                    	}
+                        if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
+                            dateFirst = th.getDateFormStrings("1", showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                            GregorianCalendar gc = new GregorianCalendar();
+                            gc.setTime(dateFirst);
+                            int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
+                            String maxDayString = "";
+                            if (maxday < 10) {
+                                maxDayString += "0";
+                            }
+                            maxDayString += maxday;
+                            dateLast = th.getDateFormStrings(maxDayString, showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                        } else {
+                            int kw = showInvoiceForm.getFromWeek();
+                            Calendar cal = Calendar.getInstance();
+                            cal.set(Calendar.YEAR, Integer.parseInt(showInvoiceForm.getFromYear()));
+                            cal.set(Calendar.WEEK_OF_YEAR, kw);
+                            cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                            dateFirst = cal.getTime();
+                            cal.add(Calendar.DATE, 6);
+                            dateLast = cal.getTime();
+                        }
                     } catch (Exception e) {
                         throw new RuntimeException("date cannot be parsed from form");
                     }
-                    
+
                     customerOrder = customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder());
                     if (showInvoiceForm.getSuborder().equals("ALL SUBORDERS")) {
                         suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId(), false);
@@ -151,7 +131,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                     sqlDateFirst = new java.sql.Date(dateFirst.getTime());
                     sqlDateLast = new java.sql.Date(dateLast.getTime());
                     // remove suborders that are not valid sometime between dateFirst and dateLast
-                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
+                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext(); ) {
                         Suborder so = iterator.next();
                         if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
                             iterator.remove();
@@ -160,8 +140,6 @@ public class ShowInvoiceAction extends DailyReportAction {
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
                     // generate dates for a period of time in custom view mode
                     try {
-                        // request.getSession().setAttribute("invoiceview",
-                        // GlobalConstants.VIEW_CUSTOM);
                         dateFirst = th.getDateFormStrings(showInvoiceForm.getFromDay(), showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
                         if (showInvoiceForm.getUntilDay() == null || showInvoiceForm.getUntilMonth() == null || showInvoiceForm.getUntilYear() == null) {
                             GregorianCalendar gc = new GregorianCalendar();
@@ -187,7 +165,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
                     // remove suborders that are not valid sometime between dateFirst and dateLast
-                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext();) {
+                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext(); ) {
                         Suborder so = iterator.next();
                         if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
                             iterator.remove();
@@ -201,28 +179,28 @@ public class ShowInvoiceAction extends DailyReportAction {
                 }
                 // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
                 if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
-                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
                 } else if (showInvoiceForm.isFixedpricebox()) {
-                	for (Suborder suborder : suborderList) {
-                		if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
-                			suborderListTemp.add(suborder);
-                		}
-                	}
-                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    for (Suborder suborder : suborderList) {
+                        if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
+                            suborderListTemp.add(suborder);
+                        }
+                    }
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
                 } else if (showInvoiceForm.isInvoicebox()) {
-                	for (Suborder suborder : suborderList) {
-                		if (!suborder.getFixedPrice()) {
-                			suborderListTemp.add(suborder);
-                		}
-                	}
-                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    for (Suborder suborder : suborderList) {
+                        if (!suborder.getFixedPrice()) {
+                            suborderListTemp.add(suborder);
+                        }
+                    }
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
                 } else {
-                	for (Suborder suborder : suborderList) {
-                		if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
-                			suborderListTemp.add(suborder);
-                		}
-                	}
-                	request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    for (Suborder suborder : suborderList) {
+                        if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
+                            suborderListTemp.add(suborder);
+                        }
+                    }
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
                 }
                 request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
                 request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
@@ -249,10 +227,10 @@ public class ShowInvoiceAction extends DailyReportAction {
                 request.getSession().setAttribute("currentSuborder", showInvoiceForm.getSuborder());
                 List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder()).getId(), showInvoiceForm.getShowOnlyValid());
                 Collections.sort(suborders, new SubOrderComparator());
-                
+
                 request.getSession().setAttribute("suborders", suborders);
             }
-            
+
             /*
              * Delete resultset if the customerorder of the invoice form has
              * changed if(request.getSession().getAttribute("viewhelpers") !=
@@ -261,7 +239,7 @@ public class ShowInvoiceAction extends DailyReportAction {
              * request.getSession().getAttribute("viewhelpers");
              * invoiceSuborderViewHelperList.get(0).getParentorder().equals(customerorderDAO.getCustomerorderBySign(invoiceForm.getOrder())); }
              */
-            
+
             // activate subcheckboxes for timereport-attributes
             if (showInvoiceForm.isTimereportsbox()) {
                 request.getSession().setAttribute("timereportsubboxes", true);
@@ -270,7 +248,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                 showInvoiceForm.setTimereportdescriptionbox(false);
                 showInvoiceForm.setEmployeesignbox(false);
             }
-            
+
             // selected view
             String selectedView = showInvoiceForm.getInvoiceview();
             if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
@@ -306,7 +284,7 @@ public class ShowInvoiceAction extends DailyReportAction {
         } else if (request.getParameter("task") != null
                 && (request.getParameter("task").equals("print") || request.getParameter("task").equals("export") || request.getParameter("task").equals("exportNew"))) {
             // call on InvoiceView with parameter print
-            List<InvoiceSuborderViewHelper> suborderViewhelperList = (List<InvoiceSuborderViewHelper>)request.getSession().getAttribute("viewhelpers");
+            List<InvoiceSuborderViewHelper> suborderViewhelperList = (List<InvoiceSuborderViewHelper>) request.getSession().getAttribute("viewhelpers");
             // reset visibility to false
             for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : suborderViewhelperList) {
                 invoiceSuborderViewHelper.setVisible(false);
@@ -348,7 +326,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                     }
                 }
             }
-            request.getSession().setAttribute("actualminutessum", (double)actualMinutesSum);
+            request.getSession().setAttribute("actualminutessum", (double) actualMinutesSum);
             DecimalFormat decimalFormat = new DecimalFormat("00");
             request.getSession().setAttribute("printactualhourssum", decimalFormat.format(actualMinutesSum / 60) + ":" + decimalFormat.format(actualMinutesSum % 60));
             request.getSession().setAttribute("titleactualhourstext", showInvoiceForm.getTitleactualhourstext());
@@ -394,7 +372,7 @@ public class ShowInvoiceAction extends DailyReportAction {
         } else if (request.getParameter("task") == null) {
             // call on invoiceView without a parameter
             // no special task - prepare everything to show invoice
-            Employee loginEmployee = (Employee)request.getSession().getAttribute("loginEmployee");
+            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
             EmployeeHelper eh = new EmployeeHelper();
             Employeecontract ec = eh.setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
             if (ec == null) {
@@ -442,9 +420,9 @@ public class ShowInvoiceAction extends DailyReportAction {
         }
         return mapping.findForward("success");
     }
-    
+
     private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList, java.sql.Date dateFirst, java.sql.Date dateLast,
-            ShowInvoiceForm invoiceForm) {
+                                  ShowInvoiceForm invoiceForm) {
         List<String> suborderIdList = new ArrayList<String>(suborderList.size());
         List<String> timereportIdList = new ArrayList<String>();
         for (Suborder suborder : suborderList) {
@@ -476,5 +454,5 @@ public class ShowInvoiceAction extends DailyReportAction {
         DecimalFormat decimalFormat = new DecimalFormat("00");
         return decimalFormat.format(totalActualminutes / 60) + ":" + decimalFormat.format(totalActualminutes % 60);
     }
-    
+
 }

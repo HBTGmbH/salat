@@ -1,14 +1,5 @@
 package org.tb.web.action.admin;
 
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -21,99 +12,107 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.web.form.AddStatusReportForm;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+
 public class CreateStatusReportAction extends StatusReportAction {
-    
+
     private EmployeeDAO employeeDAO;
     private CustomerorderDAO customerorderDAO;
     private StatusReportDAO statusReportDAO;
-    
+
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-    
+
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
-    
+
     public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
         this.statusReportDAO = statusReportDAO;
     }
-    
+
     /* (non-Javadoc)
      * @see org.tb.web.action.LoginRequiredAction#executeAuthenticated(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
-        AddStatusReportForm reportForm = (AddStatusReportForm)form;
-        
+
+        AddStatusReportForm reportForm = (AddStatusReportForm) form;
+
         // remove action info
         request.getSession().removeAttribute("actionInfo");
-        
+
         // set report status
         request.getSession().setAttribute("reportStatus", getResources(request).getMessage(getLocale(request), "statusreport.reportstatus.new.text"));
-        
+
         // set null as current statusreport
         request.getSession().setAttribute("currentStatusReport", null);
-        
+
         // set collection of phases
         request.getSession().setAttribute("phases", getPhaseOptionList(request));
-        
+
         // set collection of report sorts
         request.getSession().setAttribute("sorts", getSortOptionList(request));
-        
+
         // set collection of employees for jsp
         List<Employee> employees = employeeDAO.getEmployeesWithContracts();
         request.getSession().setAttribute("employees", employees);
-        
+
         // set collection of customers
         request.getSession().setAttribute("visibleCustomerOrders", customerorderDAO.getVisibleCustomerorders());
-        
+
         // report editable
         request.getSession().setAttribute("isReportEditable", isReportEditable(null, request));
-        
+
         // is report ready for release
         request.getSession().setAttribute("isReportReadyForRelease", isReportReadyForRelease(null, statusReportDAO, request));
-        
+
         // is report ready for acceptance
         request.getSession().setAttribute("isReportReadyForAcceptance", isReportReadyForAcceptance(null, statusReportDAO, request));
-        
+
         // presettings for the selected customer order
-        Long customerOrderId = (Long)request.getSession().getAttribute("customerOrderId");
+        Long customerOrderId = (Long) request.getSession().getAttribute("customerOrderId");
         @SuppressWarnings("unchecked")
-		List<Customerorder> customerOrders = (List<Customerorder>)request.getSession().getAttribute("visibleCustomerOrders");
+        List<Customerorder> customerOrders = (List<Customerorder>) request.getSession().getAttribute("visibleCustomerOrders");
         if (customerOrders == null || customerOrders.isEmpty()) {
             request.setAttribute("errorMessage",
                     "No customer orders found - please call system administrator.");
             return mapping.findForward("error");
         }
         Customerorder selectedCustomerOrder = null;
-        
+
         // create status report from warning
         if (request.getParameter("coId") != null) {
             customerOrderId = Long.parseLong(request.getParameter("coId"));
-            
+
             // debug
             @SuppressWarnings("unused")
-			String x = request.getParameter("final");
-            
+            String x = request.getParameter("final");
+
             if (request.getParameter("final") != null
                     && request.getParameter("final").equals("true")) {
-                reportForm.setSort((byte)3);
+                reportForm.setSort((byte) 3);
             }
         }
-        
+
         if (customerOrderId != null && customerOrderId != 0 && customerOrderId != -1) {
             selectedCustomerOrder = customerorderDAO.getCustomerorderById(customerOrderId);
         }
-        
+
         if (selectedCustomerOrder == null) {
             selectedCustomerOrder = customerOrders.get(0);
         }
         request.getSession().setAttribute("selectedCustomerOrder", selectedCustomerOrder);
-        
+
         List<Statusreport> statusReports = statusReportDAO.getStatusReportsByCustomerOrderId(selectedCustomerOrder.getId());
-        
+
         Date fromDate = selectedCustomerOrder.getFromDate();
         if (statusReports != null && !statusReports.isEmpty()) {
             Statusreport lastKnownReport = statusReports.get(statusReports.size() - 1);
@@ -124,9 +123,9 @@ public class CreateStatusReportAction extends StatusReportAction {
             fromDate.setTime(calendar.getTimeInMillis());
         }
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        
+
         byte one = 1;
-        
+
         // set form entries
         reportForm.setCustomerOrderId(selectedCustomerOrder.getId());
         if (selectedCustomerOrder.getRespEmpHbtContract() != null) {
@@ -137,7 +136,7 @@ public class CreateStatusReportAction extends StatusReportAction {
             reportForm.setSenderId(selectedCustomerOrder.getResponsible_hbt()
                     .getId());
         }
-        
+
         reportForm.setValidFrom(simpleDateFormat.format(fromDate));
         reportForm.setValidUntil(simpleDateFormat.format(new java.util.Date()));
         //new report -> status green (1)
@@ -149,10 +148,10 @@ public class CreateStatusReportAction extends StatusReportAction {
         reportForm.setCustomerfeedback_status(one);
         reportForm.setMiscellaneous_status(one);
         reportForm.setNeedforaction_status(one);
-        reportForm.setOverallStatus((byte)0);
+        reportForm.setOverallStatus((byte) 0);
         reportForm.setRiskmonitoring_status(one);
         reportForm.setTrendstatus(one);
-        
+
         // clear textfields
         reportForm.setAim_action("");
         reportForm.setAim_source("");
@@ -181,9 +180,9 @@ public class CreateStatusReportAction extends StatusReportAction {
         reportForm.setRiskmonitoring_action("");
         reportForm.setRiskmonitoring_source("");
         reportForm.setRiskmonitoring_text("");
-        reportForm.setTrend((byte)0);
-        
+        reportForm.setTrend((byte) 0);
+
         return mapping.findForward("success");
     }
-    
+
 }

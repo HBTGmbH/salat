@@ -1,214 +1,204 @@
 package org.tb.web.form;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employee;
 import org.tb.util.DateUtils;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Form for adding an employee contract
- * 
- * @author oda
  *
+ * @author oda
  */
 public class AddEmployeeContractForm extends ActionForm {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L; // 4912271204885702837L;
-	private long id;
-	private String taskdescription;
-	private String validFrom;
-	private String validUntil;
-	private Boolean freelancer;
-	private Double dailyworkingtime;
-	private Integer yearlyvacation;
-	private long employee;
-	private long supervisorid;
-	private String initialOvertime;
-	private String newOvertime;
-	private String newOvertimeComment;
-	private Boolean hide;
-	
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L; // 4912271204885702837L;
+    private long id;
+    private String taskdescription;
+    private String validFrom;
+    private String validUntil;
+    private Boolean freelancer;
+    private Double dailyworkingtime;
+    private Integer yearlyvacation;
+    private long employee;
+    private long supervisorid;
+    private String initialOvertime;
+    private String newOvertime;
+    private String newOvertimeComment;
+    private Boolean hide;
+
 //	private long employeeId;
-	
-	private String action;
 
-	
-	public long getId() {
-		return id;
-	}
+    private String action;
 
-	public void setId(long id) {
-		this.id = id;
-	}
 
-	public String getAction() {
-		return action;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setAction(String action) {
-		this.action = action;
-	}
-	
-	public Double getDailyworkingtime() {
-		return dailyworkingtime;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public void setDailyworkingtime(Double dailyworkingtime) {
-		this.dailyworkingtime = dailyworkingtime;
-	}
-	
-	public Integer getYearlyvacation() {
-		return yearlyvacation;
-	}
+    public String getAction() {
+        return action;
+    }
 
-	public void setYearlyvacation(Integer yearlyvacation) {
-		this.yearlyvacation = yearlyvacation;
-	}
+    public void setAction(String action) {
+        this.action = action;
+    }
 
-//	public long getEmployeeId() {
-//		return employeeId;
-//	}
-//
-//	public void setEmployeeId(long employeeId) {
-//		this.employeeId = employeeId;
-//	}
+    public Double getDailyworkingtime() {
+        return dailyworkingtime;
+    }
 
-	public Boolean getFreelancer() {
-		return freelancer;
-	}
+    public void setDailyworkingtime(Double dailyworkingtime) {
+        this.dailyworkingtime = dailyworkingtime;
+    }
 
-	public void setFreelancer(Boolean freelancer) {
-		this.freelancer = freelancer;
-	}
+    public Integer getYearlyvacation() {
+        return yearlyvacation;
+    }
 
-	public String getTaskdescription() {
-		return taskdescription;
-	}
+    public void setYearlyvacation(Integer yearlyvacation) {
+        this.yearlyvacation = yearlyvacation;
+    }
 
-	public void setTaskdescription(String taskdescription) {
-		this.taskdescription = taskdescription;
-	}
+    public Boolean getFreelancer() {
+        return freelancer;
+    }
 
-	public String getValidFrom() {
-		return validFrom;
-	}
+    public void setFreelancer(Boolean freelancer) {
+        this.freelancer = freelancer;
+    }
 
-	public void setValidFrom(String validFrom) {
-		this.validFrom = validFrom;
-	}
+    public String getTaskdescription() {
+        return taskdescription;
+    }
 
-	public String getValidUntil() {
-		return validUntil;
-	}
+    public void setTaskdescription(String taskdescription) {
+        this.taskdescription = taskdescription;
+    }
 
-	public void setValidUntil(String validUntil) {
-		this.validUntil = validUntil;
-	}
+    public String getValidFrom() {
+        return validFrom;
+    }
 
-	public long getEmployee() {
-		return employee;
-	}
+    public void setValidFrom(String validFrom) {
+        this.validFrom = validFrom;
+    }
 
-	public void setEmployee(long employee) {
-		this.employee = employee;
-	}
-	
-	/**
-	 * @return the hide
-	 */
-	public Boolean getHide() {
-		return hide;
-	}
+    public String getValidUntil() {
+        return validUntil;
+    }
 
-	/**
-	 * @param hide the hide to set
-	 */
-	public void setHide(Boolean hide) {
-		this.hide = hide;
-	}
+    public void setValidUntil(String validUntil) {
+        this.validUntil = validUntil;
+    }
 
-	/**
-	 * @return the newOvertime
-	 */
-	public String getNewOvertime() {
-		return newOvertime;
-	}
+    public long getEmployee() {
+        return employee;
+    }
 
-	/**
-	 * @param newOvertime the newOvertime to set
-	 */
-	public void setNewOvertime(String newOvertime) {
-		this.newOvertime = newOvertime;
-	}
+    public void setEmployee(long employee) {
+        this.employee = employee;
+    }
 
-	/**
-	 * @return the newOvertimeComment
-	 */
-	public String getNewOvertimeComment() {
-		return newOvertimeComment;
-	}
+    /**
+     * @return the hide
+     */
+    public Boolean getHide() {
+        return hide;
+    }
 
-	/**
-	 * @param newOvertimeComment the newOvertimeComment to set
-	 */
-	public void setNewOvertimeComment(String newOvertimeComment) {
-		this.newOvertimeComment = newOvertimeComment;
-	}
+    /**
+     * @param hide the hide to set
+     */
+    public void setHide(Boolean hide) {
+        this.hide = hide;
+    }
 
-	/**
-	 * @return the initialOvertime
-	 */
-	public String getInitialOvertime() {
-		return initialOvertime;
-	}
+    /**
+     * @return the newOvertime
+     */
+    public String getNewOvertime() {
+        return newOvertime;
+    }
 
-	/**
-	 * @param initialOvertime the initialOvertime to set
-	 */
-	public void setInitialOvertime(String initialOvertime) {
-		this.initialOvertime = initialOvertime;
-	}
+    /**
+     * @param newOvertime the newOvertime to set
+     */
+    public void setNewOvertime(String newOvertime) {
+        this.newOvertime = newOvertime;
+    }
 
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		try {
-			Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-			employee = loginEmployee.getId();
-		}
-		catch (Exception e) {
-			mapping.findForward("login");
-		}
-		taskdescription = "";
-		validFrom = DateUtils.getCurrentYearString() + "-01-01";
-		validUntil = "";
-		freelancer = new Boolean(Boolean.FALSE);
-		hide = new Boolean(Boolean.FALSE);
-		dailyworkingtime = 8.0;
-		initialOvertime = "0.0";
-		yearlyvacation = 30;
-		newOvertime = "0.0";
-	}
+    /**
+     * @return the newOvertimeComment
+     */
+    public String getNewOvertimeComment() {
+        return newOvertimeComment;
+    }
 
-	@Override
-	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-		ActionErrors errors = new ActionErrors();
+    /**
+     * @param newOvertimeComment the newOvertimeComment to set
+     */
+    public void setNewOvertimeComment(String newOvertimeComment) {
+        this.newOvertimeComment = newOvertimeComment;
+    }
 
-		// actually, no checks here
-		return errors;
-	}
+    /**
+     * @return the initialOvertime
+     */
+    public String getInitialOvertime() {
+        return initialOvertime;
+    }
 
-	public long getSupervisorid() {
-		return supervisorid;
-	}
+    /**
+     * @param initialOvertime the initialOvertime to set
+     */
+    public void setInitialOvertime(String initialOvertime) {
+        this.initialOvertime = initialOvertime;
+    }
 
-	public void setSupervisorid(long supervisorid) {
-		this.supervisorid = supervisorid;
-	}
+    @Override
+    public void reset(ActionMapping mapping, HttpServletRequest request) {
+        try {
+            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+            employee = loginEmployee.getId();
+        } catch (Exception e) {
+            mapping.findForward("login");
+        }
+        taskdescription = "";
+        validFrom = DateUtils.getCurrentYearString() + "-01-01";
+        validUntil = "";
+        freelancer = new Boolean(Boolean.FALSE);
+        hide = new Boolean(Boolean.FALSE);
+        dailyworkingtime = 8.0;
+        initialOvertime = "0.0";
+        yearlyvacation = 30;
+        newOvertime = "0.0";
+    }
+
+    @Override
+    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
+        ActionErrors errors = new ActionErrors();
+
+        // actually, no checks here
+        return errors;
+    }
+
+    public long getSupervisorid() {
+        return supervisorid;
+    }
+
+    public void setSupervisorid(long supervisorid) {
+        this.supervisorid = supervisorid;
+    }
 
 }

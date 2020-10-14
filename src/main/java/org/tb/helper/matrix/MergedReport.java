@@ -1,36 +1,35 @@
 /*
  * File:          $RCSfile$
  * Version:       $Revision$
- * 
+ *
  * Created:       04.12.2006 by cb
  * Last changed:  $Date$ by $Author$
- * 
+ *
  * Copyright (C) 2006 by HBT GmbH, www.hbt.de
  *
  */
 package org.tb.helper.matrix;
+
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Suborder;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import org.tb.bdom.Customerorder;
-import org.tb.bdom.Suborder;
-
 /**
  * @author cb
  * @since 04.12.2006
  */
 public class MergedReport implements Comparable<MergedReport> {
-	private Suborder subOrder;
-	private Customerorder customOrder;
-	private double sum;
-	private ArrayList<BookingDay> bookingDay = new ArrayList<BookingDay>();
-	
-	/**
-     * @param subOrderSign
-     * * @param customOrderSign
+    private Suborder subOrder;
+    private Customerorder customOrder;
+    private double sum;
+    private ArrayList<BookingDay> bookingDay = new ArrayList<BookingDay>();
+
+    /**
+     * @param subOrderSign    * @param customOrderSign
      * @param taskdescription
      * @param bookingDay
      * @author cb
@@ -47,7 +46,7 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     public void mergeBookingDay(BookingDay tempBookingDay, Date date, long durationHours, long durationMinutes, String taskdescription) {
-        bookingDay.set(bookingDay.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes, tempBookingDay.getTaskdescription()+taskdescription));
+        bookingDay.set(bookingDay.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes, tempBookingDay.getTaskdescription() + taskdescription));
     }
 
     public void addBookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
@@ -89,30 +88,30 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     @Override
-	public String toString() {
-    	StringBuilder sb = new StringBuilder();
-    	sb.append("<br>")
-	    	.append(customOrder.getSign())
-	    	.append(subOrder.getSign())
-	    	.append(" - ");
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<br>")
+                .append(customOrder.getSign())
+                .append(subOrder.getSign())
+                .append(" - ");
         for (BookingDay temp : bookingDay) {
             sb.append(temp.getDate())
-            	.append("-")
-            	.append(temp.getDurationHours())
-            	.append("/")
-            	.append(temp.getDurationMinutes())
-            	.append(" // ");
+                    .append("-")
+                    .append(temp.getDurationHours())
+                    .append("/")
+                    .append(temp.getDurationMinutes())
+                    .append(" // ");
         }
-        return sb.toString(); 
+        return sb.toString();
     }
 
     public int compareTo(MergedReport o) {
-    	return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo(o.customOrder.getSign() + o.subOrder.getSign());
+        return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo(o.customOrder.getSign() + o.subOrder.getSign());
     }
-    
-    public Double getRoundSum(){
-    	long duration = (long)(sum * 100);
-        return (double)duration / 100.0;
+
+    public Double getRoundSum() {
+        long duration = (long) (sum * 100);
+        return (double) duration / 100.0;
     }
 
     public Customerorder getCustomOrder() {

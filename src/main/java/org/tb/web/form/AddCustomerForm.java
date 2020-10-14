@@ -1,85 +1,83 @@
 package org.tb.web.form;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Form for adding a customer
- * 
- * @author oda
  *
+ * @author oda
  */
 public class AddCustomerForm extends ActionForm {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L; // -1885904234427057601L;
-	private long id;
-	private String name;
-	private String shortname;
-	private String address;
-	private String action;
-	
-	public long getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L; // -1885904234427057601L;
+    private long id;
+    private String name;
+    private String shortname;
+    private String address;
+    private String action;
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	
-	public String getAction() {
-		return action;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public void setAction(String action) {
-		this.action = action;
-	}
 
-	public String getAddress() {
-		return address;
-	}
+    public String getAction() {
+        return action;
+    }
 
-	public void setAddress(String address) {
-		this.address = address;
-	}
+    public void setAction(String action) {
+        this.action = action;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getAddress() {
+        return address;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public String getShortname() {
-		return shortname;
-	}
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
-	public void setShortname(String shortname) {
-		this.shortname = shortname;
-	}
+    public String getName() {
+        return name;
+    }
 
-	
-	
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		name = "";
-		shortname =  "";
-		address = "";
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-		ActionErrors errors = new ActionErrors();
+    public String getShortname() {
+        return shortname;
+    }
 
-		// actually, no checks here
-		return errors;
-	}
+    public void setShortname(String shortname) {
+        this.shortname = shortname;
+    }
+
+
+    @Override
+    public void reset(ActionMapping mapping, HttpServletRequest request) {
+        name = "";
+        shortname = "";
+        address = "";
+    }
+
+    @Override
+    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
+        ActionErrors errors = new ActionErrors();
+
+        // actually, no checks here
+        return errors;
+    }
 
 }
