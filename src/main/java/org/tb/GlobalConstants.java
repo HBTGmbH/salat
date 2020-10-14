@@ -287,10 +287,10 @@ public class GlobalConstants {
         SALAT_LOG = prop.getProperty("salat.log").trim();
         JIRA_URL = prop.getProperty("salat.jira.url").trim();
         JIRA_OAUTH_SIGNING_TYPE = prop.getProperty("salat.jira.oauth_signing_type").trim();
-        JIRA_CONSUMER_KEY = prop.getProperty("salat.jira.consumer_key").trim();
-        JIRA_CONSUMER_PRIVATE_KEY = prop.getProperty("salat.jira.consumer_private_key").trim();
+        JIRA_CONSUMER_KEY = System.getenv("SALAT_JIRA_CONSUMER_KEY").trim();
+        JIRA_CONSUMER_PRIVATE_KEY = System.getenv("SALAT_JIRA_CONSUMER_PRIVATE_KEY").trim();
         EXECUTE_FAILED_JIRA_WORKLOGS_AT = Integer.parseInt(prop.getProperty("salat.jira.executefailedworklogs.at").trim());
         EXECUTE_FAILED_JIRA_WORKLOGS_EVERY = Integer.parseInt(prop.getProperty("salat.jira.executefailedworklogs.every").trim());
-        MAIL_HOST = prop.getProperty("salat.mail.host").trim();
+        MAIL_HOST = System.getenv("SALAT_MAIL_HOST").trim();
     }
 }

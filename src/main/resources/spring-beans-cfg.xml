@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd"
+	   default-autowire="byName" default-lazy-init="false">
+
+	<!-- DataSource -->
+	<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+		<property name="url"
+				  value="jdbc:mysql://#{systemEnvironment['DATABASE_HOST']}:3306/#{systemEnvironment['DATABASE_NAME']}"/>
+		<property name="connectionProperties"
+				  value="autoReconnect=true;characterEncoding=UTF8;zeroDateTimeBehavior=convertToNull;useUnicode=true"/>
+
+		<property name="username" value="#{systemEnvironment['DATABASE_USERNAME']}"/>
+		<property name="password" value="#{systemEnvironment['DATABASE_PASSWORD']}"/>
+
+		<property name="validationQuery" value="SELECT 1"/>
+		<property name="testWhileIdle" value="true"/>
+		<property name="testOnBorrow" value="true"/>
+	</bean>
+
+	<import resource="classpath:general-beans.xml" />
+
+</beans>

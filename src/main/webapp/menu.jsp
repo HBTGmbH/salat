@@ -2,11 +2,6 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 
-<%
-org.springframework.web.context.WebApplicationContext context = org.springframework.web.servlet.support.RequestContextUtils.getWebApplicationContext(request, request.getServletContext());
-java.lang.Boolean isTestDB = (java.lang.Boolean)context.getBean("isTestDatabase");
-%>
-
 <script type="text/javascript"><!--//--><![CDATA[//><!--
 startList = function() {
 	if (document.all&&document.getElementById) {
@@ -42,7 +37,6 @@ window.onload=startList;
 		<font size="1pt"> 
 		   	<bean:resource id="versionTxt" name="/WEB-INF/classes/version.txt" />
 		   	<bean:write name="versionTxt" />
-		   	<c:if test="<%= isTestDB %>" ><br /><bean:message key="main.test.database.notification" /></c:if>
 		</font>
 	</td>
   </tr>
