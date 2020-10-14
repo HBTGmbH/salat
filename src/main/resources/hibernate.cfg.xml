@@ -3,12 +3,14 @@
     "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
 	<session-factory>
-		<mapping class="org.tb.bdom.Customer" />
-		<mapping class="org.tb.bdom.Employee" />
-		<mapping class="org.tb.bdom.Employeecontract" />
-		<mapping class="org.tb.bdom.Employeeorder" />
-		<mapping class="org.tb.bdom.Employeeordercontent" />
-		<mapping class="org.tb.bdom.Customerorder" />
+		<property name="hibernate.hbm2ddl.auto">update</property>
+
+		<mapping class="org.tb.bdom.Customer"/>
+		<mapping class="org.tb.bdom.Employee"/>
+		<mapping class="org.tb.bdom.Employeecontract"/>
+		<mapping class="org.tb.bdom.Employeeorder"/>
+		<mapping class="org.tb.bdom.Employeeordercontent"/>
+		<mapping class="org.tb.bdom.Customerorder"/>
 		<mapping class="org.tb.bdom.ProjectID"/>
 		<mapping class="org.tb.bdom.Ticket"/>
 		<mapping class="org.tb.bdom.WorklogMemory"/>
