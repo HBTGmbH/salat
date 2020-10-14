@@ -1,7 +1,8 @@
 package org.tb;
 
-import org.tb.util.SalatPropertiesUtil;
+import org.tb.helper.JiraConnectionOAuthHelper;
 
+import java.io.IOException;
 import java.util.Properties;
 
 /**
@@ -265,7 +266,6 @@ public class GlobalConstants {
 
     // Constants read from salat.properties
     public static final String SALAT_URL;
-    public static final String SALAT_LOG;
 
     public static final String JIRA_URL;
     public static final String JIRA_OAUTH_SIGNING_TYPE;
@@ -277,14 +277,18 @@ public class GlobalConstants {
 
     public static final String MAIL_HOST;
 
-    // Static initializer  
+    // Static initializer
     static {
         // read the properties
-        Properties prop = SalatPropertiesUtil.readSalatProperties();
+        Properties prop = new Properties();
+        try {
+            prop.load(JiraConnectionOAuthHelper.class.getClassLoader().getResourceAsStream("/org/tb/props/salat.properties"));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
 
         // set the constants
-        SALAT_URL = prop.getProperty("salat.url").trim();
-        SALAT_LOG = prop.getProperty("salat.log").trim();
+        SALAT_URL = System.getenv("SALAT_URL").trim();
         JIRA_URL = prop.getProperty("salat.jira.url").trim();
         JIRA_OAUTH_SIGNING_TYPE = prop.getProperty("salat.jira.oauth_signing_type").trim();
         JIRA_CONSUMER_KEY = System.getenv("SALAT_JIRA_CONSUMER_KEY").trim();
