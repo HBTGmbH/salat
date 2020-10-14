@@ -62,7 +62,7 @@ public class Suborder extends EditDetails implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Employeeorder> employeeorders;
 
-    @OneToMany(mappedBy = "suborder")
+    @OneToMany(mappedBy = "parentorder")
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Suborder> suborders;
