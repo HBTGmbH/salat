@@ -26,8 +26,6 @@ public class HolidaysUtil {
 
     /**
      * Loads the dates of the eastern sundays from <code>EASTERN_SUNDAYS_RESOURCE_NAME</code>
-     *
-     * @return
      */
     public static Collection<LocalDate> loadEasterSundayDates() {
         InputStream is = PublicholidayDAO.class.getClassLoader().getResourceAsStream(EASTERN_SUNDAYS_RESOURCE_NAME);
@@ -56,9 +54,6 @@ public class HolidaysUtil {
 
     /**
      * Generates the <code>Publicholiday</code>s for a year based on the date of eastern of that year
-     *
-     * @param easterSunday
-     * @return
      */
     public static Collection<Publicholiday> generateHolidays(LocalDate easterSunday) {
         LocalDate newYear = easterSunday.withDayOfYear(1);

@@ -18,13 +18,11 @@ import java.util.List;
  */
 public class StoreEmployeeAction extends LoginRequiredAction {
 
-
     private EmployeeDAO employeeDAO;
 
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -36,8 +34,8 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 
             // 'main' task - prepare everything to store the employee.
             // I.e., copy properties from the form into the employee before saving.
-            long emId = -1;
-            Employee em = null;
+            long emId;
+            Employee em;
             boolean create = false;
 
             if (request.getSession().getAttribute("emId") != null) {
@@ -95,7 +93,7 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 
         if ((request.getParameter("task") != null) &&
                 (request.getParameter("task").equals("resetPassword"))) {
-            long emId = -1;
+            long emId;
             Employee em = null;
             if (request.getSession().getAttribute("emId") != null) {
                 // edited employee
@@ -131,10 +129,6 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 
     /**
      * resets the 'add report' form to default values
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
      */
     private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddEmployeeForm emForm) {
         emForm.reset(mapping, request);
@@ -142,10 +136,6 @@ public class StoreEmployeeAction extends LoginRequiredAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param emForm
-     * @return
      */
     private ActionMessages validateFormData(HttpServletRequest request, AddEmployeeForm emForm) {
 

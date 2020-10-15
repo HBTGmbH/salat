@@ -1,5 +1,6 @@
 package org.tb.bdom.comparators;
 
+import lombok.NoArgsConstructor;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
@@ -7,7 +8,12 @@ import org.tb.bdom.Suborder;
 
 import java.util.Comparator;
 
+import static lombok.AccessLevel.PRIVATE;
+
+@NoArgsConstructor(access = PRIVATE)
 public class EmployeeOrderComparator implements Comparator<Employeeorder> {
+
+    public static final Comparator<Employeeorder> INSTANCE = new EmployeeOrderComparator();
 
     /**
      * Compares {@link Employeeorder}s by the result of the compare methods of {@link Employee#getName()}, {@link Customerorder#getSign()},

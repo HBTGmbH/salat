@@ -24,10 +24,6 @@ public class JiraSalatHelper {
     /**
      * check if for the given orderID, one or more ProjectIDs exist.
      * If so, set known Jira-Ticket-Keys into the session, so that the jsp can display them in a dropdown menu.
-     *
-     * @param request
-     * @param ticketDAO
-     * @param suborderID
      */
     public static void setJiraTicketKeysForSuborder(HttpServletRequest request, TicketDAO ticketDAO, long suborderID) {
 
@@ -43,10 +39,6 @@ public class JiraSalatHelper {
     }
 
     /**
-     * @param worklogMemoryDAO
-     * @param tr
-     * @param issueID
-     * @param worklogID
      * @param operation        GlobalConstants.CREATE_WORKLOG, GlobalConstants.UPDATE_WORKLOG or GlobalConstants.DELETE_WORKLOG
      */
     public static void saveFailedWorklog(WorklogMemoryDAO worklogMemoryDAO, TimereportDAO timereportDAO, Timereport tr, String issueID, int worklogID, int operation) {

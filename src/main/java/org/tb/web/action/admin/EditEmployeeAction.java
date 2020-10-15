@@ -24,17 +24,15 @@ public class EditEmployeeAction extends LoginRequiredAction {
         this.employeeDAO = employeeDAO;
     }
 
-
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
         AddEmployeeForm employeeForm = (AddEmployeeForm) form;
         long emId = Long.parseLong(request.getParameter("emId"));
         Employee em = employeeDAO.getEmployeeById(emId);
         request.getSession().setAttribute("emId", em.getId());
 
         // fill the form with properties of employee to be edited
-        setFormEntries(mapping, request, employeeForm, em);
+        setFormEntries(request, employeeForm, em);
 
         // forward to employee add/edit form
         return mapping.findForward("success");
@@ -42,14 +40,8 @@ public class EditEmployeeAction extends LoginRequiredAction {
 
     /**
      * fills employee form with properties of given employee
-     *
-     * @param mapping
-     * @param request
-     * @param employeeForm
-     * @param em           - the employee
      */
-    private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddEmployeeForm employeeForm, Employee em) {
+    private void setFormEntries(HttpServletRequest request, AddEmployeeForm employeeForm, Employee em) {
         employeeForm.setFirstname(em.getFirstname());
         employeeForm.setLastname(em.getLastname());
         employeeForm.setLoginname(em.getLoginname());

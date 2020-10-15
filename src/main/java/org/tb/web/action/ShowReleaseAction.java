@@ -70,7 +70,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
                 .getVisibleEmployeeContractsOrderedByEmployeeSign();
 
         //get a list of all supervisors 
-        List<Employee> supervisors = new LinkedList<Employee>();
+        List<Employee> supervisors = new LinkedList<>();
         for (Employeecontract ec : employeeContracts) {
             Employee supervisor = ec.getSupervisor();
             if (!supervisors.contains(supervisor)) {
@@ -92,7 +92,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
                             .getEmployeeContractId());
         }
         if (supervisor || (Boolean) request.getSession().getAttribute("employeeAuthorized")) {
-            Employeecontract currentEmployeeContract = null;
+            Employeecontract currentEmployeeContract;
             if (request.getParameter("task") != null
                     && request.getParameter("task").equals("updateEmployee")) {
                 updateEmployee = true;
@@ -128,7 +128,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
         } else {
             request.getSession().setAttribute("employeecontracts",
                     employeeContracts);
-            request.getSession().setAttribute("supervisorId", -1l);
+            request.getSession().setAttribute("supervisorId", -1L);
         }
 
         releaseForm.setEmployeeContractId(employeecontract.getId());
@@ -161,8 +161,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
                     releaseForm, employeecontract);
             if (errorMessages.size() > 0) {
                 return mapping.getInputForward();
-            } else {
-
             }
 
             // set selected date in session
@@ -235,8 +233,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
             Employee recipient = currentEmployeeContract.getSupervisor();
             // sender of the mail
             if (recipient != null) {
-                Employee from = loginEmployee;
-                MailSender.sendSalatBuchungenToAcceptanceMail(recipient, contEmployee, from);
+                MailSender.sendSalatBuchungenToAcceptanceMail(recipient, contEmployee, loginEmployee);
                 request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
             } else {
                 // do nothing, Supervisor must not be null
@@ -282,8 +279,7 @@ public class ShowReleaseAction extends LoginRequiredAction {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
-
-            Date reopenDate = null;
+            Date reopenDate;
 
             reopenDate = th.getDateFormStrings(releaseForm.getReopenDay(),
                     releaseForm.getReopenMonth(), releaseForm.getReopenYear(),
@@ -477,11 +473,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
         return mapping.findForward("success");
     }
 
-    /**
-     * @param request
-     * @param releaseForm
-     * @return
-     */
     private ActionMessages validateFormDataForRelease(
             HttpServletRequest request, ShowReleaseForm releaseForm,
             Employeecontract selectedEmployeecontract) {
@@ -524,11 +515,6 @@ public class ShowReleaseAction extends LoginRequiredAction {
 
     }
 
-    /**
-     * @param request
-     * @param releaseForm
-     * @return
-     */
     private ActionMessages validateFormDataForAcceptance(
             HttpServletRequest request, ShowReleaseForm releaseForm,
             Employeecontract selectedEmployeecontract) {
@@ -592,23 +578,20 @@ public class ShowReleaseAction extends LoginRequiredAction {
     /**
      * Returns a list of days as {@link OptionItem}s ("01", "02", "03",...)
      * fitting to the given date (month, year).
-     *
-     * @param date
-     * @return
      */
     private List<OptionItem> getDayList(Date date) {
         GregorianCalendar gc = new GregorianCalendar();
         gc.setTime(date);
         int maxDays = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
-        List<OptionItem> days = new ArrayList<OptionItem>();
+        List<OptionItem> days = new ArrayList<>();
 
-        String dayValue = "";
-        String dayLabel = "";
+        String dayValue;
+        String dayLabel;
         for (int i = 1; i <= maxDays; i++) {
             if (i < 10) {
                 dayLabel = "0" + i;
                 dayValue = "0" + i;
-            } else if (i >= 10) {
+            } else {
                 dayLabel = "" + i;
                 dayValue = "" + i;
             }

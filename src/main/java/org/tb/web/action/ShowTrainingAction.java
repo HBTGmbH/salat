@@ -72,8 +72,8 @@ public class ShowTrainingAction extends LoginRequiredAction {
 
         //check for refresh
         if (request.getParameter("task") != null && request.getParameter("task").equals("refresh")) {
-            boolean refreshSuccessful = refreshTraining(mapping, request, trainingForm, trainingDAO,
-                    employeecontractDAO, customerorderDAO, employeeDAO, startdate, enddate);
+            boolean refreshSuccessful = refreshTraining(request, trainingForm,
+                    employeecontractDAO, customerorderDAO, startdate, enddate);
             if (refreshSuccessful) {
                 if (trainingForm.getEmployeeContractId() == -1) {
                     request.getSession().setAttribute("currentEmployeeContract", null);
@@ -94,16 +94,15 @@ public class ShowTrainingAction extends LoginRequiredAction {
             }
         } else if (request.getParameter("task") == null) {
             //*** initialisation ***
-            String forward = init(mapping, request, trainingForm, employeecontractDAO, customerorderDAO, startdate, enddate);
+            String forward = init(request, trainingForm, employeecontractDAO, customerorderDAO, startdate, enddate);
             return mapping.findForward(forward);
         }
         request.getSession().setAttribute("showTrainingForm", trainingForm);
         return mapping.findForward("success");
     }
 
-    protected boolean refreshTraining(ActionMapping mapping,
-                                      HttpServletRequest request, ShowTrainingForm trainingForm, TrainingDAO trainingDAO, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO,
-                                      EmployeeDAO employeeDAO, Date startdate, Date enddate) {
+    protected boolean refreshTraining(HttpServletRequest request, ShowTrainingForm trainingForm, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO,
+                                      Date startdate, Date enddate) {
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
         request.getSession().setAttribute("showTrainingForm", trainingForm);
@@ -113,12 +112,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         List<TrainingOverview> trainingOverviews;
 
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
-        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext(); ) {
-            Employeecontract c = iterator.next();
-            if (c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null) {
-                iterator.remove();
-            }
-        }
+        employeecontracts.removeIf(c -> c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         // refresh all relevant attributes
@@ -127,7 +121,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
-            request.getSession().setAttribute("currentEmployeeId", -1l);
+            request.getSession().setAttribute("currentEmployeeId", -1L);
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
 
         } else {
@@ -148,14 +142,8 @@ public class ShowTrainingAction extends LoginRequiredAction {
     /**
      * Called if no special task is given, called from menu eg. Prepares everything to show trainings of current year of
      * logged-in user.
-     *
-     * @param mapping
-     * @param request
-     * @param trainingForm
-     * @throws ParseException
      */
-    private String init(ActionMapping mapping, HttpServletRequest request, ShowTrainingForm trainingForm, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO, Date startdate,
-                        Date enddate) throws ParseException {
+    private String init(HttpServletRequest request, ShowTrainingForm trainingForm, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO, Date startdate, Date enddate) {
         String forward = "success";
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
@@ -173,12 +161,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
             return forward;
         }
 
-        for (Iterator<Employeecontract> iterator = employeecontracts.iterator(); iterator.hasNext(); ) {
-            Employeecontract c = iterator.next();
-            if (c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null) {
-                iterator.remove();
-            }
-        }
+        employeecontracts.removeIf(c -> c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null);
 
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
@@ -195,7 +178,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
         if (employeeContractId == -1 || ec.getFreelancer() || ec.getDailyWorkingTime() <= 0 || ec.getEmployeeorders() == null) {
             trainingOverview = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
-            request.getSession().setAttribute("currentEmployeeId", -1l);
+            request.getSession().setAttribute("currentEmployeeId", -1L);
             request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
             // get a List of TrainingOverviews with only one entry for the selected Employee
         } else {
@@ -210,7 +193,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
 
     private List<TrainingOverview> getTrainingOverviewsForAll(Date startdate,
                                                               Date enddate, EmployeecontractDAO employeecontractDAO, Long orderID, List<Employeecontract> employeecontracts, String year) {
-        List<TrainingOverview> trainingOverviews = new LinkedList<TrainingOverview>();
+        List<TrainingOverview> trainingOverviews = new LinkedList<>();
         List<Object[]> cTrain = trainingDAO.getCommonTrainingTimesByDates(employeecontractDAO, startdate, enddate, orderID);
         List<Object[]> pTrain = trainingDAO.getProjectTrainingTimesByDates(employeecontractDAO, startdate, enddate);
         Map<Long, Object[]> projTrain = createMap(pTrain);
@@ -250,12 +233,8 @@ public class ShowTrainingAction extends LoginRequiredAction {
         return trainingOverviews;
     }
 
-    /**
-     * @param pTrain
-     * @return
-     */
     private Map<Long, Object[]> createMap(List<Object[]> objectList) {
-        Map<Long, Object[]> projTrain = new HashMap<Long, Object[]>();
+        Map<Long, Object[]> projTrain = new HashMap<>();
         for (Object[] o : objectList) {
             if (o[0] != null && o[0] instanceof Long) {
                 projTrain.put((Long) o[0], o);
@@ -266,7 +245,7 @@ public class ShowTrainingAction extends LoginRequiredAction {
 
     private List<TrainingOverview> getTrainingOverviewByEmployeecontract(Date startdate,
                                                                          Date enddate, Employeecontract ec, Long orderID, String year) {
-        List<TrainingOverview> result = new LinkedList<TrainingOverview>();
+        List<TrainingOverview> result = new LinkedList<>();
 
         Object[] cTT = trainingDAO.getCommonTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate, orderID);
         Object[] pTT = trainingDAO.getProjectTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate);

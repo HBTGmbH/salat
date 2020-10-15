@@ -65,10 +65,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
             String which = request.getParameter("which").toLowerCase();
-            Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+            int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? ecForm.getValidUntil() : ecForm.getValidFrom();
-            Integer day, month, year;
+            int day, month, year;
             Calendar cal = Calendar.getInstance();
 
             if (howMuch != 0) {
@@ -112,7 +112,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
             }
 
             // new overtime
-            Double overtimeDouble = 0.0;
+            double overtimeDouble = 0.0;
             if (ecForm.getNewOvertime() != null) {
                 String overtimeString = ecForm.getNewOvertime();
 
@@ -137,14 +137,14 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 
                     ecForm.setNewOvertime("" + overtimeDouble);
 
-                    Double time = overtimeDouble * 100000;
+                    double time = overtimeDouble * 100000;
 
                     if (time >= 0) {
                         time += 0.5;
                     } else {
                         time -= 0.5;
                     }
-                    int time2 = time.intValue();
+                    int time2 = (int) time;
                     int modulo = time2 % 5000;
 
                     if (modulo != 0) {
@@ -165,12 +165,12 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
             saveErrors(request, errors);
 
             //				 get employeecontract
-            long ecId = -1;
+            long ecId;
             ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
             Employeecontract ec = employeecontractDAO.getEmployeeContractByIdInitializeEager(ecId);
 
             if (errors.size() > 0) {
-                setFormEntries(mapping, request, ecForm, ec);
+                setFormEntries(request, ecForm, ec);
                 return mapping.getInputForward();
             }
 
@@ -204,7 +204,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
             ecForm.setNewOvertime("0.0");
             ecForm.setNewOvertimeComment("");
 
-            setFormEntries(mapping, request, ecForm, ec);
+            setFormEntries(request, ecForm, ec);
 
             return mapping.findForward("reset");
         }
@@ -215,7 +215,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 
             //	'main' task - prepare everything to store the employee contract.
             // I.e., copy properties from the form into the employee contract before saving.
-            long ecId = -1;
+            long ecId;
             Employeecontract ec = null;
             long employeeId = ecForm.getEmployee();
             if (request.getSession().getAttribute("ecId") != null) {
@@ -288,7 +288,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
                 // remove all employeeorders with duplicate suborders 
                 // (needed due to previous bug that contract duration extensions produced new automatic entries of standard employeeorders 
                 // instead of extending the existing ones)
-                Set<Long> suborderIDs = new HashSet<Long>();
+                Set<Long> suborderIDs = new HashSet<>();
                 Iterator<Employeeorder> iterator = employeeorders.iterator();
                 while (iterator.hasNext()) {
                     Employeeorder eo = iterator.next();
@@ -349,7 +349,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
             // if necessary, add new vacation for current year
             Vacation va = null;
             if (ec.getVacations() == null || ec.getVacations().size() <= 0) {
-                List<Vacation> vaList = new ArrayList<Vacation>();
+                List<Vacation> vaList = new ArrayList<>();
                 va = vacationDAO.setNewVacation(ec, DateUtils.getCurrentYear());
                 va.setEntitlement(ecForm.getYearlyvacation());
                 vaList.add(va);
@@ -438,10 +438,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 
     /**
      * resets the 'add report' form to default values
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
      */
     private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddEmployeeContractForm ecForm) {
         ecForm.reset(mapping, request);
@@ -480,10 +476,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param cuForm
-     * @return
      */
     private ActionMessages validateFormData(HttpServletRequest request, AddEmployeeContractForm ecForm,
                                             Employee theEmployee, Employeecontract employeecontract) {
@@ -501,7 +493,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
         }
 
         String dateUntilString = ecForm.getValidUntil().trim();
-        if (dateUntilString != null && !dateUntilString.equals("")) {
+        if (!dateUntilString.equals("")) {
             dateError = DateUtils.validateDate(dateUntilString);
             if (dateError) {
                 errors.add("validUntil", new ActionMessage(
@@ -513,7 +505,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
         java.util.Date newContractValidUntil = null;
         try {
             newContractValidFrom = simpleDateFormat.parse(dateFromString);
-            if (dateUntilString != null && !dateUntilString.equals("")) {
+            if (!dateUntilString.equals("")) {
                 newContractValidUntil = simpleDateFormat.parse(dateUntilString);
             }
         } catch (ParseException e) {
@@ -560,7 +552,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
                             errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
                             break;
                         }
-                    } else if (newContractValidUntil != null && existingContractValidUntil == null) {
+                    } else if (newContractValidUntil != null) {
                         if (!newContractValidUntil.before(existingContractValidFrom)) {
                             errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
                             break;
@@ -585,9 +577,9 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
                         0.0, GlobalConstants.MAX_DEBITHOURS)) {
             errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat"));
         }
-        Double time = ecForm.getDailyworkingtime() * 100000;
+        double time = ecForm.getDailyworkingtime() * 100000;
         time += 0.5;
-        int time2 = time.intValue();
+        int time2 = (int) time;
         int modulo = time2 % 5000;
         ecForm.setDailyworkingtime(time2 / 100000.0);
 
@@ -599,7 +591,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
         if (ecForm.getInitialOvertime() != null) {
             String initialOvertimeString = ecForm.getInitialOvertime();
             try {
-                Double initialOvertimeDouble = Double.parseDouble(initialOvertimeString);
+                double initialOvertimeDouble = Double.parseDouble(initialOvertimeString);
 
                 if (!GenericValidator.isDouble(initialOvertimeString) ||
                         !GenericValidator.isInRange(initialOvertimeDouble,
@@ -609,7 +601,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 
                 time = initialOvertimeDouble * 100000;
                 time += 0.5;
-                time2 = time.intValue();
+                time2 = (int) time;
                 modulo = time2 % 5000;
                 ecForm.setInitialOvertime("" + time2 / 100000.0);
 
@@ -634,7 +626,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
             sqlUntilDate = new java.sql.Date(newContractValidUntil.getTime());
         }
         if (ecId == null) {
-            ecId = 0l;
+            ecId = 0L;
         }
         List<Timereport> timereportsInvalidForDates = timereportDAO.
                 getTimereportsByEmployeeContractIdInvalidForDates(new java.sql.Date(newContractValidFrom.getTime()), sqlUntilDate, ecId);
@@ -651,15 +643,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
 
     /**
      * fills employee contract form with properties of given employee contract
-     *
-     * @param mapping
-     * @param request
-     * @param ecForm
-     * @param ec      - the employee contract
      */
-    private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddEmployeeContractForm ecForm, Employeecontract ec) {
-
+    private void setFormEntries(HttpServletRequest request, AddEmployeeContractForm ecForm, Employeecontract ec) {
         Employee theEmployee = ec.getEmployee();
         ecForm.setEmployee(theEmployee.getId());
         //only when the supervisor exists		

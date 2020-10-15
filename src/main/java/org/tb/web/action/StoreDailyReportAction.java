@@ -167,7 +167,7 @@ public class StoreDailyReportAction extends DailyReportAction {
             request.getSession().setAttribute("referenceday", datum);
             reportForm.setReferenceday(datum);
 
-            if (coHelper.refreshOrders(mapping, request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
+            if (coHelper.refreshOrders(request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
                 return mapping.findForward("error");
             } else {
                 refreshTime = true;
@@ -176,7 +176,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshOrders")) {
             // adjust the jsp with entries for Jira-Ticket-Keys, if the first customerorder in the dropdown-menu has Jira-Project-ID(s)
-            if (coHelper.refreshOrders(mapping, request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
+            if (coHelper.refreshOrders(request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
                 return mapping.findForward("error");
             } else {
                 refreshTime = true;
@@ -191,7 +191,7 @@ public class StoreDailyReportAction extends DailyReportAction {
             } else {
                 defaultSuborderIndexStr = null;
             }
-            if (soHelper.refreshSuborders(mapping, request, reportForm, suborderDAO, ticketDAO, employeecontractDAO, defaultSuborderIndexStr) != true) {
+            if (soHelper.refreshSuborders(request, reportForm, suborderDAO, ticketDAO, employeecontractDAO, defaultSuborderIndexStr) != true) {
                 return mapping.findForward("error");
             } else {
                 Customerorder selectedOrder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
@@ -208,7 +208,7 @@ public class StoreDailyReportAction extends DailyReportAction {
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustBeginTime") || refreshTime) {
 
             // refresh orders to be displayed in the select menu
-            if (coHelper.refreshOrders(mapping, request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
+            if (coHelper.refreshOrders(request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
                 return mapping.findForward("error");
             }
 
@@ -337,7 +337,7 @@ public class StoreDailyReportAction extends DailyReportAction {
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshPeriod")) {
             // refreshes the duration period after a change of begin/end times
             ActionMessages periodErrors = new ActionMessages();
-            if (TimereportHelper.refreshPeriod(request, periodErrors, reportForm) != true) {
+            if (TimereportHelper.refreshPeriod(request, reportForm) != true) {
                 saveErrors(request, periodErrors);
             }
             return mapping.findForward("success");
@@ -808,16 +808,15 @@ public class StoreDailyReportAction extends DailyReportAction {
                 request.getSession().removeAttribute("lastEmployeeContractId");
 
                 // get updated list of timereports from DB
-                refreshTimereports(mapping,
+                refreshTimereports(
                         request,
                         showDailyReportForm,
                         customerorderDAO,
                         timereportDAO,
                         employeecontractDAO,
                         suborderDAO,
-                        employeeorderDAO,
-                        publicholidayDAO,
-                        overtimeDAO);
+                        employeeorderDAO
+                );
                 reports = (List<Timereport>) request.getSession().getAttribute("timereports");
                 request.getSession().setAttribute("suborderFilerId", showDailyReportForm.getSuborderId());
 

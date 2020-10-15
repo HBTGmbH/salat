@@ -1,6 +1,9 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Referenceday;
 import org.tb.util.DateUtils;
 
@@ -12,18 +15,19 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class ReferencedayDAO extends AbstractDAO {
 
-    private PublicholidayDAO publicholidayDAO;
+    private final PublicholidayDAO publicholidayDAO;
 
-    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
+    @Autowired
+    public ReferencedayDAO(SessionFactory sessionFactory, PublicholidayDAO publicholidayDAO) {
+        super(sessionFactory);
         this.publicholidayDAO = publicholidayDAO;
     }
 
     /**
      * Saves the given referenceday.
-     *
-     * @param Referenceday ref
      */
     public void save(Referenceday ref) {
         Session session = getSession();
@@ -33,9 +37,6 @@ public class ReferencedayDAO extends AbstractDAO {
 
     /**
      * Gets the referenceday for the given id.
-     *
-     * @param long id
-     * @return Referenceday
      */
     public Referenceday getReferencedayById(long id) {
         return (Referenceday) getSession().createQuery("from Referenceday rd where rd.id = ?").setLong(0, id).uniqueResult();
@@ -43,22 +44,14 @@ public class ReferencedayDAO extends AbstractDAO {
 
     /**
      * Gets the referenceday for the given date.
-     *
-     * @param Date dt
-     * @return Referenceday
      */
     public Referenceday getReferencedayByDate(Date dt) {
-
-        Referenceday ref = (Referenceday)
+        return (Referenceday)
                 getSession().createQuery("from Referenceday r where r.refdate = ?").setDate(0, dt).uniqueResult();
-
-        return ref;
     }
 
     /**
      * Get a list of all Referencedays.
-     *
-     * @return List<Referenceday>
      */
     @SuppressWarnings("unchecked")
     public List<Referenceday> getReferencedays() {
@@ -67,8 +60,6 @@ public class ReferencedayDAO extends AbstractDAO {
 
     /**
      * Adds a referenceday to database at the time when it is first referenced in a new timereport.
-     *
-     * @param java.sql.Date dt
      */
     public void addReferenceday(java.sql.Date dt) {
         Referenceday rd = new Referenceday();

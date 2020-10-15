@@ -2,7 +2,7 @@
   <configuration default="false" name="Tomcat 8.5.59" type="#com.intellij.j2ee.web.tomcat.TomcatRunConfigurationFactory" factoryName="Local" APPLICATION_SERVER_NAME="Tomcat 8.5.59" ALTERNATIVE_JRE_ENABLED="false" nameIsGenerated="true">
     <option name="UPDATING_POLICY" value="restart-server" />
     <deployment>
-      <artifact name="tb:war">
+      <artifact name="tb:war exploded">
         <settings>
           <option name="CONTEXT_PATH" value="/tb" />
         </settings>
@@ -147,7 +147,7 @@
     <method v="2">
       <option name="Make" enabled="true" />
       <option name="BuildArtifacts" enabled="true">
-        <artifact name="tb:war" />
+        <artifact name="tb:war exploded" />
       </option>
     </method>
   </configuration>

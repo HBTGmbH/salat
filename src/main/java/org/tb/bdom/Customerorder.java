@@ -113,7 +113,7 @@ public class Customerorder extends EditDetails implements Serializable {
     }
 
     public List<Suborder> getSuborders() {
-        suborders.sort(new SubOrderComparator());
+        suborders.sort(SubOrderComparator.INSTANCE);
         return suborders;
     }
 

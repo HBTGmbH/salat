@@ -84,7 +84,7 @@ public class EditCustomerorderAction extends LoginRequiredAction {
         }
 
         // fill the form with properties of customerorder to be edited
-        setFormEntries(mapping, request, coForm, co, jiraProjectID);
+        setFormEntries(request, coForm, co, jiraProjectID);
 
         // forward to customer order add/edit form
         return mapping.findForward("success");
@@ -92,14 +92,8 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 
     /**
      * fills customer order form with properties of given cústomer
-     *
-     * @param mapping
-     * @param request
-     * @param coForm
-     * @param co      - the customer order
      */
-    private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddCustomerOrderForm coForm, Customerorder co, String jiraProjectID) {
+    private void setFormEntries(HttpServletRequest request, AddCustomerOrderForm coForm, Customerorder co, String jiraProjectID) {
 
         coForm.setCurrency(co.getCurrency());
         coForm.setCustomerId(co.getCustomer().getId());

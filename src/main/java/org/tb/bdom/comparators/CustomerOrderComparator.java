@@ -1,11 +1,17 @@
 package org.tb.bdom.comparators;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.tb.bdom.Customerorder;
 
 import java.util.Comparator;
 
+import static lombok.AccessLevel.PRIVATE;
+
+@NoArgsConstructor(access = PRIVATE)
 public class CustomerOrderComparator implements Comparator<Customerorder> {
 
+    public static final Comparator<Customerorder> INSTANCE = new CustomerOrderComparator();
 
     /**
      * Compares  {@link Customerorder}s by {@link Customerorder#getSign()}, {@link Customerorder#getDescription()} and

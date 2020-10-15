@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -42,7 +41,6 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
 //		 remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
@@ -55,7 +53,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
         request.getSession().setAttribute("selectedsuborder", eo.getSuborder());
 
         // fill the form with properties of employee order to be edited
-        setFormEntries(mapping, request, eoForm, eo);
+        setFormEntries(request, eoForm, eo);
 
         // check if the employeeorder already exists and fill the form with the existing data
 //		checkDatabaseForEmployeeOrder(request, eoForm, employeecontractDAO, employeeorderDAO);
@@ -68,15 +66,8 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 
     /**
      * fills employee order form with properties of given employee order
-     *
-     * @param mapping
-     * @param request
-     * @param eoForm
-     * @param eo      - the employee order
      */
-    private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddEmployeeOrderForm eoForm, Employeeorder eo) {
-
+    private void setFormEntries(HttpServletRequest request, AddEmployeeOrderForm eoForm, Employeeorder eo) {
         Employeecontract ec = eo.getEmployeecontract();
         Employee theEmployee = ec.getEmployee();
         request.getSession().setAttribute("currentEmployee", theEmployee.getName());
@@ -111,7 +102,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
                 orderswithsuborders.add(customerorder);
             }
         }
-        if ((orderswithsuborders == null) || (orderswithsuborders.size() <= 0)) {
+        if (orderswithsuborders.size() <= 0) {
             request.setAttribute("errorMessage",
                     "No customerorders with valid suborders found - please call system administrator.");
         }
@@ -120,13 +111,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
 
         List<Suborder> suborders = eo.getSuborder().getCustomerorder().getSuborders();
 //			 remove hidden suborders
-        Iterator<Suborder> suborderIterator = suborders.iterator();
-        while (suborderIterator.hasNext()) {
-            Suborder suborder = suborderIterator.next();
-            if (suborder.isHide()) {
-                suborderIterator.remove();
-            }
-        }
+        suborders.removeIf(Suborder::isHide);
         request.getSession().setAttribute("suborders", suborders);
 
         eoForm.setEmployeeContractId(ec.getId());
@@ -151,8 +136,6 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
         } else {
             eoForm.setValidUntil("");
         }
-
     }
-
 
 }

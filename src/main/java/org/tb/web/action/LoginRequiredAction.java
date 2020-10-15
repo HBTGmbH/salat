@@ -14,8 +14,9 @@ import org.tb.bdom.Warning;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Locale;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Parent action class for the actions of an employee who is correctly logged in.
@@ -49,7 +50,7 @@ public abstract class LoginRequiredAction extends Action {
             warning.setSort(resources.getMessage(locale, "main.authorization.access.restricted.sort"));
             String text = MessageFormat.format(resources.getMessage(locale, "main.authorization.access.restricted.text"), loginEmployee.getSign(), loginEmployee.getStatus(), mapping.getPath());
             warning.setText(text);
-            request.getSession().setAttribute("warnings", Arrays.asList(warning));
+            request.getSession().setAttribute("warnings", singletonList(warning));
             request.getSession().setAttribute("warningsPresent", true);
             return mapping.findForward("showWelcome");
         } else {
@@ -59,13 +60,6 @@ public abstract class LoginRequiredAction extends Action {
 
     /**
      * To be implemented by child classes.
-     *
-     * @param mapping
-     * @param form
-     * @param request
-     * @param response
-     * @return
-     * @throws Exception
      */
     protected abstract ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception;
 

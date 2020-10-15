@@ -1,26 +1,28 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Employeeordercontent;
 
 import java.util.List;
 
+@Component
 public class EmployeeOrderContentDAO extends AbstractDAO {
 
-    private EmployeeorderDAO employeeorderDAO;
+    private final EmployeeorderDAO employeeorderDAO;
 
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
+    @Autowired
+    public EmployeeOrderContentDAO(SessionFactory sessionFactory, EmployeeorderDAO employeeorderDAO) {
+        super(sessionFactory);
         this.employeeorderDAO = employeeorderDAO;
     }
 
-
     /**
      * Gets the {@link Employeeordercontent} for the given id.
-     *
-     * @param long id
-     * @return {@link Employeeordercontent}
      */
     public Employeeordercontent getEmployeeOrderContentById(long id) {
         return (Employeeordercontent) getSession().createQuery("from Employeeordercontent eoc where eoc.id = ?").setLong(0, id).uniqueResult();
@@ -28,8 +30,6 @@ public class EmployeeOrderContentDAO extends AbstractDAO {
 
     /**
      * Get a list of all {@link Employeeordercontent}s.
-     *
-     * @return List<Employeeordercontent>
      */
     @SuppressWarnings("unchecked")
     public List<Employeeordercontent> getEmployeeOrderContents() {
@@ -37,19 +37,14 @@ public class EmployeeOrderContentDAO extends AbstractDAO {
     }
 
     /**
-     * Calls {@link EmployeeOrderContentDAO#save(EmployeeOrderContent, Employee)} with {@link Employee} = null.
-     *
-     * @param eoc The {@link EmployeeOrderContent} to save
+     * Calls {@link EmployeeOrderContentDAO#save(Employeeordercontent, Employee)} with {@link Employee} = null.
      */
     public void save(Employeeordercontent eoc) {
         save(eoc, null);
     }
 
     /**
-     * Saves the given {@link EmployeeOrderContent} and sets creation-/update-user and creation-/update-date.
-     *
-     * @param eoc           The {@link EmployeeOrderContent} to save
-     * @param loginEmployee The login employee
+     * Saves the given {@link Employeeordercontent} and sets creation-/update-user and creation-/update-date.
      */
     public void save(Employeeordercontent eoc, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -77,8 +72,7 @@ public class EmployeeOrderContentDAO extends AbstractDAO {
      * An {@link Employeeordercontent} must not be deleted without deleting the associated {@link Employeeorder}!
      * The {@link Employeeorder} must be deleted first!
      *
-     * @param long eoId The id of the {@link Employeeordercontent} to delete
-     * @return boolean
+     * @param eocId The id of the {@link Employeeordercontent} to delete
      */
     public boolean deleteEmployeeOrderContentById(long eocId) {
         List<Employeeordercontent> allEmployeeOrderContents = getEmployeeOrderContents();

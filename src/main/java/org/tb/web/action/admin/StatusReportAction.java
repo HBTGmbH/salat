@@ -13,9 +13,8 @@ import java.util.List;
 
 public abstract class StatusReportAction extends LoginRequiredAction {
 
-
     protected List<OptionItem> getPhaseOptionList(HttpServletRequest request) {
-        List<OptionItem> phaseList = new ArrayList<OptionItem>();
+        List<OptionItem> phaseList = new ArrayList<>();
         phaseList.add(new OptionItem(GlobalConstants.PHASE_ID_ORGANISATION, getResources(request).getMessage(getLocale(request), "statusreport.phase.organisation.text")));
         phaseList.add(new OptionItem(GlobalConstants.PHASE_ID_SPECIFICATIO, getResources(request).getMessage(getLocale(request), "statusreport.phase.specification.text")));
         phaseList.add(new OptionItem(GlobalConstants.PHASE_ID_ANALYSIS, getResources(request).getMessage(getLocale(request), "statusreport.phase.analysis.text")));
@@ -28,7 +27,7 @@ public abstract class StatusReportAction extends LoginRequiredAction {
     }
 
     protected List<OptionItem> getSortOptionList(HttpServletRequest request) {
-        List<OptionItem> sortList = new ArrayList<OptionItem>();
+        List<OptionItem> sortList = new ArrayList<>();
         sortList.add(new OptionItem(GlobalConstants.STATUSREPORT_SORT_PERIODICAL, getResources(request).getMessage(getLocale(request), "statusreport.sort.periodical")));
         sortList.add(new OptionItem(GlobalConstants.STATUSREPORT_SORT_EXTRA, getResources(request).getMessage(getLocale(request), "statusreport.sort.extra")));
         sortList.add(new OptionItem(GlobalConstants.STATUSREPORT_SORT_FINAL, getResources(request).getMessage(getLocale(request), "statusreport.sort.final")));
@@ -83,22 +82,6 @@ public abstract class StatusReportAction extends LoginRequiredAction {
             return true;
         }
         return loginEmployee.equals(statusreport.getRecipient());
-    }
-
-    protected Byte getWorstStatus(Statusreport statusreport) {
-        Byte status = 0;
-        if (statusreport.getTrendstatus() > status) status = statusreport.getTrendstatus();
-        if (statusreport.getNeedforaction_status() > status) status = statusreport.getNeedforaction_status();
-        if (statusreport.getAim_status() > status) status = statusreport.getAim_status();
-        if (statusreport.getBudget_resources_date_status() > status)
-            status = statusreport.getBudget_resources_date_status();
-        if (statusreport.getRiskmonitoring_status() > status) status = statusreport.getRiskmonitoring_status();
-        if (statusreport.getChangedirective_status() > status) status = statusreport.getChangedirective_status();
-        if (statusreport.getCommunication_status() > status) status = statusreport.getCommunication_status();
-        if (statusreport.getImprovement_status() > status) status = statusreport.getImprovement_status();
-        if (statusreport.getMiscellaneous_status() > status) status = statusreport.getMiscellaneous_status();
-
-        return status;
     }
 
 }

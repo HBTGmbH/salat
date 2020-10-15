@@ -103,11 +103,6 @@ public class EditDailyReportAction extends DailyReportAction {
 
     /**
      * fills the AddDailyReportForm with properties of the timereport to be edited
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
-     * @param tr
      */
     private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
                                 AddDailyReportForm reportForm, Timereport tr) {
@@ -116,7 +111,7 @@ public class EditDailyReportAction extends DailyReportAction {
         Date utilDate = new Date(tr.getReferenceday().getRefdate().getTime()); // convert to java.util.Date
 
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
-        List<Suborder> theSuborders = new ArrayList<Suborder>();
+        List<Suborder> theSuborders = new ArrayList<>();
         if (orders != null && !orders.isEmpty()) {
             reportForm.setOrder(orders.get(0).getSign());
             reportForm.setOrderId(orders.get(0).getId());

@@ -2,40 +2,32 @@ package org.tb.persistence;
 
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.*;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-/**
- * DAO class for 'Employeecontract'
- *
- * @author oda
- */
+@Component
 public class EmployeecontractDAO extends AbstractDAO {
 
-    private MonthlyreportDAO monthlyreportDAO;
-    private VacationDAO vacationDAO;
-    private OvertimeDAO overtimeDAO;
+    private final MonthlyreportDAO monthlyreportDAO;
+    private final VacationDAO vacationDAO;
+    private final OvertimeDAO overtimeDAO;
 
-    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-        this.overtimeDAO = overtimeDAO;
-    }
-
-    public void setMonthlyreportDAO(MonthlyreportDAO monthlyreportDAO) {
+    @Autowired
+    public EmployeecontractDAO(SessionFactory sessionFactory, MonthlyreportDAO monthlyreportDAO, VacationDAO vacationDAO, OvertimeDAO overtimeDAO) {
+        super(sessionFactory);
         this.monthlyreportDAO = monthlyreportDAO;
-    }
-
-    public void setVacationDAO(VacationDAO vacationDAO) {
         this.vacationDAO = vacationDAO;
+        this.overtimeDAO = overtimeDAO;
     }
 
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
-     *
-     * @param long employeeId
-     * @return Employeecontract
      */
     public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
         return (Employeecontract) getSession()

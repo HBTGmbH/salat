@@ -28,32 +28,13 @@ public class TimereportHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TimereportHelper.class);
 
-    public TimereportHelper() {
-        // no actions
-    }
-
-    /**
-     * returns a day string like '02'
-     *
-     * @param Timereport tr
-     *
-     * @return String
-     */
-//    public static String getDayStringFromTimereport(Timereport tr) {
-//        Date dt = tr.getReferenceday().getRefdate();
-//        String dayString = dt.toString().substring(8, 10);
-//        
-//        return dayString;
-//    }
-
     /**
      * calculates worktime from begin/end times in form
      *
-     * @param AddDailyReportForm form
-     * @return double - decimal hours
+     * @return decimal hours
      */
     public static double calculateTime(AddDailyReportForm form) {
-        double worktime = 0.0;
+        double worktime;
 
         if (form.getSelectedHourDuration() != 0 || form.getSelectedMinuteDuration() != 0) {
             worktime = form.getSelectedHourDuration() * 1. + form.getSelectedMinuteDuration() / 60.;
@@ -72,151 +53,11 @@ public class TimereportHelper {
     }
 
     /**
-     * updates vacation: adds or subtracts one day used
-     *
-     * @param tr
-     * @param action: 1 or -1 (add or subtract one day
-     * @param vd - VacationDAO being used
-     *
-     * @return void
-     */
-//    public void updateVacation(Timereport tr, int action, VacationDAO vd) {
-//        String year = DateUtils.getYearString(tr.getReferenceday().getRefdate());
-//        long ecId = tr.getEmployeecontract().getId();
-//        
-//        // update entry in vacation...
-//        Vacation va = vd.getVacationByYearAndEmployeecontract(ecId, Integer.parseInt(year));
-//        
-//        if (va == null) {
-//            // should not be the case!
-//            vd.setNewVacation(tr.getEmployeecontract(), Integer.parseInt(year));
-//        } else {
-//            int used = va.getUsed().intValue() + action;
-//            va.setUsed(new Integer(used));
-//        }
-//        vd.save(va);
-//    }
-
-    /**
-     * counts the days in month with timereports for a given employee 
-     *
-     * @param long ecId
-     * @param String year
-     * @param String month
-     * @param List<Timereport> trList
-     * @param td - TimereportDAO being used
-     *
-     * @return int
-     */
-//    public int countDaysInMonthWithTimereports(long ecId, String year, String month,
-//            List<Timereport> trList, TimereportDAO td) {
-//        int numberOfDays = 0;
-//        String dateString = "";
-//        
-//        for (int i = 1; i <= DateUtils.getLastDayOfMonth(year, month); i++) {
-//            if (i < 10) {
-//                dateString = year + "-" + month + "-0" + i;
-//            } else {
-//                dateString = year + "-" + month + "-" + i;
-//            }
-//            java.sql.Date theDate = java.sql.Date.valueOf(dateString);
-//            List<Timereport> dailyTimereports =
-//                    td.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-//            if (dailyTimereports.size() > 0) {
-//                numberOfDays++;
-//            }
-//        }
-//        
-//        return numberOfDays;
-//    }
-
-    /**
-     * counts the working days in month with timereports for a given employee 
-     *
-     * @param long ecId
-     * @param String year
-     * @param String month
-     * @param List<Timereport> trList
-     * @param td - TimereportDAO being used
-     *
-     * @return int
-     */
-//    public int countWorkDaysInMonthWithTimereports(long ecId, String year, String month,
-//            List<Timereport> trList, TimereportDAO td) {
-//        int numberOfDays = 0;
-//        String dateString = "";
-//        
-//        for (int i = 1; i <= DateUtils.getLastDayOfMonth(year, month); i++) {
-//            if (i < 10) {
-//                dateString = year + "-" + month + "-0" + i;
-//            } else {
-//                dateString = year + "-" + month + "-" + i;
-//            }
-//            java.sql.Date theDate = java.sql.Date.valueOf(dateString);
-//            List<Timereport> dailyTimereports =
-//                    td.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-//            if (dailyTimereports.size() > 0) {
-//                Timereport tr = dailyTimereports.get(0);
-//                if (tr.getReferenceday().getWorkingday()) {
-//                    numberOfDays++;
-//                }
-//            }
-//        }
-//        
-//        return numberOfDays;
-//    }
-
-    /**
-     * checks the overlap
-     *
-     * @param int begin
-     * @param int end
-     * @param int refbegin
-     * @param int refend
-     *
-     * @return boolean
-     */
-//    public static boolean checkOverlap(int begin, int end, int refbegin, int refend) {
-//        
-//        boolean overlap = false;
-//        
-//        //	total overlap
-//        if (begin < refbegin && end > refend) {
-//            overlap = true;
-//        }
-//        
-//        // partial overlap left
-//        if (!overlap) {
-//            if (begin <= refbegin && end > refbegin) {
-//                overlap = true;
-//            }
-//        }
-//        
-//        // partial overlap right
-//        if (!overlap) {
-//            if (begin < refend && end >= refend) {
-//                overlap = true;
-//            }
-//        }
-//        
-//        // "inside" overlap
-//        if (!overlap) {
-//            if (begin >= refbegin && end <= refend) {
-//                overlap = true;
-//            }
-//        }
-//        return overlap;
-//    }
-
-    /**
      * refreshes hours after change of begin/end times
-     *
-     * @param AddDailyReportForm reportForm
-     * @return void
      */
     public static void refreshHours(AddDailyReportForm reportForm) {
         Double hours = reportForm.getHours();
-        if (hours.doubleValue() < 0.0) {
+        if (hours < 0.0) {
             reportForm.setSelectedHourDuration(0);
             reportForm.setSelectedMinuteDuration(0);
             return;
@@ -229,9 +70,8 @@ public class TimereportHelper {
 
         // in der alten rechnug gabs einen rundungsfehler, der geschied jezt nicht mehr
         long minuteDurationlong;
-        Integer hourDurationInteger = hours.intValue();
+        int hourDurationInteger = hours.intValue();
         minuteDurationlong = Math.round((hours - hours.intValue()) * 60);
-        int hourDuration = hourDurationInteger;
         int minuteDuration = (int) minuteDurationlong;
 
         // clean possible truncation errors	
@@ -243,28 +83,22 @@ public class TimereportHelper {
             }
         }
 
-        reportForm.setSelectedHourDuration(hourDuration);
+        reportForm.setSelectedHourDuration(hourDurationInteger);
         reportForm.setSelectedMinuteDuration(minuteDuration);
     }
 
     /**
      * refreshes period after change of hours
-     *
-     * @param HttpServletRequest request
-     * @param ActionMessages     errors
-     * @param AddDailyReportForm reportForm
-     * @return boolean
      */
-    public static boolean refreshPeriod(HttpServletRequest request, ActionMessages errors, AddDailyReportForm reportForm) {
-
+    public static boolean refreshPeriod(HttpServletRequest request, AddDailyReportForm reportForm) {
         // calculate end hour/minute
         double hours = reportForm.getSelectedHourDuration() + reportForm.getSelectedMinuteDuration() / 60.0;
-        reportForm.setHoursDuration(new Double(hours));
+        reportForm.setHours(hours);
         request.getSession().setAttribute("hourDuration", hours);
 
-        int hoursEnd = reportForm.getSelectedHourBegin() + reportForm.getHoursDuration().intValue();
-        double dMinutes = (reportForm.getHoursDuration().doubleValue() -
-                Math.floor(reportForm.getHoursDuration().doubleValue())) * 60.0;
+        int hoursEnd = reportForm.getSelectedHourBegin() + reportForm.getHours().intValue();
+        double dMinutes = (reportForm.getHours() -
+                Math.floor(reportForm.getHours())) * 60.0;
 
         int minutesEnd = reportForm.getSelectedMinuteBegin() + new Double(dMinutes).intValue();
 
@@ -340,7 +174,6 @@ public class TimereportHelper {
                 if (timereport.getId() == -1) {
                     List<Timereport> allReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(timereport.getEmployeecontract().getId(), theNewDate);
                     if (allReports.size() > 0) {
-                        valid = false;
                         errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.othersexisting"));
                     }
                 }
@@ -393,9 +226,6 @@ public class TimereportHelper {
     }
 
     /**
-     * @param date               (sql date)
-     * @param employeeContractId
-     * @param timereportDAO
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1].
      */
     public int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId, TimereportDAO timereportDAO) {
@@ -416,10 +246,6 @@ public class TimereportHelper {
     }
 
     /**
-     * @param ecId
-     * @param td
-     * @param date
-     * @param workingday
      * @return Returns int[]  0=hours 1=minutes
      */
     public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday) {
@@ -435,14 +261,6 @@ public class TimereportHelper {
         return beginTime;
     }
 
-    /**
-     * @param ecId
-     * @param td
-     * @param date
-     * @param workingday
-     * @param tr
-     * @return
-     */
     public int[] determineTimesToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday, Timereport tr) {
         List<Timereport> timereports = td.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
@@ -488,7 +306,6 @@ public class TimereportHelper {
     /**
      * Calculates the overall labortime for a list of {@link Timereport}s.
      *
-     * @param timereports
      * @return Returns the calculated time as String (hh:mm)
      */
     public String calculateLaborTime(List<Timereport> timereports) {
@@ -512,7 +329,6 @@ public class TimereportHelper {
     /**
      * Calculates the overall labortime for a list of {@link Timereport}s.
      *
-     * @param timereports
      * @return Returns the calculated time as int[] (index 0: hours, index 1: minutes)
      */
     public int[] calculateLaborTimeAsArray(List<Timereport> timereports) {
@@ -538,8 +354,6 @@ public class TimereportHelper {
     /**
      * Checks, if the overall labortime for a list of {@link Timereport}s extends the maximal daily labor time.
      *
-     * @param timereports
-     * @param maximalDailyLaborTime
      * @return Returns true, if the maximal labor time is extended, false otherwise
      */
     public boolean checkLaborTimeMaximum(List<Timereport> timereports, double maximalDailyLaborTime) {
@@ -562,7 +376,6 @@ public class TimereportHelper {
     }
 
     /**
-     * @param timereports
      * @return Returns the sum of the costs of all given timereports.
      */
     public double calculateDailyCosts(List<Timereport> timereports) {
@@ -574,8 +387,6 @@ public class TimereportHelper {
     }
 
     /**
-     * @param workingday
-     * @param request
      * @return Returns a string with the calculated quitting time (hh:mm). If something fails (may happen for missing workingday, etc.), "n/a" will be returned.
      */
     public String calculateQuittingTime(Workingday workingday, HttpServletRequest request, String timeSwitch) {
@@ -598,8 +409,8 @@ public class TimereportHelper {
             if (timeSwitch.equals("workingDayEnds")) {
                 Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
                 Double dailyWorkingTime = employeecontract.getDailyWorkingTime();
-                Integer dailyWorkingTimeHours = dailyWorkingTime.intValue();
-                Integer dailyWorkingTimeMinutes = Integer.parseInt(dailyWorkingTime.toString().replace(".", ":").split(":")[1]) * 6;
+                int dailyWorkingTimeHours = dailyWorkingTime.intValue();
+                int dailyWorkingTimeMinutes = Integer.parseInt(dailyWorkingTime.toString().replace(".", ":").split(":")[1]) * 6;
                 timeHoursInt = dailyWorkingTimeHours;
                 timeMinutesInt = dailyWorkingTimeMinutes;
             }
@@ -634,10 +445,6 @@ public class TimereportHelper {
     }
 
     /**
-     * @param employeecontract
-     * @param employeeorderDAO
-     * @param publicholidayDAO
-     * @param timereportDAO
      * @return Returns the minutes of overtime, might be negative
      */
     public int calculateOvertimeTotal(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
@@ -664,7 +471,7 @@ public class TimereportHelper {
 
         SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
         String month = monthFormat.format(start);
-        int monthIntValue = Integer.valueOf(month);
+        int monthIntValue = Integer.parseInt(month);
 
         SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
         String day = dayFormat.format(start);
@@ -767,12 +574,9 @@ public class TimereportHelper {
      * Parses the Stings to create a {@link java.util.Date}. The day- and year-String are expected to represent integers.
      * The month-String must be of the sort 'Jan', 'Feb', 'Mar', ...
      *
-     * @param dayString
-     * @param monthString
-     * @param yearString
      * @return Returns the date associated to the given Strings.
      */
-    public java.sql.Date getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) throws Exception {
+    public java.sql.Date getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) {
         int day = new Integer(dayString);
         int year = new Integer(yearString);
         int month = 0;
@@ -826,11 +630,7 @@ public class TimereportHelper {
     /**
      * Transforms a {@link Date} into 3 {@link String}s, e.g. "09", "Feb", "2011".
      *
-     * @param date
-     * @return Returns an array of strings with the
-     * day at index 0,
-     * month at index 1 and
-     * year at index 2.
+     * @return Returns an array of strings with the day at index 0, month at index 1 and year at index 2.
      */
     public String[] getDateAsStringArray(java.util.Date date) {
         SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
@@ -839,7 +639,7 @@ public class TimereportHelper {
         String day = dayFormat.format(date);
         String year = yearFormat.format(date);
         String month = monthFormat.format(date);
-        Integer monthValue = Integer.valueOf(month);
+        int monthValue = Integer.parseInt(month);
         if (monthValue == GlobalConstants.MONTH_INTVALUE_JANUARY) {
             month = GlobalConstants.MONTH_SHORTFORM_JANUARY;
         } else if (monthValue == GlobalConstants.MONTH_INTVALUE_FEBRURAY) {
@@ -875,7 +675,6 @@ public class TimereportHelper {
     }
 
     /**
-     * @param request
      * @return Returns the date associated the request. If parsing fails, the current date is returned.
      */
     public Date getSelectedDateFromRequest(HttpServletRequest request) {
@@ -895,7 +694,7 @@ public class TimereportHelper {
     }
 
     public List<Date> getDatesForTimePeriod(Date startDate, int numberOfLaborDays, PublicholidayDAO publicholidayDAO) {
-        List<Date> dates = new ArrayList<Date>(numberOfLaborDays);
+        List<Date> dates = new ArrayList<>(numberOfLaborDays);
         GregorianCalendar calendar = new GregorianCalendar();
         int loopcounter = 0;
         for (int i = 0; i < numberOfLaborDays; i++) {

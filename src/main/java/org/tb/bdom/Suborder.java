@@ -17,11 +17,6 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Bean for table 'suborder'.
- *
- * @author oda
- */
 @Data
 @Entity
 @EqualsAndHashCode(of = "id", callSuper = false)

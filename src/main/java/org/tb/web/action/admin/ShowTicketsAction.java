@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * action class for showing all Jira-Tickets
@@ -37,7 +38,6 @@ public class ShowTicketsAction extends LoginRequiredAction {
     private CustomerorderDAO customerorderDAO;
     private EmployeeorderDAO employeeorderDAO;
     private WorklogMemoryDAO worklogMemoryDAO;
-
 
     public void setTicketDAO(TicketDAO ticketDAO) {
         this.ticketDAO = ticketDAO;
@@ -87,7 +87,7 @@ public class ShowTicketsAction extends LoginRequiredAction {
 
             // Filter customerorder with tickets
             List<Customerorder> all_orders = customerorderDAO.getCustomerorders();
-            List<Customerorder> orders = new ArrayList<Customerorder>();
+            List<Customerorder> orders = new ArrayList<>();
 
             for (Customerorder order : all_orders) {
                 if (order.getProjectIDs().size() > 0) {
@@ -103,18 +103,18 @@ public class ShowTicketsAction extends LoginRequiredAction {
 
         ShowTicketsForm ticketsForm = (ShowTicketsForm) form;
         Long currentOrderId = 0L;
-        Long currentSuborderId = 0L;
+        long currentSuborderId;
 
         if (ticketsForm != null) {
             currentOrderId = ticketsForm.getOrderId();
         }
-        if (currentOrderId == null || currentOrderId == 0) {
+        if (currentOrderId == 0) {
             if (request.getSession().getAttribute("currentOrderId") != null) {
                 currentOrderId = (Long) request.getSession().getAttribute("currentOrderId");
             }
         }
         if (currentOrderId == null || currentOrderId == 0) {
-            currentOrderId = -1l;
+            currentOrderId = -1L;
         }
         if (ticketsForm != null) {
             ticketsForm.setOrderId(currentOrderId);
@@ -127,7 +127,7 @@ public class ShowTicketsAction extends LoginRequiredAction {
         if ((ticketId = request.getParameter("setSuborder")) != null) {
 
             //get the newly picked Suborder from the Dropdown list
-            long newSubOrderId = ticketsForm.getNewSuborderId();
+            long newSubOrderId = Objects.requireNonNull(ticketsForm).getNewSuborderId();
             //get the Ticket Id
             long ticketToSetL = Long.parseLong(ticketId);
             //get the right Ticket from the Decorators
@@ -146,13 +146,13 @@ public class ShowTicketsAction extends LoginRequiredAction {
                 }
             }
 
-            request.getSession().setAttribute("tickets", ticketsForm.getTicketDecorators());
+            request.getSession().setAttribute("tickets", ticketsForm.getDecorators());
         } else if ((ticketId = request.getParameter("setDate")) != null) {
 
             //get the Ticket Id
             Long ticketToSetL = Long.parseLong(ticketId);
             //get the right Ticket from the Decorators
-            TicketViewDecorator ticketVD = ticketsForm.getTicketDecoratorWithId(ticketToSetL);
+            TicketViewDecorator ticketVD = Objects.requireNonNull(ticketsForm).getTicketDecoratorWithId(ticketToSetL);
 
             if (ticketVD != null) {
                 //if dates changed
@@ -178,18 +178,17 @@ public class ShowTicketsAction extends LoginRequiredAction {
                     }
                 }
                 ticketVD.disableError();
-                request.getSession().setAttribute("tickets", ticketsForm.getTicketDecorators());
+                request.getSession().setAttribute("tickets", ticketsForm.getDecorators());
             }
         } else if ((ticketId = request.getParameter("save")) != null) {
-
             //get the Ticket Id that we need to Save
-            Long ticketToSaveL = Long.parseLong(ticketId);
+            long ticketToSaveL = Long.parseLong(ticketId);
 
             //get the Decorator for this Ticket
-            TicketViewDecorator decorator = ticketsForm.getTicketDecoratorWithId(ticketToSaveL);
+            TicketViewDecorator decorator = Objects.requireNonNull(ticketsForm).getTicketDecoratorWithId(ticketToSaveL);
 
             //get the new Suborder for this Ticket
-            Suborder pickedSuborder = suborderDAO.getSuborderById(decorator.getPickedSuborderId());
+            Suborder pickedSuborder = suborderDAO.getSuborderById(Objects.requireNonNull(decorator).getPickedSuborderId());
 
             //check if the Dates are inside the Suborder-Dates
             if (decorator.getPickedFromDate().before(decorator.getPickedUntilDate())
@@ -279,12 +278,12 @@ public class ShowTicketsAction extends LoginRequiredAction {
             }
 
             if (currentOrderId == -1L) {
-                ticketsForm.setSuborderId(-1);
+                Objects.requireNonNull(ticketsForm).setSuborderId(-1);
             }
 
             //if Order Set -> get the Suborders for this order and write to Session
             if (currentOrderId != -1L) {
-                long customerOrderId = customerorderDAO.getCustomerorderById(ticketsForm.getOrderId()).getId();
+                long customerOrderId = customerorderDAO.getCustomerorderById(Objects.requireNonNull(ticketsForm).getOrderId()).getId();
                 List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerOrderId, false);
                 request.getSession().setAttribute("suborders", suborders);
             }
@@ -315,29 +314,25 @@ public class ShowTicketsAction extends LoginRequiredAction {
 
     // Wenn ein Unterauftrag ausgewählt wurde, für den nicht für alle Mitarbeiter (die schon auf den dummy-Auftrag für das Ticket gebucht haben) 
     // MA-Aufträge vorhanden sind, wird nicht gespeichert sondern Fehlermeldung angezeigt.
-    private boolean checkEmployeeOrders(TicketViewDecorator ticketVD, MessageResources messageResources) {
-
+    private void checkEmployeeOrders(TicketViewDecorator ticketVD, MessageResources messageResources) {
         Suborder suborder = suborderDAO.getSuborderById(ticketVD.getSuborderId());
         List<Employeeorder> employeeOrders = suborder.getEmployeeorders();
 
         //für alle Mitarbeiteraufträge vom aktuellen(Dummy-) Unterauftrag
         for (Employeeorder employeeorder : employeeOrders) {
             //wenn auf dem Mittarbeiterauftrag gebucht wurde
-            if (timereportDAO.getTimereportsByEmployeeOrderId(employeeorder.getId()).isEmpty() == false) {
+            if (!timereportDAO.getTimereportsByEmployeeOrderId(employeeorder.getId()).isEmpty()) {
                 //überprüfe ob es auch für diesen Mitarbeiter ein Mitarbeiterauftrag bei dem neuausgewählten Unterauftrag existiert
                 if (employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(employeeorder.getEmployeecontract().getId(), ticketVD.getPickedSuborderId()).isEmpty()) {
                     ticketVD.setError(messageResources.getMessage("form.showTickets.error.employeeorders"));
-                    return false;
+                    return;
                 }
             }
         }
-        return true;
     }
 
     private void setTicketViewDecorators(List<Ticket> tickets, HttpServletRequest request, ShowTicketsForm ticketsForm) {
-
-        List<TicketViewDecorator> decorators = new LinkedList<TicketViewDecorator>();
-
+        List<TicketViewDecorator> decorators = new LinkedList<>();
         for (int i = 0; i < tickets.size(); i++) {
             Ticket ticket = tickets.get(i);
             TicketViewDecorator decorator = new TicketViewDecorator(ticket);
@@ -347,7 +342,8 @@ public class ShowTicketsAction extends LoginRequiredAction {
             decorator.setPickedUntilDate(ticket.getUntilDate());
             decorators.add(decorator);
         }
-        ticketsForm.setTicketDecorators(decorators);
+        ticketsForm.setDecorators(decorators);
         request.getSession().setAttribute("tickets", decorators);
     }
+
 }

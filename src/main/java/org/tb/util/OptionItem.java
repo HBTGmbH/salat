@@ -5,7 +5,6 @@ import java.io.Serializable;
 /*
  * Util class to build up a list collection to be used with html:options collection=...
  * in a JSP
- *
  */
 public class OptionItem implements Serializable {
 

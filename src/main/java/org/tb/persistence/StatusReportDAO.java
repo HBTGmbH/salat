@@ -1,22 +1,26 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
-import org.tb.bdom.Employeeordercontent;
 import org.tb.bdom.Statusreport;
 
 import java.util.Date;
 import java.util.List;
 
+@Component
 public class StatusReportDAO extends AbstractDAO {
 
+    @Autowired
+    public StatusReportDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     /**
      * Gets the {@link Statusreport} for the given id.
-     *
-     * @param long id
-     * @return {@link Statusreport}
      */
     public Statusreport getStatusReportById(long id) {
         return (Statusreport) getSession().createQuery("from Statusreport sr where sr.id = ?").setLong(0, id).uniqueResult();
@@ -24,8 +28,6 @@ public class StatusReportDAO extends AbstractDAO {
 
     /**
      * Get a list of all {@link Statusreport}s.
-     *
-     * @return List<Statusreport>
      */
     @SuppressWarnings("unchecked")
     public List<Statusreport> getStatusReports() {
@@ -34,8 +36,6 @@ public class StatusReportDAO extends AbstractDAO {
 
     /**
      * Get a list of all visible {@link Statusreport}s.
-     *
-     * @return List<Statusreport>
      */
     @SuppressWarnings("unchecked")
     public List<Statusreport> getVisibleStatusReports() {
@@ -50,8 +50,6 @@ public class StatusReportDAO extends AbstractDAO {
 
     /**
      * Get a list of all {@link Statusreport}s associated with the given {@link Customerorder}.
-     *
-     * @return List<Statusreport>
      */
     @SuppressWarnings("unchecked")
     public List<Statusreport> getStatusReportsByCustomerOrderId(long coId) {
@@ -63,8 +61,6 @@ public class StatusReportDAO extends AbstractDAO {
 
     /**
      * Get a list of all released final {@link Statusreport}s associated with the given {@link Customerorder}.
-     *
-     * @return List<Statusreport>
      */
     @SuppressWarnings("unchecked")
     public List<Statusreport> getReleasedFinalStatusReportsByCustomerOrderId(long coId) {
@@ -80,8 +76,6 @@ public class StatusReportDAO extends AbstractDAO {
     /**
      * Get a list of all unreleased final {@link Statusreport}s with an untildate > the given date,
      * that are associated with the given customerOrderId, senderId.
-     *
-     * @return List<Statusreport>
      */
     @SuppressWarnings("unchecked")
     public List<Statusreport> getUnreleasedFinalStatusReports(long customerOrderId, long senderId, java.sql.Date date) {
@@ -101,8 +95,6 @@ public class StatusReportDAO extends AbstractDAO {
     /**
      * Get a list of all unreleased periodical {@link Statusreport}s with an untildate > the given date,
      * that are associated with the given customerOrderId, senderId.
-     *
-     * @return List<Statusreport>
      */
     @SuppressWarnings("unchecked")
     public List<Statusreport> getUnreleasedPeriodicalStatusReports(long customerOrderId, long senderId, java.sql.Date date) {
@@ -121,8 +113,6 @@ public class StatusReportDAO extends AbstractDAO {
 
     /**
      * Get a list of all released but not accepted {@link Statusreport}s associated with the given recipient.
-     *
-     * @return List<Statusreport>
      */
     @SuppressWarnings("unchecked")
     public List<Statusreport> getReleasedStatusReportsByRecipientId(long employeeId) {
@@ -146,7 +136,7 @@ public class StatusReportDAO extends AbstractDAO {
 
 
     /**
-     * Calls {@link StatusReportDAO#save(Employeeordercontent, Employee)} with {@link Employee} = null.
+     * Calls {@link StatusReportDAO#save(Statusreport, Employee)} with {@link Employee} = null.
      *
      * @param sr The {@link Statusreport} to save
      */
@@ -183,7 +173,7 @@ public class StatusReportDAO extends AbstractDAO {
     /**
      * Deletes the given {@link Statusreport}.
      *
-     * @param long srId The id of the {@link Statusreport} to delete
+     * @param srId The id of the {@link Statusreport} to delete
      * @return boolean
      */
     public boolean deleteStatusReportById(long srId) {

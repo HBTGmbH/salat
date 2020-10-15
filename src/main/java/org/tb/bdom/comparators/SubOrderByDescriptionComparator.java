@@ -1,11 +1,16 @@
 package org.tb.bdom.comparators;
 
+import lombok.NoArgsConstructor;
 import org.tb.bdom.Suborder;
 
 import java.util.Comparator;
 
+import static lombok.AccessLevel.PRIVATE;
+
+@NoArgsConstructor(access = PRIVATE)
 public class SubOrderByDescriptionComparator implements Comparator<Suborder> {
 
+    public static final Comparator<Suborder> INSTANCE = new SubOrderByDescriptionComparator();
 
     /**
      * Compares {@link Suborder}s by {@link Suborder#getDescription()}.

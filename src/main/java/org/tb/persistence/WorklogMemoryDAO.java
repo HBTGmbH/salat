@@ -1,6 +1,8 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.tb.bdom.WorklogMemory;
 
 import java.util.List;
@@ -11,6 +13,11 @@ import java.util.List;
  * @author jh
  */
 public class WorklogMemoryDAO extends AbstractDAO {
+
+    @Autowired
+    public WorklogMemoryDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     @SuppressWarnings("unchecked")
     public List<WorklogMemory> getAllWorklogMemory() {

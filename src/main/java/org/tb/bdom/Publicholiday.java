@@ -12,11 +12,6 @@ import javax.persistence.Id;
 import java.io.Serializable;
 import java.sql.Date;
 
-/**
- * Bean for table 'publicholiday'
- *
- * @author oda
- */
 @Data
 @Entity
 @EqualsAndHashCode(of = "refdate")

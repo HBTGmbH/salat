@@ -35,7 +35,6 @@ public class DeleteSuborderAction extends LoginRequiredAction {
         this.suborderDAO = suborderDAO;
     }
 
-
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 

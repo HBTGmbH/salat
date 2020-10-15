@@ -10,11 +10,6 @@ import javax.persistence.Entity;
 import javax.persistence.*;
 import java.io.Serializable;
 
-/**
- * Bean for table 'invoice'.
- *
- * @author oda
- */
 @Data
 @Entity
 @EqualsAndHashCode(of = "description")

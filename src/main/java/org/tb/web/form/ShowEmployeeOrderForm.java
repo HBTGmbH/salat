@@ -1,6 +1,7 @@
 package org.tb.web.form;
 
-import org.apache.struts.action.ActionErrors;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employeecontract;
@@ -15,6 +16,8 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author oda
  */
+@Getter
+@Setter
 public class ShowEmployeeOrderForm extends ActionForm {
     private static final long serialVersionUID = 1L; // -6415687265295197319L;
 
@@ -25,84 +28,9 @@ public class ShowEmployeeOrderForm extends ActionForm {
     private Boolean show;
     private Boolean showActualHours = false;
 
-
-    /**
-     * @return the employeeContractId
-     */
-    public long getEmployeeContractId() {
-        return employeeContractId;
-    }
-
-    /**
-     * @param employeeContractId the employeeContractId to set
-     */
-    public void setEmployeeContractId(long employeeContractId) {
-        this.employeeContractId = employeeContractId;
-    }
-
-    /**
-     * @return the orderId
-     */
-    public long getOrderId() {
-        return orderId;
-    }
-
-    /**
-     * @param orderId the orderId to set
-     */
-    public void setOrderId(long orderId) {
-        this.orderId = orderId;
-    }
-
-    /**
-     * @return the filter
-     */
-    public String getFilter() {
-        return filter;
-    }
-
-    /**
-     * @param filter the filter to set
-     */
-    public void setFilter(String filter) {
-        this.filter = filter;
-    }
-
-    /**
-     * @return the show
-     */
-    public Boolean getShow() {
-        return show;
-    }
-
-    /**
-     * @param show the show to set
-     */
-    public void setShow(Boolean show) {
-        this.show = show;
-    }
-
-    /**
-     * @return the showActualHours
-     */
     @Nonnull
     public Boolean getShowActualHours() {
         return showActualHours != null && showActualHours;
-    }
-
-    /**
-     * @param showActualHours the showActualHours to set
-     */
-    public void setShowActualHours(Boolean showActualHours) {
-        this.showActualHours = showActualHours;
-    }
-
-    public long getSuborderId() {
-        return suborderId;
-    }
-
-    public void setSuborderId(long subOrderId) {
-        this.suborderId = subOrderId;
     }
 
     @Override
@@ -121,14 +49,6 @@ public class ShowEmployeeOrderForm extends ActionForm {
 
         filter = "";
         show = false;
-//		showActualHours = false;
     }
 
-    @Override
-    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-        ActionErrors errors = new ActionErrors();
-
-        // actually, no checks here
-        return errors;
-    }
 }

@@ -14,11 +14,6 @@ import javax.persistence.OneToMany;
 import java.io.Serializable;
 import java.util.List;
 
-/**
- * Bean for table 'customer'.
- *
- * @author oda
- */
 @Data
 @Entity
 @EqualsAndHashCode(of = "name", callSuper = false)

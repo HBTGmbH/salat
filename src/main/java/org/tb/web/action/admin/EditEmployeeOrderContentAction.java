@@ -21,7 +21,6 @@ import java.util.List;
 public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
 
     private EmployeeorderDAO employeeorderDAO;
-
     private EmployeeDAO employeeDAO;
 
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
@@ -131,7 +130,7 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
         }
 
         // build collection of qm processes
-        List<OptionItem> processes = new ArrayList<OptionItem>();
+        List<OptionItem> processes = new ArrayList<>();
         processes.add(new OptionItem(GlobalConstants.QM_PROCESS_ID_OTHER,
                 GlobalConstants.QM_PROCESS_OTHER));
         processes

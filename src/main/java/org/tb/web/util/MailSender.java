@@ -1,6 +1,3 @@
-/**
- *
- */
 package org.tb.web.util;
 
 import org.apache.commons.mail.EmailException;
@@ -11,7 +8,6 @@ import org.tb.bdom.Statusreport;
  * Class sends the emails from the {@link SimpleMailFactory}
  *
  * @author la
- *
  */
 public class MailSender {
 

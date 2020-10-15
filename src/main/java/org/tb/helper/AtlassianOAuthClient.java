@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static net.oauth.OAuth.OAUTH_VERIFIER;
 
 /**
@@ -30,10 +31,10 @@ import static net.oauth.OAuth.OAUTH_VERIFIER;
 public class AtlassianOAuthClient {
 
     protected static final String SERVLET_BASE_URL = "/plugins/servlet";
+    private static final String consumerKey = GlobalConstants.JIRA_CONSUMER_KEY;
+    private static final String privateKey = GlobalConstants.JIRA_CONSUMER_PRIVATE_KEY;
+    private static final String baseUrl = GlobalConstants.JIRA_URL;
 
-    private static String consumerKey = GlobalConstants.JIRA_CONSUMER_KEY;
-    private static String privateKey = GlobalConstants.JIRA_CONSUMER_PRIVATE_KEY;
-    private static String baseUrl = GlobalConstants.JIRA_URL;
     private static OAuthAccessor accessor;
     private static TokenSecretVerifierHolder tokenSecretVerifier;
 
@@ -44,7 +45,7 @@ public class AtlassianOAuthClient {
             OAuthClient oAuthClient = new OAuthClient(new HttpClient4());
             List<OAuth.Parameter> callBack;
             if (callback == null || "".equals(callback)) {
-                callBack = Collections.<OAuth.Parameter>emptyList();
+                callBack = emptyList();
             } else {
                 callBack = ImmutableList.of(new OAuth.Parameter(OAuth.OAUTH_CALLBACK, callback));
             }
@@ -104,7 +105,7 @@ public class AtlassianOAuthClient {
 
         OAuthClient client = new OAuthClient(new HttpClient4());
         HttpResponse httpResponse = new HttpResponse();
-        OAuthMessage response = null;
+        OAuthMessage response;
 
         try {
 
@@ -114,7 +115,7 @@ public class AtlassianOAuthClient {
             if (OAuthMessage.GET.equals(httpMethod)) {
                 response = client.invoke(accessor, url, Collections.<Map.Entry<?, ?>>emptySet());
             } else { // PUT, POST oder DELETE
-                OAuthMessage request = null;
+                OAuthMessage request;
 
                 if (jsonBody == null) {
                     request = accessor.newRequestMessage(httpMethod, url, Collections.<Map.Entry<?, ?>>emptySet());
@@ -141,13 +142,12 @@ public class AtlassianOAuthClient {
         } catch (OAuthException e) {
             httpResponse.status_code = ((OAuthProblemException) e).getHttpStatusCode();
         } catch (NullPointerException e) {
-            httpResponse.message_body = new String();
+            httpResponse.message_body = "";
         }
         return httpResponse;
     }
 
-
-    private static final OAuthAccessor getAccessor(String callback) {
+    private static OAuthAccessor getAccessor(String callback) {
         if (accessor == null) {
             OAuthServiceProvider serviceProvider = new OAuthServiceProvider(
                     getRequestTokenUrl(),

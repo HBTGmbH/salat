@@ -64,7 +64,7 @@ public class BookingsService {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-        List<Booking> results = new ArrayList<Booking>();
+        List<Booking> results = new ArrayList<>();
         for (Timereport tr : timeReports) {
             Booking booking = new Booking();
             booking.setEmployeeorderId(tr.getEmployeeorder().getId());

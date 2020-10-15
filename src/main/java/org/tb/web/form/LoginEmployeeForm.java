@@ -1,5 +1,7 @@
 package org.tb.web.form;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -8,37 +10,13 @@ import org.apache.struts.action.ActionMessage;
 
 import javax.servlet.http.HttpServletRequest;
 
-/**
- * Form for the employee login
- *
- * @author oda
- */
+@Getter
+@Setter
 public class LoginEmployeeForm extends ActionForm {
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L; // 3057468306212305857L;
 
     private String loginname;
-
     private String password;
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getLoginname() {
-        return loginname;
-    }
-
-    public void setLoginname(String loginname) {
-        this.loginname = loginname;
-    }
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {

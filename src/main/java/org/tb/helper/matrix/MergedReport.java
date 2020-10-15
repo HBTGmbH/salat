@@ -1,13 +1,3 @@
-/*
- * File:          $RCSfile$
- * Version:       $Revision$
- *
- * Created:       04.12.2006 by cb
- * Last changed:  $Date$ by $Author$
- *
- * Copyright (C) 2006 by HBT GmbH, www.hbt.de
- *
- */
 package org.tb.helper.matrix;
 
 import org.tb.bdom.Customerorder;
@@ -18,23 +8,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-/**
- * @author cb
- * @since 04.12.2006
- */
 public class MergedReport implements Comparable<MergedReport> {
-    private Suborder subOrder;
     private Customerorder customOrder;
+    private Suborder subOrder;
     private double sum;
-    private ArrayList<BookingDay> bookingDay = new ArrayList<BookingDay>();
+    private final ArrayList<BookingDay> bookingDay = new ArrayList<>();
 
-    /**
-     * @param subOrderSign    * @param customOrderSign
-     * @param taskdescription
-     * @param bookingDay
-     * @author cb
-     * @since 04.12.2006
-     */
     public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, Date date, long durationHours, long durationMinutes) {
         this.subOrder = subOrder;
         this.customOrder = customOrder;
@@ -131,7 +110,3 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
 }
-
-/*
- $Log$
- */

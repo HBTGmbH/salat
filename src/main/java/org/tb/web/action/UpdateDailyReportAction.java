@@ -116,8 +116,8 @@ public class UpdateDailyReportAction extends DailyReportAction {
             }
 
             tr.setTaskdescription(reportForm.getComment());
-            tr.setDurationhours(new Integer(reportForm.getSelectedDurationHour()));
-            tr.setDurationminutes(new Integer(reportForm.getSelectedDurationMinute()));
+            tr.setDurationhours(reportForm.getSelectedDurationHour());
+            tr.setDurationminutes(reportForm.getSelectedDurationMinute());
             tr.setCosts(reportForm.getCosts());
             tr.setTraining(reportForm.getTraining());
 
@@ -174,7 +174,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
 
                     // if JIRA is accessed for the first time or the access token is invalid
                     if ((jiraAccessToken == null && request.getParameter("oauth_verifier") == null) ||
-                            (jiraAccessToken != null && AtlassianOAuthClient.isValidAccessToken(jiraAccessToken) == false)) {
+                            (jiraAccessToken != null && !AtlassianOAuthClient.isValidAccessToken(jiraAccessToken))) {
                         // STEP 1: get a request token from JIRA and redirect user to JIRA login page
                         AtlassianOAuthClient.getRequestTokenAndSetRedirectToJira(response, GlobalConstants.SALAT_URL + "/do/UpdateDailyReport?trId=" + trId);
                         return null;
@@ -235,10 +235,8 @@ public class UpdateDailyReportAction extends DailyReportAction {
                             }
                         }
 
-                        if (newTime || newTaskdescription) {
-                            salatWorklog.setType("updated");
-                            salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
-                        }
+                        salatWorklog.setType("updated");
+                        salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
                     } else {
                         int[] responseCreateWorklog = jcHelper.createWorklog(tr, jiraKey);
                         if (responseCreateWorklog[0] != 200) {
@@ -286,20 +284,19 @@ public class UpdateDailyReportAction extends DailyReportAction {
 
             Long currentSuborderId = (Long) request.getSession().getAttribute("currentSuborderId");
             if (currentSuborderId == null || currentSuborderId == 0) {
-                currentSuborderId = -1l;
+                currentSuborderId = -1L;
             }
             showDailyReportForm.setSuborderId(currentSuborderId);
 
-            refreshTimereports(mapping,
+            refreshTimereports(
                     request,
                     showDailyReportForm,
                     customerorderDAO,
                     timereportDAO,
                     employeecontractDAO,
                     suborderDAO,
-                    employeeorderDAO,
-                    publicholidayDAO,
-                    overtimeDAO);
+                    employeeorderDAO
+            );
             @SuppressWarnings("unchecked")
             List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
 
@@ -343,12 +340,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param reportForm
-     * @param theDate       - sql date
-     * @param theTimereport
-     * @return
      */
     private ActionMessages validateFormData(HttpServletRequest request,
                                             UpdateDailyReportForm reportForm,

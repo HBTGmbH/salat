@@ -75,12 +75,11 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
-
             String which = request.getParameter("which").toLowerCase();
-            Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+            int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? eoForm.getValidUntil() : eoForm.getValidFrom();
-            Integer day, month, year;
+            int day, month, year;
             Calendar cal = Calendar.getInstance();
 
             if (howMuch != 0) {
@@ -186,16 +185,14 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("save") || request.getParameter("eoId") != null) {
-
             // 'main' task - prepare everything to store the employee order.
             // I.e., copy properties from the form into the employee order
             // before saving.
-            long eoId = -1;
+            long eoId;
 
-            Employeeorder eo = null;
+            Employeeorder eo;
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
-            long employeeContractId = employeecontract.getId();
-
+            long employeeContractId;
 
             if (request.getSession().getAttribute("eoId") != null) {
                 // edited employeeorder
@@ -292,7 +289,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
                 /* show actual hours */
                 List<Employeeorder> employeeOrders = employeeorderDAO
                         .getEmployeeordersByFilters(show, filter, employeeContractId, orderId);
-                List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
+                List<EmployeeOrderViewDecorator> decorators = new LinkedList<>();
 
                 for (Employeeorder employeeorder : employeeOrders) {
                     EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
@@ -333,10 +330,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
     /**
      * resets the 'add report' form to default values
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
      */
     private void doResetActions(ActionMapping mapping,
                                 HttpServletRequest request, AddEmployeeOrderForm eoForm) {
@@ -379,10 +372,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param cuForm
-     * @return
      */
     private ActionMessages validateFormData(HttpServletRequest request,
                                             AddEmployeeOrderForm eoForm, EmployeeorderDAO employeeorderDAO,
@@ -402,7 +391,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
         } catch (ParseException e) {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
-        if (eoForm.getValidUntil() != null && eoForm.getValidUntil() != "".trim()) {
+        if (eoForm.getValidUntil() != null && !eoForm.getValidUntil().equals("".trim())) {
             try {
                 validUntilDate = simpleDateFormat.parse(eoForm.getValidUntil());
             } catch (ParseException e) {
@@ -434,10 +423,10 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
                     || !GenericValidator.isInRange(eoForm.getDebithours(), 0.0, GlobalConstants.MAX_DEBITHOURS)) {
                 errors.add("debithours", new ActionMessage("form.employeeorder.error.debithours.wrongformat"));
             } else if (eoForm.getDebithours() != null && eoForm.getDebithours() != 0.0) {
-                Double debithours = eoForm.getDebithours() * 100000;
+                double debithours = eoForm.getDebithours() * 100000;
                 debithours += 0.5;
 
-                int debithours2 = debithours.intValue();
+                int debithours2 = (int) debithours;
                 int modulo = debithours2 % 5000;
                 eoForm.setDebithours(debithours2 / 100000.0);
 
@@ -491,7 +480,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
                                 errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                                 break;
                             }
-                        } else if (validUntilDate != null && employeeorder.getUntilDate() == null) {
+                        } else if (validUntilDate != null) {
                             if (!validUntilDate.before(employeeorder.getFromDate())) {
                                 errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                                 break;

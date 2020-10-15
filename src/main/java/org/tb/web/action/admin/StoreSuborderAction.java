@@ -66,10 +66,10 @@ public class StoreSuborderAction extends LoginRequiredAction {
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
             String which = request.getParameter("which").toLowerCase();
-            Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+            int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? addSuborderForm.getValidUntil() : addSuborderForm.getValidFrom();
-            Integer day, month, year;
+            int day, month, year;
             Calendar cal = Calendar.getInstance();
 
             if (howMuch != 0) {
@@ -155,7 +155,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
             try {
                 soId = new Long(request.getSession().getAttribute("soId").toString());
             } catch (Throwable th) {
-                soId = -1l;
+                soId = -1L;
             }
             if (suborders != null) {
                 if (tempSubOrder != null && (tempOrder == null || tempSubOrder.getCustomerorder().getId() == tempOrder.getId())) {
@@ -246,7 +246,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
 
             // refresh suborder default hourly rate after change of order
             // (same rate as for order itself)
-            if (refreshHourlyRate(mapping, request, addSuborderForm) != true) {
+            if (!refreshHourlyRate(mapping, request, addSuborderForm)) {
                 return mapping.findForward("error");
             } else {
                 return mapping.getInputForward();
@@ -265,8 +265,8 @@ public class StoreSuborderAction extends LoginRequiredAction {
             // 'main' task - prepare everything to store the suborder.
             // I.e., copy properties from the form into the suborder before
             // saving.
-            long soId = -1;
-            Suborder so = null;
+            long soId;
+            Suborder so;
             Customerorder customerorder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
 
             if (request.getSession().getAttribute("soId") != null) {
@@ -402,10 +402,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
 
     /**
      * resets the 'add report' form to default values
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
      */
     private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddSuborderForm soForm) {
         soForm.reset(mapping, request);
@@ -445,10 +441,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param cuForm
-     * @return
      */
     private ActionMessages validateFormData(HttpServletRequest request, AddSuborderForm addSuborderForm) {
 
@@ -464,11 +456,11 @@ public class StoreSuborderAction extends LoginRequiredAction {
             suborderId = (Long) request.getSession().getAttribute("soId");
         } else {
             // new suborder
-            suborderId = 0l;
+            suborderId = 0L;
         }
 
         // for a new suborder, check if the sign already exists
-        if (suborderId == 0l) {
+        if (suborderId == 0L) {
             // Liste aller Children der übergeordneten Suborder
             // ggf. gibt es keine übergeordnete Suborder (=null?)
             // dann die untergeordneten Suboders der Customerorder.
@@ -561,10 +553,9 @@ public class StoreSuborderAction extends LoginRequiredAction {
 
             errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat"));
         } else if (addSuborderForm.getDebithours() != null && addSuborderForm.getDebithours() != 0.0) {
-
-            Double debithours = addSuborderForm.getDebithours() * 100000;
+            double debithours = addSuborderForm.getDebithours() * 100000;
             debithours += 0.5;
-            int debithours2 = debithours.intValue();
+            int debithours2 = (int) debithours;
             int modulo = debithours2 % 5000;
             addSuborderForm.setDebithours(debithours2 / 100000.0);
 
@@ -645,11 +636,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
     /**
      * refreshes suborder default hourly rate after change of order (same rate
      * as for order itself)
-     *
-     * @param mapping
-     * @param request
-     * @param soForm
-     * @return
      */
     private boolean refreshHourlyRate(ActionMapping mapping,
                                       HttpServletRequest request, AddSuborderForm soForm) {
@@ -657,7 +643,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
         Customerorder co = customerorderDAO.getCustomerorderById(soForm.getCustomerorderId());
 
         if (co != null) {
-            request.getSession().setAttribute("currentOrderId", new Long(co.getId()));
+            request.getSession().setAttribute("currentOrderId", co.getId());
             request.getSession().setAttribute("currentOrder", co);
             request.getSession().setAttribute("hourlyRate", co.getHourly_rate());
             request.getSession().setAttribute("currency", co.getCurrency());
@@ -684,7 +670,6 @@ public class StoreSuborderAction extends LoginRequiredAction {
     }
 
     private void refreshForOverview(HttpServletRequest request) {
-
         String filter = null;
         Boolean show = null;
         Long customerOrderId = null;
@@ -703,7 +688,7 @@ public class StoreSuborderAction extends LoginRequiredAction {
         if (showActualHours) {
             /* show actual hours */
             List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
-            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
                 SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
                 suborderViewDecorators.add(decorator);

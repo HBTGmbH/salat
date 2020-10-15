@@ -42,10 +42,10 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
                 && (request.getParameter("task").equals("SetEmployeeOrderInTimereports"))) {
 
             Date start = new Date();
-            List<String> problems = new ArrayList<String>();
+            List<String> problems = new ArrayList<>();
 
             List<Timereport> timereports = timereportDAO.getOrderedTimereports();
-            List<Timereport> unassignedTimereports = new ArrayList<Timereport>();
+            List<Timereport> unassignedTimereports = new ArrayList<>();
             int total = timereports.size();
             int unassignable = 0;
             int updated = 0;
@@ -96,9 +96,9 @@ public class ShowAdminOptionsAction extends LoginRequiredAction {
             }
 
             Date end = new Date();
-            Long millis = end.getTime() - start.getTime();
-            Long sec = millis / 1000;
-            Long min = sec / 60;
+            long millis = end.getTime() - start.getTime();
+            long sec = millis / 1000;
+            long min = sec / 60;
             sec = sec % 60;
 
             request.getSession().setAttribute("setemployeeorderresults", "result:  total reports: " + total + " updated: " + updated + " unassignable: " + unassignable + " unaltered: " + assigned + "    duration: " + min + ":" + sec + " minutes");

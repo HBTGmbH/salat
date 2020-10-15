@@ -1,6 +1,7 @@
 package org.tb.web.form;
 
-import org.apache.struts.action.ActionErrors;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -13,40 +14,16 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author oda
  */
+@Getter
+@Setter
 public class ShowEmployeeForm extends ActionForm {
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L; // -3316717791855254L;
+
     private String filter;
-
-
-    /**
-     * @return the filter
-     */
-    public String getFilter() {
-        return filter;
-    }
-
-    /**
-     * @param filter the filter to set
-     */
-    public void setFilter(String filter) {
-        this.filter = filter;
-    }
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         filter = "";
-    }
-
-    @Override
-    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-        ActionErrors errors = new ActionErrors();
-
-        // actually, no checks here
-        return errors;
     }
 
 }

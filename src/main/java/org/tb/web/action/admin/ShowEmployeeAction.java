@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ShowEmployeeAction extends LoginRequiredAction {
 
-
     private EmployeeDAO employeeDAO;
 
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
@@ -28,9 +27,7 @@ public class ShowEmployeeAction extends LoginRequiredAction {
     public ActionForward executeAuthenticated(ActionMapping mapping,
                                               ActionForm form, HttpServletRequest request,
                                               HttpServletResponse response) {
-
         ShowEmployeeForm employeeForm = (ShowEmployeeForm) form;
-
         String filter = null;
 
         if ((request.getParameter("task") != null) &&
@@ -46,7 +43,6 @@ public class ShowEmployeeAction extends LoginRequiredAction {
         }
 
         request.getSession().setAttribute("employees", employeeDAO.getEmployeesByFilter(filter));
-
 
         if (request.getParameter("task") != null) {
             if (request.getParameter("task").equalsIgnoreCase("back")) {

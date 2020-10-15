@@ -3,6 +3,8 @@ package org.tb.persistence;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.ProjectID;
@@ -17,24 +19,20 @@ import java.util.Map.Entry;
  *
  * @author oda
  */
+@Component
 public class CustomerorderDAO extends AbstractDAO {
 
-    private SuborderDAO suborderDAO;
-    private ProjectIDDAO projectIDDAO;
+    private final SuborderDAO suborderDAO;
+    private final ProjectIDDAO projectIDDAO;
 
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
+    public CustomerorderDAO(SessionFactory sessionFactory, SuborderDAO suborderDAO, ProjectIDDAO projectIDDAO) {
+        super(sessionFactory);
         this.suborderDAO = suborderDAO;
-    }
-
-    public void setProjectIDDAO(ProjectIDDAO projectIDDAO) {
         this.projectIDDAO = projectIDDAO;
     }
 
     /**
      * Gets the customerorder for the given id.
-     *
-     * @param long id
-     * @return Customerorder
      */
     public Customerorder getCustomerorderById(long id) {
         return (Customerorder) getSession().createQuery("from Customerorder co where co.id = ?").setLong(0, id).uniqueResult();
@@ -42,19 +40,13 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Gets the customerorder for the given sign.
-     *
-     * @param String sign
-     * @return Customerorder
      */
     public Customerorder getCustomerorderBySign(String sign) {
-        Customerorder co = (Customerorder) getSession().createQuery("from Customerorder c where c.sign = ?").setString(0, sign).uniqueResult();
-        return co;
+        return (Customerorder) getSession().createQuery("from Customerorder c where c.sign = ?").setString(0, sign).uniqueResult();
     }
 
     /**
      * Get a list of all Customerorders ordered by their sign.
-     *
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerorders() {
@@ -63,8 +55,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Get a list of all vivible Customerorders ordered by their sign.
-     *
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Customerorder> getVisibleCustomerorders() {
@@ -125,8 +115,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Get a list of all Customerorders fitting to the given filters ordered by their sign.
-     *
-     * @return
      */
     public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
         Date now = (showInvalid == null || !showInvalid) ? new Date() : null;
@@ -145,9 +133,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
-     *
-     * @param responsibleHbtId
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
@@ -156,9 +141,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible and statusreports are neccesary.
-     *
-     * @param responsibleHbtId
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(long responsibleHbtId) {
@@ -172,9 +154,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
-     *
-     * @param responsibleHbtId
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
@@ -187,13 +166,10 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Gets a list of all Customerorders by employee contract id.
-     *
-     * @param long contractId
-     * @return
      */
     public List<Customerorder> getCustomerordersByEmployeeContractId(long contractId) {
         List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
-        List<Customerorder> allCustomerorders = new ArrayList<Customerorder>();
+        List<Customerorder> allCustomerorders = new ArrayList<>();
         outer:
         for (Suborder so : suborders) {
             Customerorder co = so.getCustomerorder();
@@ -205,7 +181,7 @@ public class CustomerorderDAO extends AbstractDAO {
             }
             allCustomerorders.add(co);
         }
-        Collections.sort(allCustomerorders, new CustomerOrderComparator());
+        allCustomerorders.sort(CustomerOrderComparator.INSTANCE);
         return allCustomerorders;
     }
 
@@ -228,8 +204,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Calls {@link CustomerorderDAO#save(Customerorder, Employee)} with {@link Employee} = null.
-     *
-     * @param co
      */
     public void save(Customerorder co) {
         save(co, null);
@@ -237,8 +211,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Saves the given order and sets creation-/update-user and creation-/update-date.
-     *
-     * @param Customerorder co
      */
     public void save(Customerorder co, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -263,9 +235,6 @@ public class CustomerorderDAO extends AbstractDAO {
 
     /**
      * Deletes the given customer order.
-     *
-     * @param long coId
-     * @return boolean
      */
     public boolean deleteCustomerorderById(long coId) {
         List<Customerorder> allCustomerorders = getCustomerorders();

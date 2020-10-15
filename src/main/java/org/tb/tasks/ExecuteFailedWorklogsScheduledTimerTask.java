@@ -43,7 +43,7 @@ public class ExecuteFailedWorklogsScheduledTimerTask extends ScheduledTimerTask 
             startDate = DateUtils.addMinutes(startDate, execute_every);
         }
 
-        long execute_every_milliseconds = execute_every * 60 * 1000;
+        long execute_every_milliseconds = (long) execute_every * 60 * 1000;
         long execute_in = startDate.getTime() - now.getTime();
 
         setDelay(execute_in);

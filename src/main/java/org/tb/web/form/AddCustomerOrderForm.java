@@ -1,6 +1,7 @@
 package org.tb.web.form;
 
-import org.apache.struts.action.ActionErrors;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
@@ -14,12 +15,11 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author oda
  */
+@Getter
+@Setter
 public class AddCustomerOrderForm extends ActionForm {
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L; // 3158661302891965253L;
+
     private long id;
     private String sign;
     private String jiraProjectID;
@@ -44,215 +44,6 @@ public class AddCustomerOrderForm extends ActionForm {
     private long respContrEmployeeId;
 
     private String action;
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public long getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(long customerId) {
-        this.customerId = customerId;
-    }
-
-    public Double getHourlyRate() {
-        return hourlyRate;
-    }
-
-    public void setHourlyRate(Double hourlyRate) {
-        this.hourlyRate = hourlyRate;
-    }
-
-    public String getOrderCustomer() {
-        return orderCustomer;
-    }
-
-    public void setOrderCustomer(String orderCustomer) {
-        this.orderCustomer = orderCustomer;
-    }
-
-    public String getSign() {
-        return sign;
-    }
-
-    public void setSign(String sign) {
-        this.sign = sign;
-    }
-
-    public String getJiraProjectID() {
-        return jiraProjectID;
-    }
-
-    public void setJiraProjectID(String jiraProjectID) {
-        this.jiraProjectID = jiraProjectID;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getValidFrom() {
-        return validFrom;
-    }
-
-    public void setValidFrom(String validFrom) {
-        this.validFrom = validFrom;
-    }
-
-    public String getValidUntil() {
-        return validUntil;
-    }
-
-    public void setValidUntil(String validUntil) {
-        this.validUntil = validUntil;
-    }
-
-    /**
-     * @return the employeeId
-     */
-    public long getEmployeeId() {
-        return employeeId;
-    }
-
-    /**
-     * @param employeeId the employeeId to set
-     */
-    public void setEmployeeId(long employeeId) {
-        this.employeeId = employeeId;
-    }
-
-    /**
-     * @return the respContrEmployeeId
-     */
-    public long getRespContrEmployeeId() {
-        return respContrEmployeeId;
-    }
-
-    /**
-     * @param respContrEmployeeId the respContrEmployeeId to set
-     */
-    public void setRespContrEmployeeId(long respContrEmployeeId) {
-        this.respContrEmployeeId = respContrEmployeeId;
-    }
-
-    /**
-     * @return the statusreport
-     */
-    public int getStatusreport() {
-        return statusreport;
-    }
-
-    /**
-     * @param statusreport the statusreport to set
-     */
-    public void setStatusreport(int statusreport) {
-        this.statusreport = statusreport;
-    }
-
-    /**
-     * @return the responsibleCustomerContractually
-     */
-    public String getResponsibleCustomerContractually() {
-        return responsibleCustomerContractually;
-    }
-
-    /**
-     * @param responsibleCustomerContractually the responsibleCustomerContractually to set
-     */
-    public void setResponsibleCustomerContractually(
-            String responsibleCustomerContractually) {
-        this.responsibleCustomerContractually = responsibleCustomerContractually;
-    }
-
-    /**
-     * @return the responsibleCustomerTechnical
-     */
-    public String getResponsibleCustomerTechnical() {
-        return responsibleCustomerTechnical;
-    }
-
-    /**
-     * @param responsibleCustomerTechnical the responsibleCustomerTechnical to set
-     */
-    public void setResponsibleCustomerTechnical(String responsibleCustomerTechnical) {
-        this.responsibleCustomerTechnical = responsibleCustomerTechnical;
-    }
-
-    public String getShortdescription() {
-        return shortdescription;
-    }
-
-    public void setShortdescription(String shortdescription) {
-        this.shortdescription = shortdescription;
-    }
-
-    /**
-     * @return the debithours
-     */
-    public Double getDebithours() {
-        return debithours;
-    }
-
-    /**
-     * @param debithours the debithours to set
-     */
-    public void setDebithours(Double debithours) {
-        this.debithours = debithours;
-    }
-
-    /**
-     * @return the debithoursunit
-     */
-    public Byte getDebithoursunit() {
-        return debithoursunit;
-    }
-
-    /**
-     * @param debithoursunit the debithoursunit to set
-     */
-    public void setDebithoursunit(Byte debithoursunit) {
-        this.debithoursunit = debithoursunit;
-    }
-
-    /**
-     * @return the hide
-     */
-    public Boolean getHide() {
-        return hide;
-    }
-
-    /**
-     * @param hide the hide to set
-     */
-    public void setHide(Boolean hide) {
-        this.hide = hide;
-    }
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -281,14 +72,6 @@ public class AddCustomerOrderForm extends ActionForm {
         debithoursunit = null;
         statusreport = 0;
         hide = false;
-    }
-
-    @Override
-    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-        ActionErrors errors = new ActionErrors();
-
-        // actually, no checks here
-        return errors;
     }
 
 }

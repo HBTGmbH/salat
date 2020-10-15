@@ -11,11 +11,6 @@ import javax.persistence.Table;
 import javax.persistence.*;
 import java.io.Serializable;
 
-/**
- * Bean for table 'statusreport'
- *
- * @author th
- */
 @Getter
 @Setter
 @Entity

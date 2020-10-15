@@ -16,12 +16,11 @@ public class GetTimereportAction extends LoginRequiredAction {
     private TimereportDAO timereportDAO;
 
     @Override
-    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+        long timereportId = Long.parseLong(request.getParameter("timereportId"));
 
-        Long timereportId = Long.valueOf(request.getParameter("timereportId"));
-
-        Map<String, String> timereportMap = new HashMap<String, String>();
-        Timereport timereport = (Timereport) timereportDAO.getTimereportById(timereportId);
+        Map<String, String> timereportMap = new HashMap<>();
+        Timereport timereport = timereportDAO.getTimereportById(timereportId);
 
         //Creating a map with timereport details for the particular report
         String suborderId = String.valueOf(timereport.getSuborder().getId());

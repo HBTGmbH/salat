@@ -10,11 +10,6 @@ import javax.persistence.Entity;
 import javax.persistence.*;
 import java.io.Serializable;
 
-/**
- * Bean for table 'vacation'
- *
- * @author oda
- */
 @Getter
 @Setter
 @Entity

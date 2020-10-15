@@ -1,5 +1,7 @@
 package org.tb.web.form;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employeecontract;
@@ -12,46 +14,22 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author sql
  */
+@Getter
+@Setter
 public class ShowTrainingForm extends ActionForm {
-
     private static final long serialVersionUID = 1L;
 
     private final String currentYear = DateUtils.getCurrentYearString();
     private String year;
     private long employeeContractId;
 
-    //    private final String order = GlobalConstants.ALL_ORDERS;
-
-    public String getYear() {
-        return year;
-    }
-
-    public void setYear(String year) {
-        this.year = year;
-    }
-
     public String getStartdate() {
-        String startdate = year + "-01-01";
-        return startdate;
-
+        return year + "-01-01";
     }
 
     public String getEnddate() {
-        int nextyear = Integer.valueOf(year) + 1;
-        String enddate = nextyear + "-01-01";
-        return enddate;
-    }
-
-    public String getCurrentYear() {
-        return currentYear;
-    }
-
-    public long getEmployeeContractId() {
-        return employeeContractId;
-    }
-
-    public void setEmployeeContractId(long employeeContractId) {
-        this.employeeContractId = employeeContractId;
+        int nextyear = Integer.parseInt(year) + 1;
+        return nextyear + "-01-01";
     }
 
     @Override
@@ -64,6 +42,6 @@ public class ShowTrainingForm extends ActionForm {
             employeeContractId = -1;
         }
         year = currentYear;
-
     }
+
 }

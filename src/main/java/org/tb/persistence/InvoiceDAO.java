@@ -1,23 +1,24 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Invoice;
 
 import java.util.List;
 
-/**
- * DAO class for 'Invoice'
- *
- * @author oda
- */
+@Component
 public class InvoiceDAO extends AbstractDAO {
+
+    @Autowired
+    public InvoiceDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     /**
      * Gets the Invoice for the given id.
-     *
-     * @param long id
-     * @return Invoice
      */
     public Invoice getInvoiceById(long id) {
         return (Invoice) getSession().createQuery("from Invoice in where in.id = ?").setLong(0, id).uniqueResult();
@@ -25,8 +26,6 @@ public class InvoiceDAO extends AbstractDAO {
 
     /**
      * Get a list of all Invoices.
-     *
-     * @return List<Invoice>
      */
     @SuppressWarnings("unchecked")
     public List<Invoice> getInvoices() {
@@ -35,8 +34,6 @@ public class InvoiceDAO extends AbstractDAO {
 
     /**
      * Calls {@link InvoiceDAO#save(Invoice, Employee)} with {@link Employee} = null.
-     *
-     * @param i
      */
     public void save(Invoice i) {
         save(i, null);
@@ -44,8 +41,6 @@ public class InvoiceDAO extends AbstractDAO {
 
     /**
      * Saves the given invoice and sets creation-/update-user and creation-/update-date.
-     *
-     * @param Invoice invoice
      */
     public void save(Invoice invoice, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -69,9 +64,6 @@ public class InvoiceDAO extends AbstractDAO {
 
     /**
      * Deletes the given Invoice.
-     *
-     * @param long inId
-     * @return boolean
      */
     public boolean deleteInvoiceById(long inId) {
         List<Invoice> allInvoices = getInvoices();

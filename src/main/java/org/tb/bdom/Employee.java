@@ -13,11 +13,6 @@ import javax.persistence.Id;
 import javax.persistence.Transient;
 import java.io.Serializable;
 
-/**
- * Bean for table 'Employee'.
- *
- * @author oda
- */
 @Data
 @Entity
 @EqualsAndHashCode(of = {"id", "sign"})

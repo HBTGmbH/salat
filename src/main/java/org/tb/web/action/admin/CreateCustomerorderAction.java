@@ -48,7 +48,7 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
         AddCustomerOrderForm addForm = (AddCustomerOrderForm) form;
 
         if (customerId == null) {
-            customerId = 0l;
+            customerId = 0L;
         }
         addForm.setCustomerId(customerId);
 
@@ -82,4 +82,5 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
         // forward to form jsp
         return mapping.findForward("success");
     }
+
 }

@@ -35,8 +35,7 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
-//		 remove list with timereports out of range
+        // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         AddEmployeeContractForm employeeContractForm = (AddEmployeeContractForm) form;
@@ -77,7 +76,7 @@ public class CreateEmployeecontractAction extends LoginRequiredAction {
         // use employee from overview filter
         Long filterEmployeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
         if (filterEmployeeId == null) {
-            filterEmployeeId = -1l;
+            filterEmployeeId = -1L;
         }
         employeeContractForm.setEmployee(filterEmployeeId);
 

@@ -43,7 +43,6 @@ public class StoreStatusReportAction extends StatusReportAction {
      */
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-
         AddStatusReportForm reportForm = (AddStatusReportForm) form;
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         boolean backAction = false;
@@ -51,10 +50,10 @@ public class StoreStatusReportAction extends StatusReportAction {
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
             String which = request.getParameter("which").toLowerCase();
-            Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+            int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? reportForm.getValidUntil() : reportForm.getValidFrom();
-            Integer day, month, year;
+            int day, month, year;
             Calendar cal = Calendar.getInstance();
 
             if (howMuch != 0) {
@@ -289,8 +288,7 @@ public class StoreStatusReportAction extends StatusReportAction {
         // end action save
 
         // action back
-        if (request.getParameter("action") != null
-                && request.getParameter("action").equals("back") || backAction) {
+        if (request.getParameter("action") != null && request.getParameter("action").equals("back")) {
 
             // refresh list of reports for overview
             Long customerOrderId = (Long) request.getSession().getAttribute("customerOrderId");
@@ -368,12 +366,6 @@ public class StoreStatusReportAction extends StatusReportAction {
 
     /**
      * Saves the status report
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
-     * @return
-     * @throws ParseException
      */
     private ActionForward saveStatusReport(ActionMapping mapping,
                                            HttpServletRequest request, AddStatusReportForm reportForm)
@@ -534,8 +526,6 @@ public class StoreStatusReportAction extends StatusReportAction {
     /**
      * Validates the form data.
      *
-     * @param request
-     * @param reportForm
      * @return Returns the errors as {@link ActionMessages}.
      */
     private ActionMessages validateFormData(HttpServletRequest request, AddStatusReportForm reportForm, boolean validateAll) {

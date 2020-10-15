@@ -41,8 +41,7 @@ public class SubordersService {
                 .getSubordersByEmployeeContractIdWithValidEmployeeOrders(
                         ec.getId(), refDate);
 
-        List<SuborderData> suborderResult = new ArrayList<SuborderData>(
-                suborders.size());
+        List<SuborderData> suborderResult = new ArrayList<>(suborders.size());
 
         for (Suborder suborder : suborders) {
             // Filtering valid suborders with not required description

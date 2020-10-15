@@ -22,15 +22,15 @@ public class StoreTimereportAction extends LoginRequiredAction {
     private TimereportDAO timereportDAO;
 
     @Override
-    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        Map<String, Object> map = new HashMap<String, Object>();
-        boolean isValid = false;
+    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+        Map<String, Object> map = new HashMap<>();
+        boolean isValid;
         Timereport timereport = new Timereport();
-        int hours = 0;
-        int minutes = 0;
+        int hours;
+        int minutes;
         Date date = new Date();
         java.sql.Date datesql = new java.sql.Date(date.getTime());
-        Long selectedOrderId = Long.valueOf(request.getParameter("orderSelect"));
+        long selectedOrderId = Long.parseLong(request.getParameter("orderSelect"));
         String description = request.getParameter("comment");
 
         //Check for description existence and if existing  add a preceding space
@@ -43,25 +43,25 @@ public class StoreTimereportAction extends LoginRequiredAction {
 
         // Setting hours and minutes values
         try {
-            hours = Integer.valueOf(request.getParameter("hours"));
+            hours = Integer.parseInt(request.getParameter("hours"));
         } catch (Exception e) {
             hours = 0;
         }
 
         try {
-            minutes = Integer.valueOf(request.getParameter("minutes"));
+            minutes = Integer.parseInt(request.getParameter("minutes"));
         } catch (Exception e) {
             minutes = 0;
         }
 
         Suborder suborder = suborderDAO.getSuborderById(selectedOrderId);
-        Employeecontract employeecontract = new Employeecontract();
+        Employeecontract employeecontract;
 
         //Checking if the timereport has to be updated or created 
         String timereportIdString = request.getParameter("hiddenTimereportId");
 
         if (!timereportIdString.isEmpty()) {
-            Long timereportId = Long.valueOf(timereportIdString);
+            long timereportId = Long.parseLong(timereportIdString);
             timereport = timereportDAO.getTimereportById(timereportId);
             employeecontract = timereport.getEmployeecontract();
             String lastupdatedby = timereport.getEmployeecontract().getEmployee().getSign();

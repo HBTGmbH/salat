@@ -19,13 +19,11 @@ import java.util.List;
  */
 public class StoreCustomerAction extends LoginRequiredAction {
 
-
     private CustomerDAO customerDAO;
 
     public void setCustomerDAO(CustomerDAO customerDAO) {
         this.customerDAO = customerDAO;
     }
-
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -37,8 +35,8 @@ public class StoreCustomerAction extends LoginRequiredAction {
 
             // 'main' task - prepare everything to store the customer.
             // I.e., copy properties from the form into the customer before saving.
-            long cuId = -1;
-            Customer cu = null;
+            long cuId;
+            Customer cu;
             if (request.getSession().getAttribute("cuId") != null) {
                 // edited customer
                 cuId = Long.parseLong(request.getSession().getAttribute("cuId").toString());
@@ -101,10 +99,6 @@ public class StoreCustomerAction extends LoginRequiredAction {
 
     /**
      * resets the 'add customer' form to default values
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
      */
     private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddCustomerForm cuForm) {
         cuForm.reset(mapping, request);
@@ -112,10 +106,6 @@ public class StoreCustomerAction extends LoginRequiredAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param cuForm
-     * @return
      */
     private ActionMessages validateFormData(HttpServletRequest request, AddCustomerForm cuForm) {
 

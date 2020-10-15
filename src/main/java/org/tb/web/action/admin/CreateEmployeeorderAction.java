@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * action class for creating a new employee order
@@ -72,13 +73,13 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
             orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         }
 
-        List<Customerorder> orderswithsuborders = new ArrayList<Customerorder>();
+        List<Customerorder> orderswithsuborders = new ArrayList<>();
         for (Customerorder customerorder : orders) {
             if (!(customerorder.getSuborders() == null || customerorder.getSuborders().isEmpty())) {
                 orderswithsuborders.add(customerorder);
             }
         }
-        if ((orderswithsuborders == null) || (orderswithsuborders.size() <= 0)) {
+        if (orderswithsuborders.size() <= 0) {
             request.setAttribute("errorMessage", "No customerorders with valid suborders found - please call system administrator.");
             return mapping.findForward("error");
         }
@@ -94,11 +95,10 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
         }
 
         // init form with first order and corresponding suborders
-        final List<Suborder> theSuborders = new ArrayList<Suborder>();
+        final List<Suborder> theSuborders = new ArrayList<>();
         request.getSession().setAttribute("suborders", theSuborders);
-        if ((orderswithsuborders != null) && (orderswithsuborders.size() > 0)) {
-
-            Customerorder selectedCustomerorder = null;
+        if (orderswithsuborders.size() > 0) {
+            Customerorder selectedCustomerorder;
 
             final Long orderId = (Long) request.getSession().getAttribute("currentOrderId");
             final Customerorder customerOrderFromFilter = customerorderDAO.getCustomerorderById(orderId);
@@ -111,7 +111,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
             request.getSession().setAttribute("selectedcustomerorder", selectedCustomerorder);
 
             // reset/init form entries
-            Boolean showOnlyValid = true;
+            boolean showOnlyValid = true;
             employeeOrderForm.reset(mapping, request, true);
             employeeOrderForm.setShowOnlyValid(showOnlyValid);
             employeeOrderForm.useDatesFromCustomerOrder(selectedCustomerorder);
@@ -126,13 +126,13 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
                 final Suborder suborder = suborderIterator.next();
                 if (suborder.isHide()) {
                     suborderIterator.remove();
-                } else if (showOnlyValid && !suborder.getCurrentlyValid()) {
+                } else if (!suborder.getCurrentlyValid()) {
                     suborderIterator.remove();
                 }
             }
 
             request.getSession().setAttribute("suborders", suborders);
-            if (suborders != null && !suborders.isEmpty()) {
+            if (!suborders.isEmpty()) {
                 request.getSession().setAttribute("selectedsuborder", suborders.get(0));
             }
             if ((selectedCustomerorder.getSuborders() != null) && (selectedCustomerorder.getSuborders().size() > 0)) {
@@ -141,7 +141,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
             }
 
             /* suggest value */
-            if (selectedCustomerorder.getSuborders().size() > 0) {
+            if (Objects.requireNonNull(selectedCustomerorder.getSuborders()).size() > 0) {
                 employeeOrderForm.setDebithours(selectedCustomerorder.getSuborders().get(0).getDebithours());
             } else {
                 employeeOrderForm.setDebithours(0.0);

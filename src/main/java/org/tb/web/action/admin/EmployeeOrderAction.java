@@ -19,13 +19,7 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 
     /**
      * Refreshes the list of employee orders and stores it in the session.
-     *
-     * @param request
-     * @param orderForm
-     * @param customerorderDAO
-     * @param employeeorderDAO
      */
-
     protected void refreshEmployeeSubOrders(HttpServletRequest request,
                                             ShowEmployeeOrderForm orderForm, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO, boolean onlyValid) {
 
@@ -49,7 +43,7 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 
-        Long employeeContractId = 0L;
+        long employeeContractId = 0L;
         Long orderId = 0L;
 
         if (orderForm != null) {
@@ -57,7 +51,7 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
             orderId = orderForm.getOrderId();
         }
 
-        if (employeeContractId == null || employeeContractId == 0) {
+        if (employeeContractId == 0) {
             if (currentEmployeeContract != null) {
                 employeeContractId = currentEmployeeContract.getId();
             } else {
@@ -65,13 +59,13 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
             }
         }
 
-        if (orderId == null || orderId == 0) {
+        if (orderId == 0) {
             if (request.getSession().getAttribute("currentOrderId") != null) {
                 orderId = (Long) request.getSession().getAttribute("currentOrderId");
             }
         }
         if (orderId == null || orderId == 0) {
-            orderId = -1l;
+            orderId = -1L;
         }
 
         request.getSession().setAttribute("currentOrderId", orderId);
@@ -145,14 +139,14 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 
         Long employeeContractId = 0L;
         Long orderId = 0L;
-        Long suborderId = 0L;
+        long suborderId;
 
         if (orderForm != null) {
             employeeContractId = orderForm.getEmployeeContractId();
             orderId = orderForm.getOrderId();
         }
 
-        if (employeeContractId == null || employeeContractId == 0) {
+        if (employeeContractId == 0) {
             if (currentEmployeeContract != null) {
                 employeeContractId = currentEmployeeContract.getId();
             } else {
@@ -160,14 +154,14 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
             }
         }
 
-        if (orderId == null || orderId == 0) {
+        if (orderId == 0) {
             if (request.getSession().getAttribute("currentOrderId") != null) {
                 orderId = (Long) request.getSession().getAttribute("currentOrderId");
             }
         }
 
         if (orderId == null || orderId == 0) {
-            orderId = -1l;
+            orderId = -1L;
         }
 
         Long currentOrderId = (Long) request.getSession().getAttribute("currentOrderId");
@@ -260,9 +254,6 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
 
     /**
      * Sets the from and until date in the form
-     *
-     * @param request
-     * @param employeeOrderForm
      */
     protected void setFormDates(HttpServletRequest request,
                                 AddEmployeeOrderForm employeeOrderForm) {
@@ -292,9 +283,9 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
             } else {
                 employeeOrderForm.setValidFrom(simpleDateFormat.format(ecFromDate));
             }
-        } else if (ecFromDate != null && soFromDate == null) {
+        } else if (ecFromDate != null) {
             employeeOrderForm.setValidFrom(simpleDateFormat.format(ecFromDate));
-        } else if (ecFromDate == null && soFromDate != null) {
+        } else if (soFromDate != null) {
             employeeOrderForm.setValidFrom(simpleDateFormat.format(soFromDate));
         }
 
@@ -305,9 +296,9 @@ public abstract class EmployeeOrderAction extends LoginRequiredAction {
             } else {
                 employeeOrderForm.setValidUntil(simpleDateFormat.format(ecUntilDate));
             }
-        } else if (ecUntilDate != null && soUntilDate == null) {
+        } else if (ecUntilDate != null) {
             employeeOrderForm.setValidUntil(simpleDateFormat.format(ecUntilDate));
-        } else if (ecUntilDate == null && soUntilDate != null) {
+        } else if (soUntilDate != null) {
             employeeOrderForm.setValidUntil(simpleDateFormat.format(soUntilDate));
         } else {
             employeeOrderForm.setValidUntil("");

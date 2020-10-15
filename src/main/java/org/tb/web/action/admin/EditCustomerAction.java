@@ -24,17 +24,15 @@ public class EditCustomerAction extends LoginRequiredAction {
         this.customerDAO = customerDAO;
     }
 
-
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
         AddCustomerForm cuForm = (AddCustomerForm) form;
         long cuId = Long.parseLong(request.getParameter("cuId"));
         Customer cu = customerDAO.getCustomerById(cuId);
         request.getSession().setAttribute("cuId", cu.getId());
 
         // fill the form with properties of cústomer to be edited
-        setFormEntries(mapping, request, cuForm, cu);
+        setFormEntries(cuForm, cu);
 
         // forward to customer add/edit form
         return mapping.findForward("success");
@@ -42,14 +40,8 @@ public class EditCustomerAction extends LoginRequiredAction {
 
     /**
      * fills customer form with properties of given cústomer
-     *
-     * @param mapping
-     * @param request
-     * @param customerForm
-     * @param cu           - the customer
      */
-    private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddCustomerForm customerForm, Customer cu) {
+    private void setFormEntries(AddCustomerForm customerForm, Customer cu) {
         customerForm.setName(cu.getName());
         customerForm.setShortname(cu.getShortname());
         customerForm.setAddress(cu.getAddress());

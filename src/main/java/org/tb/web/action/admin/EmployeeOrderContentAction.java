@@ -15,9 +15,6 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
     /**
      * Checks if the content is editable.
      *
-     * @param request
-     * @param employeeorder
-     * @param eoContent
      * @return Returns true, if content is editable, false otherwise
      */
     protected boolean isContentEditable(HttpSession session, @Nonnull Employeeorder employeeorder, @Nullable Employeeordercontent eoContent) {
@@ -41,10 +38,6 @@ public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
     /**
      * Sets the session attributs releaseEmpPossible and releaseMgmtPossible.
      * The values are true, if a release is posible, false otherwise.
-     *
-     * @param request
-     * @param employeeorder
-     * @param eoContent
      */
     protected void setReleaseAuthorizationInSession(HttpSession session, Employeeorder employeeorder, Employeeordercontent eoContent) {
         if (eoContent != null) {

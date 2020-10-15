@@ -1,5 +1,8 @@
 package org.tb.persistence;
 
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 
@@ -9,19 +12,16 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * DAO class for 'Timereport'
- *
- * @author oda
- */
+@Component
 public class TimereportDAO extends AbstractDAO {
+
+    @Autowired
+    public TimereportDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     /**
      * Gets the timereport for the given id.
-     *
-     * @param long id
-     * @return Timereport
      */
     public Timereport getTimereportById(long id) {
         return (Timereport) getSession()
@@ -33,8 +33,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Get a list of all Timereports.
-     *
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereports() {
@@ -46,8 +44,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Get a list of all Timereports ordered by employee sign, customer order sign, suborder sign and refdate.
-     *
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getOrderedTimereports() {
@@ -59,9 +55,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets the sum of all duration minutes WITH considering the hours.
-     *
-     * @param soId
-     * @return
      */
     public long getTotalDurationMinutesForSuborder(long soId) {
         Object totalMinutes = getSession()
@@ -82,9 +75,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets the sum of all duration minutes WITH considering the hours.
-     *
-     * @param soId
-     * @return
      */
     public long getTotalDurationMinutesForSuborders(List<Long> ids) {
         if (ids == null || ids.isEmpty()) return 0;
@@ -107,41 +97,30 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets the sum of all duration minutes within a range of time WITH considering the hours.
-     *
-     * @param soId
-     * @return
      */
     public long getTotalDurationMinutesForSuborder(long soId, Date fromDate, Date untilDate) {
-        long minutes = objectToLong(getSession()
+        return objectToLong(getSession()
                 .createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr " +
                         "where tr.referenceday.refdate >= ? and tr.referenceday.refdate <= ? and tr.employeeorder.suborder.id = ? ")
                 .setDate(0, fromDate)
                 .setDate(1, untilDate)
                 .setLong(2, soId)
                 .uniqueResult());
-        return minutes;
     }
 
     /**
      * Gets the sum of all duration minutes WITH consideration of the hours.
-     *
-     * @param coId
-     * @return
      */
     public long getTotalDurationMinutesForCustomerOrder(long coId) {
-        long totalMinutes = objectToLong(getSession()
+        return objectToLong(getSession()
                 .createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr " +
                         "where tr.employeeorder.suborder.customerorder.id = ?")
                 .setLong(0, coId)
                 .uniqueResult());
-        return totalMinutes;
     }
 
     /**
      * Gets the sum of all duration minutes WITH considering the hours.
-     *
-     * @param eoId
-     * @return
      */
     public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
         Object totalMinutes = getSession()
@@ -162,11 +141,6 @@ public class TimereportDAO extends AbstractDAO {
         }
     }
 
-    /**
-     * @param ecId
-     * @param suborderId
-     * @return
-     */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsBySuborderIdAndEmployeeContractId(long suborderId, long ecId) {
         return getSession()
@@ -179,7 +153,6 @@ public class TimereportDAO extends AbstractDAO {
     }
 
     /**
-     * @param employeeContractId
      * @return Returns a list of all {@link Timereport}s associated to the given {@link Employeecontract#getId()}.
      */
     @SuppressWarnings("unchecked")
@@ -194,10 +167,6 @@ public class TimereportDAO extends AbstractDAO {
     /**
      * Gets a list of Timereports by month/year.
      * month must have format EEE here, e.g. 'Jan' !
-     *
-     * @param String month
-     * @param String year
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByMonthAndYear(Date dateOfMonthAndYear) {
@@ -218,74 +187,7 @@ public class TimereportDAO extends AbstractDAO {
     }
 
     /**
-     * Gets a list of 'W' Timereports by month/year and customerorder.
-     *
-     * @param long coId
-     * @param String month
-     * @param String year
-     * @param String sortOfReport
-     *
-     * @return List<Timereport>
-     */
-//    @SuppressWarnings("unchecked")
-//    public List<Timereport> getTimereportsByMonthAndYearAndCustomerorder(long coId, String month, String year, String sortOfReport) {
-//        List<Suborder> suborders = suborderDAO.getSuborders(false);
-//        List<Timereport> allTimereports = new ArrayList<Timereport>();
-//        for (Suborder suborder : suborders) {
-//            // get all timereports for this suborder...
-//            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
-//                    "where t.suborder.id = ? and t.suborder.customerorder.id = ? " +
-//                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-//                    .setLong(0, suborder.getId()).setLong(1, coId).setCacheable(true).list();
-//            for (Timereport timereport : specificTimereports) {
-//                // if timereport belongs to reference month/year, add it to result list...
-//                if (sortOfReport != null && timereport.getSortofreport().equals("W")) {
-//                    if (TimereportHelper.getMonthStringFromTimereport(timereport).equalsIgnoreCase(month) &&
-//                            TimereportHelper.getYearStringFromTimereport(timereport).equalsIgnoreCase(year)) {
-//                        allTimereports.add(timereport);
-//                    }
-//                }
-//            }
-//        }
-//        return allTimereports;
-//    }
-
-    /**
-     * Gets a list of Timereports by month/year and customerorder.
-     *
-     * @param long coId
-     * @param Date dt
-     * @param String sortOfReport
-     *
-     * @return List<Timereport>
-     */
-//    @SuppressWarnings("unchecked")
-//    public List<Timereport> getTimereportsByDateAndCustomerorder(long coId, Date dt, String sortOfReport) {
-//        List<Suborder> suborders = suborderDAO.getSuborders(false);
-//        List<Timereport> allTimereports = new ArrayList<Timereport>();
-//        for (Suborder suborder : suborders) {
-//            // get all timereports for this suborder...
-//            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
-//                    "where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? " +
-//                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-//                    .setDate(0, dt).setLong(1, suborder.getId()).setLong(2, coId).setCacheable(true).list();
-//            for (Timereport specificTimereport : specificTimereports) {
-//                // if timereport belongs to reference month/year, add it to result list...
-//                if (sortOfReport != null && specificTimereport.getSortofreport().equals("W")) {
-//                    allTimereports.add(specificTimereport);
-//                }
-//            }
-//        }
-//        return allTimereports;
-//    }
-
-    /**
      * Gets a list of Timereports by employee contract id and month/year.
-     *
-     * @param long   contractId
-     * @param String month
-     * @param String year
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByMonthAndYearAndEmployeeContractId(long contractId, Date dateOfMonthAndYear) {
@@ -309,10 +211,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of Timereports by employee contract id and date.
-     *
-     * @param long contractId
-     * @param Date date
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDateAndEmployeeContractId(long contractId, Date date) {
@@ -328,12 +226,11 @@ public class TimereportDAO extends AbstractDAO {
      * 1) associated to the given employee contract
      * 2) refdate out of range of the employee contract
      *
-     * @param employeecontract
      * @return Returns a {@link List} with all {@link Timereport}s, that fulfill the criteria.
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsOutOfRangeForEmployeeContract(Employeecontract employeecontract) {
-        Long employeeContractId = employeecontract.getId();
+        long employeeContractId = employeecontract.getId();
         Date contractBegin = employeecontract.getValidFrom();
         Date contractEnd = employeecontract.getValidUntil();
         List<Timereport> allTimereports = new ArrayList<Timereport>();
@@ -356,25 +253,19 @@ public class TimereportDAO extends AbstractDAO {
      * 1) associated to the given employee contract
      * 2) refdate out of range of the associated employee order
      *
-     * @param employeecontract
      * @return Returns a {@link List} with all {@link Timereport}s, that fulfill the criteria.
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsOutOfRangeForEmployeeOrder(Employeecontract employeecontract) {
-        Long employeeContractId = employeecontract.getId();
-        List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
+        long employeeContractId = employeecontract.getId();
+        return (List<Timereport>) getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and (t.referenceday.refdate < t.employeeorder.fromDate or t.referenceday.refdate > t.employeeorder.untilDate) " +
                 "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
                 .setLong(0, employeeContractId).setCacheable(true).list();
-        return allTimereports;
     }
 
     /**
      * Gets a list of all {@link Timereport}s, that have no duration and are associated to the given ecId.
-     *
-     * @param ecId id of the {@link Employeecontract}
-     * @param date
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsWithoutDurationForEmployeeContractId(long ecId, Date releaseDate) {
@@ -391,17 +282,12 @@ public class TimereportDAO extends AbstractDAO {
      * 1) associated to the given employee contract id
      * 2) valid before and at the given date
      * 3) status is open
-     *
-     * @param contractId
-     * @param date
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getOpenTimereportsByEmployeeContractIdBeforeDate(long contractId, Date date) {
-        List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
+        return (List<Timereport>) getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate <= ? and status = ?")
                 .setLong(0, contractId).setDate(1, date).setString(2, GlobalConstants.TIMEREPORT_STATUS_OPEN).setCacheable(true).list();
-        return allTimereports;
     }
 
     /**
@@ -409,43 +295,28 @@ public class TimereportDAO extends AbstractDAO {
      * 1) associated to the given employee contract id
      * 2) valid before and at the given date
      * 3) status is commited
-     *
-     * @param contractId
-     * @param date
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getCommitedTimereportsByEmployeeContractIdBeforeDate(long contractId, Date date) {
-        List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
+        return (List<Timereport>) getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate <= ? and status = ?")
                 .setLong(0, contractId).setDate(1, date).setString(2, GlobalConstants.TIMEREPORT_STATUS_COMMITED).setCacheable(true).list();
-        return allTimereports;
     }
 
     /**
      * Gets a list of all {@link Timereport}s that fulfill following criteria:
      * 1) associated to the given employee contract id
      * 2) valid after and at the given date
-     *
-     * @param contractId
-     * @param dt
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByEmployeeContractIdAfterDate(long contractId, Date dt) {
-        List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
+        return (List<Timereport>) getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate >= ? ")
                 .setLong(0, contractId).setDate(1, dt).setCacheable(true).list();
-        return allTimereports;
     }
 
     /**
      * Gets a list of Timereports by employee contract id and two dates.
-     *
-     * @param long contractId
-     * @param Date begin
-     * @param Date end
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDatesAndEmployeeContractId(long contractId, Date begin, Date end) {
@@ -466,12 +337,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of Timereports by associated to the given employee contract id, customer order id and the time period between the two given dates.
-     *
-     * @param long            contractId
-     * @param Date            begin
-     * @param Date            end
-     * @param customerOrderId
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long contractId, Date begin, Date end, long customerOrderId) {
@@ -492,12 +357,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of Timereports by associated to the given employee contract id, suborder id and the time period between the two given dates.
-     *
-     * @param long            suborderId
-     * @param Date            begin
-     * @param Date            end
-     * @param customerOrderId
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long contractId, Date begin, Date end, long suborderId) {
@@ -525,9 +384,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of Timereports by employee order id.
-     *
-     * @param employeeOrderId
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByEmployeeOrderId(long employeeOrderId) {
@@ -538,9 +394,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of Timereports by date.
-     *
-     * @param Date dt
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDate(Date date) {
@@ -551,10 +404,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of timereports, which lay between two dates.
-     *
-     * @param Date begin
-     * @param Date end
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDates(Date begin, Date end) {
@@ -573,11 +422,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of timereports, which lay between two dates and belong to the given {@link Customerorder} id.
-     *
-     * @param Date begin
-     * @param Date end
-     * @param coId
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDatesAndCustomerOrderId(Date begin, Date end, long coId) {
@@ -598,11 +442,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of timereports, which lay between two dates and belong to the given {@link Suborder} id.
-     *
-     * @param Date       begin
-     * @param Date       end
-     * @param suborderId
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDatesAndSuborderId(Date begin, Date end, long suborderId) {
@@ -623,11 +462,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Gets a list of timereports, which lay between two dates and belong to the given {@link Suborder} id.
-     *
-     * @param Date       begin
-     * @param Date       end
-     * @param suborderId
-     * @return List<Timereport>
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(Date begin, Date end, long suborderId) {
@@ -647,85 +481,6 @@ public class TimereportDAO extends AbstractDAO {
     }
 
     /**
-     * Gets a list of 'W' Timereports by employee contract id and customer id and month/year.
-     *
-     * @param long contractId
-     * @param long coId
-     * @param String month
-     * @param String year
-     * @param String sortOfReport
-     *
-     * @return List<Timereport>
-     */
-//    @SuppressWarnings("unchecked")
-//    public List<Timereport> getTimereportsByMonthAndYearAndEmployeeContractIdAndCustomerorderId(long contractId, long coId, String month, String year, String sortOfReport) {
-//        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
-//        List<Timereport> allTimereports = new ArrayList<Timereport>();
-//        for (Suborder suborder : suborders) {
-//            // get all timereports for this suborder AND employee contract...
-//            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
-//                    "where t.employeecontract.id = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? " +
-//                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-//                    .setLong(0, contractId).setLong(1, suborder.getId()).setLong(2, coId).setCacheable(true).list();
-//            for (Timereport specificTimereport : specificTimereports) {
-//                // if timereport belongs to reference month/year, add it to result list...
-//                if (sortOfReport != null && specificTimereport.getSortofreport().equals("W")
-//                        && TimereportHelper.getMonthStringFromTimereport(specificTimereport).equalsIgnoreCase(month)
-//                        && TimereportHelper.getYearStringFromTimereport(specificTimereport).equalsIgnoreCase(year)) {
-//                    allTimereports.add(specificTimereport);
-//                }
-//            }
-//        }
-//        return allTimereports;
-//    }
-
-    /**
-     * Gets a list of Timereports by employee contract id and customer id and date.
-     *
-     * @param long contractId
-     * @param long coId
-     * @param Date dt
-     * @param String sortOfReport
-     *
-     * @return List<Timereport>
-     */
-//    @SuppressWarnings("unchecked")
-//    public List<Timereport> getTimereportsByDateAndEmployeeContractIdAndCustomerorderId(long contractId, long coId, Date dt, String sortOfReport) {
-//        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
-//        List<Timereport> allTimereports = new ArrayList<Timereport>();
-//        for (Suborder suborder : suborders) {
-//            // get all timereports for this suborder...
-//            List<Timereport> specificTimereports = getSession().createQuery("from Timereport t " +
-//                    "where t.referenceday.refdate = ? and t.suborder.id = ? and t.suborder.customerorder.id = ? " +
-//                    "order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-//                    .setDate(0, dt).setLong(1, suborder.getId()).setLong(2, coId).setCacheable(true).list();
-//            for (Timereport specificTimereport : specificTimereports) {
-//                // if timereport belongs to reference month/year, add it to result list...
-//                if (sortOfReport != null && specificTimereport.getSortofreport().equals("W")) {
-//                    allTimereports.add(specificTimereport);
-//                }
-//            }
-//        }
-//        return allTimereports;
-//    }
-
-    /**
-     *
-     * @param begin
-     * @param end
-     * @param customerOrderSign
-     * @return Returns a list of all timereports that are associated to the given customer order sign and are valid between the given dates. 
-     */
-//    @SuppressWarnings("unchecked")
-//    public List<Timereport> getTimereportsByDatesAndCustomerOrderSign(Date begin, Date end, String customerOrderSign) {
-//        return getSession().createQuery("from Timereport t " +
-//                "where t.referenceday.refdate >= ? and t.referenceday.refdate <= ? and t.suborder.customerorder.sign = ? ")
-//                .setDate(0, begin).setDate(1, end).setString(2, customerOrderSign).setCacheable(true).list();
-//    }
-
-    /**
-     * @param end
-     * @param coId
      * @return Returns a timereport thats valid between the first and the last day of the given date and belonging to employeecontractid
      */
     @SuppressWarnings("unchecked")
@@ -797,9 +552,7 @@ public class TimereportDAO extends AbstractDAO {
     }
 
     /**
-     * Calls {@link TimereportDAO#save(Timereport, Employee)} with {@link Employee} = null.
-     *
-     * @param tr
+     * Calls {@link TimereportDAO#save(Timereport, Employee, boolean)} with {@link Employee} = null.
      */
     public void save(Timereport tr) {
         save(tr, null, true);
@@ -807,8 +560,6 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Saves the given timereport and sets creation-/update-user and creation-/update-date.
-     *
-     * @param Timereport tr
      */
     public void save(Timereport tr, Employee loginEmployee, boolean changeUpdateDate) {
         if (loginEmployee == null) {
@@ -831,19 +582,12 @@ public class TimereportDAO extends AbstractDAO {
 
     /**
      * Deletes the given timereport.
-     *
-     * @param long trId - timereport id
      */
     public boolean deleteTimereportById(long trId) {
         Timereport timereport = getTimereportById(trId);
         boolean deleted = false;
 
         if (timereport != null) {
-//        	Worklog worklog = worklogDAO.getWorklogByTimereportID(trId);
-//        	if (worklog != null) {
-//        		worklogDAO.deleteWorklog(worklog);
-//        	}
-
             getSession().delete(timereport);
             getSession().flush();
             deleted = true;

@@ -12,11 +12,6 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 
-/**
- * Bean for table 'timereport'.
- *
- * @author oda
- */
 @Getter
 @Setter
 @Entity

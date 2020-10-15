@@ -3,30 +3,30 @@ package org.tb.persistence;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.*;
 import org.tb.bdom.comparators.SubOrderComparator;
 
 import java.util.*;
 import java.util.Map.Entry;
 
-/**
- * DAO class for 'Suborder'
- *
- * @author oda
- */
+@Component
 public class SuborderDAO extends AbstractDAO {
     private static final Logger LOG = LoggerFactory.getLogger(SuborderDAO.class);
 
+    @Autowired
+    public SuborderDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
+
     /**
      * Gets the suborder for the given id.
-     *
-     * @param long id
-     * @return Suborder
      */
     public Suborder getSuborderById(long id) {
-        //		return (Suborder) getSession().createQuery("from Suborder so where so.id = ?").setLong(0, id).uniqueResult();
         return (Suborder) getSession().get(Suborder.class, id);
     }
 
@@ -36,29 +36,18 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Gets a list of Suborders by employee contract id.
-     *
-     * @param long contractId
-     * @return List<Suborder>
      */
     public List<Suborder> getSubordersByEmployeeContractId(long contractId) {
-
         @SuppressWarnings("unchecked")
         List<Suborder> suborders = getSession()
                 .createQuery("select e.suborder from Employeeorder e where e.employeecontract.id = ? order by e.suborder.sign asc, e.suborder.description asc")
                 .setLong(0, contractId)
                 .list();
-
-
         return suborders;
     }
 
     /**
      * Gets a list of Suborders by employee contract id AND customerorder.
-     *
-     * @param onlyValid
-     * @param long      contractId
-     * @param long      coId
-     * @return List<Suborder>
      */
     public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(long contractId, long coId, boolean onlyValid) {
         List<Suborder> employeeSpecificSuborders = getSubordersByEmployeeContractId(contractId);
@@ -67,13 +56,13 @@ public class SuborderDAO extends AbstractDAO {
         List<Suborder> allSuborders = new ArrayList<Suborder>();
         for (Suborder so : employeeSpecificSuborders) {
             if (so.getCustomerorder().getId() == coId) {
-                if (!onlyValid || so.getCurrentlyValid()) {
+                if (so.getCurrentlyValid()) {
                     allSuborders.add(so);
                 }
             }
         }
 
-        Collections.sort(allSuborders, new SubOrderComparator());
+        allSuborders.sort(SubOrderComparator.INSTANCE);
         return allSuborders;
     }
 
@@ -119,10 +108,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Gets a list of Suborders by customer order id.
-     *
-     * @param onlyValid
-     * @param long      customerorderId
-     * @return List<Suborder>
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean onlyValid) {
         if (onlyValid) {
@@ -140,10 +125,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Gets a list of Suborders by customer order id.
-     *
-     * @param onlyValid
-     * @param long      customerorderId
-     * @return List<Suborder>
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, java.util.Date date) {
         @SuppressWarnings("unchecked")
@@ -165,7 +146,6 @@ public class SuborderDAO extends AbstractDAO {
      * Get a list of all Suborders ordered by their sign.
      *
      * @param onlyValid return only valid suborders
-     * @return List<Suborder>
      */
     public List<Suborder> getSuborders(boolean onlyValid) {
         if (onlyValid) {
@@ -181,9 +161,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Get a list of all Suborders ordered by their sign.
-     *
-     * @param onlyValid return only valid suborders
-     * @return List<Suborder>
      */
     public List<Suborder> getSuborders(java.util.Date date) {
         @SuppressWarnings("unchecked")
@@ -255,8 +232,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Get a list of all suborders fitting to the given filters ordered by their sign.
-     *
-     * @return
      */
     public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
         boolean isFilter = filter != null && !filter.trim().isEmpty();
@@ -273,8 +248,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Get a list of all children of the suborder associated to the given soId ordered by their sign.
-     *
-     * @return List<Suborder>
      */
     @SuppressWarnings("unchecked")
     public List<Suborder> getSuborderChildren(long soId) {
@@ -300,8 +273,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Calls {@link SuborderDAO#save(Suborder, Employee)} with {@link Employee} = null.
-     *
-     * @param so
      */
     public void save(Suborder so) {
         save(so, null);
@@ -309,8 +280,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Saves the given suborderand sets creation-/update-user and creation-/update-date.
-     *
-     * @param Suborder so
      */
     public void save(Suborder so, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -335,9 +304,6 @@ public class SuborderDAO extends AbstractDAO {
 
     /**
      * Deletes the given suborder.
-     *
-     * @param long soId
-     * @return boolean
      */
     public boolean deleteSuborderById(long soId) {
         Suborder soToDelete = getSuborderById(soId);

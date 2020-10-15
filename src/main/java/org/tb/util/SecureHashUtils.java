@@ -8,12 +8,11 @@ public class SecureHashUtils {
     /**
      * Makes a md5-hash for a given string.
      *
-     * @param text
      * @return the md5-hash of the given string
      */
     public static String makeMD5(String text) {
-        MessageDigest md = null;
-        byte[] encryptMsg = null;
+        MessageDigest md;
+        byte[] encryptMsg;
 
         try {
             md = MessageDigest.getInstance("MD5");        // getting a 'MD5-Instance'
@@ -24,8 +23,8 @@ public class SecureHashUtils {
         }
 
         String swap = "";        // swap-string for the result
-        String byteStr = "";    // swap-string for current hex-value of byte
-        StringBuffer strBuf = new StringBuffer();
+        String byteStr;    // swap-string for current hex-value of byte
+        StringBuilder strBuf = new StringBuilder();
 
         for (int i = 0; i <= encryptMsg.length - 1; i++) {
 

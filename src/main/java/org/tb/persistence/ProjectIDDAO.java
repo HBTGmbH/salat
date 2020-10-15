@@ -1,6 +1,9 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.ProjectID;
 
 import java.util.List;
@@ -10,13 +13,16 @@ import java.util.List;
  *
  * @author sql
  */
+@Component
 public class ProjectIDDAO extends AbstractDAO {
+
+    @Autowired
+    public ProjectIDDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     /**
      * Gets the ProjectID for the given id.
-     *
-     * @param long id
-     * @return ProjectID
      */
     public ProjectID getProjectIDById(long id) {
         return (ProjectID) getSession().get(ProjectID.class, id);
@@ -26,9 +32,6 @@ public class ProjectIDDAO extends AbstractDAO {
      * Gets a list of ProjectIDs by customerorder id.
      * <p>
      * At the moment, this list should only contain one or zero entries!!!
-     *
-     * @param long customerorderId
-     * @return List<ProjectID>
      */
     @SuppressWarnings("unchecked")
     public List<ProjectID> getProjectIDsByCustomerorderID(long customerorderId) {
@@ -39,9 +42,6 @@ public class ProjectIDDAO extends AbstractDAO {
      * Gets a list of ProjectIDs by Jira Project ID.
      * <p>
      * At the moment, this list should only contain one or zero entries!!!
-     *
-     * @param String jiraProjectID
-     * @return List<ProjectID>
      */
     @SuppressWarnings("unchecked")
     public List<ProjectID> getProjectIDsByJiraProjectID(String jiraProjectID) {
@@ -50,9 +50,6 @@ public class ProjectIDDAO extends AbstractDAO {
 
     /**
      * Gets a ProjectID by Jira Project ID and customerorder ID.
-     *
-     * @param String jiraProjectID, long customerorderID
-     * @return ProjectID
      */
     public ProjectID getProjectIDByJiraAndCustomerorderID(String jiraProjectID, long customerorderId) {
         return (ProjectID) getSession().createQuery("from ProjectID p where p.jiraProjectID = ? and p.customerorder.id = ?")

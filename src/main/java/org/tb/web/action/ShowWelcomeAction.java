@@ -90,7 +90,7 @@ public class ShowWelcomeAction extends DailyReportAction {
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         List<Warning> warnings = AfterLogin.createWarnings(employeecontract, loginEmployeeContract, employeeorderDAO, timereportDAO, statusReportDAO, customerorderDAO, getResources(request), getLocale(request));
 
-        if (warnings != null && !warnings.isEmpty()) {
+        if (!warnings.isEmpty()) {
             request.getSession().setAttribute("warnings", warnings);
             request.getSession().setAttribute("warningsPresent", true);
         } else {

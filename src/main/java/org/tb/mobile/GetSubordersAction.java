@@ -21,7 +21,7 @@ public class GetSubordersAction extends LoginRequiredAction {
     private EmployeecontractDAO employeecontractDAO;
 
     @Override
-    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
         Date date = new Date();
 
         Long employeeId = (Long) request.getSession().getAttribute("employeeId");
@@ -29,7 +29,7 @@ public class GetSubordersAction extends LoginRequiredAction {
         //The method getSubordersByEmployeeContractIdWithValidEmployeeOrders was added to the SuborderDao class!!!
         List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(ec.getId(), date);
 
-        List<SuborderEntry> suborderEntries = new ArrayList<SuborderEntry>(suborders.size());
+        List<SuborderEntry> suborderEntries = new ArrayList<>(suborders.size());
 
         for (Suborder suborder : suborders) {
             // Filtering valid suborders with not required description

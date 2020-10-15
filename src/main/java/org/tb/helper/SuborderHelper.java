@@ -1,6 +1,5 @@
 package org.tb.helper;
 
-import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
@@ -25,16 +24,8 @@ public class SuborderHelper {
 
     /**
      * refreshes suborder list after change of customer order in the 'add timereport' view
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm              - AddDailyReportForm
-     * @param sd                      - SuborderDAO being used
-     * @param ecd                     - EmployeecontractDAO being used
-     * @param defaultSuborderIndexStr
-     * @return boolean
      */
-    public boolean refreshSuborders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
+    public boolean refreshSuborders(HttpServletRequest request, AddDailyReportForm reportForm,
                                     SuborderDAO sd, TicketDAO td, EmployeecontractDAO ecd, String defaultSuborderIndexStr) {
 
         Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
@@ -60,7 +51,7 @@ public class SuborderHelper {
         Suborder so = null;
         if (defaultSuborderIndexStr != null) {
             try {
-                Long currentSuborderId = Long.parseLong(defaultSuborderIndexStr);
+                long currentSuborderId = Long.parseLong(defaultSuborderIndexStr);
                 request.getSession().setAttribute("currentSuborderId", currentSuborderId);
                 so = sd.getSuborderById(currentSuborderId);
             } catch (NumberFormatException e) {
@@ -79,15 +70,8 @@ public class SuborderHelper {
 
     /**
      * refreshes suborder list after change of customer order in the 'show timereport' views
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm - ShowDailyReportForm
-     * @param sd         - SuborderDAO being used
-     * @param ecd        - EmployeecontractDAO being used
-     * @return boolean
      */
-    public boolean refreshDailyOverviewSuborders(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm,
+    public boolean refreshDailyOverviewSuborders(HttpServletRequest request, ShowDailyReportForm reportForm,
                                                  SuborderDAO sd, EmployeecontractDAO ecd) {
 
         Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());

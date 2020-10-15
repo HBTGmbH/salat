@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -60,15 +59,13 @@ public class CreateDailyReportAction extends DailyReportAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
         AddDailyReportForm reportForm = (AddDailyReportForm) form;
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-        Employeecontract ec = null;
+        Employeecontract ec;
 
         if (request.getSession().getAttribute("currentEmployeeContract") != null &&
                 (Boolean) request.getSession().getAttribute("employeeAuthorized")) {
-            Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
-            ec = currentEmployeeContract;
+            ec = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 
         } else {
             ec = loginEmployeeContract;
@@ -109,8 +106,7 @@ public class CreateDailyReportAction extends DailyReportAction {
         TimereportHelper th = new TimereportHelper();
 
         // search for adequate workingday and set status in session
-        java.sql.Date currentDate = selectedDate;
-        Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(currentDate, ec.getId());
+        Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, ec.getId());
 
         boolean workingDayIsAvailable = false;
         if (workingday != null) {
@@ -173,7 +169,7 @@ public class CreateDailyReportAction extends DailyReportAction {
         reportForm.setReferenceday(simpleDateFormat.format(selectedDate));
 
         // init form with first order and corresponding suborders
-        List<Suborder> theSuborders = new ArrayList<Suborder>();
+        List<Suborder> theSuborders;
         if (orders != null && !orders.isEmpty()) {
             reportForm.setOrder(orders.get(0).getSign());
             reportForm.setOrderId(orders.get(0).getId());
@@ -194,9 +190,8 @@ public class CreateDailyReportAction extends DailyReportAction {
             return mapping.findForward("error");
         }
         // prepare second collection of suborders sorted by description
-        List<Suborder> subordersByDescription = new ArrayList<Suborder>();
-        subordersByDescription.addAll(theSuborders);
-        Collections.sort(subordersByDescription, new SubOrderByDescriptionComparator());
+        List<Suborder> subordersByDescription = new ArrayList<>(theSuborders);
+        subordersByDescription.sort(SubOrderByDescriptionComparator.INSTANCE);
         request.getSession().setAttribute("suborders", theSuborders);
         request.getSession().setAttribute("subordersByDescription", subordersByDescription);
         request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());

@@ -27,7 +27,6 @@ public class CreateSuborderAction extends LoginRequiredAction {
     private CustomerorderDAO customerorderDAO;
     private SuborderDAO suborderDAO;
 
-
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
     }
@@ -35,7 +34,6 @@ public class CreateSuborderAction extends LoginRequiredAction {
     public void setSuborderDAO(SuborderDAO suborderDAO) {
         this.suborderDAO = suborderDAO;
     }
-
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -91,7 +89,7 @@ public class CreateSuborderAction extends LoginRequiredAction {
 
         if (customerorders.size() > 0) {
             if (request.getSession().getAttribute("lastCoId") == null) {
-                request.getSession().setAttribute("currentOrderId", new Long(customerorders.get(0).getId()));
+                request.getSession().setAttribute("currentOrderId", customerorders.get(0).getId());
                 request.getSession().setAttribute("currentOrder", customerorders.get(0));
             }
 

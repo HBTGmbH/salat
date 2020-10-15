@@ -1,43 +1,37 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Workingday;
 
 import java.util.Iterator;
 import java.util.List;
 
+@Component
 public class WorkingdayDAO extends AbstractDAO {
 
-    /**
-     * @return
-     */
+    @Autowired
+    public WorkingdayDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
+
     @SuppressWarnings("unchecked")
     public List<Workingday> getWorkingdays() {
         return getSession().createQuery("from Workingday order by employeecontract.id asc, refday asc").list();
     }
 
-    /**
-     * @param refdate
-     * @param employeeContractId
-     * @return
-     */
     public Workingday getWorkingdayByDateAndEmployeeContractId(java.sql.Date refdate, long employeeContractId) {
         @SuppressWarnings("unchecked")
         List<Workingday> workingdays = getSession().createQuery("from Workingday w where w.refday = ? and w.employeecontract.id = ? ").setDate(0, refdate).setLong(1, employeeContractId).list();
         return workingdays != null && workingdays.size() > 0 ? workingdays.iterator().next() : null;
     }
 
-    /**
-     * @param workingdayId
-     * @return
-     */
     public Workingday getWorkingdayById(long workingdayId) {
         return (Workingday) getSession().createQuery("from Workingday w where w.id = ? ").setLong(0, workingdayId).uniqueResult();
     }
 
-    /**
-     * @param wd
-     */
     public void save(Workingday wd) {
         Session session = getSession();
         session.saveOrUpdate(wd);
@@ -46,8 +40,6 @@ public class WorkingdayDAO extends AbstractDAO {
 
     /**
      * Deletes the workingday with the given id.
-     *
-     * @param long wdId - workingday id
      */
     public boolean deleteWorkingdayById(long wdId) {
         List<Workingday> allWorkingdays = getWorkingdays();
@@ -64,9 +56,7 @@ public class WorkingdayDAO extends AbstractDAO {
                 break;
             }
         }
-
         return wdDeleted;
     }
-
 
 }

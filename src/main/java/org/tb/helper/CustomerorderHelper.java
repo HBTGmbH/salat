@@ -1,6 +1,5 @@
 package org.tb.helper;
 
-import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
@@ -25,16 +24,8 @@ public class CustomerorderHelper {
 
     /**
      * refreshes customer order list after change of employee in the 'add timereport' view
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm - AddDailyReportForm
-     * @param cd         - CustomerorderDAO being used
-     * @param ecd        - EmployeecontractDAO being used
-     * @param sd         - SuborderDAO being used
-     * @return boolean
      */
-    public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm,
+    public boolean refreshOrders(HttpServletRequest request, AddDailyReportForm reportForm,
                                  CustomerorderDAO cd, EmployeecontractDAO ecd, SuborderDAO sd) {
 
         String dateString = reportForm.getReferenceday();
@@ -72,7 +63,7 @@ public class CustomerorderHelper {
         request.getSession().setAttribute("orders", orders);
 
         Customerorder customerorder = cd.getCustomerorderById(reportForm.getOrderId());
-        Long suborderId;
+        long suborderId;
         List<Suborder> theSuborders;
         if (customerorder != null && orders.contains(customerorder)) {
             theSuborders = sd.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
@@ -101,16 +92,8 @@ public class CustomerorderHelper {
 
     /**
      * refreshes customer order list after change of employee in the 'show timereport' views
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm - ShowDailyReportForm
-     * @param cd         - CustomerorderDAO being used
-     * @param ecd        - EmployeecontractDAO being used
-     * @param sd         - SuborderDAO being used
-     * @return boolean
      */
-    public boolean refreshOrders(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm,
+    public boolean refreshOrders(HttpServletRequest request, ShowDailyReportForm reportForm,
                                  CustomerorderDAO cd, EmployeecontractDAO ecd, SuborderDAO sd) {
 
         Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
@@ -141,15 +124,11 @@ public class CustomerorderHelper {
     }
 
     public boolean isOrderStandard(Customerorder order) {
-
-        if (order != null &&
+        return order != null &&
                 (order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) ||
                         order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION) ||
                         order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_ILL) ||
-                        order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION))) {
-            return true;
-        }
-        return false;
+                        order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION));
     }
 
 }

@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * action class for storing a customer order permanently
@@ -80,10 +81,10 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
             String which = request.getParameter("which").toLowerCase();
-            Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
+            int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? coForm.getValidUntil() : coForm.getValidFrom();
-            Integer day, month, year;
+            int day, month, year;
             Calendar cal = Calendar.getInstance();
 
             if (howMuch != 0) {
@@ -263,7 +264,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
                 //check if a dummy-suborder for the jira-project has already been created. if not create it.
                 if (projectIDDAO.getProjectIDsByCustomerorderID(co.getId()).size() > 0) {
                     boolean dummyExists = false;
-                    for (Suborder so : suborders) {
+                    for (Suborder so : Objects.requireNonNull(suborders)) {
                         if (so.getSign().equals(co.getSign().concat(GlobalConstants.SUBORDER_DUMMY))) {
                             dummyExists = true;
                             break;
@@ -316,7 +317,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
                 if (showActualHours) {
                     /* show actual hours */
                     List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
-                    List<CustomerOrderViewDecorator> decorators = new LinkedList<CustomerOrderViewDecorator>();
+                    List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
                     for (Customerorder customerorder : customerOrders) {
                         CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
                         decorators.add(decorator);
@@ -353,10 +354,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 
     /**
      * resets the 'add report' form to default values
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
      */
     private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddCustomerOrderForm coForm) {
         coForm.reset(mapping, request);
@@ -395,11 +392,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param cuForm
-     * @return
-     * @throws IOException
      */
     private ActionMessages validateFormData(HttpServletRequest request, AddCustomerOrderForm coForm) throws IOException {
 
@@ -487,10 +479,10 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
                         0.0, GlobalConstants.MAX_DEBITHOURS)) {
             errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat"));
         } else if (coForm.getDebithours() != null && coForm.getDebithours() != 0.0) {
-            Double debithours = coForm.getDebithours() * 100000;
+            double debithours = coForm.getDebithours() * 100000;
             debithours += 0.5;
 
-            int debithours2 = debithours.intValue();
+            int debithours2 = (int) debithours;
             int modulo = debithours2 % 5000;
             coForm.setDebithours(debithours2 / 100000.0);
 

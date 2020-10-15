@@ -20,11 +20,9 @@ import java.util.stream.IntStream;
  */
 public class DateUtils {
 
-    private static String[] monthShortStrings = GlobalConstants.MONTH_SHORTFORMS;
-
-    private static String[] monthLongStrings = GlobalConstants.MONTH_LONGFORMS;
-
-    private static Map<Integer, List<OptionItem>> mapCalendarWeeks = Collections.synchronizedMap(new HashMap<Integer, List<OptionItem>>());
+    private static final String[] monthShortStrings = GlobalConstants.MONTH_SHORTFORMS;
+    private static final String[] monthLongStrings = GlobalConstants.MONTH_LONGFORMS;
+    private static final Map<Integer, List<OptionItem>> mapCalendarWeeks = Collections.synchronizedMap(new HashMap<>());
 
     public static String getCurrentYearString() {
         return Integer.toString(getCurrentYear());
@@ -125,25 +123,20 @@ public class DateUtils {
     public static String getSqlDateString(java.util.Date utilDate) {
         // gets sql date in format yyyy-mm-dd from java.util.Date
         int length = utilDate.toString().length();
-        String sqlDateString = utilDate.toString().substring(length - 4, length) + "-" +
+        return utilDate.toString().substring(length - 4, length) + "-" +
                 getMonthMMStringFromShortstring(utilDate.toString().substring(4, 7)) + "-" +
                 utilDate.toString().substring(8, 10);
-
-        return sqlDateString;
     }
 
     /**
      * validates if date string has correct sql date format 'yyyy-mm-dd'
-     *
-     * @param dateString
-     * @return boolean
      */
     public static boolean validateDate(String dateString) {
         boolean dateError = false;
         if (dateString.length() != 10) {
             dateError = true;
         }
-        if (dateError != true) {
+        if (!dateError) {
             char[] chArr = dateString.toCharArray();
             if (!Character.isDigit(chArr[0]) ||
                     !Character.isDigit(chArr[1]) ||
@@ -212,9 +205,6 @@ public class DateUtils {
 
     /**
      * builds up a list of calendar weeks for a certain year
-     *
-     * @param yearString
-     * @return
      */
     public static List<OptionItem> getWeeksToDisplay(String yearString) {
         try {
@@ -264,7 +254,7 @@ public class DateUtils {
      * builds up a list of string with days to display (01-31)
      */
     public static List<OptionItem> getDaysToDisplay() {
-        return IntStream.rangeClosed(1, 31).mapToObj(i -> DateUtils.intToOptionitem(i)).collect(Collectors.toList());
+        return IntStream.rangeClosed(1, 31).mapToObj(DateUtils::intToOptionitem).collect(Collectors.toList());
     }
 
     /*
@@ -282,7 +272,7 @@ public class DateUtils {
      * builds up a list of string with hour to display (1-5)
      */
     public static List<OptionItem> getCompleteHoursToDisplay() {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
+        List<OptionItem> theList = new ArrayList<>();
         for (int i = 0; i <= 5; i++) {
             theList.add(intToOptionitem(i));
         }
@@ -293,7 +283,7 @@ public class DateUtils {
      * builds up a list of string with duration hours to display (0-15)
      */
     public static List<OptionItem> getHoursDurationToDisplay() {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
+        List<OptionItem> theList = new ArrayList<>();
         for (int i = 0; i <= 24; i++) {
             theList.add(intToOptionitem(i));
         }
@@ -304,7 +294,7 @@ public class DateUtils {
      * builds up a list of string with minutes to display (05-55)
      */
     public static List<OptionItem> getMinutesToDisplay() {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
+        List<OptionItem> theList = new ArrayList<>();
         for (int i = 0; i < 60; i += 5) {
             theList.add(intToOptionitem(i));
         }
@@ -320,9 +310,6 @@ public class DateUtils {
     /**
      * gets date of easter for a given year as int array [year, month, day]
      * current year is taken from input Date
-     *
-     * @param Date dt
-     * @return int[] easter
      */
     public static int[] getEaster(java.sql.Date dt) {
 
@@ -369,9 +356,6 @@ public class DateUtils {
     /**
      * gets the last day of a given month
      * E.g., month given as string '02', last day is either 28 or 29
-     *
-     * @param month
-     * @return
      */
     public static int getLastDayOfMonth(java.sql.Date date) {
         LocalDate localDate = date.toLocalDate();
@@ -381,10 +365,6 @@ public class DateUtils {
     /**
      * calculates worktime from begin/end times in a form
      *
-     * @param int hrbegin
-     * @param int minbegin
-     * @param int hrend
-     * @param int minend
      * @return double - decimal hours
      */
     public static double calculateTime(int hrbegin, int minbegin, int hrend, int minend) {
@@ -405,10 +385,6 @@ public class DateUtils {
     /**
      * Takes a Date and a number of days. Changes the Date by adding (changeDays is positive) or subtracting (changeDays is negative)
      * the number of days to it. For example, you have some Date and need the next day: input parameters are (date, 1).
-     *
-     * @param originalDate
-     * @param changeDays
-     * @return Date
      */
     public static java.sql.Date addDays(java.sql.Date originalDate, int changeDays) {
         LocalDate localDate = originalDate.toLocalDate().plusDays(changeDays);

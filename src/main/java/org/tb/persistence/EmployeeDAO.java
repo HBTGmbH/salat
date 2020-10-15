@@ -2,8 +2,11 @@ package org.tb.persistence;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -11,30 +14,21 @@ import org.tb.bdom.Employeecontract;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO class for 'Employee'
- *
- * @author oda
- */
+@Component
 public class EmployeeDAO extends AbstractDAO {
 
-    private EmployeecontractDAO employeecontractDAO;
-    private List<String> adminNames;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final List<String> adminNames;
 
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
+    @Autowired
+    public EmployeeDAO(SessionFactory sessionFactory, EmployeecontractDAO employeecontractDAO, List<String> adminNames) {
+        super(sessionFactory);
         this.employeecontractDAO = employeecontractDAO;
-    }
-
-    public void setAdminNames(List<String> adminNames) {
         this.adminNames = adminNames;
     }
 
     /**
      * Registers an employee in the system.
-     *
-     * @param String username
-     * @param String password
-     * @return void
      */
     public void registerEmployee(String username, String password)
             throws EmployeeAlreadyExistsException {
@@ -66,11 +60,8 @@ public class EmployeeDAO extends AbstractDAO {
 
     /**
      * Logs in the employee with the given username and password.
-     *
-     * @param String username
-     * @param String password
      * @return the LoginEmployee instance or <code>null</code> if no
-     * employee matches the given username/password combination.
+     *         employee matches the given username/password combination.
      */
     public Employee getLoginEmployee(String username, String password) {
         Assert.notNull(username, "loginname");
@@ -84,9 +75,6 @@ public class EmployeeDAO extends AbstractDAO {
 
     /**
      * Checks if the given employee is an administrator.
-     *
-     * @param Employee employee
-     * @return boolean
      */
     public boolean isAdmin(Employee employee) {
         return adminNames.contains(employee.getSign());
@@ -94,9 +82,6 @@ public class EmployeeDAO extends AbstractDAO {
 
     /**
      * Gets the employee from the given sign (unique).
-     *
-     * @param String sign
-     * @return Employee
      */
     public Employee getEmployeeBySign(String sign) {
         return (Employee) getSession().createQuery(
@@ -105,16 +90,12 @@ public class EmployeeDAO extends AbstractDAO {
 
     /**
      * Gets the employee with the given id.
-     *
-     * @param long id
-     * @return Employee
      */
     public Employee getEmployeeById(long id) {
         return (Employee) getSession().createQuery("from Employee em where em.id = ?").setLong(0, id).uniqueResult();
     }
 
     /**
-     * @param date
      * @return Returns all {@link Employee}s with a contract.
      */
     public List<Employee> getEmployeesWithContracts() {
@@ -132,7 +113,6 @@ public class EmployeeDAO extends AbstractDAO {
     }
 
     /**
-     * @param date
      * @return Returns all {@link Employee}s with a contract.
      */
     public List<Employee> getEmployeesWithValidContracts() {
@@ -152,8 +132,6 @@ public class EmployeeDAO extends AbstractDAO {
 
     /**
      * Get a list of all Employees ordered by lastname.
-     *
-     * @return List<Employee>
      */
     @SuppressWarnings("unchecked")
     public List<Employee> getEmployees() {
@@ -163,8 +141,6 @@ public class EmployeeDAO extends AbstractDAO {
 
     /**
      * Get a list of all Employees fitting to the given filter ordered by lastname.
-     *
-     * @return List<Employee>
      */
     @SuppressWarnings("unchecked")
     public List<Employee> getEmployeesByFilter(String filter) {
@@ -194,8 +170,6 @@ public class EmployeeDAO extends AbstractDAO {
 
     /**
      * Saves the given employee and sets creation-/update-user and creation-/update-date.
-     *
-     * @param Employee employee
      */
     public void save(Employee employee, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -230,12 +204,8 @@ public class EmployeeDAO extends AbstractDAO {
         session.flush();
     }
 
-
     /**
-     * Deletes the given employee .
-     *
-     * @param long emId
-     * @return boolean
+     * Deletes the given employee.
      */
     public boolean deleteEmployeeById(long emId) {
         Employee emToDelete = getEmployeeById(emId);

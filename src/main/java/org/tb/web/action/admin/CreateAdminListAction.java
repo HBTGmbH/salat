@@ -15,9 +15,8 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class CreateAdminListAction extends AdminRequiredAction {
 
-
     @Override
-    protected ActionForward executeAdminAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    protected ActionForward executeAdminAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
         return mapping.findForward("success");
     }
 

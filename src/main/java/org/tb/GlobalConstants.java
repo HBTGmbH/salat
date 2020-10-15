@@ -14,7 +14,6 @@ public class GlobalConstants {
 
     public static final int STARTING_YEAR = 2007;
 
-    public static final double MIN_HOURS_PER_DAY = 0.01;
     public static final double MAX_HOURS_PER_DAY = 10.0;
 
     public static final double MAX_COSTS = 1.0E8;
@@ -24,20 +23,12 @@ public class GlobalConstants {
     public static final double MIN_OVERTIME = -10000.0;
 
     public static final int COMMENT_MAX_LENGTH = 32000;
-    public static final int STATUS_MAX_LENGTH = 64;
 
     public static final String DEFAULT_CURRENCY = "EUR";
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String DEFAULT_DATE_FORMAT_GERMAN = "dd.MM.yyyy";
 
-    public static final int BEGINHOUR = 9;
-    public static final int BEGINMINUTE = 0;
-    public static final int ENDHOUR = 17;
-    public static final int ENDMINUTE = 00;
-
     public static final int MINUTE_INCREMENT = 5;
-
-    public static final int BREAK_MINUTES = 30;
 
     public static final int VACATION_PER_YEAR = 30;
     public static final int MAX_VACATION_PER_YEAR = 100;
@@ -51,14 +42,12 @@ public class GlobalConstants {
     public static final int CUSTOMERORDER_DESCRIPTION_MAX_LENGTH = 256;
     public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 20;
     public static final int CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH = 64;
-    public static final int CUSTOMERORDER_RESP_HBT_MAX_LENGTH = 64;
     public static final int CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH = 64;
     public static final int CUSTOMERORDER_CURRENCY_MAX_LENGTH = 64;
 
     public static final int SUBORDER_SIGN_MAX_LENGTH = 16;
     public static final int SUBORDER_DESCRIPTION_MAX_LENGTH = 2048;
     public static final int SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH = 40;
-    public static final int SUBORDER_CURRENCY_MAX_LENGTH = 64;
     public static final int SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH = 30;
     public static final String SUBORDER_DUMMY = "_dummy";
     public static final String SUBORDER_DUMMY_DESCRIPTION = "Dummy-Unterauftrag für Aufträge mit Jira-Projekt-ID";
@@ -67,9 +56,6 @@ public class GlobalConstants {
     public static final int SUBORDER_INVOICE_YES = 'Y';
     public static final int SUBORDER_INVOICE_NO = 'N';
     public static final int SUBORDER_INVOICE_UNDEFINED = 'U';
-
-    public static final int EMPLOYEEORDER_SIGN_MAX_LENGTH = 16;
-    public static final int EMPLOYEEORDER_STATUS_MAX_LENGTH = 64;
 
     public static final int EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH = 256;
     public static final int EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH = 256;
@@ -83,9 +69,6 @@ public class GlobalConstants {
     public static final int EMPLOYEE_STATUS_MAX_LENGTH = 16;
 
     public static final String EMPLOYEE_STATUS_BL = "bl";
-    public static final String EMPLOYEE_STATUS_PL = "pl";
-    public static final String EMPLOYEE_STATUS_MA = "ma";
-    public static final String EMPLOYEE_STATUS_AV = "av";
     public static final String EMPLOYEE_STATUS_PV = "pv";
     public static final String EMPLOYEE_STATUS_RESTRICTED = "restricted";
     public static final String EMPLOYEE_STATUS_ADM = "adm";
@@ -152,7 +135,6 @@ public class GlobalConstants {
     public static final String VIEW_DAILY = "day";
     public static final String VIEW_MONTHLY = "month";
     public static final String VIEW_WEEKLY = "week";
-    public static final String VIEW_PROJECT = "project";
     public static final String VIEW_CUSTOM = "custom";
 
     // customer order signs
@@ -172,9 +154,6 @@ public class GlobalConstants {
 
     public static final int MAX_SERIAL_BOOKING_DAYS = 25;
 
-    public static final String WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EC = "timereportnotinrange";
-    public static final String WARNING_SORT_TIMEREPORT_NOT_IN_RANGE_FOR_EO = "timereportnotinrangeforeo";
-
     public static final byte DEBITHOURS_UNIT_MONTH = 12;
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
@@ -185,16 +164,10 @@ public class GlobalConstants {
     public static final String ICONPATH = "/tb/images/";
     public static final String CLOSEICON = "plus_circle.gif";
     public static final String OPENICON = "minus_circle.gif";
-    public static final String FOLDERICON = "folder_closed.gif";
     public static final String DELETEICON = "Delete.gif";
     public static final String EDITICON = "Edit.gif";
     public static final String NOTALLOWED = "verbot.gif";
     public static final String PARENTICON = "Smily_Krone.gif";
-
-    // status for the employee order content page
-    public static final String CONTENT_STATUS_NEW = "new";
-    public static final String CONTENT_STATUS_SAVED = "saved";
-    public static final String CONTENT_STATUS_COMMITTED = "committed";
 
     // qm processes
     public static final String QM_PROCESS_OTHER = "main.qm.process.other";
@@ -225,33 +198,23 @@ public class GlobalConstants {
     public static final Integer PHASE_ID_ROLLOUT = 7;
     public static final Integer PHASE_ID_FINISH = 8;
 
-    public static final Integer STATUS_CONSTANT = 1;
-    public static final Integer STATUS_ASCENDING = 2;
-    public static final Integer STATUS_EXTREM_ASCENDING = 3;
-    public static final Integer STATUS_DESCENDING = 4;
-    public static final Integer STATUS_EXTREM_DESCENDING = 5;
-
     public static final Integer STATUSREPORT_SORT_PERIODICAL = 1;
     public static final Integer STATUSREPORT_SORT_EXTRA = 2;
     public static final Integer STATUSREPORT_SORT_FINAL = 3;
 
     public static final Integer MINUTES_PER_HOUR = 60;
 
-    public static final Character GENDER_MALE = 'm';
     public static final Character GENDER_FEMALE = 'f';
 
     public static final Character INVOICE_YES = 'Y';
     public static final Character INVOICE_NO = 'N';
-    public static final Character INVOICE_UNDEFINED = 'U';
     public static final String INVOICE_EXCEL_EXPORT_FILENAME = "SALAT_Rechnung.xls";
     public static final String INVOICE_EXCEL_NEW_EXPORT_FILENAME = "SALAT_Rechnung.xlsx";
     public static final String INVOICE_EXCEL_SHEET_NAME = "SALAT Rechnung";
     public static final String INVOICE_EXCEL_CONTENT_TYPE = "application/vnd.ms-excel";
     public static final String INVOICE_EXCEL_NEW_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    public static final String INVOICE_DATE_FORMAT = GlobalConstants.DEFAULT_DATE_FORMAT.replace('y', 'J').replace('d', 'T');
 
     public static final String MAIL_DOMAIN = "hbt.de";
-    public static final String MAIL_NOREPLY_ADDRESS = "noreply@" + GlobalConstants.MAIL_DOMAIN;
 
     public static final String ZERO_DHM = "00:00:00";
     public static final String ZERO_HM = "00:00";
@@ -259,10 +222,6 @@ public class GlobalConstants {
     public static final int CREATE_WORKLOG = 1;
     public static final int UPDATE_WORKLOG = 2;
     public static final int DELETE_WORKLOG = 3;
-
-
-    public static final String SALAT_PROPERTIES_URL_TUX = "/etc/opt/salat.properties";
-    public static final String SALAT_PROPERTIES_URL_WIN = "c:\\salat\\salat.properties";
 
     // Constants read from salat.properties
     public static final String SALAT_URL;

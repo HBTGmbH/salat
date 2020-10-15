@@ -19,28 +19,23 @@ import org.tb.web.form.ShowMatrixForm;
 
 import java.util.*;
 
-/**
- * @author cb
- * @since 04.12.2006
- */
 public class MatrixHelper {
 
     private static final String HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE = "HANDLING_ERROR_MESSAGE";
     /**
      * conversion and localization of day values
      */
-    private static final Map<String, String> MONTH_MAP = new HashMap<String, String>();
+    private static final Map<String, String> MONTH_MAP = new HashMap<>();
     /**
      * conversion and localization of weekday values
      */
-    private static final Map<Integer, String> WEEK_DAYS_MAP = new HashMap<Integer, String>();
+    private static final Map<Integer, String> WEEK_DAYS_MAP = new HashMap<>();
     /**
      * conversion and localization of day values
      */
-    private static final Map<String, String> NUMBER_TO_SHORT_MONTH = new HashMap<String, String>();
+    private static final Map<String, String> NUMBER_TO_SHORT_MONTH = new HashMap<>();
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
-
 
     static {
         String[] SHORT_MONTH = new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -82,16 +77,6 @@ public class MatrixHelper {
         this.th = th;
     }
 
-    /**
-     * @param dateFirst
-     * @param dateLast
-     * @param employeeId
-     * @param method
-     * @param customerOrderId
-     * @return
-     * @author cb
-     * @since 08.02.2007
-     */
     public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
         Employeecontract employeecontract = employeeContractId != -1 ? ecDAO.getEmployeeContractById(employeeContractId) : null;
         Date validFrom = dateFirst;
@@ -110,10 +95,10 @@ public class MatrixHelper {
             //filter billable orders if necessary
             filterInvoiceable(timeReportList, invoiceable, nonInvoiceable);
         } else {
-            timeReportList = new ArrayList<Timereport>();
+            timeReportList = new ArrayList<>();
         }
 
-        List<MergedReport> mergedReportList = new ArrayList<MergedReport>();
+        List<MergedReport> mergedReportList = new ArrayList<>();
         //filling a list with new or merged 'mergedreports'
         for (Timereport timeReport : timeReportList) {
             String taskdescription = extendedTaskDescription(timeReport, employeecontract == null);
@@ -124,7 +109,7 @@ public class MatrixHelper {
             // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Überstundenausgleich" into it
             // -> needed because overtime compensation should be shown in matrix overview! (taskdescription as if-clause in jsp!)
             if (timeReport.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                if (taskdescription == null || taskdescription.length() == 0) {
+                if (taskdescription.length() == 0) {
                     taskdescription = GlobalConstants.OVERTIME_COMPENSATION_TEXT;
                 }
             }
@@ -142,7 +127,7 @@ public class MatrixHelper {
 
         List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
 
-        List<DayAndWorkingHourCount> dayHoursCount = new ArrayList<DayAndWorkingHourCount>();
+        List<DayAndWorkingHourCount> dayHoursCount = new ArrayList<>();
         double dayHoursTarget = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList);
 
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
@@ -167,7 +152,7 @@ public class MatrixHelper {
             }
             dayHoursTarget = dayHoursTarget * dailyWorkingTime;
         } else {
-            dayHoursTarget = dayHoursTarget * employeecontract.getDailyWorkingTime();
+            dayHoursTarget = dayHoursTarget * Objects.requireNonNull(employeecontract).getDailyWorkingTime();
         }
         dayHoursTarget = ((double) Math.round(dayHoursTarget * 100)) / 100;
 
@@ -271,9 +256,9 @@ public class MatrixHelper {
                                 DayAndWorkingHourCount otherDayAndWorkingHourCount = new DayAndWorkingHourCount(day,
                                         (bookingDay.getDurationHours() * 60 + bookingDay.getDurationMinutes() + dayAndWorkingHourCount.getWorkingHour() * 60) / 60, bookingDay
                                         .getDate());
-                                otherDayAndWorkingHourCount.setPublicHoliday(dayAndWorkingHourCount.getPublicHoliday());
+                                otherDayAndWorkingHourCount.setPublicHoliday(dayAndWorkingHourCount.isPublicHoliday());
                                 otherDayAndWorkingHourCount.setPublicHolidayName(dayAndWorkingHourCount.getPublicHolidayName());
-                                otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.getSatSun());
+                                otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.isSatSun());
                                 otherDayAndWorkingHourCount.setWeekDay(dayAndWorkingHourCount.getWeekDay());
                                 dayHoursCount.set(i, otherDayAndWorkingHourCount);
                                 for (Publicholiday publicHoliday : publicHolidayList) {
@@ -319,7 +304,7 @@ public class MatrixHelper {
     private void filterInvoiceable(List<Timereport> timeReportList, boolean invoiceable, boolean nonInvoiceable) {
         if (invoiceable && nonInvoiceable) return;
 
-        ArrayList<Timereport> tempTimeReportList = new ArrayList<Timereport>();
+        ArrayList<Timereport> tempTimeReportList = new ArrayList<>();
         for (Timereport timeReport : timeReportList) {
             boolean invoice = timeReport.getSuborder().getInvoice() == 'Y';
             if ((invoiceable && invoice) || (nonInvoiceable && !invoice)) {
@@ -353,7 +338,7 @@ public class MatrixHelper {
 
     public Map<String, Object> refreshMergedReports(ShowMatrixForm reportForm) {
         // selected view and selected dates
-        Map<String, Object> results = new HashMap<String, Object>();
+        Map<String, Object> results = new HashMap<>();
         String selectedView = reportForm.getMatrixview();
         Date dateFirst;
         Date dateLast;
@@ -388,8 +373,8 @@ public class MatrixHelper {
         Long ecId = reportForm.getEmployeeContractId();
         boolean isAcceptanceWarning = false;
         String acceptedBy = null;
-        boolean isInvoiceable = reportForm.isInvoice();
-        boolean isNonInvoiceable = reportForm.isNonInvoice();
+        boolean isInvoiceable = reportForm.getInvoice();
+        boolean isNonInvoiceable = reportForm.getNonInvoice();
         if (ecId == -1) {
             // consider timereports for all employees
             List<Customerorder> orders = coDAO.getCustomerorders();
@@ -407,7 +392,7 @@ public class MatrixHelper {
 
             results.put("currentEmployee", "ALL EMPLOYEES");
             results.put("currentEmployeeContract", null);
-            results.put("currentEmployeeId", -1l);
+            results.put("currentEmployeeId", -1L);
             List<Employeecontract> ecList = ecDAO.getEmployeeContracts();
             for (Employeecontract employeeContract : ecList) {
                 if (!employeeContract.getEmployee().getSign().equals("adm")) {
@@ -498,7 +483,7 @@ public class MatrixHelper {
 
     public Map<String, Object> handleNoArgs(ShowMatrixForm reportForm, Employeecontract ec, Employeecontract currentEc, Long currentEmployeeId, String currentMonth, Employee loginEmployee) {
         // selected view and selected dates
-        Map<String, Object> results = new HashMap<String, Object>();
+        Map<String, Object> results = new HashMap<>();
         // set daily view as standard
         reportForm.setMatrixview(GlobalConstants.VIEW_MONTHLY);
         results.put("matrixview", GlobalConstants.VIEW_MONTHLY);
@@ -518,8 +503,8 @@ public class MatrixHelper {
         results.put("days", DateUtils.getDaysToDisplay());
         results.put("years", DateUtils.getYearsToDisplay());
 
-        boolean isInvoiceable = reportForm.isInvoice();
-        boolean isNonInvoiceable = reportForm.isNonInvoice();
+        boolean isInvoiceable = reportForm.getInvoice();
+        boolean isNonInvoiceable = reportForm.getNonInvoice();
 
         ReportWrapper reportWrapper;
         int maxDays;
@@ -536,12 +521,11 @@ public class MatrixHelper {
             String maxDayString = getTwoDigitStr(maxDays);
             Date dateLast = initStartEndDate(th, maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
-            Employeecontract employeecontract = currentEc;
-            Long ecId = -1l;
+            long ecId = -1L;
             boolean isAcceptanceWarning = false;
-            if (employeecontract != null) {
-                ecId = employeecontract.getId();
-                isAcceptanceWarning = checkAcceptanceWarning(employeecontract, dateLast);
+            if (currentEc != null) {
+                ecId = currentEc.getId();
+                isAcceptanceWarning = checkAcceptanceWarning(currentEc, dateLast);
             } else {
                 List<Employeecontract> ecList = ecDAO.getEmployeeContracts();
                 for (Employeecontract employeeContract : ecList) {
@@ -555,7 +539,7 @@ public class MatrixHelper {
             }
             results.put("acceptance", isAcceptanceWarning);
             if (isAcceptanceWarning) {
-                Timereport tr = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), employeecontract.getId());
+                Timereport tr = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), Objects.requireNonNull(currentEc).getId());
                 Employee employee = eDAO.getEmployeeBySign(tr.getAcceptedby());
                 results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
             }
@@ -590,7 +574,6 @@ public class MatrixHelper {
             }
 
             String currMonth = reportForm.getFromMonth();
-            String currYear = yearString;
             results.put("currentDay", dayString);
             results.put("currentMonth", reportForm.getFromMonth());
             results.put("MonthKey", MONTH_MAP.get(reportForm.getFromMonth()));
@@ -606,22 +589,20 @@ public class MatrixHelper {
             results.put("lastMonth", monthString);
             results.put("lastYear", yearString);
 
-            Date dateFirst = initStartEndDate(th, "01", currMonth, currYear, monthString, yearString);
+            Date dateFirst = initStartEndDate(th, "01", currMonth, yearString, monthString, yearString);
 
             maxDays = getMaxDays(dateFirst);
             String maxDayString = getTwoDigitStr(maxDays);
-            Date dateLast = initStartEndDate(th, maxDayString, currMonth, currYear, monthString, yearString);
+            Date dateLast = initStartEndDate(th, maxDayString, currMonth, yearString, monthString, yearString);
 
-            Long ecId = -1l;
+            long ecId;
             boolean newAcceptance = false;
-            if (ec != null) {
-                ecId = ec.getId();
-                if (!ec.getAcceptanceWarningByDate(dateLast)) {
-                    if (ec.getReportAcceptanceDate() != null && !dateLast.after(ec.getReportAcceptanceDate())) {
-                        newAcceptance = true;
-                        Employee employee = eDAO.getEmployeeBySign(trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), ec.getId()).getAcceptedby());
-                        results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
-                    }
+            ecId = ec.getId();
+            if (!ec.getAcceptanceWarningByDate(dateLast)) {
+                if (ec.getReportAcceptanceDate() != null && !dateLast.after(ec.getReportAcceptanceDate())) {
+                    newAcceptance = true;
+                    Employee employee = eDAO.getEmployeeBySign(trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), ec.getId()).getAcceptedby());
+                    results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
                 }
             }
             results.put("acceptance", newAcceptance);

@@ -1,6 +1,9 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
 import org.tb.util.HolidaysUtil;
@@ -15,12 +18,16 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class PublicholidayDAO extends AbstractDAO {
+
+    @Autowired
+    public PublicholidayDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     /**
      * Saves the given public holiday.
-     *
-     * @param Publicholiday ph
      */
     public void save(Publicholiday ph) {
         Session session = getSession();
@@ -32,9 +39,7 @@ public class PublicholidayDAO extends AbstractDAO {
      * checks if given date is a German public holiday
      * An algorithm proposed by Gauss is used.
      *
-     * @param java.sql.Date dt
-     * @return String publicHoliday
-     * @link: http://www.phpforum.de/archiv_23333_Feiertage@berechnen_anzeigen.html
+     * @link http://www.phpforum.de/archiv_23333_Feiertage@berechnen_anzeigen.html
      */
     public String getPublicHoliday(java.sql.Date dt) {
         String publicHoliday = "";
@@ -74,8 +79,6 @@ public class PublicholidayDAO extends AbstractDAO {
     }
 
     /**
-     * @param start
-     * @param end
      * @return Returns the number of holidays between the two given dates.
      */
     public int getNumberOfHolidaysBetween(Date start, Date end) {
@@ -86,10 +89,6 @@ public class PublicholidayDAO extends AbstractDAO {
 
     /**
      * Returns a List of all {@link Publicholiday}s with a {@link Referenceday#getRefdate()} between the two given dates.
-     *
-     * @param start
-     * @param end
-     * @return
      */
     @SuppressWarnings("unchecked")
     public List<Publicholiday> getPublicHolidaysBetween(Date start, Date end) {

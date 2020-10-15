@@ -20,17 +20,16 @@ public class LoginMobileAction extends Action {
     private EmployeecontractDAO employeecontractDAO;
     private EmployeeDAO employeeDAO;
 
-
     @Override
     public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         boolean isValid = false;
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         Employee employee = employeeDAO.getLoginEmployee(username, SecureHashUtils.makeMD5(password));
 
         if (employee != null) {
-            Long employeeId = employee.getId();
+            long employeeId = employee.getId();
             isValid = true;
             Date date = new Date();
             Long employeecontractId = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date).getId();
@@ -59,6 +58,5 @@ public class LoginMobileAction extends Action {
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
     }
-
 
 }

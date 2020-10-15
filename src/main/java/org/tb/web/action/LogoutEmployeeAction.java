@@ -24,7 +24,6 @@ public class LogoutEmployeeAction extends LoginRequiredAction {
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         if (loginEmployee != null) {
             loginEmployee.setJira_oauthtoken(null);

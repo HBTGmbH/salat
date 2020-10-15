@@ -44,10 +44,8 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
         this.employeeDAO = employeeDAO;
     }
 
-
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
 //		 remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
@@ -57,7 +55,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
         request.getSession().setAttribute("ecId", ec.getId());
 
         // fill the form with properties of employee contract to be edited
-        setFormEntries(mapping, request, ecForm, ec);
+        setFormEntries(request, ecForm, ec);
 
         // set context
         request.getSession().setAttribute("employeeContractContext", "edit");
@@ -83,15 +81,8 @@ public class EditEmployeecontractAction extends LoginRequiredAction {
 
     /**
      * fills employee contract form with properties of given employee contract
-     *
-     * @param mapping
-     * @param request
-     * @param ecForm
-     * @param ec      - the employee contract
      */
-    private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddEmployeeContractForm ecForm, Employeecontract ec) {
-
+    private void setFormEntries(HttpServletRequest request, AddEmployeeContractForm ecForm, Employeecontract ec) {
         Employee theEmployee = ec.getEmployee();
         ecForm.setEmployee(theEmployee.getId());
 //only when the supervisor exists		

@@ -16,11 +16,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-/**
- * Bean for table 'Employeecontract'.
- *
- * @author oda
- */
 @Data
 @Entity
 @EqualsAndHashCode(of = "id", callSuper = false)

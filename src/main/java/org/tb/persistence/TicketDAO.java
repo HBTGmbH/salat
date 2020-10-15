@@ -1,30 +1,28 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Ticket;
 import org.tb.bdom.Timereport;
 
 import java.util.Date;
 import java.util.List;
 
-/**
- * DAO-class for Ticket
- *
- * @author sql
- */
+@Component
 public class TicketDAO extends AbstractDAO {
 
-    private TimereportDAO timereportDAO;
+    private final TimereportDAO timereportDAO;
 
-    public void setTimrereportDAO(TimereportDAO timereportDAO) {
+    @Autowired
+    public TicketDAO(SessionFactory sessionFactory, TimereportDAO timereportDAO) {
+        super(sessionFactory);
         this.timereportDAO = timereportDAO;
     }
 
     /**
      * Gets the Ticket for the given id.
-     *
-     * @param long id
-     * @return ProjectID
      */
     public Ticket getTicketById(long id) {
         return (Ticket) getSession().get(Ticket.class, id);
@@ -32,9 +30,6 @@ public class TicketDAO extends AbstractDAO {
 
     /**
      * Gets a list of Tickets by suborder id.
-     *
-     * @param long suborder id
-     * @return List<Ticket>
      */
     @SuppressWarnings("unchecked")
     public List<Ticket> getTicketsBySuborderID(long suborderID) {
@@ -43,9 +38,6 @@ public class TicketDAO extends AbstractDAO {
 
     /**
      * Gets a list of Tickets by Jira Ticket Key.
-     *
-     * @param String jiraTicketKey
-     * @return List<Ticket>
      */
     @SuppressWarnings("unchecked")
     public List<Ticket> getTicketsByJiraTicketKey(String jiraTicketKey) {
@@ -54,9 +46,6 @@ public class TicketDAO extends AbstractDAO {
 
     /**
      * Gets a ProjectID by Jira Project ID and customerorder ID.
-     *
-     * @param String jiraProjectID, long customerorderID
-     * @return ProjectID
      */
     @SuppressWarnings("unchecked")
     public List<Ticket> getTicketsByCustomerorderID(long customerorderId) {
@@ -91,7 +80,6 @@ public class TicketDAO extends AbstractDAO {
     }
 
     public boolean deleteTicket(Ticket ticket) {
-
         //check if there are timereports related to this ticket - if so, cannot delete ticket
         List<Timereport> timereports = timereportDAO.getTimereportsByTicketID(ticket.getId());
         boolean deleted = false;
@@ -102,4 +90,5 @@ public class TicketDAO extends AbstractDAO {
         }
         return deleted;
     }
+
 }

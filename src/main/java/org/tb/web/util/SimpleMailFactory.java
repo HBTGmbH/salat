@@ -12,7 +12,6 @@ import org.tb.bdom.Statusreport;
  *
  * @author la
  */
-
 public class SimpleMailFactory {
 
     private static SimpleEmail createBasicEmail(String subject, StringBuilder message, Employee sender, Employee recipient) throws EmailException {

@@ -1,13 +1,3 @@
-/*
- * File:          $RCSfile$
- * Version:       $Revision$
- *
- * Created:       29.11.2006 by cb
- * Last changed:  $Date$ by $Author$
- *
- * Copyright (C) 2006 by HBT GmbH, www.hbt.de
- *
- */
 package org.tb.web.action;
 
 import org.apache.struts.action.ActionForm;
@@ -24,24 +14,10 @@ import org.tb.web.form.ShowMatrixForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-/**
- * @author cb
- * @since 29.11.2006
- */
 public class ShowMatrixAction extends DailyReportAction {
-
-    // conversion and localization of day values
-    private static final Map<String, String> MONTH_MAP = new HashMap<String, String>();
-
-    static {
-        for (String mon : new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}) {
-            MONTH_MAP.put(mon, "main.timereport.select.month." + mon.toLowerCase() + ".text");
-        }
-    }
 
     private CustomerorderDAO customerorderDAO;
     private TimereportDAO timereportDAO;

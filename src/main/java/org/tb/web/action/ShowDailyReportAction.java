@@ -89,9 +89,6 @@ public class ShowDailyReportAction extends DailyReportAction {
     /**
      * parses a string to a long value and returns its value
      * returns null if there is an error
-     *
-     * @param sValue
-     * @return
      */
     private Long safeParse(String sValue) {
         try {
@@ -111,7 +108,7 @@ public class ShowDailyReportAction extends DailyReportAction {
         try {
             Arrays.stream(ids)
                     .map(this::safeParse)
-                    .filter(longOrNull -> longOrNull != null)
+                    .filter(Objects::nonNull)
                     .forEach(timereportDAO::deleteTimereportById);
             return true;
         } catch (HibernateException e) {
@@ -121,11 +118,6 @@ public class ShowDailyReportAction extends DailyReportAction {
 
     /**
      * shifts a timereport by days
-     *
-     * @param trId
-     * @param days
-     * @param ecId
-     * @param loginEmployee
      */
     private void shiftDays(long trId, int days, long ecId, Employee loginEmployee) {
         Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
@@ -148,16 +140,10 @@ public class ShowDailyReportAction extends DailyReportAction {
 
     /**
      * checks, if timereports may be shifted by days
-     *
-     * @param ids
-     * @param days
-     * @param loginEmployeeContract
-     * @param authorized
-     * @return
      */
     private Collection<Long> checkShiftedDays(Collection<Long> ids, int days, Employeecontract loginEmployeeContract, boolean authorized) {
         Collection<Long> errors = new ArrayList<>();
-        ids.stream().forEach(id -> {
+        ids.forEach(id -> {
             Timereport timereport = timereportDAO.getTimereportById(id);
             LocalDate shiftedDate = timereport.getReferenceday().getRefdate().toLocalDate().plusDays(days);
             ActionMessages actionErrors = TimereportHelper.validateNewDate(new ActionMessages(), java.sql.Date.valueOf(shiftedDate), timereport, timereportDAO, employeeorderDAO, publicholidayDAO, loginEmployeeContract, authorized);
@@ -172,7 +158,6 @@ public class ShowDailyReportAction extends DailyReportAction {
     /**
      * shifts timereports by days, does some checking
      *
-     * @param ids
      * @return null if successful, else a list of problematic timereports
      */
     private Collection<Long> massShiftDays(String[] sIds, String byDays, long ecId, Employeecontract loginEmployeeContract, boolean authorized) {
@@ -181,7 +166,7 @@ public class ShowDailyReportAction extends DailyReportAction {
 
             List<Long> ids = Arrays.stream(sIds)
                     .map(this::safeParse)
-                    .filter(longOrNull -> longOrNull != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             Collection<Long> errors = checkShiftedDays(ids, days, loginEmployeeContract, authorized);
@@ -189,7 +174,7 @@ public class ShowDailyReportAction extends DailyReportAction {
                 return errors;
             }
 
-            ids.stream().forEach(id -> shiftDays(id, days, ecId, loginEmployeeContract.getEmployee()));
+            ids.forEach(id -> shiftDays(id, days, ecId, loginEmployeeContract.getEmployee()));
             return null;
         } catch (HibernateException | NumberFormatException e) {
             return Collections.emptyList();
@@ -234,7 +219,7 @@ public class ShowDailyReportAction extends DailyReportAction {
         request.getSession().removeAttribute("deleteWorklogFailed");
         request.getSession().setAttribute("createWorklogMemoryFailed", false);
         request.getSession().setAttribute("projectIDExists", false);
-        Employeecontract ec = getEmployeeContractFromRequest(request, employeecontractDAO);
+        Employeecontract ec = getEmployeeContractFromRequest(request);
 
         // check if special tasks initiated from the daily display need to be carried out...
         String sortModus = (String) request.getSession().getAttribute("timereportSortModus");
@@ -270,7 +255,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             }
         } else {
             //*** initialisation ***
-            init(mapping, request, th, reportForm);
+            init(request, th, reportForm);
             //TODO: Hier bitte findForward zurückgeben.
             if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
                 // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
@@ -315,7 +300,7 @@ public class ShowDailyReportAction extends DailyReportAction {
         //*** task for refreshing suborders ***
         // refresh suborders to be displayed in the select menu
         SuborderHelper sh = new SuborderHelper();
-        if (sh.refreshDailyOverviewSuborders(mapping, request, reportForm, suborderDAO, employeecontractDAO) != true) {
+        if (sh.refreshDailyOverviewSuborders(request, reportForm, suborderDAO, employeecontractDAO) != true) {
             return mapping.findForward("error");
         } else {
             @SuppressWarnings("unchecked")
@@ -332,7 +317,7 @@ public class ShowDailyReportAction extends DailyReportAction {
         //*** task for refreshing orders ***
         // refresh orders to be displayed in the select menu
         CustomerorderHelper ch = new CustomerorderHelper();
-        if (ch.refreshOrders(mapping, request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
+        if (ch.refreshOrders(request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
             return mapping.findForward("error");
         } else {
             @SuppressWarnings("unchecked")
@@ -472,16 +457,15 @@ public class ShowDailyReportAction extends DailyReportAction {
             return mapping.findForward("success");
         } else {
             // refresh list of timereports to be displayed
-            boolean refreshSuccessful = refreshTimereports(mapping,
+            boolean refreshSuccessful = refreshTimereports(
                     request,
                     reportForm,
                     customerorderDAO,
                     timereportDAO,
                     employeecontractDAO,
                     suborderDAO,
-                    employeeorderDAO,
-                    publicholidayDAO,
-                    overtimeDAO);
+                    employeeorderDAO
+            );
             if (refreshSuccessful) {
                 @SuppressWarnings("unchecked")
                 List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
@@ -551,7 +535,7 @@ public class ShowDailyReportAction extends DailyReportAction {
                 // refresh workingday
                 Workingday workingday;
                 try {
-                    workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
+                    workingday = refreshWorkingday(reportForm, request, workingdayDAO);
                 } catch (Exception e) {
                     return mapping.findForward("error");
                 }
@@ -620,31 +604,31 @@ public class ShowDailyReportAction extends DailyReportAction {
         @SuppressWarnings("unchecked")
         List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
         String column = request.getParameter("column");
-        Comparator<Timereport> comparator = new TimereportByEmployeeAscComparator();
+        Comparator<Timereport> comparator = TimereportByEmployeeAscComparator.INSTANCE;
         if ("employee".equals(column)) {
             if (sortColumn.equalsIgnoreCase(column) && sortModus.equals("+")) {
-                comparator = new TimereportByEmployeeDescComparator();
+                comparator = TimereportByEmployeeDescComparator.INSTANCE;
                 session.setAttribute("timereportSortModus", "-");
             } else {
-                comparator = new TimereportByEmployeeAscComparator();
+                comparator = TimereportByEmployeeAscComparator.INSTANCE;
                 session.setAttribute("timereportSortModus", "+");
                 session.setAttribute("timereportSortColumn", column);
             }
         } else if ("refday".equals(column)) {
             if (sortColumn.equalsIgnoreCase(column) && sortModus.equals("+")) {
-                comparator = new TimereportByRefdayDescComparator();
+                comparator = TimereportByRefdayDescComparator.INSTANCE;
                 session.setAttribute("timereportSortModus", "-");
             } else {
-                comparator = new TimereportByRefdayAscComparator();
+                comparator = TimereportByRefdayAscComparator.INSTANCE;
                 session.setAttribute("timereportSortModus", "+");
                 session.setAttribute("timereportSortColumn", column);
             }
         } else if ("order".equals(column)) {
             if (sortColumn.equalsIgnoreCase(column) && sortModus.equals("+")) {
-                comparator = new TimereportByOrderDescComparator();
+                comparator = TimereportByOrderDescComparator.INSTANCE;
                 session.setAttribute("timereportSortModus", "-");
             } else {
-                comparator = new TimereportByOrderAscComparator();
+                comparator = TimereportByOrderAscComparator.INSTANCE;
                 session.setAttribute("timereportSortModus", "+");
                 session.setAttribute("timereportSortColumn", column);
             }
@@ -668,12 +652,11 @@ public class ShowDailyReportAction extends DailyReportAction {
      * Called if no special task is given, called from menu eg. Prepares everything to show timereports of
      * logged-in user.
      *
-     * @param mapping
      * @param request
      * @param th
      * @param reportForm
      */
-    private String init(ActionMapping mapping, HttpServletRequest request, TimereportHelper th, ShowDailyReportForm reportForm) {
+    private String init(HttpServletRequest request, TimereportHelper th, ShowDailyReportForm reportForm) {
         String forward = "success";
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeHelper().setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
@@ -727,7 +710,7 @@ public class ShowDailyReportAction extends DailyReportAction {
             // refresh workingday
             Workingday workingday;
             try {
-                workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
+                workingday = refreshWorkingday(reportForm, request, workingdayDAO);
             } catch (Exception e) {
                 forward = "error";
                 return forward;

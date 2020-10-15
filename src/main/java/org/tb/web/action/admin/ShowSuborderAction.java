@@ -111,8 +111,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
                 LOG.debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
                 request.getSession().setAttribute("currentOrder", co);
             } else {
-                request.getSession().setAttribute("suborderCustomerOrderId",
-                        new Long(-1));
+                request.getSession().setAttribute("suborderCustomerOrderId", -1L);
                 suborderForm.setCustomerOrderId(customerOrderId);
             }
             if (request.getSession().getAttribute("showStructure") != null) {
@@ -156,7 +155,7 @@ public class ShowSuborderAction extends LoginRequiredAction {
                 String[] suborderIdArray = suborderForm.getSuborderIdArray();
                 if (suborderIdArray != null) {
                     if (suborderForm.getSuborderOption().equals("delete")) {
-                        List<String> soIDList = new ArrayList<String>();
+                        List<String> soIDList = new ArrayList<>();
                         for (String soID : suborderIdArray) {
                             if (!suborderDAO.deleteSuborderById(Long.parseLong(soID))) {
                                 soIDList.add(soID);
@@ -195,9 +194,8 @@ public class ShowSuborderAction extends LoginRequiredAction {
 
         if (showActualHours) {
             /* show actual hours */
-            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show,
-                    filter, customerOrderId);
-            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
                 SuborderViewDecorator decorator = new SuborderViewDecorator(
                         timereportDAO, suborder);

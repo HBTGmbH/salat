@@ -105,7 +105,6 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
             request.getSession().setAttribute("customerorders", decorators);
         } else {
             request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));
-
         }
 
         // back to customer order display jsp

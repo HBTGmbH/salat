@@ -66,7 +66,7 @@ public class ShowInvoiceAction extends DailyReportAction {
         ShowInvoiceForm showInvoiceForm = (ShowInvoiceForm) form;
         TimereportHelper th = new TimereportHelper();
 
-        Map<String, String> monthMap = new HashMap<String, String>();
+        Map<String, String> monthMap = new HashMap<>();
         monthMap.put("0", "main.timereport.select.month.jan.text");
         monthMap.put("1", "main.timereport.select.month.feb.text");
         monthMap.put("2", "main.timereport.select.month.mar.text");
@@ -84,10 +84,10 @@ public class ShowInvoiceAction extends DailyReportAction {
         // request
         if (request.getParameter("task") != null && request.getParameter("task").equals("generateMaximumView")) {
             String selectedView = showInvoiceForm.getInvoiceview();
-            List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList = new LinkedList<InvoiceSuborderViewHelper>();
+            List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList = new LinkedList<>();
             List<Suborder> suborderList;
             Customerorder customerOrder;
-            List<Suborder> suborderListTemp = new LinkedList<Suborder>();
+            List<Suborder> suborderListTemp = new LinkedList<>();
             Date dateFirst;
             Date dateLast;
             java.sql.Date sqlDateFirst;
@@ -127,16 +127,11 @@ public class ShowInvoiceAction extends DailyReportAction {
                     } else {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
-                    Collections.sort(suborderList, new SubOrderComparator());
+                    suborderList.sort(SubOrderComparator.INSTANCE);
                     sqlDateFirst = new java.sql.Date(dateFirst.getTime());
                     sqlDateLast = new java.sql.Date(dateLast.getTime());
                     // remove suborders that are not valid sometime between dateFirst and dateLast
-                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext(); ) {
-                        Suborder so = iterator.next();
-                        if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
-                            iterator.remove();
-                        }
-                    }
+                    suborderList.removeIf(so -> so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst));
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
                     // generate dates for a period of time in custom view mode
                     try {
@@ -165,13 +160,8 @@ public class ShowInvoiceAction extends DailyReportAction {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
                     // remove suborders that are not valid sometime between dateFirst and dateLast
-                    for (Iterator<Suborder> iterator = suborderList.iterator(); iterator.hasNext(); ) {
-                        Suborder so = iterator.next();
-                        if (so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst)) {
-                            iterator.remove();
-                        }
-                    }
-                    Collections.sort(suborderList, new SubOrderComparator());
+                    suborderList.removeIf(so -> so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst));
+                    suborderList.sort(SubOrderComparator.INSTANCE);
                     sqlDateFirst = new java.sql.Date(dateFirst.getTime());
                     sqlDateLast = new java.sql.Date(dateLast.getTime());
                 } else {
@@ -226,7 +216,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                 request.getSession().setAttribute("currentOrder", showInvoiceForm.getOrder());
                 request.getSession().setAttribute("currentSuborder", showInvoiceForm.getSuborder());
                 List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder()).getId(), showInvoiceForm.getShowOnlyValid());
-                Collections.sort(suborders, new SubOrderComparator());
+                suborders.sort(SubOrderComparator.INSTANCE);
 
                 request.getSession().setAttribute("suborders", suborders);
             }
@@ -393,7 +383,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                 showInvoiceForm.setFromDay("01");
                 showInvoiceForm.setFromMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setFromYear(DateUtils.getYearString(today));
-                showInvoiceForm.setUntilDay(new Integer(DateUtils.getLastDayOfMonth(today)).toString());
+                showInvoiceForm.setUntilDay(Integer.toString(DateUtils.getLastDayOfMonth(today)));
                 showInvoiceForm.setUntilMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setUntilYear(DateUtils.getYearString(today));
                 request.getSession().setAttribute("invoiceview", GlobalConstants.VIEW_MONTHLY);
@@ -423,10 +413,10 @@ public class ShowInvoiceAction extends DailyReportAction {
 
     private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList, java.sql.Date dateFirst, java.sql.Date dateLast,
                                   ShowInvoiceForm invoiceForm) {
-        List<String> suborderIdList = new ArrayList<String>(suborderList.size());
-        List<String> timereportIdList = new ArrayList<String>();
+        List<String> suborderIdList = new ArrayList<>(suborderList.size());
+        List<String> timereportIdList = new ArrayList<>();
         for (Suborder suborder : suborderList) {
-            List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList = new LinkedList<InvoiceTimereportViewHelper>();
+            List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList = new LinkedList<>();
             List<Timereport> timereportList = timereportDAO.getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(dateFirst, dateLast, suborder.getId());
             for (Timereport timereport : timereportList) {
                 InvoiceTimereportViewHelper invoiceTimereportViewHelper = new InvoiceTimereportViewHelper(timereport);
@@ -445,8 +435,8 @@ public class ShowInvoiceAction extends DailyReportAction {
             invoiceSuborderViewHelperList.add(newInvoiceSuborderViewHelper);
             suborderIdList.add(String.valueOf(newInvoiceSuborderViewHelper.getId()));
         }
-        invoiceForm.setSuborderIdArray(suborderIdList.toArray(new String[suborderIdList.size()]));
-        invoiceForm.setTimereportIdArray(timereportIdList.toArray(new String[timereportIdList.size()]));
+        invoiceForm.setSuborderIdArray(suborderIdList.toArray(new String[0]));
+        invoiceForm.setTimereportIdArray(timereportIdList.toArray(new String[0]));
         long totalActualminutes = 0;
         for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : invoiceSuborderViewHelperList) {
             totalActualminutes += invoiceSuborderViewHelper.getTotalActualminutes();

@@ -5,7 +5,6 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Timereport;
-import org.tb.web.action.InvalidAccessTokenException;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -17,7 +16,6 @@ import java.text.SimpleDateFormat;
  *
  * @author mgo
  */
-
 public class JiraConnectionOAuthHelper {
 
     private String user_sign;
@@ -30,15 +28,12 @@ public class JiraConnectionOAuthHelper {
      * Sets the assignee for the current worklog
      *
      * @param key  path of the issue
-     * @param user the new assignee
      * @return status code of the response<br>
      * 200 - OK<br>
      * 400 - Returned if there is a problem with the received user representation<br>
      * 401 - Returned if the calling user does not have permission to assign the issue<br>
      * 403 - Returned if the authorization has failed<br>
      * 404 - Returned if either the issue or the user does not exist<br>
-     * @throws IOException
-     * @throws URISyntaxException
      */
     private int setAssignee(String key) throws URISyntaxException, IOException {
         String resource = GlobalConstants.JIRA_URL + "/rest/api/2/issue/" + key + "/assignee";
@@ -58,7 +53,6 @@ public class JiraConnectionOAuthHelper {
      * @param tr       timereport from Salat
      * @param resource path of the resource
      * @return Json Object with the informations of the timereport from Salat
-     * @throws JSONException
      */
     private JSONObject createJsonWorklog(Timereport tr, String resource) throws JSONException {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
@@ -130,8 +124,6 @@ public class JiraConnectionOAuthHelper {
      * 403 - Returned if the calling user does not have permission to add the worklog<br>
      * 404 - Returned if either the issue or the user does not exist (setAssignee)<br>
      * 500 - ClientHandlerException<br>
-     * @throws IOException
-     * @throws InvalidAccessTokenException
      */
     public int[] createWorklog(Timereport tr, String jiraKey) throws IOException {
 
@@ -173,8 +165,6 @@ public class JiraConnectionOAuthHelper {
      * 403 - Returned if the calling user does not have permission to delete the worklog<br>
      * 404 - Returned if either the issue or the user does not exist<br>
      * 500 - ClientHandlerException<br>
-     * @throws IOException
-     * @throws InvalidAccessTokenException
      */
     public int updateWorklog(Timereport tr, String jiraKey, int worklogId) throws IOException {
 
@@ -204,8 +194,6 @@ public class JiraConnectionOAuthHelper {
      * 400 - Returned if the input is invalid (e.g. missing required fields, invalid values, and so forth)<br>
      * 403 - Returned if the calling user does not have permission to delete the worklog<br>
      * 500 - ClientHandlerException<br>
-     * @throws IOException
-     * @throws InvalidAccessTokenException
      */
     public int deleteWorklog(long worklogId, String jiraKey) throws IOException {
 

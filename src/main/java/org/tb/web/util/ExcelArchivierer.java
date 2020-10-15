@@ -135,14 +135,14 @@ public class ExcelArchivierer {
                             && invoiceTimereportViewHelpers.size() > 0) {
                         for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceTimereportViewHelpers) {
                             if (invoiceTimereportViewHelper.isVisible()) {
-                                rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereportViewHelper, showInvoiceForm, request, factory);
+                                rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereportViewHelper, request, factory);
                             }
                         }
                     }
                 }
             }
         }
-        addSumRow(workbook, rowIndex, showInvoiceForm, request, factory);
+        addSumRow(workbook, rowIndex, request, factory);
         setColumnWidths(workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME), factory);
         return workbook;
     }
@@ -244,7 +244,7 @@ public class ExcelArchivierer {
             if (invoiceSuborderViewHelper.getDebithours() != null) {
                 cell.setCellValue(invoiceSuborderViewHelper.getDebithours() / 24);
             } else {
-                cell.setCellValue(0l);
+                cell.setCellValue(0L);
             }
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             colIndex++;
@@ -258,22 +258,21 @@ public class ExcelArchivierer {
                 layerlimit = -1;
             }
             if (invoiceSuborderViewHelper.getLayer() < layerlimit || layerlimit == -1) {
-                cell.setCellValue(new Double(invoiceSuborderViewHelper.getTotalActualminutesPrint()) / 1440);
+                cell.setCellValue((double) invoiceSuborderViewHelper.getTotalActualminutesPrint() / 1440);
                 cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             } else if (invoiceSuborderViewHelper.getLayer() == layerlimit) {
-                cell.setCellValue(new Double(invoiceSuborderViewHelper.getDurationInMinutes()) / 1440);
+                cell.setCellValue((double) invoiceSuborderViewHelper.getDurationInMinutes() / 1440);
                 if (!invoiceSuborderViewHelper.getDuration().equals("00:00") && !invoiceSuborderViewHelper.getDuration().equals(invoiceSuborderViewHelper.getActualhoursPrint())) {
                     cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
                 } else {
                     cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteItalic")));
                 }
             }
-            colIndex++;
         }
         return rowIndex;
     }
 
-    private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereportViewHelper invoiceTimereportViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
+    private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereportViewHelper invoiceTimereportViewHelper, HttpServletRequest request, InstanceFactory factory) {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 1;
@@ -311,7 +310,7 @@ public class ExcelArchivierer {
                 double duration = (invoiceTimereportViewHelper.getDurationhours() * 60) + invoiceTimereportViewHelper.getDurationminutes();
                 cell.setCellValue(duration / 1440);
             } else {
-                cell.setCellValue(0l);
+                cell.setCellValue(0L);
             }
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
         }
@@ -357,11 +356,10 @@ public class ExcelArchivierer {
             cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
             cell.setCellValue(createRTS(showInvoiceForm.getTitleactualhourstext(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
-            colIndex++;
         }
     }
 
-    private static void addSumRow(Workbook workbook, int rowIndex, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
+    private static void addSumRow(Workbook workbook, int rowIndex, HttpServletRequest request, InstanceFactory factory) {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         int colIndex = 2;
         if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
@@ -390,13 +388,13 @@ public class ExcelArchivierer {
 
     private static void setColumnWidths(Sheet sheet, InstanceFactory factory) {
         // get the highest width per column and set the column width for sheet
-        Map<Integer, Integer> widthMap = new HashMap<Integer, Integer>();
+        Map<Integer, Integer> widthMap = new HashMap<>();
         for (Iterator<Row> rowIter = sheet.rowIterator(); rowIter.hasNext(); ) {
             Row row = rowIter.next();
             for (Iterator<Cell> cellIter = row.cellIterator(); cellIter.hasNext(); ) {
                 Cell cell = cellIter.next();
                 Integer widthFromMap = widthMap.get(cell.getColumnIndex());
-                Integer width;
+                int width;
                 switch (cell.getCellType()) {
                     case Cell.CELL_TYPE_NUMERIC:
                         width = (factory.getDataFormatter().formatCellValue(cell).length() + 3) * 256;

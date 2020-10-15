@@ -18,21 +18,21 @@ public class AfterLogin {
     private static final Logger LOG = LoggerFactory.getLogger(AfterLogin.class);
 
     private static List<Warning> checkEmployeeorders(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, MessageResources resources, Locale locale) {
-        List<Warning> warnings = new ArrayList<Warning>();
+        List<Warning> warnings = new ArrayList<>();
 
         for (Employeeorder employeeorder : employeeorderDAO.getEmployeeordersForEmployeeordercontentWarning(employeecontract)) {
             if (!employeecontract.getFreelancer() && !employeeorder.getSuborder().getNoEmployeeOrderContent()) {
                 try {
                     if (employeeorder.getEmployeeordercontent() == null) {
                         throw new RuntimeException("null content");
-                    } else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_emp() != true
+                    } else if (employeeorder.getEmployeeordercontent() != null && !employeeorder.getEmployeeordercontent().getCommitted_emp()
                             && employeeorder.getEmployeecontract().getEmployee().equals(employeecontract.getEmployee())) {
                         Warning warning = new Warning();
                         warning.setSort(resources.getMessage(locale, "employeeordercontent.thumbdown.text"));
                         warning.setText(employeeorder.getEmployeeOrderAsString());
                         warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
                         warnings.add(warning);
-                    } else if (employeeorder.getEmployeeordercontent() != null && employeeorder.getEmployeeordercontent().getCommitted_mgmt() != true
+                    } else if (employeeorder.getEmployeeordercontent() != null && !employeeorder.getEmployeeordercontent().getCommitted_mgmt()
                             && employeeorder.getEmployeeordercontent().getContactTechHbt().equals(employeecontract.getEmployee())) {
                         Warning warning = new Warning();
                         warning.setSort(resources.getMessage(locale, "employeeordercontent.thumbdown.text"));
@@ -188,7 +188,7 @@ public class AfterLogin {
 
     public static void handleOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO, HttpSession session) {
         TimereportHelper th = new TimereportHelper();
-        Double overtimeStatic = employeecontract.getOvertimeStatic();
+        double overtimeStatic = employeecontract.getOvertimeStatic();
         int otStaticMinutes = (int) (overtimeStatic * 60);
 
         int overtime;

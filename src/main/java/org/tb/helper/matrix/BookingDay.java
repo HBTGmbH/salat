@@ -1,36 +1,18 @@
-/*
- * File:          $RCSfile$
- * Version:       $Revision$
- *
- * Created:       04.12.2006 by cb
- * Last changed:  $Date$ by $Author$
- *
- * Copyright (C) 2006 by HBT GmbH, www.hbt.de
- *
- */
 package org.tb.helper.matrix;
+
+import lombok.Data;
 
 import java.util.Date;
 
-/**
- * @author cb
- * @since 04.12.2006
- */
+@Data
 public class BookingDay implements Comparable<BookingDay> {
-    private boolean satSun;
-    private boolean publicHoliday;
     private Date date;
     private long durationHours;
     private long durationMinutes;
     private String taskdescription;
+    private boolean satSun;
+    private boolean publicHoliday;
 
-    /**
-     * @param date
-     * @param durationHours
-     * @param durationMinutes
-     * @author cb
-     * @since 04.12.2006
-     */
     public BookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
         this.date = date;
         this.durationHours = durationHours;
@@ -40,40 +22,8 @@ public class BookingDay implements Comparable<BookingDay> {
         this.taskdescription = taskdescription;
     }
 
-    public long getDurationHours() {
-        return durationHours;
-    }
-
-    public void setDurationHours(long durationHours) {
-        this.durationHours = durationHours;
-    }
-
-    public long getDurationMinutes() {
-        return durationMinutes;
-    }
-
-    public void setDurationMinutes(long durationMinutes) {
-        this.durationMinutes = durationMinutes;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
-
     public int compareTo(BookingDay o) {
         return this.date.compareTo(o.date);
-    }
-
-    public boolean getSatSun() {
-        return satSun;
-    }
-
-    public void setSatSun(boolean satSun) {
-        this.satSun = satSun;
     }
 
     public double getRoundHours() {
@@ -81,24 +31,4 @@ public class BookingDay implements Comparable<BookingDay> {
         return (double) duration / 100;
     }
 
-    public boolean getPublicHoliday() {
-        return publicHoliday;
-    }
-
-    public void setPublicHoliday(boolean publicHoliday) {
-        this.publicHoliday = publicHoliday;
-    }
-
-    public String getTaskdescription() {
-        return taskdescription;
-    }
-
-    public void setTaskdescription(String taskdescription) {
-        this.taskdescription = taskdescription;
-    }
-
 }
-
-/*
- $Log$
- */

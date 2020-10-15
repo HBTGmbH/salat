@@ -45,7 +45,7 @@ public class EmployeeOrdersService {
         // was added to the SuborderDao class!!!
         List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(ec.getId(), refDate);
 
-        List<EmployeeOrderData> employeeorderResult = new ArrayList<EmployeeOrderData>(suborders.size());
+        List<EmployeeOrderData> employeeorderResult = new ArrayList<>(suborders.size());
 
         for (Suborder suborder : suborders) {
             // Filtering valid suborders with not required description

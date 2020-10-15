@@ -1,6 +1,5 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
@@ -12,12 +11,10 @@ import org.tb.util.OptionItem;
 import org.tb.web.form.ShowDailyReportForm;
 
 import javax.servlet.http.HttpServletRequest;
-import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.*;
 
 public abstract class DailyReportAction extends LoginRequiredAction {
-
 
     protected void addErrorAtTheBottom(HttpServletRequest request, ActionMessages errors, ActionMessage message) {
         errors.add("status", message);
@@ -26,7 +23,6 @@ public abstract class DailyReportAction extends LoginRequiredAction {
     }
 
     /**
-     * @param request
      * @return Returns the date associated the request. If parsing fails, the current date is returned.
      */
     protected java.sql.Date getSelectedDateFromRequest(HttpServletRequest request) {
@@ -48,10 +44,6 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
     /**
      * Calculates the overtime and vaction and sets the attributes in the session.
-     *
-     * @param request
-     * @param selectedYear
-     * @param employeecontract
      */
     protected void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract,
                                               EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
@@ -71,24 +63,11 @@ public abstract class DailyReportAction extends LoginRequiredAction {
     /**
      * Refreshes the list of timereports and all session attributes, that depend on the list of timereports.
      *
-     * @param mapping
-     * @param request
-     * @param reportForm
-     * @param customerorderDAO
-     * @param timereportDAO
-     * @param employeecontractDAO
-     * @param suborderDAO
-     * @param employeeorderDAO
-     * @param publicholidayDAO
-     * @param overtimeDAO
-     * @param vacationDAO
-     * @param employeeDAO
      * @return Returns true, if refreshing was succesful.
      */
-    protected boolean refreshTimereports(ActionMapping mapping,
-                                         HttpServletRequest request, ShowDailyReportForm reportForm, CustomerorderDAO customerorderDAO,
+    protected boolean refreshTimereports(HttpServletRequest request, ShowDailyReportForm reportForm, CustomerorderDAO customerorderDAO,
                                          TimereportDAO timereportDAO, EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
-                                         EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, OvertimeDAO overtimeDAO) {
+                                         EmployeeorderDAO employeeorderDAO) {
 
         //selected view and selected dates
         String selectedView = reportForm.getView();
@@ -104,34 +83,38 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         try {
             TimereportHelper th = new TimereportHelper();
 
-            if (selectedView.equals(GlobalConstants.VIEW_DAILY)) {
-                request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
+            switch (selectedView) {
+                case GlobalConstants.VIEW_DAILY:
+                    request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
 
-                beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
-                endDate = beginDate;
-            } else if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
-                request.getSession().setAttribute("view", GlobalConstants.VIEW_MONTHLY);
-                beginDate = th.getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear(), true);
-                GregorianCalendar gc = new GregorianCalendar();
-                gc.setTime(beginDate);
-                int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
-                String maxDayString = "";
-                if (maxday < 10) {
-                    maxDayString += "0";
-                }
-                maxDayString += maxday;
-                endDate = th.getDateFormStrings(maxDayString, reportForm.getMonth(), reportForm.getYear(), true);
-            } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
-                request.getSession().setAttribute("view", GlobalConstants.VIEW_CUSTOM);
-                beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
-                if (reportForm.getLastday() == null || reportForm.getLastmonth() == null || reportForm.getLastyear() == null) {
-                    reportForm.setLastday(reportForm.getDay());
-                    reportForm.setLastmonth(reportForm.getMonth());
-                    reportForm.setLastyear(reportForm.getYear());
-                }
-                endDate = th.getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear(), true);
-            } else {
-                throw new RuntimeException("no view type selected");
+                    beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                    endDate = beginDate;
+                    break;
+                case GlobalConstants.VIEW_MONTHLY:
+                    request.getSession().setAttribute("view", GlobalConstants.VIEW_MONTHLY);
+                    beginDate = th.getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear(), true);
+                    GregorianCalendar gc = new GregorianCalendar();
+                    gc.setTime(beginDate);
+                    int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
+                    String maxDayString = "";
+                    if (maxday < 10) {
+                        maxDayString += "0";
+                    }
+                    maxDayString += maxday;
+                    endDate = th.getDateFormStrings(maxDayString, reportForm.getMonth(), reportForm.getYear(), true);
+                    break;
+                case GlobalConstants.VIEW_CUSTOM:
+                    request.getSession().setAttribute("view", GlobalConstants.VIEW_CUSTOM);
+                    beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                    if (reportForm.getLastday() == null || reportForm.getLastmonth() == null || reportForm.getLastyear() == null) {
+                        reportForm.setLastday(reportForm.getDay());
+                        reportForm.setLastmonth(reportForm.getMonth());
+                        reportForm.setLastyear(reportForm.getYear());
+                    }
+                    endDate = th.getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear(), true);
+                    break;
+                default:
+                    throw new RuntimeException("no view type selected");
             }
 
         } catch (Exception e) {
@@ -170,7 +153,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         }
 
 
-        List<Timereport> timereports = new ArrayList<Timereport>();
+        List<Timereport> timereports;
         List<Customerorder> orders = ec == null ? customerorderDAO.getCustomerorders() : customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
         request.getSession().setAttribute("orders", orders);
 
@@ -208,7 +191,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         if (request.getSession().getAttribute("timereportComparator") != null) {
             @SuppressWarnings("unchecked")
             Comparator<Timereport> comparator = (Comparator<Timereport>) request.getSession().getAttribute("timereportComparator");
-            Collections.sort(timereports, comparator);
+            timereports.sort(comparator);
         }
         request.getSession().setAttribute("timereports", timereports);
         request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());
@@ -217,7 +200,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         if (reportForm.getEmployeeContractId() == -1) {
             request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
             request.getSession().setAttribute("currentEmployeeContract", null);
-            request.getSession().setAttribute("currentEmployeeId", -1l);
+            request.getSession().setAttribute("currentEmployeeId", -1L);
         } else {
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
             request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
@@ -247,16 +230,11 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
     /**
      * Refreshes the workingday.
-     *
-     * @param mapping
-     * @param reportForm
-     * @param request
-     * @throws Exception
      */
-    protected Workingday refreshWorkingday(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, EmployeecontractDAO employeecontractDAO, WorkingdayDAO workingdayDAO)
+    protected Workingday refreshWorkingday(ShowDailyReportForm reportForm, HttpServletRequest request, WorkingdayDAO workingdayDAO)
             throws Exception {
 
-        Employeecontract employeecontract = getEmployeeContractFromRequest(request, employeecontractDAO);
+        Employeecontract employeecontract = getEmployeeContractFromRequest(request);
         if (employeecontract == null) {
             request.setAttribute("errorMessage",
                     "No employee contract found for employee - please call system administrator.");
@@ -288,11 +266,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
         return workingday;
     }
 
-    /**
-     * @param request
-     * @return
-     */
-    protected Employeecontract getEmployeeContractFromRequest(HttpServletRequest request, EmployeecontractDAO employeecontractDAO) {
+    protected Employeecontract getEmployeeContractFromRequest(HttpServletRequest request) {
         Employeecontract ec = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         if (ec == null) {
             ec = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
@@ -301,14 +275,11 @@ public abstract class DailyReportAction extends LoginRequiredAction {
     }
 
     /**
-     * @param reportForm
-     * @param ec
      * @return Returns the adequate {@link Workingday} for the selected date in the reportForm and the given
      * {@link Employeecontract}. If this workingday does not exist in the database so far, a new one is created.
-     * @throws ParseException
      */
     // getWorkingdayForReportformAndEmployeeContract have a new parameter, boolean
-    protected Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec, WorkingdayDAO workingdayDAO, boolean nullPruefung) throws Exception {
+    protected Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec, WorkingdayDAO workingdayDAO, boolean nullPruefung) {
         String dayString = reportForm.getDay();
         String monthString = reportForm.getMonth();
         String yearString = reportForm.getYear();
@@ -329,7 +300,7 @@ public abstract class DailyReportAction extends LoginRequiredAction {
 
     protected List<OptionItem> getSerialDayList() {
         int maxDays = GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
-        List<OptionItem> days = new ArrayList<OptionItem>();
+        List<OptionItem> days = new ArrayList<>();
         days.add(new OptionItem("0", "--"));
         for (int i = 1; i <= maxDays; i++) {
             String dayLabel;

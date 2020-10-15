@@ -46,7 +46,7 @@ public class EditStatusReportAction extends StatusReportAction {
         Statusreport statusreport = null;
 
         try {
-            Long srId = Long.parseLong(request.getParameter("srId"));
+            long srId = Long.parseLong(request.getParameter("srId"));
             statusreport = statusReportDAO.getStatusReportById(srId);
         } catch (Exception e) {
             // do nothing here

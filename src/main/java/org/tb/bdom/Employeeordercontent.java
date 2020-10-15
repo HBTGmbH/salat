@@ -12,11 +12,6 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
-/**
- * Bean for table 'employeeordercontent'
- *
- * @author th
- */
 @Data
 @Entity
 @EqualsAndHashCode(of = "id")

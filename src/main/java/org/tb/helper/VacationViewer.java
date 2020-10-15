@@ -59,10 +59,10 @@ public class VacationViewer implements Serializable {
         int totalVacationMinutes = usedVacationMinutes;
         int hours = totalVacationMinutes / 60;
         int minutes = totalVacationMinutes % 60;
-        Double usedTime = minutes / 60.0 + hours;
+        double usedTime = minutes / 60.0 + hours;
         usedTime += 0.005;
         usedTime *= 100;
-        int temp = usedTime.intValue();
+        int temp = (int) usedTime;
         usedTime = temp / 100.0;
         return usedTime;
     }
@@ -163,11 +163,6 @@ public class VacationViewer implements Serializable {
      * computes a list of VacationViews. Every VacationView contains one vacation-based suborder (Urlaub <Jahr>, Sonderurlaub, Resturlaub)
      * that is valid at the date of request with a sum of all durations booked for this suborder for this employee.
      * Saves the Vacations-List as an attribute in the Request.
-     *
-     * @param request
-     * @param employeecontract
-     * @param employeeorderDAO
-     * @param timereportDAO
      */
     public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO) {
 

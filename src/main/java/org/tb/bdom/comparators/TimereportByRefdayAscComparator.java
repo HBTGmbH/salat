@@ -1,11 +1,16 @@
 package org.tb.bdom.comparators;
 
+import lombok.NoArgsConstructor;
 import org.tb.bdom.Timereport;
 
 import java.util.Comparator;
 
+import static lombok.AccessLevel.PRIVATE;
+
+@NoArgsConstructor(access = PRIVATE)
 public class TimereportByRefdayAscComparator implements Comparator<Timereport> {
 
+    public static final Comparator<Timereport> INSTANCE = new TimereportByRefdayAscComparator();
 
     /**
      * @param tr1 first {@link Timereport}

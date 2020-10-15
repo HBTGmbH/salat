@@ -111,7 +111,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 
             // if JIRA is accessed for the first time or the access token is invalid:
             if ((jiraAccessToken == null && request.getParameter("oauth_verifier") == null) ||
-                    (jiraAccessToken != null && AtlassianOAuthClient.isValidAccessToken(jiraAccessToken) == false)) {
+                    (jiraAccessToken != null && !AtlassianOAuthClient.isValidAccessToken(jiraAccessToken))) {
                 // STEP 1: get a request token from JIRA and redirect user to JIRA login page
                 AtlassianOAuthClient.getRequestTokenAndSetRedirectToJira(response, GlobalConstants.SALAT_URL + "/do/DeleteTimereportFromDailyDisplay?trId=" + trId);//showDailyReport.jsp
                 return null;
@@ -175,8 +175,8 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 
         ShowDailyReportForm reportForm = (ShowDailyReportForm) request.getSession().getAttribute("reportForm");
 
-        if (refreshTimereports(mapping, request, reportForm, customerorderDAO, timereportDAO, employeecontractDAO,
-                suborderDAO, employeeorderDAO, publicholidayDAO, overtimeDAO) != true) {
+        if (!refreshTimereports(request, reportForm, customerorderDAO, timereportDAO, employeecontractDAO,
+                suborderDAO, employeeorderDAO)) {
             return mapping.findForward("error");
         } else {
 
@@ -188,7 +188,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
             //refresh workingday
             Workingday workingday;
             try {
-                workingday = refreshWorkingday(mapping, reportForm, request, employeecontractDAO, workingdayDAO);
+                workingday = refreshWorkingday(reportForm, request, workingdayDAO);
             } catch (Exception e) {
                 return mapping.findForward("error");
             }

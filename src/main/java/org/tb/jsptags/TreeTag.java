@@ -28,7 +28,7 @@ public class TreeTag extends TagSupport {
      */
     private static final long serialVersionUID = 1L; // 8705101629331486419L;
     // Random number needed for imag-label-generating.
-    private static Random rand = new Random();
+    private static final Random rand = new Random();
     // The name of the browser used by the client.
     private String browser = null;
     // this is the function (java script) specified by a string,
@@ -105,9 +105,6 @@ public class TreeTag extends TagSupport {
      * - prepare entries which are no parents (leafs)
      * - build the root of the tree view
      * - build all children recursivly
-     *
-     * @param out
-     * @return
      */
     public int doStartTag(JspWriter out) {
         try {
@@ -117,11 +114,11 @@ public class TreeTag extends TagSupport {
             //-----------------------------------------------
             //		prepare entries which are no parents (leafs)
             //-----------------------------------------------
-            this.internalNodesIDs = new ArrayList<Long>();
+            this.internalNodesIDs = new ArrayList<>();
             if (this.subProjects != null) {
                 for (Suborder suborder : this.subProjects) {
                     if (suborder.getParentorder() != null) {
-                        this.internalNodesIDs.add(new Long(suborder.getParentorder().getId()));
+                        this.internalNodesIDs.add(suborder.getParentorder().getId());
                     }
                 }
             }
@@ -179,12 +176,9 @@ public class TreeTag extends TagSupport {
     /**
      * SALAT-614
      * for a filtered list of suborders, produces one with the parent suborders included
-     *
-     * @param input
-     * @return
      */
     private Collection<Suborder> fillFilteredHierarchy(Collection<Suborder> input) {
-        Collection<Suborder> result = new LinkedHashSet<Suborder>();
+        Collection<Suborder> result = new LinkedHashSet<>();
         for (Suborder suborder : input) {
             Suborder parent = suborder;
             while (parent != null) {
@@ -230,7 +224,7 @@ public class TreeTag extends TagSupport {
                 String workingChangeFunctionStr = changeFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));
                 String workingDeleteFunctionStr = deleteFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));
 
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append(suborder.getSignAndDescription()).append("; [");
                 if (suborder.getFromDate() != null) {
                     sb.append(suborder.getFromDate());
@@ -256,7 +250,7 @@ public class TreeTag extends TagSupport {
                     outPut.println("<TABLE BORDER=0 cellspacing=\"0\" cellpadding=\"0\"><tr>");
                     outPut.println("<td class=\"noBborderStyle\" nowrap width=\"" + (30 + 37 * lastLevel) + "\">&nbsp;</td>");
                     //check, if the (+/-)-Sign must be printed or if this node is a leaf node
-                    if (this.internalNodesIDs.contains(new Long(suborder.getId()))) {
+                    if (this.internalNodesIDs.contains(suborder.getId())) {
                         outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" ");
                         outPut.println("onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '" + GlobalConstants.OPENICON + "');\"></td>");
                     } else {
@@ -268,9 +262,7 @@ public class TreeTag extends TagSupport {
                             && workingDeleteFunctionStr.length() > 0) {
                         outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.EDITICON + "\" border=\"0\" ");
                         outPut.println(" onclick=\"" + workingChangeFunctionStr + "\";></td>");
-                    } else if (workingChangeFunctionStr.length() > 0
-                            && editable
-                            && workingDeleteFunctionStr.length() == 0) {
+                    } else if (workingChangeFunctionStr.length() > 0 && editable) {
                         outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" ");
                         outPut.println(" onclick=\"" + workingChangeFunctionStr + "\";></td>");
                     } else {
@@ -293,9 +285,6 @@ public class TreeTag extends TagSupport {
 
     /**
      * Methode which ends the tag
-     *
-     * @param out
-     * @return
      */
     public int doEndTag(JspWriter out) {
         try {
@@ -322,7 +311,7 @@ public class TreeTag extends TagSupport {
         out.println("<script language='JavaScript'>");
         out.println("function nodeClick( evt, eSrc, id, open, closed ) { ");
         // Netscape and Mozilla specific Javascript
-        if ((browser != null) && (browser.indexOf("MSIE") < 0)) {
+        if ((browser != null) && (!browser.contains("MSIE"))) {
             out.println("evt.stopPropagation();");
             out.println("var eSpan = document.getElementById('span'+id);");
             out.println("eSpan.className = (eSpan.className=='clsShow') ? 'clsHide' : 'clsShow';");

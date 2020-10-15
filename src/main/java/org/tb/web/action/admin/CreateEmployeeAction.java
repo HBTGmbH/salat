@@ -27,7 +27,6 @@ public class CreateEmployeeAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
         AddEmployeeForm employeeForm = (AddEmployeeForm) form;
 
         // get list of existing employees
@@ -47,4 +46,5 @@ public class CreateEmployeeAction extends LoginRequiredAction {
         // forward to form jsp
         return mapping.findForward("success");
     }
+
 }

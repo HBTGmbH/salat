@@ -37,7 +37,6 @@ public class EditSuborderAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
         //		 remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
@@ -47,7 +46,7 @@ public class EditSuborderAction extends LoginRequiredAction {
         request.getSession().setAttribute("soId", so.getId());
 
         // fill the form with properties of suborder to be edited
-        setFormEntries(mapping, request, soForm, so);
+        setFormEntries(request, soForm, so);
 
         // make sure all customer orders are available in form
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
@@ -67,14 +66,8 @@ public class EditSuborderAction extends LoginRequiredAction {
 
     /**
      * fills suborder form with properties of given suborder
-     *
-     * @param mapping
-     * @param request
-     * @param soForm
-     * @param so      - the suborder
      */
-    private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddSuborderForm soForm, Suborder so) {
+    private void setFormEntries(HttpServletRequest request, AddSuborderForm soForm, Suborder so) {
         soForm.setCurrency(so.getCurrency());
         soForm.setCustomerorderId(so.getCustomerorder().getId());
         soForm.setHourlyRate(so.getHourly_rate());
@@ -98,7 +91,6 @@ public class EditSuborderAction extends LoginRequiredAction {
                 soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
                 request.getSession().setAttribute("suborderParent", tempSubOrder);
             } else {
-                tempSubOrder = null;
                 Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
                 soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
                 request.getSession().setAttribute("suborderParent", tempOrder);
@@ -126,7 +118,7 @@ public class EditSuborderAction extends LoginRequiredAction {
         soForm.setNoEmployeeOrderContent(so.getNoEmployeeOrderContent());
 
         //request.getSession().setAttribute("currentSuborderID", new Long(so.getId()));
-        request.getSession().setAttribute("currentOrderId", new Long(so.getCustomerorder().getId()));
+        request.getSession().setAttribute("currentOrderId", so.getCustomerorder().getId());
         request.getSession().setAttribute("currentOrder", so.getCustomerorder());
         request.getSession().setAttribute("invoice", Character.toString(so.getInvoice()));
         request.getSession().setAttribute("currency", so.getCurrency());

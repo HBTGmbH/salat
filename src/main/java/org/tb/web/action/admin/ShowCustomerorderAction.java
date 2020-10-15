@@ -24,11 +24,9 @@ import java.util.List;
  */
 public class ShowCustomerorderAction extends LoginRequiredAction {
 
-
     private CustomerorderDAO customerorderDAO;
     private CustomerDAO customerDAO;
     private TimereportDAO timereportDAO;
-
 
     public void setCustomerDAO(CustomerDAO customerDAO) {
         this.customerDAO = customerDAO;
@@ -41,7 +39,6 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -88,7 +85,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
         if (showActualHours) {
             /* show actual hours */
             List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
-            List<CustomerOrderViewDecorator> decorators = new LinkedList<CustomerOrderViewDecorator>();
+            List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
             for (Customerorder customerorder : customerOrders) {
                 CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
                 decorators.add(decorator);

@@ -25,7 +25,6 @@ public class CreateCustomerAction extends LoginRequiredAction {
         this.customerDAO = customerDAO;
     }
 
-
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 
@@ -43,8 +42,8 @@ public class CreateCustomerAction extends LoginRequiredAction {
         // make sure, no cuId still exists in session
         request.getSession().removeAttribute("cuId");
 
-
         // forward to form jsp
         return mapping.findForward("success");
     }
+
 }

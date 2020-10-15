@@ -48,12 +48,10 @@ public class ShowBudgetAction extends LoginRequiredAction {
         request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
         ShowBudgetForm budgetForm = (ShowBudgetForm) form;
         LOG.debug("ShowBudgetAction.executeAuthenticated -request.getParameter(task) : " + request.getParameter("task"));
-        Long orderOrSuborderId = new Long(-1);
-        if (budgetForm.getCustomerOrderId() != null)
-            orderOrSuborderId = budgetForm.getCustomerOrderId();
+        Long orderOrSuborderId;
         if ((request.getParameter("id") != null)) {
             if (request.getParameter("id").equals("-1")) {
-                orderOrSuborderId = budgetForm.getCustomerOrderId();
+                orderOrSuborderId = budgetForm.getCustomerorderId();
                 request.getSession().setAttribute("orderOrSuborderId", orderOrSuborderId);
                 LOG.debug("ShowBudgetAction.executeAuthenticated - orderOrSuborderId : " + orderOrSuborderId);
             } else {
@@ -61,7 +59,7 @@ public class ShowBudgetAction extends LoginRequiredAction {
                 request.getSession().setAttribute("orderOrSuborderId", orderOrSuborderId);
                 LOG.debug("ShowBudgetAction.executeAuthenticated - orderOrSuborderId : " + orderOrSuborderId);
             }
-            Suborder so = null;
+            Suborder so;
             so = suborderDAO.getSuborderById(orderOrSuborderId);
             request.getSession().setAttribute("orderOrSuborder", so);
             if (so == null) {
@@ -75,12 +73,12 @@ public class ShowBudgetAction extends LoginRequiredAction {
         }
 
         if ((request.getParameter("task") != null) && (request.getParameter("task").equals("refresh"))) {
-            request.getSession().setAttribute("currentOrder", customerorderDAO.getCustomerorderById(budgetForm.getCustomerOrderId()));
+            request.getSession().setAttribute("currentOrder", customerorderDAO.getCustomerorderById(budgetForm.getCustomerorderId()));
         } else if ((request.getParameter("task") != null) && (request.getParameter("task").equals("calcStructure"))) {
             request.getSession().setAttribute("showResult", true);
-            ArrayList<String> changeFrom = new ArrayList<String>();
-            ArrayList<String> changeTo = new ArrayList<String>();
-            ArrayList<Long> changeId = new ArrayList<Long>();
+            ArrayList<String> changeFrom = new ArrayList<>();
+            ArrayList<String> changeTo = new ArrayList<>();
+            ArrayList<Long> changeId = new ArrayList<>();
 
             createListWithChanges(request, this.suborderDAO.getSuborders(false), changeFrom, changeTo, changeId);
             request.getSession().setAttribute("changeFrom", changeFrom);
@@ -114,7 +112,7 @@ public class ShowBudgetAction extends LoginRequiredAction {
             request.getSession().setAttribute("toChange", null);
 
         } else {
-            LOG.debug("ShowBudgetAction.executeAuthenticated - budgetForm.getCustomerOrderId():  " + budgetForm.getCustomerOrderId());
+            LOG.debug("ShowBudgetAction.executeAuthenticated - budgetForm.getCustomerOrderId():  " + budgetForm.getCustomerorderId());
             request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
             request.getSession().setAttribute("currentOrder", null);
         }
@@ -124,12 +122,9 @@ public class ShowBudgetAction extends LoginRequiredAction {
     /**
      * returns a list with all the changes that must be done for the clientrequest
      * the content of the list is a list of strings
-     *
-     * @param suborders
-     * @return
      */
     private void createListWithChanges(HttpServletRequest request, List<Suborder> suborders, List<String> changeFrom, List<String> changeTo, List<Long> changeId) {
-        Long orderId;
+        long orderId;
         String orderSign;
 
         if (request.getSession().getAttribute("orderOrSuborder") instanceof Customerorder) {
@@ -152,19 +147,10 @@ public class ShowBudgetAction extends LoginRequiredAction {
                 counter++;
             }
         }
-
-        return;
     }
 
     /**
      * helps to generate the signs of the following nodes of one parent node recursivly
-     *
-     * @param changeFrom
-     * @param changeTo
-     * @param changeId
-     * @param suborder
-     * @param suborders
-     * @param parentSign
      */
     private void fillRecursivly(List<String> changeFrom, List<String> changeTo, List<Long> changeId, Suborder suborder, List<Suborder> suborders, String parentSign) {
         int counter = 1;

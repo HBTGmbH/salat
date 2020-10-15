@@ -1,17 +1,14 @@
 package org.tb.persistence;
 
+import lombok.RequiredArgsConstructor;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.classic.Session;
 
+@RequiredArgsConstructor
 abstract public class AbstractDAO {
-
-    private SessionFactory sessionFactory;
-
-    public void setSessionFactory(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
+    private final SessionFactory sessionFactory;
 
     protected Session getSession() {
-        return this.sessionFactory.getCurrentSession();
+        return sessionFactory.openSession();
     }
 }

@@ -16,24 +16,23 @@ public class GetTimereportsAction extends LoginRequiredAction {
 
     private TimereportDAO timereportDAO;
 
-
     @Override
-    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    protected ActionForward doSecureExecute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
         Date date = new Date();
         java.sql.Date datesql = new java.sql.Date(date.getTime());
 
         Long employeecontractId = (Long) request.getSession().getAttribute("employeecontractId");
 
-        Map<String, Object> timereportsMap = new HashMap<String, Object>();
+        Map<String, Object> timereportsMap = new HashMap<>();
         //The method getSubordersByEmployeeContractIdWithValidEmployeeOrders was added to the SuborderDao class!!!
         ArrayList<Timereport> timereports = (ArrayList<Timereport>) timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, datesql);
-        Timereport timereport = new Timereport();
-        Suborder suborder = new Suborder();
+        Timereport timereport;
+        Suborder suborder;
 
         //Creating a map with timereportId as a key and a list of timereport details as a value
-        for (int i = 0, l = timereports.size(); i < l; i++) {
-            timereport = timereports.get(i);
-            List<String> timereportDetailsList = new ArrayList<String>();
+        for (Timereport value : timereports) {
+            timereport = value;
+            List<String> timereportDetailsList = new ArrayList<>();
             suborder = timereport.getSuborder();
             String timereportLabel = suborder.getCustomerorder().getSign() + "/" + suborder.getShortdescription();
             String timereportHours = String.valueOf(timereport.getDurationhours());
@@ -49,15 +48,12 @@ public class GetTimereportsAction extends LoginRequiredAction {
         return mapping.findForward("success");
     }
 
-
     public TimereportDAO getTimereportDAO() {
         return timereportDAO;
     }
 
-
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
     }
-
 
 }

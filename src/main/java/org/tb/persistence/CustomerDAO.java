@@ -1,22 +1,24 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Customer;
 import org.tb.bdom.Employee;
 
 import java.util.List;
 
-/**
- * DAO class for 'Customer'
- *
- * @author oda
- */
+@Component
 public class CustomerDAO extends AbstractDAO {
+
+    @Autowired
+    public CustomerDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     /**
      * Get a list of all Customers ordered by name.
-     *
-     * @return List<Customer>
      */
     @SuppressWarnings("unchecked")
     public List<Customer> getCustomers() {
@@ -25,8 +27,6 @@ public class CustomerDAO extends AbstractDAO {
 
     /**
      * Get a list of all Customers ordered by name.
-     *
-     * @return List<Customer>
      */
     @SuppressWarnings("unchecked")
     public List<Customer> getCustomersByFilter(String filter) {
@@ -49,8 +49,6 @@ public class CustomerDAO extends AbstractDAO {
 
     /**
      * Get a list of all Customers ordered by short name.
-     *
-     * @return List<Customer>
      */
     @SuppressWarnings("unchecked")
     public List<Customer> getCustomersOrderedByShortName() {
@@ -59,30 +57,13 @@ public class CustomerDAO extends AbstractDAO {
 
     /**
      * Gets the customer for the given id.
-     *
-     * @param long id
-     * @return Customer
      */
     public Customer getCustomerById(long id) {
         return (Customer) getSession().createQuery("from Customer cu where cu.id = ?").setLong(0, id).uniqueResult();
     }
 
     /**
-     * Gets the customer for the given name.
-     *
-     * @param String name
-     *
-     * @return Customer
-     */
-//	public Customer getCustomerBySign(String name) {
-//		Customer cu = (Customer) getSession().createQuery("from Customer c where c.name = ?").setString(0, name).uniqueResult();
-//		return cu;
-//	}
-
-    /**
      * Calls {@link CustomerDAO#save(Customer, Employee)} with {@link Employee} = null.
-     *
-     * @param cu
      */
     public void save(Customer cu) {
         save(cu, null);
@@ -91,8 +72,6 @@ public class CustomerDAO extends AbstractDAO {
 
     /**
      * Saves the given customer and sets creation-/update-user and creation-/update-date.
-     *
-     * @param Customer cu
      */
     public void save(Customer cu, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -117,9 +96,6 @@ public class CustomerDAO extends AbstractDAO {
 
     /**
      * Deletes the given customer .
-     *
-     * @param long cuId
-     * @return boolean
      */
     public boolean deleteCustomerById(long cuId) {
         Customer cu = getCustomerById(cuId);

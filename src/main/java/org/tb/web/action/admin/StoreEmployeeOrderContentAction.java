@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Locale;
+import java.util.Objects;
 
 public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction {
 
@@ -248,7 +249,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
                 contentForm.setQm_process_id(eoc.getQm_process_id());
             }
 
-            if ((loginEmployee.equals(eoContent.getContactTechHbt())
+            if ((loginEmployee.equals(Objects.requireNonNull(eoContent).getContactTechHbt())
                     || loginEmployee.getStatus().equals(
                     GlobalConstants.EMPLOYEE_STATUS_ADM) || loginEmployee
                     .getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV))
@@ -377,8 +378,6 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
     /**
      * Checks, if dates from form equal dates from database.
      *
-     * @param eoContent
-     * @param contentForm
      * @return Returns true, if dates are equal, false otherwise. If an
      * {@link NullPointerException} occurs, false is returned.
      */
@@ -448,8 +447,6 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
     /**
      * Validates the form data.
      *
-     * @param request
-     * @param contentForm
      * @return Returns the errors as {@link ActionMessages}.
      */
     private ActionMessages validateFormData(final HttpServletRequest request,

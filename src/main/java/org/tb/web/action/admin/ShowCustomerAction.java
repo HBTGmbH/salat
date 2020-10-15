@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ShowCustomerAction extends LoginRequiredAction {
 
-
     private CustomerDAO customerDAO;
 
     public void setCustomerDAO(CustomerDAO customerDAO) {

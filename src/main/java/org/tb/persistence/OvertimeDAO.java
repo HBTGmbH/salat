@@ -1,13 +1,21 @@
 package org.tb.persistence;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Overtime;
 
 import java.util.List;
 
+@Component
 public class OvertimeDAO extends AbstractDAO {
 
+    @Autowired
+    public OvertimeDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
+    }
 
     /**
      * @return Returns a list with all {@link Overtime}s.
@@ -18,7 +26,6 @@ public class OvertimeDAO extends AbstractDAO {
     }
 
     /**
-     * @param employeeContractId
      * @return Returns a list with all {@link Overtime}s associated to the given employeeContractId.
      */
     @SuppressWarnings("unchecked")
@@ -27,7 +34,6 @@ public class OvertimeDAO extends AbstractDAO {
     }
 
     /**
-     * @param overtimeId
      * @return Returns the {@link Overtime} associated to the given id.
      */
     private Overtime getOvertimeById(long overtimeId) {
@@ -36,8 +42,6 @@ public class OvertimeDAO extends AbstractDAO {
 
     /**
      * Calls {@link OvertimeDAO#save(Overtime, Employee)} with the given {@link Overtime} and null for the {@link Employee}.
-     *
-     * @param overtime
      */
     public void save(Overtime overtime) {
         save(overtime, null);
@@ -45,8 +49,6 @@ public class OvertimeDAO extends AbstractDAO {
 
     /**
      * Saves the given overtime and sets creation-user and creation-date.
-     *
-     * @param Suborder so
      */
     public void save(Overtime overtime, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -64,8 +66,6 @@ public class OvertimeDAO extends AbstractDAO {
 
     /**
      * Deletes the {@link Overtime} associated to the given id.
-     *
-     * @param overtimeId
      * @return Returns true, if delete action was succesful.
      */
     public boolean deleteOvertimeById(long overtimeId) {

@@ -91,7 +91,7 @@ public class LoginEmployeeAction extends Action {
 
             // check if user is intern or extern
             String clientIP = request.getRemoteHost();
-            Boolean intern = false;
+            boolean intern = false;
             if (clientIP.startsWith("10.") ||
                     clientIP.startsWith("192.168.") ||
                     clientIP.startsWith("172.16.") ||
@@ -183,7 +183,6 @@ public class LoginEmployeeAction extends Action {
                                     if (eo.getUntilDate() != null && eo.getUntilDate().before(date)) {
                                         if (dateFrom == null || dateFrom.before(eo.getUntilDate())) {
                                             dateFrom = eo.getUntilDate();
-                                            continue;
                                         }
                                     }
                                 }
@@ -249,7 +248,7 @@ public class LoginEmployeeAction extends Action {
                                 Employee tmp = new Employee();
                                 tmp.setSign("system");
 
-                                if (untilDate == null || untilDate != null && !fromDate.after(untilDate)) {
+                                if (untilDate == null || !fromDate.after(untilDate)) {
                                     employeeorderDAO.save(employeeorder, tmp);
                                 }
 
@@ -294,7 +293,7 @@ public class LoginEmployeeAction extends Action {
                 Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
                 List<Warning> warnings = AfterLogin.createWarnings(employeecontract, loginEmployeeContract, employeeorderDAO, timereportDAO, statusReportDAO, customerorderDAO, getResources(request), getLocale(request));
 
-                if (warnings != null && !warnings.isEmpty()) {
+                if (!warnings.isEmpty()) {
                     request.getSession().setAttribute("warnings", warnings);
                     request.getSession().setAttribute("warningsPresent", true);
                 } else {
