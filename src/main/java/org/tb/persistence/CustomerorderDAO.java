@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -25,6 +26,7 @@ public class CustomerorderDAO extends AbstractDAO {
     private final SuborderDAO suborderDAO;
     private final ProjectIDDAO projectIDDAO;
 
+    @Autowired
     public CustomerorderDAO(SessionFactory sessionFactory, SuborderDAO suborderDAO, ProjectIDDAO projectIDDAO) {
         super(sessionFactory);
         this.suborderDAO = suborderDAO;
