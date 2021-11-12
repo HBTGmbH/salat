@@ -2,11 +2,12 @@ name: Build .war
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 1.8
@@ -15,3 +16,7 @@ jobs:
           java-version: 1.8
       - name: Build with Maven
         run: ./mvnw -B -Dmaven.test.skip=true package
+      - name: Publish to Github
+        run: ./mvnw -B deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
