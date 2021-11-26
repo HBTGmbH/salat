@@ -1,0 +1,8 @@
+version: "3.9"  # optional since v1.27.0
+services:
+
+  db:
+    build: ./testdb
+    ports:
+      - "3306:3306" # not necessary, only so we can access the db from host computer.
+    command: --lower_case_table_names=1

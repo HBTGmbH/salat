@@ -1,0 +1,23 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  salat:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_USERNAME: salattest
+      DATABASE_PASSWORD: salattest
+      DATABASE_HOST: db
+      DATABASE_NAME: salattest
+      SALAT_URL: localhost
+      SALAT_JIRA_CONSUMER_KEY: test
+      SALAT_JIRA_CONSUMER_PRIVATE_KEY: test
+      SALAT_MAIL_HOST: localhost
+    depends_on:
+      - db
+
+  db:
+    build: ./testdb
+    ports:
+      - "3306:3306" # not necessary, only so we can access the db from host computer.
+    command: --lower_case_table_names=1

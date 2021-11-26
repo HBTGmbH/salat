@@ -1,7 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `salattest` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_bin */;
-CREATE USER IF NOT EXISTS 'salatTest' IDENTIFIED BY 'strengGeheim';
---GRANT USAGE ON 'salattest'.* TO 'salatTest'@'';
-GRANT ALL privileges ON `salattest`.* TO `salatTest`@`%`;
+-- CREATE DATABASE  IF NOT EXISTS `salattest` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE  IF NOT EXISTS `salattest` CHARACTER SET utf8 COLLATE utf8_bin;
+CREATE USER IF NOT EXISTS 'salattest' IDENTIFIED BY 'salattest';
+-- GRANT USAGE ON 'salattest'.* TO 'salattest'@'';
+GRANT ALL privileges ON `salattest`.* TO `salattest`@`%`;
 USE `salattest`;
 -- MySQL dump 10.13  Distrib 5.6.17, for Win32 (x86)
 --
