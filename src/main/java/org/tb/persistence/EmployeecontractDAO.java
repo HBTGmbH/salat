@@ -41,7 +41,7 @@ public class EmployeecontractDAO extends AbstractDAO {
     /**
      * Gets the EmployeeContract with the given id.
      *
-     * @param long id
+     * @param id
      * @return Employeecontract
      */
     public Employeecontract getEmployeeContractById(long id) {
@@ -54,7 +54,7 @@ public class EmployeecontractDAO extends AbstractDAO {
     /**
      * Gets the EmployeeContract with the given id and concretly initialize vacations.
      *
-     * @param long id
+     * @param id
      * @return Employeecontract
      */
     public Employeecontract getEmployeeContractByIdInitializeEager(long id) {
@@ -79,7 +79,7 @@ public class EmployeecontractDAO extends AbstractDAO {
     /**
      * Saves the given Employeecontract and sets creation-/update-user and creation-/update-date.
      *
-     * @param Employeecontract ec
+     * @param ec
      */
     public void save(Employeecontract ec, Employee loginEmployee) {
         if (loginEmployee == null) {
@@ -137,11 +137,11 @@ public class EmployeecontractDAO extends AbstractDAO {
         Date now = new Date();
         return getSession()
                 .createQuery("from Employeecontract ec " +
-                        "where supervisor.id = ? " +
-                        "and validFrom <= ? " +
-                        "and (validUntil = null " +
-                        "or validUntil >= ?) " +
-                        "order by employee.lastname asc, validFrom asc")
+                                     "where supervisor.id = ? " +
+                                     "and validFrom <= ? " +
+                                     "and (validUntil = null " +
+                                     "or validUntil >= ?) " +
+                                     "order by employee.lastname asc, validFrom asc")
                 .setLong(0, supervisorId)
                 .setDate(1, now)
                 .setDate(2, now)
@@ -166,65 +166,65 @@ public class EmployeecontractDAO extends AbstractDAO {
                 if (employeeId == null || employeeId == -1) {
                     // case 1
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
-                            "validFrom <= ? " +
-                            "and (validUntil = null " +
-                            "or validUntil >= ?) " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .setDate(0, now)
-                            .setDate(1, now)
-                            .list();
+                                                                         "validFrom <= ? " +
+                                                                         "and (validUntil = null " +
+                                                                         "or validUntil >= ?) " +
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .setDate(0, now)
+                                                    .setDate(1, now)
+                                                    .list();
                 } else {
                     // case 2
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
-                            "e.employee.id = ? " +
-                            "and validFrom <= ? " +
-                            "and (validUntil = null " +
-                            "or validUntil >= ?) " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .setLong(0, employeeId)
-                            .setDate(1, now)
-                            .setDate(2, now)
-                            .list();
+                                                                         "e.employee.id = ? " +
+                                                                         "and validFrom <= ? " +
+                                                                         "and (validUntil = null " +
+                                                                         "or validUntil >= ?) " +
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .setLong(0, employeeId)
+                                                    .setDate(1, now)
+                                                    .setDate(2, now)
+                                                    .list();
                 }
             } else {
                 if (employeeId == null || employeeId == -1) {
                     // case 3
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
-                            "(upper(e.employee.firstname) like ? " +
-                            "or upper(e.employee.lastname) like ? " +
-                            "or upper(taskdescription) like ? " +
-                            "or upper(id) like ?) " +
-                            "and validFrom <= ? " +
-                            "and (validUntil = null " +
-                            "or validUntil >= ?) " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .setString(0, filter)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .setDate(4, now)
-                            .setDate(5, now)
-                            .list();
+                                                                         "(upper(e.employee.firstname) like ? " +
+                                                                         "or upper(e.employee.lastname) like ? " +
+                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(id) like ?) " +
+                                                                         "and validFrom <= ? " +
+                                                                         "and (validUntil = null " +
+                                                                         "or validUntil >= ?) " +
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .setString(0, filter)
+                                                    .setString(1, filter)
+                                                    .setString(2, filter)
+                                                    .setString(3, filter)
+                                                    .setDate(4, now)
+                                                    .setDate(5, now)
+                                                    .list();
                 } else {
                     // case 4
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
-                            "(upper(e.employee.firstname) like ? " +
-                            "or upper(e.employee.lastname) like ? " +
-                            "or upper(taskdescription) like ? " +
-                            "or upper(id) like ?) " +
-                            "and e.employee.id = ? " +
-                            "and validFrom <= ? " +
-                            "and (validUntil = null " +
-                            "or validUntil >= ?) " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .setString(0, filter)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .setLong(4, employeeId)
-                            .setDate(5, now)
-                            .setDate(6, now)
-                            .list();
+                                                                         "(upper(e.employee.firstname) like ? " +
+                                                                         "or upper(e.employee.lastname) like ? " +
+                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(id) like ?) " +
+                                                                         "and e.employee.id = ? " +
+                                                                         "and validFrom <= ? " +
+                                                                         "and (validUntil = null " +
+                                                                         "or validUntil >= ?) " +
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .setString(0, filter)
+                                                    .setString(1, filter)
+                                                    .setString(2, filter)
+                                                    .setString(3, filter)
+                                                    .setLong(4, employeeId)
+                                                    .setDate(5, now)
+                                                    .setDate(6, now)
+                                                    .list();
                 }
             }
         } else {
@@ -232,45 +232,45 @@ public class EmployeecontractDAO extends AbstractDAO {
                 if (employeeId == null || employeeId == -1) {
                     // case 5
                     employeeContracts = getSession().createQuery("from Employeecontract e " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .list();
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .list();
                 } else {
                     // case 6
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
-                            "e.employee.id = ? " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .setLong(0, employeeId)
-                            .list();
+                                                                         "e.employee.id = ? " +
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .setLong(0, employeeId)
+                                                    .list();
                 }
             } else {
                 if (employeeId == null || employeeId == -1) {
                     // case 7
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
-                            "upper(e.employee.firstname) like ? " +
-                            "or upper(e.employee.lastname) like ? " +
-                            "or upper(taskdescription) like ? " +
-                            "or upper(id) like ? " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .setString(0, filter)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .list();
+                                                                         "upper(e.employee.firstname) like ? " +
+                                                                         "or upper(e.employee.lastname) like ? " +
+                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(id) like ? " +
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .setString(0, filter)
+                                                    .setString(1, filter)
+                                                    .setString(2, filter)
+                                                    .setString(3, filter)
+                                                    .list();
                 } else {
                     // case 8
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
-                            "(upper(e.employee.firstname) like ? " +
-                            "or upper(e.employee.lastname) like ? " +
-                            "or upper(taskdescription) like ? " +
-                            "or upper(id) like ?) " +
-                            "and e.employee.id = ? " +
-                            "order by employee.lastname asc, validFrom asc")
-                            .setString(0, filter)
-                            .setString(1, filter)
-                            .setString(2, filter)
-                            .setString(3, filter)
-                            .setLong(4, employeeId)
-                            .list();
+                                                                         "(upper(e.employee.firstname) like ? " +
+                                                                         "or upper(e.employee.lastname) like ? " +
+                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(id) like ?) " +
+                                                                         "and e.employee.id = ? " +
+                                                                         "order by employee.lastname asc, validFrom asc")
+                                                    .setString(0, filter)
+                                                    .setString(1, filter)
+                                                    .setString(2, filter)
+                                                    .setString(3, filter)
+                                                    .setLong(4, employeeId)
+                                                    .list();
                 }
             }
         }
@@ -335,7 +335,7 @@ public class EmployeecontractDAO extends AbstractDAO {
     /**
      * Deletes the given employee contract .
      *
-     * @param long ecId
+     * @param ecId
      * @return boolean
      */
     public boolean deleteEmployeeContractById(long ecId) {
@@ -385,5 +385,4 @@ public class EmployeecontractDAO extends AbstractDAO {
         }
         return false;
     }
-
 }
