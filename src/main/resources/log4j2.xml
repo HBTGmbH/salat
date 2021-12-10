@@ -13,11 +13,11 @@
 	</Appenders>
 	<Loggers>
 		<!--<Logger name="org.tb.web.action" level="info"></Logger>-->
-		<Logger name="org.tb.web.action" level="trace"></Logger>
+<!--		<Logger name="org.tb.web.action" level="trace"></Logger>
 		<Logger name="org.tb.persistence" level="trace"></Logger>
 
 		<Logger name="org.hibernate" level="debug"></Logger>
-
+-->
 		<Root level="info">
 			<AppenderRef ref="async" />
 		</Root>
