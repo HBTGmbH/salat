@@ -4,6 +4,7 @@
 <hibernate-configuration>
 	<session-factory>
 		<property name="hibernate.hbm2ddl.auto">update</property>
+		<property name="hibernate.connection.release_mode">auto</property>
 
 		<mapping class="org.tb.bdom.Customer"/>
 		<mapping class="org.tb.bdom.Employee"/>
