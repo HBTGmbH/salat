@@ -58,7 +58,7 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
                     "Associated employee order not found - please call system administrator.");
             mapping.findForward("error");
         } else {
-            Employeeordercontent eoContent = employeeorder.getEmployeeordercontent();
+            Employeeordercontent eoContent = employeeorder.getEmployeeOrderContent();
 
             // Store employee order and content in session
             request.getSession().setAttribute("eoContent", eoContent);

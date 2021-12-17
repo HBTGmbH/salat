@@ -40,7 +40,7 @@ public class Employeeorder extends EditDetails implements Serializable {
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEEORDERCONTENT_ID")
     @Cascade(value = {CascadeType.SAVE_UPDATE})
-    private Employeeordercontent employeeordercontent;
+    private Employeeordercontent employeeOrderContent;
 
     /**
      * sign of the employee order
