@@ -39,6 +39,13 @@ Shutdown:
 1. Stop docker-compose: CTRL+C
 2. Remove built containers: `docker-compose down`
 
+### Debugging
+Start local database only, without Salat:
+`docker-compose -f docker-compose-infra up`
+
+! Be sure to remove existing docker containers before by running `docker-compose down` if you had the application running before.
+
+
 ### Troubleshooting
 
 Clean rebuild of compose containers: `docker-compose build --no-cache`
