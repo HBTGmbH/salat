@@ -23,17 +23,17 @@ public class AfterLogin {
         for (Employeeorder employeeorder : employeeorderDAO.getEmployeeordersForEmployeeordercontentWarning(employeecontract)) {
             if (!employeecontract.getFreelancer() && !employeeorder.getSuborder().getNoEmployeeOrderContent()) {
                 try {
-                    if (employeeorder.getEmployeeordercontent() == null) {
+                    if (employeeorder.getEmployeeOrderContent() == null) {
                         throw new RuntimeException("null content");
-                    } else if (employeeorder.getEmployeeordercontent() != null && !employeeorder.getEmployeeordercontent().getCommitted_emp()
+                    } else if (employeeorder.getEmployeeOrderContent() != null && !employeeorder.getEmployeeOrderContent().getCommitted_emp()
                             && employeeorder.getEmployeecontract().getEmployee().equals(employeecontract.getEmployee())) {
                         Warning warning = new Warning();
                         warning.setSort(resources.getMessage(locale, "employeeordercontent.thumbdown.text"));
                         warning.setText(employeeorder.getEmployeeOrderAsString());
                         warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
                         warnings.add(warning);
-                    } else if (employeeorder.getEmployeeordercontent() != null && !employeeorder.getEmployeeordercontent().getCommitted_mgmt()
-                            && employeeorder.getEmployeeordercontent().getContactTechHbt().equals(employeecontract.getEmployee())) {
+                    } else if (employeeorder.getEmployeeOrderContent() != null && !employeeorder.getEmployeeOrderContent().getCommitted_mgmt()
+                            && employeeorder.getEmployeeOrderContent().getContactTechHbt().equals(employeecontract.getEmployee())) {
                         Warning warning = new Warning();
                         warning.setSort(resources.getMessage(locale, "employeeordercontent.thumbdown.text"));
                         warning.setText(employeeorder.getEmployeeOrderAsString());

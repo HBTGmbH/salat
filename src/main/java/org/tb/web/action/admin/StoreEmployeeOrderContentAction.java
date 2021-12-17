@@ -147,7 +147,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
                     employeeOrderContentDAO
                             .deleteEmployeeOrderContentById(eoContent.getId());
                 } else {
-                    employeeorder.setEmployeeordercontent(eoContent);
+                    employeeorder.setEmployeeOrderContent(eoContent);
                     employeeorderDAO.save(employeeorder, loginEmployee);
                 }
             }
@@ -189,12 +189,12 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
             if ((loginEmployee.equals(employeeorder.getEmployeecontract()
                     .getEmployee()) || loginEmployee.getStatus().equals(
                     GlobalConstants.EMPLOYEE_STATUS_ADM))
-                    && employeeorder.getEmployeeordercontent() != null
+                    && employeeorder.getEmployeeOrderContent() != null
                     && formEntriesEqualDB(employeeorder
-                    .getEmployeeordercontent().getId(), contentForm)) {
+                    .getEmployeeOrderContent().getId(), contentForm)) {
                 // get content from db, if it was saved just before
                 if (eoContent == null) {
-                    eoContent = employeeOrderContentDAO.getEmployeeOrderContentById(employeeorder.getEmployeeordercontent().getId());
+                    eoContent = employeeOrderContentDAO.getEmployeeOrderContentById(employeeorder.getEmployeeOrderContent().getId());
                 }
                 eoContent.setCommitted_emp(true);
                 eoContent.setCommittedby_emp(employeeDAO.getEmployeeById(loginEmployee.getId()));
@@ -204,7 +204,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
                 request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "employeeordercontent.actioninfo.released.text"));
 
                 // set updated employeeorder in session
-                employeeorder.setEmployeeordercontent(eoContent);
+                employeeorder.setEmployeeOrderContent(eoContent);
                 request.getSession().setAttribute("currentEmployeeOrder", employeeorder);
 
                 // content is editable?
@@ -237,7 +237,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
             if (!editable) {
                 final Employeeordercontent eoc = employeeOrderContentDAO
                         .getEmployeeOrderContentById(employeeorder
-                                .getEmployeeordercontent().getId());
+                                .getEmployeeOrderContent().getId());
                 contentForm.setContact_contract_customer(eoc
                         .getContact_contract_customer());
                 contentForm.setContact_tech_customer(eoc
@@ -253,9 +253,9 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
                     || loginEmployee.getStatus().equals(
                     GlobalConstants.EMPLOYEE_STATUS_ADM) || loginEmployee
                     .getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV))
-                    && employeeorder.getEmployeeordercontent() != null
+                    && employeeorder.getEmployeeOrderContent() != null
                     && formEntriesEqualDB(employeeorder
-                    .getEmployeeordercontent().getId(), contentForm)) {
+                    .getEmployeeOrderContent().getId(), contentForm)) {
                 // get content from db, if it was saved just before
                 eoContent.setCommitted_mgmt(true);
                 eoContent.setCommittedby_mgmt(employeeDAO.getEmployeeById(loginEmployee.getId()));
@@ -265,7 +265,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
                 request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "employeeordercontent.actioninfo.released.text"));
 
                 // set updated employeeorder in session
-                employeeorder.setEmployeeordercontent(eoContent);
+                employeeorder.setEmployeeOrderContent(eoContent);
                 request.getSession().setAttribute("currentEmployeeOrder", employeeorder);
 
                 // content is editable?
@@ -296,7 +296,7 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
                 employeeorder = employeeorderDAO
                         .getEmployeeorderById(employeeorder.getId());
                 // set content to null and save
-                employeeorder.setEmployeeordercontent(null);
+                employeeorder.setEmployeeOrderContent(null);
                 employeeorderDAO.save(employeeorder, loginEmployee);
                 // delete content
                 employeeOrderContentDAO
