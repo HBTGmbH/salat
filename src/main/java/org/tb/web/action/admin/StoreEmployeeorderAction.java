@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import java.util.Optional;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.tb.GlobalConstants;
@@ -137,14 +138,15 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
                 /* suggest value */
                 eoForm.setDebithoursunit((byte) -1); // default: no unit set
-                Suborder so = co.getSuborders().get(0);
-                if (so != null) {
-                    eoForm.setSuborderId(so.getId());
-                    request.getSession().setAttribute("selectedsuborder", so);
-                    eoForm.setDebithours(so.getDebithours());
-                    if (so.getDebithours() != null && so.getDebithours() > 0.0) {
+                Optional<Suborder> so = co.getSuborders().stream().findFirst();
+                if (so.isPresent()) {
+                    Suborder suborder = so.get();
+                    eoForm.setSuborderId(suborder.getId());
+                    request.getSession().setAttribute("selectedsuborder", suborder);
+                    eoForm.setDebithours(suborder.getDebithours());
+                    if (suborder.getDebithours() != null && suborder.getDebithours() > 0.0) {
                         /* set unit if applicable */
-                        eoForm.setDebithoursunit(so.getDebithoursunit());
+                        eoForm.setDebithoursunit(suborder.getDebithoursunit());
                     }
                 }
 
