@@ -4,6 +4,7 @@ services:
     build: .
     ports:
       - "8080:8080"
+      - "8000:8000"
     environment:
       DATABASE_USERNAME: salattest
       DATABASE_PASSWORD: salattest
@@ -13,6 +14,7 @@ services:
       SALAT_JIRA_CONSUMER_KEY: test
       SALAT_JIRA_CONSUMER_PRIVATE_KEY: test
       SALAT_MAIL_HOST: localhost
+      JPDA_ADDRESS: "*:8000"
     depends_on:
       - db
 
