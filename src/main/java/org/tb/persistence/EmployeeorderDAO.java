@@ -91,7 +91,7 @@ public class EmployeeorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractId(long employeeContractId) {
-        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, employeeContractId)
+        return getSession().createQuery("select eo from Employeeorder eo where eo.employeecontract.id = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc").setLong(0, employeeContractId)
                            .list();
     }
 
@@ -108,7 +108,7 @@ public class EmployeeorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId, long suborderId) {
-        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and SUBORDER_ID = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
+        return getSession().createQuery("select eo from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                            .setLong(0, employeeContractId).setLong(1, suborderId).list();
     }
 
@@ -117,8 +117,8 @@ public class EmployeeorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, Date date) {
-        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and " +
-                                                "SUBORDER_ID = ? and  " +
+        return getSession().createQuery("select eo from Employeeorder eo where eo.employeecontract.id = ? and " +
+                                                "eo.suborder.id = ? and  " +
                                                 "eo.fromDate <= ? and (eo.untilDate >= ? or eo.untilDate = null or eo.untilDate = '') " +
                                                 "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                            .setLong(0, employeeContractId).setLong(1, suborderId).setDate(2, date).setDate(3, date).list();
@@ -129,8 +129,8 @@ public class EmployeeorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, Date date) {
-        return getSession().createQuery("select eo from Employeeorder eo where EMPLOYEECONTRACT_ID = ? and " +
-                                                "SUBORDER_ID = ? and  " +
+        return getSession().createQuery("select eo from Employeeorder eo where eo.employeecontract.id = ? and " +
+                                                "eo.suborder.id = ? and  " +
                                                 " (eo.untilDate >= ? or eo.untilDate = null or eo.untilDate = '') " +
                                                 "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
                            .setLong(0, employeeContractId).setLong(1, suborderId).setDate(2, date).list();

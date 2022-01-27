@@ -31,7 +31,7 @@ public class EmployeecontractDAO extends AbstractDAO {
      */
     public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
         return (Employeecontract) getSession()
-                .createQuery("from Employeecontract e where e.employee.id = ? and validfrom <= ? and (validuntil >= ? or validuntil = null)")
+                .createQuery("from Employeecontract e where e.employee.id = ? and e.validFrom <= ? and (e.validUntil >= ? or e.validUntil = null)")
                 .setLong(0, employeeId)
                 .setDate(1, date)
                 .setDate(2, date)
@@ -192,7 +192,7 @@ public class EmployeecontractDAO extends AbstractDAO {
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
                                                                          "(upper(e.employee.firstname) like ? " +
                                                                          "or upper(e.employee.lastname) like ? " +
-                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(e.taskDescription) like ? " +
                                                                          "or upper(id) like ?) " +
                                                                          "and validFrom <= ? " +
                                                                          "and (validUntil = null " +
@@ -210,7 +210,7 @@ public class EmployeecontractDAO extends AbstractDAO {
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
                                                                          "(upper(e.employee.firstname) like ? " +
                                                                          "or upper(e.employee.lastname) like ? " +
-                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(e.taskDescription) like ? " +
                                                                          "or upper(id) like ?) " +
                                                                          "and e.employee.id = ? " +
                                                                          "and validFrom <= ? " +
@@ -248,7 +248,7 @@ public class EmployeecontractDAO extends AbstractDAO {
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
                                                                          "upper(e.employee.firstname) like ? " +
                                                                          "or upper(e.employee.lastname) like ? " +
-                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(e.taskDescription) like ? " +
                                                                          "or upper(id) like ? " +
                                                                          "order by employee.lastname asc, validFrom asc")
                                                     .setString(0, filter)
@@ -261,7 +261,7 @@ public class EmployeecontractDAO extends AbstractDAO {
                     employeeContracts = getSession().createQuery("from Employeecontract e where " +
                                                                          "(upper(e.employee.firstname) like ? " +
                                                                          "or upper(e.employee.lastname) like ? " +
-                                                                         "or upper(taskdescription) like ? " +
+                                                                         "or upper(e.taskDescription) like ? " +
                                                                          "or upper(id) like ?) " +
                                                                          "and e.employee.id = ? " +
                                                                          "order by employee.lastname asc, validFrom asc")

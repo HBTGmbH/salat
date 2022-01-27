@@ -21,7 +21,7 @@ public class InvoiceDAO extends AbstractDAO {
      * Gets the Invoice for the given id.
      */
     public Invoice getInvoiceById(long id) {
-        return (Invoice) getSession().createQuery("from Invoice in where in.id = ?").setLong(0, id).uniqueResult();
+        return (Invoice) getSession().createQuery("from Invoice i where i.id = ?").setLong(0, id).uniqueResult();
     }
 
     /**

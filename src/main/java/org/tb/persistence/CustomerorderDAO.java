@@ -138,7 +138,7 @@ public class CustomerorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
-        return getSession().createQuery("from Customerorder where RESPONSIBLE_HBT_ID = ? order by sign").setLong(0, responsibleHbtId).list();
+        return getSession().createQuery("from Customerorder where responsible_hbt.id = ? order by sign").setLong(0, responsibleHbtId).list();
     }
 
     /**
@@ -147,7 +147,7 @@ public class CustomerorderDAO extends AbstractDAO {
     @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(long responsibleHbtId) {
         return getSession().createQuery("from Customerorder " +
-                "where RESPONSIBLE_HBT_ID = ? " +
+                "where responsible_hbt.id = ? " +
                 "and (statusreport = 4 " +
                 "or statusreport = 6 " +
                 "or statusreport = 12) " +
@@ -160,7 +160,7 @@ public class CustomerorderDAO extends AbstractDAO {
     @SuppressWarnings("unchecked")
     public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
         Date now = new Date();
-        return getSession().createQuery("from Customerorder where RESPONSIBLE_HBT_ID = ? " +
+        return getSession().createQuery("from Customerorder where responsible_hbt.id = ? " +
                 "and ((hide = null or hide = false) " +
                 "or (fromDate <= ? and (untilDate = null or untilDate >= ? ))) " +
                 "order by sign").setLong(0, responsibleHbtId).setDate(1, now).setDate(2, now).list();
