@@ -4,4 +4,4 @@ ADD target/tb.war /usr/local/tomcat/webapps/
 
 EXPOSE 8080
 
-CMD ["catalina.sh", "jpda", "run"]
+CMD ["catalina.sh", "run"]
