@@ -18,6 +18,11 @@
 		<property name="validationQuery" value="SELECT 1"/>
 		<property name="testWhileIdle" value="true"/>
 		<property name="testOnBorrow" value="true"/>
+
+		<property name="initialSize" value="20" />
+		<property name="maxWait" value="5000" />
+		<property name="maxActive" value="50" />
+
 	</bean>
 
 	<import resource="classpath:general-beans.xml" />
