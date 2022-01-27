@@ -143,10 +143,6 @@
 
 		<property name="dataSource" ref="myDataSource" />
 
-		<property name="configurationClass">
-			<value>org.hibernate.cfg.AnnotationConfiguration</value>
-		</property>
-
 		<property name="configLocation">
 			<value>classpath:/hibernate.cfg.xml</value>
 		</property>
