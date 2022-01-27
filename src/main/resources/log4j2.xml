@@ -12,11 +12,14 @@
 		</Async>
 	</Appenders>
 	<Loggers>
-		<!--<Logger name="org.tb.web.action" level="info"></Logger>-->
-<!--		<Logger name="org.tb.web.action" level="debug"></Logger>-->
-<!--		<Logger name="org.tb.persistence" level="debug"></Logger>-->
+		<!--<Logger name="org.tb.web.action" level="info"></Logger>
+		<Logger name="org.tb.web.action" level="debug"></Logger>
+		<Logger name="org.tb.persistence" level="debug"></Logger>
 
-<!--		<Logger name="org.hibernate" level="debug"></Logger>-->
+		<Logger name="org.hibernate" level="debug"></Logger>-->
+
+		<Logger name="org.springframework.orm.hibernate3" level="warn"></Logger>
+		<Logger name="org.hibernate.jdbc" level="warn"></Logger>
 
 		<Root level="info">
 			<AppenderRef ref="async" />
