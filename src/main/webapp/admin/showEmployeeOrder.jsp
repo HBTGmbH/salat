@@ -362,7 +362,7 @@
 		<c:choose>
 			<c:when test="${!employeeorder.currentlyValid}">
 				<td style="color: gray"
-					title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
+					title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if
 					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out
 					value="${employeeorder.employeecontract.employee.sign}" /></td>
 				<td style="color: gray"
@@ -444,11 +444,11 @@
 					</td>
 					<td align="right" style="color: gray">
 						<c:choose>
-						
+
 							<c:when test="${employeeorder.difference != null && (employeeorder.difference < 0.0 || employeeorder.difference >= 0.0)&&(employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12)}">
 									<font color="#0000FF"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
-							</c:when>						
-						
+							</c:when>
+
 							<c:when test="${employeeorder.difference != null && employeeorder.difference < 0.0}">
 									<font color="#FF7777"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
 							</c:when>
@@ -465,7 +465,7 @@
 			</c:when>
 			<c:otherwise>
 				<td
-					title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if 
+					title="<c:out value="${employeeorder.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out value="${employeeorder.employeecontract.timeString}" /><c:if
 					test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)"><c:out
 					value="${employeeorder.employeecontract.employee.sign}" /></td>
 				<td
@@ -544,11 +544,11 @@
 					</td>
 					<td align="right">
 						<c:choose>
-						
+
 							<c:when test="${employeeorder.difference != null && (employeeorder.difference < 0.0 || employeeorder.difference >= 0.0)&&(employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12)}">
 									<font color="#0000FF"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
 							</c:when>
-													
+
 							<c:when test="${employeeorder.difference != null && employeeorder.difference < 0.0}">
 									<font color="#FF0000"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
 							</c:when>
@@ -564,32 +564,30 @@
 
 			</c:otherwise>
 		</c:choose>
-
-		<html:form action="/EditEmployeeOrderContent">
 			<td align="center" valign="middle">
 				<c:choose>
 					<c:when test="${!loginEmployeeContract.freelancer && !employeeorder.suborder.noEmployeeOrderContent}">
-						<c:choose>
-							<c:when test="${employeeorder.employeeordercontent == null || (employeeorder.employeeordercontent.committed_mgmt != true && employeeorder.employeeordercontent.committed_emp != true)}">
-								<html:image onclick="editContent(this.form, ${employeeorder.id})"
-									src="/tb/images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
-							</c:when>
-							<c:when
-								test="${employeeorder.employeeordercontent != null && (employeeorder.employeeordercontent.committed_mgmt != true || employeeorder.employeeordercontent.committed_emp != true)}">
-								<html:image onclick="editContent(this.form, ${employeeorder.id})"
-									src="/tb/images/yellow.gif" titleKey="employeeordercontent.yellow.text" /> 
-							</c:when>
-							<c:otherwise>
-								<html:image onclick="editContent(this.form, ${employeeorder.id})"
-									src="/tb/images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
-							</c:otherwise>
-						</c:choose>
+						<html:form action="/EditEmployeeOrderContent" style="margin: 0">
+							<c:choose>
+								<c:when test="${employeeorder.employeeOrderContent == null || (employeeorder.employeeOrderContent.committed_mgmt != true && employeeorder.employeeOrderContent.committed_emp != true)}">
+									<html:image onclick="editContent(this.form, ${employeeorder.id})"
+										src="/tb/images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
+								</c:when>
+								<c:when
+									test="${employeeorder.employeeOrderContent != null && (employeeorder.employeeOrderContent.committed_mgmt != true || employeeorder.employeeOrderContent.committed_emp != true)}">
+									<html:image onclick="editContent(this.form, ${employeeorder.id})"
+										src="/tb/images/yellow.gif" titleKey="employeeordercontent.yellow.text" />
+								</c:when>
+								<c:otherwise>
+									<html:image onclick="editContent(this.form, ${employeeorder.id})"
+										src="/tb/images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
+								</c:otherwise>
+							</c:choose>
+						</html:form>
 					</c:when>
 					<c:otherwise>&nbsp;</c:otherwise>
 				</c:choose>
 			</td>
-		</html:form>
-
 		<c:choose>
 			<c:when
 				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">

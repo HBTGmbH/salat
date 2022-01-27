@@ -72,7 +72,7 @@
 			<c:if test="${releaseMgmtPossible}">
 				<html:submit onclick="setStoreAction(this.form, 'releaseMgmt')"
 					styleId="button"><bean:message key="employeeordercontent.button.release.management.text"/></html:submit></c:if>
-			<c:if test="${loginEmployee.status == 'adm' && currentEmployeeOrder.employeeordercontent != null}">
+			<c:if test="${loginEmployee.status == 'adm' && currentEmployeeOrder.employeeOrderContent != null}">
 				<html:submit onclick="setStoreAction(this.form, 'removeRelease')"
 					styleId="button"><bean:message key="employeeordercontent.button.removerelease.text"/></html:submit>
 				<html:submit onclick="setStoreAction(this.form, 'deleteContent')"
@@ -334,21 +334,21 @@
 		<tr>
 			<td class="noBborderStyle" valign="top">
 				<c:choose>
-					<c:when test="${currentEmployeeOrder.employeeordercontent == null || !currentEmployeeOrder.employeeordercontent.committed_emp}">
+					<c:when test="${currentEmployeeOrder.employeeOrderContent == null || !currentEmployeeOrder.employeeOrderContent.committed_emp}">
 						<i><bean:message key="employeeordercontent.releasestatus.notreleased.text"/></i>
 					</c:when>
 					<c:otherwise>
-						<i><bean:message key="employeeordercontent.releasestatus.released.text"/> (<c:out value="${currentEmployeeOrder.employeeordercontent.committedby_emp.name}" />)</i>
+						<i><bean:message key="employeeordercontent.releasestatus.released.text"/> (<c:out value="${currentEmployeeOrder.employeeOrderContent.committedby_emp.name}" />)</i>
 					</c:otherwise>
 				</c:choose>
 			</td>
 			<td class="noBborderStyle" valign="top">
 				<c:choose>
-					<c:when test="${currentEmployeeOrder.employeeordercontent == null || !currentEmployeeOrder.employeeordercontent.committed_mgmt}">
+					<c:when test="${currentEmployeeOrder.employeeOrderContent == null || !currentEmployeeOrder.employeeOrderContent.committed_mgmt}">
 						<i><bean:message key="employeeordercontent.releasestatus.notreleased.text"/></i>
 					</c:when>
 					<c:otherwise>
-						<i><bean:message key="employeeordercontent.releasestatus.released.text"/> (<c:out value="${currentEmployeeOrder.employeeordercontent.committedby_mgmt.name}" />)</i>
+						<i><bean:message key="employeeordercontent.releasestatus.released.text"/> (<c:out value="${currentEmployeeOrder.employeeOrderContent.committedby_mgmt.name}" />)</i>
 					</c:otherwise>
 				</c:choose>
 			</td>
@@ -369,7 +369,7 @@
 			<c:if test="${releaseMgmtPossible}">
 				<html:submit onclick="setStoreAction(this.form, 'releaseMgmt')"
 					styleId="button"><bean:message key="employeeordercontent.button.release.management.text"/></html:submit></c:if>
-			<c:if test="${loginEmployee.status == 'adm' && currentEmployeeOrder.employeeordercontent != null}">
+			<c:if test="${loginEmployee.status == 'adm' && currentEmployeeOrder.employeeOrderContent != null}">
 				<html:submit onclick="setStoreAction(this.form, 'removeRelease')"
 					styleId="button"><bean:message key="employeeordercontent.button.removerelease.text"/></html:submit>
 				<html:submit onclick="setStoreAction(this.form, 'deleteContent')"
