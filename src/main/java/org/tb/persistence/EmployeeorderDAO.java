@@ -631,7 +631,7 @@ public class EmployeeorderDAO extends AbstractDAO {
                     if (customerOrderId == null || customerOrderId == 0 || customerOrderId == -1) {
                         // case 01: only valid, no filter, no employeeContractId, no customerOrderId
                         employeeorders = getSession().createQuery("from Employeeorder eo where " +
-                                                                          "and eo.fromDate <= ? " +
+                                                                          "eo.fromDate <= ? " +
                                                                           "and (eo.untilDate = null " +
                                                                           "or eo.untilDate >= ?) " +
                                                                           "order by eo.employeecontract.employee.sign asc, eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
