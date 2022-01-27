@@ -149,7 +149,13 @@ public class ShowTrainingAction extends LoginRequiredAction {
         long employeeContractId = trainingForm.getEmployeeContractId();
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeHelper().setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
-        long orderID = customerorderDAO.getCustomerorderBySign(TRAINING_ID).getId();
+        Customerorder trainingOrder = customerorderDAO.getCustomerorderBySign(TRAINING_ID);
+        if (trainingOrder == null) {
+            request.setAttribute("errorMessage", "No training customer order has been found matching " + TRAINING_ID + " - please call system administrator.");
+            forward = "error";
+            return forward;
+        }
+        long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverview;
 
         request.getSession().setAttribute("showTrainingForm", trainingForm);
