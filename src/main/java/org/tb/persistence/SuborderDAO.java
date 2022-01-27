@@ -164,8 +164,8 @@ public class SuborderDAO extends AbstractDAO {
      */
     public List<Suborder> getSuborders(java.util.Date date) {
         @SuppressWarnings("unchecked")
-        List<Suborder> result = getSession().createQuery("from Suborder " +
-                "and s.fromDate <= :refDate " +
+        List<Suborder> result = getSession().createQuery("from Suborder s " +
+                "where s.fromDate <= :refDate " +
                 "and (s.untilDate is null " +
                 "or s.untilDate >= :refDate) " +
                 "order by sign")
@@ -251,7 +251,7 @@ public class SuborderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Suborder> getSuborderChildren(long soId) {
-        return getSession().createQuery("from Suborder so where so.suborder.id = ? order by sign").setLong(0, soId).list();
+        return getSession().createQuery("from Suborder so where so.parentorder.id = ? order by sign").setLong(0, soId).list();
     }
 
     /**
