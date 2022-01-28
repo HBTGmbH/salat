@@ -22,7 +22,7 @@ import java.util.List;
  * @author oda, th
  */
 public class LoginEmployeeAction extends Action {
-    private final static Logger LOG = LoggerFactory.getLogger(LoginEmployeeAction.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoginEmployeeAction.class);
 
     private EmployeeDAO employeeDAO;
     private PublicholidayDAO publicholidayDAO;
@@ -88,7 +88,6 @@ public class LoginEmployeeAction extends Action {
 
                 saveErrors(request, errors);
                 return mapping.getInputForward();
-                //return mapping.findForward("error");
             }
 
             // check if user is intern or extern
@@ -130,20 +129,13 @@ public class LoginEmployeeAction extends Action {
                 request.getSession().setAttribute("employeeAuthorized", false);
             }
 
-            // not necessary at the moment
-            //		if(employeeDAO.isAdmin(loginEmployee)) {
-            //			request.getSession().setAttribute("admin", Boolean.TRUE);
-            //		}
-
             // check if public holidays are available
             publicholidayDAO.checkPublicHolidaysForCurrentYear();
 
             // check if employee has an employee contract and is has employee orders for all standard suborders
-            //		Date date = new Date();
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
             String dateString2 = simpleDateFormat.format(date);
             date = simpleDateFormat.parse(dateString2);
-            //		Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
 
             if (employeecontract != null) {
                 request.getSession().setAttribute("employeeHasValidContract", true);
@@ -152,7 +144,7 @@ public class LoginEmployeeAction extends Action {
                 if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
                         !employeecontract.getFreelancer()) {
                     List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
-                    if (standardSuborders != null && standardSuborders.size() > 0) {
+                    if (standardSuborders != null && !standardSuborders.isEmpty()) {
                         // test if employeeorder exists
                         for (Suborder suborder : standardSuborders) {
                             List<Employeeorder> employeeorders = employeeorderDAO

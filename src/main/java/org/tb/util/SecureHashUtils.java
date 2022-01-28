@@ -38,7 +38,7 @@ public class SecureHashUtils {
             md = MessageDigest.getInstance("MD5");        // getting a 'MD5-Instance'
             encryptMsg = md.digest(text.getBytes());    // solving the MD5-Hash
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("No Such Algorithm Exception!");
+            log.warn("No Such Algorithm Exception!");
             return "";
         }
 
