@@ -1,3 +1,9 @@
 .hiddencontent {
 	display: none;
 }
+
+@media print{
+	@page {
+		size: landscape
+	}
+}
