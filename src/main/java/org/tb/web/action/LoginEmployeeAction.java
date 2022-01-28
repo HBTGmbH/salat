@@ -78,9 +78,24 @@ public class LoginEmployeeAction extends Action {
             LoginEmployeeForm loginEmployeeForm = (LoginEmployeeForm) form;
 
             Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname());
-            if (loginEmployee == null 
-                || !SecureHashUtils.passwordMatches(loginEmployeeForm.getPassword(), loginEmployee.getPassword())) {
-                return loginFailed(request, "form.login.error.unknownuser", mapping);
+            boolean passwordMatches = loginEmployee != null && SecureHashUtils.passwordMatches(
+                loginEmployeeForm.getPassword(),
+                loginEmployee.getPassword()
+            );
+            if (!passwordMatches) {
+                boolean legacyPasswordMatches = loginEmployee != null && SecureHashUtils.legacyPasswordMatches(
+                    loginEmployeeForm.getPassword(), loginEmployee.getPassword()
+                );
+                if (legacyPasswordMatches) {
+                    // employee still has old password form
+                    // store password again with new hashing algorithm
+                    Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
+                    em.changePassword(loginEmployeeForm.getPassword());
+                    loginEmployee.changePassword(loginEmployeeForm.getPassword());
+                    employeeDAO.save(em, loginEmployee);
+                } else {
+                    return loginFailed(request, "form.login.error.unknownuser", mapping);
+                }
             }
 
             // check if user is internal or extern
