@@ -1,5 +1,7 @@
 package org.tb.helper.matrix;
 
+import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
+
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;
 
@@ -11,7 +13,8 @@ import java.util.GregorianCalendar;
 public class MergedReport implements Comparable<MergedReport> {
     private Customerorder customOrder;
     private Suborder subOrder;
-    private double sum;
+    private double sumHours;
+    private long sumMinutes;
     private final ArrayList<BookingDay> bookingDay = new ArrayList<>();
 
     public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, Date date, long durationHours, long durationMinutes) {
@@ -33,15 +36,15 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     public void setSum() {
-        double tempMinutes = 0;
+        sumMinutes = 0;
         for (BookingDay tempBookingDay : bookingDay) {
-            tempMinutes += tempBookingDay.getDurationHours() * 60 + tempBookingDay.getDurationMinutes();
+            sumMinutes += tempBookingDay.getDurationHours() * 60 + tempBookingDay.getDurationMinutes();
         }
-        sum = (tempMinutes / 60);
+        sumHours = (double)sumMinutes / 60;
     }
 
-    public double getSum() {
-        return sum;
+    public double getSumHours() {
+        return sumHours;
     }
 
     public void fillBookingDaysWithNull(Date dateFirst, Date dateLast) {
@@ -89,8 +92,12 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     public Double getRoundSum() {
-        long duration = (long) (sum * 100);
+        long duration = (long) (sumHours * 100);
         return (double) duration / 100.0;
+    }
+
+    public String getSumString() {
+        return timeFormatMinutes(sumMinutes);
     }
 
     public Customerorder getCustomOrder() {

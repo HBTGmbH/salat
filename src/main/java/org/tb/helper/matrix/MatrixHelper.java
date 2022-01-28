@@ -463,9 +463,10 @@ public class MatrixHelper {
         results.put("acceptance", isAcceptanceWarning);
         results.put("mergedreports", reportWrapper.getMergedReportList());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
-        results.put("dayhourssum", reportWrapper.getDayHoursSum());
-        results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
+        results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
+        results.put("dayhourstargetstring", reportWrapper.getDayHoursTargetString());
         results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
+        results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
         results.put("currentOrder", sOrder == null ? "ALL ORDERS" : sOrder);
         results.put("currentDay", reportForm.getFromDay());
         results.put("currentMonth", reportForm.getFromMonth());
