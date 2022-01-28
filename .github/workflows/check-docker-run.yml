@@ -8,16 +8,18 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    container: ubuntu
     services: 
       salat:
         image: ghcr.io/hbtgmbh/salat:main
         ports:
           - 8080:8080
     steps:
-      - name: run CURL
-        run: "curl -X GET http://localhost:8080/tb/"
+      - run: apt-get update; apt-get install curl -y
+      - run: curl -X GET salat:8080 > curl_result_docker
+      - run: cat curl_result_docker
       - name: Check HTTP status
         uses: lakuapik/gh-actions-http-status@v1
         with:
-          sites: '["http://localhost:8080/tb/"]'
+          sites: '["http://salat:8080/tb/"]'
           expected: '[200]'
