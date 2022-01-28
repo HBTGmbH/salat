@@ -26,9 +26,9 @@ public class LoginMobileAction extends Action {
         boolean isValid = false;
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-        Employee employee = employeeDAO.getLoginEmployee(username, SecureHashUtils.makeMD5(password));
+        Employee employee = employeeDAO.getLoginEmployee(username);
 
-        if (employee != null) {
+        if (employee != null && SecureHashUtils.passwordMatches(password, employee.getPassword())) {
             long employeeId = employee.getId();
             isValid = true;
             Date date = new Date();

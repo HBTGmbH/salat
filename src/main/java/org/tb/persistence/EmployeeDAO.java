@@ -59,18 +59,15 @@ public class EmployeeDAO extends AbstractDAO {
     }
 
     /**
-     * Logs in the employee with the given username and password.
+     * Retrieves the employee with the given username.
      * @return the LoginEmployee instance or <code>null</code> if no
-     *         employee matches the given username/password combination.
+     *         employee matches the given username.
      */
-    public Employee getLoginEmployee(String username, String password) {
+    public Employee getLoginEmployee(String username) {
         Assert.notNull(username, "loginname");
-        Assert.notNull(password, "password");
-        Employee employee = (Employee) getSession()
+        return (Employee) getSession()
                 .createCriteria(Employee.class).add(
-                        Restrictions.eq("loginname", username)).add(
-                        Restrictions.eq("password", password)).uniqueResult();
-        return employee;
+                        Restrictions.eq("loginname", username)).uniqueResult();
     }
 
     /**

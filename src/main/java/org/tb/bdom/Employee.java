@@ -91,13 +91,13 @@ public class Employee implements Serializable {
     }
 
     public void resetPassword() {
-        password = SecureHashUtils.makeMD5(sign);
+        password = SecureHashUtils.encodePassword(sign);
         passwordchange = true;
     }
 
     public void changePassword(final String newPassword) {
         passwordchange = false;
-        password = SecureHashUtils.makeMD5(newPassword);
+        password = SecureHashUtils.encodePassword(newPassword);
     }
 
     @Transient
