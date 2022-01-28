@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.tb.exception.LogicException;
 
 @Slf4j
 public class SecureHashUtils {
@@ -23,6 +24,10 @@ public class SecureHashUtils {
         return encoder.matches(enteredPassword, hashedPassword);
     }
 
+    public static boolean legacyPasswordMatches(String enteredPassword, String md5HashedPassword) {
+        return makeMD5(enteredPassword).equals(md5HashedPassword);
+    }
+
     /**
      * Makes a md5-hash for a given string.
      *
@@ -38,8 +43,8 @@ public class SecureHashUtils {
             md = MessageDigest.getInstance("MD5");        // getting a 'MD5-Instance'
             encryptMsg = md.digest(text.getBytes());    // solving the MD5-Hash
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("No Such Algorithm Exception!");
-            return "";
+            log.error("MD5 not supported!", e);
+            throw new LogicException("MD5 not supported", e);
         }
 
         String swap = "";        // swap-string for the result
