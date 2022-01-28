@@ -23,6 +23,7 @@ import java.util.List;
  */
 public class LoginEmployeeAction extends Action {
     private static final Logger LOG = LoggerFactory.getLogger(LoginEmployeeAction.class);
+    private static final String SYSTEM_SIGN = "system";
 
     private EmployeeDAO employeeDAO;
     private PublicholidayDAO publicholidayDAO;
@@ -79,55 +80,29 @@ public class LoginEmployeeAction extends Action {
             Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname());
             if (loginEmployee == null 
                 || !SecureHashUtils.passwordMatches(loginEmployeeForm.getPassword(), loginEmployee.getPassword())) {
-                
-                ActionMessages errors = getErrors(request);
-                if (errors == null) {
-                    errors = new ActionMessages();
-                }
-                errors.add(null, new ActionMessage("form.login.error.unknownuser"));
-
-                saveErrors(request, errors);
-                return mapping.getInputForward();
+                return loginFailed(request, "form.login.error.unknownuser", mapping);
             }
 
-            // check if user is intern or extern
+            // check if user is internal or extern
             String clientIP = request.getRemoteHost();
-            boolean intern = false;
-            if (clientIP.startsWith("10.") ||
-                    clientIP.startsWith("192.168.") ||
-                    clientIP.startsWith("172.16.") ||
-                    clientIP.startsWith("127.0.0.")) {
-                intern = true;
-            }
-            request.getSession().setAttribute("clientIntern", intern);
+            boolean internal = clientIP.startsWith("10.") ||
+                clientIP.startsWith("192.168.") ||
+                clientIP.startsWith("172.16.") ||
+                clientIP.startsWith("127.0.0.");
+            request.getSession().setAttribute("clientIntern", internal);
 
             Date date = new Date();
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
             if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-                ActionMessages errors = getErrors(request);
-                if (errors == null) {
-                    errors = new ActionMessages();
-                }
-                errors.add(null, new ActionMessage("form.login.error.invalidcontract"));
-
-                saveErrors(request, errors);
-                return mapping.getInputForward();
+                return loginFailed(request, "form.login.error.invalidcontract", mapping);
             }
 
             request.getSession().setAttribute("loginEmployee", loginEmployee);
             String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
             request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
             request.getSession().setAttribute("report", "W");
-
             request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-
-            if (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL) ||
-                    loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PV) ||
-                    loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-                request.getSession().setAttribute("employeeAuthorized", true);
-            } else {
-                request.getSession().setAttribute("employeeAuthorized", false);
-            }
+            request.getSession().setAttribute("employeeAuthorized", employeeHasAuthorization(loginEmployee));
 
             // check if public holidays are available
             publicholidayDAO.checkPublicHolidaysForCurrentYear();
@@ -142,7 +117,7 @@ public class LoginEmployeeAction extends Action {
 
                 // auto generate employee orders
                 if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
-                        !employeecontract.getFreelancer()) {
+                    Boolean.FALSE.equals(employeecontract.getFreelancer())) {
                     List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
                     if (standardSuborders != null && !standardSuborders.isEmpty()) {
                         // test if employeeorder exists
@@ -166,18 +141,18 @@ public class LoginEmployeeAction extends Action {
                                 for (Employeeorder eo : invalidEmployeeorders) {
 
                                     // employeeorder starts in the future
-                                    if (eo.getFromDate() != null && eo.getFromDate().after(date)) {
-                                        if (dateUntil == null || dateUntil.after(eo.getFromDate())) {
-                                            dateUntil = eo.getFromDate();
-                                            continue;
-                                        }
+                                    if (eo.getFromDate() != null && eo.getFromDate().after(date) 
+                                        && (dateUntil == null || dateUntil.after(eo.getFromDate()))) {
+                                        
+                                        dateUntil = eo.getFromDate();
+                                        continue;
                                     }
 
                                     // employeeorder ends in the past
-                                    if (eo.getUntilDate() != null && eo.getUntilDate().before(date)) {
-                                        if (dateFrom == null || dateFrom.before(eo.getUntilDate())) {
-                                            dateFrom = eo.getUntilDate();
-                                        }
+                                    if (eo.getUntilDate() != null && eo.getUntilDate().before(date) 
+                                        && (dateFrom == null || dateFrom.before(eo.getUntilDate()))) {
+                                        
+                                        dateFrom = eo.getUntilDate();
                                     }
                                 }
 
@@ -240,7 +215,7 @@ public class LoginEmployeeAction extends Action {
 
                                 // create tmp employee
                                 Employee tmp = new Employee();
-                                tmp.setSign("system");
+                                tmp.setSign(SYSTEM_SIGN);
 
                                 if (untilDate == null || !fromDate.after(untilDate)) {
                                     employeeorderDAO.save(employeeorder, tmp);
@@ -255,7 +230,7 @@ public class LoginEmployeeAction extends Action {
                     employeecontract.setReportAcceptanceDate(validFromDate);
                     // create tmp employee
                     Employee tmp = new Employee();
-                    tmp.setSign("system");
+                    tmp.setSign(SYSTEM_SIGN);
                     employeecontractDAO.save(employeecontract, tmp);
                 }
                 if (employeecontract.getReportReleaseDate() == null) {
@@ -263,7 +238,7 @@ public class LoginEmployeeAction extends Action {
                     employeecontract.setReportReleaseDate(validFromDate);
                     // create tmp employee
                     Employee tmp = new Employee();
-                    tmp.setSign("system");
+                    tmp.setSign(SYSTEM_SIGN);
                     employeecontractDAO.save(employeecontract, tmp);
                 }
                 // set used employee contract of login employee
@@ -299,7 +274,7 @@ public class LoginEmployeeAction extends Action {
             }
 
             // show change password site, if password equals username
-            if (loginEmployee.getPasswordchange()) {
+            if (Boolean.TRUE.equals(loginEmployee.getPasswordchange())) {
                 return mapping.findForward("password");
             }
 
@@ -311,5 +286,22 @@ public class LoginEmployeeAction extends Action {
         } finally {
             LOG.trace("leaving {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
         }
+    }
+
+    private boolean employeeHasAuthorization(Employee loginEmployee) {
+        return loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL) ||
+            loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PV) ||
+            loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM);
+    }
+
+    private ActionForward loginFailed(HttpServletRequest request, String key, ActionMapping mapping) {
+        ActionMessages errors = getErrors(request);
+        if (errors == null) {
+            errors = new ActionMessages();
+        }
+        errors.add(null, new ActionMessage(key));
+
+        saveErrors(request, errors);
+        return mapping.getInputForward();
     }
 }
