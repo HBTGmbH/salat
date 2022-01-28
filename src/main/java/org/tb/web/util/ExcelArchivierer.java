@@ -151,35 +151,35 @@ public class ExcelArchivierer {
         // title-Style
         CellStyle titleCellStyle = workbook.createCellStyle();
         Font boldItalicFont = workbook.createFont();
-        boldItalicFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+        boldItalicFont.setBold(true);
         boldItalicFont.setItalic(true);
         titleCellStyle.setFont(boldItalicFont);
-        titleCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
-        titleCellStyle.setAlignment(CellStyle.ALIGN_CENTER);
+        titleCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        titleCellStyle.setAlignment(HorizontalAlignment.CENTER);
         cellStyleIndexes.put("title", titleCellStyle.getIndex());
         // italic-Style
         CellStyle italicCellStyle = workbook.createCellStyle();
         Font italicFont = workbook.createFont();
-        italicFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
+        italicFont.setBold(false);
         italicFont.setItalic(true);
         italicCellStyle.setFont(italicFont);
-        italicCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
-        italicCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
+        italicCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        italicCellStyle.setAlignment(HorizontalAlignment.RIGHT);
         cellStyleIndexes.put("italic", italicCellStyle.getIndex());
         // textwrap-Style
         CellStyle textwrapCellStyle = workbook.createCellStyle();
         Font normalFont = workbook.createFont();
-        normalFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
+        normalFont.setBold(false);
         textwrapCellStyle.setFont(normalFont);
         textwrapCellStyle.setWrapText(true);
-        textwrapCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
-        textwrapCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
+        textwrapCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        textwrapCellStyle.setAlignment(HorizontalAlignment.LEFT);
         cellStyleIndexes.put("textwrap", textwrapCellStyle.getIndex());
         // hourMinute-Style
         CellStyle hourMinuteCellStyle = workbook.createCellStyle();
         hourMinuteCellStyle.setFont(normalFont);
-        hourMinuteCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
-        hourMinuteCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
+        hourMinuteCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        hourMinuteCellStyle.setAlignment(HorizontalAlignment.RIGHT);
         DataFormat hhmmFormat = workbook.createDataFormat();
         hourMinuteCellStyle.setDataFormat(hhmmFormat.getFormat("[hh]:mm"));
         cellStyleIndexes.put("hourMinute", hourMinuteCellStyle.getIndex());
@@ -192,14 +192,14 @@ public class ExcelArchivierer {
         CellStyle hourMinuteBoldCellStyle = workbook.createCellStyle();
         hourMinuteBoldCellStyle.cloneStyleFrom(hourMinuteCellStyle);
         Font boldFont = workbook.createFont();
-        boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+        boldFont.setBold(true);
         hourMinuteBoldCellStyle.setFont(boldFont);
         cellStyleIndexes.put("hourMinuteBold", hourMinuteBoldCellStyle.getIndex());
         // date-Style
         CellStyle dateCellStyle = workbook.createCellStyle();
         dateCellStyle.setFont(normalFont);
-        dateCellStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
-        dateCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
+        dateCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        dateCellStyle.setAlignment(HorizontalAlignment.RIGHT);
         DataFormat dateFormat = workbook.createDataFormat();
         dateCellStyle.setDataFormat(dateFormat.getFormat(GlobalConstants.DEFAULT_DATE_FORMAT_GERMAN));
         cellStyleIndexes.put("date", dateCellStyle.getIndex());
