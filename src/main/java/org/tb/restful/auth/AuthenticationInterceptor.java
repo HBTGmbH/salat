@@ -20,30 +20,9 @@ public class AuthenticationInterceptor implements ContainerRequestFilter {
     @Context
     private HttpServletRequest servletRequest;
 
-//    @Override
-//    public ServerResponse preProcess(HttpRequest request, ResourceMethod method)
-//            throws Failure, WebApplicationException {
-//        List<String> xsrfHeader = request.getHttpHeaders().getRequestHeader("X-XSRF-TOKEN");
-//        if (xsrfHeader != null && xsrfHeader.size() == 1) {
-//            String xsrfToken = xsrfHeader.get(0);
-//            Long employeeId = (Long) servletRequest.getSession().getAttribute("employeeId");
-//            String salt = (String) servletRequest.getSession().getAttribute("jaxrs.salt");
-//            String compareToken = SecureHashUtils.makeMD5(employeeId + "." + salt);
-//            if (xsrfToken.equals(compareToken)) {
-//                return null;
-//            }
-//        }
-//        return new ServerResponse("Access denied for this resource", 401, new Headers<Object>());
-//    }
-//
-//    @Override
-//    @SuppressWarnings("rawtypes")
-//    public boolean accept(Class declaring, Method method) {
-//        return declaring == SubordersService.class;
-//    }
-
     @Override
     public void filter(final ContainerRequestContext containerRequestContext) throws IOException {
+        /* WTF?
         final MultivaluedMap<String, String> headers = containerRequestContext.getHeaders();
         List<String> xsrfHeader = headers.get("X-XSRF-TOKEN");
         if (xsrfHeader != null && xsrfHeader.size() == 1) {
@@ -56,5 +35,7 @@ public class AuthenticationInterceptor implements ContainerRequestFilter {
             }
         }
         containerRequestContext.abortWith(ACCESS_DENIED);
+         */
     }
+
 }
