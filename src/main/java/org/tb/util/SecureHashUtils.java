@@ -9,11 +9,11 @@ import org.tb.exception.LogicException;
 
 @Slf4j
 public class SecureHashUtils {
-    
+
     private static final int COMPLEXITY = 10;
-    
+
     private SecureHashUtils() {}
-    
+
     public static String encodePassword(String password) {
         PasswordEncoder encoder = new BCryptPasswordEncoder(COMPLEXITY);
         return encoder.encode(password);
@@ -23,7 +23,7 @@ public class SecureHashUtils {
         PasswordEncoder encoder = new BCryptPasswordEncoder(COMPLEXITY);
         return encoder.matches(enteredPassword, hashedPassword);
     }
-    
+
     public static boolean legacyPasswordMatches(String enteredPassword, String md5HashedPassword) {
         return makeMD5(enteredPassword).equals(md5HashedPassword);
     }
