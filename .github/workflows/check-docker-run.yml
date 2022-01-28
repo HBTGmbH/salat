@@ -15,11 +15,10 @@ jobs:
         ports:
           - 8080:8080
     steps:
-      - run: apt-get update; apt-get install curl -y
-      - run: curl -X GET salat:8080 > curl_result_docker
-      - run: cat curl_result_docker
-      - name: Check HTTP status
-        uses: lakuapik/gh-actions-http-status@v1
-        with:
-          sites: '["http://salat:8080/tb/"]'
-          expected: '[200]'
+      - name: install curl
+        run: apt-get update; apt-get install curl -y 
+      - name: run curl against salat
+        run: curl -I salat:8080/tb/ | head -n 1 | cut -d$' ' -f2 > curl_result_docker
+      - name: is status code equal to 200?
+        run: test $(<curl_result_docker) == "200"
+              
