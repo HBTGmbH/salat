@@ -84,12 +84,7 @@ public class LoginEmployeeAction extends Action {
             }
 
             // check if user is internal or extern
-            String clientIP = request.getRemoteHost();
-            boolean internal = clientIP.startsWith("10.") ||
-                clientIP.startsWith("192.168.") ||
-                clientIP.startsWith("172.16.") ||
-                clientIP.startsWith("127.0.0.");
-            request.getSession().setAttribute("clientIntern", internal);
+            setEmployeeIsInternalAttribute(request);
 
             Date date = new Date();
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
@@ -114,57 +109,7 @@ public class LoginEmployeeAction extends Action {
 
             if (employeecontract != null) {
                 request.getSession().setAttribute("employeeHasValidContract", true);
-
-                // auto generate employee orders
-                if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
-                    Boolean.FALSE.equals(employeecontract.getFreelancer())) {
-                    generateEmployeeOrders(date, employeecontract, dateString);
-                }
-                
-                if (employeecontract.getReportAcceptanceDate() == null) {
-                    java.sql.Date validFromDate = employeecontract.getValidFrom();
-                    employeecontract.setReportAcceptanceDate(validFromDate);
-                    // create tmp employee
-                    Employee tmp = new Employee();
-                    tmp.setSign(SYSTEM_SIGN);
-                    employeecontractDAO.save(employeecontract, tmp);
-                }
-                if (employeecontract.getReportReleaseDate() == null) {
-                    java.sql.Date validFromDate = employeecontract.getValidFrom();
-                    employeecontract.setReportReleaseDate(validFromDate);
-                    // create tmp employee
-                    Employee tmp = new Employee();
-                    tmp.setSign(SYSTEM_SIGN);
-                    employeecontractDAO.save(employeecontract, tmp);
-                }
-                // set used employee contract of login employee
-                request.getSession().setAttribute("loginEmployeeContract", employeecontract);
-                request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
-                request.getSession().setAttribute("currentEmployeeContract", employeecontract);
-
-                // get info about vacation, overtime and report status
-                request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
-                request.getSession().setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
-
-                String releaseDate = employeecontract.getReportReleaseDateString();
-                String acceptanceDate = employeecontract.getReportAcceptanceDateString();
-
-                request.getSession().setAttribute("releasedUntil", releaseDate);
-                request.getSession().setAttribute("acceptedUntil", acceptanceDate);
-
-                AfterLogin.handleOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, request.getSession());
-
-                // get warnings
-                Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-                List<Warning> warnings = AfterLogin.createWarnings(employeecontract, loginEmployeeContract, employeeorderDAO, timereportDAO, statusReportDAO, customerorderDAO, getResources(request), getLocale(request));
-
-                if (!warnings.isEmpty()) {
-                    request.getSession().setAttribute("warnings", warnings);
-                    request.getSession().setAttribute("warningsPresent", true);
-                } else {
-                    request.getSession().setAttribute("warningsPresent", false);
-                }
-
+                handleEmployeeWithValidContract(request, loginEmployee, date, employeecontract, dateString);
             } else {
                 request.getSession().setAttribute("employeeHasValidContract", false);
             }
@@ -182,6 +127,69 @@ public class LoginEmployeeAction extends Action {
         } finally {
             LOG.trace("leaving {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
         }
+    }
+
+    private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee, Date date,
+        Employeecontract employeecontract, String dateString) {
+        // auto generate employee orders
+        if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
+            Boolean.FALSE.equals(employeecontract.getFreelancer())) {
+            generateEmployeeOrders(date, employeecontract, dateString);
+        }
+
+        if (employeecontract.getReportAcceptanceDate() == null) {
+            java.sql.Date validFromDate = employeecontract.getValidFrom();
+            employeecontract.setReportAcceptanceDate(validFromDate);
+            // create tmp employee
+            Employee tmp = new Employee();
+            tmp.setSign(SYSTEM_SIGN);
+            employeecontractDAO.save(employeecontract, tmp);
+        }
+        if (employeecontract.getReportReleaseDate() == null) {
+            java.sql.Date validFromDate = employeecontract.getValidFrom();
+            employeecontract.setReportReleaseDate(validFromDate);
+            // create tmp employee
+            Employee tmp = new Employee();
+            tmp.setSign(SYSTEM_SIGN);
+            employeecontractDAO.save(employeecontract, tmp);
+        }
+        // set used employee contract of login employee
+        request.getSession().setAttribute("loginEmployeeContract", employeecontract);
+        request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
+        request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+
+        // get info about vacation, overtime and report status
+        request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
+        request.getSession().setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
+
+        String releaseDate = employeecontract.getReportReleaseDateString();
+        String acceptanceDate = employeecontract.getReportAcceptanceDateString();
+
+        request.getSession().setAttribute("releasedUntil", releaseDate);
+        request.getSession().setAttribute("acceptedUntil", acceptanceDate);
+
+        AfterLogin.handleOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, request.getSession());
+
+        // get warnings
+        Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+        List<Warning> warnings = AfterLogin.createWarnings(employeecontract, loginEmployeeContract, employeeorderDAO, timereportDAO, statusReportDAO, customerorderDAO, getResources(
+            request), getLocale(request));
+
+        if (!warnings.isEmpty()) {
+            request.getSession().setAttribute("warnings", warnings);
+            request.getSession().setAttribute("warningsPresent", true);
+        } else {
+            request.getSession().setAttribute("warningsPresent", false);
+        }
+    }
+
+    private void setEmployeeIsInternalAttribute(HttpServletRequest request) {
+        String clientIP = request.getRemoteHost();
+        boolean isInternal = clientIP.startsWith("10.") ||
+            clientIP.startsWith("192.168.") ||
+            clientIP.startsWith("172.16.") ||
+            clientIP.startsWith("127.0.0.");
+        request.getSession().setAttribute("clientIntern", isInternal);
     }
 
     private void generateEmployeeOrders(Date date, Employeecontract employeecontract, String dateString2) {
