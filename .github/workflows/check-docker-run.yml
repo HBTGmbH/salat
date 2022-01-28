@@ -12,7 +12,7 @@ jobs:
       salat:
         image: ghcr.io/hbtgmbh/salat:main
         ports:
-          - 80:80
+          - 8080:8080
     steps:
       - name: check that service is running
-        run: http://localhost/tb/
+        run: http://localhost:8080/tb/
