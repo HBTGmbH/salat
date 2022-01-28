@@ -97,7 +97,7 @@ public class EmployeeDAO extends AbstractDAO {
      */
     public List<Employee> getEmployeesWithContracts() {
         List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
-        List<Employee> employees = new ArrayList<Employee>();
+        List<Employee> employees = new ArrayList<>();
         for (Employeecontract employeecontract : employeeContracts) {
             if (!employees.contains(employeecontract.getEmployee())) {
                 employees.add(employeecontract.getEmployee());
@@ -114,7 +114,7 @@ public class EmployeeDAO extends AbstractDAO {
      */
     public List<Employee> getEmployeesWithValidContracts() {
         List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
-        List<Employee> employees = new ArrayList<Employee>();
+        List<Employee> employees = new ArrayList<>();
         for (Employeecontract employeecontract : employeeContracts) {
             if (employeecontract.getCurrentlyValid() && !employees.contains(employeecontract.getEmployee())) {
                 employees.add(employeecontract.getEmployee());
