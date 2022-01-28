@@ -1,5 +1,7 @@
 package org.tb.helper.matrix;
 
+import static org.tb.web.util.TimeFormatUtils.timeFormatHours;
+
 import lombok.Data;
 
 import java.util.Date;
@@ -27,6 +29,10 @@ public class DayAndWorkingHourCount {
     public double getRoundWorkingHour() {
         long duration = (long) (workingHour * 100);
         return (double) duration / 100.0;
+    }
+
+    public String getWorkingHourString() {
+        return timeFormatHours(workingHour);
     }
 
     public String getDayString() {

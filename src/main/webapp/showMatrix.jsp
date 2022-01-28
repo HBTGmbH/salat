@@ -375,24 +375,22 @@
 					</c:if>
 
 					<c:choose>
-						<c:when
-							test="${(mergedreport.subOrder.sign eq overtimeCompensation and (not empty bookingday.taskdescription) 
+						<c:when test="${(mergedreport.subOrder.sign eq overtimeCompensation and (not empty bookingday.taskdescription)
 						and bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-							<c:out value="0.0"></c:out>
+							<c:out value="${bookingday.durationString}" />
 						</c:when>
 						<c:otherwise>
-							<c:if
-								test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
-							<c:if
-								test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-								<c:out value="${bookingday.roundHours}"></c:out>
+							<c:if test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+								&nbsp;
+							</c:if>
+							<c:if test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+								<c:out value="${bookingday.durationString}" />
 							</c:if>
 						</c:otherwise>
 					</c:choose>
 					</td>
 				</c:forEach>
-				<td class="matrix" align="right"><c:out	value="${mergedreport.roundSum}"></c:out></td>
+				<td class="matrix" align="right"><c:out	value="${mergedreport.sumString}"></c:out></td>
 			</tr>
 		</c:forEach>
 
@@ -405,7 +403,7 @@
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
 							align="right"><c:if
 								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
 							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 					</c:if>
@@ -414,7 +412,7 @@
 							style="font-size: 7pt; border-top: 2px black solid; background-color: lightgrey;"
 							align="right"><c:if
 								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
 							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 					</c:if>
@@ -425,7 +423,7 @@
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
 							align="right"><c:if
 								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
 							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 					</c:if>
@@ -434,14 +432,14 @@
 							style="font-size: 7pt; border-top: 2px black solid;"
 							align="right"><c:if
 								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
 							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 					</c:if>
 				</c:if>
 
 			</c:forEach>
-			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${dayhourssum}"></c:out></td>
+			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${dayhourssumstring}"></c:out></td>
 		</tr>
 
 		<tr class="matrix">
@@ -449,15 +447,15 @@
 				<table>
 					<tr class="matrix">
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.actualtime.text" /></td>
-						<td class="matrix underline" style="border-style: none;"><c:out	value="${dayhourssum}"></c:out></td>
+						<td class="matrix underline" style="border-style: none; text-align: right"><c:out	value="${dayhourssumstring}"></c:out></td>
 					</tr>
 					<tr class="matrix">
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
-						<td class="matrix underline" style="border-style: none;"><c:out	value="${dayhourstarget}" /></td>
+						<td class="matrix underline" style="border-style: none; text-align: right"><c:out	value="${dayhourstargetstring}" /></td>
 					</tr>
 					<tr class="matrix">
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
-						<td class="matrix underline" style="border-style:none;<c:if test="${dayhoursdiff < 0}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiff}" /></td>
+						<td class="matrix underline" style="border-style:none;text-align: right;<c:if test="${dayhoursdiff < 0}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiffstring}" /></td>
 					</tr>
 				</table>
 			</td>
@@ -476,9 +474,7 @@
 						</html:submit></td>
 				</html:form>
 			</c:if>
-			<html:form target="fenster"
-				onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
-				action="/ShowMatrix?task=print">
+			<html:form target="_blank" action="/ShowMatrix?task=print">
 				<td class="noBborderStyle" align="left"><html:submit
 						styleId="button"
 						titleKey="main.general.button.printpreview.alttext.text">

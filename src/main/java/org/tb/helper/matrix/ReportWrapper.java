@@ -1,5 +1,7 @@
 package org.tb.helper.matrix;
 
+import static org.tb.web.util.TimeFormatUtils.timeFormatHours;
+
 import java.util.List;
 
 public class ReportWrapper {
@@ -32,6 +34,18 @@ public class ReportWrapper {
 
     public double getDayHoursSum() {
         return dayHoursSum;
+    }
+
+    public String getDayHoursSumString() {
+        return timeFormatHours(dayHoursSum);
+    }
+
+    public String getDayHoursTargetString() {
+        return timeFormatHours(dayHoursTarget);
+    }
+
+    public String getDayHoursDiffString() {
+        return timeFormatHours(dayHoursDiff);
     }
 
     public List<DayAndWorkingHourCount> getDayAndWorkingHourCountList() {

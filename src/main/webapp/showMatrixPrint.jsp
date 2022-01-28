@@ -143,14 +143,12 @@
 					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
 				<c:if
 					test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-					<!--<c:out
-						value="${(((bookingday.durationHours*60)+(bookingday.durationMinutes))/60)}"></c:out>-->
-					<c:out value="${bookingday.roundHours}"></c:out>
+					<c:out value="${bookingday.durationString}"></c:out>
 				</c:if>
 				</td>
 			</c:forEach>
 			<td class="matrix" align="right"><c:out
-				value="${mergedreport.roundSum}"></c:out></td>
+				value="${mergedreport.sumString}"></c:out></td>
 		</tr>
 	</c:forEach>
 	<tr class="matrix">
@@ -165,7 +163,7 @@
 						style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;"
 						align="right"><c:if
 						test="${!(dayhourcount.workingHour eq '0.0')}">
-						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+						<c:out value="${dayhourcount.workingHourString}"></c:out>
 					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
@@ -173,7 +171,7 @@
 						style="font-size: 6pt;border-top:2px black solid;background-color:lightgrey;"
 						align="right"><c:if
 						test="${!(dayhourcount.workingHour eq '0.0')}">
-						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+						<c:out value="${dayhourcount.workingHourString}"></c:out>
 					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 				</c:if>
 			</c:if>
@@ -183,21 +181,21 @@
 						style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;"
 						align="right"><c:if
 						test="${!(dayhourcount.workingHour eq '0.0')}">
-						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+						<c:out value="${dayhourcount.workingHourString}"></c:out>
 					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 				</c:if>
 				<c:if test="${dayhourcount.publicHoliday==false}">
 					<td class="matrix"
 						style="font-size: 6pt;border-top:2px black solid;" align="right"><c:if
 						test="${!(dayhourcount.workingHour eq '0.0')}">
-						<c:out value="${dayhourcount.roundWorkingHour}"></c:out>
+						<c:out value="${dayhourcount.workingHourString}"></c:out>
 					</c:if><c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
 				</c:if>
 			</c:if>
 
 		</c:forEach>
 		<td class="matrix bold" style="border-top:2px black solid;"
-			align="right"><c:out value="${dayhourssum}"></c:out></td>
+			align="right"><c:out value="${dayhourssumstring}"></c:out></td>
 	</tr>
 </table>
 <br>

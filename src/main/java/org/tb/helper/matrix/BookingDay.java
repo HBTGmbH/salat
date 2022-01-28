@@ -1,5 +1,7 @@
 package org.tb.helper.matrix;
 
+import static org.tb.web.util.TimeFormatUtils.timeFormatHoursAndMinutes;
+
 import lombok.Data;
 
 import java.util.Date;
@@ -26,9 +28,8 @@ public class BookingDay implements Comparable<BookingDay> {
         return this.date.compareTo(o.date);
     }
 
-    public double getRoundHours() {
-        long duration = (durationHours * 60 + durationMinutes) * 100 / 60;
-        return (double) duration / 100;
+    public String getDurationString() {
+        return timeFormatHoursAndMinutes(durationHours, durationMinutes);
     }
 
 }
