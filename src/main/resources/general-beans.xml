@@ -132,7 +132,9 @@
 	<!-- other classes -->
 
 	<!-- Restful Webservices -->
-	<bean id="helloSalatWebservice" class="org.tb.restful.hello.HelloSalatWebservice"></bean>
+	<bean id="helloSalatWebservice" class="org.tb.restful.hello.HelloSalatWebservice">
+		<constructor-arg index="0" ref="employeeDAO" />
+	</bean>
 	<bean id="authenticationService" class="org.tb.restful.auth.AuthenticationService"></bean>
 	<bean id="subordersService" class="org.tb.restful.suborders.SubordersService"></bean>
 	<bean id="bookingsService" class="org.tb.restful.bookings.BookingsService"></bean>

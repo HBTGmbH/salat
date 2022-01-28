@@ -1,5 +1,6 @@
 package org.tb.restful.hello;
 
+import lombok.RequiredArgsConstructor;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 
@@ -9,10 +10,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+@RequiredArgsConstructor
 @Path("/rest/HelloSalatWebservice")
 public class HelloSalatWebservice {
 
-    private EmployeeDAO employeeDAO;
+    private final EmployeeDAO employeeDAO;
 
     @GET
     @Path("/sayHello")
@@ -21,10 +23,6 @@ public class HelloSalatWebservice {
         Employee employee = employeeDAO.getEmployeeBySign(sign);
 
         return new Message("Hello!", new Person(employee.getFirstname()));
-    }
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
     }
 
 }
