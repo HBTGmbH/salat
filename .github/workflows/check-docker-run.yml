@@ -8,5 +8,11 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    services: 
+      salat:
+        image: ghcr.io/hbtgmbh/salat:main
+        ports:
+          - 80:80
     steps:
-      - uses: docker://ghcr.io/hbtgmbh/salat:main
+      - name: check that service is running
+        run: http://localhost/tb/
