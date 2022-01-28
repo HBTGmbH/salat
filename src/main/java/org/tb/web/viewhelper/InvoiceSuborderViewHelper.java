@@ -1,10 +1,14 @@
 package org.tb.web.viewhelper;
 
+import static org.tb.web.util.TimeFormatUtils.decimalFormatHours;
+import static org.tb.web.util.TimeFormatUtils.decimalFormatMinutes;
+import static org.tb.web.util.TimeFormatUtils.timeFormatHours;
+import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
+
 import org.tb.bdom.*;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
-import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -82,10 +86,8 @@ public class InvoiceSuborderViewHelper extends Suborder {
     }
 
     private String getActualhoursHelper(boolean print) {
-        long actualhours = getTotalActualminutesHelper(print) / 60;
-        long actualminutes = getTotalActualminutesHelper(print) % 60;
-        DecimalFormat decimalFormat = new DecimalFormat("00");
-        return decimalFormat.format(actualhours) + ":" + decimalFormat.format(actualminutes);
+        long actualminutes = getTotalActualminutesHelper(print);
+        return timeFormatMinutes(actualminutes) + " (" + decimalFormatMinutes(actualminutes) + ")";
     }
 
     public long getTotalActualminutes() {
@@ -189,10 +191,9 @@ public class InvoiceSuborderViewHelper extends Suborder {
     public String getDebithoursString() {
         String result = "";
         if (suborder.getDebithours() != null && suborder.getDebithours() != 0.0) {
-            DecimalFormat decimalFormat = new DecimalFormat("00");
-            String hours = decimalFormat.format(Math.floor(suborder.getDebithours()));
-            String minutes = decimalFormat.format(suborder.getDebithours() % 1 * 60);
-            result = hours + ":" + minutes;
+            result = timeFormatHours(suborder.getDebithours());
+            // add decimal value - helps the backoffice
+            result += " (" + decimalFormatHours(suborder.getDebithours()) + ")";
         }
         return result;
     }

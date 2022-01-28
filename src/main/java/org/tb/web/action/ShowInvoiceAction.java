@@ -1,5 +1,8 @@
 package org.tb.web.action;
 
+import static org.tb.web.util.TimeFormatUtils.decimalFormatMinutes;
+import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
+
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -18,7 +21,6 @@ import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -317,8 +319,7 @@ public class ShowInvoiceAction extends DailyReportAction {
                 }
             }
             request.getSession().setAttribute("actualminutessum", (double) actualMinutesSum);
-            DecimalFormat decimalFormat = new DecimalFormat("00");
-            request.getSession().setAttribute("printactualhourssum", decimalFormat.format(actualMinutesSum / 60) + ":" + decimalFormat.format(actualMinutesSum % 60));
+            request.getSession().setAttribute("printactualhourssum", timeFormatMinutes(actualMinutesSum) + " (" + decimalFormatMinutes(actualMinutesSum) + ")");
             request.getSession().setAttribute("titleactualhourstext", showInvoiceForm.getTitleactualhourstext());
             request.getSession().setAttribute("titlecustomersigntext", showInvoiceForm.getTitlecustomersigntext());
             request.getSession().setAttribute("titleinvoiceattachment", showInvoiceForm.getTitleinvoiceattachment());
@@ -441,8 +442,7 @@ public class ShowInvoiceAction extends DailyReportAction {
         for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : invoiceSuborderViewHelperList) {
             totalActualminutes += invoiceSuborderViewHelper.getTotalActualminutes();
         }
-        DecimalFormat decimalFormat = new DecimalFormat("00");
-        return decimalFormat.format(totalActualminutes / 60) + ":" + decimalFormat.format(totalActualminutes % 60);
+        return timeFormatMinutes(totalActualminutes) + " (" + decimalFormatMinutes(totalActualminutes) + ")";
     }
 
 }

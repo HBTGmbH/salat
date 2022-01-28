@@ -163,7 +163,7 @@
 								</c:if>
 								<c:if test="${targethoursbox eq 'true'}">
 									<td class="matrix" style="text-align: right;">
-										<c:out value="${suborderviewhelper.debithours}" />
+										<c:out value="${suborderviewhelper.debithoursString}" />
 									</td>
 								</c:if>
 								<c:if test="${actualhoursbox eq 'true'}">
@@ -217,17 +217,8 @@
 												</td>
 											</c:if>
 											<c:if test="${actualhoursbox eq 'true'}">
-												<td class="matrix">
-													<%--
-													<c:out value="${timereportviewhelper.durationhours}" />
-													 --%>
-													<fmt:formatNumber value="${timereportviewhelper.durationhours}" pattern="00" />
-													<c:out value=":"/>
-													<fmt:formatNumber value="${timereportviewhelper.durationminutes}" pattern="00" />
-													<%--
-													<c:if test="${timereportviewhelper.durationminutes<10}">0</c:if>
-													<c:out value="${timereportviewhelper.durationminutes}" />
-													 --%>
+												<td class="matrix" style="text-align: right">
+													<c:out value="${timereportviewhelper.durationString}"/>
 												</td>
 											</c:if>
 										</tr>
