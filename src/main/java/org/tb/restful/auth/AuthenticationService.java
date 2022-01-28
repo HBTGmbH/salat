@@ -1,6 +1,12 @@
 package org.tb.restful.auth;
 
+import static javax.ws.rs.core.Response.Status.OK;
+import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.Response.Status;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.util.SecureHashUtils;
@@ -24,29 +30,26 @@ public class AuthenticationService {
     private EmployeeDAO employeeDAO;
 
     @GET
-    @Path("authenticate")
+    @Path("/authenticate")
     @Produces(MediaType.APPLICATION_JSON)
     public Response authenticate(@Context HttpServletRequest request, @QueryParam("username") String username, @QueryParam("password") String password) {
-
         Employee employee = employeeDAO.getLoginEmployee(username, SecureHashUtils.makeMD5(password));
-
         if (employee != null) {
-            Long employeeId = employee.getId();
-            Date date = new Date();
-            Long employeecontractId = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date).getId();
-            request.getSession().setAttribute("employeeId", employeeId);
-            request.getSession().setAttribute("employeecontractId", employeecontractId);
+            long employeeId = employee.getId();
+            Employeecontract contract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, new Date());
+            if(contract != null) {
+                long employeecontractId = contract.getId();
+                request.getSession().setAttribute("employeeId", employeeId);
+                request.getSession().setAttribute("employeecontractId", employeecontractId);
 
-            String salt = UUID.randomUUID().toString();
-            request.getSession().setAttribute("jaxrs.salt", salt);
+                // XSRF-TOKEN must be read from Client and be put into a HTTP-header x-xsrf-token
+                String xsrfToken = UUID.randomUUID().toString();
+                request.getSession().setAttribute("x-xsrf-token", xsrfToken);
 
-            // XSRF-TOKEN must be read from Client and be put into a HTTP-header
-            // X-XSRF-TOKEN or as a query param named XSRF_TOKEN
-            NewCookie xsrfCookie = new NewCookie("XSRF-TOKEN", SecureHashUtils.makeMD5(employeeId + "." + salt));
-
-            return Response.noContent().cookie(xsrfCookie).status(200).build();
+                return Response.noContent().header("x-csrf-token", xsrfToken).status(OK).build();
+            }
         }
-        return Response.noContent().status(401).build();
+        return Response.noContent().status(UNAUTHORIZED).build();
     }
 
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {

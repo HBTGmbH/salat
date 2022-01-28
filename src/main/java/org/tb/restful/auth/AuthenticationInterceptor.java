@@ -22,20 +22,19 @@ public class AuthenticationInterceptor implements ContainerRequestFilter {
 
     @Override
     public void filter(final ContainerRequestContext containerRequestContext) throws IOException {
-        /* WTF?
+        if(containerRequestContext.getUriInfo().getMatchedURIs().contains("rest/AuthenticationService")) {
+            // calls to the AuthenticationService must be allowed to login
+            return;
+        }
         final MultivaluedMap<String, String> headers = containerRequestContext.getHeaders();
-        List<String> xsrfHeader = headers.get("X-XSRF-TOKEN");
-        if (xsrfHeader != null && xsrfHeader.size() == 1) {
-            String xsrfToken = xsrfHeader.get(0);
-            Long employeeId = (Long) servletRequest.getSession().getAttribute("employeeId");
-            String salt = (String) servletRequest.getSession().getAttribute("jaxrs.salt");
-            String compareToken = SecureHashUtils.makeMD5(employeeId + "." + salt);
-            if (xsrfToken.equals(compareToken)) {
+        String xsrfTokenHeader = headers.getFirst("x-xsrf-token");
+        if (xsrfTokenHeader != null) {
+            String xsrfToken = (String) servletRequest.getSession().getAttribute("x-xsrf-token");
+            if (xsrfToken != null && xsrfToken.equals(xsrfTokenHeader)) {
                 return;
             }
         }
         containerRequestContext.abortWith(ACCESS_DENIED);
-         */
     }
 
 }
