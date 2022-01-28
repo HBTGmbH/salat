@@ -143,7 +143,7 @@ public class LoginEmployeeAction extends Action {
             } else {
                 request.getSession().setAttribute("employeeHasValidContract", false);
             }
-            
+
             // property passwordchange is set to true if password has been reset (username and password are equal)
             // in this case show the password change site
             if (Boolean.TRUE.equals(loginEmployee.getPasswordchange())) {
@@ -248,17 +248,17 @@ public class LoginEmployeeAction extends Action {
                     for (Employeeorder eo : invalidEmployeeorders) {
 
                         // employeeorder starts in the future
-                        if (eo.getFromDate() != null && eo.getFromDate().after(date) 
+                        if (eo.getFromDate() != null && eo.getFromDate().after(date)
                             && (dateUntil == null || dateUntil.after(eo.getFromDate()))) {
-                            
+
                             dateUntil = eo.getFromDate();
                             continue;
                         }
 
                         // employeeorder ends in the past
-                        if (eo.getUntilDate() != null && eo.getUntilDate().before(date) 
+                        if (eo.getUntilDate() != null && eo.getUntilDate().before(date)
                             && (dateFrom == null || dateFrom.before(eo.getUntilDate()))) {
-                            
+
                             dateFrom = eo.getUntilDate();
                         }
                     }
