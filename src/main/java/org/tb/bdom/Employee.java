@@ -1,15 +1,12 @@
 package org.tb.bdom;
 
 import java.io.Serializable;
-import java.util.Objects;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.GlobalConstants;
@@ -17,8 +14,6 @@ import org.tb.util.SecureHashUtils;
 
 @Getter
 @Setter
-@ToString
-@RequiredArgsConstructor
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Employee implements Serializable {
@@ -112,23 +107,4 @@ public class Employee implements Serializable {
         return this.restricted;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null) {
-            return false;
-        }
-        if (getClass() != o.getClass()) {
-            return false;
-        }
-        Employee employee = (Employee) o;
-        return Objects.equals(id, employee.id) && sign != null && Objects.equals(sign, employee.sign);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id) + sign.hashCode();
-    }
 }
