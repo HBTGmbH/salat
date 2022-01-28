@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.hbt.salat</groupId>
 	<artifactId>tb</artifactId>
@@ -199,7 +200,7 @@
 			<version>2.17.1</version>
 		</dependency>
 
-		<!-- <dependency> <groupId>log4j</groupId> <artifactId>log4j</artifactId> 
+		<!-- <dependency> <groupId>log4j</groupId> <artifactId>log4j</artifactId>
 			<version>1.2.17</version> </dependency> -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -239,7 +240,7 @@
 			<scope>provided</scope>
 		</dependency>
 		<!-- bei Tomcat 7 weglassen -->
-		<!-- dependency> <groupId>taglibs</groupId> <artifactId>standard</artifactId> 
+		<!-- dependency> <groupId>taglibs</groupId> <artifactId>standard</artifactId>
 			<version>1.1.2</version> </dependency -->
 
 		<dependency>
@@ -312,6 +313,11 @@
 			<artifactId>spring-test</artifactId>
 			<version>${spring.version}</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+			<version>4.1.0.Final</version>
 		</dependency>
 
 		<dependency>
