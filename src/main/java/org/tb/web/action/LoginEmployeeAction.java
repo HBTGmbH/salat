@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Action class for the login of an employee
@@ -88,18 +89,6 @@ public class LoginEmployeeAction extends Action {
                 return mapping.getInputForward();
                 //return mapping.findForward("error");
             }
-
-            // check if user is intern or extern
-            String clientIP = request.getRemoteHost();
-            boolean intern = false;
-            if (clientIP.startsWith("10.") ||
-                    clientIP.startsWith("192.168.") ||
-                    clientIP.startsWith("172.16.") ||
-                    clientIP.startsWith("127.0.0.")) {
-                intern = true;
-            }
-            request.getSession().setAttribute("clientIntern", intern);
-
             Date date = new Date();
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
             if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
@@ -113,20 +102,9 @@ public class LoginEmployeeAction extends Action {
                 return mapping.getInputForward();
             }
 
-            request.getSession().setAttribute("loginEmployee", loginEmployee);
-            String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
-            request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
-            request.getSession().setAttribute("report", "W");
+            Map<String, Object> attributes = employeeDAO.getAttributes(request, loginEmployee);
+            attributes.forEach((key, value) -> request.getSession().setAttribute(key, value));
 
-            request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-
-            if (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL) ||
-                    loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PV) ||
-                    loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-                request.getSession().setAttribute("employeeAuthorized", true);
-            } else {
-                request.getSession().setAttribute("employeeAuthorized", false);
-            }
 
             // not necessary at the moment
             //		if(employeeDAO.isAdmin(loginEmployee)) {
