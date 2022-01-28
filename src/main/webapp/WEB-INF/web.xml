@@ -5,15 +5,16 @@
 		 id="WebApp_ID" version="2.4">
 
 	<display-name>tb</display-name>
+
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>classpath:/spring-beans-cfg.xml</param-value>
 	</context-param>
 
-	<!-- context-param>
+	<context-param>
 		<param-name>resteasy.providers</param-name>
-		<param-value>org.tb.restful.AuthenticationInterceptor</param-value>
-	</context-param-->
+		<param-value>org.tb.restful.auth.AuthenticationInterceptor</param-value>
+	</context-param>
 
 	<listener>
 		<listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
