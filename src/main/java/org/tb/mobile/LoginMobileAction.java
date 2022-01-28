@@ -26,10 +26,28 @@ public class LoginMobileAction extends Action {
         boolean isValid = false;
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-        Employee employee = employeeDAO.getLoginEmployee(username);
+        Employee loginEmployee = employeeDAO.getLoginEmployee(username);
 
-        if (employee != null && SecureHashUtils.passwordMatches(password, employee.getPassword())) {
-            long employeeId = employee.getId();
+        boolean passwordMatches = loginEmployee != null && SecureHashUtils.passwordMatches(
+            password,
+            loginEmployee.getPassword()
+        );
+        if (!passwordMatches) {
+            boolean legacyPasswordMatches = loginEmployee != null && SecureHashUtils.legacyPasswordMatches(
+                password, loginEmployee.getPassword()
+            );
+            if (legacyPasswordMatches) {
+                // employee still has old password form
+                // store password again with new hashing algorithm
+                Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
+                em.changePassword(password);
+                loginEmployee.changePassword(password);
+                employeeDAO.save(em, loginEmployee);
+                passwordMatches = true;
+            }
+        }
+        if (loginEmployee != null && passwordMatches) {
+            long employeeId = loginEmployee.getId();
             isValid = true;
             Date date = new Date();
             Long employeecontractId = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date).getId();

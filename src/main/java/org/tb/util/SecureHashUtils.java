@@ -22,6 +22,10 @@ public class SecureHashUtils {
         PasswordEncoder encoder = new BCryptPasswordEncoder(COMPLEXITY);
         return encoder.matches(enteredPassword, hashedPassword);
     }
+    
+    public static boolean legacyPasswordMatches(String enteredPassword, String md5HashedPassword) {
+        return makeMD5(enteredPassword).equals(md5HashedPassword);
+    }
 
     /**
      * Makes a md5-hash for a given string.
