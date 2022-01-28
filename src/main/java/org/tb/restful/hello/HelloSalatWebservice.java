@@ -21,8 +21,11 @@ public class HelloSalatWebservice {
     @Produces(MediaType.APPLICATION_JSON)
     public Message sayHello(@QueryParam("sign") String sign) {
         Employee employee = employeeDAO.getEmployeeBySign(sign);
-
-        return new Message("Hello!", new Person(employee.getFirstname()));
+        if (employee != null) {
+          return new Message("Hello!", new Person(employee.getFirstname()));
+        } else {
+          return new Message("not found " + sign, null);
+        }
     }
 
 }
