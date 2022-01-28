@@ -698,8 +698,8 @@
 										<td></td>
 									</c:if>
 									<c:if test="${param.actualhoursbox eq 'on'}">
-										<td>
-											<c:out value="${timereportviewhelper.durationhours}" />:<c:if test="${timereportviewhelper.durationminutes<10}">0</c:if><c:out value="${timereportviewhelper.durationminutes}" />
+										<td style="text-align: right">
+											<c:out value="${timereportviewhelper.durationString}" />
 										</td>
 									</c:if>
 								</tr>
