@@ -21,7 +21,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
-@Path("/rest/AuthenticationService")@Setter
+@Path("/rest/AuthenticationService")
+@Setter
 public class AuthenticationService {
 
     private EmployeecontractDAO employeecontractDAO;
