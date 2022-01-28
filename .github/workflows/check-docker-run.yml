@@ -14,7 +14,9 @@ jobs:
         ports:
           - 8080:8080
     steps:
-      - name: Check that Salat is running
+      - name: run CURL
+        run: "curl -X http://localhost:8080/tb/"
+      - name: Check HTTP status
         uses: lakuapik/gh-actions-http-status@v1
         with:
           sites: '["http://localhost:8080/tb/"]'
