@@ -109,8 +109,8 @@ public class LoginEmployeeAction extends Action {
 
             // check if employee has an employee contract and is has employee orders for all standard suborders
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
-            String dateString2 = simpleDateFormat.format(date);
-            date = simpleDateFormat.parse(dateString2);
+            String dateString = simpleDateFormat.format(date);
+            date = simpleDateFormat.parse(dateString);
 
             if (employeecontract != null) {
                 request.getSession().setAttribute("employeeHasValidContract", true);
@@ -118,113 +118,9 @@ public class LoginEmployeeAction extends Action {
                 // auto generate employee orders
                 if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
                     Boolean.FALSE.equals(employeecontract.getFreelancer())) {
-                    List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
-                    if (standardSuborders != null && !standardSuborders.isEmpty()) {
-                        // test if employeeorder exists
-                        for (Suborder suborder : standardSuborders) {
-                            List<Employeeorder> employeeorders = employeeorderDAO
-                                    .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(
-                                            employeecontract.getId(), suborder
-                                                    .getId(), date);
-                            if (employeeorders == null || employeeorders.isEmpty()) {
-
-                                // do not create an employeeorder for past years "URLAUB" !
-                                if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-                                        && !dateString2.startsWith(suborder.getSign())) {
-                                    continue;
-                                }
-
-                                // find latest untilDate of all employeeorders for this suborder
-                                List<Employeeorder> invalidEmployeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(employeecontract.getId(), suborder.getId());
-                                Date dateUntil = null;
-                                Date dateFrom = null;
-                                for (Employeeorder eo : invalidEmployeeorders) {
-
-                                    // employeeorder starts in the future
-                                    if (eo.getFromDate() != null && eo.getFromDate().after(date) 
-                                        && (dateUntil == null || dateUntil.after(eo.getFromDate()))) {
-                                        
-                                        dateUntil = eo.getFromDate();
-                                        continue;
-                                    }
-
-                                    // employeeorder ends in the past
-                                    if (eo.getUntilDate() != null && eo.getUntilDate().before(date) 
-                                        && (dateFrom == null || dateFrom.before(eo.getUntilDate()))) {
-                                        
-                                        dateFrom = eo.getUntilDate();
-                                    }
-                                }
-
-                                // calculate time period
-                                Date ecFromDate = employeecontract.getValidFrom();
-                                Date ecUntilDate = employeecontract.getValidUntil();
-                                Date soFromDate = suborder.getFromDate();
-                                Date soUntilDate = suborder.getUntilDate();
-                                Date fromDate = ecFromDate.before(soFromDate) ? soFromDate : ecFromDate;
-
-                                // fromDate should not be before the ending of the most recent contract
-                                if (dateFrom != null && dateFrom.after(fromDate)) {
-                                    fromDate = dateFrom;
-                                }
-                                Date untilDate = null;
-
-                                if (ecUntilDate == null && soUntilDate == null) {
-                                    //untildate remains null
-                                } else if (ecUntilDate == null) {
-                                    untilDate = soUntilDate;
-                                } else if (soUntilDate == null) {
-                                    untilDate = ecUntilDate;
-                                } else if (ecUntilDate.before(soUntilDate)) {
-                                    untilDate = ecUntilDate;
-                                } else {
-                                    untilDate = soUntilDate;
-                                }
-
-                                Employeeorder employeeorder = new Employeeorder();
-
-                                java.sql.Date sqlFromDate = new java.sql.Date(fromDate.getTime());
-                                employeeorder.setFromDate(sqlFromDate);
-
-                                // untilDate should not overreach a future employee contract
-                                if (untilDate == null) {
-                                    untilDate = dateUntil;
-                                } else {
-                                    if (dateUntil != null && dateUntil.before(untilDate)) {
-                                        untilDate = dateUntil;
-                                    }
-                                }
-
-                                if (untilDate != null) {
-                                    java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
-                                    employeeorder.setUntilDate(sqlUntilDate);
-                                }
-                                if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-                                        && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                                    employeeorder.setDebithours(employeecontract
-                                            .getDailyWorkingTime()
-                                            * employeecontract
-                                            .getVacationEntitlement());
-                                    employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
-                                } else {
-                                    // not decided yet
-                                }
-                                employeeorder.setEmployeecontract(employeecontract);
-                                employeeorder.setSign(" ");
-                                employeeorder.setSuborder(suborder);
-
-                                // create tmp employee
-                                Employee tmp = new Employee();
-                                tmp.setSign(SYSTEM_SIGN);
-
-                                if (untilDate == null || !fromDate.after(untilDate)) {
-                                    employeeorderDAO.save(employeeorder, tmp);
-                                }
-
-                            }
-                        }
-                    }
+                    generateEmployeeOrders(date, employeecontract, dateString);
                 }
+                
                 if (employeecontract.getReportAcceptanceDate() == null) {
                     java.sql.Date validFromDate = employeecontract.getValidFrom();
                     employeecontract.setReportAcceptanceDate(validFromDate);
@@ -285,6 +181,116 @@ public class LoginEmployeeAction extends Action {
             return mapping.findForward("success");
         } finally {
             LOG.trace("leaving {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
+        }
+    }
+
+    private void generateEmployeeOrders(Date date, Employeecontract employeecontract, String dateString2) {
+        List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
+        if (standardSuborders != null && !standardSuborders.isEmpty()) {
+            // test if employeeorder exists
+            for (Suborder suborder : standardSuborders) {
+                List<Employeeorder> employeeorders = employeeorderDAO
+                        .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(
+                                employeecontract.getId(), suborder
+                                        .getId(), date);
+                if (employeeorders == null || employeeorders.isEmpty()) {
+
+                    // do not create an employeeorder for past years "URLAUB" !
+                    if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+                            && !dateString2.startsWith(suborder.getSign())) {
+                        continue;
+                    }
+
+                    // find latest untilDate of all employeeorders for this suborder
+                    List<Employeeorder> invalidEmployeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(
+                        employeecontract.getId(), suborder.getId());
+                    Date dateUntil = null;
+                    Date dateFrom = null;
+                    for (Employeeorder eo : invalidEmployeeorders) {
+
+                        // employeeorder starts in the future
+                        if (eo.getFromDate() != null && eo.getFromDate().after(date) 
+                            && (dateUntil == null || dateUntil.after(eo.getFromDate()))) {
+                            
+                            dateUntil = eo.getFromDate();
+                            continue;
+                        }
+
+                        // employeeorder ends in the past
+                        if (eo.getUntilDate() != null && eo.getUntilDate().before(date) 
+                            && (dateFrom == null || dateFrom.before(eo.getUntilDate()))) {
+                            
+                            dateFrom = eo.getUntilDate();
+                        }
+                    }
+
+                    // calculate time period
+                    Date ecFromDate = employeecontract.getValidFrom();
+                    Date ecUntilDate = employeecontract.getValidUntil();
+                    Date soFromDate = suborder.getFromDate();
+                    Date soUntilDate = suborder.getUntilDate();
+                    Date fromDate = ecFromDate.before(soFromDate) ? soFromDate : ecFromDate;
+
+                    // fromDate should not be before the ending of the most recent contract
+                    if (dateFrom != null && dateFrom.after(fromDate)) {
+                        fromDate = dateFrom;
+                    }
+                    Date untilDate = null;
+
+                    if (ecUntilDate == null && soUntilDate == null) {
+                        //untildate remains null
+                    } else if (ecUntilDate == null) {
+                        untilDate = soUntilDate;
+                    } else if (soUntilDate == null) {
+                        untilDate = ecUntilDate;
+                    } else if (ecUntilDate.before(soUntilDate)) {
+                        untilDate = ecUntilDate;
+                    } else {
+                        untilDate = soUntilDate;
+                    }
+
+                    Employeeorder employeeorder = new Employeeorder();
+
+                    java.sql.Date sqlFromDate = new java.sql.Date(fromDate.getTime());
+                    employeeorder.setFromDate(sqlFromDate);
+
+                    // untilDate should not overreach a future employee contract
+                    if (untilDate == null) {
+                        untilDate = dateUntil;
+                    } else {
+                        if (dateUntil != null && dateUntil.before(untilDate)) {
+                            untilDate = dateUntil;
+                        }
+                    }
+
+                    if (untilDate != null) {
+                        java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
+                        employeeorder.setUntilDate(sqlUntilDate);
+                    }
+                    if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+                            && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+                        employeeorder.setDebithours(employeecontract
+                                .getDailyWorkingTime()
+                                * employeecontract
+                                .getVacationEntitlement());
+                        employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
+                    } else {
+                        // not decided yet
+                    }
+                    employeeorder.setEmployeecontract(employeecontract);
+                    employeeorder.setSign(" ");
+                    employeeorder.setSuborder(suborder);
+
+                    // create tmp employee
+                    Employee tmp = new Employee();
+                    tmp.setSign(SYSTEM_SIGN);
+
+                    if (untilDate == null || !fromDate.after(untilDate)) {
+                        employeeorderDAO.save(employeeorder, tmp);
+                    }
+
+                }
+            }
         }
     }
 
