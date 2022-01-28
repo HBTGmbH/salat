@@ -2,14 +2,34 @@ package org.tb.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+@Slf4j
 public class SecureHashUtils {
+    
+    private static final int COMPLEXITY = 10;
+    
+    private SecureHashUtils() {}
+    
+    public static String encodePassword(String password) {
+        PasswordEncoder encoder = new BCryptPasswordEncoder(COMPLEXITY);
+        return encoder.encode(password);
+    }
+
+    public static boolean passwordMatches(String enteredPassword, String hashedPassword) {
+        PasswordEncoder encoder = new BCryptPasswordEncoder(COMPLEXITY);
+        return encoder.matches(enteredPassword, hashedPassword);
+    }
 
     /**
      * Makes a md5-hash for a given string.
      *
      * @return the md5-hash of the given string
+     * @deprecated Use {@link #encodePassword(String)} and {@link #passwordMatches(String, String)} instead
      */
+    @Deprecated
     public static String makeMD5(String text) {
         MessageDigest md;
         byte[] encryptMsg;
