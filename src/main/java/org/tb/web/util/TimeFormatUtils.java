@@ -33,7 +33,7 @@ public class TimeFormatUtils {
   }
 
   public static synchronized String timeFormatHoursAndMinutes(long hours, long minutes) {
-    return hours + ":" + timeMinutesFormat.format(minutes);
+    return hours + ":" + timeMinutesFormat.format(Math.abs(minutes));
   }
 
   public static synchronized String timeFormatMinutes(long minutes) {
