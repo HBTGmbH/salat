@@ -1,0 +1,12 @@
+name: Check Docker run
+on:
+  workflow_run:
+    workflows:
+      - Build .war and Docker container
+    types:
+      - completed
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://ghcr.io/hbtgmbh/salat:main
