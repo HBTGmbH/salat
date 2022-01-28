@@ -143,8 +143,9 @@ public class LoginEmployeeAction extends Action {
             } else {
                 request.getSession().setAttribute("employeeHasValidContract", false);
             }
-
-            // show change password site, if password equals username
+            
+            // property passwordchange is set to true if password has been reset (username and password are equal)
+            // in this case show the password change site
             if (Boolean.TRUE.equals(loginEmployee.getPasswordchange())) {
                 return mapping.findForward("password");
             }
