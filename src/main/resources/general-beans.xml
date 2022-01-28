@@ -124,7 +124,7 @@
 		<constructor-arg >
 			<list>
 				<value>th</value>
-				<value>mm</value>
+				<value>kr</value>
 			</list>
 		</constructor-arg>
 	</bean>
