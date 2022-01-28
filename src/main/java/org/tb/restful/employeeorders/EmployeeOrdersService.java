@@ -1,5 +1,7 @@
 package org.tb.restful.employeeorders;
 
+import lombok.RequiredArgsConstructor;
+import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
@@ -20,15 +22,12 @@ import java.util.Date;
 import java.util.List;
 
 @Path("/rest/employeeorders")
+@RequiredArgsConstructor
 public class EmployeeOrdersService {
 
-    private EmployeecontractDAO employeecontractDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private SuborderDAO suborderDAO;
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
+    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final SuborderDAO suborderDAO;
 
     @GET
     @Path("/validOrders")
@@ -39,8 +38,8 @@ public class EmployeeOrdersService {
 
         if (refDate == null) refDate = new Date();
 
-        Long employeeId = (Long) request.getSession().getAttribute("employeeId");
-        Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, refDate);
+        Employee employee = (Employee) request.getSession().getAttribute("loginEmployee");
+        Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employee.getId(), refDate);
         // The method getSubordersByEmployeeContractIdWithValidEmployeeOrders
         // was added to the SuborderDao class!!!
         List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(ec.getId(), refDate);
@@ -60,12 +59,5 @@ public class EmployeeOrdersService {
         return employeeorderResult;
     }
 
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
 
 }

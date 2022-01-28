@@ -128,7 +128,6 @@
 			</list>
 		</constructor-arg>
 	</bean>
-
 	<!-- other classes -->
 
 	<!-- Restful Webservices -->
@@ -138,7 +137,12 @@
 	<bean id="authenticationService" class="org.tb.restful.auth.AuthenticationService"></bean>
 	<bean id="subordersService" class="org.tb.restful.suborders.SubordersService"></bean>
 	<bean id="bookingsService" class="org.tb.restful.bookings.BookingsService"></bean>
-	<bean id="employeeOrdersService" class="org.tb.restful.employeeorders.EmployeeOrdersService"></bean>
+	<bean id="employeeService" class="org.tb.restful.employee.EmployeeService"></bean>
+	<bean id="employeeOrdersService" class="org.tb.restful.employeeorders.EmployeeOrdersService">
+		<constructor-arg index="0" ref="employeecontractDAO" />
+		<constructor-arg index="1" ref="employeeorderDAO" />
+		<constructor-arg index="2" ref="suborderDAO" />
+	</bean>
 
 	<!-- Hibernate Konfiguration -->
 	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
