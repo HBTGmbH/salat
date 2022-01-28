@@ -210,9 +210,6 @@
 			<artifactId>log4j-web</artifactId>
 			<version>2.17.1</version>
 		</dependency>
-
-		<!-- <dependency> <groupId>log4j</groupId> <artifactId>log4j</artifactId>
-			<version>1.2.17</version> </dependency> -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-email</artifactId>
@@ -249,10 +246,6 @@
 			<!-- 1.2 bei Tomcat 7 -->
 			<version>1.2</version>
 		</dependency>
-		<!-- bei Tomcat 7 weglassen -->
-		<!-- dependency> <groupId>taglibs</groupId> <artifactId>standard</artifactId>
-			<version>1.1.2</version> </dependency -->
-
 		<dependency>
 			<groupId>javax.servlet.jsp</groupId>
 			<artifactId>jsp-api</artifactId>
@@ -329,7 +322,6 @@
 			<artifactId>hibernate-validator</artifactId>
 			<version>4.1.0.Final</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
