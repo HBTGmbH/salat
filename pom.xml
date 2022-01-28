@@ -112,6 +112,17 @@
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
 			<version>3.6.10.Final</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.25</version>
 		</dependency>
 		<dependency>
 			<groupId>javassist</groupId>
@@ -237,7 +248,6 @@
 			<artifactId>jstl</artifactId>
 			<!-- 1.2 bei Tomcat 7 -->
 			<version>1.2</version>
-			<scope>provided</scope>
 		</dependency>
 		<!-- bei Tomcat 7 weglassen -->
 		<!-- dependency> <groupId>taglibs</groupId> <artifactId>standard</artifactId>
@@ -281,7 +291,7 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.10</version>
+			<version>1.7.25</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
