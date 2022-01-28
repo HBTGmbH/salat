@@ -1,28 +1,43 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.helper.AfterLogin;
-import org.tb.persistence.*;
-import org.tb.util.SecureHashUtils;
-import org.tb.web.form.LoginEmployeeForm;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.struts.action.Action;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Warning;
+import org.tb.helper.AfterLogin;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.StatusReportDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.util.SecureHashUtils;
+import org.tb.web.form.LoginEmployeeForm;
 
 /**
  * Action class for the login of an employee
  *
  * @author oda, th
  */
+@Slf4j
 public class LoginEmployeeAction extends Action {
-    private static final Logger LOG = LoggerFactory.getLogger(LoginEmployeeAction.class);
     private static final String SYSTEM_SIGN = "system";
 
     private EmployeeDAO employeeDAO;
@@ -73,7 +88,7 @@ public class LoginEmployeeAction extends Action {
 
     @Override
     public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        LOG.trace("entering {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
+        log.trace("entering {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
         try {
             LoginEmployeeForm loginEmployeeForm = (LoginEmployeeForm) form;
 
@@ -140,7 +155,7 @@ public class LoginEmployeeAction extends Action {
 
             return mapping.findForward("success");
         } finally {
-            LOG.trace("leaving {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
+            log.trace("leaving {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
         }
     }
 
