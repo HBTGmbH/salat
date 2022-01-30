@@ -146,7 +146,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
                 vacationView.addVacationMinutes(60 * tr.getDurationhours());
                 vacationView.addVacationMinutes(tr.getDurationminutes());
                 //check if current timereport would overrun vacation budget of corresponding year of suborder
-                if (vacationView.getExtended()) {
+                if (vacationView.isVacationBudgetExceeded()) {
                     request.getSession().setAttribute("vacationBudgetOverrun", true);
                     return mapping.findForward("success");
                 } else {

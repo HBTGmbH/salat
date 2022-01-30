@@ -117,7 +117,7 @@
 							<b><c:out value="${vacationentry.suborderSign}" />:</b>
 						</td>
 						<c:choose>
-							<c:when test="${vacationentry.extended}">
+							<c:when test="${vacationentry.vacationBudgetExceeded}">
 								<td align="left" class="noBborderStyle" title="<bean:message
 									key="main.welcome.vacation.title.text" />"><b><font color="red">
 										<c:out value="${vacationentry.usedVacationString}" /></font>

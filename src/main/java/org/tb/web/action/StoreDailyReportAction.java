@@ -594,7 +594,7 @@ public class StoreDailyReportAction extends DailyReportAction {
                 vacationView.addVacationMinutes(numberOfLaborDays * tr.getDurationminutes());
 
                 //check if current timereport/serial reports would overrun vacation budget of corresponding year of suborder
-                if (vacationView.getExtended()) {
+                if (vacationView.isVacationBudgetExceeded()) {
                     request.getSession().setAttribute("vacationBudgetOverrun", true);
                     return mapping.findForward("showDaily");
                 }
