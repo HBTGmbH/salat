@@ -27,14 +27,8 @@ public class Referenceday implements Serializable {
     @GeneratedValue
     private long id;
 
-    /**
-     * list of timereports, associated to this refday
-     */
-    @OneToMany
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Timereport> timereports;
     private java.sql.Date refdate;
+
     private Boolean workingday;
     /**
      * Day of week
