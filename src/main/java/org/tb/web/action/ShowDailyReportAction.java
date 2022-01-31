@@ -214,11 +214,6 @@ public class ShowDailyReportAction extends DailyReportAction {
 
         TimereportHelper th = new TimereportHelper();
         request.getSession().setAttribute("vacationBudgetOverrun", false);
-        request.getSession().removeAttribute("createWorklogFailed");
-        request.getSession().removeAttribute("updateWorklogFailed");
-        request.getSession().removeAttribute("deleteWorklogFailed");
-        request.getSession().setAttribute("createWorklogMemoryFailed", false);
-        request.getSession().setAttribute("projectIDExists", false);
         Employeecontract ec = getEmployeeContractFromRequest(request);
 
         // check if special tasks initiated from the daily display need to be carried out...

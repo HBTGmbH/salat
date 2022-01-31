@@ -8,8 +8,6 @@ DATABASE_PASSWORD
 DATABASE_HOST
 DATABASE_NAME
 SALAT_URL
-SALAT_JIRA_CONSUMER_KEY
-SALAT_JIRA_CONSUMER_PRIVATE_KEY
 SALAT_MAIL_HOST
 ```
 
@@ -21,8 +19,6 @@ DATABASE_PASSWORD=salattest
 DATABASE_HOST=localhost
 DATABASE_NAME=salat
 SALAT_URL=localhost
-SALAT_JIRA_CONSUMER_KEY=x
-SALAT_JIRA_CONSUMER_PRIVATE_KEY=x
 SALAT_MAIL_HOST=localhost
 ```
 
@@ -49,3 +45,17 @@ Start local database only, without Salat:
 ### Troubleshooting
 
 Clean rebuild of compose containers: `docker-compose build --no-cache`
+
+### DB Migrations
+drop table referenceday_timereport;
+drop table worklog;
+drop table worklogmemory;
+drop table ticket_timereport;
+alter table timereport drop foreign key FKDA2C766119CE4732;
+alter table timereport drop column TICKET_ID;
+drop table ticket;
+alter table employee drop column jira_oauthtoken;
+
+
+
+

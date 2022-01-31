@@ -56,8 +56,6 @@
 			type="org.tb.web.form.ShowSuborderForm" />
 		<form-bean name="showBudgetForm"
 			type="org.tb.web.form.ShowBudgetForm" />
-		<form-bean name="showTicketsForm"
-			type="org.tb.web.form.ShowTicketsForm" />
 		<form-bean name="addEmployeeOrderForm"
 			type="org.tb.web.form.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm"
@@ -425,14 +423,6 @@
 		<action path="/ShowBudget" name="showBudgetForm">
 			<forward name="success" path="/admin/showBudget.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
-		</action>
-		
-		<!-- Jira Tickets -->
-		<action path="/ShowTickets" input="/ShowTickets" name="showTicketsForm">
-			<forward name="success" path="/admin/showTickets.jsp" />
-			<forward name="error" path="/admin/error.jsp" />
-			<forward name="cancel" path="/showWelcome.jsp" />
-			<forward name="reset" path="/admin/showTickets.jsp" />
 		</action>
 
 		<!-- Employee -->

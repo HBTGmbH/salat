@@ -6,7 +6,6 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
-import org.tb.helper.JiraSalatHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.*;
 import org.tb.util.DateUtils;
@@ -31,7 +30,6 @@ public class CreateDailyReportAction extends DailyReportAction {
     private SuborderDAO suborderDAO;
     private TimereportDAO timereportDAO;
     private WorkingdayDAO workingdayDAO;
-    private TicketDAO ticketDAO;
 
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
@@ -51,10 +49,6 @@ public class CreateDailyReportAction extends DailyReportAction {
 
     public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
         this.workingdayDAO = workingdayDAO;
-    }
-
-    public void setTicketDAO(TicketDAO ticketDAO) {
-        this.ticketDAO = ticketDAO;
     }
 
     @Override
@@ -182,9 +176,6 @@ public class CreateDailyReportAction extends DailyReportAction {
             }
             // set isEdit = false into the session, so order/suborder menu will not be disabled
             request.getSession().setAttribute("isEdit", false);
-
-            List<ProjectID> projectIDs = customerorderDAO.getCustomerorderById(reportForm.getOrderId()).getProjectIDs();
-            request.getSession().setAttribute("projectIDExists", !projectIDs.isEmpty());
         } else {
             request.setAttribute("errorMessage", "no orders found for employee - please call system administrator."); //TODO
             return mapping.findForward("error");
@@ -201,12 +192,8 @@ public class CreateDailyReportAction extends DailyReportAction {
         Suborder so = theSuborders.get(0);
         request.getSession().setAttribute("currentSuborderId", so.getId());
 
-        JiraSalatHelper.setJiraTicketKeysForSuborder(request, ticketDAO, so.getId());
-
         // make sure, no cuId still exists in session
         request.getSession().removeAttribute("trId");
-        // make sure that no jiraTicketKey is still set in session
-        request.getSession().removeAttribute("jiraTicketKey");
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("matrix")) {
             reportForm.setReferenceday(todayString);

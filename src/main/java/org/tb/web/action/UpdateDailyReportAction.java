@@ -32,9 +32,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
     private OvertimeDAO overtimeDAO;
     private EmployeeDAO employeeDAO;
     private EmployeecontractDAO employeecontractDAO;
-    private WorklogDAO worklogDAO;
-    private ProjectIDDAO projectIDDAO;
-    private WorklogMemoryDAO worklogMemoryDAO;
 
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
@@ -74,18 +71,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
 
     public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
         this.employeeorderDAO = employeeorderDAO;
-    }
-
-    public void setWorklogDAO(WorklogDAO worklogDAO) {
-        this.worklogDAO = worklogDAO;
-    }
-
-    public void setProjectIDDAO(ProjectIDDAO projectIDDAO) {
-        this.projectIDDAO = projectIDDAO;
-    }
-
-    public void setWorklogMemoryDAO(WorklogMemoryDAO worklogMemoryDAO) {
-        this.worklogMemoryDAO = worklogMemoryDAO;
     }
 
     /* (non-Javadoc)
@@ -164,101 +149,6 @@ public class UpdateDailyReportAction extends DailyReportAction {
             boolean newTaskdescription = !previousTaskdescription.equals(tr.getTaskdescription());
             boolean newTime = tr.getDurationhours() != previousDurationhours || tr.getDurationminutes() != previousDurationminutes;
 
-
-            if (newTime || newTaskdescription) {
-                // need to check if order of timereport has a jira-project-id attached
-                if (!projectIDDAO.getProjectIDsByCustomerorderID(tr.getSuborder().getCustomerorder().getId()).isEmpty()) {
-
-
-                    String jiraAccessToken = loginEmployee.getJira_oauthtoken();
-
-                    // if JIRA is accessed for the first time or the access token is invalid
-                    if ((jiraAccessToken == null && request.getParameter("oauth_verifier") == null) ||
-                            (jiraAccessToken != null && !AtlassianOAuthClient.isValidAccessToken(jiraAccessToken))) {
-                        // STEP 1: get a request token from JIRA and redirect user to JIRA login page
-                        AtlassianOAuthClient.getRequestTokenAndSetRedirectToJira(response, GlobalConstants.SALAT_URL + "/do/UpdateDailyReport?trId=" + trId);
-                        return null;
-                    } else {
-                        AtlassianOAuthClient.setAccessToken(jiraAccessToken);
-                    }
-
-                    // STEP 2: JIRA returned a verifier code. Now swap the request token and the verifier with access token
-                    String oauthVerifier = request.getParameter("oauth_verifier");
-                    if (oauthVerifier != null) {
-                        if (oauthVerifier.equals("denied")) {
-                            addErrorAtTheBottom(request, errors, new ActionMessage("oauth.error.denied"));
-                            return mapping.getInputForward();
-                        } else {
-                            String accessToken = AtlassianOAuthClient.swapRequestTokenForAccessToken(oauthVerifier, employeeDAO, loginEmployee);
-                            if (accessToken == null) return mapping.findForward("error");
-                        }
-                    }
-
-
-                    JiraConnectionOAuthHelper jcHelper = new JiraConnectionOAuthHelper(loginEmployee.getSign());
-
-                    //need to check if worklog already exists (only applies to projects that obtained a jira-project-id after timereports have been stored)
-                    Worklog salatWorklog = worklogDAO.getWorklogByTimereportID(tr.getId());
-                    String jiraKey = tr.getTicket().getJiraTicketKey();
-                    String jiraProjectID = projectIDDAO.getProjectIDsByCustomerorderID(tr.getSuborder().getCustomerorder().getId()).get(0).getJiraProjectID();
-                    jiraKey = jiraProjectID + "-" + jiraKey;
-
-                    if (salatWorklog != null) {
-
-                        int responseUpdateWorklog = jcHelper.updateWorklog(tr, jiraKey, salatWorklog.getJiraWorklogID());
-
-                        //if Worklog not found/has been deleted - try to create a new one
-                        if (responseUpdateWorklog == 404) {
-                            int[] create_status = jcHelper.createWorklog(tr, jiraKey);
-                            if (create_status[0] != 200) {
-//    							request.getSession().setAttribute("updateWorklogFailed", create_status[0]);
-                                addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.updateerror", create_status[0]));
-                                try {
-                                    JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
-                                } catch (Exception e) {
-//    		                		request.getSession().setAttribute("createWorklogMemoryFailed", true);
-                                    addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
-                                }
-                            } else {
-                                salatWorklog.setJiraWorklogID(create_status[1]);
-                                salatWorklog.setType("updated");
-                                salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
-                            }
-                        } else if (responseUpdateWorklog != 200) {
-//    						request.getSession().setAttribute("updateWorklogFailed", responseUpdateWorklog);
-                            addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.updateerror", responseUpdateWorklog));
-                            try {
-                                JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, salatWorklog.getJiraWorklogID(), GlobalConstants.UPDATE_WORKLOG);
-                            } catch (Exception e) {
-//    	                		request.getSession().setAttribute("createWorklogMemoryFailed", true);
-                                addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
-                            }
-                        }
-
-                        salatWorklog.setType("updated");
-                        salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
-                    } else {
-                        int[] responseCreateWorklog = jcHelper.createWorklog(tr, jiraKey);
-                        if (responseCreateWorklog[0] != 200) {
-//                    		request.getSession().setAttribute("createWorklogFailed", responseCreateWorklog[0]);
-                            addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.createerror", responseCreateWorklog[0]));
-                            try {
-                                JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
-                            } catch (Exception e) {
-//    	                		request.getSession().setAttribute("createWorklogMemoryFailed", true);
-                                addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
-                            }
-                        }
-                        salatWorklog = new Worklog();
-                        salatWorklog.setJiraWorklogID(responseCreateWorklog[1]);
-                        salatWorklog.setTimereport(tr);
-                        salatWorklog.setType("created");
-                        salatWorklog.setUpdatecounter(0);
-                    }
-
-                }
-//                saveErrors(request, errors);
-            }
             TimereportHelper th = new TimereportHelper();
             if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract

@@ -55,16 +55,6 @@
         <option name="IS_PREDEFINED" value="false" />
       </EnvironmentVariables>
       <EnvironmentVariables>
-        <option name="NAME" value="SALAT_JIRA_CONSUMER_KEY" />
-        <option name="VALUE" value="test" />
-        <option name="IS_PREDEFINED" value="false" />
-      </EnvironmentVariables>
-      <EnvironmentVariables>
-        <option name="NAME" value="SALAT_JIRA_CONSUMER_PRIVATE_KEY" />
-        <option name="VALUE" value="test" />
-        <option name="IS_PREDEFINED" value="false" />
-      </EnvironmentVariables>
-      <EnvironmentVariables>
         <option name="NAME" value="SALAT_MAIL_HOST" />
         <option name="VALUE" value="mail.blabla" />
         <option name="IS_PREDEFINED" value="false" />
@@ -122,16 +112,6 @@
       <EnvironmentVariables>
         <option name="NAME" value="SALAT_URL" />
         <option name="VALUE" value="http://localhost:8080/tb" />
-        <option name="IS_PREDEFINED" value="false" />
-      </EnvironmentVariables>
-      <EnvironmentVariables>
-        <option name="NAME" value="SALAT_JIRA_CONSUMER_KEY" />
-        <option name="VALUE" value="test" />
-        <option name="IS_PREDEFINED" value="false" />
-      </EnvironmentVariables>
-      <EnvironmentVariables>
-        <option name="NAME" value="SALAT_JIRA_CONSUMER_PRIVATE_KEY" />
-        <option name="VALUE" value="test" />
         <option name="IS_PREDEFINED" value="false" />
       </EnvironmentVariables>
       <EnvironmentVariables>

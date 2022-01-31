@@ -46,14 +46,6 @@ public class Customerorder extends EditDetails implements Serializable {
     private List<Suborder> suborders;
 
     /**
-     * list of ProjectIDs, associated to this customerorder
-     */
-    @OneToMany(mappedBy = "customerorder")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<ProjectID> projectIDs;
-
-    /**
      * Responsible of Customer
      */
     private String responsible_customer_technical;

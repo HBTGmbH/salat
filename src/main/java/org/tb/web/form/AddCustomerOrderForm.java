@@ -22,7 +22,6 @@ public class AddCustomerOrderForm extends ActionForm {
 
     private long id;
     private String sign;
-    private String jiraProjectID;
     private String description;
     private String shortdescription;
     private String validFrom;
@@ -48,7 +47,6 @@ public class AddCustomerOrderForm extends ActionForm {
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         sign = "";
-        jiraProjectID = "";
         description = "";
         shortdescription = "";
         validFrom = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'

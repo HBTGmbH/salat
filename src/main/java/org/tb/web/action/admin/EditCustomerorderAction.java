@@ -6,11 +6,9 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customer;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
-import org.tb.bdom.ProjectID;
 import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
-import org.tb.persistence.ProjectIDDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.AddCustomerOrderForm;
@@ -30,7 +28,6 @@ public class EditCustomerorderAction extends LoginRequiredAction {
     private CustomerorderDAO customerorderDAO;
     private CustomerDAO customerDAO;
     private EmployeeDAO employeeDAO;
-    private ProjectIDDAO projectIDDAO;
 
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
@@ -42,10 +39,6 @@ public class EditCustomerorderAction extends LoginRequiredAction {
 
     public void setCustomerDAO(CustomerDAO customerDAO) {
         this.customerDAO = customerDAO;
-    }
-
-    public void setProjectIDDAO(ProjectIDDAO projectIDDAO) {
-        this.projectIDDAO = projectIDDAO;
     }
 
     @Override
@@ -75,16 +68,8 @@ public class EditCustomerorderAction extends LoginRequiredAction {
         List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithContracts();
         request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
 
-        String jiraProjectID = "";
-        List<ProjectID> pIDs = projectIDDAO.getProjectIDsByCustomerorderID(co.getId());
-        // at the moment, the above List should contain only one or no entry.        
-        // when adding support for multiple Jira-Project-IDs for each customerorder, the following lines will need adjustment!
-        if (!pIDs.isEmpty()) {
-            jiraProjectID = pIDs.get(0).getJiraProjectID();
-        }
-
         // fill the form with properties of customerorder to be edited
-        setFormEntries(request, coForm, co, jiraProjectID);
+        setFormEntries(request, coForm, co);
 
         // forward to customer order add/edit form
         return mapping.findForward("success");
@@ -93,19 +78,12 @@ public class EditCustomerorderAction extends LoginRequiredAction {
     /**
      * fills customer order form with properties of given cústomer
      */
-    private void setFormEntries(HttpServletRequest request, AddCustomerOrderForm coForm, Customerorder co, String jiraProjectID) {
+    private void setFormEntries(HttpServletRequest request, AddCustomerOrderForm coForm, Customerorder co) {
 
         coForm.setCurrency(co.getCurrency());
         coForm.setCustomerId(co.getCustomer().getId());
         coForm.setHourlyRate(co.getHourly_rate());
         coForm.setOrderCustomer(co.getOrder_customer());
-        coForm.setJiraProjectID(jiraProjectID);
-
-        if (!jiraProjectID.equals("")) {
-            request.getSession().setAttribute("projectIDExistsCustomerOrder", true);
-        } else {
-            request.getSession().setAttribute("projectIDExistsCustomerOrder", false);
-        }
 
         coForm.setResponsibleCustomerContractually(co.getResponsible_customer_contractually());
         coForm.setResponsibleCustomerTechnical(co.getResponsible_customer_technical());

@@ -902,7 +902,6 @@
 				<html:errors property="selectedHourEnd" footer="<br>" /> 
 				<html:errors property="costs" footer="<br>" />
 				<html:errors property="status" footer="<br>" />
-				<html:errors property="createWorklogFailed" footer="<br>" />
 				<br>
 				<html:errors property="comment" footer="<br>" />
 			</b>
