@@ -4,9 +4,7 @@ import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.tb.bdom.CustomerOrderViewDecorator;
 import org.tb.bdom.Customerorder;
-import org.tb.bdom.ProjectID;
 import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.ProjectIDDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.ShowCustomerOrderForm;
@@ -25,7 +23,6 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
 
     private CustomerorderDAO customerorderDAO;
     private TimereportDAO timereportDAO;
-    private ProjectIDDAO projectIDDAO;
 
     public void setTimereportDAO(TimereportDAO timereportDAO) {
         this.timereportDAO = timereportDAO;
@@ -33,10 +30,6 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
 
     public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
         this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setProjectIDDAO(ProjectIDDAO projectIDDAO) {
-        this.projectIDDAO = projectIDDAO;
     }
 
     @Override
@@ -55,12 +48,6 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
         }
 
         ShowCustomerOrderForm orderForm = (ShowCustomerOrderForm) form;
-
-        // before deleting the customerorder, delete all ProjectIDs that contain this customerorder
-        List<ProjectID> pIDs = projectIDDAO.getProjectIDsByCustomerorderID(co.getId());
-        for (ProjectID pID : pIDs) {
-            projectIDDAO.deleteProjectID(pID);
-        }
 
         boolean deleted = customerorderDAO.deleteCustomerorderById(coId);
 

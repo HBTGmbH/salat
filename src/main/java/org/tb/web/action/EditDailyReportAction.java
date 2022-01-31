@@ -5,7 +5,6 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
-import org.tb.helper.JiraSalatHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.*;
 import org.tb.util.DateUtils;
@@ -30,7 +29,6 @@ public class EditDailyReportAction extends DailyReportAction {
     private SuborderDAO suborderDAO;
     private EmployeecontractDAO employeecontractDAO;
     private WorkingdayDAO workingdayDAO;
-    private TicketDAO ticketDAO;
 
     public TimereportDAO getTimereportDAO() {
         return timereportDAO;
@@ -56,10 +54,6 @@ public class EditDailyReportAction extends DailyReportAction {
         this.workingdayDAO = workingdayDAO;
     }
 
-    public void setTicketDAO(TicketDAO ticketDAO) {
-        this.ticketDAO = ticketDAO;
-    }
-
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 
@@ -77,9 +71,6 @@ public class EditDailyReportAction extends DailyReportAction {
                 || request.getSession().getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
             request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
         }
-
-        // adjust the jsp with entries for Jira-Ticket-Keys, if a timereport for a customerorder with Jira-Project-ID is edited 
-        JiraSalatHelper.setJiraTicketKeysForSuborder(request, ticketDAO, tr.getSuborder().getId());
 
         // fill the form with properties of the timereport to be edited
         setFormEntries(mapping, request, reportForm, tr);
@@ -128,9 +119,6 @@ public class EditDailyReportAction extends DailyReportAction {
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
-
-        // set isEdit into the Session, so that the order/suborder menu will be disabled if a timereport for a customerorder with Jira-Project-ID is edited
-        request.getSession().setAttribute("isEdit", false);
 
         /* set hours list in session in case of that the dialog is triggered from the welcome page */
         request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
@@ -198,12 +186,6 @@ public class EditDailyReportAction extends DailyReportAction {
         }
         reportForm.setComment(tr.getTaskdescription());
         reportForm.setTraining(tr.getTraining());
-        if (tr.getTicket() != null) {
-            request.getSession().setAttribute("projectIDExists", true);
-            request.getSession().setAttribute("isEdit", true);
-            reportForm.setJiraTicketKey(tr.getTicket().getJiraTicketKey());
-            request.getSession().setAttribute("jiraTicketKey", reportForm.getJiraTicketKey());
-        }
     }
 
     @Override

@@ -44,7 +44,6 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
         // form presettings
         Long customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
-        request.getSession().setAttribute("projectIDExistsCustomerOrder", false);
         AddCustomerOrderForm addForm = (AddCustomerOrderForm) form;
 
         if (customerId == null) {

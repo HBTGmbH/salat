@@ -34,14 +34,6 @@ public class Suborder extends EditDetails implements Serializable {
     private Customerorder customerorder;
 
     /**
-     * list of Tickets, associated to this suborder
-     */
-    @OneToMany(mappedBy = "suborder")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Ticket> tickets;
-
-    /**
      * list of timereports, associated to this suborder
      */
     @OneToMany(mappedBy = "suborder")

@@ -5,7 +5,6 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.persistence.TicketDAO;
 import org.tb.web.form.AddDailyReportForm;
 import org.tb.web.form.ShowDailyReportForm;
 
@@ -26,7 +25,7 @@ public class SuborderHelper {
      * refreshes suborder list after change of customer order in the 'add timereport' view
      */
     public boolean refreshSuborders(HttpServletRequest request, AddDailyReportForm reportForm,
-                                    SuborderDAO sd, TicketDAO td, EmployeecontractDAO ecd, String defaultSuborderIndexStr) {
+                                    SuborderDAO sd, EmployeecontractDAO ecd, String defaultSuborderIndexStr) {
 
         Employeecontract ec = ecd.getEmployeeContractById(reportForm.getEmployeeContractId());
 
@@ -62,7 +61,6 @@ public class SuborderHelper {
         so = so != null ? so : theSuborders.get(0);
         if (so != null) {
             assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
-            JiraSalatHelper.setJiraTicketKeysForSuborder(request, td, so.getId());
         }
 
         return true;

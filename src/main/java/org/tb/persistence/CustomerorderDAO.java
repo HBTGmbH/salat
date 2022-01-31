@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
-import org.tb.bdom.ProjectID;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.comparators.CustomerOrderComparator;
 
@@ -24,13 +23,11 @@ import java.util.Map.Entry;
 public class CustomerorderDAO extends AbstractDAO {
 
     private final SuborderDAO suborderDAO;
-    private final ProjectIDDAO projectIDDAO;
 
     @Autowired
-    public CustomerorderDAO(SessionFactory sessionFactory, SuborderDAO suborderDAO, ProjectIDDAO projectIDDAO) {
+    public CustomerorderDAO(SessionFactory sessionFactory, SuborderDAO suborderDAO) {
         super(sessionFactory);
         this.suborderDAO = suborderDAO;
-        this.projectIDDAO = projectIDDAO;
     }
 
     /**
@@ -249,12 +246,6 @@ public class CustomerorderDAO extends AbstractDAO {
                     if (so.getCustomerorder().getId() == coId) {
                         return false;
                     }
-                }
-
-                // check if related ProjectIDs exist - if so, no deletion possible
-                List<ProjectID> projectIDs = projectIDDAO.getProjectIDsByCustomerorderID(coId);
-                if (!projectIDs.isEmpty()) {
-                    return false;
                 }
 
                 Session session = getSession();

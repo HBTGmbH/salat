@@ -1,6 +1,7 @@
 package org.tb.persistence;
 
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -311,21 +312,16 @@ public class SuborderDAO extends AbstractDAO {
             return false;
         }
 
-        // check if related timereports, employee orders, suborders or tickets exist - if so, no deletion possible
+        // check if related timereports, employee orders, suborders exist - if so, no deletion possible
         if (soToDelete.getEmployeeorders() != null && !soToDelete.getEmployeeorders().isEmpty()) return false;
 
         if (soToDelete.getTimereports() != null && !soToDelete.getTimereports().isEmpty()) return false;
 
         if (soToDelete.getSuborders() != null && !soToDelete.getSuborders().isEmpty()) return false;
 
-        if (soToDelete.getTickets() != null && !soToDelete.getTickets().isEmpty()) return false;
-
         Session session = getSession();
         session.delete(soToDelete);
-        try {
-            session.flush();
-        } catch (Throwable th) {
-        }
+        session.flush();
         LOG.debug("SuborderDAO.deleteSuborderById - deleted object {} and flushed!", soToDelete);
         return true;
     }

@@ -116,7 +116,6 @@ CREATE TABLE `employee` (
   `createdby` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `firstname` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `gender` char(1) COLLATE utf8_bin NOT NULL,
-  `jira_oauthtoken` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `lastname` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `lastupdate` datetime DEFAULT NULL,
   `lastupdatedby` varchar(255) COLLATE utf8_bin DEFAULT NULL,
@@ -136,7 +135,7 @@ CREATE TABLE `employee` (
 
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
-INSERT INTO `employee` VALUES (1680,'2006-12-27 13:24:28','adm','salat','m',NULL,'admin','2019-09-11 04:47:09','adm','admin','21232f297a57a5a743894a0e4a801fc3','\0','adm','adm',151),(178367,'2019-09-11 04:43:54','adm','Bossy','f',NULL,'Bossmann','2019-09-11 04:58:16','bm','bm','126cfbcd4d16ae6d25c9bfcae76d8ee4','\0','bm','adm',5),(178368,'2019-09-11 04:48:00','bm','Testy','m',NULL,'Testmann','2019-09-11 04:57:39','tt','tt','126cfbcd4d16ae6d25c9bfcae76d8ee4','\0','tt','ma',2);
+INSERT INTO `employee` VALUES (1680,'2006-12-27 13:24:28','adm','salat','m','admin','2019-09-11 04:47:09','adm','admin','21232f297a57a5a743894a0e4a801fc3','\0','adm','adm',151),(178367,'2019-09-11 04:43:54','adm','Bossy','f','Bossmann','2019-09-11 04:58:16','bm','bm','126cfbcd4d16ae6d25c9bfcae76d8ee4','\0','bm','adm',5),(178368,'2019-09-11 04:48:00','bm','Testy','m','Testmann','2019-09-11 04:57:39','tt','tt','126cfbcd4d16ae6d25c9bfcae76d8ee4','\0','tt','ma',2);
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -369,32 +368,6 @@ INSERT INTO `overtime` VALUES (180259,'initial overtime','2019-09-11 04:47:04','
 UNLOCK TABLES;
 
 --
--- Table structure for table `projectid`
---
-
-DROP TABLE IF EXISTS `projectid`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `projectid` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `jira_Project_ID` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  `CUSTOMERORDER_ID` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK421C11D442103BC2` (`CUSTOMERORDER_ID`),
-  CONSTRAINT `FK421C11D442103BC2` FOREIGN KEY (`CUSTOMERORDER_ID`) REFERENCES `customerorder` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `projectid`
---
-
-LOCK TABLES `projectid` WRITE;
-/*!40000 ALTER TABLE `projectid` DISABLE KEYS */;
-/*!40000 ALTER TABLE `projectid` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `publicholiday`
 --
 
@@ -445,32 +418,6 @@ LOCK TABLES `referenceday` WRITE;
 /*!40000 ALTER TABLE `referenceday` DISABLE KEYS */;
 INSERT INTO `referenceday` VALUES (181025,'Wed','\0','','2019-09-11',''),(181026,'Thu','\0','','2019-09-12',''),(181027,'Fri','\0','','2019-09-13',''),(181028,'Mon','\0','','2019-09-16',''),(181029,'Tue','\0','','2019-09-17',''),(181030,'Wed','\0','','2019-09-18','');
 /*!40000 ALTER TABLE `referenceday` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `referenceday_timereport`
---
-
-DROP TABLE IF EXISTS `referenceday_timereport`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `referenceday_timereport` (
-  `Referenceday_id` bigint(20) NOT NULL,
-  `timereports_id` bigint(20) NOT NULL,
-  KEY `FK122026CFEC9FF712` (`Referenceday_id`),
-  KEY `FK122026CF23CBE961` (`timereports_id`),
-  CONSTRAINT `FK122026CF23CBE961` FOREIGN KEY (`timereports_id`) REFERENCES `timereport` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `FK122026CFEC9FF712` FOREIGN KEY (`Referenceday_id`) REFERENCES `referenceday` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `referenceday_timereport`
---
-
-LOCK TABLES `referenceday_timereport` WRITE;
-/*!40000 ALTER TABLE `referenceday_timereport` DISABLE KEYS */;
-/*!40000 ALTER TABLE `referenceday_timereport` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -611,60 +558,6 @@ INSERT INTO `suborder` VALUES (5861,'\0','2006-12-22 14:14:18','adm','EUR',NULL,
 UNLOCK TABLES;
 
 --
--- Table structure for table `ticket`
---
-
-DROP TABLE IF EXISTS `ticket`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ticket` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `fromDate` date DEFAULT NULL,
-  `jira_Ticket_Key` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  `untilDate` date DEFAULT NULL,
-  `SUBORDER_ID` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK954D572C6F5511F2` (`SUBORDER_ID`),
-  CONSTRAINT `FK954D572C6F5511F2` FOREIGN KEY (`SUBORDER_ID`) REFERENCES `suborder` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `ticket`
---
-
-LOCK TABLES `ticket` WRITE;
-/*!40000 ALTER TABLE `ticket` DISABLE KEYS */;
-/*!40000 ALTER TABLE `ticket` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `ticket_timereport`
---
-
-DROP TABLE IF EXISTS `ticket_timereport`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ticket_timereport` (
-  `Ticket_id` bigint(20) NOT NULL,
-  `timereports_id` bigint(20) NOT NULL,
-  KEY `FKD559815419CE4732` (`Ticket_id`),
-  KEY `FKD559815423CBE961` (`timereports_id`),
-  CONSTRAINT `FKD559815419CE4732` FOREIGN KEY (`Ticket_id`) REFERENCES `ticket` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `FKD559815423CBE961` FOREIGN KEY (`timereports_id`) REFERENCES `timereport` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `ticket_timereport`
---
-
-LOCK TABLES `ticket_timereport` WRITE;
-/*!40000 ALTER TABLE `ticket_timereport` DISABLE KEYS */;
-/*!40000 ALTER TABLE `ticket_timereport` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `timereport`
 --
 
@@ -694,14 +587,11 @@ CREATE TABLE `timereport` (
   `EMPLOYEEORDER_ID` bigint(20) DEFAULT NULL,
   `REFERENCEDAY_ID` bigint(20) DEFAULT NULL,
   `SUBORDER_ID` bigint(20) DEFAULT NULL,
-  `TICKET_ID` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FKDA2C7661789484B2` (`EMPLOYEECONTRACT_ID`),
   KEY `FKDA2C76616F5511F2` (`SUBORDER_ID`),
-  KEY `FKDA2C766119CE4732` (`TICKET_ID`),
   KEY `FKDA2C766196C42DC2` (`EMPLOYEEORDER_ID`),
   KEY `FKDA2C7661EC9FF712` (`REFERENCEDAY_ID`),
-  CONSTRAINT `FKDA2C766119CE4732` FOREIGN KEY (`TICKET_ID`) REFERENCES `ticket` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FKDA2C76616F5511F2` FOREIGN KEY (`SUBORDER_ID`) REFERENCES `suborder` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FKDA2C7661789484B2` FOREIGN KEY (`EMPLOYEECONTRACT_ID`) REFERENCES `employeecontract` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FKDA2C766196C42DC2` FOREIGN KEY (`EMPLOYEEORDER_ID`) REFERENCES `employeeorder` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -715,7 +605,7 @@ CREATE TABLE `timereport` (
 
 LOCK TABLES `timereport` WRITE;
 /*!40000 ALTER TABLE `timereport` DISABLE KEYS */;
-INSERT INTO `timereport` VALUES (214169,NULL,NULL,0,'2019-09-11 04:55:58','tt',8,0,NULL,NULL,NULL,NULL,1,'W','open','Nichts gemacht','\0',NULL,180662,183209,181025,180692,NULL),(214170,NULL,NULL,0,'2019-09-11 04:57:03','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181026,180692,NULL),(214171,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181027,180692,NULL),(214172,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181028,180692,NULL),(214173,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181029,180692,NULL),(214174,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181030,180692,NULL);
+INSERT INTO `timereport` VALUES (214169,NULL,NULL,0,'2019-09-11 04:55:58','tt',8,0,NULL,NULL,NULL,NULL,1,'W','open','Nichts gemacht','\0',NULL,180662,183209,181025,180692),(214170,NULL,NULL,0,'2019-09-11 04:57:03','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181026,180692),(214171,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181027,180692),(214172,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181028,180692),(214173,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181029,180692),(214174,NULL,NULL,0,'2019-09-11 04:57:04','tt',8,0,NULL,NULL,NULL,NULL,0,'W','open','Einfach nur rumgesessen','\0',NULL,180662,183209,181030,180692);
 /*!40000 ALTER TABLE `timereport` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -778,62 +668,6 @@ LOCK TABLES `workingday` WRITE;
 /*!40000 ALTER TABLE `workingday` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Table structure for table `worklog`
---
-
-DROP TABLE IF EXISTS `worklog`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `worklog` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `jira_Ticket_Key` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  `jira_Worklog_ID` int(11) DEFAULT NULL,
-  `type` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  `updatecounter` int(11) DEFAULT NULL,
-  `TIMEREPORT_ID` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKBE20CE736C0AC312` (`TIMEREPORT_ID`),
-  CONSTRAINT `FKBE20CE736C0AC312` FOREIGN KEY (`TIMEREPORT_ID`) REFERENCES `timereport` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `worklog`
---
-
-LOCK TABLES `worklog` WRITE;
-/*!40000 ALTER TABLE `worklog` DISABLE KEYS */;
-/*!40000 ALTER TABLE `worklog` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `worklogmemory`
---
-
-DROP TABLE IF EXISTS `worklogmemory`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `worklogmemory` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `issue_ID` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  `operation` int(11) DEFAULT NULL,
-  `worklog_ID` int(11) DEFAULT NULL,
-  `TIMEREPORT_ID` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK366295546C0AC312` (`TIMEREPORT_ID`),
-  CONSTRAINT `FK366295546C0AC312` FOREIGN KEY (`TIMEREPORT_ID`) REFERENCES `timereport` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `worklogmemory`
---
-
-LOCK TABLES `worklogmemory` WRITE;
-/*!40000 ALTER TABLE `worklogmemory` DISABLE KEYS */;
-/*!40000 ALTER TABLE `worklogmemory` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

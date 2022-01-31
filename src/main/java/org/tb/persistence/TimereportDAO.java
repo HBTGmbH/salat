@@ -545,12 +545,6 @@ public class TimereportDAO extends AbstractDAO {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByTicketID(long ticketID) {
-        return getSession().createQuery("from Timereport t where t.ticket.id = ?")
-                .setLong(0, ticketID).list();
-    }
-
     /**
      * Calls {@link TimereportDAO#save(Timereport, Employee, boolean)} with {@link Employee} = null.
      */

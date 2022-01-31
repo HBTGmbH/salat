@@ -28,7 +28,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 
     private CustomerDAO customerDAO;
     private SuborderDAO suborderDAO;
-    private ProjectIDDAO projectIDDAO;
     private TimereportDAO timereportDAO;
     private CustomerorderDAO customerorderDAO;
 
@@ -60,10 +59,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
         this.customerDAO = customerDAO;
     }
 
-    public void setProjectIDDAO(ProjectIDDAO projectIDDAO) {
-        this.projectIDDAO = projectIDDAO;
-    }
-
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
     }
@@ -76,7 +71,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 
         /* remove list with timereports out of range */
         request.getSession().removeAttribute("timereportsOutOfRange");
-        ProjectID pID = null;
 
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
@@ -242,17 +236,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
             co.setStatusreport(coForm.getStatusreport());
             co.setHide(coForm.getHide());
 
-            /* if Jira-project-ID is given, check if a projectID-entity with the given jiraProjectID and customerorderID already exists. If not, create one*/
-            if (coForm.getJiraProjectID() != null && coForm.getJiraProjectID().length() > 0) {
-                pID = projectIDDAO.getProjectIDByJiraAndCustomerorderID(coForm.getJiraProjectID(), co.getId());
-                if (pID == null) {
-                    pID = new ProjectID();
-                    pID.setCustomerorder(co);
-                    pID.setJiraProjectID(coForm.getJiraProjectID());
-                    projectIDDAO.save(pID);
-                }
-            }
-
             customerorderDAO.save(co, loginEmployee);
 
             request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
@@ -260,45 +243,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 
             boolean addMoreOrders = Boolean.parseBoolean(request.getParameter("continue"));
             if (!addMoreOrders) {
-
-                //check if a dummy-suborder for the jira-project has already been created. if not create it.
-                if (projectIDDAO.getProjectIDsByCustomerorderID(co.getId()).size() > 0) {
-                    boolean dummyExists = false;
-                    for (Suborder so : Objects.requireNonNull(suborders)) {
-                        if (so.getSign().equals(co.getSign().concat(GlobalConstants.SUBORDER_DUMMY))) {
-                            dummyExists = true;
-                            break;
-                        }
-                    }
-                    if (!dummyExists) {
-                        Suborder dummySo = new Suborder();
-                        dummySo.setCurrency(GlobalConstants.DEFAULT_CURRENCY);
-                        dummySo.setCustomerorder(co);
-                        dummySo.setDescription(GlobalConstants.SUBORDER_DUMMY_DESCRIPTION);
-                        dummySo.setFromDate(co.getFromDate());
-                        dummySo.setHourly_rate(0.0);
-                        dummySo.setUntilDate(co.getUntilDate());
-                        dummySo.setShortdescription(GlobalConstants.SUBORDER_DUMMY_SHORTDESCRIPTION);
-                        dummySo.setSign(co.getSign().concat(GlobalConstants.SUBORDER_DUMMY));
-                        dummySo.setSuborder_customer("");
-                        dummySo.setInvoice('J');
-                        dummySo.setStandard(false);
-                        dummySo.setCommentnecessary(false);
-                        dummySo.setFixedPrice(false);
-                        dummySo.setTrainingFlag(false);
-                        dummySo.setDebithours(null);
-                        dummySo.setDebithoursunit(null);
-                        dummySo.setHide(false);
-                        dummySo.setNoEmployeeOrderContent(true);
-                        suborderDAO.save(dummySo, loginEmployee);
-                        //after saving the dummy-suborder, forward to generateMultipleEmloyeeorders.jsp
-                        request.getSession().setAttribute("oId", co.getId());
-                        request.getSession().setAttribute("soId", dummySo.getId());
-
-                        initializeMultipleEmployeeOrders(loginEmployee, request, co.getId(), dummySo.getId());
-                        return mapping.findForward("dummy");
-                    }
-                }
 
                 String filter = null;
                 Boolean show = null;
@@ -435,9 +379,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
         }
         if (coForm.getSign().length() <= 0) {
             errors.add("sign", new ActionMessage("form.customerorder.error.sign.required"));
-        }
-        if (coForm.getJiraProjectID().length() > GlobalConstants.CUSTOMERORDER_JIRA_MAX_LENGTH) {
-            errors.add("jiraProjectID", new ActionMessage("form.customerorder.error.jiraProjectID.toolong"));
         }
         if (coForm.getDescription().length() > GlobalConstants.CUSTOMERORDER_DESCRIPTION_MAX_LENGTH) {
             errors.add("description", new ActionMessage("form.customerorder.error.description.toolong"));

@@ -15,28 +15,8 @@
 
 	<context:component-scan base-package="org.tb.persistence"/>
 
-    <bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-	    <property name="sessionFactory" ref="sessionFactory"/>
-    </bean>
-
-	<!-- Set a TimerTask Using JDK Timer support -->
- 	<bean id="executeFailedWorklogsTask" class="org.tb.tasks.ExecuteFailedWorklogsTask" />
-
- 	<bean id="executeFailedWorklogsScheduledTask" class="org.tb.tasks.ExecuteFailedWorklogsScheduledTimerTask">
-	    <property name="runnable" ref="executeFailedWorklogsTaskInvoker" />
-	</bean>
-
-	<bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
-	    <property name="scheduledTimerTasks">
-	        <list>
-	            <ref bean="executeFailedWorklogsScheduledTask" />
-	        </list>
-	    </property>
-	</bean>
-
-	<bean id="executeFailedWorklogsTaskInvoker" class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean">
-	    <property name="targetObject" ref ="executeFailedWorklogsTask" />
-	    <property name="targetMethod" value="run" />
+	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"/>
 	</bean>
 
 	<!-- Struts User Actions -->
@@ -73,8 +53,6 @@
 	<bean name="/EditSuborder" class="org.tb.web.action.admin.EditSuborderAction" />
 	<bean name="/ShowSuborder" class="org.tb.web.action.admin.ShowSuborderAction" />
 	<bean name="/StoreSuborder" class="org.tb.web.action.admin.StoreSuborderAction" />
-
-	<bean name="/ShowTickets" class="org.tb.web.action.admin.ShowTicketsAction" />
 
 	<bean name="/ShowBudget" class="org.tb.web.action.admin.ShowBudgetAction" />
 

@@ -205,16 +205,6 @@
 						<td class="info" colspan="3"><c:out
 							value="${customerorder.sign}" /></td>
 					</tr>
-					<tr>						
-						<td class="info"><bean:message
-							key="main.customerorder.jiraIDs.text"/>:</td>
-						<td class="info" colspan="3">
-							<c:forEach var="projectID" items="${customerorder.projectIDs}">
-							<c:out value="${projectID.jiraProjectID}"/>&nbsp;</c:forEach>
-						</td>
-					</tr> 
- 
-					
 					<tr>
 						<td class="info">&nbsp;</td>
 						<td class="info" colspan="3"><c:out

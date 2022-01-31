@@ -1,5 +1,6 @@
 package org.tb.web.action;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.tb.GlobalConstants;
@@ -29,6 +30,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Slf4j
 public class StoreDailyReportAction extends DailyReportAction {
 
     private EmployeecontractDAO employeecontractDAO;
@@ -41,13 +43,9 @@ public class StoreDailyReportAction extends DailyReportAction {
     private EmployeeDAO employeeDAO;
     private EmployeeorderDAO employeeorderDAO;
     private OvertimeDAO overtimeDAO;
-    private TicketDAO ticketDAO;
-    private WorklogDAO worklogDAO;
-    private WorklogMemoryDAO worklogMemoryDAO;
 
     private SuborderHelper soHelper;
     private CustomerorderHelper coHelper;
-    private JiraConnectionOAuthHelper jcHelper;
 
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
@@ -93,21 +91,23 @@ public class StoreDailyReportAction extends DailyReportAction {
         this.workingdayDAO = workingdayDAO;
     }
 
-    public void setTicketDAO(TicketDAO ticketDAO) {
-        this.ticketDAO = ticketDAO;
-    }
-
-    public void setWorklogDAO(WorklogDAO worklogDAO) {
-        this.worklogDAO = worklogDAO;
-    }
-
-    public void setWorklogMemoryDAO(WorklogMemoryDAO worklogMemoryDAO) {
-        this.worklogMemoryDAO = worklogMemoryDAO;
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        AddDailyReportForm dailyReportForm = (AddDailyReportForm) form;
+        log.info("Task: {}", request.getParameter("task"));
+        log.info("Employeecontract.Id: {}", dailyReportForm.getEmployeeContractId());
+        log.info("Referenceday: {}", dailyReportForm.getReferenceday());
+        log.info("SetDate.howMuch: {}", request.getParameter("howMuch"));
+        log.info("NumberOfSerialDays: {}", dailyReportForm.getNumberOfSerialDays());
+        log.info("Customerorder.Id: {}", dailyReportForm.getOrderId());
+        log.info("Suborder.Id: {}", dailyReportForm.getSuborderSignId());
+        log.info("Begin: {}:{}", dailyReportForm.getSelectedHourBegin(), dailyReportForm.getSelectedMinuteBegin());
+        log.info("End: {}:{}", dailyReportForm.getSelectedHourEnd(), dailyReportForm.getSelectedMinuteEnd());
+        log.info("Duration: {}:{}", dailyReportForm.getSelectedHourDuration(), dailyReportForm.getSelectedMinuteDuration());
+        log.info("Costs: {}", dailyReportForm.getCosts());
+        log.info("Training: {}", dailyReportForm.getTraining());
+        log.info("Comment: {}", dailyReportForm.getComment());
 
         Employeecontract employeeContract = null;
         if ((employeeContract = getEmployeeContractAndSetSessionVars(mapping, request)) == null) {
@@ -117,28 +117,14 @@ public class StoreDailyReportAction extends DailyReportAction {
 
         soHelper = new SuborderHelper();
         coHelper = new CustomerorderHelper();
-        jcHelper = new JiraConnectionOAuthHelper(employeeContract.getEmployee().getSign());
 
         // check if special tasks initiated from the form or the daily display need to be carried out...
         AddDailyReportForm reportForm = (AddDailyReportForm) form;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         boolean refreshTime = false;
-        Ticket previousTicket = null;
         int previousDurationhours = reportForm.getSelectedHourDuration();
         int previousDurationminutes = reportForm.getSelectedMinuteDuration();
         String previousComment = reportForm.getComment();
-
-
-        List<ProjectID> projectIDs = customerorderDAO.getCustomerorderById(reportForm.getOrderId()).getProjectIDs();
-        request.getSession().setAttribute("projectIDExists", !projectIDs.isEmpty());
-
-        String oauthVerifier1 = request.getParameter("oauth_verifier");
-        if (oauthVerifier1 == null) {
-
-            // if jira-Ticket-Key has been selected or entered, keep it selected even if changes are made on other parts of the site ("refresh...")
-            request.getSession().setAttribute("jiraTicketKey", reportForm.getJiraTicketKey());
-            request.getSession().setAttribute("newJiraTicketKey", reportForm.getNewJiraTicketKey());
-        }
 
         // task for setting the date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
@@ -175,7 +161,6 @@ public class StoreDailyReportAction extends DailyReportAction {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshOrders")) {
-            // adjust the jsp with entries for Jira-Ticket-Keys, if the first customerorder in the dropdown-menu has Jira-Project-ID(s)
             if (coHelper.refreshOrders(request, reportForm, customerorderDAO, employeecontractDAO, suborderDAO) != true) {
                 return mapping.findForward("error");
             } else {
@@ -191,7 +176,7 @@ public class StoreDailyReportAction extends DailyReportAction {
             } else {
                 defaultSuborderIndexStr = null;
             }
-            if (soHelper.refreshSuborders(request, reportForm, suborderDAO, ticketDAO, employeecontractDAO, defaultSuborderIndexStr) != true) {
+            if (soHelper.refreshSuborders(request, reportForm, suborderDAO, employeecontractDAO, defaultSuborderIndexStr) != true) {
                 return mapping.findForward("error");
             } else {
                 Customerorder selectedOrder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
@@ -358,25 +343,18 @@ public class StoreDailyReportAction extends DailyReportAction {
             if (request.getSession().getAttribute("trId") != null) {
                 trId = Long.parseLong(request.getSession().getAttribute("trId").toString());
                 tr = timereportDAO.getTimereportById(trId);
-                previousTicket = tr.getTicket();
                 previousDurationhours = tr.getDurationhours();
                 previousDurationminutes = tr.getDurationminutes();
             } else if (request.getParameter("trId") != null) {
                 // edited report from daily overview
                 trId = Long.parseLong(request.getParameter("trId"));
                 tr = timereportDAO.getTimereportById(trId);
-                previousTicket = tr.getTicket();
                 previousDurationhours = tr.getDurationhours();
                 previousDurationminutes = tr.getDurationminutes();
             } else {
                 // new report
                 tr = new Timereport();
                 tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
-            }
-
-            //TODO: kann warscheinlich nach oben in selben if statement
-            if (oauthVerifier1 != null) {
-                restoreFormData(request, reportForm);
             }
 
             ActionMessages errors = getErrors(request);
@@ -392,90 +370,6 @@ public class StoreDailyReportAction extends DailyReportAction {
             tr.setTaskdescription(reportForm.getComment());
             tr.setEmployeecontract(employeecontract);
             tr.setTraining(reportForm.getTraining());
-
-            // TICKET-Functionality
-            // check if chosen order has at least one ProjectID - otherwise, no ticket functionality is needed
-            if ((Boolean) request.getSession().getAttribute("projectIDExists")) {
-
-                String jiraAccessToken = employeeContract.getEmployee().getJira_oauthtoken();
-
-                // if JIRA is accessed for the first time or the access token is invalid
-                if ((jiraAccessToken == null && request.getParameter("oauth_verifier") == null) ||
-                        (jiraAccessToken != null && AtlassianOAuthClient.isValidAccessToken(jiraAccessToken) == false)) {
-
-                    saveStaticFormDataToSession(request, reportForm);
-
-                    // STEP 1: get a request token from JIRA and redirect user to JIRA login page
-                    AtlassianOAuthClient.getRequestTokenAndSetRedirectToJira(response, GlobalConstants.SALAT_URL + "do/StoreDailyReport?task=save");
-                    return null;
-                } else {
-                    AtlassianOAuthClient.setAccessToken(jiraAccessToken);
-                }
-
-                // STEP 2: JIRA returned a verifier code. Now swap the request token and the verifier with access token
-                String oauthVerifier = request.getParameter("oauth_verifier");
-                if (oauthVerifier != null) {
-                    if (oauthVerifier.equals("denied")) {
-                        addErrorAtTheBottom(request, errors, new ActionMessage("oauth.error.denied"));
-                        return mapping.getInputForward();
-                    } else {
-                        String accessToken = AtlassianOAuthClient.swapRequestTokenForAccessToken(oauthVerifier, employeeDAO, employeeContract.getEmployee());
-                        if (accessToken == null) return mapping.findForward("error");
-                    }
-                }
-
-                //if new Jira-Ticket-Key has been entered, check if it really is not known in Salat yet (for this Order). If so, create an instance of Ticket for it. 
-                if (reportForm.getNewJiraTicketKey() != null && !reportForm.getNewJiraTicketKey().equals("")) {
-
-                    List<Ticket> knownTickets = ticketDAO.getTicketsByCustomerorderID(reportForm.getOrderId());
-                    boolean newTicketKnownForSuborder = false;
-
-                    for (Ticket t : knownTickets) {
-                        if (t.getSuborder().getId() == reportForm.getSuborderSignId()) {
-                            if (t.getJiraTicketKey().equals(reportForm.getNewJiraTicketKey())) {
-                                newTicketKnownForSuborder = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!newTicketKnownForSuborder) {
-                        Ticket t = new Ticket();
-                        t.setJiraTicketKey(reportForm.getNewJiraTicketKey());
-                        t.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
-                        //set fromDate an untilDate to the corresponding dates from suborder
-                        t.setFromDate(t.getSuborder().getFromDate());
-                        t.setUntilDate(t.getSuborder().getUntilDate());
-                        ticketDAO.save(t);
-                        tr.setTicket(t);
-                        tr.setSuborder(t.getSuborder());
-                    } else {
-                        //Ticket already exists, only set it and its Suborder into the timereport
-                        Ticket ticket = ticketDAO.getTicketByJiraTicketKeyAndDate(reportForm.getNewJiraTicketKey(), theDate);
-                        if (ticket != null) {
-                            tr.setTicket(ticket);
-                            tr.setSuborder(tr.getTicket().getSuborder());
-                        } else {
-                            errors.add("newJiraTicketKeyErr", new ActionMessage("form.timereport.error.jira.noTicketWithKeyAndDate"));
-                        }
-                    }
-                    // if no new key has been entered, set ticket corresponding to chosen key from dropdown-menu into the timereport
-                    // has to have a value other than -1, or validateFormData would have returned at least one error before.
-                } else {
-                    Ticket ticket = ticketDAO.getTicketByJiraTicketKeyAndDate(reportForm.getJiraTicketKey(), theDate);
-                    if (ticket != null) {
-                        tr.setTicket(ticket);
-                        tr.setSuborder(tr.getTicket().getSuborder());
-                    } else {
-                        errors.add("noTicketWithKeyAndDate", new ActionMessage("form.timereport.error.jira.noTicketWithKeyAndDate"));
-                    }
-                }
-
-                saveErrors(request, errors);
-                if (errorMessages.size() > 0) {
-                    return mapping.getInputForward();
-                }
-            }
 
             // currently every timereport has status 'w'
             if (!reportForm.getSortOfReport().equals("W")) {
@@ -509,13 +403,9 @@ public class StoreDailyReportAction extends DailyReportAction {
 
             if (reportForm.getSortOfReport().equals("W")) {
                 tr.setCosts(reportForm.getCosts());
-                //only set Suborder to the Suborder chosen by the employee, if no Jira-Project-ID is given for the order.
-                if (!(Boolean) request.getSession().getAttribute("projectIDExists")) {
-                    tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
-                }
+                tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
             } else {
                 // 'special' reports: set suborder in timereport to null.	
-                // no need to check for Jira-Project-ID here since special reports have no Jira-Equivalent
                 tr.setSuborder(null);
                 tr.setCosts(0.0);
             }
@@ -623,110 +513,6 @@ public class StoreDailyReportAction extends DailyReportAction {
             } else {
                 timereportDAO.save(tr, loginEmployee, true);
             }
-
-
-            // WORKLOG-Functionality
-            if (!projectIDs.isEmpty()) {
-
-                // check if a Salat-Worklog already exists for this timereport
-                Worklog salatWorklog = worklogDAO.getWorklogByTimereportID(tr.getId());
-                String customerorderSign = projectIDs.get(0).getJiraProjectID();
-                String jiraKey = customerorderSign + "-";
-
-                if (reportForm.getJiraTicketKey().equals("-1")) {
-                    jiraKey = jiraKey + reportForm.getNewJiraTicketKey();
-                } else {
-                    jiraKey = jiraKey + reportForm.getJiraTicketKey();
-                }
-                //if no worklog exists for this timereport, create a new worklog
-                if (salatWorklog == null) {
-
-                    int[] responseCreateWorklog = jcHelper.createWorklog(tr, jiraKey);
-                    if (responseCreateWorklog[0] != 200) {
-                        request.getSession().setAttribute("createWorklogFailed", responseCreateWorklog[0]);
-                        try {
-                            JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
-                        } catch (Exception e) {
-                            addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.createerror", responseCreateWorklog[0]));
-                        }
-                    } else {
-                        // create a salat-worklog
-                        salatWorklog = new Worklog();
-                        salatWorklog.setJiraWorklogID(responseCreateWorklog[1]);
-                        salatWorklog.setJiraTicketKey(jiraKey);
-                        salatWorklog.setTimereport(tr);
-                        salatWorklog.setType("created");
-                        salatWorklog.setUpdatecounter(0);
-                    }
-
-                    // check if Jira-Ticket-Key has been changed for this save
-                } else if (previousTicket != null && tr.getTicket().getId() != previousTicket.getId()) {
-                    // need to delete the existing Jira-Worklog for the previous Ticket, create a new one for the new Ticket, and adjust the Salat-Worklog
-                    int responseDeleteWorklog = jcHelper.deleteWorklog(salatWorklog.getJiraWorklogID(), jiraKey);
-                    if (responseDeleteWorklog != 200) {
-                        addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.deleteerror", responseDeleteWorklog));
-                        try {
-                            JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, "", salatWorklog.getJiraWorklogID(), GlobalConstants.DELETE_WORKLOG);
-                            JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
-                        } catch (Exception e) {
-                            addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
-                        }
-                    } else {
-                        int[] responseCreateWorklog = jcHelper.createWorklog(tr, jiraKey);
-                        if (responseCreateWorklog[0] != 200) {
-                            addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.createerror", responseCreateWorklog[0]));
-                            try {
-                                JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
-                            } catch (Exception e) {
-                                addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
-                            }
-                        } else {
-                            salatWorklog.setJiraWorklogID(responseCreateWorklog[1]);
-                            salatWorklog.setType("updated");
-                            salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
-                        }
-                    }
-                    // check if Durationhours and/or Durationminutes have been adjusted for this save.
-                } else if (tr.getDurationhours() != previousDurationhours || tr.getDurationminutes() != previousDurationminutes || !tr.getStatus().equals(previousComment)) {
-                    // if so, update the existing Jira-Worklog and the Salat-Worklog
-                    int responseUpdateWorklog = jcHelper.updateWorklog(tr, jiraKey, salatWorklog.getJiraWorklogID());
-                    //if Worklog not found/has been deleted - try to create a new one
-                    if (responseUpdateWorklog == 404) {
-                        int[] create_status = jcHelper.createWorklog(tr, jiraKey);
-                        if (create_status[0] != 200) {
-                            addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.updateerror", responseUpdateWorklog));
-                            try {
-                                JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, 0, GlobalConstants.CREATE_WORKLOG);
-                            } catch (Exception e) {
-                                addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
-                            }
-                        } else {
-                            salatWorklog.setJiraWorklogID(create_status[1]);
-                            salatWorklog.setType("updated");
-                            salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
-                        }
-                    } else if (responseUpdateWorklog != 200) {
-                        addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.jiraworklog.updateerror", responseUpdateWorklog));
-                        try {
-                            JiraSalatHelper.saveFailedWorklog(worklogMemoryDAO, timereportDAO, tr, jiraKey, salatWorklog.getJiraWorklogID(), GlobalConstants.UPDATE_WORKLOG);
-                        } catch (Exception e) {
-                            addErrorAtTheBottom(request, errors, new ActionMessage("form.general.error.worklogmemoryfailed"));
-                        }
-                    }
-
-                    if (tr.getDurationhours() != previousDurationhours || tr.getDurationminutes() != previousDurationminutes) {
-                        salatWorklog.setType("updated");
-                        salatWorklog.setUpdatecounter(salatWorklog.getUpdatecounter() + 1);
-                    }
-                }
-                if (salatWorklog != null) {
-                    worklogDAO.save(salatWorklog);
-                }
-                if (errorMessages.size() > 0) {
-                    return mapping.getInputForward();
-                }
-            }
-
 
             if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract
@@ -945,9 +731,7 @@ public class StoreDailyReportAction extends DailyReportAction {
     }
 
     private void saveStaticFormDataToSession(HttpServletRequest request, AddDailyReportForm reportForm) {
-
         request.getSession().setAttribute("numberOfSerialDays", reportForm.getNumberOfSerialDays());
-        request.getSession().setAttribute("newJiraTicketKey", reportForm.getNewJiraTicketKey());
         request.getSession().setAttribute("costs", reportForm.getCosts());
         request.getSession().setAttribute("comment", reportForm.getComment());
     }
@@ -963,10 +747,6 @@ public class StoreDailyReportAction extends DailyReportAction {
         }
         Integer numberOfSerialDays = (Integer) request.getSession().getAttribute("numberOfSerialDays");
         if (numberOfSerialDays != null) reportForm.setNumberOfSerialDays(numberOfSerialDays);
-        String jiraTicketKey = (String) request.getSession().getAttribute("jiraTicketKey");
-        if (jiraTicketKey != null) reportForm.setJiraTicketKey(jiraTicketKey);
-        String newJiraTicketKey = (String) request.getSession().getAttribute("newJiraTicketKey");
-        if (newJiraTicketKey != null) reportForm.setNewJiraTicketKey(newJiraTicketKey);
         Double hours = (Double) request.getSession().getAttribute("hourDuration");
         if (hours != null) reportForm.setHours(hours);
         TimereportHelper.refreshHours(reportForm);
@@ -999,9 +779,6 @@ public class StoreDailyReportAction extends DailyReportAction {
 
     private void setSubOrder(@Nonnull Suborder suborder, HttpServletRequest request, AddDailyReportForm reportForm) {
 
-        // adjust the jsp with entries for Jira-Ticket-Keys for the chosen suborder
-        JiraSalatHelper.setJiraTicketKeysForSuborder(request, ticketDAO, suborder.getId());
-
         // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
         // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
         if (suborder != null && suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
@@ -1022,10 +799,6 @@ public class StoreDailyReportAction extends DailyReportAction {
 
     /**
      * resets the 'add report' form to default values
-     *
-     * @param mapping
-     * @param request
-     * @param reportForm
      */
     private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddDailyReportForm reportForm) {
         reportForm.reset(mapping, request);
@@ -1077,18 +850,7 @@ public class StoreDailyReportAction extends DailyReportAction {
 
             //reset the rest
             reportForm.setReferenceday(tr.getReferenceday().getRefdate().toString());
-            if (tr.getTicket() != null) {
-                if (!suborders.isEmpty()) {
-                    // adjust the jsp with entries for Jira-Ticket-Keys, if the first customerorder in the dropdown-menu has Jira-Project-ID(s)
-                    JiraSalatHelper.setJiraTicketKeysForSuborder(request, ticketDAO, suborders.get(0).getId());
-                }
-                //reportForm.setJiraTicketKey(tr.getTicket().getJiraTicketKey());
-                request.getSession().setAttribute("jiraTicketKey", tr.getTicket().getJiraTicketKey());
-                // set isEdit = true into the session, so order/suborder menu will be disabled
-                request.getSession().setAttribute("isEdit", true);
-            } else {
-                request.getSession().setAttribute("isEdit", false);
-            }
+            request.getSession().setAttribute("isEdit", false);
             reportForm.setSelectedHourDuration(tr.getDurationhours());
             reportForm.setSelectedMinuteDuration(tr.getDurationminutes());
             reportForm.setCosts(tr.getCosts());
@@ -1124,13 +886,6 @@ public class StoreDailyReportAction extends DailyReportAction {
 
     /**
      * validates the form data (syntax and logic)
-     *
-     * @param request
-     * @param reportForm
-     * @param trId:      > 0 for edited report, -1 for new report
-     * @param ecId
-     * @param hours
-     * @return
      */
     private ActionMessages validateFormData(
             HttpServletRequest request,
@@ -1230,55 +985,6 @@ public class StoreDailyReportAction extends DailyReportAction {
                 }
             }
 
-        }
-
-        // check if for Timereports whose Orders have a Jira-Project-ID, a Jira-Ticket-Key has been chosen or newly entered.
-        if ((Boolean) request.getSession().getAttribute("projectIDExists")) {
-            if (reportForm.getJiraTicketKey().equals("-1") && reportForm.getNewJiraTicketKey().equals("")) {
-                errors.add("noKeySelected", new ActionMessage("form.timereport.error.noJiraTicketKey"));
-            } else if (!reportForm.getJiraTicketKey().equals("-1") && !reportForm.getNewJiraTicketKey().equals("")) {
-                errors.add("noKeySelected", new ActionMessage("form.timereport.error.twoJiraTickets"));
-            } else {
-                // if a new Jira-Ticket-Key has been entered, check with Jira if Ticket exists
-                List<ProjectID> projectIDs = customerorderDAO.getCustomerorderById(reportForm.getOrderId()).getProjectIDs();
-                if (projectIDs.size() > 0 && reportForm.getJiraTicketKey().equals("-1")) {
-                    String customerorderSign = projectIDs.get(0).getJiraProjectID();
-                    String jiraKey = customerorderSign + "-" + reportForm.getNewJiraTicketKey();
-                    int responseCheckJiraTicket = jcHelper.checkJiraTicketID(jiraKey);
-                    if (responseCheckJiraTicket != 200) {
-                        if (responseCheckJiraTicket == 404) {
-                            errors.add("nonexistentKey", new ActionMessage("form.timereport.error.jiraTicketNotExists"));
-                        } else if (responseCheckJiraTicket == 500) {
-                            //No error returned so that we can save the Report even if Jira is unreachable
-                        }
-                    }
-                }
-            }
-
-            //also check if Duration is > 0, because Jira-Worklog doesnt accept 0 Duration
-            if (hours == 0) {
-                errors.add("selectedDuration", new ActionMessage("form.timereport.error.hours.unset"));
-                saveErrors(request, errors);
-                return errors;
-            }
-        }
-
-        // if an existing Jira-Ticket-Key has been chosen, check if the employer has the corresponding suborder as employeeorder
-        if (!reportForm.getJiraTicketKey().equals("-1")) {
-            Ticket t = null;
-            if (reportForm.getJiraTicketKey().equals("-1")) {
-                t = ticketDAO.getTicketByJiraTicketKeyAndDate(reportForm.getNewJiraTicketKey(), theDate);
-            } else {
-                t = ticketDAO.getTicketByJiraTicketKeyAndDate(reportForm.getJiraTicketKey(), theDate);
-            }
-            if (t == null) {
-                errors.add("noTicketWithKeyAndDate", new ActionMessage("form.timereport.error.jira.noTicketWithKeyAndDate"));
-            } else {
-                Employeeorder eo = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(ecId, t.getSuborder().getId(), theDate);
-                if (eo == null) {
-                    errors.add("noEmployeeOrderForJiraTicketKey", new ActionMessage("form.timereport.error.jira.noEmployeeOrder"));
-                }
-            }
         }
 
         // check costs format

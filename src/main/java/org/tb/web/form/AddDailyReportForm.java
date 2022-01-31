@@ -42,8 +42,6 @@ public class AddDailyReportForm extends ActionForm {
     private long suborderSignId;
     private long suborderDescriptionId;
     private Long employeeContractId;
-    private String jiraTicketKey;
-    private String newJiraTicketKey;
     private int numberOfSerialDays;
     private String action;
 
@@ -72,8 +70,6 @@ public class AddDailyReportForm extends ActionForm {
     }
 
     public void reset() {
-        jiraTicketKey = "-1";
-        newJiraTicketKey = "";
         comment = "";
         order = "";
         suborder = "";
