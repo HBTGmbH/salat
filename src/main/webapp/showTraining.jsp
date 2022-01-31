@@ -152,7 +152,7 @@
 					<b><c:out value="${training.commonTrainingTime}"></c:out></b>
 				</td>
 				<td title="<bean:message key="main.training.title.text2" />">
-					<b><c:out value="${training.cTTHoursMin}"></c:out></b>
+					<b><c:out value="${training.getCTTHoursMin()}"></c:out></b>
 				</td>
 								
 				<!-- projectbased training -->
@@ -160,7 +160,7 @@
 					<b><c:out value="${training.projectTrainingTime}"></c:out></b>
 				</td>
 				<td title="<bean:message key="main.training.title.text2" />">
-					<b><c:out value="${training.pTTHoursMin}"></c:out></b>
+					<b><c:out value="${training.getPTTHoursMin()}"></c:out></b>
 				</td>
 				
 			</c:forEach>
