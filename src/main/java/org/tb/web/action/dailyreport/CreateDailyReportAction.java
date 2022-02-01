@@ -6,8 +6,10 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
@@ -29,6 +31,8 @@ import org.tb.web.form.AddDailyReportForm;
  *
  * @author oda
  */
+@Component("/CreateDailyReport")
+@Slf4j
 public class CreateDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private EmployeecontractDAO employeecontractDAO;

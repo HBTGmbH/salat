@@ -13,7 +13,7 @@
 
     <tx:annotation-driven transaction-manager="txManager"/>
 
-	<context:component-scan base-package="org.tb.persistence"/>
+	<context:component-scan base-package="org.tb"/>
 
 	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
 		<property name="sessionFactory" ref="sessionFactory"/>
@@ -22,14 +22,8 @@
 	<!-- Struts User Actions -->
 	<bean name="/LoginEmployee" class="org.tb.web.action.LoginEmployeeAction" />
 	<bean name="/LogoutEmployee" class="org.tb.web.action.LogoutEmployeeAction" />
-	<bean name="/CreateDailyReport" class="org.tb.web.action.dailyreport.CreateDailyReportAction" />
 	<bean name="/ShowMatrix" class="org.tb.web.action.ShowMatrixAction" />
 	<bean name="/ShowInvoice" class="org.tb.web.action.ShowInvoiceAction" />
-	<bean name="/ShowDailyReport" class="org.tb.web.action.dailyreport.ShowDailyReportAction" />
-	<bean name="/UpdateDailyReport" class="org.tb.web.action.UpdateDailyReportAction" />
-	<bean name="/StoreDailyReport" class="org.tb.web.action.dailyreport.StoreDailyReportAction" />
-	<bean name="/EditDailyReport" class="org.tb.web.action.dailyreport.EditDailyReportAction" />
-	<bean name="/DeleteTimereportFromDailyDisplay" class="org.tb.web.action.DeleteTimereportFromDailyDisplayAction" />
 	<bean name="/ShowSettings" class="org.tb.web.action.ShowSettingsAction" />
 	<bean name="/ShowWelcome" class="org.tb.web.action.ShowWelcomeAction" />
 	<bean name="/ShowRelease" class="org.tb.web.action.ShowReleaseAction" />

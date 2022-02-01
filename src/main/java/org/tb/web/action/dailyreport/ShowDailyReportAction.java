@@ -23,10 +23,12 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.hibernate.HibernateException;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -65,6 +67,8 @@ import org.tb.web.util.OvertimeString;
  *
  * @author oda, th
  */
+@Component("/ShowDailyReport")
+@Slf4j
 public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm> {
 
     private OvertimeDAO overtimeDAO;
