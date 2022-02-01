@@ -1,20 +1,24 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.ActionForm;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Warning;
 import org.tb.helper.AfterLogin;
-import org.tb.persistence.*;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.StatusReportDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.form.ShowWelcomeForm;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-public class ShowWelcomeAction extends DailyReportAction {
+public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
     private OvertimeDAO overtimeDAO;
     private TimereportDAO timereportDAO;
@@ -54,10 +58,9 @@ public class ShowWelcomeAction extends DailyReportAction {
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
-                                                 ActionForm form, HttpServletRequest request,
-                                                 HttpServletResponse response) throws Exception {
+        ShowWelcomeForm welcomeForm, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
 
-        ShowWelcomeForm welcomeForm = (ShowWelcomeForm) form;
         Employeecontract employeecontract;
 
         // create collection of employeecontracts

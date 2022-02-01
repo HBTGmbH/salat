@@ -1,6 +1,18 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.LinkedList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
@@ -8,18 +20,18 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
 import org.tb.helper.TimereportHelper;
-import org.tb.persistence.*;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
 import org.tb.web.form.ShowReleaseForm;
 import org.tb.web.util.MailSender;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-public class ShowReleaseAction extends LoginRequiredAction {
+public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     private static final Logger LOG = LoggerFactory.getLogger(ShowReleaseAction.class);
 
     private EmployeecontractDAO employeecontractDAO;
@@ -55,10 +67,9 @@ public class ShowReleaseAction extends LoginRequiredAction {
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
-                                                 ActionForm form, HttpServletRequest request,
-                                                 HttpServletResponse response) throws Exception {
+        ShowReleaseForm releaseForm, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
 
-        ShowReleaseForm releaseForm = (ShowReleaseForm) form;
         boolean updateEmployee = false;
         long superId;
 

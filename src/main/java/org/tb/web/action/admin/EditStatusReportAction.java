@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-public class EditStatusReportAction extends StatusReportAction {
+public class EditStatusReportAction extends StatusReportAction<AddStatusReportForm> {
 
     private EmployeeDAO employeeDAO;
     private StatusReportDAO statusReportDAO;
@@ -38,9 +38,7 @@ public class EditStatusReportAction extends StatusReportAction {
      * @see org.tb.web.action.LoginRequiredAction#executeAuthenticated(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
     @Override
-    protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        AddStatusReportForm reportForm = (AddStatusReportForm) form;
+    protected ActionForward executeAuthenticated(ActionMapping mapping, AddStatusReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         // get status report to be edited
         Statusreport statusreport = null;

@@ -21,7 +21,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class DeleteSuborderAction extends LoginRequiredAction {
+public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
     private static final Logger LOG = LoggerFactory.getLogger(DeleteSuborderAction.class);
 
     private SuborderDAO suborderDAO;
@@ -36,13 +36,11 @@ public class DeleteSuborderAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowSuborderForm suborderForm, HttpServletRequest request, HttpServletResponse response) {
 
         if ((GenericValidator.isBlankOrNull(request.getParameter("soId"))) ||
                 (!GenericValidator.isLong(request.getParameter("soId"))))
             return mapping.getInputForward();
-
-        ShowSuborderForm suborderForm = (ShowSuborderForm) form;
 
         ActionMessages errors = new ActionMessages();
         long soId = Long.parseLong(request.getParameter("soId"));

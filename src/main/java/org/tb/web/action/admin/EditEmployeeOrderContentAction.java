@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
+public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction<AddEmployeeOrderContentForm> {
 
     private EmployeeorderDAO employeeorderDAO;
     private EmployeeDAO employeeDAO;
@@ -33,10 +33,8 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction {
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
-                                                 ActionForm form, HttpServletRequest request,
-                                                 HttpServletResponse response) throws Exception {
-
-        AddEmployeeOrderContentForm contentForm = (AddEmployeeOrderContentForm) form;
+        AddEmployeeOrderContentForm contentForm, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
 
         // remove action info
         request.getSession().removeAttribute("actionInfo");

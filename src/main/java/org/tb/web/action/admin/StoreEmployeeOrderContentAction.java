@@ -18,7 +18,7 @@ import javax.servlet.http.HttpSession;
 import java.util.Locale;
 import java.util.Objects;
 
-public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction {
+public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction<AddEmployeeOrderContentForm> {
 
     private EmployeeOrderContentDAO employeeOrderContentDAO;
     private EmployeeDAO employeeDAO;
@@ -26,13 +26,12 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction 
 
     @Override
     protected ActionForward executeAuthenticated(final ActionMapping mapping,
-                                                 final ActionForm form, final HttpServletRequest request,
+                                                 final AddEmployeeOrderContentForm contentForm, final HttpServletRequest request,
                                                  final HttpServletResponse response) throws Exception {
 
         // boolean to trigger back action
         boolean backAction = false;
 
-        final AddEmployeeOrderContentForm contentForm = (AddEmployeeOrderContentForm) form;
         final Employee loginEmployee = (Employee) request.getSession()
                 .getAttribute("loginEmployee");
 

@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class CreateEmployeeAction extends LoginRequiredAction {
+public class CreateEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
     private EmployeeDAO employeeDAO;
 
@@ -26,9 +26,7 @@ public class CreateEmployeeAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        AddEmployeeForm employeeForm = (AddEmployeeForm) form;
-
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeForm employeeForm, HttpServletRequest request, HttpServletResponse response) {
         // get list of existing employees
         List<Employee> employees = employeeDAO.getEmployees();
 

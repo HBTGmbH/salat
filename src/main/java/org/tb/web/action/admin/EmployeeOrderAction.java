@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import org.apache.struts.action.ActionForm;
 import org.tb.GlobalConstants;
 import org.tb.bdom.EmployeeOrderViewDecorator;
 import org.tb.bdom.Employeecontract;
@@ -15,7 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class EmployeeOrderAction extends LoginRequiredAction {
+public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
     /**
      * Refreshes the list of employee orders and stores it in the session.

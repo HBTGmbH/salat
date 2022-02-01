@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShowBudgetAction extends LoginRequiredAction {
+public class ShowBudgetAction extends LoginRequiredAction<ShowBudgetForm> {
     private static final Logger LOG = LoggerFactory.getLogger(ShowBudgetAction.class);
 
     private SuborderDAO suborderDAO;
@@ -35,8 +35,8 @@ public class ShowBudgetAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
+        ShowBudgetForm budgetForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
 
         request.getSession().setAttribute("showResult", false);
@@ -46,7 +46,6 @@ public class ShowBudgetAction extends LoginRequiredAction {
         List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
         request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
         request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
-        ShowBudgetForm budgetForm = (ShowBudgetForm) form;
         LOG.debug("ShowBudgetAction.executeAuthenticated -request.getParameter(task) : " + request.getParameter("task"));
         Long orderOrSuborderId;
         if ((request.getParameter("id") != null)) {

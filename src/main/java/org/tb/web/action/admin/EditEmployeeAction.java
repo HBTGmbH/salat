@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class EditEmployeeAction extends LoginRequiredAction {
+public class EditEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
     private EmployeeDAO employeeDAO;
 
@@ -25,8 +25,7 @@ public class EditEmployeeAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        AddEmployeeForm employeeForm = (AddEmployeeForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeForm employeeForm, HttpServletRequest request, HttpServletResponse response) {
         long emId = Long.parseLong(request.getParameter("emId"));
         Employee em = employeeDAO.getEmployeeById(emId);
         request.getSession().setAttribute("emId", em.getId());

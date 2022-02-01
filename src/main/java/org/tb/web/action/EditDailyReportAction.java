@@ -1,28 +1,35 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.helper.TimereportHelper;
-import org.tb.persistence.*;
-import org.tb.util.DateUtils;
-import org.tb.web.form.AddDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
+import org.tb.helper.TimereportHelper;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
+import org.tb.util.DateUtils;
+import org.tb.web.form.AddDailyReportForm;
 
 /**
  * Action class for editing of a timereport
  *
  * @author oda
  */
-public class EditDailyReportAction extends DailyReportAction {
+public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private TimereportDAO timereportDAO;
     private CustomerorderDAO customerorderDAO;
@@ -55,9 +62,7 @@ public class EditDailyReportAction extends DailyReportAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
-        AddDailyReportForm reportForm = (AddDailyReportForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
         long trId = Long.parseLong(request.getParameter("trId"));
         Timereport tr = timereportDAO.getTimereportById(trId);
 

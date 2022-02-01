@@ -13,7 +13,7 @@ services:
       DATABASE_USERNAME: salattest
       DATABASE_PASSWORD: salattest
       DATABASE_HOST: db
-      DATABASE_NAME: salattest
+      DATABASE_NAME: salat
       SALAT_URL: localhost
       SALAT_MAIL_HOST: localhost
       JPDA_ADDRESS: "*:8000"

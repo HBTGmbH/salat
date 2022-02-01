@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class CreateAdminListAction extends AdminRequiredAction {
+public class CreateAdminListAction extends AdminRequiredAction<ActionForm> {
 
     @Override
     protected ActionForward executeAdminAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {

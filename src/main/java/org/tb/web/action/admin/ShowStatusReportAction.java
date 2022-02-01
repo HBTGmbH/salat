@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
-public class ShowStatusReportAction extends LoginRequiredAction {
+public class ShowStatusReportAction extends LoginRequiredAction<ShowStatusReportForm> {
 
     private StatusReportDAO statusReportDAO;
     private CustomerorderDAO customerorderDAO;
@@ -28,10 +28,9 @@ public class ShowStatusReportAction extends LoginRequiredAction {
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
-                                                 ActionForm form, HttpServletRequest request,
-                                                 HttpServletResponse response) throws Exception {
+        ShowStatusReportForm reportForm, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
 
-        ShowStatusReportForm reportForm = (ShowStatusReportForm) form;
         request.getSession().setAttribute("visibleCustomerOrders", customerorderDAO.getVisibleCustomerorders());
 
         long customerOrderId;

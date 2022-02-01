@@ -24,7 +24,7 @@ import java.util.Objects;
  *
  * @author oda
  */
-public class StoreCustomerorderAction extends LoginRequiredAction {
+public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerOrderForm> {
 
     private CustomerDAO customerDAO;
     private SuborderDAO suborderDAO;
@@ -65,8 +65,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction {
 
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        AddCustomerOrderForm coForm = (AddCustomerOrderForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerOrderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
         /* remove list with timereports out of range */

@@ -22,7 +22,7 @@ import java.util.List;
  *
  * @author oda, th
  */
-public class CreateSuborderAction extends LoginRequiredAction {
+public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
     private CustomerorderDAO customerorderDAO;
     private SuborderDAO suborderDAO;
@@ -36,12 +36,10 @@ public class CreateSuborderAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddSuborderForm suborderForm, HttpServletRequest request, HttpServletResponse response) {
 
         // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
-
-        AddSuborderForm suborderForm = (AddSuborderForm) form;
 
         // get login employee
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

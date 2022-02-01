@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class StoreCustomerAction extends LoginRequiredAction {
+public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
 
     private CustomerDAO customerDAO;
 
@@ -26,9 +26,7 @@ public class StoreCustomerAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        AddCustomerForm cuForm = (AddCustomerForm) form;
-
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerForm cuForm, HttpServletRequest request, HttpServletResponse response) {
         if ((request.getParameter("task") != null) &&
                 (request.getParameter("task").equals("save")) ||
                 (request.getParameter("cuId") != null)) {

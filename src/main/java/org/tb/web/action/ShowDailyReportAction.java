@@ -1,39 +1,70 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessages;
-import org.hibernate.HibernateException;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.bdom.comparators.*;
-import org.tb.helper.CustomerorderHelper;
-import org.tb.helper.EmployeeHelper;
-import org.tb.helper.SuborderHelper;
-import org.tb.helper.TimereportHelper;
-import org.tb.persistence.*;
-import org.tb.util.DateUtils;
-import org.tb.web.form.ShowDailyReportForm;
-import org.tb.web.util.OvertimeString;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessages;
+import org.hibernate.HibernateException;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Referenceday;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
+import org.tb.bdom.comparators.TimereportByEmployeeAscComparator;
+import org.tb.bdom.comparators.TimereportByEmployeeDescComparator;
+import org.tb.bdom.comparators.TimereportByOrderAscComparator;
+import org.tb.bdom.comparators.TimereportByOrderDescComparator;
+import org.tb.bdom.comparators.TimereportByRefdayAscComparator;
+import org.tb.bdom.comparators.TimereportByRefdayDescComparator;
+import org.tb.helper.CustomerorderHelper;
+import org.tb.helper.EmployeeHelper;
+import org.tb.helper.SuborderHelper;
+import org.tb.helper.TimereportHelper;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.ReferencedayDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
+import org.tb.util.DateUtils;
+import org.tb.web.form.ShowDailyReportForm;
+import org.tb.web.util.OvertimeString;
 
 /**
  * Action class for a timereport to be shown in the daily display
  *
  * @author oda, th
  */
-public class ShowDailyReportAction extends DailyReportAction {
+public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm> {
 
     private OvertimeDAO overtimeDAO;
     private CustomerorderDAO customerorderDAO;
@@ -182,10 +213,8 @@ public class ShowDailyReportAction extends DailyReportAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
         String task = request.getParameter("task");
-        ShowDailyReportForm reportForm = (ShowDailyReportForm) form;
-
         if ("massdelete".equalsIgnoreCase(task)) {
             // delete the selected ids from the database and continue as if this was a refreshTimereports task
             String sIds = request.getParameter("ids");

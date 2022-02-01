@@ -1,20 +1,19 @@
 package org.tb.web.action;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * Action class for the logout of an employee
  *
  * @author oda
  */
-public class LogoutEmployeeAction extends LoginRequiredAction {
+public class LogoutEmployeeAction extends LoginRequiredAction<ActionForm> {
 
     private EmployeeDAO employeeDAO;
 

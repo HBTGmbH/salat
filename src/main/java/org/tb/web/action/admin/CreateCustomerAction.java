@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class CreateCustomerAction extends LoginRequiredAction {
+public class CreateCustomerAction extends LoginRequiredAction<AddCustomerForm> {
 
     private CustomerDAO customerDAO;
 
@@ -26,9 +26,7 @@ public class CreateCustomerAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-
-        AddCustomerForm customerForm = (AddCustomerForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerForm customerForm, HttpServletRequest request, HttpServletResponse response) {
 
         // get list of existing customers
         List<Customer> customers = customerDAO.getCustomers();

@@ -1,27 +1,42 @@
 package org.tb.web.action;
 
-import org.apache.commons.validator.GenericValidator;
-import org.apache.struts.action.*;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.helper.*;
-import org.tb.persistence.*;
-import org.tb.util.DateUtils;
-import org.tb.web.form.ShowDailyReportForm;
-import org.tb.web.form.UpdateDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.validator.GenericValidator;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
+import org.tb.helper.TimereportHelper;
+import org.tb.helper.VacationViewer;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
+import org.tb.util.DateUtils;
+import org.tb.web.form.ShowDailyReportForm;
+import org.tb.web.form.UpdateDailyReportForm;
 
 /**
  * action class for updating a timereport directly from daily display
  *
  * @author oda
  */
-public class UpdateDailyReportAction extends DailyReportAction {
+public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReportForm> {
 
     private SuborderDAO suborderDAO;
     private CustomerorderDAO customerorderDAO;
@@ -77,8 +92,7 @@ public class UpdateDailyReportAction extends DailyReportAction {
      * @see org.tb.web.action.LoginRequiredAction#executeAuthenticated(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        UpdateDailyReportForm reportForm = (UpdateDailyReportForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, UpdateDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         ActionMessages errors = getErrors(request);
         if (errors == null) {

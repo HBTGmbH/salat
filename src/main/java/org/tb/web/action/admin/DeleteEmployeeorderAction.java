@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class DeleteEmployeeorderAction extends EmployeeOrderAction {
+public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrderForm> {
 
     private EmployeeorderDAO employeeorderDAO;
     private EmployeecontractDAO employeecontractDAO;
@@ -36,7 +36,7 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowEmployeeOrderForm oldEmployeeOrderForm, HttpServletRequest request, HttpServletResponse response) {
         if (!GenericValidator.isLong(request.getParameter("eoId"))) return mapping.getInputForward();
 
         long eoId = Long.parseLong(request.getParameter("eoId"));
@@ -61,10 +61,7 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction {
         Long orderId = (Long) request.getSession().getAttribute("currentOrderId");
         employeeOrderForm.setOrderId(orderId);
 
-        if (form instanceof ShowEmployeeOrderForm) {
-            ShowEmployeeOrderForm oldEmployeeOrderForm = (ShowEmployeeOrderForm) form;
-            employeeOrderForm.setShowActualHours(oldEmployeeOrderForm.getShowActualHours());
-        }
+        employeeOrderForm.setShowActualHours(oldEmployeeOrderForm.getShowActualHours());
 
         refreshEmployeeOrders(request, employeeOrderForm, employeeorderDAO, employeecontractDAO, timereportDAO);
 

@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class ShowEmployeeAction extends LoginRequiredAction {
+public class ShowEmployeeAction extends LoginRequiredAction<ShowEmployeeForm> {
 
     private EmployeeDAO employeeDAO;
 
@@ -25,9 +25,8 @@ public class ShowEmployeeAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
-        ShowEmployeeForm employeeForm = (ShowEmployeeForm) form;
+        ShowEmployeeForm employeeForm, HttpServletRequest request,
+        HttpServletResponse response) {
         String filter = null;
 
         if ((request.getParameter("task") != null) &&

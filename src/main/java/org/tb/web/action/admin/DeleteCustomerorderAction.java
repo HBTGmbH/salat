@@ -19,7 +19,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class DeleteCustomerorderAction extends LoginRequiredAction {
+public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomerOrderForm> {
 
     private CustomerorderDAO customerorderDAO;
     private TimereportDAO timereportDAO;
@@ -33,7 +33,7 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowCustomerOrderForm orderForm, HttpServletRequest request, HttpServletResponse response) {
 
         if (GenericValidator.isBlankOrNull(request.getParameter("coId")) ||
                 !GenericValidator.isLong(request.getParameter("coId"))) {
@@ -46,8 +46,6 @@ public class DeleteCustomerorderAction extends LoginRequiredAction {
         if (co == null) {
             return mapping.getInputForward();
         }
-
-        ShowCustomerOrderForm orderForm = (ShowCustomerOrderForm) form;
 
         boolean deleted = customerorderDAO.deleteCustomerorderById(coId);
 

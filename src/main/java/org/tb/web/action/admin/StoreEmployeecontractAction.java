@@ -21,7 +21,7 @@ import java.util.*;
  *
  * @author oda
  */
-public class StoreEmployeecontractAction extends LoginRequiredAction {
+public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployeeContractForm> {
 
     private EmployeeDAO employeeDAO;
     private EmployeecontractDAO employeecontractDAO;
@@ -55,8 +55,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        AddEmployeeContractForm ecForm = (AddEmployeeContractForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeContractForm ecForm, HttpServletRequest request, HttpServletResponse response) {
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
         //			 remove list with timereports out of range

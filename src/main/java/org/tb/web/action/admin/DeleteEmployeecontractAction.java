@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class DeleteEmployeecontractAction extends LoginRequiredAction {
+public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm> {
 
     private EmployeecontractDAO employeecontractDAO;
 

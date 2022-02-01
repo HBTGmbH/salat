@@ -22,7 +22,7 @@ import java.util.Objects;
  *
  * @author oda
  */
-public class CreateEmployeeorderAction extends EmployeeOrderAction {
+public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrderForm> {
 
     private EmployeeorderDAO employeeorderDAO;
     private CustomerorderDAO customerorderDAO;
@@ -42,13 +42,11 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction {
 
     @Override
     public ActionForward executeAuthenticated(final ActionMapping mapping,
-                                              final ActionForm form, final HttpServletRequest request,
+                                              final AddEmployeeOrderForm employeeOrderForm, final HttpServletRequest request,
                                               final HttpServletResponse response) {
 
         // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
-
-        final AddEmployeeOrderForm employeeOrderForm = (AddEmployeeOrderForm) form;
 
         // get lists of existing employee contracts and suborders
         final List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();

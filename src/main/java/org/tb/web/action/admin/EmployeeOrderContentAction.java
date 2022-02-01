@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import org.apache.struts.action.ActionForm;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
@@ -10,7 +11,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpSession;
 
-public abstract class EmployeeOrderContentAction extends LoginRequiredAction {
+public abstract class EmployeeOrderContentAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
     /**
      * Checks if the content is editable.

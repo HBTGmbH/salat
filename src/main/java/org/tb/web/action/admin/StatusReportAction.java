@@ -1,5 +1,6 @@
 package org.tb.web.action.admin;
 
+import org.apache.struts.action.ActionForm;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
@@ -11,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class StatusReportAction extends LoginRequiredAction {
+public abstract class StatusReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
     protected List<OptionItem> getPhaseOptionList(HttpServletRequest request) {
         List<OptionItem> phaseList = new ArrayList<>();

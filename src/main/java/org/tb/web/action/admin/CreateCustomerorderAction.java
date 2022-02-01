@@ -21,7 +21,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class CreateCustomerorderAction extends LoginRequiredAction {
+public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomerOrderForm> {
 
     private EmployeeDAO employeeDAO;
     private CustomerDAO customerDAO;
@@ -41,10 +41,9 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
 
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerOrderForm addForm, HttpServletRequest request, HttpServletResponse response) {
         // form presettings
         Long customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
-        AddCustomerOrderForm addForm = (AddCustomerOrderForm) form;
 
         if (customerId == null) {
             customerId = 0L;
@@ -54,7 +53,7 @@ public class CreateCustomerorderAction extends LoginRequiredAction {
         // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
-        AddCustomerOrderForm customerOrderForm = (AddCustomerOrderForm) form;
+        AddCustomerOrderForm customerOrderForm = addForm;
 
         // get list of existing customers and customer orders
         List<Customer> customers = customerDAO.getCustomers();

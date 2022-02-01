@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author sql
  */
-public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
+public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<GenerateMultipleEmployeeordersForm> {
 
     private SuborderDAO suborderDAO;
     private CustomerorderDAO customerorderDAO;
@@ -46,10 +46,9 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
+        GenerateMultipleEmployeeordersForm generateMultipleEmployeeordersForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
-        GenerateMultipleEmployeeordersForm generateMultipleEmployeeordersForm = (GenerateMultipleEmployeeordersForm) form;
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
         ActionMessages errors = getErrors(request);

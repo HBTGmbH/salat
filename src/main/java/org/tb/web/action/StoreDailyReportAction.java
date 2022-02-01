@@ -1,19 +1,5 @@
 package org.tb.web.action;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.validator.GenericValidator;
-import org.apache.struts.action.*;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.helper.*;
-import org.tb.persistence.*;
-import org.tb.util.DateUtils;
-import org.tb.web.form.AddDailyReportForm;
-import org.tb.web.form.ShowDailyReportForm;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
@@ -24,6 +10,41 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.GenericValidator;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Referenceday;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
+import org.tb.helper.CustomerorderHelper;
+import org.tb.helper.SuborderHelper;
+import org.tb.helper.TimereportHelper;
+import org.tb.helper.VacationViewer;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.ReferencedayDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
+import org.tb.util.DateUtils;
+import org.tb.web.form.AddDailyReportForm;
+import org.tb.web.form.ShowDailyReportForm;
 
 /**
  * Action class for a timereport to be stored permanently.
@@ -31,7 +52,7 @@ import java.util.List;
  * @author oda
  */
 @Slf4j
-public class StoreDailyReportAction extends DailyReportAction {
+public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private EmployeecontractDAO employeecontractDAO;
     private SuborderDAO suborderDAO;
@@ -93,21 +114,20 @@ public class StoreDailyReportAction extends DailyReportAction {
 
     @SuppressWarnings("unchecked")
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        AddDailyReportForm dailyReportForm = (AddDailyReportForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
         log.info("Task: {}", request.getParameter("task"));
-        log.info("Employeecontract.Id: {}", dailyReportForm.getEmployeeContractId());
-        log.info("Referenceday: {}", dailyReportForm.getReferenceday());
+        log.info("Employeecontract.Id: {}", reportForm.getEmployeeContractId());
+        log.info("Referenceday: {}", reportForm.getReferenceday());
         log.info("SetDate.howMuch: {}", request.getParameter("howMuch"));
-        log.info("NumberOfSerialDays: {}", dailyReportForm.getNumberOfSerialDays());
-        log.info("Customerorder.Id: {}", dailyReportForm.getOrderId());
-        log.info("Suborder.Id: {}", dailyReportForm.getSuborderSignId());
-        log.info("Begin: {}:{}", dailyReportForm.getSelectedHourBegin(), dailyReportForm.getSelectedMinuteBegin());
-        log.info("End: {}:{}", dailyReportForm.getSelectedHourEnd(), dailyReportForm.getSelectedMinuteEnd());
-        log.info("Duration: {}:{}", dailyReportForm.getSelectedHourDuration(), dailyReportForm.getSelectedMinuteDuration());
-        log.info("Costs: {}", dailyReportForm.getCosts());
-        log.info("Training: {}", dailyReportForm.getTraining());
-        log.info("Comment: {}", dailyReportForm.getComment());
+        log.info("NumberOfSerialDays: {}", reportForm.getNumberOfSerialDays());
+        log.info("Customerorder.Id: {}", reportForm.getOrderId());
+        log.info("Suborder.Id: {}", reportForm.getSuborderSignId());
+        log.info("Begin: {}:{}", reportForm.getSelectedHourBegin(), reportForm.getSelectedMinuteBegin());
+        log.info("End: {}:{}", reportForm.getSelectedHourEnd(), reportForm.getSelectedMinuteEnd());
+        log.info("Duration: {}:{}", reportForm.getSelectedHourDuration(), reportForm.getSelectedMinuteDuration());
+        log.info("Costs: {}", reportForm.getCosts());
+        log.info("Training: {}", reportForm.getTraining());
+        log.info("Comment: {}", reportForm.getComment());
 
         Employeecontract employeeContract = null;
         if ((employeeContract = getEmployeeContractAndSetSessionVars(mapping, request)) == null) {
@@ -119,7 +139,6 @@ public class StoreDailyReportAction extends DailyReportAction {
         coHelper = new CustomerorderHelper();
 
         // check if special tasks initiated from the form or the daily display need to be carried out...
-        AddDailyReportForm reportForm = (AddDailyReportForm) form;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         boolean refreshTime = false;
         int previousDurationhours = reportForm.getSelectedHourDuration();
@@ -138,7 +157,7 @@ public class StoreDailyReportAction extends DailyReportAction {
                 return mapping.getInputForward();
             }
 
-            day = Integer.parseInt(datum.substring(8)); // parsing date from string 
+            day = Integer.parseInt(datum.substring(8)); // parsing date from string
             month = Integer.parseInt(datum.substring(5, 7));
             year = Integer.parseInt(datum.substring(0, 4));
 
@@ -405,7 +424,7 @@ public class StoreDailyReportAction extends DailyReportAction {
                 tr.setCosts(reportForm.getCosts());
                 tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
             } else {
-                // 'special' reports: set suborder in timereport to null.	
+                // 'special' reports: set suborder in timereport to null.
                 tr.setSuborder(null);
                 tr.setCosts(0.0);
             }

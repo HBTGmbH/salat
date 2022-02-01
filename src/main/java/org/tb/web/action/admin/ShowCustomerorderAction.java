@@ -22,7 +22,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class ShowCustomerorderAction extends LoginRequiredAction {
+public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerOrderForm> {
 
     private CustomerorderDAO customerorderDAO;
     private CustomerDAO customerDAO;
@@ -42,10 +42,8 @@ public class ShowCustomerorderAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
-
-        ShowCustomerOrderForm orderForm = (ShowCustomerOrderForm) form;
+        ShowCustomerOrderForm orderForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
         List<Customer> customers = customerDAO.getCustomersOrderedByShortName();
         request.getSession().setAttribute("customers", customers);

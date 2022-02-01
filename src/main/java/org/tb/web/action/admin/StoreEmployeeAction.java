@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class StoreEmployeeAction extends LoginRequiredAction {
+public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
     private EmployeeDAO employeeDAO;
 
@@ -25,8 +25,7 @@ public class StoreEmployeeAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        AddEmployeeForm emForm = (AddEmployeeForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeForm emForm, HttpServletRequest request, HttpServletResponse response) {
 
         if ((request.getParameter("task") != null) &&
                 (request.getParameter("task").equals("save")) ||

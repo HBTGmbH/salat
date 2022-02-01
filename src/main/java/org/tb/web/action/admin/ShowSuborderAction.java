@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class ShowSuborderAction extends LoginRequiredAction {
+public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
     private static final Logger LOG = LoggerFactory.getLogger(ShowSuborderAction.class);
 
     private SuborderDAO suborderDAO;
@@ -47,10 +47,9 @@ public class ShowSuborderAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
+        ShowSuborderForm suborderForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
-        ShowSuborderForm suborderForm = (ShowSuborderForm) form;
         List<Customerorder> visibleCustomerOrders = customerorderDAO.getVisibleCustomerorders();
         request.getSession().setAttribute("visibleCustomerOrders", visibleCustomerOrders);
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

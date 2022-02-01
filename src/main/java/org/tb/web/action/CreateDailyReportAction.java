@@ -1,29 +1,34 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
-import org.tb.helper.TimereportHelper;
-import org.tb.persistence.*;
-import org.tb.util.DateUtils;
-import org.tb.web.form.AddDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Workingday;
+import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
+import org.tb.helper.TimereportHelper;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
+import org.tb.util.DateUtils;
+import org.tb.web.form.AddDailyReportForm;
 
 /**
  * Action class for creation of a timereport
  *
  * @author oda
  */
-public class CreateDailyReportAction extends DailyReportAction {
+public class CreateDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private EmployeecontractDAO employeecontractDAO;
     private CustomerorderDAO customerorderDAO;
@@ -52,8 +57,7 @@ public class CreateDailyReportAction extends DailyReportAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        AddDailyReportForm reportForm = (AddDailyReportForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) {
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         Employeecontract ec;
 
@@ -125,8 +129,8 @@ public class CreateDailyReportAction extends DailyReportAction {
         // set the begin time as the end time of the latest existing timereport of current employee
         // for current day. If no other reports exist so far, set standard begin time (0800).
         int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
-        reportForm.setSelectedHourBegin(beginTime[0]);
-        reportForm.setSelectedMinuteBegin(beginTime[1]);
+        form.setSelectedHourBegin(beginTime[0]);
+        form.setSelectedMinuteBegin(beginTime[1]);
         //		TimereportHelper.refreshHours(reportForm);
 
         if (workingDayIsAvailable) {
@@ -147,26 +151,26 @@ public class CreateDailyReportAction extends DailyReportAction {
             }
 
             if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
-                reportForm.setSelectedMinuteEnd(minute);
-                reportForm.setSelectedHourEnd(hour);
+                form.setSelectedMinuteEnd(minute);
+                form.setSelectedHourEnd(hour);
             } else {
-                reportForm.setSelectedMinuteEnd(beginTime[1]);
-                reportForm.setSelectedHourEnd(beginTime[0]);
+                form.setSelectedMinuteEnd(beginTime[1]);
+                form.setSelectedHourEnd(beginTime[0]);
             }
-            TimereportHelper.refreshHours(reportForm);
+            TimereportHelper.refreshHours(form);
         } else {
-            reportForm.setSelectedHourDuration(0);
-            reportForm.setSelectedMinuteDuration(0);
+            form.setSelectedHourDuration(0);
+            form.setSelectedMinuteDuration(0);
         }
 
         // init form with selected Date
-        reportForm.setReferenceday(simpleDateFormat.format(selectedDate));
+        form.setReferenceday(simpleDateFormat.format(selectedDate));
 
         // init form with first order and corresponding suborders
         List<Suborder> theSuborders;
         if (orders != null && !orders.isEmpty()) {
-            reportForm.setOrder(orders.get(0).getSign());
-            reportForm.setOrderId(orders.get(0).getId());
+            form.setOrder(orders.get(0).getSign());
+            form.setOrderId(orders.get(0).getId());
 
             theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(), selectedDate);
 
@@ -196,13 +200,13 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().removeAttribute("trId");
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("matrix")) {
-            reportForm.setReferenceday(todayString);
+            form.setReferenceday(todayString);
         }
 
         // init the rest of the form
-        reportForm.setCosts(0d);
-        reportForm.setTraining(false);
-        reportForm.setComment("");
+        form.setCosts(0d);
+        form.setTraining(false);
+        form.setComment("");
 
         // store last selected order
         String lastOrder;
@@ -223,7 +227,7 @@ public class CreateDailyReportAction extends DailyReportAction {
         request.getSession().setAttribute("lastLastYear", request.getSession().getAttribute("lastYear"));
         request.getSession().setAttribute("lastSuborderId", request.getSession().getAttribute("suborderFilerId"));
         request.getSession().setAttribute("lastView", request.getSession().getAttribute("view"));
-        request.getSession().setAttribute("lastEmployeeContractId", reportForm.getEmployeeContractId());
+        request.getSession().setAttribute("lastEmployeeContractId", form.getEmployeeContractId());
 
         //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
         if (request.getSession().getAttribute("overtimeCompensation") == null

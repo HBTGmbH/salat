@@ -1,20 +1,37 @@
 package org.tb.web.action;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
-import org.tb.bdom.*;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
 import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
-import org.tb.persistence.*;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.OptionItem;
 import org.tb.web.form.ShowDailyReportForm;
 
-import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDate;
-import java.util.*;
-
-public abstract class DailyReportAction extends LoginRequiredAction {
+public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
     protected void addErrorAtTheBottom(HttpServletRequest request, ActionMessages errors, ActionMessage message) {
         errors.add("status", message);

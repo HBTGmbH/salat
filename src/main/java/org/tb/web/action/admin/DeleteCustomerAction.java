@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class DeleteCustomerAction extends LoginRequiredAction {
+public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
 
     private CustomerDAO customerDAO;
 

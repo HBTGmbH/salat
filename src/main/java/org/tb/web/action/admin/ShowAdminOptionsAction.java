@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class ShowAdminOptionsAction extends LoginRequiredAction {
+public class ShowAdminOptionsAction extends LoginRequiredAction<ActionForm> {
 
     private TimereportDAO timereportDAO;
     private EmployeeorderDAO employeeorderDAO;

@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class EditCustomerAction extends LoginRequiredAction {
+public class EditCustomerAction extends LoginRequiredAction<AddCustomerForm> {
 
     private CustomerDAO customerDAO;
 
@@ -25,8 +25,7 @@ public class EditCustomerAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-        AddCustomerForm cuForm = (AddCustomerForm) form;
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerForm cuForm, HttpServletRequest request, HttpServletResponse response) {
         long cuId = Long.parseLong(request.getParameter("cuId"));
         Customer cu = customerDAO.getCustomerById(cuId);
         request.getSession().setAttribute("cuId", cu.getId());

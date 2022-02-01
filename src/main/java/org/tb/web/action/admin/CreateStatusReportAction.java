@@ -20,7 +20,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-public class CreateStatusReportAction extends StatusReportAction {
+public class CreateStatusReportAction extends StatusReportAction<AddStatusReportForm> {
 
     private EmployeeDAO employeeDAO;
     private CustomerorderDAO customerorderDAO;
@@ -42,9 +42,7 @@ public class CreateStatusReportAction extends StatusReportAction {
      * @see org.tb.web.action.LoginRequiredAction#executeAuthenticated(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
     @Override
-    protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        AddStatusReportForm reportForm = (AddStatusReportForm) form;
+    protected ActionForward executeAuthenticated(ActionMapping mapping, AddStatusReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         // remove action info
         request.getSession().removeAttribute("actionInfo");

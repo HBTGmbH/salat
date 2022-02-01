@@ -1,6 +1,9 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.ActionForm;
+import java.util.Map;
+import java.util.Map.Entry;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
@@ -9,15 +12,15 @@ import org.tb.bdom.Employeecontract;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.matrix.MatrixHelper;
-import org.tb.persistence.*;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.web.form.ShowMatrixForm;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.Map;
-import java.util.Map.Entry;
-
-public class ShowMatrixAction extends DailyReportAction {
+public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
     private CustomerorderDAO customerorderDAO;
     private TimereportDAO timereportDAO;
@@ -51,11 +54,10 @@ public class ShowMatrixAction extends DailyReportAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowMatrixForm reportForm, HttpServletRequest request, HttpServletResponse response) {
 
         // check if special tasks initiated from the daily display need to be
         // carried out...
-        ShowMatrixForm reportForm = (ShowMatrixForm) form;
         TimereportHelper th = new TimereportHelper();
         String task = request.getParameter("task");
 

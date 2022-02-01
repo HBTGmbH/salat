@@ -28,7 +28,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class StoreSuborderAction extends LoginRequiredAction {
+public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
     private static final Logger LOG = LoggerFactory.getLogger(StoreSuborderAction.class);
 
     private CustomerorderDAO customerorderDAO;
@@ -54,10 +54,9 @@ public class StoreSuborderAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
+        AddSuborderForm addSuborderForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
-        AddSuborderForm addSuborderForm = (AddSuborderForm) form;
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
         // remove list with timereports out of range

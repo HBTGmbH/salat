@@ -3,30 +3,43 @@ package org.tb.web.action;
 import static org.tb.web.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
 
-import org.apache.struts.action.ActionForm;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.tb.GlobalConstants;
-import org.tb.bdom.*;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.TimereportHelper;
-import org.tb.persistence.*;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowInvoiceForm;
 import org.tb.web.util.ExcelArchivierer;
 import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
 import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-public class ShowInvoiceAction extends DailyReportAction {
+public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
 
     private CustomerorderDAO customerorderDAO;
 
@@ -60,12 +73,11 @@ public class ShowInvoiceAction extends DailyReportAction {
 
     @SuppressWarnings("unchecked")
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, HttpServletResponse response) {
 
         // check if special tasks initiated from the daily display need to be
         // carried out...
 
-        ShowInvoiceForm showInvoiceForm = (ShowInvoiceForm) form;
         TimereportHelper th = new TimereportHelper();
 
         Map<String, String> monthMap = new HashMap<>();

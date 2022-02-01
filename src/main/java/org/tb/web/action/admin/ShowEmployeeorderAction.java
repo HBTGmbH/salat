@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class ShowEmployeeorderAction extends EmployeeOrderAction {
+public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrderForm> {
 
     private EmployeeorderDAO employeeorderDAO;
     private SuborderDAO suborderDAO;
@@ -46,10 +46,8 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
-
-        ShowEmployeeOrderForm orderForm = (ShowEmployeeOrderForm) form;
+        ShowEmployeeOrderForm orderForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
         if (request.getParameter("task") != null && request.getParameter("task").equalsIgnoreCase("adjustDates")) {
             @SuppressWarnings("unchecked")

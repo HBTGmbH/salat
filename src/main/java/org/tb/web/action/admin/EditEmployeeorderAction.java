@@ -21,7 +21,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class EditEmployeeorderAction extends EmployeeOrderAction {
+public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrderForm> {
 
     private EmployeeorderDAO employeeorderDAO;
     private CustomerorderDAO customerorderDAO;
@@ -40,11 +40,10 @@ public class EditEmployeeorderAction extends EmployeeOrderAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeOrderForm eoForm, HttpServletRequest request, HttpServletResponse response) {
 //		 remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
-        AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
         long eoId = Long.parseLong(request.getParameter("eoId"));
         Employeeorder eo = employeeorderDAO.getEmployeeorderById(eoId);
         request.getSession().setAttribute("eoId", eo.getId());

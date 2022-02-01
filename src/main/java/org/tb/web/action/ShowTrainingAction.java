@@ -1,6 +1,14 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.ActionForm;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
@@ -17,16 +25,10 @@ import org.tb.persistence.TrainingDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowTrainingForm;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
 /**
  * Action class for trainings to be shown on separate page
  */
-public class ShowTrainingAction extends LoginRequiredAction {
+public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
     private final static String TRAINING_ID = "i976";
     private EmployeecontractDAO employeecontractDAO;
@@ -63,9 +65,8 @@ public class ShowTrainingAction extends LoginRequiredAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws ParseException {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowTrainingForm trainingForm, HttpServletRequest request, HttpServletResponse response) throws ParseException {
 
-        ShowTrainingForm trainingForm = (ShowTrainingForm) form;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         Date startdate = simpleDateFormat.parse(trainingForm.getStartdate());
         Date enddate = simpleDateFormat.parse(trainingForm.getEnddate());

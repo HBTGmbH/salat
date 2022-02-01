@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public class ShowEmployeecontractAction extends LoginRequiredAction {
+public class ShowEmployeecontractAction extends LoginRequiredAction<ShowEmployeeContractForm> {
 
     private EmployeecontractDAO employeecontractDAO;
     private EmployeeDAO employeeDAO;
@@ -31,10 +31,9 @@ public class ShowEmployeecontractAction extends LoginRequiredAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
+        ShowEmployeeContractForm contractForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
-        ShowEmployeeContractForm contractForm = (ShowEmployeeContractForm) form;
         request.getSession().setAttribute("employees", employeeDAO.getEmployees());
 
         String filter = null;

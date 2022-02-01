@@ -1,24 +1,36 @@
 package org.tb.web.action;
 
-import org.apache.commons.validator.GenericValidator;
-import org.apache.struts.action.*;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.helper.TimereportHelper;
-import org.tb.persistence.*;
-import org.tb.web.form.ShowDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.validator.GenericValidator;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessages;
+import org.tb.GlobalConstants;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
+import org.tb.helper.TimereportHelper;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.SuborderDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.persistence.WorkingdayDAO;
+import org.tb.web.form.ShowDailyReportForm;
 
 /**
  * Action class for deletion of a timereport initiated from the daily display
  *
  * @author oda
  */
-public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
+public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<ShowDailyReportForm> {
 
     private OvertimeDAO overtimeDAO;
     private CustomerorderDAO customerorderDAO;
@@ -67,7 +79,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
     }
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         ActionMessages errors = getErrors(request);
         if (errors == null) {
@@ -88,9 +100,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
 
         TimereportHelper th = new TimereportHelper();
 
-        ShowDailyReportForm reportForm = (ShowDailyReportForm) request.getSession().getAttribute("reportForm");
-
-        if (!refreshTimereports(request, reportForm, customerorderDAO, timereportDAO, employeecontractDAO,
+        if (!refreshTimereports(request, form, customerorderDAO, timereportDAO, employeecontractDAO,
                 suborderDAO, employeeorderDAO)) {
             return mapping.findForward("error");
         } else {
@@ -103,11 +113,11 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction {
             //refresh workingday
             Workingday workingday;
             try {
-                workingday = refreshWorkingday(reportForm, request, workingdayDAO);
+                workingday = refreshWorkingday(form, request, workingdayDAO);
             } catch (Exception e) {
                 return mapping.findForward("error");
             }
-            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
             request.getSession().setAttribute("quittingtime", th.calculateQuittingTime(workingday, request, "quittingtime"));
             if (employeecontract != null) {
                 request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());

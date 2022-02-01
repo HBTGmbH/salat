@@ -14,10 +14,10 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
-public abstract class AdminRequiredAction extends LoginRequiredAction {
+public abstract class AdminRequiredAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
     @Override
-    protected final ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    protected final ActionForward executeAuthenticated(ActionMapping mapping, F form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         if (request.getSession().getAttribute("admin") != null) {
             return executeAdminAuthenticated(mapping, form, request, response);
         } else {
@@ -25,6 +25,6 @@ public abstract class AdminRequiredAction extends LoginRequiredAction {
         }
     }
 
-    protected abstract ActionForward executeAdminAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception;
+    protected abstract ActionForward executeAdminAuthenticated(ActionMapping mapping, F form, HttpServletRequest request, HttpServletResponse response) throws Exception;
 
 }

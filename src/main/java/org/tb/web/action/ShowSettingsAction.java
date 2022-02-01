@@ -1,16 +1,18 @@
 package org.tb.web.action;
 
-import org.apache.struts.action.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.util.SecureHashUtils;
 import org.tb.web.form.ShowSettingsForm;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-public class ShowSettingsAction extends LoginRequiredAction {
+public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
 
     private EmployeeDAO employeeDAO;
 
@@ -20,10 +22,9 @@ public class ShowSettingsAction extends LoginRequiredAction {
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
-                                                 ActionForm form, HttpServletRequest request,
-                                                 HttpServletResponse response) throws Exception {
+        ShowSettingsForm settingsForm, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
 
-        ShowSettingsForm settingsForm = (ShowSettingsForm) form;
         request.getSession().setAttribute("passwordchanged", false);
 
         if (request.getParameter("task") != null) {

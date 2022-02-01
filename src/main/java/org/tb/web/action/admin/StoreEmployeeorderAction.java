@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @author oda
  */
-public class StoreEmployeeorderAction extends EmployeeOrderAction {
+public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrderForm> {
 
     private EmployeecontractDAO employeecontractDAO;
     private EmployeeorderDAO employeeorderDAO;
@@ -53,10 +53,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction {
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-                                              ActionForm form, HttpServletRequest request,
-                                              HttpServletResponse response) {
+        AddEmployeeOrderForm eoForm, HttpServletRequest request,
+        HttpServletResponse response) {
 
-        AddEmployeeOrderForm eoForm = (AddEmployeeOrderForm) form;
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
         // remove list with timereports out of range
