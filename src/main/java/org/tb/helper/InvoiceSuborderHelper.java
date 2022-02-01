@@ -1,4 +1,4 @@
-package org.tb.web.viewhelper;
+package org.tb.helper;
 
 import static org.tb.util.TimeFormatUtils.decimalFormatHours;
 import static org.tb.util.TimeFormatUtils.decimalFormatMinutes;
@@ -12,7 +12,7 @@ import org.tb.persistence.TimereportDAO;
 import java.util.Date;
 import java.util.List;
 
-public class InvoiceSuborderViewHelper extends Suborder {
+public class InvoiceSuborderHelper extends Suborder {
 
     private static final long serialVersionUID = 1L;
     private final TimereportDAO timereportDAO;
@@ -20,12 +20,12 @@ public class InvoiceSuborderViewHelper extends Suborder {
     private final java.sql.Date untilDate;
     private final boolean invoicebox;
     private Suborder suborder;
-    private List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList;
+    private List<InvoiceTimereportHelper> invoiceTimereportViewHelperList;
     private boolean visible;
     private int layer;
     private InvoiceSuborderActualHoursVisitor visitor = null;
 
-    public InvoiceSuborderViewHelper(Suborder suborder, TimereportDAO timereportDAO, java.sql.Date fromDate, java.sql.Date untilDate, boolean invoicebox) {
+    public InvoiceSuborderHelper(Suborder suborder, TimereportDAO timereportDAO, java.sql.Date fromDate, java.sql.Date untilDate, boolean invoicebox) {
         if (suborder == null) {
             throw new IllegalArgumentException("suborder must not be null!");
         }
@@ -100,7 +100,7 @@ public class InvoiceSuborderViewHelper extends Suborder {
 
     private long getTotalActualminutesHelper(boolean print) {
         long actualminutes = 0;
-        for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceTimereportViewHelperList) {
+        for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceTimereportViewHelperList) {
             if (!print) {
                 actualminutes += invoiceTimereportViewHelper.getDurationminutes();
                 actualminutes += invoiceTimereportViewHelper.getDurationhours() * 60;
@@ -112,11 +112,11 @@ public class InvoiceSuborderViewHelper extends Suborder {
         return actualminutes;
     }
 
-    public List<InvoiceTimereportViewHelper> getInvoiceTimereportViewHelperList() {
+    public List<InvoiceTimereportHelper> getInvoiceTimereportViewHelperList() {
         return invoiceTimereportViewHelperList;
     }
 
-    public void setInvoiceTimereportViewHelperList(List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList) {
+    public void setInvoiceTimereportViewHelperList(List<InvoiceTimereportHelper> invoiceTimereportViewHelperList) {
         this.invoiceTimereportViewHelperList = invoiceTimereportViewHelperList;
     }
 

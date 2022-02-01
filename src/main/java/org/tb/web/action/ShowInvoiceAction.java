@@ -37,8 +37,8 @@ import org.tb.util.DateUtils;
 import org.tb.web.action.dailyreport.DailyReportAction;
 import org.tb.web.form.ShowInvoiceForm;
 import org.tb.util.ExcelArchivierer;
-import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
-import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
+import org.tb.helper.InvoiceSuborderHelper;
+import org.tb.helper.InvoiceTimereportHelper;
 
 public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
 
@@ -99,7 +99,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         // request
         if (request.getParameter("task") != null && request.getParameter("task").equals("generateMaximumView")) {
             String selectedView = showInvoiceForm.getInvoiceview();
-            List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList = new LinkedList<>();
+            List<InvoiceSuborderHelper> invoiceSuborderViewHelperList = new LinkedList<>();
             List<Suborder> suborderList;
             Customerorder customerOrder;
             List<Suborder> suborderListTemp = new LinkedList<>();
@@ -289,25 +289,25 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         } else if (request.getParameter("task") != null
                 && (request.getParameter("task").equals("print") || request.getParameter("task").equals("export") || request.getParameter("task").equals("exportNew"))) {
             // call on InvoiceView with parameter print
-            List<InvoiceSuborderViewHelper> suborderViewhelperList = (List<InvoiceSuborderViewHelper>) request.getSession().getAttribute("viewhelpers");
+            List<InvoiceSuborderHelper> suborderViewhelperList = (List<InvoiceSuborderHelper>) request.getSession().getAttribute("viewhelpers");
             // reset visibility to false
-            for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : suborderViewhelperList) {
+            for (InvoiceSuborderHelper invoiceSuborderViewHelper : suborderViewhelperList) {
                 invoiceSuborderViewHelper.setVisible(false);
-                for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList()) {
+                for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList()) {
                     invoiceTimereportViewHelper.setVisible(false);
                 }
             }
             // set visibility to true if found in arrays
             String[] suborderIds = showInvoiceForm.getSuborderIdArray();
             String[] timereportIds = showInvoiceForm.getTimereportIdArray();
-            for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : suborderViewhelperList) {
+            for (InvoiceSuborderHelper invoiceSuborderViewHelper : suborderViewhelperList) {
                 for (String suborderId : suborderIds) {
                     if (Long.parseLong(suborderId) == invoiceSuborderViewHelper.getId()) {
                         invoiceSuborderViewHelper.setVisible(true);
                         break;
                     }
                 }
-                for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList()) {
+                for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList()) {
                     for (String timereportId : timereportIds) {
                         if (Long.parseLong(timereportId) == invoiceTimereportViewHelper.getId()) {
                             invoiceTimereportViewHelper.setVisible(true);
@@ -318,7 +318,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             }
             long actualMinutesSum = 0;
             int layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
-            for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : suborderViewhelperList) {
+            for (InvoiceSuborderHelper invoiceSuborderViewHelper : suborderViewhelperList) {
                 if (invoiceSuborderViewHelper.getLayer() <= layerlimit
                         || showInvoiceForm.getLayerlimit().equals("-1")) {
                     if (invoiceSuborderViewHelper.isVisible()) {
@@ -425,19 +425,19 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         return mapping.findForward("success");
     }
 
-    private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderViewHelper> invoiceSuborderViewHelperList, java.sql.Date dateFirst, java.sql.Date dateLast,
+    private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderHelper> invoiceSuborderViewHelperList, java.sql.Date dateFirst, java.sql.Date dateLast,
                                   ShowInvoiceForm invoiceForm) {
         List<String> suborderIdList = new ArrayList<>(suborderList.size());
         List<String> timereportIdList = new ArrayList<>();
         for (Suborder suborder : suborderList) {
-            List<InvoiceTimereportViewHelper> invoiceTimereportViewHelperList = new LinkedList<>();
+            List<InvoiceTimereportHelper> invoiceTimereportViewHelperList = new LinkedList<>();
             List<Timereport> timereportList = timereportDAO.getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(dateFirst, dateLast, suborder.getId());
             for (Timereport timereport : timereportList) {
-                InvoiceTimereportViewHelper invoiceTimereportViewHelper = new InvoiceTimereportViewHelper(timereport);
+                InvoiceTimereportHelper invoiceTimereportViewHelper = new InvoiceTimereportHelper(timereport);
                 invoiceTimereportViewHelperList.add(invoiceTimereportViewHelper);
                 timereportIdList.add(String.valueOf(invoiceTimereportViewHelper.getId()));
             }
-            InvoiceSuborderViewHelper newInvoiceSuborderViewHelper = new InvoiceSuborderViewHelper(suborder, timereportDAO, dateFirst, dateLast, invoiceForm.isInvoicebox());
+            InvoiceSuborderHelper newInvoiceSuborderViewHelper = new InvoiceSuborderHelper(suborder, timereportDAO, dateFirst, dateLast, invoiceForm.isInvoicebox());
             newInvoiceSuborderViewHelper.setInvoiceTimereportViewHelperList(invoiceTimereportViewHelperList);
             Pattern p = Pattern.compile("\\.");
             Matcher m = p.matcher(suborder.getSign());
@@ -452,7 +452,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         invoiceForm.setSuborderIdArray(suborderIdList.toArray(new String[0]));
         invoiceForm.setTimereportIdArray(timereportIdList.toArray(new String[0]));
         long totalActualminutes = 0;
-        for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : invoiceSuborderViewHelperList) {
+        for (InvoiceSuborderHelper invoiceSuborderViewHelper : invoiceSuborderViewHelperList) {
             totalActualminutes += invoiceSuborderViewHelper.getTotalActualminutes();
         }
         return timeFormatMinutes(totalActualminutes) + " (" + decimalFormatMinutes(totalActualminutes) + ")";

@@ -9,8 +9,8 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.tb.GlobalConstants;
 import org.tb.web.form.ShowInvoiceForm;
-import org.tb.web.viewhelper.InvoiceSuborderViewHelper;
-import org.tb.web.viewhelper.InvoiceTimereportViewHelper;
+import org.tb.helper.InvoiceSuborderHelper;
+import org.tb.helper.InvoiceTimereportHelper;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletOutputStream;
@@ -118,22 +118,22 @@ public class ExcelArchivierer {
         workbook.createSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME);
         addTitleRow(workbook, showInvoiceForm, request, factory);
         int rowIndex = 1;
-        List<InvoiceSuborderViewHelper> invoiceSuborderViewhelpers = (List<InvoiceSuborderViewHelper>) request.getSession().getAttribute("viewhelpers");
+        List<InvoiceSuborderHelper> invoiceSuborderViewhelpers = (List<InvoiceSuborderHelper>) request.getSession().getAttribute("viewhelpers");
         int layerlimit;
         try {
             layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
         } catch (NumberFormatException e) {
             layerlimit = -1;
         }
-        for (InvoiceSuborderViewHelper invoiceSuborderViewHelper : invoiceSuborderViewhelpers) {
+        for (InvoiceSuborderHelper invoiceSuborderViewHelper : invoiceSuborderViewhelpers) {
             if (invoiceSuborderViewHelper.getLayer() <= layerlimit || layerlimit == -1) {
                 if (invoiceSuborderViewHelper.isVisible()) {
                     rowIndex = addSuborderDataRow(workbook, rowIndex, invoiceSuborderViewHelper, showInvoiceForm, request, factory);
                     // ab hier ggf. Timereports ausgeben
-                    List<InvoiceTimereportViewHelper> invoiceTimereportViewHelpers = invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList();
+                    List<InvoiceTimereportHelper> invoiceTimereportViewHelpers = invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList();
                     if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))
                             && invoiceTimereportViewHelpers.size() > 0) {
-                        for (InvoiceTimereportViewHelper invoiceTimereportViewHelper : invoiceTimereportViewHelpers) {
+                        for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceTimereportViewHelpers) {
                             if (invoiceTimereportViewHelper.isVisible()) {
                                 rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereportViewHelper, request, factory);
                             }
@@ -210,7 +210,7 @@ public class ExcelArchivierer {
         return factory.createRichTextString(str);
     }
 
-    private static int addSuborderDataRow(Workbook workbook, int rowIndex, InvoiceSuborderViewHelper invoiceSuborderViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
+    private static int addSuborderDataRow(Workbook workbook, int rowIndex, InvoiceSuborderHelper invoiceSuborderViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 0;
@@ -272,7 +272,7 @@ public class ExcelArchivierer {
         return rowIndex;
     }
 
-    private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereportViewHelper invoiceTimereportViewHelper, HttpServletRequest request, InstanceFactory factory) {
+    private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereportHelper invoiceTimereportViewHelper, HttpServletRequest request, InstanceFactory factory) {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 1;

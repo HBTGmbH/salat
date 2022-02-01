@@ -1,4 +1,4 @@
-package org.tb.web.viewhelper;
+package org.tb.helper;
 
 import static org.tb.util.TimeFormatUtils.timeFormatHoursAndMinutes;
 
@@ -7,12 +7,12 @@ import org.tb.bdom.*;
 
 import java.util.Date;
 
-public class InvoiceTimereportViewHelper {
+public class InvoiceTimereportHelper {
 
     private Timereport timereport;
     private boolean visible;
 
-    public InvoiceTimereportViewHelper(Timereport timereport) {
+    public InvoiceTimereportHelper(Timereport timereport) {
         this.timereport = timereport;
         this.visible = true;
     }
