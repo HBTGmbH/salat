@@ -1,9 +1,9 @@
--- CREATE DATABASE  IF NOT EXISTS `salattest` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE DATABASE  IF NOT EXISTS `salattest` CHARACTER SET utf8 COLLATE utf8_bin;
+-- CREATE DATABASE  IF NOT EXISTS `salat` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE  IF NOT EXISTS `salat` CHARACTER SET utf8 COLLATE utf8_bin;
 CREATE USER IF NOT EXISTS 'salattest' IDENTIFIED BY 'salattest';
--- GRANT USAGE ON 'salattest'.* TO 'salattest'@'';
-GRANT ALL privileges ON `salattest`.* TO `salattest`@`%`;
-USE `salattest`;
+-- GRANT USAGE ON 'salat'.* TO 'salattest'@'';
+GRANT ALL privileges ON `salat`.* TO `salattest`@`%`;
+USE `salat`;
 -- MySQL dump 10.13  Distrib 5.6.17, for Win32 (x86)
 --
 -- Host: database01    Database: salat
