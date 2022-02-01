@@ -29,6 +29,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.hibernate.HibernateException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
@@ -69,7 +70,7 @@ import org.tb.web.util.OvertimeString;
  */
 @Component("/ShowDailyReport")
 @Slf4j
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = { @Autowired })
 public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm> {
 
     private final OvertimeDAO overtimeDAO;
