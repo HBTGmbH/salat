@@ -152,7 +152,7 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
 
-    public static final String OVERTIME_COMPENSATION_TEXT = "ܜberstundenausgleich";
+    public static final String OVERTIME_COMPENSATION_TEXT = "Überstundenausgleich";
 
     // pathstrings and iconstrings
     public static final String ICONPATH = "/tb/images/";
