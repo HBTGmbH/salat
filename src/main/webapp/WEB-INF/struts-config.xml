@@ -161,7 +161,7 @@
 		</action>
 
 		<action path="/DeleteTimereportFromDailyDisplay"
-			input="/showDailyReport.jsp" name="addDailyReportForm">
+			input="/showDailyReport.jsp" name="showDailyReportForm">
 			<forward name="success" path="/showDailyReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
