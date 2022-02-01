@@ -1,4 +1,4 @@
-package org.tb.web.action;
+package org.tb.web.action.dailyreport;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -29,6 +29,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.OptionItem;
+import org.tb.web.action.LoginRequiredAction;
 import org.tb.web.form.ShowDailyReportForm;
 
 public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {

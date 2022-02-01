@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -24,7 +25,6 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.action.DailyReportAction;
 import org.tb.web.form.AddDailyReportForm;
 
 /**
@@ -34,37 +34,14 @@ import org.tb.web.form.AddDailyReportForm;
  */
 @Component("/EditDailyReport")
 @Slf4j
+@RequiredArgsConstructor
 public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
-    private TimereportDAO timereportDAO;
-    private CustomerorderDAO customerorderDAO;
-    private SuborderDAO suborderDAO;
-    private EmployeecontractDAO employeecontractDAO;
-    private WorkingdayDAO workingdayDAO;
-
-    public TimereportDAO getTimereportDAO() {
-        return timereportDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
-
-    public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
-        this.workingdayDAO = workingdayDAO;
-    }
+    private final TimereportDAO timereportDAO;
+    private final CustomerorderDAO customerorderDAO;
+    private final SuborderDAO suborderDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final WorkingdayDAO workingdayDAO;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {

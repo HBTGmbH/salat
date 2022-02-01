@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -58,7 +59,6 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.action.DailyReportAction;
 import org.tb.web.form.ShowDailyReportForm;
 import org.tb.web.util.OvertimeString;
 
@@ -69,58 +69,19 @@ import org.tb.web.util.OvertimeString;
  */
 @Component("/ShowDailyReport")
 @Slf4j
+@RequiredArgsConstructor
 public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm> {
 
-    private OvertimeDAO overtimeDAO;
-    private CustomerorderDAO customerorderDAO;
-    private TimereportDAO timereportDAO;
-    private EmployeecontractDAO employeecontractDAO;
-    private SuborderDAO suborderDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private PublicholidayDAO publicholidayDAO;
-    private WorkingdayDAO workingdayDAO;
-    private EmployeeDAO employeeDAO;
-    private ReferencedayDAO referencedayDAO;
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
-
-    public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
-        this.workingdayDAO = workingdayDAO;
-    }
-
-    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
-        this.publicholidayDAO = publicholidayDAO;
-    }
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-        this.overtimeDAO = overtimeDAO;
-    }
-
-    public void setReferencedayDAO(ReferencedayDAO referencedayDAO) {
-        this.referencedayDAO = referencedayDAO;
-    }
+    private final OvertimeDAO overtimeDAO;
+    private final CustomerorderDAO customerorderDAO;
+    private final TimereportDAO timereportDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final SuborderDAO suborderDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final PublicholidayDAO publicholidayDAO;
+    private final WorkingdayDAO workingdayDAO;
+    private final EmployeeDAO employeeDAO;
+    private final ReferencedayDAO referencedayDAO;
 
     /**
      * parses a string to a long value and returns its value

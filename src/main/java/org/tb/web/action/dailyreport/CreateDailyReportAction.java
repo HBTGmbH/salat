@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -23,7 +24,6 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.action.DailyReportAction;
 import org.tb.web.form.AddDailyReportForm;
 
 /**
@@ -33,33 +33,14 @@ import org.tb.web.form.AddDailyReportForm;
  */
 @Component("/CreateDailyReport")
 @Slf4j
+@RequiredArgsConstructor
 public class CreateDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
-    private EmployeecontractDAO employeecontractDAO;
-    private CustomerorderDAO customerorderDAO;
-    private SuborderDAO suborderDAO;
-    private TimereportDAO timereportDAO;
-    private WorkingdayDAO workingdayDAO;
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
-        this.workingdayDAO = workingdayDAO;
-    }
+    private final EmployeecontractDAO employeecontractDAO;
+    private final CustomerorderDAO customerorderDAO;
+    private final SuborderDAO suborderDAO;
+    private final TimereportDAO timereportDAO;
+    private final WorkingdayDAO workingdayDAO;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) {

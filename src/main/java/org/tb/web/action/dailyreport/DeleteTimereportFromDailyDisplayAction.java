@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
@@ -25,7 +26,6 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
-import org.tb.web.action.DailyReportAction;
 import org.tb.web.form.ShowDailyReportForm;
 
 /**
@@ -35,53 +35,15 @@ import org.tb.web.form.ShowDailyReportForm;
  */
 @Component("/DeleteTimereportFromDailyDisplay")
 @Slf4j
+@RequiredArgsConstructor
 public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<ShowDailyReportForm> {
 
-    private OvertimeDAO overtimeDAO;
-    private CustomerorderDAO customerorderDAO;
-    private TimereportDAO timereportDAO;
-    private EmployeecontractDAO employeecontractDAO;
-    private SuborderDAO suborderDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private PublicholidayDAO publicholidayDAO;
-    private WorkingdayDAO workingdayDAO;
-    private EmployeeDAO employeeDAO;
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
-
-    public void setWorkingdayDAO(WorkingdayDAO workingdayDAO) {
-        this.workingdayDAO = workingdayDAO;
-    }
-
-    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
-        this.publicholidayDAO = publicholidayDAO;
-    }
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-        this.overtimeDAO = overtimeDAO;
-    }
+    private final CustomerorderDAO customerorderDAO;
+    private final TimereportDAO timereportDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final SuborderDAO suborderDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final WorkingdayDAO workingdayDAO;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {

@@ -18,6 +18,7 @@ import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.web.action.dailyreport.DailyReportAction;
 import org.tb.web.form.ShowMatrixForm;
 
 public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
