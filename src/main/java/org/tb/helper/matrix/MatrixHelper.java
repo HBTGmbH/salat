@@ -629,9 +629,10 @@ public class MatrixHelper {
         }
         results.put("mergedreports", reportWrapper.getMergedReportList());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
-        results.put("dayhourssum", reportWrapper.getDayHoursSum());
-        results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
+        results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
+        results.put("dayhourstargetstring", reportWrapper.getDayHoursTargetString());
         results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
+        results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
         results.put("daysofmonth", maxDays);
         return results;
     }
