@@ -1,4 +1,4 @@
-package org.tb.web.util;
+package org.tb.util;
 
 import org.apache.commons.mail.EmailException;
 import org.tb.bdom.Employee;

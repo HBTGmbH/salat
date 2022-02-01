@@ -29,7 +29,7 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
 import org.tb.web.form.ShowReleaseForm;
-import org.tb.web.util.MailSender;
+import org.tb.util.MailSender;
 
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     private static final Logger LOG = LoggerFactory.getLogger(ShowReleaseAction.class);

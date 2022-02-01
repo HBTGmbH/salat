@@ -1,4 +1,4 @@
-package org.tb.web.util;
+package org.tb.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
