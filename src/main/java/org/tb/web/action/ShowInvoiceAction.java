@@ -1,7 +1,7 @@
 package org.tb.web.action;
 
-import static org.tb.web.util.TimeFormatUtils.decimalFormatMinutes;
-import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
+import static org.tb.util.TimeFormatUtils.decimalFormatMinutes;
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

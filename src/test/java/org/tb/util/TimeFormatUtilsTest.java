@@ -1,6 +1,6 @@
-package org.tb.web.util;
+package org.tb.util;
 
-import static org.tb.web.util.TimeFormatUtils.*;
+import static org.tb.util.TimeFormatUtils.*;
 
 import junit.framework.TestCase;
 

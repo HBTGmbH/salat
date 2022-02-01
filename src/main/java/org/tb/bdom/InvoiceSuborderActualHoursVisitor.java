@@ -1,11 +1,14 @@
 package org.tb.bdom;
 
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
+
 import lombok.RequiredArgsConstructor;
 import org.tb.GlobalConstants;
 import org.tb.persistence.TimereportDAO;
 
 import java.sql.Date;
 import java.text.DecimalFormat;
+import org.tb.util.TimeFormatUtils;
 
 @RequiredArgsConstructor
 public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
@@ -27,8 +30,7 @@ public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
     }
 
     public String getTotalTime() {
-        DecimalFormat decimalFormat = new DecimalFormat("00");
-        return decimalFormat.format(durationMinutes / 60) + ":" + decimalFormat.format(durationMinutes % 60);
+        return timeFormatMinutes(durationMinutes);
     }
 
     public long getTotalMinutes() {

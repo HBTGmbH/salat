@@ -2,8 +2,8 @@ package org.tb.helper;
 
 import static java.math.RoundingMode.DOWN;
 import static java.util.Locale.GERMAN;
-import static org.tb.web.util.TimeFormatUtils.timeFormatHours;
-import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
+import static org.tb.util.TimeFormatUtils.timeFormatHours;
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;

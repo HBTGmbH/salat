@@ -1,6 +1,6 @@
 package org.tb.helper.matrix;
 
-import static org.tb.web.util.TimeFormatUtils.timeFormatHours;
+import static org.tb.util.TimeFormatUtils.timeFormatHours;
 
 import lombok.Data;
 

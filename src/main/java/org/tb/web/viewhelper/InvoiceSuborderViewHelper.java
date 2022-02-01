@@ -1,9 +1,9 @@
 package org.tb.web.viewhelper;
 
-import static org.tb.web.util.TimeFormatUtils.decimalFormatHours;
-import static org.tb.web.util.TimeFormatUtils.decimalFormatMinutes;
-import static org.tb.web.util.TimeFormatUtils.timeFormatHours;
-import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
+import static org.tb.util.TimeFormatUtils.decimalFormatHours;
+import static org.tb.util.TimeFormatUtils.decimalFormatMinutes;
+import static org.tb.util.TimeFormatUtils.timeFormatHours;
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import org.tb.bdom.*;
 import org.tb.persistence.SuborderDAO;
