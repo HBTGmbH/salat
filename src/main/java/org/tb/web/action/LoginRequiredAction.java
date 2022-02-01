@@ -30,7 +30,7 @@ public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAct
             request.getSession().removeAttribute("errors");
         }
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        if (isAllowedForRestrictedUsers() || (loginEmployee != null && !loginEmployee.isRestricted())) {
+        if (loginEmployee != null && (isAllowedForRestrictedUsers() || !loginEmployee.isRestricted())) {
             log.trace("entering {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
             try {
                 return executeAuthenticated(mapping, form, request, response);
