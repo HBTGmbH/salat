@@ -99,6 +99,9 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
         TimereportHelper th = new TimereportHelper();
+        if (!timereportDAO.deleteTimereportById(trId)) {
+            return mapping.findForward("error");
+        }
 
         if (!refreshTimereports(request, form, customerorderDAO, timereportDAO, employeecontractDAO,
                 suborderDAO, employeeorderDAO)) {
