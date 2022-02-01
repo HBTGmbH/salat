@@ -11,8 +11,7 @@
                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
 	   default-autowire="byName" default-lazy-init="false">
 
-    <tx:annotation-driven transaction-manager="txManager"/>
-
+  <tx:annotation-driven transaction-manager="txManager"/>
 	<context:component-scan base-package="org.tb"/>
 
 	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
@@ -80,14 +79,6 @@
 	<bean name="/EditStatusReport" class="org.tb.action.admin.EditStatusReportAction" />
 	<bean name="/DeleteStatusReport" class="org.tb.action.admin.DeleteStatusReportAction" />
 	<bean name="/StoreStatusReport" class="org.tb.action.admin.StoreStatusReportAction" />
-
-
-	<!-- mobile actions -->
-	<bean name="/mobile/suborder/getSuborders" class="org.tb.mobile.GetSubordersAction" />
-	<bean name="/mobile/timereport/store" class="org.tb.mobile.StoreTimereportAction" />
-	<bean name="/mobile/timereport/getTimereports" class="org.tb.mobile.GetTimereportsAction" />
-	<bean name="/mobile/timereport/getTimereport" class="org.tb.mobile.GetTimereportAction" />
-	<bean name="/mobile/login" class="org.tb.mobile.LoginMobileAction" />
 
 	<!-- Data Access Objects -->
 	<bean id="employeeDAO" class="org.tb.persistence.EmployeeDAO">

@@ -49,16 +49,6 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	<filter>
-		<display-name>LoginMobileFilter</display-name>
-		<filter-name>LoginMobileFilter</filter-name>
-		<filter-class>org.tb.mobile.LoginMobileFilter</filter-class>
-	</filter>
-	<filter-mapping>
-		<filter-name>LoginMobileFilter</filter-name>
-		<url-pattern>/mobile/pages/addDailyReport.html</url-pattern>
-		<dispatcher>REQUEST</dispatcher>
-	</filter-mapping>
-	<filter>
 		<filter-name>PerformanceLoggingFilter</filter-name>
 		<filter-class>org.tb.util.PerformanceLoggingFilter</filter-class>
 		<init-param>
