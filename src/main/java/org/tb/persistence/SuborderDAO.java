@@ -1,7 +1,6 @@
 package org.tb.persistence;
 
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -300,7 +299,7 @@ public class SuborderDAO extends AbstractDAO {
         }
         session.saveOrUpdate(so);
         session.flush();
-        //session.clear(); nicht praktikabel da später benötigte objekte der session bekannt aber nicht mehr vorhanden sind. bei speicherproblemen evtl. session.evict()
+        //session.clear(); nicht praktikabel da spÃ¤ter benÃ¶tigte objekte der session bekannt aber nicht mehr vorhanden sind. bei speicherproblemen evtl. session.evict()
     }
 
     /**
