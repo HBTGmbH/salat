@@ -5,7 +5,7 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.ShowEmployeeContractForm;
+import org.tb.form.ShowEmployeeContractForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

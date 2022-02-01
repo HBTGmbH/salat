@@ -4,7 +4,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
-import org.tb.web.form.ShowEmployeeOrderForm;
+import org.tb.form.ShowEmployeeOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

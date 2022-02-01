@@ -8,8 +8,8 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.*;
-import org.tb.web.form.AddEmployeeOrderForm;
-import org.tb.web.form.ShowEmployeeOrderForm;
+import org.tb.form.AddEmployeeOrderForm;
+import org.tb.form.ShowEmployeeOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;

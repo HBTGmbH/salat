@@ -11,7 +11,7 @@ import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.form.AddDailyReportForm;
+import org.tb.form.AddDailyReportForm;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;

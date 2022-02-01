@@ -10,7 +10,7 @@ import org.tb.bdom.Employeeordercontent;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.util.OptionItem;
-import org.tb.web.form.AddEmployeeOrderContentForm;
+import org.tb.form.AddEmployeeOrderContentForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

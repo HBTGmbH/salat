@@ -4,7 +4,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.persistence.CustomerDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.ShowCustomerForm;
+import org.tb.form.ShowCustomerForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

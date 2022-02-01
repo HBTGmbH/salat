@@ -17,7 +17,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.action.dailyreport.DailyReportAction;
-import org.tb.web.form.ShowWelcomeForm;
+import org.tb.form.ShowWelcomeForm;
 
 public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 

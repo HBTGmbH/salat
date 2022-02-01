@@ -35,7 +35,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.action.dailyreport.DailyReportAction;
-import org.tb.web.form.ShowInvoiceForm;
+import org.tb.form.ShowInvoiceForm;
 import org.tb.util.ExcelArchivierer;
 import org.tb.helper.InvoiceSuborderHelper;
 import org.tb.helper.InvoiceTimereportHelper;

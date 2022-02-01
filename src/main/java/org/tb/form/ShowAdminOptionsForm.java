@@ -1,4 +1,4 @@
-package org.tb.web.form;
+package org.tb.form;
 
 import org.apache.struts.action.ActionForm;
 

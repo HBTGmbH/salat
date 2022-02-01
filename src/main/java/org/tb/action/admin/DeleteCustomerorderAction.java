@@ -7,7 +7,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.ShowCustomerOrderForm;
+import org.tb.form.ShowCustomerOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

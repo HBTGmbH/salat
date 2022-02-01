@@ -24,7 +24,7 @@ import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
-import org.tb.web.form.ShowDailyReportForm;
+import org.tb.form.ShowDailyReportForm;
 
 /**
  * Action class for deletion of a timereport initiated from the daily display

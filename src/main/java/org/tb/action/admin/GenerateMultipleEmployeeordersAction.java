@@ -5,7 +5,7 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.GenerateMultipleEmployeeordersForm;
+import org.tb.form.GenerateMultipleEmployeeordersForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

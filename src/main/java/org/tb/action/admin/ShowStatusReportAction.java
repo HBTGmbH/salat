@@ -6,7 +6,7 @@ import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Statusreport;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.StatusReportDAO;
-import org.tb.web.form.ShowStatusReportForm;
+import org.tb.form.ShowStatusReportForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

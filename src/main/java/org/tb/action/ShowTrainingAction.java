@@ -23,7 +23,7 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.TrainingDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.form.ShowTrainingForm;
+import org.tb.form.ShowTrainingForm;
 
 /**
  * Action class for trainings to be shown on separate page

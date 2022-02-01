@@ -7,7 +7,7 @@ import org.tb.bdom.*;
 import org.tb.persistence.*;
 import org.tb.util.DateUtils;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.AddCustomerOrderForm;
+import org.tb.form.AddCustomerOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

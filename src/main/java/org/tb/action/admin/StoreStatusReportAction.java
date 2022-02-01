@@ -8,7 +8,7 @@ import org.tb.bdom.Statusreport;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.StatusReportDAO;
-import org.tb.web.form.AddStatusReportForm;
+import org.tb.form.AddStatusReportForm;
 import org.tb.util.MailSender;
 
 import javax.servlet.http.HttpServletRequest;

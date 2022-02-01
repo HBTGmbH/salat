@@ -10,7 +10,7 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.util.SecureHashUtils;
-import org.tb.web.form.ShowSettingsForm;
+import org.tb.form.ShowSettingsForm;
 
 public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
 

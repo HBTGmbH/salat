@@ -19,7 +19,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.action.dailyreport.DailyReportAction;
-import org.tb.web.form.ShowMatrixForm;
+import org.tb.form.ShowMatrixForm;
 
 public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 

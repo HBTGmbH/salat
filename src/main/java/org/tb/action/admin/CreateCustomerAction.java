@@ -5,7 +5,7 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Customer;
 import org.tb.persistence.CustomerDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.AddCustomerForm;
+import org.tb.form.AddCustomerForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

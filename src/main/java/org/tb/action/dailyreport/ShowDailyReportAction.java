@@ -62,7 +62,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.form.ShowDailyReportForm;
+import org.tb.form.ShowDailyReportForm;
 
 /**
  * Action class for a timereport to be shown in the daily display

@@ -6,7 +6,7 @@ import org.apache.struts.action.*;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
-import org.tb.web.form.AddEmployeeOrderForm;
+import org.tb.form.AddEmployeeOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

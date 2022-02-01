@@ -27,7 +27,7 @@ import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.SecureHashUtils;
-import org.tb.web.form.LoginEmployeeForm;
+import org.tb.form.LoginEmployeeForm;
 
 /**
  * Action class for the login of an employee

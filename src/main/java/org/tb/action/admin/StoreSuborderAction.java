@@ -11,7 +11,7 @@ import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.AddSuborderForm;
+import org.tb.form.AddSuborderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

@@ -28,7 +28,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
-import org.tb.web.form.ShowReleaseForm;
+import org.tb.form.ShowReleaseForm;
 import org.tb.util.MailSender;
 
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {

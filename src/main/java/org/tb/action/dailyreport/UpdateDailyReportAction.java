@@ -31,8 +31,8 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.form.ShowDailyReportForm;
-import org.tb.web.form.UpdateDailyReportForm;
+import org.tb.form.ShowDailyReportForm;
+import org.tb.form.UpdateDailyReportForm;
 
 /**
  * action class for updating a timereport directly from daily display

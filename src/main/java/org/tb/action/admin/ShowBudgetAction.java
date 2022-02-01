@@ -11,7 +11,7 @@ import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.web.form.ShowBudgetForm;
+import org.tb.form.ShowBudgetForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

@@ -26,7 +26,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.form.AddDailyReportForm;
+import org.tb.form.AddDailyReportForm;
 
 /**
  * Action class for editing of a timereport

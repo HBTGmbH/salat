@@ -7,7 +7,7 @@ import org.tb.bdom.*;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.web.form.AddEmployeeOrderForm;
+import org.tb.form.AddEmployeeOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

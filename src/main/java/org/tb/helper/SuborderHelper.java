@@ -5,8 +5,8 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.web.form.AddDailyReportForm;
-import org.tb.web.form.ShowDailyReportForm;
+import org.tb.form.AddDailyReportForm;
+import org.tb.form.ShowDailyReportForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;

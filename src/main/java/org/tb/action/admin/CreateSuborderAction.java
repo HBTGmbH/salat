@@ -9,7 +9,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.web.form.AddSuborderForm;
+import org.tb.form.AddSuborderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
