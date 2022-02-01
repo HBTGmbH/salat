@@ -1,18 +1,33 @@
 package org.tb.helper;
 
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
+
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
+import javax.servlet.http.HttpSession;
 import org.apache.struts.util.MessageResources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.persistence.*;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Statusreport;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Warning;
+import org.tb.persistence.CustomerorderDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
+import org.tb.persistence.PublicholidayDAO;
+import org.tb.persistence.StatusReportDAO;
+import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.util.OvertimeString;
-
-import javax.servlet.http.HttpSession;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.util.*;
 
 public class AfterLogin {
     private static final Logger LOG = LoggerFactory.getLogger(AfterLogin.class);
@@ -212,7 +227,7 @@ public class AfterLogin {
 
         session.setAttribute("overtimeIsNegative", overtimeIsNegative);
 
-        String overtimeString = OvertimeString.overtimeToString(overtime);
+        String overtimeString = timeFormatMinutes(overtime);
         session.setAttribute("overtime", overtimeString);
 
         //overtime this month
@@ -233,7 +248,7 @@ public class AfterLogin {
         }
         boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;
         session.setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
-        String monthlyOvertimeString = OvertimeString.overtimeToString(monthlyOvertime);
+        String monthlyOvertimeString = timeFormatMinutes(monthlyOvertime);
         session.setAttribute("monthlyOvertime", monthlyOvertimeString);
 
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");

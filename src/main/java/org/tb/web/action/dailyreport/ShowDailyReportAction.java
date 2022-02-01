@@ -1,5 +1,7 @@
 package org.tb.web.action.dailyreport;
 
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -61,7 +63,6 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.web.form.ShowDailyReportForm;
-import org.tb.web.util.OvertimeString;
 
 /**
  * Action class for a timereport to be shown in the daily display
@@ -503,7 +504,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     boolean overtimeUntilIsNeg = overtime < 0;
                     request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);
                     request.getSession().setAttribute("enddate", simpleDateFormat.format(date));
-                    String overtimeString = OvertimeString.overtimeToString(overtime);
+                    String overtimeString = timeFormatMinutes(overtime);
                     request.getSession().setAttribute("overtimeUntil", overtimeString);
                 }
 
