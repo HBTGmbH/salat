@@ -1,4 +1,4 @@
-package org.tb.web.action;
+package org.tb.web.action.dailyreport;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -56,6 +56,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
+import org.tb.web.action.DailyReportAction;
 import org.tb.web.form.ShowDailyReportForm;
 import org.tb.web.util.OvertimeString;
 

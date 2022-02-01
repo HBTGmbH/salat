@@ -1,4 +1,4 @@
-package org.tb.web.action;
+package org.tb.web.action.dailyreport;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,6 +22,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
+import org.tb.web.action.DailyReportAction;
 import org.tb.web.form.AddDailyReportForm;
 
 /**

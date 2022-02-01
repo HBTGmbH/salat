@@ -1,4 +1,4 @@
-package org.tb.web.action;
+package org.tb.web.action.dailyreport;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -43,6 +43,7 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
+import org.tb.web.action.DailyReportAction;
 import org.tb.web.form.AddDailyReportForm;
 import org.tb.web.form.ShowDailyReportForm;
 
