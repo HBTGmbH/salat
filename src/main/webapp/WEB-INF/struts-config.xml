@@ -94,7 +94,6 @@
 		<action path="/StoreDailyReport" input="/dailyreport/addDailyReport.jsp" validate="true" name="addDailyReportForm">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" redirect="true" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="showMonthly" path="/showMonthlyReport.jsp" />
 			<forward name="showDaily" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
@@ -104,7 +103,6 @@
 		<action path="/UpdateDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true" name="updateDailyReportForm">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="showMonthly" path="/showMonthlyReport.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />

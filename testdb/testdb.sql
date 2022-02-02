@@ -308,36 +308,6 @@ LOCK TABLES `invoice` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `monthlyreport`
---
-
-DROP TABLE IF EXISTS `monthlyreport`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `monthlyreport` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `hourbalance` double DEFAULT NULL,
-  `month` int(11) DEFAULT NULL,
-  `ok_av` bit(1) DEFAULT NULL,
-  `ok_ma` bit(1) DEFAULT NULL,
-  `year` int(11) DEFAULT NULL,
-  `EMPLOYEECONTRACT_ID` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK96E61761789484B2` (`EMPLOYEECONTRACT_ID`),
-  CONSTRAINT `FK96E61761789484B2` FOREIGN KEY (`EMPLOYEECONTRACT_ID`) REFERENCES `employeecontract` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=6732 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `monthlyreport`
---
-
-LOCK TABLES `monthlyreport` WRITE;
-/*!40000 ALTER TABLE `monthlyreport` DISABLE KEYS */;
-/*!40000 ALTER TABLE `monthlyreport` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `overtime`
 --
 
