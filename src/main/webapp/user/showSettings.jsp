@@ -5,21 +5,19 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-<html:base />
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.application.title" /> -
-<bean:message key="main.general.mainmenu.settings.title.text" /></title>
-<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-
-<script type="text/javascript" language="JavaScript">
-	
-	function setStoreAction(form, actionVal) {	
- 		form.action = "do/ShowSettings?task=" + actionVal;
-		form.submit();
-	}	
-			
-</script>
-
+	<html:base />
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+	<title><bean:message key="main.general.application.title" /> -
+	<bean:message key="main.general.mainmenu.settings.title.text" /></title>
+	<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="../style/tb.css" media="all" />
+	<link rel="stylesheet" type="text/css" href="../style/print.css" media="print" />
+	<script type="text/javascript" language="JavaScript">
+		function setStoreAction(form, actionVal) {
+			form.action = "../do/ShowSettings?task=" + actionVal;
+			form.submit();
+		}
+	</script>
 </head>
 <body>
 <jsp:include flush="true" page="/menu.jsp">

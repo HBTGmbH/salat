@@ -266,11 +266,11 @@
 					</tr>
 					<br>
 					<td class="noBborderStyle" nowrap align="left"><img id="img1"
-						src="../images/Edit.gif" border="0"> <bean:message
+																		src="../images/Edit.gif" border="0"> <bean:message
 							key="main.general.structureInstructionEdit.text" /></td>
 					<br>
 					<td class="noBborderStyle" nowrap align="left"><img id="img1"
-						src="../images/Delete.gif" border="0"> <bean:message
+																		src="../images/Delete.gif" border="0"> <bean:message
 							key="main.general.structureInstructionDelete.text" /></td>
 				</c:when>
 				<c:otherwise>
@@ -778,7 +778,7 @@
 								<td align="center"><html:link
 										href="../do/EditSuborder?soId=${suborder.id}">
 										<img src="../images/Edit.gif" alt="Edit Suborder"
-											title="<bean:message key="main.headlinedescription.suborders.edit.text"/>" />
+											 title="<bean:message key="main.headlinedescription.suborders.edit.text"/>" />
 									</html:link></td>
 								<td align="center"><html:image
 										onclick="confirmDelete(this.form, ${suborder.id})"
@@ -787,11 +787,11 @@
 							</c:when>
 							<c:otherwise>
 								<td align="center"><img height="12px" width="12px"
-									src="../images/verbot.gif" alt="Edit Suborder"
-									title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
+														src="../images/verbot.gif" alt="Edit Suborder"
+														title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
 								<td align="center"><img height="12px" width="12px"
-									src="../images/verbot.gif" alt="Delete Suborder"
-									title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
+														src="../images/verbot.gif" alt="Delete Suborder"
+														title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
 							</c:otherwise>
 						</c:choose>
 						</tr>

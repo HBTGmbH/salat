@@ -188,7 +188,7 @@
                	<html:text property="validFrom" readonly="false" size="12" maxlength="10" />
                	<a href="javascript:calenderPopupFrom()" name="from" ID="from" style="text-decoration:none;"> 
                		<img src="../images/popupcalendar.gif" width="22" height="22"
-	               		alt="<bean:message key="main.date.popup.alt.text" />" style="border:0;vertical-align:top">
+						 alt="<bean:message key="main.date.popup.alt.text" />" style="border:0;vertical-align:top">
 				</a>
 				<%-- Arrows for navigating the from-Date --%>
 				&nbsp;&nbsp;
@@ -218,9 +218,9 @@
 				property="validUntil" readonly="false" size="12" maxlength="10" />
 			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
 				style="text-decoration:none;"> <img
-				src="../images/popupcalendar.gif" width="22" height="22"
-				alt="<bean:message key="main.date.popup.alt.text" />"
-				style="border:0;vertical-align:top"> </a>
+					src="../images/popupcalendar.gif" width="22" height="22"
+					alt="<bean:message key="main.date.popup.alt.text" />"
+					style="border:0;vertical-align:top"> </a>
 				
 				<%-- Arrows for navigating the until-Date --%>
 				&nbsp;&nbsp;

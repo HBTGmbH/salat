@@ -6,109 +6,83 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-
 <html:html>
 <head>
 <html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployeecontract.text" /></title>
+<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addcustomerorder.text" /></title>
 <link rel="stylesheet" type="text/css" href="../style/tb.css" />
 <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
-	
+
 	function setDate(which, howMuch) {
-		document.forms[0].action = "../do/StoreEmployeecontract?task=setDate&which=" + which + "&howMuch=" + howMuch;
+		document.forms[0].action = "../do/StoreCustomerorder?task=setDate&which=" + which + "&howMuch=" + howMuch;
 		document.forms[0].submit();
 	}
 	
 	function setStoreAction(form, actionVal, addMore) {	
- 		form.action = "../do/StoreEmployeecontract?task=" + actionVal + "&continue=" + addMore;
+		form.action = "../do/StoreCustomerorder?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 	}
 		
 	function afterCalenderClick() {
 	}
-		
+	
+		function showWMTT(Trigger,id) {
+  	  wmtt = document.getElementById(id);
+    	var hint;
+   	 hint = Trigger.getAttribute("hint");
+   	 //if((hint != null) && (hint != "")){
+   	 	//wmtt.innerHTML = hint;
+    	wmtt.style.display = "block";
+   	 //}
+	}
+
+	function hideWMTT() {
+		wmtt.style.display = "none";
+	}
+					
 </script>
 
 </head>
 <body>
 
-<html:form action="/StoreEmployeecontract">
+<html:form action="/StoreCustomerorder">
 
 	<jsp:include flush="true" page="/menu.jsp">
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
 	<br>
 	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
-		key="main.general.enteremployeecontractproperties.text" />:<br></span>
+		key="main.general.entercustomerorderproperties.text" />:<br></span>
 	<br>
+
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.employee.text" /></b></td>
-			<td align="left" class="noBborderStyle">
-				<c:choose>
-					<c:when test="${employeeContractContext eq 'create'}">
-						<html:select
-							property="employee">
-						<html:options collection="employees" labelProperty="name"
-							property="id" />
-						</html:select>  <span style="color:red"><html:errors
-							property="employeename" /></span>
-					</c:when>
-					<c:otherwise>
-						<b><c:out value="${currentEmployee}" /></b>
-					</c:otherwise>
-				</c:choose>
-			</td>
-		</tr>
-		
-		
-	<tr>
-	  <td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.supervisor.text" /></b></td>
-	  <td align="left" class="noBborderStyle">
-	 
-		<html:select property="supervisorid" onchange="refresh(this.form)">
-				<html:options collection="empWithCont" labelProperty="name"
-							property="id" />
-				<%--
-				<c:forEach var="employee" items="${empWithCont}">
-					 <c:if test="${employee.status == 'bl' || employee.status == 'pv'}"> 
-						<html:option value="${employee.id}">
-							<c:out value="${employee.name}" />
-						</html:option>
-					</c:if> 
-				</c:forEach>
-				--%>				
-			</html:select>
-<%--			warning for supervisor --%>
-			<span style="color:red"><html:errors
-				property="invalidSupervisor" /></span>
-	</td> 
-	
-	</tr>
-		
-		
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.taskdescription.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:textarea
-				property="taskdescription" cols="40" rows="6" /> <span
-				style="color:red"><html:errors property="taskdescription" /></span>
-			</td>
+				key="main.customerorder.customer.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:select
+				property="customerId">
+				<html:options collection="customers" labelProperty="shortname"
+					property="id" />
+			</html:select></td>
 		</tr>
 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.validfrom.text" /></b></td>
-			<td align="left" class="noBborderStyle">
-		
-			<!-- JavaScript Stuff for popup calender -->
+				key="main.customerorder.sign.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="sign" size="40"
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH %>" />
+			<span style="color:red"><html:errors property="sign" /></span></td>
+		</tr>
+
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.validfrom.text" /></b></td>
+			<td align="left" class="noBborderStyle"><!-- JavaScript Stuff for popup calender -->
 			<script type="text/javascript" language="JavaScript"
 				src=""../scripts/"CalendarPopup.js"></script> <script type="text/javascript"
 				language="JavaScript">
@@ -133,12 +107,12 @@
                         cal.select(document.forms[0].validUntil,'until','yyyy-MM-dd');
                     }
                 </script> <html:text property="validFrom" readonly="false"
-				size="10" maxlength="10" /> <a
+				size="12" maxlength="10" /> <a
 				href="javascript:calenderPopupFrom()" name="from" ID="from"
 				style="text-decoration:none;"> <img
-				src="../images/popupcalendar.gif" width="22" height="22"
-				alt="<bean:message key="main.date.popup.alt.text" />"
-				style="border:0;vertical-align:top"> </a> 
+						src="../images/popupcalendar.gif" width="22" height="22"
+						alt="<bean:message key="main.date.popup.alt.text" />"
+						style="border:0;vertical-align:top"> </a>
 				
 				<%-- Arrows for navigating the from-Date --%>
 				&nbsp;&nbsp;
@@ -162,14 +136,14 @@
 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.validuntil.text" /></b></td>
+				key="main.customerorder.validuntil.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
-				property="validUntil" readonly="false" size="10" maxlength="10" />
+				property="validUntil" readonly="false" size="12" maxlength="10" />
 			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
 				style="text-decoration:none;"> <img
-				src="../images/popupcalendar.gif" width="22" height="22"
-				alt="<bean:message key="main.date.popup.alt.text" />"
-				style="border:0;vertical-align:top"> </a>
+					src="../images/popupcalendar.gif" width="22" height="22"
+					alt="<bean:message key="main.date.popup.alt.text" />"
+					style="border:0;vertical-align:top"> </a>
 				
 				<%-- Arrows for navigating the until-Date --%>
 				&nbsp;&nbsp;
@@ -190,45 +164,129 @@
 				<span style="color:red"><html:errors
 				property="validUntil" /></span></td>
 		</tr>
-
+		
+		<!-- Bezeichnung -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.freelancer.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:checkbox
-				property="freelancer" /> <span style="color:red"><html:errors
-				property="freelancer" /></span></td>
-		</tr>
-
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.dailyworkingtime.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="dailyworkingtime" size="10" /> <span style="color:red"><html:errors
-				property="dailyworkingtime" /></span></td>
-		</tr>
-
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.yearlyvacation.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="yearlyvacation" size="10" /> <span style="color:red"><html:errors
-				property="yearlyvacation" /></span></td>
+				key="main.customerorder.description.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:textarea
+				property="description" cols="30" rows="4" /> <span style="color:red"><html:errors
+				property="description" /></span></td>
 		</tr>
 		
+		<!-- Kurzbezeichnung -->
 		<tr>
-			<c:choose>
-				<c:when test="${employeeContractContext eq 'create'}">
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.employeecontract.initialovertime.text" /></b></td>
-					<td align="left" class="noBborderStyle"><html:text
-						property="initialOvertime" size="10" /> <span style="color:red"><html:errors
-						property="initialOvertime" /></span></td>
-				</c:when>
-				<c:otherwise>
-					<td align="left" class="noBborderStyle"></td>	
-				</c:otherwise>
-			</c:choose>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.shortdescription.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="shortdescription" size="20"
+				maxlength="20" /> <span style="color:red"><html:errors
+				property="shortdescription" /></span></td>
 		</tr>
+		
+		<!-- Durchf�hrungsverantwortlicher bei HBT -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.responsiblehbt.execution.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="employeeId">
+					<html:options collection="employeeswithcontract" labelProperty="name"
+						property="id" />
+				</html:select>
+			</td>
+		</tr>
+		
+		<!-- Vertragsverantwortlicher bei HBT -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.responsiblehbt.contract.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="respContrEmployeeId">
+					<html:options collection="employeeswithcontract" labelProperty="name"
+						property="id" />
+				</html:select>
+			</td>
+		</tr>
+		
+		<!-- Verantwortlicher beim Kunden (fachlich) -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.responsiblecustomer.tech.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="responsibleCustomerTechnical" size="40"
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
+			<span style="color:red"><html:errors
+				property="responsibleCustomerTechnical" /></span></td>
+		</tr>
+
+		<!-- Verantwortlicher beim Kunden (vertraglich) -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.responsiblecustomer.contract.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="responsibleCustomerContractually" size="40"
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH %>" />
+			<span style="color:red"><html:errors property="responsibleCustomerContractually" /></span>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.ordercustomer.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="orderCustomer" size="40"
+				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH %>" />
+			<span style="color:red"><html:errors property="orderCustomer" /></span>
+			</td>
+		</tr>
+		
+		
+		<!-- hourly rate & currency -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.hourlyrate.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="hourlyRate" size="20" /> <html:select property="currency">
+					<html:option value="EUR">EUR</html:option>
+				</html:select> <span style="color:red"><html:errors
+				property="hourlyRate" /></span>
+			</td>
+		</tr>
+		
+		<!-- debithours -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.general.debithours.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:text
+				property="debithours" size="20" />&nbsp;&nbsp;<bean:message
+				key="main.general.per.text" />&nbsp;&nbsp;&nbsp;&nbsp;
+				<html:radio property="debithoursunit" value="12" disabled="false" /><bean:message
+				key="main.general.month.text" /> <html:radio 
+				property="debithoursunit" value="1" disabled="false" /><bean:message
+				key="main.general.year.text" /> <html:radio 
+				property="debithoursunit" value="0" disabled="false" /><bean:message
+				key="main.general.totaltime.text" /> <span 
+				style="color:red"><html:errors property="debithours" /></span>
+			</td>
+		</tr>
+		
+		<!-- Statusbericht -->
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+				key="main.customerorder.statusreport.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="statusreport">
+					<html:option value="0"><bean:message
+				key="main.customerorder.statusreport.option.0.text" /></html:option>
+					<html:option value="12"><bean:message
+				key="main.customerorder.statusreport.option.12.text" /></html:option>
+					<html:option value="6"><bean:message
+				key="main.customerorder.statusreport.option.6.text" /></html:option>
+					<html:option value="4"><bean:message
+				key="main.customerorder.statusreport.option.4.text" /></html:option>
+				</html:select>
+			</td>
+		</tr>		
 		
 		<!-- hide -->
 		<tr>
@@ -243,7 +301,7 @@
 	<table class="center">
 		<tr>
 			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button" titleKey="main.general.button.save.alttext.text">
+				onclick="setStoreAction(this.form, 'save', 'false');return false" styleId="button"  titleKey="main.general.button.save.alttext.text">
 				<bean:message key="main.general.button.save.text" />
 			</html:submit></td>
 			<td class="noBborderStyle"><html:submit
@@ -258,7 +316,7 @@
 	</table>
 	<html:hidden property="id" />
 	
-	<c:if test="${timereportsOutOfRange != null}">
+<c:if test="${timereportsOutOfRange != null}">
 	<br>
 	<br>
 	<span style="color:red"><html:errors property="timereportOutOfRange" /></span>
@@ -298,16 +356,8 @@
 				key="main.timereport.monthly.costs.text" /></b></th>
 		</tr>
 		
-		<c:forEach var="timereport" items="${timereportsOutOfRange}"
-			varStatus="rowID">
-			<c:choose>
-				<c:when test="${rowID.count%2==0}">
-					<tr class="primarycolor">
-				</c:when>
-				<c:otherwise>
-					<tr class="secondarycolor">
-				</c:otherwise>
-			</c:choose>
+		<c:forEach var="timereport" items="${timereportsOutOfRange}" varStatus="rowID">
+			<tr class="${rowID.count % 2 == 0 ? 'primarycolor' : 'secondarycolor'}">
 			
 			<!-- Info -->
 			<td align="center">
@@ -452,104 +502,9 @@
 			</tr>
 		</c:forEach>
 	</table>
-<br><br>
+<br><br><br><br><br><br><br><br><br><br><br><br>
 </c:if>
 	
-	
 </html:form>
-
-	<!-- overtime table -->
-	 
-<html:form action="/StoreEmployeecontract?task=storeOvertime">			
-	<c:if test="${employeeContractContext eq 'edit'}">
-	<br>
-	<br>
-	<b><bean:message key="main.employeecontract.overtime.headline.text" /></b>
-	<br>
-	<br>
-		<table class="center backgroundcolor">
-			<tr>
-				<td class="noBborderStyle" align="right">
-					<b><bean:message key="main.employeecontract.overtime.total.text" />:</b>
-				</td>
-				<th>
-					<c:out value="${totalovertime}" />
-				</th>
-			</tr>
-			<tr>
-				<th>
-					<b><bean:message
-						key="main.employeecontract.overtime.date.text" /></b>
-				</th>
-				<th>
-					<b><bean:message
-						key="main.employeecontract.overtime.duration.text" /></b>
-				</th>
-				<th>
-					<b><bean:message
-						key="main.employeecontract.overtime.comment.text" /></b>
-				</th>
-			</tr>
-			<c:forEach var="overtime" items="${overtimes}" varStatus="statusID">
-				<c:choose>
-					<c:when test="${statusID.count%2==0}">
-						<tr class="primarycolor">
-					</c:when>
-					<c:otherwise>
-						<tr class="secondarycolor">
-					</c:otherwise>
-				</c:choose>
-					<td align="center"> 
-						<c:out value="${overtime.createdString}" />
-					</td>
-					<td align="center"> 
-						<c:out value="${overtime.time}" />
-					</td>
-					<td align="left">
-						<c:out value="${overtime.comment}" />
-					</td>
-				</tr>	
-			</c:forEach>
-			<tr>
-				<td align="center">
-					<c:out value="${dateString}" />
-				</td>
-				<td>
-					<html:text property="newOvertime" size="10" /> 
-				</td>					
-				<td>
-					<html:text property="newOvertimeComment" size="64" />
-				</td>
-				<td class="noBborderStyle">
-					<html:submit styleId="button" styleClass="hiddencontent" titleKey="main.general.button.save.alttext.text">
-						<bean:message key="main.general.button.save.text" />						
-					</html:submit>
-				</td>
-			</tr>
-			<tr>
-				<td class="noBborderStyle" align="right">
-					<b><bean:message key="main.employeecontract.overtime.total.text" />:</b>
-				</td>
-				<th>
-					<c:out value="${totalovertime}" />
-				</th>
-			</tr>
-			
-			<!-- error messages -->
-			
-			<tr>
-				<td class="noBborderStyle" colspan="4">
-					<span style="color:red"><html:errors property="newOvertime" /></span>
-				</td>
-			</tr>
-			<tr>
-				<td class="noBborderStyle" colspan="4">
-					<span style="color:red"><html:errors property="newOvertimeComment" /></span>
-				</td>
-			</tr>		
-		</table>
-	</c:if>
-</html:form>
-
 </body>
 </html:html>

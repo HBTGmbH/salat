@@ -13,13 +13,13 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.matrix.title.text" /></title>
-<link rel="stylesheet" type="text/css" href="style/matrixprint.css"
+<link rel="stylesheet" type="text/css" href="../style/matrixprint.css"
 	media="all" />
-<link rel="stylesheet" type="text/css" href="style/print.css"
+<link rel="stylesheet" type="text/css" href="../style/print.css"
 	media="print" />
 <script type="text/javascript" language="JavaScript">	
  	function setUpdateMergedreportsAction(form) {	
- 		form.action = "do/ShowMatrix?task=refreshMergedreports";
+ 		form.action = "../do/ShowMatrix?task=refreshMergedreports";
 		form.submit();
 	}
 </script>
