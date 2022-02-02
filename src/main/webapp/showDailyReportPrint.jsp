@@ -16,9 +16,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.daily.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/style/matrixprint.css"
+<link rel="stylesheet" type="text/css" href="style/matrixprint.css"
 	media="all" />
-<link rel="stylesheet" type="text/css" href="/tb/style/print.css"
+<link rel="stylesheet" type="text/css" href="style/print.css"
 	media="print" />
 
 </head>

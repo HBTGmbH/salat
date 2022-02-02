@@ -22,8 +22,8 @@
 <link
 	rel="stylesheet"
 	type="text/css"
-	href="/tb/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
+	href="style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
 </head>
 <body>
 <center>
@@ -56,7 +56,7 @@
    </html:submit>
 </html:form>
 <!-- 
-<form name="logoutform" method="post" action="/tb/do/LogoutEmployee">
+<form name="logoutform" method="post" action="do/LogoutEmployee">
    <input type="submit" name="Submit" value="Logout">
 </form>
  -->

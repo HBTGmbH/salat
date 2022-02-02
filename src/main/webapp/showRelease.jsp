@@ -10,10 +10,10 @@
 <head>
 <html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link href="/tb/style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
-<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
-<script src="/tb/scripts/select2.full.min.js"></script>
+<link href="style/select2.min.css" rel="stylesheet" />
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+<script src="scripts/jquery-1.11.3.min.js"></script>
+<script src="scripts/select2.full.min.js"></script>
 
 <title><bean:message key="main.general.application.title" /> - <bean:message
 	 key="main.general.mainmenu.release.title.text" /></title>
@@ -24,7 +24,7 @@
 	function confirmSendReleaseMail(form, sign) {	
 		var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
 		if (agree) {
-			form.action = "/tb/do/ShowRelease?task=sendreleasemail&sign="+sign;
+			form.action = "do/ShowRelease?task=sendreleasemail&sign="+sign;
 			form.submit();
 		}
 	}
@@ -32,7 +32,7 @@
 	function confirmSendAcceptanceMail(form, sign) {	
 		var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
 		if (agree) {
-			form.action = "/tb/do/ShowRelease?task=sendacceptancemail&sign="+sign;
+			form.action = "do/ShowRelease?task=sendacceptancemail&sign="+sign;
 			form.submit();
 		}
 	}
@@ -42,7 +42,7 @@
 	function confirmRelease(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmrelease.text" />");
 		if (agree) {
-			form.action = "/tb/do/ShowRelease?task=release";
+			form.action = "do/ShowRelease?task=release";
 			form.submit();
 		}
 	}
@@ -50,7 +50,7 @@
 	function confirmAcceptance(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmacceptance.text" />");
 		if (agree) {
-			form.action = "/tb/do/ShowRelease?task=accept";
+			form.action = "do/ShowRelease?task=accept";
 			form.submit();
 		}
 	}
@@ -58,48 +58,48 @@
 	function confirmReopen(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmreopen.text" />");
 		if (agree) {
-			form.action = "/tb/do/ShowRelease?task=reopen";
+			form.action = "do/ShowRelease?task=reopen";
 			form.submit();
 		}
 	}
 	
 	function refreshDate(form) {
-		form.action = "/tb/do/ShowRelease?task=refreshDate";
+		form.action = "do/ShowRelease?task=refreshDate";
 		form.submit();
 	}
 	
 	function refreshAcceptanceDate(form) {
-		form.action = "/tb/do/ShowRelease?task=refreshAcceptanceDate";
+		form.action = "do/ShowRelease?task=refreshAcceptanceDate";
 		form.submit();
 	}
 	
 	function refreshReopenDate(form) {
-		form.action = "/tb/do/ShowRelease?task=refreshReopenDate";
+		form.action = "do/ShowRelease?task=refreshReopenDate";
 		form.submit();
 	}
 	
 	function refreshMonth(form) {
-		form.action = "/tb/do/ShowRelease?task=refreshDate&refreshMonth=true";
+		form.action = "do/ShowRelease?task=refreshDate&refreshMonth=true";
 		form.submit();
 	}
 	
 	function refreshAcceptanceMonth(form) {
-		form.action = "/tb/do/ShowRelease?task=refreshAcceptanceDate&refreshMonth=true";
+		form.action = "do/ShowRelease?task=refreshAcceptanceDate&refreshMonth=true";
 		form.submit();
 	}
 	
 	function refreshReopenMonth(form) {
-		form.action = "/tb/do/ShowRelease?task=refreshReopenDate&refreshMonth=true";
+		form.action = "do/ShowRelease?task=refreshReopenDate&refreshMonth=true";
 		form.submit();
 	}	
 	
 	function setUpdateEmployeeContract(form) {
-		form.action = "/tb/do/ShowRelease?task=updateEmployee";
+		form.action = "do/ShowRelease?task=updateEmployee";
 		form.submit();
 	}
 	
 	function setUpdateSupervisor(form) {
-		form.action = "/tb/do/ShowRelease?task=updateSupervisor";
+		form.action = "do/ShowRelease?task=updateSupervisor";
 		form.submit();
 	}
 
@@ -501,7 +501,7 @@
 						</td>
 						<td>
 							<%-- <html:link title="Buchungen pr�fen" 
-							href="/tb/do/ShowDailyReport?currentEmployeeContract='${employeecontract}'"> 
+							href="do/ShowDailyReport?currentEmployeeContract='${employeecontract}'">
 							<font color="blue">--%>
 							<c:out value="${employeecontract.employee.name}" />
 							<%-- </font>
@@ -523,7 +523,7 @@
 									<c:if test="${loginEmployee.status == 'pv' || loginEmployee.status == 'adm'}">
 										<html:image title="Erinnerungsmail senden"
 											onclick="confirmSendReleaseMail(this.form, '${employeecontract.employee.sign}');return false"
-											src="/tb/images/mail_icon_01.gif">
+											src="images/mail_icon_01.gif">
 											<font color="red"><c:out
 													value="${employeecontract.reportReleaseDateString}" />
 											</font>
@@ -546,7 +546,7 @@
 									<c:if test="${(loginEmployee.status == 'pv' || loginEmployee.status == 'adm') && !employeecontract.releaseWarning}">
 										<html:image title="Erinnerungsmail senden"
 											onclick="confirmSendAcceptanceMail(this.form, '${employeecontract.employee.sign}');return false"
-											src="/tb/images/mail_icon_01.gif">
+											src="images/mail_icon_01.gif">
 											<font color="red"><c:out
 													value="${employeecontract.reportReleaseDateString}" />
 											</font>
