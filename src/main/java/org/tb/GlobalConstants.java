@@ -155,7 +155,7 @@ public class GlobalConstants {
     public static final String OVERTIME_COMPENSATION_TEXT = "Überstundenausgleich";
 
     // pathstrings and iconstrings
-    public static final String ICONPATH = "/tb/images/";
+    public static final String ICONPATH = "/images/";
     public static final String CLOSEICON = "plus_circle.gif";
     public static final String OPENICON = "minus_circle.gif";
     public static final String DELETEICON = "Delete.gif";
