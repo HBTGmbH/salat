@@ -1,5 +1,6 @@
 package org.tb.action;
 
+import static org.tb.util.DateUtils.getDateAsStringArray;
 import static org.tb.util.DateUtils.getDateFormStrings;
 
 import java.text.SimpleDateFormat;
@@ -16,12 +17,11 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
+import org.tb.form.ShowReleaseForm;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -30,9 +30,8 @@ import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
-import org.tb.util.OptionItem;
-import org.tb.form.ShowReleaseForm;
 import org.tb.util.MailSender;
+import org.tb.util.OptionItem;
 
 @Slf4j
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
@@ -299,7 +298,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
             Date reopenDate;
 
-            reopenDate = timereportHelper.getDateFormStrings(releaseForm.getReopenDay(),
+            reopenDate = getDateFormStrings(releaseForm.getReopenDay(),
                     releaseForm.getReopenMonth(), releaseForm.getReopenYear(),
                     false);
 
@@ -323,8 +322,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             if (sqlReopenDate.before(releaseDateFromContract)) {
                 employeecontract.setReportReleaseDate(sqlReopenDate);
                 releaseDateFromContract = sqlReopenDate;
-                String[] releaseDateArray = timereportHelper
-                        .getDateAsStringArray(releaseDateFromContract);
+                String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
                 releaseForm.setDay(releaseDateArray[0]);
                 releaseForm.setMonth(releaseDateArray[1]);
                 releaseForm.setYear(releaseDateArray[2]);
@@ -332,8 +330,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             if (sqlReopenDate.before(acceptanceDateFromContract)) {
                 employeecontract.setReportAcceptanceDate(sqlReopenDate);
                 acceptanceDateFromContract = sqlReopenDate;
-                String[] acceptanceDateArray = timereportHelper
-                        .getDateAsStringArray(acceptanceDateFromContract);
+                String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
                 releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
                 releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);
                 releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
@@ -378,7 +375,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getDay());
 
-            Date selectedDate = timereportHelper.getDateFormStrings("01", releaseForm
+            Date selectedDate = getDateFormStrings("01", releaseForm
                     .getMonth(), releaseForm.getYear(), false);
 
             List<OptionItem> days = getDayList(selectedDate);
@@ -403,7 +400,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getAcceptanceDay());
 
-            Date selectedDate = timereportHelper.getDateFormStrings("01", releaseForm
+            Date selectedDate = getDateFormStrings("01", releaseForm
                             .getAcceptanceMonth(), releaseForm.getAcceptanceYear(),
                     false);
 
@@ -428,7 +425,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getReopenDay());
 
-            Date selectedDate = timereportHelper.getDateFormStrings("01", releaseForm
+            Date selectedDate = getDateFormStrings("01", releaseForm
                     .getReopenMonth(), releaseForm.getReopenYear(), false);
 
             List<OptionItem> days = getDayList(selectedDate);
@@ -448,10 +445,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (request.getParameter("task") == null || updateEmployee) {
-            String[] releaseDateArray = timereportHelper
-                    .getDateAsStringArray(releaseDateFromContract);
-            String[] acceptanceDateArray = timereportHelper
-                    .getDateAsStringArray(acceptanceDateFromContract);
+            String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
+            String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
 
             // set form entries
             releaseForm.setDay(releaseDateArray[0]);
