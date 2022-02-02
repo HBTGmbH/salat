@@ -1,5 +1,7 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.util.DateUtils.getDateFormStrings;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -8,6 +10,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
@@ -19,20 +22,20 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.form.ShowDailyReportForm;
 import org.tb.helper.AfterLogin;
-import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
-import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.OptionItem;
-import org.tb.form.ShowDailyReportForm;
 
+@RequiredArgsConstructor
 public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
+
+    private final AfterLogin afterLogin;
 
     protected void addErrorAtTheBottom(HttpServletRequest request, ActionMessages errors, ActionMessage message) {
         errors.add("status", message);
@@ -50,8 +53,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
 
         java.sql.Date date;
         try {
-            TimereportHelper th = new TimereportHelper();
-            date = th.getDateFormStrings(dayString, monthString, yearString, true);
+            date = getDateFormStrings(dayString, monthString, yearString, true);
         } catch (Exception e) {
             // if parsing fails, return current date
             date = java.sql.Date.valueOf(LocalDate.now());
@@ -63,9 +65,8 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
     /**
      * Calculates the overtime and vaction and sets the attributes in the session.
      */
-    protected void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract,
-                                              EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
-        AfterLogin.handleOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, request.getSession());
+    protected void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract) {
+        afterLogin.handleOvertime(employeecontract, request.getSession());
 
         // release
         request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
@@ -99,18 +100,17 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         request.getSession().setAttribute("showDailyReportForm", reportForm);
 
         try {
-            TimereportHelper th = new TimereportHelper();
 
             switch (selectedView) {
                 case GlobalConstants.VIEW_DAILY:
                     request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
 
-                    beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                    beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
                     endDate = beginDate;
                     break;
                 case GlobalConstants.VIEW_MONTHLY:
                     request.getSession().setAttribute("view", GlobalConstants.VIEW_MONTHLY);
-                    beginDate = th.getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear(), true);
+                    beginDate = getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear(), true);
                     GregorianCalendar gc = new GregorianCalendar();
                     gc.setTime(beginDate);
                     int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -119,17 +119,17 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
                         maxDayString += "0";
                     }
                     maxDayString += maxday;
-                    endDate = th.getDateFormStrings(maxDayString, reportForm.getMonth(), reportForm.getYear(), true);
+                    endDate = getDateFormStrings(maxDayString, reportForm.getMonth(), reportForm.getYear(), true);
                     break;
                 case GlobalConstants.VIEW_CUSTOM:
                     request.getSession().setAttribute("view", GlobalConstants.VIEW_CUSTOM);
-                    beginDate = th.getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                    beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
                     if (reportForm.getLastday() == null || reportForm.getLastmonth() == null || reportForm.getLastyear() == null) {
                         reportForm.setLastday(reportForm.getDay());
                         reportForm.setLastmonth(reportForm.getMonth());
                         reportForm.setLastyear(reportForm.getYear());
                     }
-                    endDate = th.getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear(), true);
+                    endDate = getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear(), true);
                     break;
                 default:
                     throw new RuntimeException("no view type selected");
@@ -302,8 +302,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         String monthString = reportForm.getMonth();
         String yearString = reportForm.getYear();
 
-        TimereportHelper th = new TimereportHelper();
-        Date tmp = th.getDateFormStrings(dayString, monthString, yearString, true);
+        Date tmp = getDateFormStrings(dayString, monthString, yearString, true);
 
         java.sql.Date refDate = new java.sql.Date(tmp.getTime());
 

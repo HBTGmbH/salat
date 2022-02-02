@@ -7,10 +7,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
+import org.tb.action.dailyreport.DailyReportAction;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.form.ShowMatrixForm;
+import org.tb.helper.AfterLogin;
 import org.tb.helper.EmployeeHelper;
-import org.tb.helper.TimereportHelper;
 import org.tb.helper.matrix.MatrixHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
@@ -18,8 +20,6 @@ import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.action.dailyreport.DailyReportAction;
-import org.tb.form.ShowMatrixForm;
 
 public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
@@ -29,6 +29,15 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
     private SuborderDAO suborderDAO;
     private PublicholidayDAO publicholidayDAO;
     private EmployeeDAO employeeDAO;
+    private AfterLogin afterLogin;
+
+    public ShowMatrixAction(AfterLogin afterLogin) {
+        super(afterLogin);
+    }
+
+    public void setAfterLogin(AfterLogin afterLogin) {
+        this.afterLogin = afterLogin;
+    }
 
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
@@ -59,7 +68,6 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // check if special tasks initiated from the daily display need to be
         // carried out...
-        TimereportHelper th = new TimereportHelper();
         String task = request.getParameter("task");
 
         // call on MatrixView with parameter print
@@ -67,7 +75,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             return mapping.findForward("print");
         }
 
-        MatrixHelper mh = new MatrixHelper(timereportDAO, employeecontractDAO, publicholidayDAO, customerorderDAO, suborderDAO, employeeDAO, th);
+        MatrixHelper mh = new MatrixHelper(timereportDAO, employeecontractDAO, publicholidayDAO, customerorderDAO, suborderDAO, employeeDAO);
         // call on MatrixView with parameter refreshMergedreports to update request
         if ("refreshMergedreports".equals(task)) {
             Map<String, Object> results = mh.refreshMergedReports(reportForm);
@@ -121,4 +129,5 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
     protected boolean isAllowedForRestrictedUsers() {
         return true;
     }
+
 }

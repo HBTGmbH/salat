@@ -28,6 +28,15 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
     private PublicholidayDAO publicholidayDAO;
     private CustomerorderDAO customerorderDAO;
     private StatusReportDAO statusReportDAO;
+    private AfterLogin afterLogin;
+
+    public ShowWelcomeAction(AfterLogin afterLogin) {
+        super(afterLogin);
+    }
+
+    public void setAfterLogin(AfterLogin afterLogin) {
+        this.afterLogin = afterLogin;
+    }
 
     public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
         this.statusReportDAO = statusReportDAO;
@@ -88,11 +97,11 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
             request.getSession().setAttribute("currentEmployeeContract", employeecontract);
         }
 
-        refreshVacationAndOvertime(request, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+        refreshVacationAndOvertime(request, employeecontract);
 
         // warnings
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-        List<Warning> warnings = AfterLogin.createWarnings(employeecontract, loginEmployeeContract, employeeorderDAO, timereportDAO, statusReportDAO, customerorderDAO, getResources(request), getLocale(request));
+        List<Warning> warnings = afterLogin.createWarnings(employeecontract, loginEmployeeContract, getResources(request), getLocale(request));
 
         if (!warnings.isEmpty()) {
             request.getSession().setAttribute("warnings", warnings);
@@ -108,4 +117,5 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
     protected boolean isAllowedForRestrictedUsers() {
         return true;
     }
+
 }

@@ -11,9 +11,11 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import javax.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
@@ -29,10 +31,20 @@ import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 
+@Component
+@Slf4j
+@RequiredArgsConstructor(onConstructor_ = { @Autowired})
 public class AfterLogin {
-    private static final Logger LOG = LoggerFactory.getLogger(AfterLogin.class);
 
-    private static List<Warning> checkEmployeeorders(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, MessageResources resources, Locale locale) {
+    private final TimereportHelper timereportHelper;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final PublicholidayDAO publicholidayDAO;
+    private final TimereportDAO timereportDAO;
+    private final OvertimeDAO overtimeDAO;
+    private final StatusReportDAO statusReportDAO;
+    private final CustomerorderDAO customerorderDAO;
+
+    private List<Warning> checkEmployeeorders(Employeecontract employeecontract, MessageResources resources, Locale locale) {
         List<Warning> warnings = new ArrayList<>();
 
         for (Employeeorder employeeorder : employeeorderDAO.getEmployeeordersForEmployeeordercontentWarning(employeecontract)) {
@@ -58,7 +70,7 @@ public class AfterLogin {
                         throw new RuntimeException("query suboptimal");
                     }
                 } catch (Exception e) {
-                    LOG.error(e.getMessage(), e);
+                    log.error(e.getMessage(), e);
                 }
             }
         }
@@ -66,9 +78,9 @@ public class AfterLogin {
         return warnings;
     }
 
-    public static List<Warning> createWarnings(Employeecontract employeecontract, Employeecontract loginEmployeeContract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO, StatusReportDAO statusReportDAO, CustomerorderDAO customerorderDAO, MessageResources resources, Locale locale) {
+    public List<Warning> createWarnings(Employeecontract employeecontract, Employeecontract loginEmployeeContract, MessageResources resources, Locale locale) {
         // warnings
-        List<Warning> warnings = AfterLogin.checkEmployeeorders(employeecontract, employeeorderDAO, resources, locale);
+        List<Warning> warnings = checkEmployeeorders(employeecontract, resources, locale);
 
         // timereport warning
         List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
@@ -104,12 +116,12 @@ public class AfterLogin {
         }
 
         // statusreport due warning
-        addWarnings(loginEmployeeContract, resources, locale, warnings, statusReportDAO, customerorderDAO);
+        addWarnings(loginEmployeeContract, resources, locale, warnings);
 
         return warnings;
     }
 
-    private static void addWarnings(Employeecontract employeecontract, MessageResources resources, Locale locale, List<Warning> warnings, StatusReportDAO statusReportDAO, CustomerorderDAO customerorderDAO) {
+    private void addWarnings(Employeecontract employeecontract, MessageResources resources, Locale locale, List<Warning> warnings) {
         // statusreport due warning
         List<Customerorder> customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(employeecontract.getEmployee().getId());
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
@@ -201,8 +213,7 @@ public class AfterLogin {
         }
     }
 
-    public static void handleOvertime(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO, HttpSession session) {
-        TimereportHelper th = new TimereportHelper();
+    public void handleOvertime(Employeecontract employeecontract, HttpSession session) {
         double overtimeStatic = employeecontract.getOvertimeStatic();
         int otStaticMinutes = (int) (overtimeStatic * 60);
 
@@ -216,11 +227,11 @@ public class AfterLogin {
             } else {
                 dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
             }
-            int overtimeDynamic = th.calculateOvertime(dynamicDate, new Date(), employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+            int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, new Date(), employeecontract, true);
             overtime = otStaticMinutes + overtimeDynamic;
             // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
         } else {
-            overtime = th.calculateOvertimeTotal(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+            overtime = timereportHelper.calculateOvertimeTotal(employeecontract);
         }
 
         boolean overtimeIsNegative = overtime < 0;
@@ -244,7 +255,7 @@ public class AfterLogin {
         }
         int monthlyOvertime = 0;
         if (!(validUntil != null && validUntil.before(start) || validFrom.after(currentDate))) {
-            monthlyOvertime = th.calculateOvertime(start, currentDate, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, false);
+            monthlyOvertime = timereportHelper.calculateOvertime(start, currentDate, employeecontract, false);
         }
         boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;
         session.setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);

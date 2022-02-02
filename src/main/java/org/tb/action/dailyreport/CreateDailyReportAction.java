@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -18,11 +17,11 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Workingday;
 import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
+import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
 import org.tb.form.AddDailyReportForm;
@@ -34,14 +33,27 @@ import org.tb.form.AddDailyReportForm;
  */
 @Component("/CreateDailyReport")
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = { @Autowired })
 public class CreateDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final CustomerorderDAO customerorderDAO;
     private final SuborderDAO suborderDAO;
-    private final TimereportDAO timereportDAO;
     private final WorkingdayDAO workingdayDAO;
+    private final AfterLogin afterLogin;
+    private final TimereportHelper timereportHelper;
+
+    @Autowired
+    public CreateDailyReportAction(AfterLogin afterLogin, EmployeecontractDAO employeecontractDAO,
+        CustomerorderDAO customerorderDAO, SuborderDAO suborderDAO, WorkingdayDAO workingdayDAO,
+        AfterLogin afterLogin1, TimereportHelper timereportHelper) {
+        super(afterLogin);
+        this.employeecontractDAO = employeecontractDAO;
+        this.customerorderDAO = customerorderDAO;
+        this.suborderDAO = suborderDAO;
+        this.workingdayDAO = workingdayDAO;
+        this.afterLogin = afterLogin1;
+        this.timereportHelper = timereportHelper;
+    }
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -88,8 +100,6 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
         request.getSession().setAttribute("serialBookings", getSerialDayList());
 
-        TimereportHelper th = new TimereportHelper();
-
         // search for adequate workingday and set status in session
         Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, ec.getId());
 
@@ -115,7 +125,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set the begin time as the end time of the latest existing timereport of current employee
         // for current day. If no other reports exist so far, set standard begin time (0800).
-        int[] beginTime = th.determineBeginTimeToDisplay(ec.getId(), timereportDAO, selectedDate, workingday);
+        int[] beginTime = timereportHelper.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
         form.setSelectedHourBegin(beginTime[0]);
         form.setSelectedMinuteBegin(beginTime[1]);
         //		TimereportHelper.refreshHours(reportForm);
@@ -144,7 +154,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
                 form.setSelectedMinuteEnd(beginTime[1]);
                 form.setSelectedHourEnd(beginTime[0]);
             }
-            TimereportHelper.refreshHours(form);
+            timereportHelper.refreshHours(form);
         } else {
             form.setSelectedHourDuration(0);
             form.setSelectedMinuteDuration(0);
@@ -229,4 +239,5 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
     protected boolean isAllowedForRestrictedUsers() {
         return true;
     }
+
 }

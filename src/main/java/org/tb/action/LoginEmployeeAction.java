@@ -48,6 +48,11 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
     private TimereportDAO timereportDAO;
     private CustomerorderDAO customerorderDAO;
     private StatusReportDAO statusReportDAO;
+    private AfterLogin afterLogin;
+
+    public void setAfterLogin(AfterLogin afterLogin) {
+        this.afterLogin = afterLogin;
+    }
 
     public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
         this.statusReportDAO = statusReportDAO;
@@ -196,11 +201,11 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         request.getSession().setAttribute("releasedUntil", releaseDate);
         request.getSession().setAttribute("acceptedUntil", acceptanceDate);
 
-        AfterLogin.handleOvertime(employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, request.getSession());
+        afterLogin.handleOvertime(employeecontract, request.getSession());
 
         // get warnings
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-        List<Warning> warnings = AfterLogin.createWarnings(employeecontract, loginEmployeeContract, employeeorderDAO, timereportDAO, statusReportDAO, customerorderDAO, getResources(
+        List<Warning> warnings = afterLogin.createWarnings(employeecontract, loginEmployeeContract, getResources(
             request), getLocale(request));
 
         if (!warnings.isEmpty()) {

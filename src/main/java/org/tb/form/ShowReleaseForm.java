@@ -1,14 +1,14 @@
 package org.tb.form;
 
+import static org.tb.util.DateUtils.getDateAsStringArray;
+
+import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.bdom.Employeecontract;
-import org.tb.helper.TimereportHelper;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -29,7 +29,6 @@ public class ShowReleaseForm extends ActionForm {
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
-        TimereportHelper th = new TimereportHelper();
         Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         Date releaseDate = new Date();
         Date acceptanceDate = new Date();
@@ -45,15 +44,15 @@ public class ShowReleaseForm extends ActionForm {
             }
         }
 
-        String[] releaseDateArray = th.getDateAsStringArray(releaseDate);
+        String[] releaseDateArray = getDateAsStringArray(releaseDate);
         day = releaseDateArray[0];
         month = releaseDateArray[1];
         year = releaseDateArray[2];
-        String[] acceptanceDateArray = th.getDateAsStringArray(acceptanceDate);
+        String[] acceptanceDateArray = getDateAsStringArray(acceptanceDate);
         acceptanceDay = acceptanceDateArray[0];
         acceptanceMonth = acceptanceDateArray[1];
         acceptanceYear = acceptanceDateArray[2];
-        String[] reopenDateArray = th.getDateAsStringArray(releaseDate);
+        String[] reopenDateArray = getDateAsStringArray(releaseDate);
         reopenDay = reopenDateArray[0];
         reopenMonth = reopenDateArray[1];
         reopenYear = reopenDateArray[2];

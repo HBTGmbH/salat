@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
@@ -17,6 +16,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -33,7 +33,6 @@ import org.tb.form.ShowDailyReportForm;
  */
 @Component("/DeleteTimereportFromDailyDisplay")
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = { @Autowired })
 public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<ShowDailyReportForm> {
 
     private final CustomerorderDAO customerorderDAO;
@@ -42,6 +41,22 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
     private final SuborderDAO suborderDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final WorkingdayDAO workingdayDAO;
+    private final TimereportHelper timereportHelper;
+
+    @Autowired
+    public DeleteTimereportFromDailyDisplayAction(AfterLogin afterLogin,
+        CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
+        EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
+        EmployeeorderDAO employeeorderDAO, WorkingdayDAO workingdayDAO, TimereportHelper timereportHelper) {
+        super(afterLogin);
+        this.customerorderDAO = customerorderDAO;
+        this.timereportDAO = timereportDAO;
+        this.employeecontractDAO = employeecontractDAO;
+        this.suborderDAO = suborderDAO;
+        this.employeeorderDAO = employeeorderDAO;
+        this.workingdayDAO = workingdayDAO;
+        this.timereportHelper = timereportHelper;
+    }
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -63,7 +78,6 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
-        TimereportHelper th = new TimereportHelper();
         if (!timereportDAO.deleteTimereportById(trId)) {
             return mapping.findForward("error");
         }
@@ -75,9 +89,9 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
 
             @SuppressWarnings("unchecked")
             List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
-            request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
-            request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+            request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
+            request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
             //refresh workingday
             Workingday workingday;
             try {
@@ -86,7 +100,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
                 return mapping.findForward("error");
             }
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
-            request.getSession().setAttribute("quittingtime", th.calculateQuittingTime(workingday, request, "quittingtime"));
+            request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
             if (employeecontract != null) {
                 request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
                 request.getSession().setAttribute("currentEmployeeContract", employeecontract);

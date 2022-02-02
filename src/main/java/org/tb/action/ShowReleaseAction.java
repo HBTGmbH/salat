@@ -1,5 +1,7 @@
 package org.tb.action;
 
+import static org.tb.util.DateUtils.getDateFormStrings;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -9,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -31,8 +34,8 @@ import org.tb.util.OptionItem;
 import org.tb.form.ShowReleaseForm;
 import org.tb.util.MailSender;
 
+@Slf4j
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
-    private static final Logger LOG = LoggerFactory.getLogger(ShowReleaseAction.class);
 
     private EmployeecontractDAO employeecontractDAO;
     private TimereportDAO timereportDAO;
@@ -40,6 +43,11 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     private PublicholidayDAO publicholidayDAO;
     private OvertimeDAO overtimeDAO;
     private EmployeeorderDAO employeeorderDAO;
+    private TimereportHelper timereportHelper;
+
+    public void setTimereportHelper(TimereportHelper timereportHelper) {
+        this.timereportHelper = timereportHelper;
+    }
 
     public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
         this.employeecontractDAO = employeecontractDAO;
@@ -162,7 +170,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             acceptanceDateFromContract = employeecontract.getValidFrom();
         }
 
-        TimereportHelper th = new TimereportHelper();
         // Release Action
         if (request.getParameter("task") != null
                 && request.getParameter("task").equals("release")) {
@@ -215,7 +222,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 try {
                     MailSender.sendSalatBuchungenReleasedMail(recipient, from);
                 } catch (Exception e) {
-                    LOG.error("sending release mail failed!!!");
+                    log.error("sending release mail failed!!!");
                 }
             }
         }
@@ -277,8 +284,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             // set new acceptance date in employee contract
             employeecontract.setReportAcceptanceDate(sqlAcceptanceDate);
             //compute overtimeStatic and set it in employee contract
-            double otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
-                    employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+            double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+                    employeecontract, true);
             employeecontract.setOvertimeStatic(otStatic / 60.0);
 
             //only used the first time a release is accepted after SALAT-Release 1.83:
@@ -292,7 +299,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
             Date reopenDate;
 
-            reopenDate = th.getDateFormStrings(releaseForm.getReopenDay(),
+            reopenDate = timereportHelper.getDateFormStrings(releaseForm.getReopenDay(),
                     releaseForm.getReopenMonth(), releaseForm.getReopenYear(),
                     false);
 
@@ -316,7 +323,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             if (sqlReopenDate.before(releaseDateFromContract)) {
                 employeecontract.setReportReleaseDate(sqlReopenDate);
                 releaseDateFromContract = sqlReopenDate;
-                String[] releaseDateArray = th
+                String[] releaseDateArray = timereportHelper
                         .getDateAsStringArray(releaseDateFromContract);
                 releaseForm.setDay(releaseDateArray[0]);
                 releaseForm.setMonth(releaseDateArray[1]);
@@ -325,15 +332,15 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             if (sqlReopenDate.before(acceptanceDateFromContract)) {
                 employeecontract.setReportAcceptanceDate(sqlReopenDate);
                 acceptanceDateFromContract = sqlReopenDate;
-                String[] acceptanceDateArray = th
+                String[] acceptanceDateArray = timereportHelper
                         .getDateAsStringArray(acceptanceDateFromContract);
                 releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
                 releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);
                 releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
 
                 // recompute overtimeStatic and set it in employeecontract
-                double otStatic = th.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
-                        employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+                        employeecontract, true);
                 employeecontract.setOvertimeStatic(otStatic / 60.0);
             }
 
@@ -371,7 +378,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getDay());
 
-            Date selectedDate = th.getDateFormStrings("01", releaseForm
+            Date selectedDate = timereportHelper.getDateFormStrings("01", releaseForm
                     .getMonth(), releaseForm.getYear(), false);
 
             List<OptionItem> days = getDayList(selectedDate);
@@ -396,7 +403,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getAcceptanceDay());
 
-            Date selectedDate = th.getDateFormStrings("01", releaseForm
+            Date selectedDate = timereportHelper.getDateFormStrings("01", releaseForm
                             .getAcceptanceMonth(), releaseForm.getAcceptanceYear(),
                     false);
 
@@ -421,7 +428,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getReopenDay());
 
-            Date selectedDate = th.getDateFormStrings("01", releaseForm
+            Date selectedDate = timereportHelper.getDateFormStrings("01", releaseForm
                     .getReopenMonth(), releaseForm.getReopenYear(), false);
 
             List<OptionItem> days = getDayList(selectedDate);
@@ -441,9 +448,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (request.getParameter("task") == null || updateEmployee) {
-            String[] releaseDateArray = th
+            String[] releaseDateArray = timereportHelper
                     .getDateAsStringArray(releaseDateFromContract);
-            String[] acceptanceDateArray = th
+            String[] acceptanceDateArray = timereportHelper
                     .getDateAsStringArray(acceptanceDateFromContract);
 
             // set form entries
@@ -493,10 +500,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             errors = new ActionMessages();
         }
 
-        TimereportHelper th = new TimereportHelper();
         Date date = null;
         try {
-            date = th.getDateFormStrings(releaseForm.getDay(), releaseForm
+            date = getDateFormStrings(releaseForm.getDay(), releaseForm
                     .getMonth(), releaseForm.getYear(), false);
         } catch (Exception e) {
             errors.add("releasedate", new ActionMessage(
@@ -535,10 +541,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             errors = new ActionMessages();
         }
 
-        TimereportHelper th = new TimereportHelper();
         Date date = null;
         try {
-            date = th.getDateFormStrings(releaseForm.getAcceptanceDay(),
+            date = getDateFormStrings(releaseForm.getAcceptanceDay(),
                     releaseForm.getAcceptanceMonth(), releaseForm
                             .getAcceptanceYear(), false);
         } catch (Exception e) {

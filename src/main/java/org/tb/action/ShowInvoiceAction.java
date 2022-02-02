@@ -1,5 +1,6 @@
 package org.tb.action;
 
+import static org.tb.util.DateUtils.getDateFormStrings;
 import static org.tb.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
@@ -20,25 +21,25 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.tb.GlobalConstants;
+import org.tb.action.dailyreport.DailyReportAction;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.comparators.SubOrderComparator;
+import org.tb.form.ShowInvoiceForm;
+import org.tb.helper.AfterLogin;
 import org.tb.helper.EmployeeHelper;
-import org.tb.helper.TimereportHelper;
+import org.tb.helper.InvoiceSuborderHelper;
+import org.tb.helper.InvoiceTimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
-import org.tb.action.dailyreport.DailyReportAction;
-import org.tb.form.ShowInvoiceForm;
 import org.tb.util.ExcelArchivierer;
-import org.tb.helper.InvoiceSuborderHelper;
-import org.tb.helper.InvoiceTimereportHelper;
 
 public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
 
@@ -51,6 +52,10 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
     private SuborderDAO suborderDAO;
 
     private EmployeeDAO employeeDAO;
+
+    public ShowInvoiceAction(AfterLogin afterLogin) {
+        super(afterLogin);
+    }
 
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
@@ -78,8 +83,6 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
 
         // check if special tasks initiated from the daily display need to be
         // carried out...
-
-        TimereportHelper th = new TimereportHelper();
 
         Map<String, String> monthMap = new HashMap<>();
         monthMap.put("0", "main.timereport.select.month.jan.text");
@@ -112,7 +115,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     // generate dates for monthly view mode
                     try {
                         if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
-                            dateFirst = th.getDateFormStrings("1", showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                            dateFirst = getDateFormStrings("1", showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
                             GregorianCalendar gc = new GregorianCalendar();
                             gc.setTime(dateFirst);
                             int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -121,7 +124,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                                 maxDayString += "0";
                             }
                             maxDayString += maxday;
-                            dateLast = th.getDateFormStrings(maxDayString, showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                            dateLast = getDateFormStrings(maxDayString, showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
                         } else {
                             int kw = showInvoiceForm.getFromWeek();
                             Calendar cal = Calendar.getInstance();
@@ -150,7 +153,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
                     // generate dates for a period of time in custom view mode
                     try {
-                        dateFirst = th.getDateFormStrings(showInvoiceForm.getFromDay(), showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                        dateFirst = getDateFormStrings(showInvoiceForm.getFromDay(), showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
                         if (showInvoiceForm.getUntilDay() == null || showInvoiceForm.getUntilMonth() == null || showInvoiceForm.getUntilYear() == null) {
                             GregorianCalendar gc = new GregorianCalendar();
                             gc.setTime(dateFirst);
@@ -164,7 +167,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                             showInvoiceForm.setUntilMonth(showInvoiceForm.getFromMonth());
                             showInvoiceForm.setUntilYear(showInvoiceForm.getFromYear());
                         }
-                        dateLast = th.getDateFormStrings(showInvoiceForm.getUntilDay(), showInvoiceForm.getUntilMonth(), showInvoiceForm.getUntilYear(), false);
+                        dateLast = getDateFormStrings(showInvoiceForm.getUntilDay(), showInvoiceForm.getUntilMonth(), showInvoiceForm.getUntilYear(), false);
                     } catch (Exception e) {
                         throw new RuntimeException("date cannot be parsed from form");
                     }

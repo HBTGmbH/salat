@@ -1,39 +1,55 @@
 package org.tb.helper;
 
+import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
-import org.tb.bdom.*;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Overtime;
+import org.tb.bdom.Publicholiday;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
+import org.tb.form.AddDailyReportForm;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
-import org.tb.form.AddDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import java.text.SimpleDateFormat;
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.util.*;
 
 /**
  * Helper class for timereport handling which does not directly deal with persistence
  *
  * @author oda
  */
+@Component
+@Slf4j
+@RequiredArgsConstructor(onConstructor_ = { @Autowired})
 public class TimereportHelper {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TimereportHelper.class);
+    private final TimereportDAO timereportDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final PublicholidayDAO publicholidayDAO;
+    private final OvertimeDAO overtimeDAO;
 
     /**
      * calculates worktime from begin/end times in form
      *
      * @return decimal hours
      */
-    public static double calculateTime(AddDailyReportForm form) {
+    public double calculateTime(AddDailyReportForm form) {
         double worktime;
 
         if (form.getSelectedHourDuration() != 0 || form.getSelectedMinuteDuration() != 0) {
@@ -55,7 +71,7 @@ public class TimereportHelper {
     /**
      * refreshes hours after change of begin/end times
      */
-    public static void refreshHours(AddDailyReportForm reportForm) {
+    public void refreshHours(AddDailyReportForm reportForm) {
         Double hours = reportForm.getHours();
         if (hours < 0.0) {
             reportForm.setSelectedHourDuration(0);
@@ -90,7 +106,7 @@ public class TimereportHelper {
     /**
      * refreshes period after change of hours
      */
-    public static boolean refreshPeriod(HttpServletRequest request, AddDailyReportForm reportForm) {
+    public boolean refreshPeriod(HttpServletRequest request, AddDailyReportForm reportForm) {
         // calculate end hour/minute
         double hours = reportForm.getSelectedHourDuration() + reportForm.getSelectedMinuteDuration() / 60.0;
         reportForm.setHours(hours);
@@ -122,13 +138,10 @@ public class TimereportHelper {
         return true;
     }
 
-    public static ActionMessages validateNewDate(
+    public ActionMessages validateNewDate(
             ActionMessages errors,
             java.sql.Date theNewDate,
             Timereport timereport,
-            TimereportDAO timereportDAO,
-            EmployeeorderDAO employeeorderDAO,
-            PublicholidayDAO publicholidayDAO,
             Employeecontract loginEmployeeContract,
             boolean authorized) {
         LocalDate localDate = theNewDate.toLocalDate();
@@ -228,7 +241,7 @@ public class TimereportHelper {
     /**
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1].
      */
-    public int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId, TimereportDAO timereportDAO) {
+    public int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId) {
         int[] workingTime = new int[2];
         List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         int hours = 0;
@@ -248,8 +261,8 @@ public class TimereportHelper {
     /**
      * @return Returns int[]  0=hours 1=minutes
      */
-    public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday) {
-        int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId, td);
+    public int[] determineBeginTimeToDisplay(long ecId, java.sql.Date date, Workingday workingday) {
+        int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId);
         if (workingday != null) {
             beginTime[0] += workingday.getStarttimehour();
             beginTime[1] += workingday.getStarttimeminute();
@@ -261,8 +274,8 @@ public class TimereportHelper {
         return beginTime;
     }
 
-    public int[] determineTimesToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday, Timereport tr) {
-        List<Timereport> timereports = td.getTimereportsByDateAndEmployeeContractId(ecId, date);
+    public int[] determineTimesToDisplay(long ecId, java.sql.Date date, Workingday workingday, Timereport tr) {
+        List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
             int hourBegin = workingday.getStarttimehour();
             int minuteBegin = workingday.getStarttimeminute();
@@ -447,18 +460,17 @@ public class TimereportHelper {
     /**
      * @return Returns the minutes of overtime, might be negative
      */
-    public int calculateOvertimeTotal(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
+    public int calculateOvertimeTotal(Employeecontract employeecontract) {
 
         Date today = new Date();
 
         Date contractBegin = employeecontract.getValidFrom();
 
-        return calculateOvertime(contractBegin, today, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+        return calculateOvertime(contractBegin, today, employeecontract, true);
 
     }
 
-    public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO,
-                                 OvertimeDAO overtimeDAO, boolean useOverTimeAdjustment) {
+    public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
         // do not consider invalid(outside of the validity of the contract) days
         if (employeecontract.getValidUntil() != null && end.after(employeecontract.getValidUntil()))
@@ -575,7 +587,9 @@ public class TimereportHelper {
      * The month-String must be of the sort 'Jan', 'Feb', 'Mar', ...
      *
      * @return Returns the date associated to the given Strings.
+     * @deprecated use {@link DateUtils#getDateFormStrings(String, String, String, boolean)}
      */
+    @Deprecated
     public java.sql.Date getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) {
         int day = new Integer(dayString);
         int year = new Integer(yearString);
@@ -609,7 +623,7 @@ public class TimereportHelper {
             try {
                 month = new Integer(monthString);
             } catch (NumberFormatException e) {
-                LOG.error("monthString is in wrong format", e);
+                log.error("monthString is in wrong format", e);
             }
         }
 
@@ -631,7 +645,9 @@ public class TimereportHelper {
      * Transforms a {@link Date} into 3 {@link String}s, e.g. "09", "Feb", "2011".
      *
      * @return Returns an array of strings with the day at index 0, month at index 1 and year at index 2.
+     * @deprecated use {@link DateUtils#getDateAsStringArray(Date)}
      */
+    @Deprecated
     public String[] getDateAsStringArray(java.util.Date date) {
         SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
         SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
@@ -693,7 +709,7 @@ public class TimereportHelper {
         return date;
     }
 
-    public List<Date> getDatesForTimePeriod(Date startDate, int numberOfLaborDays, PublicholidayDAO publicholidayDAO) {
+    public List<Date> getDatesForTimePeriod(Date startDate, int numberOfLaborDays) {
         List<Date> dates = new ArrayList<>(numberOfLaborDays);
         GregorianCalendar calendar = new GregorianCalendar();
         int loopcounter = 0;

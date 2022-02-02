@@ -5,7 +5,6 @@ import java.sql.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
@@ -20,6 +19,7 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
@@ -41,7 +41,6 @@ import org.tb.form.UpdateDailyReportForm;
  */
 @Component("/UpdateDailyReport")
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = { @Autowired })
 public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReportForm> {
 
     private final SuborderDAO suborderDAO;
@@ -50,8 +49,25 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
     private final PublicholidayDAO publicholidayDAO;
     private final WorkingdayDAO workingdayDAO;
     private final EmployeeorderDAO employeeorderDAO;
-    private final OvertimeDAO overtimeDAO;
     private final EmployeecontractDAO employeecontractDAO;
+    private final TimereportHelper timereportHelper;
+
+    @Autowired
+    public UpdateDailyReportAction(AfterLogin afterLogin, SuborderDAO suborderDAO,
+        CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
+        PublicholidayDAO publicholidayDAO, WorkingdayDAO workingdayDAO,
+        EmployeeorderDAO employeeorderDAO,
+        EmployeecontractDAO employeecontractDAO, TimereportHelper timereportHelper) {
+        super(afterLogin);
+        this.suborderDAO = suborderDAO;
+        this.customerorderDAO = customerorderDAO;
+        this.timereportDAO = timereportDAO;
+        this.publicholidayDAO = publicholidayDAO;
+        this.workingdayDAO = workingdayDAO;
+        this.employeeorderDAO = employeeorderDAO;
+        this.employeecontractDAO = employeecontractDAO;
+        this.timereportHelper = timereportHelper;
+    }
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, UpdateDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -125,11 +141,9 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             boolean newTaskdescription = !previousTaskdescription.equals(tr.getTaskdescription());
             boolean newTime = tr.getDurationhours() != previousDurationhours || tr.getDurationminutes() != previousDurationminutes;
 
-            TimereportHelper th = new TimereportHelper();
             if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract
-                double otStatic = th.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(),
-                        ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+                double otStatic = timereportHelper.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(), ec, true);
                 ec.setOvertimeStatic(otStatic / 60.0);
                 employeecontractDAO.save(ec, loginEmployee);
             }
@@ -166,9 +180,9 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             @SuppressWarnings("unchecked")
             List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
 
-            request.getSession().setAttribute("labortime", th.calculateLaborTime(timereports));
-            request.getSession().setAttribute("maxlabortime", th.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", th.calculateDailyCosts(timereports));
+            request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
+            request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
 
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
 
@@ -193,10 +207,10 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 showDailyReportForm.setSelectedBreakMinute(0);
             }
 
-            request.getSession().setAttribute("quittingtime", th.calculateQuittingTime(workingday, request, "quittingtime"));
+            request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
 
             //refresh overtime
-            refreshVacationAndOvertime(request, ec, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO);
+            refreshVacationAndOvertime(request, ec);
 
             return mapping.findForward("success");
         }
