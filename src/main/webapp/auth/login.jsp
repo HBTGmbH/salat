@@ -23,8 +23,8 @@ while(names.hasMoreElements()) {
 <link
 	rel="stylesheet"
 	type="text/css"
-	href="style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+	href="../style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
 </head>
 <body>
 <div align="right">
@@ -47,7 +47,7 @@ while(names.hasMoreElements()) {
 				height="100px">
 				 
 				<img
-				src="images/salad.png"
+				src="../images/salad.png"
 				width="130"
 				height="110"
 				border="0">
@@ -82,7 +82,7 @@ while(names.hasMoreElements()) {
 		<tr></tr>
 		<tr>
 			<td class="noBborderStyle">
-				<img src="images/flag_en_GB.gif" width="36" height="24" border="0">
+				<img src="../images/flag_en_GB.gif" width="36" height="24" border="0">
 			</td>
 			<td class="noBborderStyle">
 				<bean:message key="main.general.loginscreen.en.1"/><br>
@@ -91,7 +91,7 @@ while(names.hasMoreElements()) {
 		</tr>
 		<tr>
 			<td class="noBborderStyle">
-				<img src="images/flag_de_DE.gif" width="36" height="24" border="0">
+				<img src="../images/flag_de_DE.gif" width="36" height="24" border="0">
 			</td>
 			<td class="noBborderStyle">
 				<bean:message key="main.general.loginscreen.de.1"/><br>

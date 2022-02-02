@@ -606,11 +606,11 @@
 			</c:when>
 			<c:otherwise>
 				<td align="center"><img height="12px" width="12px"
-					src="../images/verbot.gif" alt="Edit Employeeorder"
-					title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
+                                        src="../images/verbot.gif" alt="Edit Employeeorder"
+                                        title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 				<td align="center"><img height="12px" width="12px"
-					src="../images/verbot.gif" alt="Delete Employeeorder"
-					title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
+                                        src="../images/verbot.gif" alt="Delete Employeeorder"
+                                        title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 			</c:otherwise>
 		</c:choose>
 	</c:forEach>
