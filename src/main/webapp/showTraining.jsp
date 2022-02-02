@@ -14,8 +14,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 	<bean:message key="main.general.mainmenu.training.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
-<link rel="stylesheet" type="text/css" href="/tb/print.css"
+<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" media="all" />
+<link rel="stylesheet" type="text/css" href="/tb/style/print.css"
 	media="print" />
 <link href="/tb/style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />

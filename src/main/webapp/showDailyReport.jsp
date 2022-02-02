@@ -13,8 +13,8 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
-		<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
+		<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" media="all" />
+		<link rel="stylesheet" type="text/css" href="/tb/style/print.css" media="print" />
 		<link href="/tb/style/select2.min.css" rel="stylesheet" />
 		<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 		<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
@@ -271,7 +271,7 @@
 						<!-- JavaScript Stuff for popup calender -->
 						<c:choose>
 							<c:when test="${!(view eq 'month')}">
-								<script type="text/javascript" language="JavaScript" src="/tb/CalendarPopup.js">
+								<script type="text/javascript" language="JavaScript" src="/tb/scripts/CalendarPopup.js">
 								</script>
 								<script type="text/javascript" language="JavaScript">
 									document.write(getCalendarStyles());
