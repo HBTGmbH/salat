@@ -1,21 +1,20 @@
 package org.tb.bdom;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.io.Serializable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Transient;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.GlobalConstants;
 import org.tb.util.SecureHashUtils;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Transient;
-import java.io.Serializable;
-
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = {"id", "sign"})
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Employee implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -91,13 +90,13 @@ public class Employee implements Serializable {
     }
 
     public void resetPassword() {
-        password = SecureHashUtils.makeMD5(sign);
+        password = SecureHashUtils.encodePassword(sign);
         passwordchange = true;
     }
 
     public void changePassword(final String newPassword) {
         passwordchange = false;
-        password = SecureHashUtils.makeMD5(newPassword);
+        password = SecureHashUtils.encodePassword(newPassword);
     }
 
     @Transient

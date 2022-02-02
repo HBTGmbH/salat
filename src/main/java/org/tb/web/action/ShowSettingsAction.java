@@ -74,7 +74,7 @@ public class ShowSettingsAction extends LoginRequiredAction {
         //old password
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         String passwordFromDB = employeeDAO.getEmployeeById(loginEmployee.getId()).getPassword();
-        if (oldPassword == null || !SecureHashUtils.makeMD5(oldPassword).equals(passwordFromDB)) {
+        if (oldPassword == null || !SecureHashUtils.passwordMatches(oldPassword, passwordFromDB)) {
             errors.add("oldpassword", new ActionMessage("form.settings.error.oldpassword.false"));
         }
 

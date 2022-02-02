@@ -1,0 +1,26 @@
+name: Check Docker run
+on:
+  workflow_run:
+    workflows:
+      - Build .war and Docker container
+    types:
+      - completed
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    container: ubuntu
+    services: 
+      salat:
+        image: ghcr.io/hbtgmbh/salat:main
+        ports:
+          - 8080:8080
+    steps:
+      - name: install curl
+        run: apt-get update; apt-get install curl -y 
+      - name: run curl against salat
+        run: curl -I salat:8080/tb/ | head -n 1 | cut -d ' ' -f2 > curl_result_docker
+      - name: show result of curl
+        run: cat curl_result_docker
+      - name: is status code equal to 200?
+        run: bash -c 'test $(<curl_result_docker) = "200"'
+              

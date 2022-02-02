@@ -64,19 +64,15 @@ public class EmployeeDAO extends AbstractDAO {
     }
 
     /**
-     * Logs in the employee with the given username and password.
-     *
-     * @return the LoginEmployee instance or <code>null</code> if no employee matches the given username/password
-     * combination.
+     * Retrieves the employee with the given username.
+     * @return the LoginEmployee instance or <code>null</code> if no
+     *         employee matches the given username.
      */
-    public Employee getLoginEmployee(String username, String password) {
+    public Employee getLoginEmployee(String username) {
         Assert.notNull(username, "loginname");
-        Assert.notNull(password, "password");
-        Employee employee = (Employee) getSession()
+        return (Employee) getSession()
                 .createCriteria(Employee.class).add(
-                        Restrictions.eq("loginname", username)).add(
-                        Restrictions.eq("password", password)).uniqueResult();
-        return employee;
+                        Restrictions.eq("loginname", username)).uniqueResult();
     }
 
     /**
@@ -106,7 +102,7 @@ public class EmployeeDAO extends AbstractDAO {
      */
     public List<Employee> getEmployeesWithContracts() {
         List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
-        List<Employee> employees = new ArrayList<Employee>();
+        List<Employee> employees = new ArrayList<>();
         for (Employeecontract employeecontract : employeeContracts) {
             if (!employees.contains(employeecontract.getEmployee())) {
                 employees.add(employeecontract.getEmployee());
@@ -123,7 +119,7 @@ public class EmployeeDAO extends AbstractDAO {
      */
     public List<Employee> getEmployeesWithValidContracts() {
         List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
-        List<Employee> employees = new ArrayList<Employee>();
+        List<Employee> employees = new ArrayList<>();
         for (Employeecontract employeecontract : employeeContracts) {
             if (employeecontract.getCurrentlyValid() && !employees.contains(employeecontract.getEmployee())) {
                 employees.add(employeecontract.getEmployee());

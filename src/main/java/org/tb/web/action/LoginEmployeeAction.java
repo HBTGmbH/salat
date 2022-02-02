@@ -77,8 +77,10 @@ public class LoginEmployeeAction extends Action {
         try {
             LoginEmployeeForm loginEmployeeForm = (LoginEmployeeForm) form;
 
-            Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname(), SecureHashUtils.makeMD5(loginEmployeeForm.getPassword()));
-            if (loginEmployee == null) {
+            Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname());
+            if (loginEmployee == null 
+                || !SecureHashUtils.passwordMatches(loginEmployeeForm.getPassword(), loginEmployee.getPassword())) {
+                
                 ActionMessages errors = getErrors(request);
                 if (errors == null) {
                     errors = new ActionMessages();
