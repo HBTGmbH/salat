@@ -21,10 +21,16 @@
 	<!-- Struts User Actions -->
 	<bean name="/LoginEmployee" class="org.tb.action.LoginEmployeeAction" />
 	<bean name="/LogoutEmployee" class="org.tb.action.LogoutEmployeeAction" />
-	<bean name="/ShowMatrix" class="org.tb.action.ShowMatrixAction" />
-	<bean name="/ShowInvoice" class="org.tb.action.ShowInvoiceAction" />
+	<bean name="/ShowMatrix" class="org.tb.action.ShowMatrixAction">
+		<constructor-arg index="0" ref="afterLogin" />
+	</bean>
+	<bean name="/ShowInvoice" class="org.tb.action.ShowInvoiceAction">
+		<constructor-arg index="0" ref="afterLogin" />
+	</bean>
 	<bean name="/ShowSettings" class="org.tb.action.ShowSettingsAction" />
-	<bean name="/ShowWelcome" class="org.tb.action.ShowWelcomeAction" />
+	<bean name="/ShowWelcome" class="org.tb.action.ShowWelcomeAction">
+		<constructor-arg index="0" ref="afterLogin" />
+	</bean>
 	<bean name="/ShowRelease" class="org.tb.action.ShowReleaseAction" />
 	<bean name="/ShowTraining" class="org.tb.action.ShowTrainingAction" />
 
