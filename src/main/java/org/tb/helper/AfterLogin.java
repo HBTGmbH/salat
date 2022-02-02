@@ -1,48 +1,40 @@
 package org.tb.helper;
 
-import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
-
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Locale;
-import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
+import org.apache.struts.util.RequestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
-import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Statusreport;
-import org.tb.bdom.Timereport;
-import org.tb.bdom.Warning;
-import org.tb.persistence.CustomerorderDAO;
-import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
-import org.tb.persistence.PublicholidayDAO;
-import org.tb.persistence.StatusReportDAO;
-import org.tb.persistence.TimereportDAO;
+import org.tb.bdom.*;
+import org.tb.persistence.*;
 import org.tb.util.DateUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.util.*;
+
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = { @Autowired})
+@RequiredArgsConstructor(onConstructor_ = {@Autowired})
 public class AfterLogin {
 
     private final TimereportHelper timereportHelper;
     private final EmployeeorderDAO employeeorderDAO;
     private final PublicholidayDAO publicholidayDAO;
     private final TimereportDAO timereportDAO;
-    private final OvertimeDAO overtimeDAO;
     private final StatusReportDAO statusReportDAO;
     private final CustomerorderDAO customerorderDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final SuborderDAO suborderDAO;
+
+    private static final String SYSTEM_SIGN = "system";
 
     private List<Warning> checkEmployeeorders(Employeecontract employeecontract, MessageResources resources, Locale locale) {
         List<Warning> warnings = new ArrayList<>();
@@ -269,4 +261,249 @@ public class AfterLogin {
         VacationViewer vw = new VacationViewer(employeecontract);
         vw.computeVacations(session, employeecontract, employeeorderDAO, timereportDAO);
     }
+
+
+    public void setEmployeeAttributes(HttpServletRequest request, Employee loginEmployee) {
+        request.setAttribute("loginEmployee", loginEmployee);
+        String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
+        request.setAttribute("loginEmployeeFullName", loginEmployeeFullName);
+        request.setAttribute("report", "W");
+
+        request.setAttribute("employeeId", loginEmployee.getId());
+        request.setAttribute("currentEmployeeId", loginEmployee.getId());
+
+        request.getSession().setAttribute("employeeAuthorized", employeeHasAuthorization(loginEmployee));
+
+    }
+
+    private boolean employeeHasAuthorization(Employee loginEmployee) {
+        return loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL) ||
+                loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PV) ||
+                loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM);
+    }
+
+    private void setEmployeeIsInternalAttribute(HttpServletRequest request) {
+        String clientIP = request.getRemoteHost();
+        boolean isInternal = clientIP.startsWith("10.") ||
+                clientIP.startsWith("192.168.") ||
+                clientIP.startsWith("172.16.") ||
+                clientIP.startsWith("127.0.0.");
+        request.getSession().setAttribute("clientIntern", isInternal);
+    }
+
+    /**
+     * @param request
+     * @param loginEmployee
+     * @return an error-code
+     */
+    public String handle(HttpServletRequest request, Employee loginEmployee) {
+
+        Date date = new Date();
+        Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
+        if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+            return "form.login.error.invalidcontract";
+        }
+        setEmployeeAttributes(request, loginEmployee);
+
+        // check if user is internal or extern
+        setEmployeeIsInternalAttribute(request);
+
+        // check if public holidays are available
+        publicholidayDAO.checkPublicHolidaysForCurrentYear();
+
+        try {
+            // check if employee has an employee contract and is has employee orders for all standard suborders
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+            String dateString = simpleDateFormat.format(date);
+            date = simpleDateFormat.parse(dateString);
+            if (employeecontract != null) {
+                request.getSession().setAttribute("employeecontractId", employeecontract.getId());
+                request.getSession().setAttribute("employeeHasValidContract", true);
+                handleEmployeeWithValidContract(request, loginEmployee, date, employeecontract, dateString);
+            } else {
+                request.getSession().setAttribute("employeeHasValidContract", false);
+            }
+        } catch (ParseException e) {
+            log.error("Error parsing date");
+        }
+
+        // create collection of employeecontracts
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
+        request.getSession().setAttribute("employeecontracts", employeecontracts);
+
+        return null;
+    }
+
+    private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee, Date date,
+                                                 Employeecontract employeecontract, String dateString) {
+        // auto generate employee orders
+        if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
+                Boolean.FALSE.equals(employeecontract.getFreelancer())) {
+            generateEmployeeOrders(date, employeecontract, dateString);
+        }
+
+        if (employeecontract.getReportAcceptanceDate() == null) {
+            java.sql.Date validFromDate = employeecontract.getValidFrom();
+            employeecontract.setReportAcceptanceDate(validFromDate);
+            // create tmp employee
+            Employee tmp = new Employee();
+            tmp.setSign(SYSTEM_SIGN);
+            employeecontractDAO.save(employeecontract, tmp);
+        }
+        if (employeecontract.getReportReleaseDate() == null) {
+            java.sql.Date validFromDate = employeecontract.getValidFrom();
+            employeecontract.setReportReleaseDate(validFromDate);
+            // create tmp employee
+            Employee tmp = new Employee();
+            tmp.setSign(SYSTEM_SIGN);
+            employeecontractDAO.save(employeecontract, tmp);
+        }
+        // set used employee contract of login employee
+        request.getSession().setAttribute("loginEmployeeContract", employeecontract);
+        request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
+        request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+
+        // get info about vacation, overtime and report status
+        request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
+        request.getSession().setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
+
+        String releaseDate = employeecontract.getReportReleaseDateString();
+        String acceptanceDate = employeecontract.getReportAcceptanceDateString();
+
+        request.getSession().setAttribute("releasedUntil", releaseDate);
+        request.getSession().setAttribute("acceptedUntil", acceptanceDate);
+
+        handleOvertime(employeecontract, request.getSession());
+
+        // get warnings
+        Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+        List<Warning> warnings = createWarnings(employeecontract, loginEmployeeContract, getResources(
+                request), getLocale(request));
+
+        if (!warnings.isEmpty()) {
+            request.getSession().setAttribute("warnings", warnings);
+            request.getSession().setAttribute("warningsPresent", true);
+        } else {
+            request.getSession().setAttribute("warningsPresent", false);
+        }
+    }
+
+    protected MessageResources getResources(HttpServletRequest request) {
+        return (MessageResources)request.getAttribute("org.apache.struts.action.MESSAGE");
+    }
+
+    protected Locale getLocale(HttpServletRequest request) {
+        return RequestUtils.getUserLocale(request, (String)null);
+    }
+
+    private void generateEmployeeOrders(Date date, Employeecontract employeecontract, String dateString2) {
+        List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
+        if (standardSuborders != null && !standardSuborders.isEmpty()) {
+            // test if employeeorder exists
+            for (Suborder suborder : standardSuborders) {
+                List<Employeeorder> employeeorders = employeeorderDAO
+                        .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(
+                                employeecontract.getId(), suborder
+                                        .getId(), date);
+                if (employeeorders == null || employeeorders.isEmpty()) {
+
+                    // do not create an employeeorder for past years "URLAUB" !
+                    if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+                            && !dateString2.startsWith(suborder.getSign())) {
+                        continue;
+                    }
+
+                    // find latest untilDate of all employeeorders for this suborder
+                    List<Employeeorder> invalidEmployeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(
+                            employeecontract.getId(), suborder.getId());
+                    Date dateUntil = null;
+                    Date dateFrom = null;
+                    for (Employeeorder eo : invalidEmployeeorders) {
+
+                        // employeeorder starts in the future
+                        if (eo.getFromDate() != null && eo.getFromDate().after(date)
+                                && (dateUntil == null || dateUntil.after(eo.getFromDate()))) {
+
+                            dateUntil = eo.getFromDate();
+                            continue;
+                        }
+
+                        // employeeorder ends in the past
+                        if (eo.getUntilDate() != null && eo.getUntilDate().before(date)
+                                && (dateFrom == null || dateFrom.before(eo.getUntilDate()))) {
+
+                            dateFrom = eo.getUntilDate();
+                        }
+                    }
+
+                    // calculate time period
+                    Date ecFromDate = employeecontract.getValidFrom();
+                    Date ecUntilDate = employeecontract.getValidUntil();
+                    Date soFromDate = suborder.getFromDate();
+                    Date soUntilDate = suborder.getUntilDate();
+                    Date fromDate = ecFromDate.before(soFromDate) ? soFromDate : ecFromDate;
+
+                    // fromDate should not be before the ending of the most recent contract
+                    if (dateFrom != null && dateFrom.after(fromDate)) {
+                        fromDate = dateFrom;
+                    }
+                    Date untilDate = null;
+
+                    if (ecUntilDate == null && soUntilDate == null) {
+                        //untildate remains null
+                    } else if (ecUntilDate == null) {
+                        untilDate = soUntilDate;
+                    } else if (soUntilDate == null) {
+                        untilDate = ecUntilDate;
+                    } else if (ecUntilDate.before(soUntilDate)) {
+                        untilDate = ecUntilDate;
+                    } else {
+                        untilDate = soUntilDate;
+                    }
+
+                    Employeeorder employeeorder = new Employeeorder();
+
+                    java.sql.Date sqlFromDate = new java.sql.Date(fromDate.getTime());
+                    employeeorder.setFromDate(sqlFromDate);
+
+                    // untilDate should not overreach a future employee contract
+                    if (untilDate == null) {
+                        untilDate = dateUntil;
+                    } else {
+                        if (dateUntil != null && dateUntil.before(untilDate)) {
+                            untilDate = dateUntil;
+                        }
+                    }
+
+                    if (untilDate != null) {
+                        java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
+                        employeeorder.setUntilDate(sqlUntilDate);
+                    }
+                    if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+                            && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+                        employeeorder.setDebithours(employeecontract
+                                .getDailyWorkingTime()
+                                * employeecontract
+                                .getVacationEntitlement());
+                        employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
+                    } else {
+                        // not decided yet
+                    }
+                    employeeorder.setEmployeecontract(employeecontract);
+                    employeeorder.setSign(" ");
+                    employeeorder.setSuborder(suborder);
+
+                    // create tmp employee
+                    Employee tmp = new Employee();
+                    tmp.setSign(SYSTEM_SIGN);
+
+                    if (untilDate == null || !fromDate.after(untilDate)) {
+                        employeeorderDAO.save(employeeorder, tmp);
+                    }
+
+                }
+            }
+        }
+    }
+
 }

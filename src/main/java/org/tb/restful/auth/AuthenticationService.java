@@ -2,14 +2,11 @@ package org.tb.restful.auth;
 
 import lombok.Setter;
 import org.tb.GlobalConstants;
-import static javax.ws.rs.core.Response.Status.OK;
-import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
-
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Employeecontract;
 import org.tb.helper.AfterLogin;
-import org.tb.persistence.*;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
 import org.tb.util.SecureHashUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -21,8 +18,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
+
+import static javax.ws.rs.core.Response.Status.OK;
+import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 
 
 @Path("/rest/AuthenticationService")
@@ -31,10 +30,7 @@ public class AuthenticationService {
 
     private EmployeecontractDAO employeecontractDAO;
     private EmployeeDAO employeeDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private PublicholidayDAO publicholidayDAO;
-    private TimereportDAO timereportDAO;
-    private OvertimeDAO overtimeDAO;
+    private AfterLogin afterLogin;
 
 
     @GET
@@ -54,19 +50,18 @@ public class AuthenticationService {
                 return Response.noContent().status(UNAUTHORIZED).build();
             }
             if(contract != null) {
+                afterLogin.handle(request, employee);
                 long employeecontractId = contract.getId();
                 request.getSession().setAttribute("employeeId", employeeId);
                 request.getSession().setAttribute("employeecontractId", employeecontractId);
 
+                afterLogin.handleOvertime(contract, request.getSession());
+
+
                 // XSRF-TOKEN must be read from Client and be put into a HTTP-header x-xsrf-token
                 String xsrfToken = UUID.randomUUID().toString();
+
                 request.getSession().setAttribute("x-xsrf-token", xsrfToken);
-
-                Map<String, Object> attributes = employeeDAO.getAttributes(request, employee);
-                attributes.forEach((key, value) -> request.getSession().setAttribute(key, value));
-
-                AfterLogin.handleOvertime(contract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO,
-                        request.getSession());
 
                 //  TODO Here are several parts missing from LoginEmployeeAction
 

@@ -2,12 +2,12 @@ package org.tb.restful.employee;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@Setter
 @Builder
+@RequiredArgsConstructor
 public class OvertimeData {
-    private String overtime;
-    private String monthlyOvertime;
+    final private String overtime;
+    final private String monthlyOvertime;
 }

@@ -225,35 +225,4 @@ public class EmployeeDAO extends AbstractDAO {
         return false;
     }
 
-
-    public Map<String, Object> getAttributes(HttpServletRequest request, Employee loginEmployee) {
-        Map<String, Object> res = new HashMap<>();
-
-        // check if user is intern or extern
-        String clientIP = request.getRemoteHost();
-        boolean intern = false;
-        if (clientIP.startsWith("10.") ||
-                clientIP.startsWith("192.168.") ||
-                clientIP.startsWith("172.16.") ||
-                clientIP.startsWith("127.0.0.")) {
-            intern = true;
-        }
-        res.put("clientIntern", intern);
-
-        res.put("loginEmployee", loginEmployee);
-        String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
-        res.put("loginEmployeeFullName", loginEmployeeFullName);
-        res.put("report", "W");
-
-        res.put("currentEmployeeId", loginEmployee.getId());
-
-        if (loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL) ||
-                loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PV) ||
-                loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-            res.put("employeeAuthorized", true);
-        } else {
-            res.put("employeeAuthorized", false);
-        }
-        return res;
-    }
 }
