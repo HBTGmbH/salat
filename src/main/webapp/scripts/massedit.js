@@ -33,7 +33,7 @@ HBT.MassEdit = HBT.MassEdit || (function(){
 					ids.push(id);
 				}
 			});
-			form.action = "/tb/do/ShowDailyReport?task=MassDelete&ids=" + ids.join(",");
+			form.action = "do/ShowDailyReport?task=MassDelete&ids=" + ids.join(",");
 			form.submit();
 		} else {
 			return false;
@@ -62,7 +62,7 @@ HBT.MassEdit = HBT.MassEdit || (function(){
 						ids.push(id);
 					}
 				});
-				form.action = "/tb/do/ShowDailyReport?task=MassShiftDays&ids=" + ids.join(",") + "&byDays=" + days;
+				form.action = "do/ShowDailyReport?task=MassShiftDays&ids=" + ids.join(",") + "&byDays=" + days;
 				form.submit();
 			} else {
 				return false;

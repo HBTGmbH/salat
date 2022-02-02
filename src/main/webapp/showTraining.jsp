@@ -15,16 +15,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 	<bean:message key="main.general.mainmenu.training.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" media="all" />
-<link rel="stylesheet" type="text/css" href="/tb/style/print.css"
+<link rel="stylesheet" type="text/css" href="style/tb.css" media="all" />
+<link rel="stylesheet" type="text/css" href="style/print.css"
 	media="print" />
-<link href="/tb/style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
-<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
-<script src="/tb/scripts/select2.full.min.js"></script>
+<link href="style/select2.min.css" rel="stylesheet" />
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+<script src="scripts/jquery-1.11.3.min.js"></script>
+<script src="scripts/select2.full.min.js"></script>
 <script type="text/javascript" language="JavaScript">
 	function setUpdate(form) {
-		form.action = "/tb/do/ShowTraining?task=refresh";
+		form.action = "do/ShowTraining?task=refresh";
 		form.submit();
 	}
 

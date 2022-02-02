@@ -16,18 +16,18 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.addsuborder.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="../style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
 	
 	function setDate(which, howMuch) {
-		document.forms[0].action = "/tb/do/StoreSuborder?task=setDate&which=" + which + "&howMuch=" + howMuch;
+		document.forms[0].action = "../do/StoreSuborder?task=setDate&which=" + which + "&howMuch=" + howMuch;
 		document.forms[0].submit();
 	}
 	
 	function setStoreAction(form, task, addMore) {	
- 		form.action = "/tb/do/StoreSuborder?task=" + task + "&continue=" + addMore;
+ 		form.action = "../do/StoreSuborder?task=" + task + "&continue=" + addMore;
 		form.submit();
 	}		
 			
@@ -51,7 +51,7 @@
 	function confirmCopy(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmsubordercopy.text" />");
 		if (agree) {
-			form.action = "/tb/do/StoreSuborder?task=copy";
+			form.action = "../do/StoreSuborder?task=copy";
 			form.submit();
 		}
 	}
@@ -59,7 +59,7 @@
 	function confirmFit(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmsuborderfit.text" />");
 		if (agree) {
-			form.action = "/tb/do/StoreSuborder?task=fitDates";
+			form.action = "../do/StoreSuborder?task=fitDates";
 			form.submit();
 		}
 	}
@@ -114,7 +114,7 @@
 				&nbsp;
 			</td>
 			<td class="noBborderStyle" nowrap align="left"> 
-				<img id="img1" src="/tb/images/Smily_Krone.gif" border="0"> <bean:message key="main.general.structureInstructionAsParent.text" />
+				<img id="img1" src="images/Smily_Krone.gif" border="0"> <bean:message key="main.general.structureInstructionAsParent.text" />
 			</td>
 		</tr>
 		<!-- show the parent of this suborder -->
@@ -161,7 +161,7 @@
 			<td align="left" class="noBborderStyle">
 				<!-- JavaScript Stuff for popup calender -->
 				<script type="text/javascript" language="JavaScript"
-					src="/tb/scripts/CalendarPopup.js"></script> <script type="text/javascript"
+					src=""../scripts/"CalendarPopup.js"></script> <script type="text/javascript"
 					language="JavaScript">
                     document.write(getCalendarStyles());
                 </script> 
@@ -187,21 +187,21 @@
                 </script> 
                	<html:text property="validFrom" readonly="false" size="12" maxlength="10" />
                	<a href="javascript:calenderPopupFrom()" name="from" ID="from" style="text-decoration:none;"> 
-               		<img src="/tb/images/popupcalendar.gif" width="22" height="22" 
+               		<img src="images/popupcalendar.gif" width="22" height="22"
 	               		alt="<bean:message key="main.date.popup.alt.text" />" style="border:0;vertical-align:top">
 				</a>
 				<%-- Arrows for navigating the from-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','-1')" title="<bean:message key="main.date.popup.prevday" />">
-					<img src="/tb/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','0')" title="<bean:message key="main.date.popup.today" />">
-					<img src="/tb/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','1')" title="<bean:message key="main.date.popup.nextday" />">
-					<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				<span style="color:red">
 					<html:errors property="validFrom" />
@@ -218,24 +218,24 @@
 				property="validUntil" readonly="false" size="12" maxlength="10" />
 			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
 				style="text-decoration:none;"> <img
-				src="/tb/images/popupcalendar.gif" width="22" height="22"
+				src="images/popupcalendar.gif" width="22" height="22"
 				alt="<bean:message key="main.date.popup.alt.text" />"
 				style="border:0;vertical-align:top"> </a>
 				
 				<%-- Arrows for navigating the until-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','-1')" title="<bean:message key="main.date.popup.prevday" />">
-				<img src="/tb/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','0')" title="<bean:message key="main.date.popup.today" />">
-				<img src="/tb/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','1')" title="<bean:message key="main.date.popup.nextday" />">
-				<img src="/tb/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				<span style="color:red">
 					<html:errors property="validUntil" />
@@ -571,7 +571,7 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/tb/images/info_button.gif" />
+				src="images/info_button.gif" />
 			</td>
 
 			<!-- Mitarbeiter -->

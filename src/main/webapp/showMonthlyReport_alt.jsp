@@ -34,30 +34,30 @@
 <html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.mainmenu.monthly.text"/></title>
-<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
     	
  	function setUpdateTimereportsAction(form) {	
- 		form.action = "/tb/do/ShowMonthlyReport?task=refreshTimereports";
+ 		form.action = "do/ShowMonthlyReport?task=refreshTimereports";
 		form.submit();
 	}	
 	
 	function createNewReportAction(form) {	
- 		form.action = "/tb/do/CreateDailyReport";
+ 		form.action = "do/CreateDailyReport";
 		form.submit();
 	}	
 	
 	function setStoreAction(form, actionVal) {	
- 		form.action = "/tb/do/StoreDailyReport?task=" + actionVal;
+ 		form.action = "do/StoreDailyReport?task=" + actionVal;
 		form.submit();
 	}
 	
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "/tb/do/DeleteTimereportFromMonthlyDisplay?trId=" + id;
+			form.action = "do/DeleteTimereportFromMonthlyDisplay?trId=" + id;
 			form.submit();
 		}
 	}								
@@ -77,7 +77,7 @@
 <br>
 <html:form action="/ShowMonthlyReport">
 	<table border="0" cellspacing="0" cellpadding="2"
-		style="background-image:url(/tb/images/backtile.jpg)" class="center">
+		style="background-image:url(images/backtile.jpg)" class="center">
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.monthlyreport.employee.fullname.text" />:</b></td>
@@ -157,7 +157,7 @@
 </html:form>
 
 <table border="0" cellspacing="0" cellpadding="2"
-		style="background-image:url(/tb/images/backtile.jpg)" class="center">
+		style="background-image:url(images/backtile.jpg)" class="center">
    	<tr>
    		<logic:equal name="currentEmployee" value="ALL EMPLOYEES" scope="session">
    			<td align="left"> <b><bean:message key="main.timereport.monthly.employee.text"/></b> </td>
@@ -247,12 +247,12 @@
       </logic:notEqual>
       <logic:notEqual name="currentEmployee" value="ALL EMPLOYEES" scope="session">
     	  <logic:equal name="employeeAuthorized" value="true" scope="session">
-      		<td align="center"> <html:link href="/tb/do/EditDailyReport?trId=${timereport.id}">
-      			<img src="/tb/images/Edit.gif" alt="Edit Timereport" /></html:link> </td>
+      		<td align="center"> <html:link href="do/EditDailyReport?trId=${timereport.id}">
+      			<img src="images/Edit.gif" alt="Edit Timereport" /></html:link> </td>
       		<html:form action="/DeleteTimereportFromMonthlyDisplay">
       			<td align="center">      			
       				<html:image onclick="confirmDelete(this.form, ${timereport.id})" 
-      					src="/tb/images/Delete.gif" alt="Delete Timereport"/>     			
+      					src="images/Delete.gif" alt="Delete Timereport"/>
       			</td>
       		</html:form>
      	 </logic:equal>
@@ -262,12 +262,12 @@
      			<td align="center"></td>
       		</logic:equal>
       		<logic:notEqual name="timereport" property="status" value="closed">
-      			<td align="center"> <html:link href="/tb/do/EditDailyReport?trId=${timereport.id}">
-      				<img src="/tb/images/Edit.gif" alt="Edit Timereport" /></html:link> </td>
+      			<td align="center"> <html:link href="do/EditDailyReport?trId=${timereport.id}">
+      				<img src="images/Edit.gif" alt="Edit Timereport" /></html:link> </td>
      			<html:form action="/DeleteTimereportFromMonthlyDisplay">
      				<td align="center">  	
      			 		<html:image onclick="confirmDelete(this.form, ${timereport.id})" 
-      						src="/tb/images/Delete.gif" alt="Delete Timereport"/>	
+      						src="images/Delete.gif" alt="Delete Timereport"/>
      				</td>
      			</html:form>
       		</logic:notEqual>
@@ -289,7 +289,7 @@
 
 <logic:notEqual name="currentEmployee" value="ALL EMPLOYEES" scope="session">
 	<table border="0" cellspacing="0" cellpadding="2"
-		style="background-image:url(/tb/images/backtile.jpg)" class="center">
+		style="background-image:url(images/backtile.jpg)" class="center">
    		<tr>
 			<td>
 				<b><bean:message key="main.general.button.monthlyhourbalance.text"/>: </b>

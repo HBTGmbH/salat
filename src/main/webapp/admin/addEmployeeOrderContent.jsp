@@ -16,20 +16,20 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.addemployeeordercontent.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="../style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
 	
 	function setStoreAction(form, actionVal) {	
- 		form.action = "/tb/do/StoreEmployeeOrderContent?action=" + actionVal;
+ 		form.action = "../do/StoreEmployeeOrderContent?action=" + actionVal;
 		form.submit();
 	}
 		
 	function confirmBack(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmback.text" />");
 		if (agree) {
-			form.action = "/tb/do/StoreEmployeeOrderContent?action=back";
+			form.action = "../do/StoreEmployeeOrderContent?action=back";
 			form.submit();
 		}
 	}

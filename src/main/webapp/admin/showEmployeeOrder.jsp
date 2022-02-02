@@ -15,34 +15,34 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.employeeorders.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
-<link href="/tb/style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
-<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
-<script src="/tb/scripts/select2.full.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/tb.css" />
+<link href="../style/select2.min.css" rel="stylesheet" />
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<script src=""../scripts/"jquery-1.11.3.min.js"></script>
+<script src=""../scripts/"select2.full.min.js"></script>
 <script type="text/javascript" language="JavaScript">
 
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "/tb/do/DeleteEmployeeorder?eoId=" + id;
+			form.action = "../do/DeleteEmployeeorder?eoId=" + id;
 			form.submit();
 		}
 	}
 	
 	function editContent(form, id) {		
-		form.action = "/tb/do/EditEmployeeOrderContent?eoId=" + id;
+		form.action = "../do/EditEmployeeOrderContent?eoId=" + id;
 		form.submit();
 	}
 	
 	function setUpdateEmployeeOrders(form) {
-		form.action = "/tb/do/ShowEmployeeorder";
+		form.action = "../do/ShowEmployeeorder";
 		form.submit();
 	
 	}
 	
 	function refresh(form) {	
-		form.action = "/tb/do/ShowEmployeeorder?task=refresh";
+		form.action = "../do/ShowEmployeeorder?task=refresh";
 		form.submit();
 	}
 					
@@ -358,7 +358,7 @@
 		<img
 			onMouseOver="showWMTT(this,'info<c:out value="${employeeorder.id}" />')"
 			onMouseOut="hideWMTT()" width="12px" height="12px"
-			src="/tb/images/info_button.gif" /></td>
+			src="images/info_button.gif" /></td>
 
 		<c:choose>
 			<c:when test="${!employeeorder.currentlyValid}">
@@ -572,16 +572,16 @@
 							<c:choose>
 								<c:when test="${employeeorder.employeeOrderContent == null || (employeeorder.employeeOrderContent.committed_mgmt != true && employeeorder.employeeOrderContent.committed_emp != true)}">
 									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="/tb/images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
+										src="images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
 								</c:when>
 								<c:when
 									test="${employeeorder.employeeOrderContent != null && (employeeorder.employeeOrderContent.committed_mgmt != true || employeeorder.employeeOrderContent.committed_emp != true)}">
 									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="/tb/images/yellow.gif" titleKey="employeeordercontent.yellow.text" />
+										src="images/yellow.gif" titleKey="employeeordercontent.yellow.text" />
 								</c:when>
 								<c:otherwise>
 									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="/tb/images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
+										src="images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
 								</c:otherwise>
 							</c:choose>
 						</html:form>
@@ -593,23 +593,23 @@
 			<c:when
 				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
 				<td align="center"><html:link
-					href="/tb/do/EditEmployeeorder?eoId=${employeeorder.id}">
-					<html:img src="/tb/images/Edit.gif" alt="Edit Employeeorder"
+					href="../do/EditEmployeeorder?eoId=${employeeorder.id}">
+					<html:img src="images/Edit.gif" alt="Edit Employeeorder"
 						titleKey="main.headlinedescription.employeeorders.edit.text" />
 				</html:link></td>
 				<html:form action="/DeleteEmployeeorder">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employeeorder.id})"
-						src="/tb/images/Delete.gif" alt="Delete Employeeorder"
+						src="images/Delete.gif" alt="Delete Employeeorder"
 						titleKey="main.headlinedescription.employeeorders.delete.text" /></td>
 				</html:form>
 			</c:when>
 			<c:otherwise>
 				<td align="center"><img height="12px" width="12px"
-					src="/tb/images/verbot.gif" alt="Edit Employeeorder"
+					src="images/verbot.gif" alt="Edit Employeeorder"
 					title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 				<td align="center"><img height="12px" width="12px"
-					src="/tb/images/verbot.gif" alt="Delete Employeeorder"
+					src="images/verbot.gif" alt="Delete Employeeorder"
 					title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 			</c:otherwise>
 		</c:choose>

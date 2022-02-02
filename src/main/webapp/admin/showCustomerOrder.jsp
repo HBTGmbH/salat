@@ -14,21 +14,21 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.customerorders.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="../style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
  
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "/tb/do/DeleteCustomerorder?coId=" + id;
+			form.action = "../do/DeleteCustomerorder?coId=" + id;
 			form.submit();
 		}
 	}	
 	
 	function refresh(form) {	
-		form.action = "/tb/do/ShowCustomerorder?task=refresh";
+		form.action = "../do/ShowCustomerorder?task=refresh";
 		form.submit();
 
 	}				
@@ -242,7 +242,7 @@
 				<img
 					onMouseOver="showWMTT(this,'info<c:out value="${customerorder.id}" />')"
 					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="/tb/images/info_button.gif" /></td>
+					src="images/info_button.gif" /></td>
 
 		<!-- invalid orders should be gray -->
 		<c:choose>
@@ -453,14 +453,14 @@
 
 		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
-				href="/tb/do/EditCustomerorder?coId=${customerorder.id}">
-				<img src="/tb/images/Edit.gif" alt="Edit Customerorder"
+				href="../do/EditCustomerorder?coId=${customerorder.id}">
+				<img src="images/Edit.gif" alt="Edit Customerorder"
 					title="<bean:message key="main.headlinedescription.orders.edit.text"/>" />
 			</html:link></td>
 			<html:form action="/DeleteCustomerorder">
 				<td align="center"><html:image
 					onclick="confirmDelete(this.form, ${customerorder.id})"
-					src="/tb/images/Delete.gif" alt="Delete Customerorder"
+					src="images/Delete.gif" alt="Delete Customerorder"
 					titleKey="main.headlinedescription.orders.edit.text" /></td>
 			</html:form>
 		</c:if>
