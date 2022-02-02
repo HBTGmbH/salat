@@ -358,7 +358,7 @@
 		<img
 			onMouseOver="showWMTT(this,'info<c:out value="${employeeorder.id}" />')"
 			onMouseOut="hideWMTT()" width="12px" height="12px"
-			src="images/info_button.gif" /></td>
+			src="../images/info_button.gif" /></td>
 
 		<c:choose>
 			<c:when test="${!employeeorder.currentlyValid}">
@@ -572,16 +572,16 @@
 							<c:choose>
 								<c:when test="${employeeorder.employeeOrderContent == null || (employeeorder.employeeOrderContent.committed_mgmt != true && employeeorder.employeeOrderContent.committed_emp != true)}">
 									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
+										src="../images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
 								</c:when>
 								<c:when
 									test="${employeeorder.employeeOrderContent != null && (employeeorder.employeeOrderContent.committed_mgmt != true || employeeorder.employeeOrderContent.committed_emp != true)}">
 									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="images/yellow.gif" titleKey="employeeordercontent.yellow.text" />
+										src="../images/yellow.gif" titleKey="employeeordercontent.yellow.text" />
 								</c:when>
 								<c:otherwise>
 									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
+										src="../images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
 								</c:otherwise>
 							</c:choose>
 						</html:form>
@@ -594,22 +594,22 @@
 				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
 				<td align="center"><html:link
 					href="../do/EditEmployeeorder?eoId=${employeeorder.id}">
-					<html:img src="images/Edit.gif" alt="Edit Employeeorder"
+					<html:img src="../images/Edit.gif" alt="Edit Employeeorder"
 						titleKey="main.headlinedescription.employeeorders.edit.text" />
 				</html:link></td>
 				<html:form action="/DeleteEmployeeorder">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employeeorder.id})"
-						src="images/Delete.gif" alt="Delete Employeeorder"
+						src="../images/Delete.gif" alt="Delete Employeeorder"
 						titleKey="main.headlinedescription.employeeorders.delete.text" /></td>
 				</html:form>
 			</c:when>
 			<c:otherwise>
 				<td align="center"><img height="12px" width="12px"
-					src="images/verbot.gif" alt="Edit Employeeorder"
+					src="../images/verbot.gif" alt="Edit Employeeorder"
 					title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 				<td align="center"><img height="12px" width="12px"
-					src="images/verbot.gif" alt="Delete Employeeorder"
+					src="../images/verbot.gif" alt="Delete Employeeorder"
 					title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 			</c:otherwise>
 		</c:choose>

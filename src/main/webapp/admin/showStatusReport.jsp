@@ -210,7 +210,7 @@
 					<img
 						onMouseOver="showWMTT(this,'info<c:out value="${statusreport.id}" />')"
 						onMouseOut="hideWMTT()" width="12px" height="12px"
-						src="images/info_button.gif" /></td>
+						src="../images/info_button.gif" /></td>
 					<!-- order -->
 					<td><c:out value="${statusreport.customerorder.sign}" /></td>
 					<!-- order description -->
@@ -235,17 +235,17 @@
 					<td><c:choose>
 						<c:when test="${statusreport.overallStatus == 1}">
 							<html:img style="width:15px; height:15px;"
-								src="images/green.gif" />
+								src="../images/green.gif" />
 							<bean:message key="statusreport.status.green" />
 						</c:when>
 						<c:when test="${statusreport.overallStatus == 2}">
 							<html:img style="width:15px; height:15px;"
-								src="images/yellow.gif" />
+								src="../images/yellow.gif" />
 							<bean:message key="statusreport.status.yellow" />
 						</c:when>
 						<c:when test="${statusreport.overallStatus == 3}">
 							<html:img style="width:15px; height:15px;"
-								src="images/red.gif" />
+								src="../images/red.gif" />
 							<bean:message key="statusreport.status.red" />
 						</c:when>
 						<c:otherwise>
@@ -277,12 +277,12 @@
 					<html:form action="/ShowStatusReport">
 						<td align="center" nowrap="nowrap"><html:image
 							onclick="editReport(this.form, ${statusreport.id})"
-							src="images/Edit.gif" altKey="statusreport.button.edit.text"
+							src="../images/Edit.gif" altKey="statusreport.button.edit.text"
 							titleKey="statusreport.button.edit.text" /> &nbsp; <c:if
 							test="${loginEmployee.status == 'adm'}">
 							<html:image
 								onclick="confirmDelete(this.form, ${statusreport.id})"
-								src="images/Delete.gif"
+								src="../images/Delete.gif"
 								altKey="statusreport.button.delete.text"
 								titleKey="statusreport.button.delete.text" />
 						</c:if></td>

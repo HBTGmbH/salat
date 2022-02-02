@@ -242,7 +242,7 @@
 				<img
 					onMouseOver="showWMTT(this,'info<c:out value="${customerorder.id}" />')"
 					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="images/info_button.gif" /></td>
+					src="../images/info_button.gif" /></td>
 
 		<!-- invalid orders should be gray -->
 		<c:choose>
@@ -454,13 +454,13 @@
 		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
 				href="../do/EditCustomerorder?coId=${customerorder.id}">
-				<img src="images/Edit.gif" alt="Edit Customerorder"
+				<img src="../images/Edit.gif" alt="Edit Customerorder"
 					title="<bean:message key="main.headlinedescription.orders.edit.text"/>" />
 			</html:link></td>
 			<html:form action="/DeleteCustomerorder">
 				<td align="center"><html:image
 					onclick="confirmDelete(this.form, ${customerorder.id})"
-					src="images/Delete.gif" alt="Delete Customerorder"
+					src="../images/Delete.gif" alt="Delete Customerorder"
 					titleKey="main.headlinedescription.orders.edit.text" /></td>
 			</html:form>
 		</c:if>
