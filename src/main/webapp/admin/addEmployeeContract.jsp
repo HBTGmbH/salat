@@ -8,7 +8,9 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
+<html:html>
 <head>
+<html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployeecontract.text" /></title>
 <link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
@@ -550,4 +552,4 @@
 </html:form>
 
 </body>
-
+</html:html>

@@ -6,8 +6,9 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<html:html>
 <head>
+<html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - Admin</title>
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
@@ -56,4 +57,4 @@
 	</c:if>
 </html:form>
 </body>
-</html>
+</html:html>

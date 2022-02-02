@@ -2,7 +2,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 
-<script type="text/javascript"><!--//--><![CDATA[//><!--
+<script type="text/javascript">
 startList = function() {
 	if (document.all&&document.getElementById) {
 		navRoot = document.getElementById("nav");
@@ -24,10 +24,7 @@ startList = function() {
 	}
 }
 window.onload=startList;
-
-//--><!]]></script>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
+</script>
 
 <table style="width:100%;">
   <tr>

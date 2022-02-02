@@ -11,6 +11,7 @@
 
 <html:html>
 <head>
+<html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 	<bean:message key="main.general.mainmenu.training.text" /></title>

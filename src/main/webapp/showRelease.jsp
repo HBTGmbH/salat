@@ -8,6 +8,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
+<html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link href="/tb/style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
@@ -441,7 +442,7 @@
 			<!-- overview table -->
 			<br>
 			<br>
-<%--	Benachrichtigung über emailvesand		--%>
+<%--	Benachrichtigung ï¿½ber emailvesand		--%>
 			<div style="font-size: 12pt;"><i><c:out value="${actionInfo}" />&nbsp;</i></div>
 			<c:if test="${not loginEmployee.restricted}">
 			<br>
@@ -480,7 +481,7 @@
 						</b>
 					</th>
 					<!-- <th align="left">
-						Buchungen prüfen
+						Buchungen prï¿½fen
 					</th> -->
 				</tr>
 				<c:forEach var="employeecontract" items="${employeecontracts}"
@@ -499,7 +500,7 @@
 							<c:out value="${employeecontract.employee.sign}" />
 						</td>
 						<td>
-							<%-- <html:link title="Buchungen prüfen" 
+							<%-- <html:link title="Buchungen prï¿½fen" 
 							href="/tb/do/ShowDailyReport?currentEmployeeContract='${employeecontract}'"> 
 							<font color="blue">--%>
 							<c:out value="${employeecontract.employee.name}" />

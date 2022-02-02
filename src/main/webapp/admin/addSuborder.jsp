@@ -10,7 +10,9 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib uri="/WEB-INF/treeTag.tld" prefix="myjsp" %>
 
+<html:html>
 <head>
+<html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.addsuborder.text" /></title>
@@ -630,4 +632,4 @@
 	
 </html:form>
 </body>
-
+</html:html>
