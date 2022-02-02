@@ -1,6 +1,7 @@
 package org.tb.helper;
 
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
+import static org.tb.util.UrlUtils.absoluteUrl;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +27,6 @@ import org.tb.bdom.Timereport;
 import org.tb.bdom.Warning;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
-import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
@@ -38,11 +38,10 @@ public class AfterLogin {
 
     private final TimereportHelper timereportHelper;
     private final EmployeeorderDAO employeeorderDAO;
-    private final PublicholidayDAO publicholidayDAO;
     private final TimereportDAO timereportDAO;
-    private final OvertimeDAO overtimeDAO;
     private final StatusReportDAO statusReportDAO;
     private final CustomerorderDAO customerorderDAO;
+    private final ServletContext servletContext;
 
     private List<Warning> checkEmployeeorders(Employeecontract employeecontract, MessageResources resources, Locale locale) {
         List<Warning> warnings = new ArrayList<>();
@@ -57,14 +56,14 @@ public class AfterLogin {
                         Warning warning = new Warning();
                         warning.setSort(resources.getMessage(locale, "employeeordercontent.thumbdown.text"));
                         warning.setText(employeeorder.getEmployeeOrderAsString());
-                        warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
+                        warning.setLink(absoluteUrl("/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId(), servletContext));
                         warnings.add(warning);
                     } else if (employeeorder.getEmployeeOrderContent() != null && !employeeorder.getEmployeeOrderContent().getCommitted_mgmt()
                             && employeeorder.getEmployeeOrderContent().getContactTechHbt().equals(employeecontract.getEmployee())) {
                         Warning warning = new Warning();
                         warning.setSort(resources.getMessage(locale, "employeeordercontent.thumbdown.text"));
                         warning.setText(employeeorder.getEmployeeOrderAsString());
-                        warning.setLink("/tb/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId());
+                        warning.setLink(absoluteUrl("/do/ShowEmployeeorder?employeeContractId=" + employeeorder.getEmployeecontract().getId(), servletContext));
                         warnings.add(warning);
                     } else {
                         throw new RuntimeException("query suboptimal");
@@ -78,7 +77,8 @@ public class AfterLogin {
         return warnings;
     }
 
-    public List<Warning> createWarnings(Employeecontract employeecontract, Employeecontract loginEmployeeContract, MessageResources resources, Locale locale) {
+    public List<Warning> createWarnings(Employeecontract employeecontract, Employeecontract loginEmployeeContract,
+        MessageResources resources, Locale locale) {
         // warnings
         List<Warning> warnings = checkEmployeeorders(employeecontract, resources, locale);
 
@@ -110,7 +110,7 @@ public class AfterLogin {
                     || loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
                     || loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
                     || loginEmployeeContract.getEmployee().getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-                warning.setLink("/tb/do/EditDailyReport?trId=" + timereport.getId());
+                warning.setLink(absoluteUrl("/do/EditDailyReport?trId=" + timereport.getId(), servletContext));
             }
             warnings.add(warning);
         }
@@ -156,12 +156,12 @@ public class AfterLogin {
                     List<Statusreport> unreleasedReports = statusReportDAO.getUnreleasedFinalStatusReports(customerorder.getId(), employeecontract.getEmployee().getId(), maxUntilDate);
                     if (unreleasedReports != null && !unreleasedReports.isEmpty()) {
                         if (unreleasedReports.size() == 1) {
-                            warning.setLink("/tb/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId());
+                            warning.setLink(absoluteUrl("/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId(), servletContext));
                         } else {
-                            warning.setLink("/tb/do/ShowStatusReport?coId=" + customerorder.getId());
+                            warning.setLink(absoluteUrl("/do/ShowStatusReport?coId=" + customerorder.getId(), servletContext));
                         }
                     } else {
-                        warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=true");
+                        warning.setLink(absoluteUrl("/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=true", servletContext));
                     }
                     warnings.add(warning);
                 }
@@ -175,14 +175,14 @@ public class AfterLogin {
                     List<Statusreport> unreleasedReports = statusReportDAO.getUnreleasedPeriodicalStatusReports(customerorder.getId(), employeecontract.getEmployee().getId(), maxUntilDate);
                     if (unreleasedReports != null && !unreleasedReports.isEmpty()) {
                         if (unreleasedReports.size() == 1) {
-                            warning.setLink("/tb/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId());
+                            warning.setLink(absoluteUrl("/do/EditStatusReport?srId=" + unreleasedReports.get(0).getId(), servletContext));
                         } else {
-                            warning.setLink("/tb/do/ShowStatusReport?coId=" + customerorder.getId());
+                            warning.setLink(absoluteUrl("/do/ShowStatusReport?coId=" + customerorder.getId(), servletContext));
                         }
                         warnings.add(warning);
                     } else {
-                        if (finalReports.isEmpty()) {
-                            warning.setLink("/tb/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=false");
+                        if (finalReports == null || finalReports.isEmpty()) {
+                            warning.setLink(absoluteUrl("/do/CreateStatusReport?coId=" + customerorder.getId() + "&final=false", servletContext));
                             warnings.add(warning);
                         }
                     }
@@ -207,7 +207,7 @@ public class AfterLogin {
                         + ":" + statusreport.getSender().getName() + " "
                         + resources.getMessage(locale, "statusreport.to.text")
                         + ":" + statusreport.getRecipient().getName() + ")");
-                warning.setLink("/tb/do/EditStatusReport?srId=" + statusreport.getId());
+                warning.setLink(absoluteUrl("/do/EditStatusReport?srId=" + statusreport.getId(), servletContext));
                 warnings.add(warning);
             }
         }

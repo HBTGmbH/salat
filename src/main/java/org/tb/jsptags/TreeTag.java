@@ -1,15 +1,20 @@
 package org.tb.jsptags;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.tb.util.UrlUtils.absoluteUrl;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Random;
+import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.tagext.TagSupport;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;
-
-import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.tagext.TagSupport;
-import java.io.IOException;
-import java.util.*;
 
 /**
  * This class generates a tree view for jsp-Pages.
@@ -20,12 +25,10 @@ import java.util.*;
  *
  * @author ts
  */
+@Slf4j
+@Setter
 public class TreeTag extends TagSupport {
-    private static final Logger LOG = LoggerFactory.getLogger(TreeTag.class);
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L; // 8705101629331486419L;
     // Random number needed for imag-label-generating.
     private static final Random rand = new Random();
@@ -56,45 +59,6 @@ public class TreeTag extends TagSupport {
     private Boolean onlySuborders = false;
     // The string represents the text for open dates.
     private String endlessDate = "-";
-
-    // ------------------------------------------------
-    // All set-methods for communicating with the jsp!
-    // ------------------------------------------------
-    public void setEndlessDate(String endlessDate) {
-        this.endlessDate = endlessDate;
-    }
-
-    public void setDeleteFunctionString(String deleteFunctionString) {
-        this.deleteFunctionString = deleteFunctionString;
-    }
-
-    public void setOnlySuborders(Boolean onlySuborders) {
-        this.onlySuborders = onlySuborders;
-    }
-
-    public void setCurrentSuborderID(Long currentSuborderID) {
-        this.currentSuborderID = currentSuborderID;
-    }
-
-    public void setDefaultString(String defaultString) {
-        this.defaultString = defaultString;
-    }
-
-    public void setMainProject(Customerorder mainProject) {
-        this.mainProject = mainProject;
-    }
-
-    public void setSubProjects(List<Suborder> subProjects) {
-        this.subProjects = subProjects;
-    }
-
-    public void setBrowser(String browser) {
-        this.browser = browser;
-    }
-
-    public void setChangeFunctionString(String changeFunctionString) {
-        this.changeFunctionString = changeFunctionString;
-    }
 
     /**
      * This methode is called from the jsp to produce some output on it.
@@ -129,7 +93,7 @@ public class TreeTag extends TagSupport {
             out.print("<td class=\"noBborderStyle\" nowrap width=\"30\" align=\"left\"> <img id=\"img");
             out.print(name);
             out.print("\" src=\"");
-            out.print(GlobalConstants.ICONPATH);
+            out.print(absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()));
             out.print(GlobalConstants.CLOSEICON);
             out.println("\" border=\"0\" ");
             out.print(" onClick=\"nodeClick(event, this, '");
@@ -142,7 +106,7 @@ public class TreeTag extends TagSupport {
             if (!onlySuborders && this.changeFunctionString != null && !this.changeFunctionString.isEmpty()) {
                 String tempChangeFunctionString = changeFunctionString.replaceFirst(this.defaultString, Long.toString(mainProject.getId()));
                 out.print("<td class=\"noBborderStyle\" nowrap align=\"left\"><b>" + mainProject.getSignAndDescription() + "</b></td>");
-                out.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" ");
+                out.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + GlobalConstants.PARENTICON + "\" border=\"0\" ");
                 out.println(" onclick=\"" + tempChangeFunctionString + "\";></td>");
 
             } else {
@@ -160,7 +124,7 @@ public class TreeTag extends TagSupport {
             }
             out.print("</span>");
         } catch (Exception ioe) {
-            LOG.error("Error in Tree Tag!");
+            log.error("Error in Tree Tag!");
         }
         return (EVAL_BODY_INCLUDE);
     }
@@ -251,7 +215,7 @@ public class TreeTag extends TagSupport {
                     outPut.println("<td class=\"noBborderStyle\" nowrap width=\"" + (30 + 37 * lastLevel) + "\">&nbsp;</td>");
                     //check, if the (+/-)-Sign must be printed or if this node is a leaf node
                     if (this.internalNodesIDs.contains(suborder.getId())) {
-                        outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"> <img id=\"img" + name + "\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.CLOSEICON + "\" border=\"0\" ");
+                        outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\"> <img id=\"img" + name + "\" src=\"" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + GlobalConstants.CLOSEICON + "\" border=\"0\" ");
                         outPut.println("onClick=\"nodeClick(event, this, '" + name + "', '" + GlobalConstants.CLOSEICON + "', '" + GlobalConstants.OPENICON + "');\"></td>");
                     } else {
                         outPut.println("<td class=\"noBborderStyle\" nowrap width=\"30\">&nbsp;</td>");
@@ -260,16 +224,16 @@ public class TreeTag extends TagSupport {
                     if (workingChangeFunctionStr.length() > 0
                             && editable
                             && workingDeleteFunctionStr.length() > 0) {
-                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.EDITICON + "\" border=\"0\" ");
+                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + GlobalConstants.EDITICON + "\" border=\"0\" ");
                         outPut.println(" onclick=\"" + workingChangeFunctionStr + "\";></td>");
                     } else if (workingChangeFunctionStr.length() > 0 && editable) {
-                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.PARENTICON + "\" border=\"0\" ");
+                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + GlobalConstants.PARENTICON + "\" border=\"0\" ");
                         outPut.println(" onclick=\"" + workingChangeFunctionStr + "\";></td>");
                     } else {
-                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <img id=\"img1\" height=\"12px\" width=\"12px\" src=\"" + GlobalConstants.ICONPATH + GlobalConstants.NOTALLOWED + "\" border=\"0\" </td>");
+                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <img id=\"img1\" height=\"12px\" width=\"12px\" src=\"" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + GlobalConstants.NOTALLOWED + "\" border=\"0\" </td>");
                     }
                     if (workingDeleteFunctionStr.length() > 0 && editable) {
-                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + GlobalConstants.ICONPATH + GlobalConstants.DELETEICON + "\" border=\"0\" ");
+                        outPut.println("<td class=\"noBborderStyle\" nowrap align=\"left\"> <input type=\"image\" name= \"\"  src=\"" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + GlobalConstants.DELETEICON + "\" border=\"0\" ");
                         outPut.println(" onclick=\"" + workingDeleteFunctionStr + "\";></td>");
                     }
                     outPut.println("\n</tr></TABLE>\n");
@@ -277,7 +241,7 @@ public class TreeTag extends TagSupport {
                     generateTreeRecursivly(suborder.getId(), thisLevel, outPut, editable, filteredHierarchy);
                     outPut.println("</span>");
                 } catch (IOException ioe) {
-                    LOG.error("Error in Tree Tag!");
+                    log.error("Error in Tree Tag!");
                 }
             }
         }
@@ -323,9 +287,9 @@ public class TreeTag extends TagSupport {
             out.println("var eImg = document.all['img'+id];");
         }
         out.println("if( eSpan.className=='clsHide' ) {");
-        out.println("eImg.src = ('" + GlobalConstants.ICONPATH + "' + open);");
+        out.println("eImg.src = ('" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + "' + open);");
         out.println("} else {");
-        out.println("eImg.src = ('" + GlobalConstants.ICONPATH + "' + closed);");
+        out.println("eImg.src = ('" + absoluteUrl(GlobalConstants.ICONPATH, pageContext.getServletContext()) + "' + closed);");
         out.println("}");
         out.println("} </script>");
         out.println("<style type='text/css'>");
