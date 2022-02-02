@@ -55,7 +55,7 @@ alter table timereport drop foreign key FKDA2C766119CE4732;
 alter table timereport drop column TICKET_ID;
 drop table ticket;
 alter table employee drop column jira_oauthtoken;
-
+drop table monthlyreport;
 
 
 

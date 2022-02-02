@@ -14,14 +14,12 @@ import java.util.List;
 @Component
 public class EmployeecontractDAO extends AbstractDAO {
 
-    private final MonthlyreportDAO monthlyreportDAO;
     private final VacationDAO vacationDAO;
     private final OvertimeDAO overtimeDAO;
 
     @Autowired
-    public EmployeecontractDAO(SessionFactory sessionFactory, MonthlyreportDAO monthlyreportDAO, VacationDAO vacationDAO, OvertimeDAO overtimeDAO) {
+    public EmployeecontractDAO(SessionFactory sessionFactory, VacationDAO vacationDAO, OvertimeDAO overtimeDAO) {
         super(sessionFactory);
-        this.monthlyreportDAO = monthlyreportDAO;
         this.vacationDAO = vacationDAO;
         this.overtimeDAO = overtimeDAO;
     }
@@ -355,14 +353,8 @@ public class EmployeecontractDAO extends AbstractDAO {
                 return false;
             }
 
-            // if ok for deletion, check for monthlyreport and vacation entries and
+            // if ok for deletion, check for overtime and vacation entries and
             // delete them successively (cannot yet be done via web application)
-            List<Monthlyreport> allMonthlyreports = ec.getMonthlyreports();
-            if (allMonthlyreports != null) {
-                for (Monthlyreport mr : allMonthlyreports) {
-                    monthlyreportDAO.deleteMonthlyreportById(mr.getId());
-                }
-            }
 
             List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
             for (Overtime overtime : overtimes) {

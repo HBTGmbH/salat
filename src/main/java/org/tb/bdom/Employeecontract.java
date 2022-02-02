@@ -74,14 +74,6 @@ public class Employeecontract extends EditDetails implements Serializable {
     private List<Employeeorder> employeeorders;
 
     /**
-     * list of monthlyreports, associated to this employeecontract
-     */
-    @OneToMany(mappedBy = "employeecontract")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Monthlyreport> monthlyreports;
-
-    /**
      * list of vacations, associated to this employeecontract
      */
     @OneToMany(mappedBy = "employeecontract")
