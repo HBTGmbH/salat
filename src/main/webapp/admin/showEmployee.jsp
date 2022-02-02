@@ -170,7 +170,7 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${employee.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="images/info_button.gif" />
+				src="../images/info_button.gif" />
 			</td>
 			
 			
@@ -186,12 +186,12 @@
 			<c:if test="${employeeAuthorized}">
 				<td align="center"><html:link
 					href="../do/EditEmployee?emId=${employee.id}">
-					<img src="images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
+					<img src="../images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
 				</html:link></td>
 				<html:form action="/DeleteEmployee">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employee.id})"
-						src="images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
+						src="../images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
 				</html:form>
 			</c:if>
 			</tr>

@@ -207,7 +207,7 @@
 				</div>
 				<img onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
 					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="images/info_button.gif" />
+					src="../images/info_button.gif" />
 			</td>
 			
 			<c:choose>
@@ -262,12 +262,12 @@
 			<c:if test="${employeeAuthorized}">
 				<td align="center"><html:link
 					href="../do/EditEmployeecontract?ecId=${employeecontract.id}">
-					<img src="images/Edit.gif" alt="Edit Employeecontract" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text"/>"/>
+					<img src="../images/Edit.gif" alt="Edit Employeecontract" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text"/>"/>
 				</html:link></td>
 				<html:form action="/DeleteEmployeecontract">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employeecontract.id})"
-						src="images/Delete.gif" alt="Delete Employeecontract" titleKey="main.headlinedescription.employeecontracts.delete.text"/></td>
+						src="../images/Delete.gif" alt="Delete Employeecontract" titleKey="main.headlinedescription.employeecontracts.delete.text"/></td>
 				</html:form>
 			</c:if>
 			</tr>
