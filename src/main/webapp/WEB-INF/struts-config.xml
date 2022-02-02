@@ -241,7 +241,7 @@
 
 		<action path="/ShowSuborder" name="showSuborderForm">
 			<forward name="success" path="/order/showSuborder.jsp" />
-			<forward name="backtomenu" path="/showMenu.jsp" />
+			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
