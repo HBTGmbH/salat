@@ -21,7 +21,7 @@
 <link
 	rel="stylesheet"
 	type="text/css"
-	href="/tb/tb.css" />
+	href="/tb/style/tb.css" />
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 </head>
 <body>

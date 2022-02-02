@@ -9,7 +9,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addcustomer.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">

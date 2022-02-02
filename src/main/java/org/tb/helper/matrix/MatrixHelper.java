@@ -10,12 +10,14 @@
  */
 package org.tb.helper.matrix;
 
+import static org.tb.util.DateUtils.getDateAsStringArray;
+import static org.tb.util.DateUtils.getDateFormStrings;
+
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
-import org.tb.helper.TimereportHelper;
 import org.tb.persistence.*;
 import org.tb.util.DateUtils;
-import org.tb.web.form.ShowMatrixForm;
+import org.tb.form.ShowMatrixForm;
 
 import java.util.*;
 
@@ -65,16 +67,14 @@ public class MatrixHelper {
     private final CustomerorderDAO coDAO;
     private final SuborderDAO soDAO;
     private final EmployeeDAO eDAO;
-    private final TimereportHelper th;
 
-    public MatrixHelper(TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, CustomerorderDAO coDAO, SuborderDAO soDAO, EmployeeDAO eDAO, TimereportHelper th) {
+    public MatrixHelper(TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, CustomerorderDAO coDAO, SuborderDAO soDAO, EmployeeDAO eDAO) {
         this.trDAO = trDAO;
         this.ecDAO = ecDAO;
         this.phDAO = phDAO;
         this.coDAO = coDAO;
         this.soDAO = soDAO;
         this.eDAO = eDAO;
-        this.th = th;
     }
 
     public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
@@ -344,12 +344,12 @@ public class MatrixHelper {
         Date dateLast;
         try {
             if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
-                dateFirst = th.getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
+                dateFirst = getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
                 int maxDays = getMaxDays(dateFirst);
                 String maxDayString = getTwoDigitStr(maxDays);
-                dateLast = th.getDateFormStrings(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), false);
+                dateLast = getDateFormStrings(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), false);
             } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
-                dateFirst = th.getDateFormStrings(reportForm.getFromDay(), reportForm.getFromMonth(), reportForm.getFromYear(), false);
+                dateFirst = getDateFormStrings(reportForm.getFromDay(), reportForm.getFromMonth(), reportForm.getFromYear(), false);
                 if (reportForm.getUntilDay() == null || reportForm.getUntilMonth() == null || reportForm.getUntilYear() == null) {
                     int maxDays = getMaxDays(dateFirst);
                     String maxDayString = getTwoDigitStr(maxDays);
@@ -357,7 +357,7 @@ public class MatrixHelper {
                     reportForm.setUntilMonth(reportForm.getFromMonth());
                     reportForm.setUntilYear(reportForm.getFromYear());
                 }
-                dateLast = th.getDateFormStrings(reportForm.getUntilDay(), reportForm.getUntilMonth(), reportForm.getUntilYear(), false);
+                dateLast = getDateFormStrings(reportForm.getUntilDay(), reportForm.getUntilMonth(), reportForm.getUntilYear(), false);
             } else {
                 throw new RuntimeException("no view type selected");
             }
@@ -516,11 +516,11 @@ public class MatrixHelper {
             results.put("MonthKey", MONTH_MAP.get(reportForm.getFromMonth()));
             results.put("currentYear", reportForm.getFromYear());
 
-            Date dateFirst = initStartEndDate(th, "01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
+            Date dateFirst = initStartEndDate("01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
             maxDays = getMaxDays(dateFirst);
             String maxDayString = getTwoDigitStr(maxDays);
-            Date dateLast = initStartEndDate(th, maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
+            Date dateLast = initStartEndDate(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
             long ecId = -1L;
             boolean isAcceptanceWarning = false;
@@ -568,7 +568,7 @@ public class MatrixHelper {
                 String month = currentMonth;
                 if (month == null || month.trim().equals("")) {
                     Date date = new Date();
-                    String[] dateArray = th.getDateAsStringArray(date);
+                    String[] dateArray = getDateAsStringArray(date);
                     month = dateArray[1];
                 }
                 reportForm.setFromMonth(month);
@@ -590,11 +590,11 @@ public class MatrixHelper {
             results.put("lastMonth", monthString);
             results.put("lastYear", yearString);
 
-            Date dateFirst = initStartEndDate(th, "01", currMonth, yearString, monthString, yearString);
+            Date dateFirst = initStartEndDate("01", currMonth, yearString, monthString, yearString);
 
             maxDays = getMaxDays(dateFirst);
             String maxDayString = getTwoDigitStr(maxDays);
-            Date dateLast = initStartEndDate(th, maxDayString, currMonth, yearString, monthString, yearString);
+            Date dateLast = initStartEndDate(maxDayString, currMonth, yearString, monthString, yearString);
 
             long ecId;
             boolean newAcceptance = false;
@@ -629,19 +629,20 @@ public class MatrixHelper {
         }
         results.put("mergedreports", reportWrapper.getMergedReportList());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
-        results.put("dayhourssum", reportWrapper.getDayHoursSum());
-        results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
+        results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
+        results.put("dayhourstargetstring", reportWrapper.getDayHoursTargetString());
         results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
+        results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
         results.put("daysofmonth", maxDays);
         return results;
     }
 
-    private Date initStartEndDate(TimereportHelper th, String startEndStr, String currMonth, String currYear, String monthString, String yearString) {
+    private Date initStartEndDate(String startEndStr, String currMonth, String currYear, String monthString, String yearString) {
         try {
             if (currMonth != null) {
-                return th.getDateFormStrings(startEndStr, currMonth, currYear, false);
+                return getDateFormStrings(startEndStr, currMonth, currYear, false);
             } else {
-                return th.getDateFormStrings(startEndStr, monthString, yearString, false);
+                return getDateFormStrings(startEndStr, monthString, yearString, false);
             }
         } catch (Exception e) {
             System.out.println("this should not happen");

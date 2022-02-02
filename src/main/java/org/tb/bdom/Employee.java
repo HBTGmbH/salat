@@ -74,10 +74,6 @@ public class Employee implements Serializable {
      * Password change required
      */
     private Boolean passwordchange;
-    /**
-     * Jira OAuth Token
-     */
-    private String jira_oauthtoken;
 
     private transient Boolean restricted = null;
 

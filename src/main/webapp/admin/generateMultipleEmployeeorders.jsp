@@ -13,7 +13,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.multipleEmployeeorders.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
 <link href="/tb/style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 <script src="/tb/scripts/jquery-1.11.3.min.js"></script>

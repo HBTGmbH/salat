@@ -47,12 +47,6 @@ public class Timereport extends EditDetails implements Serializable {
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     private Employeeorder employeeorder;
 
-    @ManyToOne
-    @Fetch(FetchMode.SELECT)
-    @JoinColumn(name = "TICKET_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
-    private Ticket ticket;
-
     private Integer durationhours;
     private Integer durationminutes;
     private String sortofreport;

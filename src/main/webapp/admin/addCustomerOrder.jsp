@@ -9,7 +9,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addcustomerorder.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
@@ -22,14 +22,6 @@
 	function setStoreAction(form, actionVal, addMore) {	
 		form.action = "/tb/do/StoreCustomerorder?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
-	}
-	
-	function multipleGeneratorAction(form) {
-		var jiraProjectID = form.elements[2].value; 
-		if (jiraProjectID != "") {
-			form.action = "/tb/do/GenerateMultipleEmployeeorders?task=default";
-			form.submit();
-		}
 	}
 		
 	function afterCalenderClick() {
@@ -87,19 +79,10 @@
 
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.jira.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text 
-				property="jiraProjectID" disabled="${projectIDExistsCustomerOrder}" size="40" 
-				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERORDER_JIRA_MAX_LENGTH %>" />
-			<span style="color:red"><html:errors property="jiraProjectID" /></span></td>
-		</tr>
-
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.validfrom.text" /></b></td>
 			<td align="left" class="noBborderStyle"><!-- JavaScript Stuff for popup calender -->
 			<script type="text/javascript" language="JavaScript"
-				src="/tb/CalendarPopup.js"></script> <script type="text/javascript"
+				src="/tb/scripts/CalendarPopup.js"></script> <script type="text/javascript"
 				language="JavaScript">
                     document.write(getCalendarStyles());
                 </script> <script type="text/javascript" language="JavaScript">
@@ -199,7 +182,7 @@
 				property="shortdescription" /></span></td>
 		</tr>
 		
-		<!-- Durchführungsverantwortlicher bei HBT -->
+		<!-- Durchfï¿½hrungsverantwortlicher bei HBT -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.responsiblehbt.execution.text" /></b></td>

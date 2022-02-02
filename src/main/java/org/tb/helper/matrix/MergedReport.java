@@ -1,6 +1,6 @@
 package org.tb.helper.matrix;
 
-import static org.tb.web.util.TimeFormatUtils.timeFormatMinutes;
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;

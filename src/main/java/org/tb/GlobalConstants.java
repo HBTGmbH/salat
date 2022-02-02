@@ -1,7 +1,5 @@
 package org.tb;
 
-import org.tb.helper.JiraConnectionOAuthHelper;
-
 import java.io.IOException;
 import java.util.Properties;
 
@@ -38,7 +36,6 @@ public class GlobalConstants {
     public static final int CUSTOMERADDRESS_MAX_LENGTH = 256;
 
     public static final int CUSTOMERORDER_SIGN_MAX_LENGTH = 16;
-    public static final int CUSTOMERORDER_JIRA_MAX_LENGTH = 32;
     public static final int CUSTOMERORDER_DESCRIPTION_MAX_LENGTH = 256;
     public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 20;
     public static final int CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH = 64;
@@ -49,9 +46,6 @@ public class GlobalConstants {
     public static final int SUBORDER_DESCRIPTION_MAX_LENGTH = 2048;
     public static final int SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH = 40;
     public static final int SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH = 30;
-    public static final String SUBORDER_DUMMY = "_dummy";
-    public static final String SUBORDER_DUMMY_DESCRIPTION = "Dummy-Unterauftrag für Aufträge mit Jira-Projekt-ID";
-    public static final String SUBORDER_DUMMY_SHORTDESCRIPTION = "Dummy";
 
     public static final int SUBORDER_INVOICE_YES = 'Y';
     public static final int SUBORDER_INVOICE_NO = 'N';
@@ -158,7 +152,7 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
 
-    public static final String OVERTIME_COMPENSATION_TEXT = "ܜberstundenausgleich";
+    public static final String OVERTIME_COMPENSATION_TEXT = "Überstundenausgleich";
 
     // pathstrings and iconstrings
     public static final String ICONPATH = "/tb/images/";
@@ -219,41 +213,13 @@ public class GlobalConstants {
     public static final String ZERO_DHM = "00:00:00";
     public static final String ZERO_HM = "00:00";
 
-    public static final int CREATE_WORKLOG = 1;
-    public static final int UPDATE_WORKLOG = 2;
-    public static final int DELETE_WORKLOG = 3;
-
-    // Constants read from salat.properties
     public static final String SALAT_URL;
-
-    public static final String JIRA_URL;
-    public static final String JIRA_OAUTH_SIGNING_TYPE;
-    public static final String JIRA_CONSUMER_KEY;
-    public static final String JIRA_CONSUMER_PRIVATE_KEY;
-
-    public static final int EXECUTE_FAILED_JIRA_WORKLOGS_AT;
-    public static final int EXECUTE_FAILED_JIRA_WORKLOGS_EVERY;
-
     public static final String MAIL_HOST;
 
     // Static initializer
     static {
-        // read the properties
-        Properties prop = new Properties();
-        try {
-            prop.load(JiraConnectionOAuthHelper.class.getClassLoader().getResourceAsStream("/org/tb/props/salat.properties"));
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
-
         // set the constants
         SALAT_URL = System.getenv("SALAT_URL").trim();
-        JIRA_URL = prop.getProperty("salat.jira.url").trim();
-        JIRA_OAUTH_SIGNING_TYPE = prop.getProperty("salat.jira.oauth_signing_type").trim();
-        JIRA_CONSUMER_KEY = System.getenv("SALAT_JIRA_CONSUMER_KEY").trim();
-        JIRA_CONSUMER_PRIVATE_KEY = System.getenv("SALAT_JIRA_CONSUMER_PRIVATE_KEY").trim();
-        EXECUTE_FAILED_JIRA_WORKLOGS_AT = Integer.parseInt(prop.getProperty("salat.jira.executefailedworklogs.at").trim());
-        EXECUTE_FAILED_JIRA_WORKLOGS_EVERY = Integer.parseInt(prop.getProperty("salat.jira.executefailedworklogs.every").trim());
         MAIL_HOST = System.getenv("SALAT_MAIL_HOST").trim();
     }
 }

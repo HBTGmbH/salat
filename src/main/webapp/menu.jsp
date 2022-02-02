@@ -27,7 +27,7 @@ window.onload=startList;
 
 //--><!]]></script>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
 
 <table style="width:100%;">
   <tr>
@@ -92,9 +92,6 @@ window.onload=startList;
 			</html:link></li>
 			<li><html:link styleClass="menu" action="/ShowSuborder">
 				<bean:message key="main.general.mainmenu.suborders.text" />
-			</html:link></li>
-			<li><html:link styleClass="menu" action="/ShowTickets">
-				<bean:message key="main.general.mainmenu.tickets.text" />
 			</html:link></li>
 			<li><html:link styleClass="menu" action="/ShowStatusReport">
 				<bean:message key="main.general.mainmenu.statusreports.text" />

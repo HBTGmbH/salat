@@ -13,8 +13,8 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
-		<link rel="stylesheet" type="text/css" href="/tb/tb.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
+		<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" media="all" />
+		<link rel="stylesheet" type="text/css" href="/tb/style/print.css" media="print" />
 		<link href="/tb/style/select2.min.css" rel="stylesheet" />
 		<link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 		<script src="/tb/scripts/jquery-1.11.3.min.js"></script>
@@ -271,7 +271,7 @@
 						<!-- JavaScript Stuff for popup calender -->
 						<c:choose>
 							<c:when test="${!(view eq 'month')}">
-								<script type="text/javascript" language="JavaScript" src="/tb/CalendarPopup.js">
+								<script type="text/javascript" language="JavaScript" src="/tb/scripts/CalendarPopup.js">
 								</script>
 								<script type="text/javascript" language="JavaScript">
 									document.write(getCalendarStyles());
@@ -758,7 +758,7 @@
 		
 					<!-- visibility dependent on user and status -->
 					<c:choose>
-						<c:when	test="${((loginEmployee == timereport.employeecontract.employee) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv') && (timereport.status eq 'commited') && (loginEmployee != timereport.employeecontract.employee)) || loginEmployee.status eq 'adm'}">
+						<c:when	test="${((loginEmployee.id == timereport.employeecontract.employee.id) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv') && (timereport.status eq 'commited') && (loginEmployee != timereport.employeecontract.employee)) || loginEmployee.status eq 'adm'}">
 							<!-- Kommentar -->
 							<td>
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}" 
@@ -902,7 +902,6 @@
 				<html:errors property="selectedHourEnd" footer="<br>" /> 
 				<html:errors property="costs" footer="<br>" />
 				<html:errors property="status" footer="<br>" />
-				<html:errors property="createWorklogFailed" footer="<br>" />
 				<br>
 				<html:errors property="comment" footer="<br>" />
 			</b>

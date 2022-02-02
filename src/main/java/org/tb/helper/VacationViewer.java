@@ -1,5 +1,12 @@
 package org.tb.helper;
 
+import static java.math.RoundingMode.DOWN;
+import static java.util.Locale.GERMAN;
+import static org.tb.util.TimeFormatUtils.timeFormatHours;
+import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
+
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeeorderDAO;
@@ -51,110 +58,53 @@ public class VacationViewer implements Serializable {
         this.usedVacationMinutes += minutes;
     }
 
-    public boolean getExtended() {
-        return getTime() > budget;
-    }
-
-    public double getTime() {
-        int totalVacationMinutes = usedVacationMinutes;
-        int hours = totalVacationMinutes / 60;
-        int minutes = totalVacationMinutes % 60;
-        double usedTime = minutes / 60.0 + hours;
-        usedTime += 0.005;
-        usedTime *= 100;
-        int temp = (int) usedTime;
-        usedTime = temp / 100.0;
-        return usedTime;
-    }
-
-    public String getVacationString() {
-        int totalVacationMinutes = usedVacationMinutes;
-
-        int dailyWorkingTimeMinutes = getMinutesForHourDouble(employeecontract.getDailyWorkingTime());
-
-        int vacationDays = totalVacationMinutes / dailyWorkingTimeMinutes;
-        int restMinutes = totalVacationMinutes % dailyWorkingTimeMinutes;
-        int vacationHours = restMinutes / 60;
-        int vacationMinutes = restMinutes % 60;
-
-        int totalBudgetMinutes = getMinutesForHourDouble(budget);
-
-        int budgetDays = totalBudgetMinutes / dailyWorkingTimeMinutes;
-        int budgetRestMinutes = totalBudgetMinutes % dailyWorkingTimeMinutes;
-        int budgetHours = budgetRestMinutes / 60;
-        int budgetMinutes = budgetRestMinutes % 60;
-
-        return vacationDays + ":" + vacationHours + ":" + vacationMinutes + " / " + budgetDays + ":" + budgetHours + ":" + budgetMinutes;
+    public boolean isVacationBudgetExceeded() {
+        return usedVacationMinutes > (budget * 60);
     }
 
     public String getUsedVacationString() {
-        int totalVacationMinutes = usedVacationMinutes;
+        StringBuilder usedVacation = new StringBuilder();
+        usedVacation.append(timeFormatMinutes(this.usedVacationMinutes));
 
-        int dailyWorkingTimeMinutes = getMinutesForHourDouble(employeecontract.getDailyWorkingTime());
-
-        int vacationDays = totalVacationMinutes / dailyWorkingTimeMinutes;
-        int restMinutes = totalVacationMinutes % dailyWorkingTimeMinutes;
-        int vacationHours = restMinutes / 60;
-        int vacationMinutes = restMinutes % 60;
-
-        StringBuffer vacationString = new StringBuffer();
-        if (vacationDays < 10) {
-            vacationString.append(0);
+        BigDecimal dailyWorkingTimeMinutes = BigDecimal
+            .valueOf(employeecontract.getDailyWorkingTime())
+            .multiply(BigDecimal.valueOf(60));
+        if(dailyWorkingTimeMinutes.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal usedVacationDays = BigDecimal.valueOf(this.usedVacationMinutes)
+                .setScale(2, DOWN)
+                .divide(dailyWorkingTimeMinutes, DOWN);
+            NumberFormat nf = NumberFormat.getNumberInstance(GERMAN);
+            nf.setMinimumFractionDigits(2);
+            nf.setMaximumFractionDigits(2);
+            usedVacation
+                .append(" (")
+                .append(nf.format(usedVacationDays))
+                .append(" Tage)");
         }
-        vacationString.append(vacationDays);
-        vacationString.append(':');
-        if (vacationHours < 10) {
-            vacationString.append(0);
-        }
-        vacationString.append(vacationHours);
-        vacationString.append(':');
-        if (vacationMinutes < 10) {
-            vacationString.append(0);
-        }
-        vacationString.append(vacationMinutes);
-
-        return vacationString.toString();
+        return usedVacation.toString();
     }
 
     public String getBudgetVacationString() {
-        int dailyWorkingTimeMinutes = getMinutesForHourDouble(employeecontract.getDailyWorkingTime());
+        StringBuilder budgetVacation = new StringBuilder();
+        budgetVacation.append(timeFormatHours(this.budget));
 
-        int totalBudgetMinutes = getMinutesForHourDouble(budget);
-
-        int budgetDays = totalBudgetMinutes / dailyWorkingTimeMinutes;
-        int budgetRestMinutes = totalBudgetMinutes % dailyWorkingTimeMinutes;
-        int budgetHours = budgetRestMinutes / 60;
-        int budgetMinutes = budgetRestMinutes % 60;
-
-        StringBuffer vacationString = new StringBuffer();
-        if (budgetDays < 10) {
-            vacationString.append(0);
+        BigDecimal dailyWorkingTimeMinutes = BigDecimal
+            .valueOf(employeecontract.getDailyWorkingTime())
+            .multiply(BigDecimal.valueOf(60));
+        if(dailyWorkingTimeMinutes.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal usedVacationDays = BigDecimal.valueOf(this.budget)
+                .multiply(BigDecimal.valueOf(60))
+                .setScale(2, DOWN)
+                .divide(dailyWorkingTimeMinutes, DOWN);
+            NumberFormat nf = NumberFormat.getNumberInstance(GERMAN);
+            nf.setMinimumFractionDigits(2);
+            nf.setMaximumFractionDigits(2);
+            budgetVacation
+                .append(" (")
+                .append(nf.format(usedVacationDays))
+                .append(" Tage)");
         }
-        vacationString.append(budgetDays);
-        vacationString.append(':');
-        if (budgetHours < 10) {
-            vacationString.append(0);
-        }
-        vacationString.append(budgetHours);
-        vacationString.append(':');
-        if (budgetMinutes < 10) {
-            vacationString.append(0);
-        }
-        vacationString.append(budgetMinutes);
-
-        return vacationString.toString();
-    }
-
-    private int getMinutesForHourDouble(Double doubleValue) {
-        int hours = doubleValue.intValue();
-        doubleValue = doubleValue - hours;
-        int minutes = 0;
-        if (doubleValue != 0.0) {
-            doubleValue *= 100;
-            minutes = doubleValue.intValue() * 60 / 100;
-        }
-        minutes += hours * 60;
-        return minutes;
+        return budgetVacation.toString();
     }
 
     /**

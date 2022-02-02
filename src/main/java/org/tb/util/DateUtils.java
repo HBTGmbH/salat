@@ -1,5 +1,7 @@
 package org.tb.util;
 
+import java.time.DateTimeException;
+import lombok.extern.slf4j.Slf4j;
 import org.tb.GlobalConstants;
 
 import java.text.SimpleDateFormat;
@@ -18,6 +20,7 @@ import java.util.stream.IntStream;
  * 'Wed Aug 16 00:00:00 CEST 2006' (daylight saving time!)
  * - java.sql.Date.toString()looks like:  '2006-08-16'
  */
+@Slf4j
 public class DateUtils {
 
     private static final String[] monthShortStrings = GlobalConstants.MONTH_SHORTFORMS;
@@ -391,4 +394,109 @@ public class DateUtils {
 
         return java.sql.Date.valueOf(localDate);
     }
+
+    /**
+     * Transforms a {@link Date} into 3 {@link String}s, e.g. "09", "Feb", "2011".
+     *
+     * @return Returns an array of strings with the day at index 0, month at index 1 and year at index 2.
+     */
+    public static String[] getDateAsStringArray(java.util.Date date) {
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
+        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
+        String day = dayFormat.format(date);
+        String year = yearFormat.format(date);
+        String month = monthFormat.format(date);
+        int monthValue = Integer.parseInt(month);
+        if (monthValue == GlobalConstants.MONTH_INTVALUE_JANUARY) {
+            month = GlobalConstants.MONTH_SHORTFORM_JANUARY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_FEBRURAY) {
+            month = GlobalConstants.MONTH_SHORTFORM_FEBRUARY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MARCH) {
+            month = GlobalConstants.MONTH_SHORTFORM_MARCH;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_APRIL) {
+            month = GlobalConstants.MONTH_SHORTFORM_APRIL;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MAY) {
+            month = GlobalConstants.MONTH_SHORTFORM_MAY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JUNE) {
+            month = GlobalConstants.MONTH_SHORTFORM_JUNE;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JULY) {
+            month = GlobalConstants.MONTH_SHORTFORM_JULY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_AUGUST) {
+            month = GlobalConstants.MONTH_SHORTFORM_AUGUST;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_SEPTEMBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_SEPTEMBER;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_OCTOBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_OCTOBER;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_NOVEMBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_NOVEMBER;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_DECEMBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_DECEMBER;
+        }
+
+        String[] dateArray = new String[3];
+        dateArray[0] = day;
+        dateArray[1] = month;
+        dateArray[2] = year;
+
+        return dateArray;
+    }
+
+    /**
+     * Parses the Stings to create a {@link java.util.Date}. The day- and year-String are expected to represent integers.
+     * The month-String must be of the sort 'Jan', 'Feb', 'Mar', ...
+     *
+     * @return Returns the date associated to the given Strings.
+     */
+    public static java.sql.Date getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) {
+        int day = new Integer(dayString);
+        int year = new Integer(yearString);
+        int month = 0;
+
+        if (GlobalConstants.MONTH_SHORTFORM_JANUARY.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_JANUARY;
+        } else if (GlobalConstants.MONTH_SHORTFORM_FEBRUARY.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_FEBRURAY;
+        } else if (GlobalConstants.MONTH_SHORTFORM_MARCH.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_MARCH;
+        } else if (GlobalConstants.MONTH_SHORTFORM_APRIL.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_APRIL;
+        } else if (GlobalConstants.MONTH_SHORTFORM_MAY.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_MAY;
+        } else if (GlobalConstants.MONTH_SHORTFORM_JUNE.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_JUNE;
+        } else if (GlobalConstants.MONTH_SHORTFORM_JULY.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_JULY;
+        } else if (GlobalConstants.MONTH_SHORTFORM_AUGUST.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_AUGUST;
+        } else if (GlobalConstants.MONTH_SHORTFORM_SEPTEMBER.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_SEPTEMBER;
+        } else if (GlobalConstants.MONTH_SHORTFORM_OCTOBER.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_OCTOBER;
+        } else if (GlobalConstants.MONTH_SHORTFORM_NOVEMBER.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_NOVEMBER;
+        } else if (GlobalConstants.MONTH_SHORTFORM_DECEMBER.equals(monthString)) {
+            month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
+        } else {
+            try {
+                month = new Integer(monthString);
+            } catch (NumberFormatException e) {
+                log.error("monthString is in wrong format", e);
+            }
+        }
+
+        java.sql.Date selectedDate;
+        try {
+            selectedDate = java.sql.Date.valueOf(LocalDate.of(year, month, day));
+        } catch (DateTimeException e) {
+            //no date could be constructed - use current date instead
+            if (useCurrentDateForFailure) {
+                selectedDate = java.sql.Date.valueOf(LocalDate.now());
+            } else {
+                throw new IllegalArgumentException("construction of the date failed");
+            }
+        }
+        return selectedDate;
+    }
+
 }

@@ -13,8 +13,8 @@
 		<title>
 			<bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.invoice.title.text" />
 		</title>
-		<link rel="stylesheet" type="text/css" href="/tb/invoiceprint.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="/tb/print.css" media="print" />
+		<link rel="stylesheet" type="text/css" href="/tb/style/invoiceprint.css" media="all" />
+		<link rel="stylesheet" type="text/css" href="/tb/style/print.css" media="print" />
 	</head>
 	<body>
 		<form onsubmit="javascript:window.print();return false;">

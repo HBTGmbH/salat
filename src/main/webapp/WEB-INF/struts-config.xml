@@ -24,70 +24,68 @@
 
 	<form-beans>
 		<form-bean name="loginEmployeeForm"
-			type="org.tb.web.form.LoginEmployeeForm">
+			type="org.tb.form.LoginEmployeeForm">
 			<!--specify the dynamic properties of the form
 				<form-property name="loginname" type="java.lang.String" />
 				<form-property name="password" type="java.lang.String" />
 			-->
 		</form-bean>
 		<form-bean name="logoutEmployeeForm"
-			type="org.tb.web.form.LogoutEmployeeForm" />
+			type="org.tb.form.LogoutEmployeeForm" />
 		<form-bean name="addDailyReportForm"
-			type="org.tb.web.form.AddDailyReportForm" />
+			type="org.tb.form.AddDailyReportForm" />
 		<form-bean name="showMatrixForm"
-			type="org.tb.web.form.ShowMatrixForm" />
+			type="org.tb.form.ShowMatrixForm" />
 		<form-bean name="showInvoiceForm"
-			type="org.tb.web.form.ShowInvoiceForm" />
+			type="org.tb.form.ShowInvoiceForm" />
 		<form-bean name="showDailyReportForm"
-			type="org.tb.web.form.ShowDailyReportForm" />
+			type="org.tb.form.ShowDailyReportForm" />
 		<form-bean name="updateDailyReportForm"
-			type="org.tb.web.form.UpdateDailyReportForm" />
+			type="org.tb.form.UpdateDailyReportForm" />
 		<form-bean name="addCustomerForm"
-			type="org.tb.web.form.AddCustomerForm" />
+			type="org.tb.form.AddCustomerForm" />
 		<form-bean name="showCustomerForm"
-			type="org.tb.web.form.ShowCustomerForm" />
+			type="org.tb.form.ShowCustomerForm" />
 		<form-bean name="addCustomerOrderForm"
-			type="org.tb.web.form.AddCustomerOrderForm" />
+			type="org.tb.form.AddCustomerOrderForm" />
 		<form-bean name="showCustomerOrderForm"
-			type="org.tb.web.form.ShowCustomerOrderForm" />
+			type="org.tb.form.ShowCustomerOrderForm" />
 		<form-bean name="addSuborderForm"
-			type="org.tb.web.form.AddSuborderForm" />
+			type="org.tb.form.AddSuborderForm" />
 		<form-bean name="showSuborderForm"
-			type="org.tb.web.form.ShowSuborderForm" />
+			type="org.tb.form.ShowSuborderForm" />
 		<form-bean name="showBudgetForm"
-			type="org.tb.web.form.ShowBudgetForm" />
-		<form-bean name="showTicketsForm"
-			type="org.tb.web.form.ShowTicketsForm" />
+			type="org.tb.form.ShowBudgetForm" />
 		<form-bean name="addEmployeeOrderForm"
-			type="org.tb.web.form.AddEmployeeOrderForm" />
+			type="org.tb.form.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm"
-			type="org.tb.web.form.ShowEmployeeOrderForm" />
+			type="org.tb.form.ShowEmployeeOrderForm" />
 		<form-bean name="generateMultipleEmployeeordersForm"
-			type="org.tb.web.form.GenerateMultipleEmployeeordersForm"/>
+			type="org.tb.form.GenerateMultipleEmployeeordersForm"/>
 		<form-bean name="addEmployeeContractForm"
-			type="org.tb.web.form.AddEmployeeContractForm" />
+			type="org.tb.form.AddEmployeeContractForm" />
 		<form-bean name="showEmployeeContractForm"
-			type="org.tb.web.form.ShowEmployeeContractForm" />
+			type="org.tb.form.ShowEmployeeContractForm" />
 		<form-bean name="addEmployeeForm"
-			type="org.tb.web.form.AddEmployeeForm" />
+			type="org.tb.form.AddEmployeeForm" />
 		<form-bean name="showEmployeeForm"
-			type="org.tb.web.form.ShowEmployeeForm" />
+			type="org.tb.form.ShowEmployeeForm" />
 		<form-bean name="showSettingsForm"
-			type="org.tb.web.form.ShowSettingsForm" />
+			type="org.tb.form.ShowSettingsForm" />
 		<form-bean name="showWelcomeForm"
-			type="org.tb.web.form.ShowWelcomeForm" />
+			type="org.tb.form.ShowWelcomeForm" />
 		<form-bean name="showReleaseForm"
-			type="org.tb.web.form.ShowReleaseForm" />
+			type="org.tb.form.ShowReleaseForm" />
 		<form-bean name="showAdminOptionsForm"
-			type="org.tb.web.form.ShowAdminOptionsForm" />
+			type="org.tb.form.ShowAdminOptionsForm" />
 		<form-bean name="addEmployeeOrderContentForm"
-			type="org.tb.web.form.AddEmployeeOrderContentForm" />	
+			type="org.tb.form.AddEmployeeOrderContentForm" />
 		<form-bean name="showStatusReportForm"
-			type="org.tb.web.form.ShowStatusReportForm" />
+			type="org.tb.form.ShowStatusReportForm" />
 		<form-bean name="addStatusReportForm"
-			type="org.tb.web.form.AddStatusReportForm" />	
+			type="org.tb.form.AddStatusReportForm" />
 		<form-bean name="showTrainingForm"
-			type="org.tb.web.form.ShowTrainingForm" />
+			type="org.tb.form.ShowTrainingForm" />
 	</form-beans>
 
 
@@ -163,7 +161,7 @@
 		</action>
 
 		<action path="/DeleteTimereportFromDailyDisplay"
-			input="/showDailyReport.jsp" name="addDailyReportForm">
+			input="/showDailyReport.jsp" name="showDailyReportForm">
 			<forward name="success" path="/showDailyReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
@@ -426,14 +424,6 @@
 			<forward name="success" path="/admin/showBudget.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
 		</action>
-		
-		<!-- Jira Tickets -->
-		<action path="/ShowTickets" input="/ShowTickets" name="showTicketsForm">
-			<forward name="success" path="/admin/showTickets.jsp" />
-			<forward name="error" path="/admin/error.jsp" />
-			<forward name="cancel" path="/showWelcome.jsp" />
-			<forward name="reset" path="/admin/showTickets.jsp" />
-		</action>
 
 		<!-- Employee -->
 		<action path="/CreateEmployee" validate="true"
@@ -509,23 +499,6 @@
 			<forward name="cancel" path="/admin/showStatusReport.jsp" />
 			<forward name="reset" path="/admin/addStatusReport.jsp" />
 			<forward name="error" path="/admin/error.jsp" />
-		</action>
-		
-		<!-- Mobile pages  -->
-		<action path="/mobile/suborder/getSuborders" scope="request" validate="false">
-			<forward name="success" path="/mobile/suborder/getSubordersResponse.jsp" />
-		</action>
-		<action path="/mobile/timereport/store" scope="request" validate="false">
-			<forward name="success" path="/mobile/timereport/storeResponse.jsp" />
-		</action>
-		<action path="/mobile/timereport/getTimereports" scope="request" validate="false">
-			<forward name="success" path="/mobile/timereport/getTimereportsResponse.jsp" />
-		</action>
-		<action path="/mobile/timereport/getTimereport" scope="request" validate="false">
-			<forward name="success" path="/mobile/timereport/getTimereportResponse.jsp" />
-		</action>
-		<action path="/mobile/login" scope="request" validate="false">
-			<forward name="success" path="/mobile/login/loginMobileResponse.jsp" />
 		</action>
 
 	</action-mappings>

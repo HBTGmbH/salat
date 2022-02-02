@@ -14,7 +14,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
-<link rel="stylesheet" type="text/css" href="/tb/tb.css" />
+<link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
 <link href="/tb/style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="/tb/favicon.ico" />
 <script src="/tb/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
@@ -171,7 +171,7 @@
 			</td>
 			<td align="left" class="noBborderStyle">
 				<!-- JavaScript Stuff for popup calender -->
-				<script type="text/javascript" language="JavaScript" src="/tb/CalendarPopup.js">
+				<script type="text/javascript" language="JavaScript" src="/tb/scripts/CalendarPopup.js">
 				</script>
 				<script type="text/javascript" language="JavaScript">
                     document.write(getCalendarStyles());
@@ -244,13 +244,13 @@
 				</td>
 
 				<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
-					<html:select property="orderId" onchange="setUpdateSubordersAction(this)" disabled="${projectIDExists and isEdit}" styleClass="make-select2 orderCls">
+					<html:select property="orderId" onchange="setUpdateSubordersAction(this)" styleClass="make-select2 orderCls">
 						<html:options collection="orders" labelProperty="signAndDescription" property="id" />
 					</html:select>
 					<img id="favOrderBtn" class="favOrderBtn" src="/tb/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
 					<b> / </b>
 					<html:select property="suborderSignId" styleClass="mandatory make-select2 suborderCls" value="${currentSuborderId}" 
-						onchange="adjustSuborderSignChangedAction(this.form)" disabled="${projectIDExists and isEdit}">
+						onchange="adjustSuborderSignChangedAction(this.form)">
 						<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
 					</html:select>
 					<img id="favSuborderBtn" class="favOrderBtn" src="/tb/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
@@ -260,44 +260,6 @@
 					</span>
 				</td>
 			</tr>
-			
-			<!-- Jira Ticket Keys, if chosen Customerorder has Project-ID(s) -->
-			<c:if test="${projectIDExists}">
-				<tr>
-					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<b><bean:message key="main.timereport.jiraTicketKeys.text" />:</b>
-					</td>
-					<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
-						<html:select property="jiraTicketKey" value="${jiraTicketKey}" >
-							<html:option value="-1">
-								<bean:message key="main.timereport.jiraTicketKey.choose" />
-							</html:option>
-							<c:forEach var="jiraTicketKey" items="${jiraTicketKeys}">
-									<html:option value="${jiraTicketKey}">
-										<c:out value="${jiraTicketKey}" />
-									</html:option>
-								</c:forEach>
-						</html:select>
-						<span style="color:red">
-				 			<html:errors property="noEmployeeOrderForJiraTicketKey" />
-				 			<html:errors property="noTicketWithKeyAndDate" />
-				 	</span>
-					</td>
-				</tr>
-				<tr>	
-					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<b><bean:message key="main.timereport.newJiraTicketKey.text" />:</b>
-					</td>
-					<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
-					<html:text property="newJiraTicketKey" size="10" maxlength="32" />
-				 	<span style="color:red">
-				 		<html:errors property="nonexistentKey" />
-				 		<html:errors property="noKeySelected" />
-				 		<html:errors property="newJiraTicketKeyErr" />
-				 	</span>
-				 	</td>
-				</tr>
-			</c:if>			
 			
 			<c:if test="${workingDayIsAvailable}">
 				<tr>

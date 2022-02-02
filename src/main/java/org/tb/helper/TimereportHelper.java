@@ -1,39 +1,54 @@
 package org.tb.helper;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
-import org.tb.bdom.*;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Overtime;
+import org.tb.bdom.Publicholiday;
+import org.tb.bdom.Timereport;
+import org.tb.bdom.Workingday;
+import org.tb.form.AddDailyReportForm;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
-import org.tb.web.form.AddDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import java.text.SimpleDateFormat;
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.util.*;
 
 /**
  * Helper class for timereport handling which does not directly deal with persistence
  *
  * @author oda
  */
+@Component
+@Slf4j
+@RequiredArgsConstructor(onConstructor_ = { @Autowired})
 public class TimereportHelper {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TimereportHelper.class);
+    private final TimereportDAO timereportDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final PublicholidayDAO publicholidayDAO;
+    private final OvertimeDAO overtimeDAO;
 
     /**
      * calculates worktime from begin/end times in form
      *
      * @return decimal hours
      */
-    public static double calculateTime(AddDailyReportForm form) {
+    public double calculateTime(AddDailyReportForm form) {
         double worktime;
 
         if (form.getSelectedHourDuration() != 0 || form.getSelectedMinuteDuration() != 0) {
@@ -55,7 +70,7 @@ public class TimereportHelper {
     /**
      * refreshes hours after change of begin/end times
      */
-    public static void refreshHours(AddDailyReportForm reportForm) {
+    public void refreshHours(AddDailyReportForm reportForm) {
         Double hours = reportForm.getHours();
         if (hours < 0.0) {
             reportForm.setSelectedHourDuration(0);
@@ -90,7 +105,7 @@ public class TimereportHelper {
     /**
      * refreshes period after change of hours
      */
-    public static boolean refreshPeriod(HttpServletRequest request, AddDailyReportForm reportForm) {
+    public boolean refreshPeriod(HttpServletRequest request, AddDailyReportForm reportForm) {
         // calculate end hour/minute
         double hours = reportForm.getSelectedHourDuration() + reportForm.getSelectedMinuteDuration() / 60.0;
         reportForm.setHours(hours);
@@ -122,13 +137,10 @@ public class TimereportHelper {
         return true;
     }
 
-    public static ActionMessages validateNewDate(
+    public ActionMessages validateNewDate(
             ActionMessages errors,
             java.sql.Date theNewDate,
             Timereport timereport,
-            TimereportDAO timereportDAO,
-            EmployeeorderDAO employeeorderDAO,
-            PublicholidayDAO publicholidayDAO,
             Employeecontract loginEmployeeContract,
             boolean authorized) {
         LocalDate localDate = theNewDate.toLocalDate();
@@ -228,7 +240,7 @@ public class TimereportHelper {
     /**
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1].
      */
-    public int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId, TimereportDAO timereportDAO) {
+    public int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId) {
         int[] workingTime = new int[2];
         List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         int hours = 0;
@@ -248,8 +260,8 @@ public class TimereportHelper {
     /**
      * @return Returns int[]  0=hours 1=minutes
      */
-    public int[] determineBeginTimeToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday) {
-        int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId, td);
+    public int[] determineBeginTimeToDisplay(long ecId, java.sql.Date date, Workingday workingday) {
+        int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId);
         if (workingday != null) {
             beginTime[0] += workingday.getStarttimehour();
             beginTime[1] += workingday.getStarttimeminute();
@@ -261,8 +273,8 @@ public class TimereportHelper {
         return beginTime;
     }
 
-    public int[] determineTimesToDisplay(long ecId, TimereportDAO td, java.sql.Date date, Workingday workingday, Timereport tr) {
-        List<Timereport> timereports = td.getTimereportsByDateAndEmployeeContractId(ecId, date);
+    public int[] determineTimesToDisplay(long ecId, java.sql.Date date, Workingday workingday, Timereport tr) {
+        List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
             int hourBegin = workingday.getStarttimehour();
             int minuteBegin = workingday.getStarttimeminute();
@@ -447,18 +459,17 @@ public class TimereportHelper {
     /**
      * @return Returns the minutes of overtime, might be negative
      */
-    public int calculateOvertimeTotal(Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO, OvertimeDAO overtimeDAO) {
+    public int calculateOvertimeTotal(Employeecontract employeecontract) {
 
         Date today = new Date();
 
         Date contractBegin = employeecontract.getValidFrom();
 
-        return calculateOvertime(contractBegin, today, employeecontract, employeeorderDAO, publicholidayDAO, timereportDAO, overtimeDAO, true);
+        return calculateOvertime(contractBegin, today, employeecontract, true);
 
     }
 
-    public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, PublicholidayDAO publicholidayDAO, TimereportDAO timereportDAO,
-                                 OvertimeDAO overtimeDAO, boolean useOverTimeAdjustment) {
+    public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
         // do not consider invalid(outside of the validity of the contract) days
         if (employeecontract.getValidUntil() != null && end.after(employeecontract.getValidUntil()))
@@ -570,130 +581,7 @@ public class TimereportHelper {
         }
     }
 
-    /**
-     * Parses the Stings to create a {@link java.util.Date}. The day- and year-String are expected to represent integers.
-     * The month-String must be of the sort 'Jan', 'Feb', 'Mar', ...
-     *
-     * @return Returns the date associated to the given Strings.
-     */
-    public java.sql.Date getDateFormStrings(String dayString, String monthString, String yearString, boolean useCurrentDateForFailure) {
-        int day = new Integer(dayString);
-        int year = new Integer(yearString);
-        int month = 0;
-
-        if (GlobalConstants.MONTH_SHORTFORM_JANUARY.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_JANUARY;
-        } else if (GlobalConstants.MONTH_SHORTFORM_FEBRUARY.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_FEBRURAY;
-        } else if (GlobalConstants.MONTH_SHORTFORM_MARCH.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_MARCH;
-        } else if (GlobalConstants.MONTH_SHORTFORM_APRIL.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_APRIL;
-        } else if (GlobalConstants.MONTH_SHORTFORM_MAY.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_MAY;
-        } else if (GlobalConstants.MONTH_SHORTFORM_JUNE.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_JUNE;
-        } else if (GlobalConstants.MONTH_SHORTFORM_JULY.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_JULY;
-        } else if (GlobalConstants.MONTH_SHORTFORM_AUGUST.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_AUGUST;
-        } else if (GlobalConstants.MONTH_SHORTFORM_SEPTEMBER.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_SEPTEMBER;
-        } else if (GlobalConstants.MONTH_SHORTFORM_OCTOBER.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_OCTOBER;
-        } else if (GlobalConstants.MONTH_SHORTFORM_NOVEMBER.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_NOVEMBER;
-        } else if (GlobalConstants.MONTH_SHORTFORM_DECEMBER.equals(monthString)) {
-            month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
-        } else {
-            try {
-                month = new Integer(monthString);
-            } catch (NumberFormatException e) {
-                LOG.error("monthString is in wrong format", e);
-            }
-        }
-
-        java.sql.Date selectedDate;
-        try {
-            selectedDate = java.sql.Date.valueOf(LocalDate.of(year, month, day));
-        } catch (DateTimeException e) {
-            //no date could be constructed - use current date instead
-            if (useCurrentDateForFailure) {
-                selectedDate = java.sql.Date.valueOf(LocalDate.now());
-            } else {
-                throw new IllegalArgumentException("construction of the date failed");
-            }
-        }
-        return selectedDate;
-    }
-
-    /**
-     * Transforms a {@link Date} into 3 {@link String}s, e.g. "09", "Feb", "2011".
-     *
-     * @return Returns an array of strings with the day at index 0, month at index 1 and year at index 2.
-     */
-    public String[] getDateAsStringArray(java.util.Date date) {
-        SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
-        SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
-        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-        String day = dayFormat.format(date);
-        String year = yearFormat.format(date);
-        String month = monthFormat.format(date);
-        int monthValue = Integer.parseInt(month);
-        if (monthValue == GlobalConstants.MONTH_INTVALUE_JANUARY) {
-            month = GlobalConstants.MONTH_SHORTFORM_JANUARY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_FEBRURAY) {
-            month = GlobalConstants.MONTH_SHORTFORM_FEBRUARY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MARCH) {
-            month = GlobalConstants.MONTH_SHORTFORM_MARCH;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_APRIL) {
-            month = GlobalConstants.MONTH_SHORTFORM_APRIL;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MAY) {
-            month = GlobalConstants.MONTH_SHORTFORM_MAY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JUNE) {
-            month = GlobalConstants.MONTH_SHORTFORM_JUNE;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JULY) {
-            month = GlobalConstants.MONTH_SHORTFORM_JULY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_AUGUST) {
-            month = GlobalConstants.MONTH_SHORTFORM_AUGUST;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_SEPTEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_SEPTEMBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_OCTOBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_OCTOBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_NOVEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_NOVEMBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_DECEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_DECEMBER;
-        }
-
-        String[] dateArray = new String[3];
-        dateArray[0] = day;
-        dateArray[1] = month;
-        dateArray[2] = year;
-
-        return dateArray;
-    }
-
-    /**
-     * @return Returns the date associated the request. If parsing fails, the current date is returned.
-     */
-    public Date getSelectedDateFromRequest(HttpServletRequest request) {
-        String dayString = (String) request.getSession().getAttribute("currentDay");
-        String monthString = (String) request.getSession().getAttribute("currentMonth");
-        String yearString = (String) request.getSession().getAttribute("currentYear");
-
-        Date date;
-        try {
-            date = getDateFormStrings(dayString, monthString, yearString, true);
-        } catch (Exception e) {
-            // if parsing fails, return current date
-            date = new Date();
-        }
-
-        return date;
-    }
-
-    public List<Date> getDatesForTimePeriod(Date startDate, int numberOfLaborDays, PublicholidayDAO publicholidayDAO) {
+    public List<Date> getDatesForTimePeriod(Date startDate, int numberOfLaborDays) {
         List<Date> dates = new ArrayList<>(numberOfLaborDays);
         GregorianCalendar calendar = new GregorianCalendar();
         int loopcounter = 0;

@@ -11,111 +11,80 @@
                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
 	   default-autowire="byName" default-lazy-init="false">
 
-    <tx:annotation-driven transaction-manager="txManager"/>
+  <tx:annotation-driven transaction-manager="txManager"/>
+	<context:component-scan base-package="org.tb"/>
 
-	<context:component-scan base-package="org.tb.persistence"/>
-
-    <bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-	    <property name="sessionFactory" ref="sessionFactory"/>
-    </bean>
-
-	<!-- Set a TimerTask Using JDK Timer support -->
- 	<bean id="executeFailedWorklogsTask" class="org.tb.tasks.ExecuteFailedWorklogsTask" />
-
- 	<bean id="executeFailedWorklogsScheduledTask" class="org.tb.tasks.ExecuteFailedWorklogsScheduledTimerTask">
-	    <property name="runnable" ref="executeFailedWorklogsTaskInvoker" />
-	</bean>
-
-	<bean id="timerFactory" class="org.springframework.scheduling.timer.TimerFactoryBean">
-	    <property name="scheduledTimerTasks">
-	        <list>
-	            <ref bean="executeFailedWorklogsScheduledTask" />
-	        </list>
-	    </property>
-	</bean>
-
-	<bean id="executeFailedWorklogsTaskInvoker" class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean">
-	    <property name="targetObject" ref ="executeFailedWorklogsTask" />
-	    <property name="targetMethod" value="run" />
+	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"/>
 	</bean>
 
 	<!-- Struts User Actions -->
-	<bean name="/LoginEmployee" class="org.tb.web.action.LoginEmployeeAction" />
-	<bean name="/LogoutEmployee" class="org.tb.web.action.LogoutEmployeeAction" />
-	<bean name="/CreateDailyReport" class="org.tb.web.action.CreateDailyReportAction" />
-	<bean name="/ShowMatrix" class="org.tb.web.action.ShowMatrixAction" />
-	<bean name="/ShowInvoice" class="org.tb.web.action.ShowInvoiceAction" />
-	<bean name="/ShowDailyReport" class="org.tb.web.action.ShowDailyReportAction" />
-	<bean name="/UpdateDailyReport" class="org.tb.web.action.UpdateDailyReportAction" />
-	<bean name="/StoreDailyReport" class="org.tb.web.action.StoreDailyReportAction" />
-	<bean name="/EditDailyReport" class="org.tb.web.action.EditDailyReportAction" />
-	<bean name="/DeleteTimereportFromDailyDisplay" class="org.tb.web.action.DeleteTimereportFromDailyDisplayAction" />
-	<bean name="/ShowSettings" class="org.tb.web.action.ShowSettingsAction" />
-	<bean name="/ShowWelcome" class="org.tb.web.action.ShowWelcomeAction" />
-	<bean name="/ShowRelease" class="org.tb.web.action.ShowReleaseAction" />
-	<bean name="/ShowTraining" class="org.tb.web.action.ShowTrainingAction" />
+	<bean name="/LoginEmployee" class="org.tb.action.LoginEmployeeAction" />
+	<bean name="/LogoutEmployee" class="org.tb.action.LogoutEmployeeAction" />
+	<bean name="/ShowMatrix" class="org.tb.action.ShowMatrixAction">
+		<constructor-arg index="0" ref="afterLogin" />
+	</bean>
+	<bean name="/ShowInvoice" class="org.tb.action.ShowInvoiceAction">
+		<constructor-arg index="0" ref="afterLogin" />
+	</bean>
+	<bean name="/ShowSettings" class="org.tb.action.ShowSettingsAction" />
+	<bean name="/ShowWelcome" class="org.tb.action.ShowWelcomeAction">
+		<constructor-arg index="0" ref="afterLogin" />
+	</bean>
+	<bean name="/ShowRelease" class="org.tb.action.ShowReleaseAction" />
+	<bean name="/ShowTraining" class="org.tb.action.ShowTrainingAction" />
 
 	<!-- Struts Admin Actions -->
-	<bean name="/CreateCustomer" class="org.tb.web.action.admin.CreateCustomerAction" />
-	<bean name="/DeleteCustomer" class="org.tb.web.action.admin.DeleteCustomerAction" />
-	<bean name="/EditCustomer" class="org.tb.web.action.admin.EditCustomerAction" />
-	<bean name="/ShowCustomer" class="org.tb.web.action.admin.ShowCustomerAction" />
-	<bean name="/StoreCustomer" class="org.tb.web.action.admin.StoreCustomerAction" />
+	<bean name="/CreateCustomer" class="org.tb.action.admin.CreateCustomerAction" />
+	<bean name="/DeleteCustomer" class="org.tb.action.admin.DeleteCustomerAction" />
+	<bean name="/EditCustomer" class="org.tb.action.admin.EditCustomerAction" />
+	<bean name="/ShowCustomer" class="org.tb.action.admin.ShowCustomerAction" />
+	<bean name="/StoreCustomer" class="org.tb.action.admin.StoreCustomerAction" />
 
-	<bean name="/CreateCustomerorder" class="org.tb.web.action.admin.CreateCustomerorderAction" />
-	<bean name="/DeleteCustomerorder" class="org.tb.web.action.admin.DeleteCustomerorderAction" />
-	<bean name="/EditCustomerorder" class="org.tb.web.action.admin.EditCustomerorderAction" />
-	<bean name="/ShowCustomerorder" class="org.tb.web.action.admin.ShowCustomerorderAction" />
-	<bean name="/StoreCustomerorder" class="org.tb.web.action.admin.StoreCustomerorderAction" />
+	<bean name="/CreateCustomerorder" class="org.tb.action.admin.CreateCustomerorderAction" />
+	<bean name="/DeleteCustomerorder" class="org.tb.action.admin.DeleteCustomerorderAction" />
+	<bean name="/EditCustomerorder" class="org.tb.action.admin.EditCustomerorderAction" />
+	<bean name="/ShowCustomerorder" class="org.tb.action.admin.ShowCustomerorderAction" />
+	<bean name="/StoreCustomerorder" class="org.tb.action.admin.StoreCustomerorderAction" />
 
-	<bean name="/CreateSuborder" class="org.tb.web.action.admin.CreateSuborderAction" />
-	<bean name="/DeleteSuborder" class="org.tb.web.action.admin.DeleteSuborderAction" />
-	<bean name="/EditSuborder" class="org.tb.web.action.admin.EditSuborderAction" />
-	<bean name="/ShowSuborder" class="org.tb.web.action.admin.ShowSuborderAction" />
-	<bean name="/StoreSuborder" class="org.tb.web.action.admin.StoreSuborderAction" />
+	<bean name="/CreateSuborder" class="org.tb.action.admin.CreateSuborderAction" />
+	<bean name="/DeleteSuborder" class="org.tb.action.admin.DeleteSuborderAction" />
+	<bean name="/EditSuborder" class="org.tb.action.admin.EditSuborderAction" />
+	<bean name="/ShowSuborder" class="org.tb.action.admin.ShowSuborderAction" />
+	<bean name="/StoreSuborder" class="org.tb.action.admin.StoreSuborderAction" />
 
-	<bean name="/ShowTickets" class="org.tb.web.action.admin.ShowTicketsAction" />
+	<bean name="/ShowBudget" class="org.tb.action.admin.ShowBudgetAction" />
 
-	<bean name="/ShowBudget" class="org.tb.web.action.admin.ShowBudgetAction" />
+	<bean name="/CreateEmployeeorder" class="org.tb.action.admin.CreateEmployeeorderAction" />
+	<bean name="/DeleteEmployeeorder" class="org.tb.action.admin.DeleteEmployeeorderAction" />
+	<bean name="/EditEmployeeorder" class="org.tb.action.admin.EditEmployeeorderAction" />
+	<bean name="/ShowEmployeeorder" class="org.tb.action.admin.ShowEmployeeorderAction" />
+	<bean name="/StoreEmployeeorder" class="org.tb.action.admin.StoreEmployeeorderAction" />
+	<bean name="/GenerateMultipleEmployeeorders" class="org.tb.action.admin.GenerateMultipleEmployeeordersAction"/>
 
-	<bean name="/CreateEmployeeorder" class="org.tb.web.action.admin.CreateEmployeeorderAction" />
-	<bean name="/DeleteEmployeeorder" class="org.tb.web.action.admin.DeleteEmployeeorderAction" />
-	<bean name="/EditEmployeeorder" class="org.tb.web.action.admin.EditEmployeeorderAction" />
-	<bean name="/ShowEmployeeorder" class="org.tb.web.action.admin.ShowEmployeeorderAction" />
-	<bean name="/StoreEmployeeorder" class="org.tb.web.action.admin.StoreEmployeeorderAction" />
-	<bean name="/GenerateMultipleEmployeeorders" class="org.tb.web.action.admin.GenerateMultipleEmployeeordersAction"/>
+	<bean name="/EditEmployeeOrderContent" class="org.tb.action.admin.EditEmployeeOrderContentAction" />
+	<bean name="/StoreEmployeeOrderContent" class="org.tb.action.admin.StoreEmployeeOrderContentAction" />
 
-	<bean name="/EditEmployeeOrderContent" class="org.tb.web.action.admin.EditEmployeeOrderContentAction" />
-	<bean name="/StoreEmployeeOrderContent" class="org.tb.web.action.admin.StoreEmployeeOrderContentAction" />
+	<bean name="/CreateEmployeecontract" class="org.tb.action.admin.CreateEmployeecontractAction" />
+	<bean name="/DeleteEmployeecontract" class="org.tb.action.admin.DeleteEmployeecontractAction" />
+	<bean name="/EditEmployeecontract" class="org.tb.action.admin.EditEmployeecontractAction" />
+	<bean name="/ShowEmployeecontract" class="org.tb.action.admin.ShowEmployeecontractAction" />
+	<bean name="/StoreEmployeecontract" class="org.tb.action.admin.StoreEmployeecontractAction" />
 
-	<bean name="/CreateEmployeecontract" class="org.tb.web.action.admin.CreateEmployeecontractAction" />
-	<bean name="/DeleteEmployeecontract" class="org.tb.web.action.admin.DeleteEmployeecontractAction" />
-	<bean name="/EditEmployeecontract" class="org.tb.web.action.admin.EditEmployeecontractAction" />
-	<bean name="/ShowEmployeecontract" class="org.tb.web.action.admin.ShowEmployeecontractAction" />
-	<bean name="/StoreEmployeecontract" class="org.tb.web.action.admin.StoreEmployeecontractAction" />
+	<bean name="/CreateEmployee" class="org.tb.action.admin.CreateEmployeeAction" />
+	<bean name="/DeleteEmployee" class="org.tb.action.admin.DeleteEmployeeAction" />
+	<bean name="/EditEmployee" class="org.tb.action.admin.EditEmployeeAction" />
+	<bean name="/ShowEmployee" class="org.tb.action.admin.ShowEmployeeAction" />
+	<bean name="/StoreEmployee" class="org.tb.action.admin.StoreEmployeeAction" />
 
-	<bean name="/CreateEmployee" class="org.tb.web.action.admin.CreateEmployeeAction" />
-	<bean name="/DeleteEmployee" class="org.tb.web.action.admin.DeleteEmployeeAction" />
-	<bean name="/EditEmployee" class="org.tb.web.action.admin.EditEmployeeAction" />
-	<bean name="/ShowEmployee" class="org.tb.web.action.admin.ShowEmployeeAction" />
-	<bean name="/StoreEmployee" class="org.tb.web.action.admin.StoreEmployeeAction" />
+	<bean name="/CreateAdminList" class="org.tb.action.admin.CreateAdminListAction" />
+	<bean name="/ShowAdminOptions" class="org.tb.action.admin.ShowAdminOptionsAction" />
 
-	<bean name="/CreateAdminList" class="org.tb.web.action.admin.CreateAdminListAction" />
-	<bean name="/ShowAdminOptions" class="org.tb.web.action.admin.ShowAdminOptionsAction" />
-
-	<bean name="/ShowStatusReport" class="org.tb.web.action.admin.ShowStatusReportAction" />
-	<bean name="/CreateStatusReport" class="org.tb.web.action.admin.CreateStatusReportAction" />
-	<bean name="/EditStatusReport" class="org.tb.web.action.admin.EditStatusReportAction" />
-	<bean name="/DeleteStatusReport" class="org.tb.web.action.admin.DeleteStatusReportAction" />
-	<bean name="/StoreStatusReport" class="org.tb.web.action.admin.StoreStatusReportAction" />
-
-
-	<!-- mobile actions -->
-	<bean name="/mobile/suborder/getSuborders" class="org.tb.mobile.GetSubordersAction" />
-	<bean name="/mobile/timereport/store" class="org.tb.mobile.StoreTimereportAction" />
-	<bean name="/mobile/timereport/getTimereports" class="org.tb.mobile.GetTimereportsAction" />
-	<bean name="/mobile/timereport/getTimereport" class="org.tb.mobile.GetTimereportAction" />
-	<bean name="/mobile/login" class="org.tb.mobile.LoginMobileAction" />
+	<bean name="/ShowStatusReport" class="org.tb.action.admin.ShowStatusReportAction" />
+	<bean name="/CreateStatusReport" class="org.tb.action.admin.CreateStatusReportAction" />
+	<bean name="/EditStatusReport" class="org.tb.action.admin.EditStatusReportAction" />
+	<bean name="/DeleteStatusReport" class="org.tb.action.admin.DeleteStatusReportAction" />
+	<bean name="/StoreStatusReport" class="org.tb.action.admin.StoreStatusReportAction" />
 
 	<!-- Data Access Objects -->
 	<bean id="employeeDAO" class="org.tb.persistence.EmployeeDAO">
