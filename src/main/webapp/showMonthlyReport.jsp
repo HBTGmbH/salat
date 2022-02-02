@@ -8,6 +8,7 @@
 
 <html>
 <head>
+<html:base />
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>under construction</title>
 <link rel="stylesheet" type="text/css" href="/tb/style/tb.css" />
