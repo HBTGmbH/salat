@@ -36,7 +36,6 @@
 		<form-bean name="showCustomerOrderForm" type="org.tb.form.ShowCustomerOrderForm" />
 		<form-bean name="addSuborderForm" type="org.tb.form.AddSuborderForm" />
 		<form-bean name="showSuborderForm" type="org.tb.form.ShowSuborderForm" />
-		<form-bean name="showBudgetForm" type="org.tb.form.ShowBudgetForm" />
 		<form-bean name="addEmployeeOrderForm" type="org.tb.form.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm" type="org.tb.form.ShowEmployeeOrderForm" />
 		<form-bean name="generateMultipleEmployeeordersForm" type="org.tb.form.GenerateMultipleEmployeeordersForm"/>
@@ -323,12 +322,6 @@
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployeeContract.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-		
-		<!-- Budget -->
-		<action path="/ShowBudget" name="showBudgetForm">
-			<forward name="success" path="/admin/showBudget.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
