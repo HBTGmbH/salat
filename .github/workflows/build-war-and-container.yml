@@ -72,7 +72,7 @@ jobs:
   runNonPR:
     needs:
       - build
-    if: ${{ !contains('pull', github.ref) }}
+    if: ${{ github.event_name != 'pull_request' }}
     uses: HBTGmbH/salat/.github/workflows/check-docker-run.yml@main
     with:
       salat_tag: ${{ github.ref_name }}
@@ -80,9 +80,9 @@ jobs:
   runPR:
     needs: 
       - build
-    if: ${{ contains('pull', github.ref) }}
+    if: ${{ github.event_name == 'pull_request' }}
     uses: HBTGmbH/salat/.github/workflows/check-docker-run.yml@main
     with: 
-      salat_tag: pr-${{ github.ref_name }}
-      db_tag: pr-${{ github.ref_name }}
+      salat_tag: pr-${{ github.event.number }}
+      db_tag: pr-${{ github.event.number }}
     
