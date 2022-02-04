@@ -11,9 +11,22 @@ jobs:
     container: ubuntu
     services: 
       salat:
-        image: ghcr.io/hbtgmbh/salat:main
+        image: ghcr.io/hbtgmbh/salat:latest
         ports:
           - 8080:8080
+          - 8000:8000
+        env:
+          DATABASE_USERNAME: salattest
+          DATABASE_PASSWORD: salattest
+          DATABASE_HOST: db
+          DATABASE_NAME: salattest
+          SALAT_URL: localhost
+          SALAT_JIRA_CONSUMER_KEY: test
+          SALAT_JIRA_CONSUMER_PRIVATE_KEY: test
+          SALAT_MAIL_HOST: localhost
+          JPDA_ADDRESS: "*:8000"
+      db:
+        image: ghcr.io/hbtgmbh/salat-testdb:latest
     steps:
       - name: install curl
         run: apt-get update; apt-get install curl -y 
