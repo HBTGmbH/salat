@@ -69,10 +69,19 @@ jobs:
           push: true
           tags: ${{ steps.metadb.outputs.tags }}
           labels: ${{ steps.metadb.outputs.labels }}
-  run:
+  runNonPR:
+    needs:
+      - build
+    uses: ./.github/workflows/check-docker-run.yml
+    if: ${{ !contains('pulls', github.ref) }}
+    with:
+      salat_tag: ${{ github.ref_name }}
+      db_tag: ${{ github.ref_name }}   
+  runPR:
     needs: 
       - build
     uses: ./.github/workflows/check-docker-run.yml
+    if: ${{ contains('pulls', github.ref) }}
     with: 
-      salat_tag: ${{ steps.meta.outputs.tags }}
-      db_tag: ${{ steps.metadb.outputs.tags }}
+      salat_tag: pr-${{ github.ref_name }}
+      db_tag: pr-${{ github.ref_name }}
