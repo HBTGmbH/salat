@@ -1,13 +1,20 @@
 name: Check Docker run
 on:
   workflow_call:
+    inputs: 
+      salat_tag:
+        required: true
+        type: string
+      db_tag:
+        required: true
+        type: string
 jobs:
   run:
     runs-on: ubuntu-latest
     container: ubuntu
     services: 
       salat:
-        image: ghcr.io/hbtgmbh/salat:latest
+        image: ghcr.io/hbtgmbh/salat:${{ inputs.salat_tag }}
         ports:
           - 8080:8080
           - 8000:8000
@@ -22,7 +29,7 @@ jobs:
           SALAT_MAIL_HOST: localhost
           JPDA_ADDRESS: "*:8000"
       db:
-        image: ghcr.io/hbtgmbh/salat-testdb:latest
+        image: ghcr.io/hbtgmbh/salat-testdb:${{ inputs.db_tag }}
     steps:
       - name: install curl
         run: apt-get update; apt-get install curl -y 
