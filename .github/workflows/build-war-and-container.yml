@@ -73,3 +73,6 @@ jobs:
     needs: 
       - build
     uses: ./.github/workflows/check-docker-run.yml
+    with: 
+      salat_tag: ${{ steps.meta.outputs.tags }}
+      db_tag: ${{ steps.metadb.outputs.tags }}
