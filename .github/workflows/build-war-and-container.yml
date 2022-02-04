@@ -73,7 +73,7 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
-    if: ${{ !contains('pull', github.ref) }}
+#     if: ${{ !contains('pull', github.ref) }}
     steps:
       - name: print Github ref
         run: |
@@ -83,17 +83,17 @@ jobs:
 #         with:
 #           salat_tag: ${{ github.ref_name }}
 #           db_tag: ${{ github.ref_name }}
-  runPR:
-    needs: 
-      - build
-    if: ${{ contains('pull', github.ref) }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: retrieve ref name
-        id: ref
-        run: |
-          ref=$(echo ${{ github.ref_name }} | cut -d/ -f1)
-          echo "::set-output name=ref::$ref"
+#   runPR:
+#     needs: 
+#       - build
+#     if: ${{ contains('pull', github.ref) }}
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: retrieve ref name
+#         id: ref
+#         run: |
+#           ref=$(echo ${{ github.ref_name }} | cut -d/ -f1)
+#           echo "::set-output name=ref::$ref"
 #       - name: check docker run
 #         uses: HBTGmbH/salat/.github/workflows/check-docker-run.yml@main
 #         with: 
