@@ -94,9 +94,9 @@ jobs:
         run: |
           ref=$(echo ${{ github.ref_name }} | cut -d/ -f1)
           echo "::set-output name=ref::$ref"
-      - name: check docker run
-        uses: HBTGmbH/salat/.github/workflows/check-docker-run.yml@main
-        with: 
-          salat_tag: pr-${{ steps.ref.outputs.ref }}
-          db_tag: pr-${{ steps.ref.outputs.ref }}
+#       - name: check docker run
+#         uses: HBTGmbH/salat/.github/workflows/check-docker-run.yml@main
+#         with: 
+#           salat_tag: pr-${{ steps.ref.outputs.ref }}
+#           db_tag: pr-${{ steps.ref.outputs.ref }}
     
