@@ -1,10 +1,6 @@
 name: Check Docker run
 on:
-  workflow_run:
-    workflows:
-      - Build .war and Docker container
-    types:
-      - completed
+  workflow_call:
 jobs:
   run:
     runs-on: ubuntu-latest

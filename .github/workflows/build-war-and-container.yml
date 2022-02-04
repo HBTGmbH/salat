@@ -69,3 +69,7 @@ jobs:
           push: true
           tags: ${{ steps.metadb.outputs.tags }}
           labels: ${{ steps.metadb.outputs.labels }}
+  run:
+    needs: 
+      - build
+    uses: ./.github/workflows/check-docker-run.yml
