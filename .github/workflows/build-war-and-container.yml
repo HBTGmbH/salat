@@ -41,6 +41,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
@@ -55,6 +58,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-testdb
           tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
       - name: Build and push database Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
