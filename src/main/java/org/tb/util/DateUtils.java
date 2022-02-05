@@ -1,6 +1,11 @@
 package org.tb.util;
 
+import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
+
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.time.DateTimeException;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.tb.GlobalConstants;
 
@@ -23,9 +28,23 @@ import java.util.stream.IntStream;
 @Slf4j
 public class DateUtils {
 
+    private static final ThreadLocal<DateFormat> dateFormatHolder =
+        ThreadLocal.withInitial(() -> new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT));
+    private static final ThreadLocal<Calendar> calendarHolder = ThreadLocal.withInitial(Calendar::getInstance);
+
     private static final String[] monthShortStrings = GlobalConstants.MONTH_SHORTFORMS;
     private static final String[] monthLongStrings = GlobalConstants.MONTH_LONGFORMS;
     private static final Map<Integer, List<OptionItem>> mapCalendarWeeks = Collections.synchronizedMap(new HashMap<>());
+
+    private static DateFormat getDateFormat() {
+        return dateFormatHolder.get();
+    }
+
+    private static Calendar getCalendar() {
+        Calendar calendar = calendarHolder.get();
+        calendar.setTime(new Date());
+        return calendar;
+    }
 
     public static String getCurrentYearString() {
         return Integer.toString(getCurrentYear());
@@ -33,15 +52,6 @@ public class DateUtils {
 
     public static int getCurrentYear() {
         return LocalDate.now().getYear();
-    }
-
-    public static String getCurrentMonthString() {
-        int month = getCurrentMonth();
-        if (month < 10) {
-            return "0" + month;
-        } else {
-            return Integer.toString(month);
-        }
     }
 
     public static int getCurrentMonth() {
@@ -55,20 +65,6 @@ public class DateUtils {
 
     public static String getYearString(java.sql.Date dt) {
         return Integer.toString(dt.toLocalDate().getYear());
-    }
-
-    public static String getMonthString(java.sql.Date dt) {
-        int month = dt.toLocalDate().getMonthValue();
-        if (month >= 10) {
-            return Integer.toString(month);
-        } else {
-            return "0" + month;
-        }
-    }
-
-    public static int getMonth(java.sql.Date dt) {
-        // returns MM as int
-        return Integer.parseInt(getMonthString(dt));
     }
 
     public static String getMonthShortString(java.sql.Date dt) {
@@ -108,66 +104,39 @@ public class DateUtils {
         }
     }
 
-    public static int getYear(java.sql.Date dt) {
-        // returns yyyy as int from date
-        return Integer.parseInt(getYearString(dt));
-    }
-
     public static int getYear(String st) {
         // returns yyyy as int from String
         return Integer.parseInt(st);
     }
 
-    public static String getSqlDateString(String eeeyyyymmdd) {
-        // gets format yyyy-mm-dd from eee yyyy-mm-dd
-        return eeeyyyymmdd.substring(4, eeeyyyymmdd.length());
-    }
-
     public static String getSqlDateString(java.util.Date utilDate) {
         // gets sql date in format yyyy-mm-dd from java.util.Date
-        int length = utilDate.toString().length();
-        return utilDate.toString().substring(length - 4, length) + "-" +
-                getMonthMMStringFromShortstring(utilDate.toString().substring(4, 7)) + "-" +
-                utilDate.toString().substring(8, 10);
+        return getDateFormat().format(utilDate);
     }
 
     /**
      * validates if date string has correct sql date format 'yyyy-mm-dd'
      */
     public static boolean validateDate(String dateString) {
-        boolean dateError = false;
-        if (dateString.length() != 10) {
-            dateError = true;
+        try {
+            getDateFormat().parse(dateString);
+            return true;
+        } catch (ParseException e) {
+            return false;
         }
-        if (!dateError) {
-            char[] chArr = dateString.toCharArray();
-            if (!Character.isDigit(chArr[0]) ||
-                    !Character.isDigit(chArr[1]) ||
-                    !Character.isDigit(chArr[2]) ||
-                    !Character.isDigit(chArr[3]) ||
-                    chArr[4] != '-' ||
-                    !Character.isDigit(chArr[5]) ||
-                    !Character.isDigit(chArr[6]) ||
-                    chArr[7] != '-' ||
-                    !Character.isDigit(chArr[8]) ||
-                    !Character.isDigit(chArr[9])) {
-                dateError = true;
-            }
-        }
-        return dateError;
     }
 
-    public static boolean isSatOrSun(java.sql.Date dt) {
+    public static boolean isWeekday(java.sql.Date dt) {
         LocalDate date = dt.toLocalDate();
         DayOfWeek dayOfWeek = date.getDayOfWeek();
-        return DayOfWeek.SATURDAY.equals(dayOfWeek) || DayOfWeek.SUNDAY.equals(dayOfWeek);
+        return !DayOfWeek.SATURDAY.equals(dayOfWeek) && !DayOfWeek.SUNDAY.equals(dayOfWeek);
     }
 
     /*
      * builds up a list of string with current and previous year
      */
     public static List<OptionItem> getYearsToDisplay() {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
+        List<OptionItem> theList = new ArrayList<>();
 
         for (int i = GlobalConstants.STARTING_YEAR; i <= getCurrentYear() + 1; i++) {
             String yearString = Integer.toString(i);
@@ -181,7 +150,7 @@ public class DateUtils {
      * builds up a list of string with current and previous years since startyear of contract
      */
     public static List<OptionItem> getYearsSinceContractStartToDisplay(java.sql.Date validFrom) {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
+        List<OptionItem> theList = new ArrayList<>();
 
         int startyear = Integer.parseInt(getYearString(validFrom));
         for (int i = startyear; i <= getCurrentYear() + 1; i++) {
@@ -196,7 +165,7 @@ public class DateUtils {
      * builds up a list of string with months to display (Jan-Dec)
      */
     public static List<OptionItem> getMonthsToDisplay() {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
+        List<OptionItem> theList = new ArrayList<>();
         for (int i = 1; i <= 12; i++) {
             String dayValue = monthShortStrings[i - 1];
             String dayLabel = monthLongStrings[i - 1];
@@ -211,13 +180,13 @@ public class DateUtils {
      */
     public static List<OptionItem> getWeeksToDisplay(String yearString) {
         try {
-            Calendar calendar = Calendar.getInstance();
-            Integer year = null;
+            Calendar calendar = getCalendar();
+            int year;
             if (yearString != null) {
                 year = Integer.parseInt(yearString);
-                calendar.set(year, 11, 31);
+                calendar.set(year, Calendar.DECEMBER, 31);
             } else {
-                calendar.set(Calendar.MONTH, 11);
+                calendar.set(Calendar.MONTH, Calendar.DECEMBER);
                 calendar.set(Calendar.DAY_OF_MONTH, 31);
                 year = calendar.get(Calendar.YEAR);
             }
@@ -231,16 +200,14 @@ public class DateUtils {
                     lastWeekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
                 }
 
-                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
-
-                theList = new ArrayList<OptionItem>();
+                theList = new ArrayList<>();
                 for (int i = 1; i <= lastWeekOfYear; i++) {
                     calendar.set(Calendar.WEEK_OF_YEAR, i);
                     calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
                     StringBuilder sb = new StringBuilder();
-                    sb.append("KW").append(i).append(" (").append(sdf.format(calendar.getTime()));
+                    sb.append("KW").append(i).append(" (").append(getDateFormat().format(calendar.getTime()));
                     calendar.add(Calendar.DATE, 6);
-                    sb.append("-").append(sdf.format(calendar.getTime())).append(")");
+                    sb.append("-").append(getDateFormat().format(calendar.getTime())).append(")");
                     theList.add(new OptionItem(i, sb.toString()));
                 }
 
@@ -264,7 +231,7 @@ public class DateUtils {
      * builds up a list of string with hour to display (6-21)
      */
     public static List<OptionItem> getHoursToDisplay() {
-        List<OptionItem> theList = new ArrayList<OptionItem>();
+        List<OptionItem> theList = new ArrayList<>();
         for (int i = 6; i < 22; i++) {
             theList.add(intToOptionitem(i));
         }
@@ -311,52 +278,6 @@ public class DateUtils {
     }
 
     /**
-     * gets date of easter for a given year as int array [year, month, day]
-     * current year is taken from input Date
-     */
-    public static int[] getEaster(java.sql.Date dt) {
-
-        int[] easter = new int[3];
-        int year = getYear(dt);
-
-        int a, b, c, d, e;
-
-        a = year % 19;
-        b = year % 4;
-        c = year % 7;
-        int m = (8 * (year / 100) + 13) / 25 - 2;
-        int s = year / 100 - year / 400 - 2;
-        int M = (15 + s - m) % 30;
-        int N = (6 + s) % 7;
-        d = (M + 19 * a) % 30;
-
-        int D;
-        if (d == 29) {
-            D = 28;
-        } else if (d == 28 && a >= 11) {
-            D = 27;
-        } else {
-            D = d;
-        }
-
-        e = (2 * b + 4 * c + 6 * D + N) % 7;
-
-        //int delta = D + e + 1;
-        int delta = D + e + 1 + 21;
-
-        easter[0] = year;
-        if (delta > 31) {
-            easter[1] = 4; // April
-            easter[2] = delta - 31;
-        } else {
-            easter[1] = 3; // April
-            easter[2] = delta;
-        }
-
-        return easter;
-    }
-
-    /**
      * gets the last day of a given month
      * E.g., month given as string '02', last day is either 28 or 29
      */
@@ -371,14 +292,14 @@ public class DateUtils {
      * @return double - decimal hours
      */
     public static double calculateTime(int hrbegin, int minbegin, int hrend, int minend) {
-        double worktime = 0.0;
+        double worktime;
 
         int hours = hrend - hrbegin;
         int minutes = minend - minbegin;
 
         if (minutes < 0) {
             hours -= 1;
-            minutes += 60;
+            minutes += MINUTES_PER_HOUR;
         }
         worktime = hours * 1. + minutes / 60.;
 
@@ -479,7 +400,7 @@ public class DateUtils {
             month = GlobalConstants.MONTH_INTVALUE_DECEMBER;
         } else {
             try {
-                month = new Integer(monthString);
+                month = Integer.parseInt(monthString);
             } catch (NumberFormatException e) {
                 log.error("monthString is in wrong format", e);
             }
@@ -497,6 +418,72 @@ public class DateUtils {
             }
         }
         return selectedDate;
+    }
+
+    public static Date today() {
+        Date date = new Date();
+        return org.apache.commons.lang.time.DateUtils.truncate(date, Calendar.DAY_OF_MONTH);
+    }
+
+    public static java.sql.Date todaySqlDate() {
+        Date date = new Date();
+        return new java.sql.Date(org.apache.commons.lang.time.DateUtils.truncate(date, Calendar.DAY_OF_MONTH).getTime());
+    }
+
+    public static String format(Date date) {
+        return getDateFormat().format(date);
+    }
+
+    public static Date parse(String date, Function<ParseException, Date> exceptionHandler) {
+        try {
+            return parse(date);
+        } catch (ParseException e) {
+            return exceptionHandler.apply(e);
+        }
+    }
+
+    public static Date parse(String date) throws ParseException {
+        return getDateFormat().parse(date);
+    }
+
+    public static Date parse(String date, Date parseExceptionValue) {
+        try {
+            return parse(date);
+        } catch (ParseException e) {
+            return parseExceptionValue;
+        }
+    }
+
+    public static java.sql.Date parseSqlDate(String date, Function<ParseException, java.sql.Date> exceptionHandler) {
+        try {
+            return parseSqlDate(date);
+        } catch (ParseException e) {
+            return exceptionHandler.apply(e);
+        }
+    }
+
+    public static java.sql.Date parseSqlDate(String date) throws ParseException {
+        return new java.sql.Date(getDateFormat().parse(date).getTime());
+    }
+
+    public static java.sql.Date parseSqlDate(String date, java.sql.Date parseExceptionValue) {
+        try {
+            return parseSqlDate(date);
+        } catch (ParseException e) {
+            return parseExceptionValue;
+        }
+    }
+
+    public static int getCurrentMinutes() {
+        return getCalendar().get(Calendar.MINUTE);
+    }
+
+    public static int getCurrentHours() {
+        return getCalendar().get(Calendar.HOUR_OF_DAY);
+    }
+
+    public static java.sql.Date toSqlDate(Date date) {
+        return new java.sql.Date(date.getTime());
     }
 
 }

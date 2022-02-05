@@ -1,15 +1,12 @@
 package org.tb.form;
 
+import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
-
-import javax.servlet.http.HttpServletRequest;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import org.tb.util.DateUtils;
 
 /**
  * Form for adding a suborder
@@ -26,7 +23,7 @@ public class AddSuborderForm extends ActionForm {
     private String description;
     private String shortdescription;
     private String suborder_customer;
-    private String invoice;
+    private char invoice;
     private String currency;
     private Double hourlyRate;
     private long customerorderId;
@@ -50,17 +47,15 @@ public class AddSuborderForm extends ActionForm {
         description = "";
         shortdescription = "";
         suborder_customer = "";
-        invoice = "J";
+        invoice = GlobalConstants.INVOICE_YES;
         currency = GlobalConstants.DEFAULT_CURRENCY;
         standard = false;
         commentnecessary = false;
         fixedPrice = false;
         trainingFlag = false;
 
-        Date now = new Date();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        validFrom = simpleDateFormat.format(now);
-        validUntil = simpleDateFormat.format(now);
+        validFrom = DateUtils.format(DateUtils.today());
+        validUntil = validFrom;
         debithours = null;
         debithoursunit = null;
         hide = false;

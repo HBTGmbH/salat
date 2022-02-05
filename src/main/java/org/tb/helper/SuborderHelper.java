@@ -1,5 +1,6 @@
 package org.tb.helper;
 
+import java.text.ParseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,10 +37,14 @@ public class SuborderHelper {
      */
     public boolean refreshSuborders(HttpServletRequest request, AddDailyReportForm reportForm, String defaultSuborderIndexStr) {
 
+        // initial with empty values in case of an error
+        request.getSession().removeAttribute("overtimeCompensation");
+        request.getSession().setAttribute("currentSuborderId", -1);
+
         Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
 
         if (ec == null) {
-            request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
+            // request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
             return false;
         }
 
@@ -48,30 +53,31 @@ public class SuborderHelper {
         Date date;
         try {
             date = simpleDateFormat.parse(dateString);
-        } catch (Exception e) {
+        } catch (ParseException e) {
             throw new RuntimeException("error while parsing date");
         }
 
         // get suborders related to employee AND selected customer order
         long customerorderId = reportForm.getOrderId();
         List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorderId, date);
-        request.getSession().setAttribute("suborders", theSuborders);
         Suborder so = null;
         if (defaultSuborderIndexStr != null) {
             try {
                 long currentSuborderId = Long.parseLong(defaultSuborderIndexStr);
-                request.getSession().setAttribute("currentSuborderId", currentSuborderId);
                 so = suborderDAO.getSuborderById(currentSuborderId);
-            } catch (NumberFormatException e) {
-            } // do nothing
+            } catch (NumberFormatException ignore) {
+            }
         }
 
-        // set the first Suborder as current
-        so = so != null ? so : theSuborders.get(0);
         if (so != null) {
+            assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
+        } else if (!theSuborders.isEmpty()) {
+            // set the first Suborder as current
+            so = theSuborders.get(0);
             assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
         }
 
+        request.getSession().setAttribute("suborders", theSuborders);
         return true;
     }
 

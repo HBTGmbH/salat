@@ -49,7 +49,7 @@ public class SimpleMailFactory {
     public static SimpleEmail createSalatBuchungenToReleaseMail(Employee recipient, Employee sender) throws EmailException {
         String subject = "Freigabe: SALAT freigeben";
         StringBuilder message = new StringBuilder();
-        if (GlobalConstants.GENDER_FEMALE.equals(recipient.getGender())) {
+        if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
             message.append("Liebe ");
         } else {
             message.append("Lieber ");
@@ -65,7 +65,7 @@ public class SimpleMailFactory {
     public static Email createSalatBuchungenToAcceptanceMail(Employee recipient, Employee coworker, Employee sender) throws EmailException {
         String subject = "SALAT: freigegebene Buchungen abnehmen";
         StringBuilder message = new StringBuilder();
-        if (GlobalConstants.GENDER_FEMALE.equals(recipient.getGender())) {
+        if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
             message.append("Liebe ");
         } else {
             message.append("Lieber ");
@@ -73,7 +73,7 @@ public class SimpleMailFactory {
         message.append(recipient.getFirstname());
         message.append(",\n\n");
         message.append("bitte nimm die SALAT-Buchungen des abgelaufenen Monats von ");
-        if (GlobalConstants.GENDER_FEMALE.equals(coworker.getGender())) {
+        if (GlobalConstants.GENDER_FEMALE == coworker.getGender()) {
             message.append("Kollegin ");
         } else {
             message.append("Kollege ");
@@ -88,7 +88,7 @@ public class SimpleMailFactory {
     public static Email createSalatBuchungenReleasedMail(Employee recipient, Employee sender) throws EmailException {
         String subject = "SALAT: Buchungen durch " + sender.getSign() + " freigegeben";
         StringBuilder message = new StringBuilder();
-        if (GlobalConstants.GENDER_FEMALE.equals(recipient.getGender())) {
+        if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
             message.append("Liebe Personalverantwortliche "); // ehemals Bereichsleiterin
         } else {
             message.append("Lieber Personalverantwortlicher "); // ehemals Bereichsleiter
@@ -97,7 +97,7 @@ public class SimpleMailFactory {
         message.append(",\n\n");
         message.append(sender.getName());
         message.append(" hat eben ");
-        if (GlobalConstants.GENDER_FEMALE.equals(sender.getGender())) {
+        if (GlobalConstants.GENDER_FEMALE == sender.getGender()) {
             message.append("ihre ");
         } else {
             message.append("seine ");

@@ -1,14 +1,13 @@
 package org.tb.action.dailyreport;
 
+import static java.lang.Boolean.TRUE;
+import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.GlobalConstants.MINUTE_INCREMENT;
+
 import java.io.IOException;
 import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -30,6 +29,8 @@ import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.form.AddDailyReportForm;
+import org.tb.form.ShowDailyReportForm;
 import org.tb.helper.AfterLogin;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.SuborderHelper;
@@ -38,15 +39,12 @@ import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.form.AddDailyReportForm;
-import org.tb.form.ShowDailyReportForm;
 
 /**
  * Action class for a timereport to be stored permanently.
@@ -92,235 +90,168 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
     @SuppressWarnings("unchecked")
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
         log.info("Task: {}", request.getParameter("task"));
-        log.info("Employeecontract.Id: {}", reportForm.getEmployeeContractId());
-        log.info("Referenceday: {}", reportForm.getReferenceday());
+        log.info("Employeecontract.Id: {}", form.getEmployeeContractId());
+        log.info("Referenceday: {}", form.getReferenceday());
         log.info("SetDate.howMuch: {}", request.getParameter("howMuch"));
-        log.info("NumberOfSerialDays: {}", reportForm.getNumberOfSerialDays());
-        log.info("Customerorder.Id: {}", reportForm.getOrderId());
-        log.info("Suborder.Id: {}", reportForm.getSuborderSignId());
-        log.info("Begin: {}:{}", reportForm.getSelectedHourBegin(), reportForm.getSelectedMinuteBegin());
-        log.info("End: {}:{}", reportForm.getSelectedHourEnd(), reportForm.getSelectedMinuteEnd());
-        log.info("Duration: {}:{}", reportForm.getSelectedHourDuration(), reportForm.getSelectedMinuteDuration());
-        log.info("Costs: {}", reportForm.getCosts());
-        log.info("Training: {}", reportForm.getTraining());
-        log.info("Comment: {}", reportForm.getComment());
+        log.info("NumberOfSerialDays: {}", form.getNumberOfSerialDays());
+        log.info("Customerorder.Id: {}", form.getOrderId());
+        log.info("Suborder.Id: {}", form.getSuborderSignId());
+        log.info("Begin: {}:{}", form.getSelectedHourBegin(), form.getSelectedMinuteBegin());
+        log.info("End: {}:{}", form.getSelectedHourEnd(), form.getSelectedMinuteEnd());
+        log.info("Duration: {}:{}", form.getSelectedHourDuration(), form.getSelectedMinuteDuration());
+        log.info("Costs: {}", form.getCosts());
+        log.info("Training: {}", form.getTraining());
+        log.info("Comment: {}", form.getComment());
 
-        Employeecontract employeeContract = null;
-        if ((employeeContract = getEmployeeContractAndSetSessionVars(mapping, request)) == null) {
+        boolean refreshOrders = false;
+        boolean refreshSuborders = false;
+        boolean refreshWorkdayAvailability = false;
+
+        // TODO split logic into different methods
+        Employeecontract employeeContract = getEmployeeContractAndSetSessionVars(request);
+        /* TODO move to pre store checks?
+        if ((employeeContract  == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
             return mapping.findForward("error");
         }
-
-        // check if special tasks initiated from the form or the daily display need to be carried out...
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        boolean refreshTime = false;
-        int previousDurationhours = reportForm.getSelectedHourDuration();
-        int previousDurationminutes = reportForm.getSelectedMinuteDuration();
-        String previousComment = reportForm.getComment();
+        */
 
         // task for setting the date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
-            Integer howMuch = Integer.parseInt(request.getParameter("howMuch"));
-            String datum = reportForm.getReferenceday();
-            Integer day, month, year;
-            Calendar cal = Calendar.getInstance();
+            int howMuch = Integer.parseInt(request.getParameter("howMuch"));
+            String referenceDayFormValue = form.getReferenceday();
+            java.util.Date calculatedReferenceDay;
 
-            ActionMessages errorMessages = valiDate(request, reportForm);
-            if (errorMessages.size() > 0) {
-                return mapping.getInputForward();
-            }
-
-            day = Integer.parseInt(datum.substring(8)); // parsing date from string
-            month = Integer.parseInt(datum.substring(5, 7));
-            year = Integer.parseInt(datum.substring(0, 4));
-
-            cal.set(Calendar.DATE, day);
-            cal.set(Calendar.MONTH, month - 1);
-            cal.set(Calendar.YEAR, year);
-
-            cal.add(Calendar.DATE, howMuch);
-            /* check if today is to be set (if howMuch == 0)or not */
-            datum = howMuch == 0 ? simpleDateFormat.format(new java.util.Date()) : simpleDateFormat.format(cal.getTime());
-
-            request.getSession().setAttribute("referenceday", datum);
-            reportForm.setReferenceday(datum);
-
-            if (!customerorderHelper.refreshOrders(request, reportForm)) {
-                return mapping.findForward("error");
+            /* check if today is to be set or not, 0 indicates "set to today" */
+            if(howMuch == 0) {
+                calculatedReferenceDay = DateUtils.today();
             } else {
-                refreshTime = true;
+                calculatedReferenceDay = DateUtils.parse(referenceDayFormValue, DateUtils.today());
+                Calendar calculatedReferenceDayCalendar = Calendar.getInstance();
+                calculatedReferenceDayCalendar.setTime(calculatedReferenceDay);
+                calculatedReferenceDayCalendar.add(Calendar.DAY_OF_MONTH, howMuch);
+                calculatedReferenceDay = calculatedReferenceDayCalendar.getTime();
             }
+
+            String calculatedReferenceDayFormValue = DateUtils.format(calculatedReferenceDay);
+            request.getSession().setAttribute("referenceday", calculatedReferenceDayFormValue);
+            form.setReferenceday(calculatedReferenceDayFormValue);
+            refreshOrders = true;
+            refreshSuborders = true;
+            refreshWorkdayAvailability = true;
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshOrders")) {
-            if (!customerorderHelper.refreshOrders(request, reportForm)) {
-                return mapping.findForward("error");
-            } else {
-                refreshTime = true;
-            }
+            refreshOrders = true;
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshSuborders")) {
-            // refresh suborders to be displayed in the select menu
-            String defaultSuborderIndexStr;
-            if (request.getParameter("continue") == null) {
-                defaultSuborderIndexStr = request.getParameter("defaultSuborderIndex");
-            } else {
-                defaultSuborderIndexStr = null;
-            }
-            if (suborderHelper.refreshSuborders(request, reportForm, defaultSuborderIndexStr) != true) {
-                return mapping.findForward("error");
-            } else {
-                Customerorder selectedOrder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
-                boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
-                // selected order is a standard order => set daily working time als default time
-                if (standardOrder) {
-                    refreshTime = true;
-                } else {
-                    return mapping.findForward("success");
-                }
-            }
+            refreshSuborders = true;
         }
 
-        if (request.getParameter("task") != null && request.getParameter("task").equals("adjustBeginTime") || refreshTime) {
-
-            // refresh orders to be displayed in the select menu
-            if (!customerorderHelper.refreshOrders(request, reportForm)) {
-                return mapping.findForward("error");
-            }
-
-            // refresh begin time to be displayed
-            refreshTime = false;
-            java.sql.Date selectedDate;
-
-            try {
-                DateTimeFormatter dtf = DateTimeFormatter.ofPattern(GlobalConstants.DEFAULT_DATE_FORMAT);
-                selectedDate = java.sql.Date.valueOf(LocalDate.parse(reportForm.getReferenceday(), dtf));
-            } catch (DateTimeParseException e) {
-                // error occured while parsing date - use current date instead
-                selectedDate = java.sql.Date.valueOf(LocalDate.now());
-            }
-            request.getSession().setAttribute("referenceday", selectedDate);
-
-            // search for adequate workingday and set status in session
-            java.sql.Date currentDate = selectedDate;
-            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(currentDate, employeeContract.getId());
-
-            boolean workingDayIsAvailable = false;
-            if (workingday != null) {
-                workingDayIsAvailable = true;
-            }
-
-            // workingday should only be available for today
-            java.util.Date today = new java.util.Date();
-            String todayString = simpleDateFormat.format(today);
-            try {
-                today = simpleDateFormat.parse(todayString);
-            } catch (Exception e) {
-                throw new RuntimeException("this should never happen...!");
-            }
-            if (!selectedDate.equals(today)) {
-                workingDayIsAvailable = false;
-            }
-            request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
-
+        if (request.getParameter("task") != null && request.getParameter("task").equals("adjustBeginTime")) {
+            refreshWorkdayAvailability = true;
             Double dailyWorkingTime = employeeContract.getDailyWorkingTime();
             dailyWorkingTime *= 60;
             int dailyWorkingTimeMinutes = dailyWorkingTime.intValue();
-            Customerorder selectedOrder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
+            Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
+            Boolean workingDayAvailable = (Boolean) request.getSession().getAttribute("workingDayIsAvailable");
+            if (TRUE == workingDayAvailable) {
+                java.sql.Date referenceDay = DateUtils.parseSqlDate(form.getReferenceday(), DateUtils.todaySqlDate());
+                Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContract.getId());
 
-            if (workingDayIsAvailable) {
                 // set the begin time as the end time of the latest existing timereport of current employee
                 // for current day. If no other reports exist so far, set standard begin time (0800).
-                int[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeeContract.getId(), selectedDate, workingday);
-                reportForm.setSelectedHourBegin(beginTime[0]);
-                reportForm.setSelectedMinuteBegin(beginTime[1]);
-                // set end time in reportform
-                today = new java.util.Date();
-                SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
-                SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
-                int hour = new Integer(hourFormat.format(today));
-                int minute = new Integer(minuteFormat.format(today));
-                minute = minute / 5 * 5;
+                int[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
+                int beginHours = beginTime[0];
+                int beginMinutes = beginTime[1];
+                // round down to next minute increment
+                beginMinutes = beginMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
+                form.setSelectedHourBegin(beginTime[0]);
+                form.setSelectedMinuteBegin(beginTime[1]);
 
-                todayString = simpleDateFormat.format(today);
-                try {
-                    today = simpleDateFormat.parse(todayString);
-                } catch (Exception e) {
-                    throw new RuntimeException("this should never happen...!");
-                }
+                // determine end time
+                int currentHours = DateUtils.getCurrentHours();
+                int currentMinutes = DateUtils.getCurrentMinutes();
+                // round down to next minute increment
+                currentMinutes = currentMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
+                Date today = DateUtils.todaySqlDate();
                 if (standardOrder) {
-                    int minutes = reportForm.getSelectedHourBegin() * 60 + reportForm.getSelectedMinuteBegin();
+                    int minutes = form.getSelectedHourBegin() * MINUTES_PER_HOUR + form.getSelectedMinuteBegin();
                     minutes += dailyWorkingTimeMinutes;
-                    int hours = minutes / 60;
-                    minutes = minutes % 60;
-                    reportForm.setSelectedMinuteEnd(minutes);
-                    reportForm.setSelectedHourEnd(hours);
-                } else if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
-                    reportForm.setSelectedMinuteEnd(minute);
-                    reportForm.setSelectedHourEnd(hour);
+                    int hours = minutes / MINUTES_PER_HOUR;
+                    minutes = minutes % MINUTES_PER_HOUR;
+                    // round down to next minute increment
+                    minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
+                    form.setSelectedMinuteEnd(minutes);
+                    form.setSelectedHourEnd(hours);
+                } else if (workStartedEarlier(beginHours, beginMinutes, currentHours, currentMinutes) && referenceDay.equals(today)) {
+                    form.setSelectedMinuteEnd(currentMinutes);
+                    form.setSelectedHourEnd(currentHours);
                 } else {
-                    reportForm.setSelectedMinuteEnd(beginTime[1]);
-                    reportForm.setSelectedHourEnd(beginTime[0]);
+                    form.setSelectedHourEnd(beginHours);
+                    form.setSelectedMinuteEnd(beginMinutes);
                 }
-                timereportHelper.refreshHours(reportForm);
+                timereportHelper.refreshHours(form);
             } else {
+                // TODO wird dieser Code je durchlaufen?
                 if (standardOrder) {
 
-                    int hours = dailyWorkingTimeMinutes / 60;
-                    int minutes = dailyWorkingTimeMinutes % 60;
+                    int hours = dailyWorkingTimeMinutes / MINUTES_PER_HOUR;
+                    int minutes = dailyWorkingTimeMinutes % MINUTES_PER_HOUR;
+                    // round down to next minute increment
+                    minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
 
-                    if (minutes % GlobalConstants.MINUTE_INCREMENT != 0) {
-                        if (minutes % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                            minutes += 5 - minutes % GlobalConstants.MINUTE_INCREMENT;
-                        } else if (minutes % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                            minutes -= minutes % GlobalConstants.MINUTE_INCREMENT;
-                        }
-                    }
-
-                    reportForm.setSelectedHourDuration(hours);
-                    reportForm.setSelectedMinuteDuration(minutes);
+                    form.setSelectedHourDuration(hours);
+                    form.setSelectedMinuteDuration(minutes);
                 }
             }
-
-            return mapping.findForward("success");
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustSuborderSignChanged")) {
 
             // refresh suborder sign/description select menus
-            suborderHelper.adjustSuborderSignChanged(request.getSession(), reportForm);
-            Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+            suborderHelper.adjustSuborderSignChanged(request.getSession(), form);
+            Suborder suborder = suborderDAO.getSuborderById(form.getSuborderSignId());
             request.getSession().setAttribute("currentSuborderSign", suborder.getSign());
-            setSubOrder(suborder, request, reportForm);
-
-            return mapping.findForward("success");
+            setSubOrder(suborder, request, form);
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equalsIgnoreCase("updateSortOfReport")) {
             // updates the sort of report
-            request.getSession().setAttribute("report", reportForm.getSortOfReport());
-            return mapping.findForward("success");
+            request.getSession().setAttribute("report", form.getSortOfReport());
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshHours")) {
             // refreshes the hours displayed after a change of duration period
-            timereportHelper.refreshHours(reportForm);
-            return mapping.findForward("success");
+            timereportHelper.refreshHours(form);
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshPeriod")) {
             // refreshes the duration period after a change of begin/end times
-            ActionMessages periodErrors = new ActionMessages();
-            if (timereportHelper.refreshPeriod(request, reportForm) != true) {
-                saveErrors(request, periodErrors);
-            }
-            return mapping.findForward("success");
+            timereportHelper.refreshPeriod(request, form);
         }
 
+        if (refreshOrders) {
+            customerorderHelper.refreshOrders(request, form);
+        }
+
+        if (refreshSuborders) {
+            // refresh suborders to be displayed in the select menu
+            String defaultSuborderIndexStr = request.getParameter("defaultSuborderIndex");
+            suborderHelper.refreshSuborders(request, form, defaultSuborderIndexStr);
+        }
+
+        if (refreshWorkdayAvailability) {
+            // search for adequate workingday and set status in session
+            java.sql.Date selectedDate = DateUtils.parseSqlDate(form.getReferenceday(), DateUtils.todaySqlDate());
+            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, employeeContract.getId());
+            boolean workingDayIsAvailable = workingday != null && DateUtils.todaySqlDate().equals(selectedDate);
+            request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
+        }
 
         if (request.getParameter("task") != null &&
                 request.getParameter("task").equals("save") ||
@@ -329,101 +260,91 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
             // 'main' task - prepare everything to store the report.
             // I.e., copy properties from the form into the timereport before saving.
-            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
-            double hours = timereportHelper.calculateTime(reportForm);
-            long trId = -1;
-            Timereport tr = null;
+            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
+            double hours = timereportHelper.calculateTime(form);
+            long timeReportId = -1;
+            final Timereport timereport;
             if (request.getSession().getAttribute("trId") != null) {
-                trId = Long.parseLong(request.getSession().getAttribute("trId").toString());
-                tr = timereportDAO.getTimereportById(trId);
-                previousDurationhours = tr.getDurationhours();
-                previousDurationminutes = tr.getDurationminutes();
+                timeReportId = Long.parseLong(request.getSession().getAttribute("trId").toString());
+                timereport = timereportDAO.getTimereportById(timeReportId);
             } else if (request.getParameter("trId") != null) {
                 // edited report from daily overview
-                trId = Long.parseLong(request.getParameter("trId"));
-                tr = timereportDAO.getTimereportById(trId);
-                previousDurationhours = tr.getDurationhours();
-                previousDurationminutes = tr.getDurationminutes();
+                timeReportId = Long.parseLong(request.getParameter("trId"));
+                timereport = timereportDAO.getTimereportById(timeReportId);
             } else {
                 // new report
-                tr = new Timereport();
-                tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
+                timereport = new Timereport();
+                timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
             }
 
             ActionMessages errors = getErrors(request);
             if (errors == null) {
                 errors = new ActionMessages();
             }
-            ActionMessages errorMessages = validateFormData(request, reportForm, trId, employeecontract.getId(), hours, errors);
+            ActionMessages errorMessages = validateFormData(request, form, timeReportId, employeecontract.getId(), hours, errors);
             if (errorMessages.size() > 0) {
                 return mapping.getInputForward();
             }
 
-            Date theDate = Date.valueOf(reportForm.getReferenceday());
-            tr.setTaskdescription(reportForm.getComment());
-            tr.setEmployeecontract(employeecontract);
-            tr.setTraining(reportForm.getTraining());
+            Date theDate = Date.valueOf(form.getReferenceday());
+            timereport.setTaskdescription(form.getComment());
+            timereport.setEmployeecontract(employeecontract);
+            timereport.setTraining(form.getTraining());
 
             // currently every timereport has status 'w'
-            if (!reportForm.getSortOfReport().equals("W")) {
-                Double durationMinutes = employeecontract.getDailyWorkingTime() % 1 * 60;
-                tr.setDurationhours(employeecontract.getDailyWorkingTime().intValue());
-                tr.setDurationminutes(durationMinutes.intValue());
+            if (!form.getSortOfReport().equals("W")) {
+                double durationMinutes = employeecontract.getDailyWorkingTime() % 1 * MINUTES_PER_HOUR; // calc minutes from decimal part
+                timereport.setDurationhours(employeecontract.getDailyWorkingTime().intValue()); // get the full hours part
+                timereport.setDurationminutes((int)durationMinutes);
             } else {
-                tr.setDurationhours(new Integer(reportForm.getSelectedHourDuration()));
-                tr.setDurationminutes(new Integer(reportForm.getSelectedMinuteDuration()));
+                timereport.setDurationhours(form.getSelectedHourDuration());
+                timereport.setDurationminutes(form.getSelectedMinuteDuration());
             }
 
-            tr.setSortofreport("W");
+            timereport.setSortofreport("W");
 
-            if (tr.getReferenceday() == null ||
-                    tr.getReferenceday().getRefdate() == null ||
-                    !tr.getReferenceday().getRefdate().equals(theDate)) {
+            if (timereport.getReferenceday() == null ||
+                    timereport.getReferenceday().getRefdate() == null ||
+                    !timereport.getReferenceday().getRefdate().equals(theDate)) {
                 // if timereport is new
-                Referenceday rd = referencedayDAO.getReferencedayByDate(theDate);
-                if (rd == null) {
+                Referenceday referenceDay = referencedayDAO.getReferencedayByDate(theDate);
+                if (referenceDay == null) {
                     // new referenceday to be added in database
                     referencedayDAO.addReferenceday(theDate);
-                    rd = referencedayDAO.getReferencedayByDate(theDate);
+                    referenceDay = referencedayDAO.getReferencedayByDate(theDate);
                 }
-                tr.setReferenceday(rd);
+                timereport.setReferenceday(referenceDay);
             }
 
             // set employee order
             Employeeorder employeeorder = (Employeeorder) request.getSession().getAttribute("saveEmployeeOrder");
-            tr.setEmployeeorder(employeeorder);
+            // FIXME get Employeeorder from form and DAO not from session!
+            timereport.setEmployeeorder(employeeorder);
             request.getSession().removeAttribute("saveEmployeeOrder");
 
-            if (reportForm.getSortOfReport().equals("W")) {
-                tr.setCosts(reportForm.getCosts());
-                tr.setSuborder(suborderDAO.getSuborderById(reportForm.getSuborderSignId()));
+            if (form.getSortOfReport().equals("W")) {
+                timereport.setCosts(form.getCosts());
+                timereport.setSuborder(suborderDAO.getSuborderById(form.getSuborderSignId()));
             } else {
                 // 'special' reports: set suborder in timereport to null.
-                tr.setSuborder(null);
-                tr.setCosts(0.0);
+                timereport.setSuborder(null);
+                timereport.setCosts(0.0);
             }
 
-            List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(tr.getEmployeecontract().getId(), tr.getReferenceday().getRefdate());
-            boolean reportFoundInList = false;
-            if (timereports != null && !timereports.isEmpty()) {
-                Iterator<Timereport> it = timereports.iterator();
-                while (it.hasNext()) {
-                    Timereport timereport = it.next();
-                    if (timereport.getId() == tr.getId()) {
-                        reportFoundInList = true;
-                        break;
-                    }
-                }
-            }
+            List<Timereport> existingTimereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
+                employeecontract.getId(), timereport.getReferenceday().getRefdate());
+            boolean reportFoundInList = existingTimereports.stream()
+                .anyMatch(existingTimereport -> existingTimereport.getId() == timereport.getId());
             if (!reportFoundInList) {
-                if (timereports.isEmpty()) {
-                    tr.setSequencenumber(1);
+                if (existingTimereports.isEmpty()) {
+                    timereport.setSequencenumber(1);
                 } else {
-                    int lastindex = timereports.size() - 1;
-                    tr.setSequencenumber(timereports.get(lastindex).getSequencenumber() + 1);
+                    int lastindex = existingTimereports.size() - 1;
+                    timereport.setSequencenumber(existingTimereports.get(lastindex).getSequencenumber() + 1);
                 }
             }
 
+            // FIXME remove firstday - better fall back on day before contract starts when no release date or acceptance date is found
             java.util.Date releaseDate = employeecontract.getReportReleaseDate();
             if (releaseDate == null) {
                 releaseDate = employeecontract.getValidFrom();
@@ -432,50 +353,55 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             if (acceptanceDate == null) {
                 acceptanceDate = employeecontract.getValidFrom();
             }
-            java.util.Date refDate = tr.getReferenceday().getRefdate();
+            java.util.Date refDate = timereport.getReferenceday().getRefdate();
 
             boolean firstday = false;
-            if (!releaseDate.after(employeecontract.getValidFrom()) &&
-                    !refDate.after(employeecontract.getValidFrom())) {
-                firstday = true;
+            if (!releaseDate.after(employeecontract.getValidFrom())) {
+                if (!refDate.after(employeecontract.getValidFrom())) {
+                    firstday = true;
+                }
             }
 
+            // TODO check: should fail when performed by a non manager
             if (!refDate.after(releaseDate) && !firstday) {
-                tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+                timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
             }
+            // TODO check: should fail when performed by a non admin
             if (!refDate.after(acceptanceDate) && !firstday) {
-                tr.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
+                timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
             }
 
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-            int numberOfLaborDays = reportForm.getNumberOfSerialDays();
+            int numberOfSerialDays = form.getNumberOfSerialDays();
 
             // is the timereport a booking for vacation?
-            if (tr.getSuborder() != null
-                    && tr.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-                    && !tr.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+            if (timereport.getSuborder() != null
+                    && timereport.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+                    && !timereport.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 //fill VacationView with data
-                Employeeorder vacationOrder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontract.getId(), tr.getSuborder().getId(), refDate);
+                Employeeorder vacationOrder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontract.getId(), timereport.getSuborder().getId(), refDate);
                 VacationViewer vacationView = new VacationViewer(employeecontract);
                 vacationView.setSuborderSign(vacationOrder.getSuborder().getSign());
                 if (vacationOrder.getDebithours() != null) {
                     vacationView.setBudget(vacationOrder.getDebithours());
                 } else { //should not happen since debit hours of yearly vacation order is generated automatically when the order is created
+                    // FIXME remove this???? Maybe we need to fix this ?!? Aktuell wird bei Vertragswechseln der Urlaubsanspruch falsch berechnet. Das kann hieran liegen!!!
                     vacationOrder.setDebithours(vacationOrder.getEmployeecontract().getVacationEntitlement() * vacationOrder.getEmployeecontract().getDailyWorkingTime());
                     vacationView.setBudget(vacationOrder.getDebithours());
                 }
-                List<Timereport> timereps = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(vacationOrder.getSuborder().getId(), employeecontract.getId());
-                for (Timereport timereport : timereps) {
-                    if (tr.getId() != timereport.getId()) {
-                        vacationView.addVacationMinutes(60 * timereport.getDurationhours());
-                        vacationView.addVacationMinutes(timereport.getDurationminutes());
+                List<Timereport> existingVacationTimereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(vacationOrder.getSuborder().getId(), employeecontract.getId());
+                for (Timereport existingVacationTimereport : existingVacationTimereports) {
+                    if (existingVacationTimereport.getId() != existingVacationTimereport.getId()) {
+                        vacationView.addVacationMinutes(MINUTES_PER_HOUR * existingVacationTimereport.getDurationhours());
+                        vacationView.addVacationMinutes(existingVacationTimereport.getDurationminutes());
                     }
                 }
 
-                numberOfLaborDays = Math.max(numberOfLaborDays, 1);
-                vacationView.addVacationMinutes(60 * numberOfLaborDays * tr.getDurationhours());
-                vacationView.addVacationMinutes(numberOfLaborDays * tr.getDurationminutes());
+                numberOfSerialDays = Math.max(numberOfSerialDays, 1); // if nothing is selected, set to 1
+                vacationView.addVacationMinutes(MINUTES_PER_HOUR * numberOfSerialDays * timereport.getDurationhours());
+                vacationView.addVacationMinutes(numberOfSerialDays * timereport.getDurationminutes());
 
+                // FIXME move to validation method as this is the validation i was looking for
                 //check if current timereport/serial reports would overrun vacation budget of corresponding year of suborder
                 if (vacationView.isVacationBudgetExceeded()) {
                     request.getSession().setAttribute("vacationBudgetOverrun", true);
@@ -483,30 +409,32 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 }
             }
             request.getSession().setAttribute("vacationBudgetOverrun", false);
-            if (numberOfLaborDays > 1) {
-                if (tr.getId() != 0) {
-                    timereportDAO.deleteTimereportById(tr.getId());
+            if (numberOfSerialDays > 1) {
+                if (timereport.getId() != 0) {
+                    // FIXME why that??? Maybe we update timereports with this action, too? check that!
+                    timereportDAO.deleteTimereportById(timereport.getId());
                 }
-                Date startDate = tr.getReferenceday().getRefdate();
+                Date firstTimereportReferenceDay = timereport.getReferenceday().getRefdate();
 
-                List<java.util.Date> dates = timereportHelper.getDatesForTimePeriod(startDate, numberOfLaborDays);
-                for (java.util.Date date : dates) {
-                    java.sql.Date sqlDate = new java.sql.Date(date.getTime());
-                    Referenceday rd = referencedayDAO.getReferencedayByDate(sqlDate);
-                    if (rd == null) {
+                List<java.util.Date> calculatedReferenceDays = timereportHelper.getDatesForTimePeriod(firstTimereportReferenceDay, numberOfSerialDays);
+                for (java.util.Date calculatedReferenceDay : calculatedReferenceDays) {
+                    java.sql.Date calculatedReferenceDaySqlDate = DateUtils.toSqlDate(calculatedReferenceDay);
+                    // FIXME get or create reference day?
+                    Referenceday referenceDay = referencedayDAO.getReferencedayByDate(calculatedReferenceDaySqlDate);
+                    if (referenceDay == null) {
                         // new referenceday to be added in database
-                        referencedayDAO.addReferenceday(sqlDate);
-                        rd = referencedayDAO.getReferencedayByDate(sqlDate);
+                        referencedayDAO.addReferenceday(calculatedReferenceDaySqlDate);
+                        referenceDay = referencedayDAO.getReferencedayByDate(calculatedReferenceDaySqlDate);
                     }
-                    Timereport serialReport = tr.getTwin();
-                    serialReport.setReferenceday(rd);
+                    Timereport serialReport = timereport.getTwin();
+                    serialReport.setReferenceday(referenceDay);
                     timereportDAO.save(serialReport, loginEmployee, true);
                 }
             } else {
-                timereportDAO.save(tr, loginEmployee, true);
+                timereportDAO.save(timereport, loginEmployee, true);
             }
 
-            if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
+            if (timereport.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract
                 double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                         employeecontract, true);
@@ -521,42 +449,31 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             if (request.getSession().getAttribute("trId") != null) {
                 request.getSession().removeAttribute("trId");
             }
-            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), employeecontract.getId());
+            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(timereport.getReferenceday().getRefdate(), employeecontract.getId());
 
             if (request.getParameter("continue") == null || !Boolean.parseBoolean(request.getParameter("continue"))) {
+                // FIXME geht das nicht leichter?
                 // set new ShowDailyReportForm with saved filter settings
-                ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
+                ShowDailyReportForm continueForm = new ShowDailyReportForm();
 
-                java.sql.Date referenceDate;
-                DateTimeFormatter dtf = DateTimeFormatter.ofPattern(GlobalConstants.DEFAULT_DATE_FORMAT);
-                try {
-                    referenceDate = java.sql.Date.valueOf(LocalDate.parse(reportForm.getReferenceday(), dtf));
-                } catch (DateTimeParseException e) {
-                    // error occured while parsing date - use current date instead
-                    referenceDate = java.sql.Date.valueOf(LocalDate.now());
-                }
-                showDailyReportForm.setDay(DateUtils.getDayString(referenceDate));
-                showDailyReportForm.setMonth(DateUtils.getMonthShortString(referenceDate));
-                showDailyReportForm.setYear(DateUtils.getYearString(referenceDate));
+                java.sql.Date referenceday = DateUtils.parseSqlDate(form.getReferenceday(), DateUtils.todaySqlDate());
+                // TODO pruefen, warum diese Felder gebraucht werden
+                continueForm.setDay(DateUtils.getDayString(referenceday));
+                continueForm.setMonth(DateUtils.getMonthShortString(referenceday));
+                continueForm.setYear(DateUtils.getYearString(referenceday));
 
-                showDailyReportForm.setStartdate(showDailyReportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(showDailyReportForm.getMonth()) + "-" + showDailyReportForm.getDay());
+                continueForm.setStartdate(continueForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(continueForm.getMonth()) + "-" + continueForm.getDay());
                 if (request.getSession().getAttribute("lastLastMonth") != null) {
-                    showDailyReportForm.setLastday((String) request.getSession().getAttribute("lastLastDay"));
-                    showDailyReportForm.setLastmonth((String) request.getSession().getAttribute("lastLastMonth"));
-                    showDailyReportForm.setLastyear((String) request.getSession().getAttribute("lastLastYear"));
+                    continueForm.setLastday((String) request.getSession().getAttribute("lastLastDay"));
+                    continueForm.setLastmonth((String) request.getSession().getAttribute("lastLastMonth"));
+                    continueForm.setLastyear((String) request.getSession().getAttribute("lastLastYear"));
                 } else {
-                    try {
-                        referenceDate = java.sql.Date.valueOf(LocalDate.parse(reportForm.getReferenceday(), dtf));
-                    } catch (DateTimeParseException e) {
-                        // error occured while parsing date - use current date instead
-                        referenceDate = java.sql.Date.valueOf(LocalDate.now());
-                    }
-                    showDailyReportForm.setLastday(DateUtils.getDayString(referenceDate));
-                    showDailyReportForm.setLastmonth(DateUtils.getMonthShortString(referenceDate));
-                    showDailyReportForm.setLastyear(DateUtils.getYearString(referenceDate));
+                    continueForm.setLastday(DateUtils.getDayString(referenceday));
+                    continueForm.setLastmonth(DateUtils.getMonthShortString(referenceday));
+                    continueForm.setLastyear(DateUtils.getYearString(referenceday));
                 }
-                showDailyReportForm.setEnddate(showDailyReportForm.getLastyear() + "-" + DateUtils.getMonthMMStringFromShortstring(showDailyReportForm.getLastmonth()) + "-"
-                        + showDailyReportForm.getLastday());
+                continueForm.setEnddate(continueForm.getLastyear() + "-" + DateUtils.getMonthMMStringFromShortstring(continueForm.getLastmonth()) + "-"
+                        + continueForm.getLastday());
                 request.getSession().removeAttribute("lastCurrentDay");
                 request.getSession().removeAttribute("lastCurrentMonth");
                 request.getSession().removeAttribute("lastCurrentYear");
@@ -565,21 +482,21 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 request.getSession().removeAttribute("lastLastYear");
 
                 if (request.getSession().getAttribute("lastView") != null) {
-                    showDailyReportForm.setView((String) request.getSession().getAttribute("lastView"));
+                    continueForm.setView((String) request.getSession().getAttribute("lastView"));
                 } else {
-                    showDailyReportForm.setView(GlobalConstants.VIEW_DAILY);
+                    continueForm.setView(GlobalConstants.VIEW_DAILY);
                 }
                 request.getSession().removeAttribute("lastView");
-                showDailyReportForm.setOrder((String) request.getSession().getAttribute("lastOrder"));
+                continueForm.setOrder((String) request.getSession().getAttribute("lastOrder"));
                 if (request.getSession().getAttribute("lastSuborderId") != null) {
-                    showDailyReportForm.setSuborderId((Long) request.getSession().getAttribute("lastSuborderId"));
+                    continueForm.setSuborderId((Long) request.getSession().getAttribute("lastSuborderId"));
                 } else {
-                    showDailyReportForm.setSuborderId(-1l);
+                    continueForm.setSuborderId(-1);
                 }
                 if (request.getSession().getAttribute("lastEmployeeContractId") != null) {
-                    showDailyReportForm.setEmployeeContractId((Long) request.getSession().getAttribute("lastEmployeeContractId"));
+                    continueForm.setEmployeeContractId((Long) request.getSession().getAttribute("lastEmployeeContractId"));
                 } else {
-                    showDailyReportForm.setEmployeeContractId(loginEmployee.getId());
+                    continueForm.setEmployeeContractId(loginEmployee.getId());
                 }
                 request.getSession().removeAttribute("lastSuborderId");
                 request.getSession().removeAttribute("lastOrder");
@@ -588,7 +505,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 // get updated list of timereports from DB
                 refreshTimereports(
                         request,
-                        showDailyReportForm,
+                        continueForm,
                         customerorderDAO,
                         timereportDAO,
                         employeecontractDAO,
@@ -596,11 +513,11 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         employeeorderDAO
                 );
                 reports = (List<Timereport>) request.getSession().getAttribute("timereports");
-                request.getSession().setAttribute("suborderFilerId", showDailyReportForm.getSuborderId());
+                request.getSession().setAttribute("suborderFilerId", continueForm.getSuborderId());
 
                 request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(reports));
-                request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-                request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
+                request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(existingTimereports, GlobalConstants.MAX_HOURS_PER_DAY));
+                request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(existingTimereports));
                 request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
 
                 //calculate Working Day End
@@ -620,18 +537,18 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     // show break time, quitting time and working day ends on the
                     // showdailyreport.jsp
                     request.getSession().setAttribute("visibleworkingday", true);
-                    showDailyReportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
-                    showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
-                    showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
-                    showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+                    continueForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
+                    continueForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
+                    continueForm.setSelectedBreakHour(workingday.getBreakhours());
+                    continueForm.setSelectedBreakMinute(workingday.getBreakminutes());
                 } else {
                     // don't show break time, quitting time and working day ends on
                     // the showdailyreport.jsp
                     request.getSession().setAttribute("visibleworkingday", false);
-                    showDailyReportForm.setSelectedWorkHourBegin(0);
-                    showDailyReportForm.setSelectedWorkMinuteBegin(0);
-                    showDailyReportForm.setSelectedBreakHour(0);
-                    showDailyReportForm.setSelectedBreakMinute(0);
+                    continueForm.setSelectedWorkHourBegin(0);
+                    continueForm.setSelectedWorkMinuteBegin(0);
+                    continueForm.setSelectedBreakHour(0);
+                    continueForm.setSelectedBreakMinute(0);
                 }
                 // refresh overtime and vacation
                 refreshVacationAndOvertime(request, employeecontract);
@@ -642,65 +559,51 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 java.sql.Date selectedDate = getSelectedDateFromRequest(request);
 
                 //deleting comment, costs and days of serialBookings in the addDailyReport-Form
-                reportForm.setComment("");
-                reportForm.setCosts(0.0);
-                reportForm.setNumberOfSerialDays(0);
+                form.setComment("");
+                form.setCosts(0.0);
+                form.setNumberOfSerialDays(0);
 
                 if (workingday != null) {
                     int[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeecontract.getId(), selectedDate, workingday);
-                    reportForm.setSelectedHourBegin(beginTime[0]);
-                    reportForm.setSelectedMinuteBegin(beginTime[1]);
-                    reportForm.setNumberOfSerialDays(0);
-                    java.util.Date today = new java.util.Date();
-                    SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
-                    SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
-                    int hour = new Integer(hourFormat.format(today));
-                    int minute = new Integer(minuteFormat.format(today));
-                    minute = minute / 5 * 5;
+                    int beginHours = beginTime[0];
+                    int beginMinutes = beginTime[1];
+                    form.setSelectedHourBegin(beginHours);
+                    form.setSelectedMinuteBegin(beginMinutes);
+                    form.setNumberOfSerialDays(0);
+                    java.util.Date today = DateUtils.today();
+                    int currentHours = DateUtils.getCurrentHours();
+                    int currentMinutes = DateUtils.getCurrentMinutes();
+                    // round to next minute increment
+                    currentMinutes = currentMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
 
-                    String todayString = simpleDateFormat.format(today);
-                    try {
-                        today = simpleDateFormat.parse(todayString);
-                    } catch (Exception e) {
-                        throw new RuntimeException("this should never happen...!");
-                    }
-
-                    if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
-                        reportForm.setSelectedMinuteEnd(minute);
-                        reportForm.setSelectedHourEnd(hour);
+                    if (workStartedEarlier(beginHours, beginMinutes, currentHours, currentMinutes) && selectedDate.equals(today)) {
+                        form.setSelectedMinuteEnd(currentMinutes);
+                        form.setSelectedHourEnd(currentHours);
                     } else {
-                        reportForm.setSelectedMinuteEnd(beginTime[1]);
-                        reportForm.setSelectedHourEnd(beginTime[0]);
+                        form.setSelectedMinuteEnd(beginHours);
+                        form.setSelectedHourEnd(beginMinutes);
                     }
-                    timereportHelper.refreshHours(reportForm);
+                    timereportHelper.refreshHours(form);
 
                 } else {
-                    reportForm.setSelectedHourDuration(0);
-                    reportForm.setSelectedMinuteDuration(0);
+                    form.setSelectedHourDuration(0);
+                    form.setSelectedMinuteDuration(0);
                 }
 
-                // set orders and suborders
+                // load orders and suborders
                 List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeecontract.getId(), selectedDate);
-
-                // set order
-                request.getSession().setAttribute("orders", orders);
-
-                List<Suborder> theSuborders = new ArrayList<Suborder>();
-                if (orders != null && !orders.isEmpty()) {
-                    long orderId = reportForm.getOrderId();
+                List<Suborder> theSuborders;
+                if (!orders.isEmpty()) {
+                    long orderId = form.getOrderId();
                     if (orderId == 0) {
                         orderId = orders.get(0).getId();
                     }
                     theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontract.getId(), orderId, selectedDate);
-                    if (theSuborders == null || theSuborders.isEmpty()) {
-                        request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator.");
-                        return mapping.findForward("error");
-                    }
                 } else {
-                    request.setAttribute("errorMessage", "no orders found for employee - please call system administrator.");
-                    return mapping.findForward("error");
+                    theSuborders = Collections.emptyList();
                 }
-                // set suborders
+
+                request.getSession().setAttribute("orders", orders);
                 request.getSession().setAttribute("suborders", theSuborders);
 
                 return mapping.findForward("addDaily");
@@ -710,70 +613,40 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         if (request.getParameter("task") != null && request.getParameter("task").equals("back")) {
             // go back
             request.getSession().removeAttribute("trId");
-            reportForm.reset(mapping, request);
-            return mapping.findForward("cancel");
+            form.reset(mapping, request);
         }
         if (request.getParameter("task") != null && request.getParameter("task").equals("reset")) {
             // reset form
-            doResetActions(mapping, request, reportForm);
-            return mapping.getInputForward();
+            doResetActions(mapping, request, form);
         }
 
-        return mapping.findForward("error");
+        return mapping.getInputForward();
     }
 
-    private void saveStaticFormDataToSession(HttpServletRequest request, AddDailyReportForm reportForm) {
-        request.getSession().setAttribute("numberOfSerialDays", reportForm.getNumberOfSerialDays());
-        request.getSession().setAttribute("costs", reportForm.getCosts());
-        request.getSession().setAttribute("comment", reportForm.getComment());
-    }
-
-    private void restoreFormData(HttpServletRequest request, AddDailyReportForm reportForm) {
-
-        SimpleDateFormat sdFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        java.util.Date date = (java.util.Date) request.getSession().getAttribute("referenceday");
-        if (date == null) reportForm.setReferenceday(sdFormat.format(new java.util.Date()));
-        else {
-            String referenceday = sdFormat.format(date);
-            if (referenceday != null) reportForm.setReferenceday(referenceday);
-        }
-        Integer numberOfSerialDays = (Integer) request.getSession().getAttribute("numberOfSerialDays");
-        if (numberOfSerialDays != null) reportForm.setNumberOfSerialDays(numberOfSerialDays);
-        Double hours = (Double) request.getSession().getAttribute("hourDuration");
-        if (hours != null) reportForm.setHours(hours);
-        timereportHelper.refreshHours(reportForm);
-        Double costs = (Double) request.getSession().getAttribute("costs");
-        if (costs != null) reportForm.setCosts(costs);
-        String comment = (String) request.getSession().getAttribute("comment");
-        if (comment != null) reportForm.setComment(comment);
-    }
-
-    private Employeecontract getEmployeeContractAndSetSessionVars(
-            ActionMapping mapping, HttpServletRequest request) {
-        Employeecontract ec;
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+    private Employeecontract getEmployeeContractAndSetSessionVars(HttpServletRequest request) {
+        Employeecontract employeecontract;
 
         if (request.getSession().getAttribute("currentEmployeeContract") != null) {
-            Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
-            ec = currentEmployeeContract;
-            request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
-            request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
+            employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         } else {
-            ec = loginEmployeeContract;
-            request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
-            request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-            request.getSession().setAttribute("currentEmployeeContract", loginEmployeeContract);
+            employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         }
+        long employeeContractId = employeecontract.getId();
 
-        return ec;
+        // TODO only store the id in the session, not the whole entity
+        employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+
+        request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
+        request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+        request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+        return employeecontract;
     }
 
     private void setSubOrder(@Nonnull Suborder suborder, HttpServletRequest request, AddDailyReportForm reportForm) {
 
         // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
         // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
-        if (suborder != null && suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+        if (suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
             reportForm.setSelectedHourDuration(0);
             reportForm.setSelectedMinuteDuration(0);
             if (request.getSession().getAttribute("overtimeCompensation") == null || request.getSession().getAttribute("overtimeCompensation")
@@ -784,7 +657,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         }
 
         // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
-        if (Boolean.TRUE.equals(suborder.getTrainingFlag())) {
+        if (TRUE.equals(suborder.getTrainingFlag())) {
             reportForm.setTraining(true);
         }
     }
@@ -796,84 +669,53 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         reportForm.reset(mapping, request);
 
         //reset the current employee Session Variables
-        Employeecontract ec = null;
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 
-        ec = loginEmployeeContract;
-
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
-        request.getSession().setAttribute("employeecontracts", employeecontracts);
-
-        request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
-        request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-        request.getSession().setAttribute("currentEmployeeContract", loginEmployeeContract);
-
         String dateString = reportForm.getReferenceday();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        java.util.Date date;
-        try {
-            date = simpleDateFormat.parse(dateString);
-        } catch (Exception e) {
-            throw new RuntimeException("error while parsing date");
-        }
+        java.util.Date date = DateUtils.parse(dateString, DateUtils.today());
 
-        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), date);
-        List<Suborder> suborders = null;
-        request.getSession().setAttribute("orders", orders);
-        request.getSession().setAttribute("report", "W");
+        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(loginEmployeeContract.getId(), date);
+        List<Suborder> suborders;
 
         //reset first order and corresponding suborders
-        if (orders != null && orders.size() > 0) {
+        if (!orders.isEmpty()) {
             reportForm.setOrder(orders.get(0).getSign());
             reportForm.setOrderId(orders.get(0).getId());
             // prepare second collection of suborders sorted by description
-            suborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(), date);
-            request.getSession().setAttribute("suborders", suborders);
+            suborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(loginEmployeeContract.getId(), orders.get(0).getId(), date);
         } else {
-            request.setAttribute("errorMessage", "No orders found for employee - please call system administrator.");
-            mapping.findForward("error");
+            reportForm.setOrder(null);
+            reportForm.setOrderId(-1);
+            suborders = Collections.emptyList();
         }
 
         if (request.getSession().getAttribute("trId") != null) {
             //get the Timereport object
             long trId = Long.parseLong(request.getSession().getAttribute("trId").toString());
-            Timereport tr = timereportDAO.getTimereportById(trId);
+            Timereport timereport = timereportDAO.getTimereportById(trId);
 
             //reset the rest
-            reportForm.setReferenceday(tr.getReferenceday().getRefdate().toString());
+            reportForm.setReferenceday(timereport.getReferenceday().getRefdate().toString());
             request.getSession().setAttribute("isEdit", false);
-            reportForm.setSelectedHourDuration(tr.getDurationhours());
-            reportForm.setSelectedMinuteDuration(tr.getDurationminutes());
-            reportForm.setCosts(tr.getCosts());
-            reportForm.setTraining(tr.getTraining());
-            reportForm.setComment(tr.getTaskdescription());
+            reportForm.setSelectedHourDuration(timereport.getDurationhours());
+            reportForm.setSelectedMinuteDuration(timereport.getDurationminutes());
+            reportForm.setCosts(timereport.getCosts());
+            reportForm.setTraining(timereport.getTraining());
+            reportForm.setComment(timereport.getTaskdescription());
         } else {
             reportForm.reset();
         }
 
-    }
+        request.getSession().setAttribute("employeecontracts", employeecontracts);
+        request.getSession().setAttribute("currentEmployee", loginEmployee.getName());
+        request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+        request.getSession().setAttribute("currentEmployeeContract", loginEmployeeContract);
 
-    private ActionMessages valiDate(HttpServletRequest request, AddDailyReportForm reportForm) {
-        ActionMessages errors = getErrors(request);
-        if (errors == null) {
-            errors = new ActionMessages();
-        }
-
-        String dateString = reportForm.getReferenceday().trim();
-
-        int minus = 0;
-        for (int i = 0; i < dateString.length(); i++) {
-            if (dateString.charAt(i) == '-') {
-                minus++;
-            }
-        }
-        if (dateString.length() != 10 || minus != 2) {
-            errors.add("referenceday", new ActionMessage("form.timereport.error.date.wrongformat"));
-        }
-
-        saveErrors(request, errors);
-        return errors;
+        request.getSession().setAttribute("orders", orders);
+        request.getSession().setAttribute("suborders", suborders);
+        request.getSession().setAttribute("report", "W");
     }
 
     /**
@@ -890,8 +732,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         // check date format (must now be 'yyyy-MM-dd')
         String dateString = reportForm.getReferenceday().trim();
 
-        boolean dateError = DateUtils.validateDate(dateString);
-        if (dateError) {
+        boolean dateValid = DateUtils.validateDate(dateString);
+        if (!dateValid) {
             errors.add("referenceday", new ActionMessage("form.timereport.error.date.wrongformat"));
             // return here - further validations do not make sense with wrong date format
             saveErrors(request, errors);
@@ -925,21 +767,19 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             }
         }
         // check if report types for one day are unique and if there is no time overlap with other work reports
-        List<Timereport> dailyReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
-        if (dailyReports != null && dailyReports.size() > 0) {
-            for (Object element : dailyReports) {
-                Timereport tr = (Timereport) element;
-                if (tr.getId() != trId) { // do not check report against itself in case of edit
-                    // uniqueness of types
-                    // actually not checked - e.g., combination of sickness and work on ONE day should be valid
-                    // but: vacation or sickness MUST occur only once per day
-                    if (!reportForm.getSortOfReport().equals("W") && !tr.getSortofreport().equals("W")) {
-                        errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.special.alreadyexisting"));
-                        break;
-                    }
+        List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
+        for (Timereport timereport : timereports) {
+            if (timereport.getId() != trId) { // do not check report against itself in case of edit
+                // uniqueness of types
+                // actually not checked - e.g., combination of sickness and work on ONE day should be valid
+                // but: vacation or sickness MUST occur only once per day
+                if (!reportForm.getSortOfReport().equals("W") && !timereport.getSortofreport().equals("W")) {
+                    errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.special.alreadyexisting"));
+                    break;
                 }
             }
         }
+
 
         // check if orders/suborders are filled in case of 'W' report
         if (reportForm.getSortOfReport().equals("W")) {
@@ -954,7 +794,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
         if (!reportForm.getSortOfReport().equals("W")) {
-            boolean valid = !DateUtils.isSatOrSun(theDate);
+            boolean valid = DateUtils.isWeekday(theDate);
 
             // checks for public holidays
             if (valid) {
@@ -971,7 +811,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 if (trId == -1) {
                     List<Timereport> allReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, theDate);
                     if (allReports.size() > 0) {
-                        valid = false;
                         errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.othersexisting"));
                     }
                 }
@@ -1003,8 +842,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(ecId);
         Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         Boolean authorized = (Boolean) request.getSession().getAttribute("employeeAuthorized");
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        java.util.Date refDate = null;
+        java.util.Date refDate = DateUtils.parse(reportForm.getReferenceday(), e -> {
+            throw new RuntimeException("date cannot be parsed (yyyy-MM-dd)", e);
+        });
+        // TODO check if it is better to set default dates one day before contract begin
         Date releaseDate = employeecontract.getReportReleaseDate();
         if (releaseDate == null) {
             releaseDate = employeecontract.getValidFrom();
@@ -1013,18 +854,12 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         if (acceptanceDate == null) {
             acceptanceDate = employeecontract.getValidFrom();
         }
-        try {
-            refDate = simpleDateFormat.parse(reportForm.getReferenceday());
-        } catch (Exception e) {
-            throw new RuntimeException("date cannot be parsed (yyyy-MM-dd)");
-        }
 
         // check, if refDate is first day
-        boolean firstday = false;
-        if (!releaseDate.after(employeecontract.getValidFrom()) &&
-                !refDate.after(employeecontract.getValidFrom())) {
-            firstday = true;
-        }
+        // TODO firstday is a bit weird
+        boolean firstday;
+        firstday = !releaseDate.after(employeecontract.getValidFrom()) &&
+            !refDate.after(employeecontract.getValidFrom());
 
         if (!loginEmployeecontract.getEmployee().getSign().equals("adm")) {
             if (authorized && loginEmployeecontract.getId() != ecId) {
@@ -1070,6 +905,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         saveErrors(request, errors);
         return errors;
+    }
+
+    private boolean workStartedEarlier(int beginHours, int beginMinutes, int currentHours, int currentMinutes) {
+        return beginHours < currentHours || (beginHours == currentHours && beginMinutes < currentMinutes);
     }
 
     @Override

@@ -291,7 +291,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             so.setDescription(addSuborderForm.getDescription());
             so.setShortdescription(addSuborderForm.getShortdescription());
             so.setHourly_rate(addSuborderForm.getHourlyRate());
-            so.setInvoice(addSuborderForm.getInvoice().charAt(0));
+            so.setInvoice(addSuborderForm.getInvoice());
             so.setStandard(addSuborderForm.getStandard());
             so.setCommentnecessary(addSuborderForm.getCommentnecessary());
             so.setFixedPrice(addSuborderForm.getFixedPrice());
@@ -378,7 +378,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 addSuborderForm.setDescription("");
                 addSuborderForm.setSign("");
                 addSuborderForm.setSuborder_customer("");
-                addSuborderForm.setInvoice("J");
+                addSuborderForm.setInvoice(GlobalConstants.INVOICE_YES);
                 addSuborderForm.setCurrency(GlobalConstants.DEFAULT_CURRENCY);
                 return mapping.findForward("reset");
             }
@@ -511,9 +511,9 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             errors.add("suborder_customer", new ActionMessage("form.suborder.error.suborder_customer.toolong"));
         }
         // check invoice character
-        if (addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_YES
-                && addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_NO
-                && addSuborderForm.getInvoice().charAt(0) != GlobalConstants.SUBORDER_INVOICE_UNDEFINED) {
+        if (addSuborderForm.getInvoice() != GlobalConstants.SUBORDER_INVOICE_YES
+                && addSuborderForm.getInvoice() != GlobalConstants.SUBORDER_INVOICE_NO
+                && addSuborderForm.getInvoice() != GlobalConstants.SUBORDER_INVOICE_UNDEFINED) {
 
             errors.add("invoice", new ActionMessage("form.suborder.error.invoice.invalid"));
         }
@@ -611,7 +611,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         // check if billable suborder has assigned hourly rate
-        if (addSuborderForm.getInvoice().equals(GlobalConstants.INVOICE_YES.toString()) && (addSuborderForm.getHourlyRate() == null || addSuborderForm.getHourlyRate() == 0.0)) {
+        if (addSuborderForm.getInvoice() == GlobalConstants.INVOICE_YES && (addSuborderForm.getHourlyRate() == null || addSuborderForm.getHourlyRate() == 0.0)) {
             errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.unavailable"));
         }
 

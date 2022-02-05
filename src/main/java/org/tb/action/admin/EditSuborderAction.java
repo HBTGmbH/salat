@@ -72,7 +72,7 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         soForm.setSign(so.getSign());
         soForm.setDescription(so.getDescription());
         soForm.setShortdescription(so.getShortdescription());
-        soForm.setInvoice(Character.toString(so.getInvoice()));
+        soForm.setInvoice(so.getInvoice());
         soForm.setStandard(so.getStandard());
         soForm.setCommentnecessary(so.getCommentnecessary());
         soForm.setTrainingFlag(so.getTrainingFlag());

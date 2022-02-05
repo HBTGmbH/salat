@@ -25,7 +25,6 @@ import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
@@ -71,19 +70,9 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, UpdateDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
-
-        ActionMessages errors = getErrors(request);
-        if (errors == null) {
-            errors = new ActionMessages();
-        }
-
         if (request.getParameter("trId") != null) {
             long trId = Long.parseLong(request.getParameter("trId"));
             Timereport tr = timereportDAO.getTimereportById(trId);
-
-            int previousDurationhours = tr.getDurationhours();
-            int previousDurationminutes = tr.getDurationminutes();
-            String previousTaskdescription = tr.getTaskdescription();
             Date theDate = tr.getReferenceday().getRefdate();
             Employeecontract ec = tr.getEmployeecontract();
 
@@ -136,10 +125,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 request.getSession().setAttribute("vacationBudgetOverrun", false);
                 timereportDAO.save(tr, loginEmployee, true);
             }
-
-            // check if Durationhours and/or Durationminutes have been adjusted for this save.  
-            boolean newTaskdescription = !previousTaskdescription.equals(tr.getTaskdescription());
-            boolean newTime = tr.getDurationhours() != previousDurationhours || tr.getDurationminutes() != previousDurationminutes;
 
             if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
                 // recompute overtimeStatic and store it in employeecontract
@@ -234,7 +219,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
         if (!theTimereport.getSortofreport().equals("W")) {
-            boolean valid = !DateUtils.isSatOrSun(theDate);
+            boolean valid = DateUtils.isWeekday(theDate);
 
             // checks for public holidays
             if (valid) {

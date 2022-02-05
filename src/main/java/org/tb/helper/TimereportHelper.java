@@ -1,5 +1,7 @@
 package org.tb.helper;
 
+import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
+
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -169,7 +171,7 @@ public class TimereportHelper {
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
         if (!timereport.getSortofreport().equals("W")) {
-            boolean valid = !DateUtils.isSatOrSun(theNewDate);
+            boolean valid = DateUtils.isWeekday(theNewDate);
 
             // checks for public holidays
             if (valid) {
@@ -240,7 +242,7 @@ public class TimereportHelper {
     /**
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1].
      */
-    public int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId) {
+    private int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId) {
         int[] workingTime = new int[2];
         List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         int hours = 0;
@@ -249,8 +251,8 @@ public class TimereportHelper {
             hours += timereport.getDurationhours();
             minutes += timereport.getDurationminutes();
         }
-        hours += minutes / 60;
-        minutes = minutes % 60;
+        hours += minutes / MINUTES_PER_HOUR;
+        minutes = minutes % MINUTES_PER_HOUR;
         workingTime[0] = hours;
         workingTime[1] = minutes;
 
@@ -267,8 +269,8 @@ public class TimereportHelper {
             beginTime[1] += workingday.getStarttimeminute();
             beginTime[0] += workingday.getBreakhours();
             beginTime[1] += workingday.getBreakminutes();
-            beginTime[0] += beginTime[1] / 60;
-            beginTime[1] = beginTime[1] % 60;
+            beginTime[0] += beginTime[1] / MINUTES_PER_HOUR;
+            beginTime[1] = beginTime[1] % MINUTES_PER_HOUR;
         }
         return beginTime;
     }
