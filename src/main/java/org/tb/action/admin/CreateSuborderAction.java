@@ -64,7 +64,7 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         // set relevant attributes
         request.getSession().setAttribute("customerorders", customerorders);
         request.getSession().setAttribute("suborders", suborders);
-        request.getSession().setAttribute("invoice", "J");
+        request.getSession().setAttribute("invoice", GlobalConstants.INVOICE_YES);
 
         // use customer order from filter
         Long customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
