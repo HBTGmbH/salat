@@ -170,8 +170,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 int beginMinutes = beginTime[1];
                 // round down to next minute increment
                 beginMinutes = beginMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
-                form.setSelectedHourBegin(beginTime[0]);
-                form.setSelectedMinuteBegin(beginTime[1]);
+                form.setSelectedHourBegin(beginHours);
+                form.setSelectedMinuteBegin(beginMinutes);
 
                 // determine end time
                 int currentHours = DateUtils.getCurrentHours();
@@ -243,6 +243,23 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             // refresh suborders to be displayed in the select menu
             String defaultSuborderIndexStr = request.getParameter("defaultSuborderIndex");
             suborderHelper.refreshSuborders(request, form, defaultSuborderIndexStr);
+
+            // check if we can prefill the form with daily working time - this helps for standard orders like URLAUB
+            Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
+            boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
+            if (standardOrder) {
+
+                Double dailyWorkingTime = employeeContract.getDailyWorkingTime();
+                dailyWorkingTime *= 60;
+                int dailyWorkingTimeMinutes = dailyWorkingTime.intValue();
+                int hours = dailyWorkingTimeMinutes / MINUTES_PER_HOUR;
+                int minutes = dailyWorkingTimeMinutes % MINUTES_PER_HOUR;
+                // round down to next minute increment
+                minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
+
+                form.setSelectedHourDuration(hours);
+                form.setSelectedMinuteDuration(minutes);
+            }
         }
 
         if (refreshWorkdayAvailability) {
