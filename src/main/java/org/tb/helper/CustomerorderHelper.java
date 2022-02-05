@@ -1,5 +1,7 @@
 package org.tb.helper;
 
+import java.text.ParseException;
+import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,13 +40,21 @@ public class CustomerorderHelper {
      */
     public boolean refreshOrders(HttpServletRequest request, AddDailyReportForm reportForm) {
 
+        // initialize with empty values (in case of any error we return an empty result)
+        reportForm.setOrderId(-1);
+        reportForm.setSuborderSignId(-1);
+        reportForm.setSuborderDescriptionId(-1);
+        request.getSession().setAttribute("orders", Collections.emptyList());
+        request.getSession().setAttribute("currentSuborderId", -1);
+        request.getSession().setAttribute("suborders", Collections.emptyList());
+
         String dateString = reportForm.getReferenceday();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         Date date;
         try {
-            date = simpleDateFormat.parse(dateString);
-        } catch (Exception e) {
-            throw new RuntimeException("error while parsing date");
+            date = dateFormat.parse(dateString);
+        } catch (ParseException e) {
+            return false;
         }
 
         Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
@@ -54,39 +64,34 @@ public class CustomerorderHelper {
                 ec = matchingTimeEC;
             }
         } else {
-            request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO: MessageResources
+            // TODO request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO: MessageResources
             return false;
         }
-
-        request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
-        request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
-        request.getSession().setAttribute("currentEmployeeContract", ec);
 
         // get orders related to employee
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), date);
-
-        if ((orders == null) || (orders.size() <= 0)) {
-            request.setAttribute("errorMessage", "No orders found for employee - please call system administrator."); //TODO: MessageResources
+        if (orders.isEmpty()) {
+            // TODO check error messages - request.setAttribute("errorMessage", "No orders found for employee - please call system administrator."); //TODO: MessageResources
             return false;
         }
 
-        request.getSession().setAttribute("orders", orders);
-
         Customerorder customerorder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
-        long suborderId;
+        long suborderId = -1;
         List<Suborder> theSuborders;
         if (customerorder != null && orders.contains(customerorder)) {
             theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
             Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
             if (suborder != null && theSuborders.contains(suborder)) {
                 suborderId = suborder.getId();
-            } else {
+            } else if(!theSuborders.isEmpty()) {
                 suborderId = theSuborders.get(0).getId();
             }
         } else {
             customerorder = orders.get(0);
             theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
-            suborderId = theSuborders.get(0).getId();
+            if (!theSuborders.isEmpty()) {
+                suborderId = theSuborders.get(0).getId();
+            }
         }
 
         // set form entries
@@ -94,8 +99,13 @@ public class CustomerorderHelper {
         reportForm.setSuborderSignId(suborderId);
         reportForm.setSuborderDescriptionId(suborderId);
 
+        request.getSession().setAttribute("orders", orders);
         request.getSession().setAttribute("currentSuborderId", suborderId);
         request.getSession().setAttribute("suborders", theSuborders);
+
+        request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
+        request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
+        request.getSession().setAttribute("currentEmployeeContract", ec);
 
         return true;
     }

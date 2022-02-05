@@ -67,6 +67,7 @@ public class GlobalConstants {
     public static final String EMPLOYEE_STATUS_RESTRICTED = "restricted";
     public static final String EMPLOYEE_STATUS_ADM = "adm";
 
+    // FIXME use SimpleDateFormat for this
     public static final String MONTH_SHORTFORM_JANUARY = "Jan";
     public static final String MONTH_SHORTFORM_FEBRUARY = "Feb";
     public static final String MONTH_SHORTFORM_MARCH = "Mar";
@@ -86,6 +87,7 @@ public class GlobalConstants {
             MONTH_SHORTFORM_OCTOBER, MONTH_SHORTFORM_NOVEMBER, MONTH_SHORTFORM_DECEMBER
     };
 
+    // FIXME use SimpleDateFormat for this
     public static final String MONTH_LONGFORM_JANUARY = "January";
     public static final String MONTH_LONGFORM_FEBRUARY = "February";
     public static final String MONTH_LONGFORM_MARCH = "March";
@@ -105,6 +107,7 @@ public class GlobalConstants {
             MONTH_LONGFORM_OCTOBER, MONTH_LONGFORM_NOVEMBER, MONTH_LONGFORM_DECEMBER
     };
 
+    // FIXME use Calendar for this
     public static final int MONTH_INTVALUE_JANUARY = 1;
     public static final int MONTH_INTVALUE_FEBRURAY = 2;
     public static final int MONTH_INTVALUE_MARCH = 3;
@@ -183,25 +186,25 @@ public class GlobalConstants {
     public static final int FORM_MAX_CHAR_NAME_TEXTFIELD = 64;
     public static final int FORM_MAX_CHAR_TEXTFIELD = 64;
 
-    public static final Integer PHASE_ID_ORGANISATION = 1;
-    public static final Integer PHASE_ID_SPECIFICATIO = 2;
-    public static final Integer PHASE_ID_ANALYSIS = 3;
-    public static final Integer PHASE_ID_REALIZATION = 4;
-    public static final Integer PHASE_ID_ACCEPTANCE = 5;
-    public static final Integer PHASE_ID_DELIVERY = 6;
-    public static final Integer PHASE_ID_ROLLOUT = 7;
-    public static final Integer PHASE_ID_FINISH = 8;
+    public static final int PHASE_ID_ORGANISATION = 1;
+    public static final int PHASE_ID_SPECIFICATIO = 2;
+    public static final int PHASE_ID_ANALYSIS = 3;
+    public static final int PHASE_ID_REALIZATION = 4;
+    public static final int PHASE_ID_ACCEPTANCE = 5;
+    public static final int PHASE_ID_DELIVERY = 6;
+    public static final int PHASE_ID_ROLLOUT = 7;
+    public static final int PHASE_ID_FINISH = 8;
 
-    public static final Integer STATUSREPORT_SORT_PERIODICAL = 1;
-    public static final Integer STATUSREPORT_SORT_EXTRA = 2;
-    public static final Integer STATUSREPORT_SORT_FINAL = 3;
+    public static final int STATUSREPORT_SORT_PERIODICAL = 1;
+    public static final int STATUSREPORT_SORT_EXTRA = 2;
+    public static final int STATUSREPORT_SORT_FINAL = 3;
 
-    public static final Integer MINUTES_PER_HOUR = 60;
+    public static final int MINUTES_PER_HOUR = 60;
 
-    public static final Character GENDER_FEMALE = 'f';
+    public static final char GENDER_FEMALE = 'f';
 
-    public static final Character INVOICE_YES = 'Y';
-    public static final Character INVOICE_NO = 'N';
+    public static final char INVOICE_YES = 'Y';
+    public static final char INVOICE_NO = 'N';
     public static final String INVOICE_EXCEL_EXPORT_FILENAME = "SALAT_Rechnung.xls";
     public static final String INVOICE_EXCEL_NEW_EXPORT_FILENAME = "SALAT_Rechnung.xlsx";
     public static final String INVOICE_EXCEL_SHEET_NAME = "SALAT Rechnung";

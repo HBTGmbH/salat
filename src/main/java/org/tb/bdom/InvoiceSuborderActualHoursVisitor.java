@@ -20,11 +20,11 @@ public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
     private Long durationMinutes;
 
     public void visitSuborder(Suborder suborder) {
-        if (invoicebox && GlobalConstants.INVOICE_NO.equals(suborder.getInvoice())) {
+        if (invoicebox && GlobalConstants.INVOICE_NO == suborder.getInvoice()) {
             durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
-        } else if (invoicebox && GlobalConstants.INVOICE_YES.equals(suborder.getInvoice())) {
+        } else if (invoicebox && GlobalConstants.INVOICE_YES == suborder.getInvoice()) {
             durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
-        } else if (!invoicebox && GlobalConstants.INVOICE_YES.equals(suborder.getInvoice())) {
+        } else if (!invoicebox && GlobalConstants.INVOICE_YES == suborder.getInvoice()) {
             durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
         }
     }
