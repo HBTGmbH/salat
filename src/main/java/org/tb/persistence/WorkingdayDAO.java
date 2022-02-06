@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import java.util.Date;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class WorkingdayDAO extends AbstractDAO {
         return getSession().createQuery("from Workingday order by employeecontract.id asc, refday asc").list();
     }
 
-    public Workingday getWorkingdayByDateAndEmployeeContractId(java.sql.Date refdate, long employeeContractId) {
+    public Workingday getWorkingdayByDateAndEmployeeContractId(Date refdate, long employeeContractId) {
         @SuppressWarnings("unchecked")
         List<Workingday> workingdays = getSession().createQuery("from Workingday w where w.refday = ? and w.employeecontract.id = ? ").setDate(0, refdate).setLong(1, employeeContractId).list();
         return workingdays != null && workingdays.size() > 0 ? workingdays.iterator().next() : null;

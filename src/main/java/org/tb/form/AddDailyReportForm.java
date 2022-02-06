@@ -1,5 +1,7 @@
 package org.tb.form;
 
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
@@ -74,7 +76,7 @@ public class AddDailyReportForm extends ActionForm {
         order = "";
         suborder = "";
         status = "";
-        sortOfReport = "W";
+        sortOfReport = SORT_OF_REPORT_WORK;
         selectedHourDuration = 0;
         selectedMinuteDuration = 0;
         selectedHourBegin = 0;

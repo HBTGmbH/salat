@@ -1,8 +1,11 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+
 import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,7 @@ import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.helper.AfterLogin;
@@ -218,13 +222,13 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
 
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
-        if (!theTimereport.getSortofreport().equals("W")) {
+        if (!theTimereport.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
             boolean valid = DateUtils.isWeekday(theDate);
 
             // checks for public holidays
             if (valid) {
-                String publicHoliday = publicholidayDAO.getPublicHoliday(theDate);
-                if (publicHoliday != null && publicHoliday.length() > 0) {
+                Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(theDate);
+                if (publicHoliday.isPresent()) {
                     valid = false;
                 }
             }
@@ -234,7 +238,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             }
         }
 
-        if (theTimereport.getSortofreport().equals("W")) {
+        if (theTimereport.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
             // check costs format		
             if (!GenericValidator.isDouble(reportForm.getCosts().toString()) ||
                     !GenericValidator.isInRange(reportForm.getCosts(),

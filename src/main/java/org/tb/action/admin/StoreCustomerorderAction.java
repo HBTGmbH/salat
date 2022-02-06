@@ -438,20 +438,20 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerOrd
         }
 
         // check, if dates fit to existing timereports
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        Date fromDate = null;
-        Date untilDate = null;
-        try {
-            fromDate = new Date(simpleDateFormat.parse(coForm.getValidFrom().trim()).getTime());
-            untilDate = new Date(simpleDateFormat.parse(coForm.getValidUntil().trim()).getTime());
-        } catch (Exception e) {
-            // do nothing
+        java.util.Date fromDate = DateUtils.parse(coForm.getValidFrom(), e -> {
+            throw new RuntimeException(e);
+        });
+        java.util.Date untilDate = null;
+        if(coForm.getValidUntil() != null && !coForm.getValidUntil().trim().isEmpty()) {
+            untilDate = DateUtils.parse(coForm.getValidUntil(), e -> {
+                throw new RuntimeException(e);
+            });
         }
+
         List<Timereport> timereportsInvalidForDates = timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(fromDate, untilDate, coId);
         if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
             request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
             errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
-
         }
 
         saveErrors(request, errors);

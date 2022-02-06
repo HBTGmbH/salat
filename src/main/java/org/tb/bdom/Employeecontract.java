@@ -114,8 +114,12 @@ public class Employeecontract extends EditDetails implements Serializable {
         return simpleDateFormat.format(validFrom) + " - " + simpleDateFormat.format(validUntil);
     }
 
-    public Boolean getOpenEnd() {
+    public boolean getOpenEnd() {
         return validUntil == null;
+    }
+
+    public boolean isValidAt(java.util.Date date) {
+        return !date.before(validFrom) && (validUntil == null || !date.after(validUntil));
     }
 
     public Integer getVacationEntitlement() {

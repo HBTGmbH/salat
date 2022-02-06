@@ -25,6 +25,7 @@ public class GlobalConstants {
     public static final String DEFAULT_CURRENCY = "EUR";
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String DEFAULT_DATE_FORMAT_GERMAN = "dd.MM.yyyy";
+    public static final String DEFAULT_TIMEZONE_ID = "Europe/Berlin";
 
     public static final int MINUTE_INCREMENT = 5;
 
@@ -47,9 +48,11 @@ public class GlobalConstants {
     public static final int SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH = 40;
     public static final int SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH = 30;
 
-    public static final int SUBORDER_INVOICE_YES = 'Y';
-    public static final int SUBORDER_INVOICE_NO = 'N';
-    public static final int SUBORDER_INVOICE_UNDEFINED = 'U';
+    public static final char SUBORDER_INVOICE_YES = 'Y';
+    public static final char SUBORDER_INVOICE_NO = 'N';
+    public static final char SUBORDER_INVOICE_UNDEFINED = 'U';
+
+    public static final String SORT_OF_REPORT_WORK = "W";
 
     public static final int EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH = 256;
     public static final int EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH = 256;
@@ -125,7 +128,7 @@ public class GlobalConstants {
     public static final String ALL_EMPLOYEES = "ALL EMPLOYEES";
 
     public static final String TIMEREPORT_STATUS_OPEN = "open";
-    public static final String TIMEREPORT_STATUS_COMMITED = "commited";
+    public static final String TIMEREPORT_STATUS_COMMITED = "commited"; // TODO fix type commited -> committed (changes data in database
     public static final String TIMEREPORT_STATUS_CLOSED = "closed";
 
     // view constants

@@ -51,6 +51,21 @@ public class Employeeorder extends EditDetails implements Serializable {
     private Date fromDate;
     private Date untilDate;
 
+    public boolean getOpenEnd() {
+        return getUntilDate() == null;
+    }
+
+    public Date getUntilDate() {
+        if (untilDate == null) {
+            return suborder.getUntilDate();
+        }
+        return untilDate;
+    }
+
+    public boolean isValidAt(java.util.Date date) {
+        return !date.before(getFromDate()) && (getUntilDate() == null || !date.after(getUntilDate()));
+    }
+
     public String getEmployeeOrderAsString() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         if (getUntilDate() != null) {

@@ -122,6 +122,24 @@ public class TimereportDAO extends AbstractDAO {
     /**
      * Gets the sum of all duration minutes WITH considering the hours.
      */
+    public long getTotalDurationMinutesForEmployeeOrder(long employeeorderId, java.util.Date fromDate, java.util.Date untilDate) {
+        Object totalMinutes = getSession()
+            .createQuery("select sum(durationminutes) + 60 * sum(durationhours) "
+                + "from Timereport tr "
+                + "where tr.employeeorder.id = :employeeorderId "
+                + "and tr.referenceday.refdate >= :fromDate "
+                + "and tr.referenceday.refdate <= :untilDate")
+            .setLong("employeeorderId", employeeorderId)
+            .setDate("fromDate", fromDate)
+            .setDate("untilDate", untilDate)
+            .setCacheable(true)
+            .uniqueResult();
+        return objectToLong(totalMinutes);
+    }
+
+    /**
+     * Gets the sum of all duration minutes WITH considering the hours.
+     */
     public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
         Object totalMinutes = getSession()
                 .createQuery("select sum(durationminutes)+60*sum(durationhours) from Timereport tr WHERE tr.employeeorder.id = ?")
@@ -213,7 +231,7 @@ public class TimereportDAO extends AbstractDAO {
      * Gets a list of Timereports by employee contract id and date.
      */
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByDateAndEmployeeContractId(long contractId, Date date) {
+    public List<Timereport> getTimereportsByDateAndEmployeeContractId(long contractId, java.util.Date date) {
         List<Timereport> allTimereports = getSession().createQuery("from Timereport t " +
                 "where t.employeecontract.id = ? and t.referenceday.refdate = ? " +
                 "order by employeecontract.employee.sign asc, sequencenumber asc")
@@ -523,7 +541,7 @@ public class TimereportDAO extends AbstractDAO {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByCustomerOrderIdInvalidForDates(Date begin, Date end, Long customerOrderId) {
+    public List<Timereport> getTimereportsByCustomerOrderIdInvalidForDates(java.util.Date begin, java.util.Date end, Long customerOrderId) {
         return getSession().createQuery("from Timereport t " +
                 "where t.employeeorder.suborder.customerorder.id = ? and (t.referenceday.refdate < ? or t.referenceday.refdate > ?) " +
                 "order by t.employeeorder.employeecontract.employee.sign asc, t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc")
