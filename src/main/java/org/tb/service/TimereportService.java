@@ -25,11 +25,9 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.GlobalConstants;
 import org.tb.bdom.AuthorizedUser;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -37,6 +35,9 @@ import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
+import org.tb.exception.AuthorizationException;
+import org.tb.exception.InvalidDataException;
+import org.tb.exception.LogicException;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.PublicholidayDAO;
@@ -57,21 +58,22 @@ public class TimereportService {
 
   @Transactional
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs, int numberOfSerialDays) {
+      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs, int numberOfSerialDays)
+  throws AuthorizationException, InvalidDataException, LogicException {
 
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
-    Validate.notNull(employeecontract, "employeeContractById must match an employee contract");
+    DataValidation.notNull(employeecontract, "employeeContractById must match an employee contract");
     Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
-    Validate.notNull(employeeorder, "employeeOrderId must match an employee order");
-    Validate.notNull(referenceDay, "reference day must not be null");
+    DataValidation.notNull(employeeorder, "employeeOrderId must match an employee order");
+    DataValidation.notNull(referenceDay, "reference day must not be null");
     Referenceday referenceday = referencedayDAO.getOrAddReferenceday(referenceDay);
-    Validate.notNull(taskDescription, "taskDescription must at least be an empty string");
-    Validate.isTrue(durationHours >= 0, "durationHours must be 0 at minimum");
-    Validate.isTrue(durationMinutes >= 0, "durationMinutes must be 0 at minimum");
-    Validate.isTrue(durationHours > 0 || durationMinutes > 0, "At least one of durationHours and durationMinutes must be greater than 0");
-    Validate.isTrue(SORT_OF_REPORT_WORK.equals(sortOfReport), "sortOfReport must be " + SORT_OF_REPORT_WORK);
-    Validate.isTrue(costs >= 0.0, "costs must be greater than or equal to 0");
-    Validate.isTrue(numberOfSerialDays >= 1, "numberOfSerialDays must be 1 at minimum");
+    DataValidation.notNull(taskDescription, "taskDescription must at least be an empty string");
+    DataValidation.isTrue(durationHours >= 0, "durationHours must be 0 at minimum");
+    DataValidation.isTrue(durationMinutes >= 0, "durationMinutes must be 0 at minimum");
+    DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, "At least one of durationHours and durationMinutes must be greater than 0");
+    DataValidation.isTrue(SORT_OF_REPORT_WORK.equals(sortOfReport), "sortOfReport must be " + SORT_OF_REPORT_WORK);
+    DataValidation.isTrue(costs >= 0.0, "costs must be greater than or equal to 0");
+    DataValidation.isTrue(numberOfSerialDays >= 1, "numberOfSerialDays must be 1 at minimum");
 
     Timereport timereportTemplate = new Timereport();
     timereportTemplate.setEmployeecontract(employeecontract);
@@ -113,7 +115,7 @@ public class TimereportService {
   }
 
   private void setSequencenumber(Timereport timereport) {
-    Validate.isTrue(timereport.getSequencenumber() == 0, "sequencenumber already set on timereport");
+    BusinessRuleChecks.isTrue(timereport.getSequencenumber() == 0, "sequencenumber already set on timereport");
     List<Timereport> existingTimereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
         timereport.getEmployeecontract().getId(),
         timereport.getReferenceday().getRefdate()
@@ -158,21 +160,26 @@ public class TimereportService {
     return nextWorkableDay;
   }
 
-  private void checkAuthorization(List<Timereport> timereportsToSave, AuthorizedUser authorizedUser) {
+  private void checkAuthorization(List<Timereport> timereportsToSave, AuthorizedUser authorizedUser) throws AuthorizationException {
     // authorization is based on the status
     timereportsToSave.forEach(t -> {
-      Validate.isTrue(!TIMEREPORT_STATUS_CLOSED.equals(t.getStatus()) || authorizedUser.isAdmin(),
-          "closed time reports can only be saved by admins.");
-      Validate.isTrue(!TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) ||
-              authorizedUser.isManager() || authorizedUser.isAdmin(),
-          "committed time reports can only be saved by admins and managers.");
-      Validate.isTrue(!TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) ||
-              authorizedUser.getEmployeeId() == t.getEmployeecontract().getEmployee().getId(),
-          "open time reports can only be saved by the employee herself.");
+      if(TIMEREPORT_STATUS_CLOSED.equals(t.getStatus()) &&
+          !authorizedUser.isAdmin()) {
+        throw new AuthorizationException("closed time reports can only be saved by admins.");
+      }
+      if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
+          !authorizedUser.isManager() &&
+          !authorizedUser.isAdmin()) {
+        throw new AuthorizationException("committed time reports can only be saved by admins and managers.");
+      }
+      if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
+              authorizedUser.getEmployeeId() != t.getEmployeecontract().getEmployee().getId()) {
+        throw new AuthorizationException("open time reports can only be saved by the employee herself.");
+      }
     });
   }
 
-  private void validateEmployeeorderBudget(List<Timereport> timereportsToSave) {
+  private void validateEmployeeorderBudget(List<Timereport> timereportsToSave) throws LogicException {
     // one timereport exists at least and all share the same suborder & employeeorder
     Employeeorder employeeorder = timereportsToSave.get(0).getEmployeeorder();
     if(employeeorder.getDebithoursunit() == null) {
@@ -190,7 +197,7 @@ public class TimereportService {
               getFirstDay(yearMonth),
               getLastDay(yearMonth)
           );
-          Validate.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
+          BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
               "debit minutes of employee order exceeded for month " + yearMonth);
         });
         break;
@@ -204,7 +211,7 @@ public class TimereportService {
               getFirstDay(year),
               getLastDay(year)
           );
-          Validate.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
+          BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
               "debit minutes of employee order exceeded for year " + year);
         });
         break;
@@ -215,7 +222,7 @@ public class TimereportService {
             .sum();
         long alreadyReportedMinutes = timereportDAO
             .getTotalDurationMinutesForEmployeeOrder(employeeorder.getId());
-        Validate.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
+        BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
             "debit minutes of employee order exceeded (total)");
         break;
       default:
@@ -226,30 +233,27 @@ public class TimereportService {
     }
   }
 
-  private void validateSuborderBudget(List<Timereport> timereportsToSave) {
-    // TODO cgeck budget of suborder, maybe customerorder, too - or implement another job for this that runs scheduled
-  }
-
-  private void validateOrder(List<Timereport> timereportsToSave) {
+  private void validateOrder(List<Timereport> timereportsToSave) throws LogicException {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereportsToSave.get(0);
     Date refdate = timereport.getReferenceday().getRefdate();
     Suborder suborder = timereport.getSuborder();
     Employeeorder employeeorder = timereport.getEmployeeorder();
     if(TRUE.equals(suborder.getCommentnecessary())) {
-      Validate.notEmpty(timereport.getTaskdescription(), "taskDescription must not be empty for suborder");
+      BusinessRuleChecks.notEmpty(timereport.getTaskdescription(), "taskDescription must not be empty to meet the requirements of the related suborder");
     }
-    Validate.isTrue(
+    BusinessRuleChecks.isTrue(
         employeeorder.isValidAt(refdate),
         "referenceday must fit to the employee order's date validity - check also suborder and customer order"
     );
   }
 
-  private void validateContract(List<Timereport> timereportsToSave) {
+  private void validateContract(List<Timereport> timereportsToSave) throws LogicException {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereportsToSave.get(0);
     Date refdate = timereport.getReferenceday().getRefdate();
-    timereport.getEmployeecontract().isValidAt(refdate);
+    BusinessRuleChecks.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
+        "employee contract must be valid for the reference day of the time report");
   }
 
 }
