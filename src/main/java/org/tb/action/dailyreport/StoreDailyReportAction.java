@@ -291,10 +291,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
             double hours = timereportHelper.calculateTime(form);
 
-            // FIXME hier weiter
-            // FIXME get Employeeorder from form and DAO not from session!
-            Employeeorder employeeorder = (Employeeorder) request.getSession().getAttribute("saveEmployeeOrder");
-            java.util.Date referencedayRefDate = null;
+            java.util.Date referencedayRefDate;
             try {
                 referencedayRefDate = DateUtils.parse(form.getReferenceday());
             } catch (ParseException e) {
@@ -358,6 +355,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             if (errorMessages.size() > 0) {
                 return mapping.getInputForward();
             }
+
+            // FIXME get Employeeorder from form and DAO not from session!
+            Employeeorder employeeorder = (Employeeorder) request.getSession().getAttribute("saveEmployeeOrder");
 
             timereport.setTaskdescription(form.getComment());
             timereport.setEmployeecontract(employeecontract);
