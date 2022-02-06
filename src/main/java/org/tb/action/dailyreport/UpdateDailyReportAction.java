@@ -1,5 +1,8 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
+import static org.tb.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static org.tb.GlobalConstants.EMPLOYEE_STATUS_PV;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.io.IOException;
@@ -17,6 +20,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
+import org.tb.bdom.AuthorizedUser;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -33,6 +37,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
+import org.tb.service.TimereportService;
 import org.tb.util.DateUtils;
 import org.tb.form.ShowDailyReportForm;
 import org.tb.form.UpdateDailyReportForm;
@@ -54,13 +59,15 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
     private final EmployeeorderDAO employeeorderDAO;
     private final EmployeecontractDAO employeecontractDAO;
     private final TimereportHelper timereportHelper;
+    private final TimereportService timereportService;
 
     @Autowired
     public UpdateDailyReportAction(AfterLogin afterLogin, SuborderDAO suborderDAO,
         CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
         PublicholidayDAO publicholidayDAO, WorkingdayDAO workingdayDAO,
         EmployeeorderDAO employeeorderDAO,
-        EmployeecontractDAO employeecontractDAO, TimereportHelper timereportHelper) {
+        EmployeecontractDAO employeecontractDAO, TimereportHelper timereportHelper,
+        TimereportService timereportService) {
         super(afterLogin);
         this.suborderDAO = suborderDAO;
         this.customerorderDAO = customerorderDAO;
@@ -70,6 +77,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
         this.employeeorderDAO = employeeorderDAO;
         this.employeecontractDAO = employeecontractDAO;
         this.timereportHelper = timereportHelper;
+        this.timereportService = timereportService;
     }
 
     @Override
@@ -91,7 +99,29 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             tr.setCosts(reportForm.getCosts());
             tr.setTraining(reportForm.getTraining());
 
+            // TODO get authorizedUser from session
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+
+            AuthorizedUser authorizedUser = new AuthorizedUser(
+                loginEmployee.getId(),
+                loginEmployee.getSign(),
+                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
+                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
+            );
+
+            timereportService.updateTimereport(
+                authorizedUser,
+                trId,
+                tr.getEmployeecontract().getId(),
+                tr.getEmployeeorder().getId(),
+                tr.getReferenceday().getRefdate(),
+                reportForm.getComment(),
+                Boolean.TRUE.equals(reportForm.getTraining()),
+                reportForm.getSelectedDurationHour(),
+                reportForm.getSelectedDurationMinute(),
+                tr.getSortofreport(),
+                reportForm.getCosts()
+            );
 
             //check if report's order is vacation but not Overtime compensation
             if (tr.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
