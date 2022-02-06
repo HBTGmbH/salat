@@ -222,12 +222,14 @@ public class TimereportService {
     if(employeeorder.getDebithoursunit() == null) {
       return; // no budget defined!
     }
-    long debitMinutes = (long) (employeeorder.getDebithours() * MINUTES_PER_HOUR);
-    // increase debit minutes of timereport exists (update case) by the time of the existing timereport in database,
-    // because this time is read from the database, too. This is a trick to circumvent this special case
+    long debitMinutesTemp = (long) (employeeorder.getDebithours() * MINUTES_PER_HOUR);
+    // increase debit minutes if timereport exists (update case) by the time of that timereport
+    // because this time is read from the database query, too. This is a trick to circumvent this special case.
     if(timereportsToSave.size() == 1 && timereportsToSave.get(0).getId() > 0) {
-      // FIXME continue here
+      Timereport timereport = timereportsToSave.get(0);
+      debitMinutesTemp += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
     }
+    final long debitMinutes = debitMinutesTemp;
     switch(employeeorder.getDebithoursunit()) {
       case DEBITHOURS_UNIT_MONTH:
         Map<YearMonth, Integer> minutesPerYearMonth = timereportsToSave.stream()
