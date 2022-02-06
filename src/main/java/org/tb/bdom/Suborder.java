@@ -166,7 +166,7 @@ public class Suborder extends EditDetails implements Serializable {
         return result;
     }
 
-    public Boolean getOpenEnd() {
+    public boolean getOpenEnd() {
         return getUntilDate() == null;
     }
 
@@ -175,7 +175,7 @@ public class Suborder extends EditDetails implements Serializable {
             if (parentorder != null) {
                 return parentorder.getUntilDate();
             }
-            return getCustomerorder().getUntilDate();
+            return customerorder.getUntilDate();
         }
         return untilDate;
     }
@@ -209,7 +209,11 @@ public class Suborder extends EditDetails implements Serializable {
      */
     public boolean getCurrentlyValid() {
         java.util.Date now = new java.util.Date();
-        return !now.before(getFromDate()) && (getUntilDate() == null || !now.after(getUntilDate()));
+        return isValidAt(now);
+    }
+
+    public boolean isValidAt(java.util.Date date) {
+        return !date.before(getFromDate()) && (getUntilDate() == null || !date.after(getUntilDate()));
     }
 
     /**

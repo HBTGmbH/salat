@@ -1,6 +1,10 @@
 package org.tb.restful.bookings;
 
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+import static org.tb.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+
 import org.jboss.resteasy.spi.BadRequestException;
+import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
 
@@ -109,8 +113,8 @@ public class BookingsService {
         timereport.setEmployeecontract(eo.getEmployeecontract());
         timereport.setCreatedby(eo.getEmployeecontract().getEmployee().getSign());
         timereport.setCreated(new Date());
-        timereport.setStatus("open");
-        timereport.setSortofreport("W");
+        timereport.setStatus(TIMEREPORT_STATUS_OPEN);
+        timereport.setSortofreport(SORT_OF_REPORT_WORK);
         timereport.setReferenceday(referenceday);
         timereport.setTraining(false);
         timereport.setDurationhours(booking.getHours());

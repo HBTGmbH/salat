@@ -1,6 +1,7 @@
 package org.tb.helper;
 
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -9,6 +10,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +53,7 @@ public class TimereportHelper {
      * @return decimal hours
      */
     public double calculateTime(AddDailyReportForm form) {
-        double worktime;
+        double worktime; // FIXME migrate to BigDecimal or better not use double in any case
 
         if (form.getSelectedHourDuration() != 0 || form.getSelectedMinuteDuration() != 0) {
             worktime = form.getSelectedHourDuration() * 1. + form.getSelectedMinuteDuration() / 60.;
@@ -61,7 +63,7 @@ public class TimereportHelper {
 
             if (minutes < 0) {
                 hours -= 1;
-                minutes += 60;
+                minutes += MINUTES_PER_HOUR;
             }
             worktime = hours * 1. + minutes / 60.;
         }
@@ -160,7 +162,7 @@ public class TimereportHelper {
                     // uniqueness of types
                     // actually not checked - e.g., combination of sickness and work on ONE day should be valid
                     // but: vacation or sickness MUST occur only once per day
-                    if (!timereport.getSortofreport().equals("W") && !tr.getSortofreport().equals("W")) {
+                    if (!timereport.getSortofreport().equals(SORT_OF_REPORT_WORK) && !tr.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
                         errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.special.alreadyexisting"));
                         break;
                     }
@@ -170,13 +172,13 @@ public class TimereportHelper {
 
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
-        if (!timereport.getSortofreport().equals("W")) {
+        if (!timereport.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
             boolean valid = DateUtils.isWeekday(theNewDate);
 
             // checks for public holidays
             if (valid) {
-                String publicHoliday = publicholidayDAO.getPublicHoliday(theNewDate);
-                if (publicHoliday != null && publicHoliday.length() > 0) {
+                Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(theNewDate);
+                if (publicHoliday.isPresent()) {
                     valid = false;
                 }
             }
@@ -242,7 +244,7 @@ public class TimereportHelper {
     /**
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1].
      */
-    private int[] getWorkingTimeForDateAndEmployeeContract(java.sql.Date date, long employeeContractId) {
+    private int[] getWorkingTimeForDateAndEmployeeContract(Date date, long employeeContractId) {
         int[] workingTime = new int[2];
         List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         int hours = 0;
@@ -262,7 +264,7 @@ public class TimereportHelper {
     /**
      * @return Returns int[]  0=hours 1=minutes
      */
-    public int[] determineBeginTimeToDisplay(long ecId, java.sql.Date date, Workingday workingday) {
+    public int[] determineBeginTimeToDisplay(long ecId, Date date, Workingday workingday) {
         int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId);
         if (workingday != null) {
             beginTime[0] += workingday.getStarttimehour();
@@ -597,8 +599,8 @@ public class TimereportHelper {
             if (weekday != 1 && weekday != 7) {
                 // weekday is no sa, su
                 Date laborDay = calendar.getTime();
-                String holidayName = publicholidayDAO.getPublicHoliday(new java.sql.Date(laborDay.getTime()));
-                if (holidayName == null || holidayName.equals("")) {
+                Optional<Publicholiday> publicholiday = publicholidayDAO.getPublicHoliday(new java.sql.Date(laborDay.getTime()));
+                if (!publicholiday.isPresent()) {
                     // labor day is not a holiday
                     dates.add(laborDay);
                 } else {

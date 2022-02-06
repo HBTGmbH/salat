@@ -1,5 +1,7 @@
 package org.tb.action;
 
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -127,7 +129,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             request.getSession().setAttribute("loginEmployee", loginEmployee);
             String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
             request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
-            request.getSession().setAttribute("report", "W");
+            request.getSession().setAttribute("report", SORT_OF_REPORT_WORK);
             request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
             request.getSession().setAttribute("employeeAuthorized", employeeHasAuthorization(loginEmployee));
 

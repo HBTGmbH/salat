@@ -11,6 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import org.tb.util.DateUtils;
 
 @Getter
 @Setter
@@ -49,7 +50,7 @@ public class Timereport extends EditDetails implements Serializable {
 
     private Integer durationhours;
     private Integer durationminutes;
-    private String sortofreport;
+    private String sortofreport; // TODO was steckt hinter diesem Konzept? klären!
     private String taskdescription;
     private String status;
     private Double costs;
@@ -79,7 +80,7 @@ public class Timereport extends EditDetails implements Serializable {
         timereport.setTraining(training);
         timereport.setSequencenumber(0);
         timereport.setEmployeeorder(employeeorder);
-
+        timereport.setReferenceday(referenceday);
         return timereport;
     }
 
@@ -88,12 +89,12 @@ public class Timereport extends EditDetails implements Serializable {
     }
 
     public String getTimeReportAsString() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         return "TR[" + getEmployeecontract().getEmployee().getSign() + " | "
-                + simpleDateFormat.format(getReferenceday().getRefdate()) + " | "
+                + DateUtils.format(getReferenceday().getRefdate()) + " | "
                 + getSuborder().getCustomerorder().getSign() + " / "
                 + getSuborder().getSign() + " | " + getDurationhours() + ":"
-                + getDurationminutes() + " | " + getTaskdescription() + "]";
+                + getDurationminutes() + " | " + getTaskdescription() + " | "
+                + getStatus() + "]";
     }
 
 }

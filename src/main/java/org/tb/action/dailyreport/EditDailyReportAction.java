@@ -1,5 +1,7 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -174,7 +176,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         reportForm.setSortOfReport(tr.getSortofreport());
         request.getSession().setAttribute("report", tr.getSortofreport());
 
-        if (tr.getSortofreport().equals("W")) {
+        if (tr.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
             if (tr.getSuborder() != null && tr.getSuborder().getCustomerorder() != null) {
                 reportForm.setSuborder(tr.getSuborder().getSign());
                 reportForm.setSuborderSignId(tr.getSuborder().getId());

@@ -46,20 +46,12 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
     /**
      * @return Returns the date associated the request. If parsing fails, the current date is returned.
      */
-    protected java.sql.Date getSelectedDateFromRequest(HttpServletRequest request) {
+    protected Date getSelectedDateFromRequest(HttpServletRequest request) {
         String dayString = (String) request.getSession().getAttribute("currentDay");
         String monthString = (String) request.getSession().getAttribute("currentMonth");
         String yearString = (String) request.getSession().getAttribute("currentYear");
 
-        java.sql.Date date;
-        try {
-            date = getDateFormStrings(dayString, monthString, yearString, true);
-        } catch (Exception e) {
-            // if parsing fails, return current date
-            date = java.sql.Date.valueOf(LocalDate.now());
-        }
-
-        return date;
+        return getDateFormStrings(dayString, monthString, yearString, true);
     }
 
     /**

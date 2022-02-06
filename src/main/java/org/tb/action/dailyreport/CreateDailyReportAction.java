@@ -1,5 +1,7 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -74,7 +76,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         }
 
         // get selected date for new report
-        java.sql.Date selectedDate = getSelectedDateFromRequest(request);
+        Date selectedDate = getSelectedDateFromRequest(request);
 
         Employeecontract matchingEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), selectedDate);
         if (matchingEC != null) {
@@ -92,7 +94,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set attributes to be analyzed by target jsp
         request.getSession().setAttribute("orders", orders);
-        request.getSession().setAttribute("report", "W");
+        request.getSession().setAttribute("report", SORT_OF_REPORT_WORK);
         request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
         request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());
         request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());

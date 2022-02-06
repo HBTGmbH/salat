@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import java.util.Optional;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,16 +42,10 @@ public class PublicholidayDAO extends AbstractDAO {
      *
      * @link http://www.phpforum.de/archiv_23333_Feiertage@berechnen_anzeigen.html
      */
-    public String getPublicHoliday(java.sql.Date dt) {
-        String publicHoliday = "";
+    public Optional<Publicholiday> getPublicHoliday(Date dt) {
         Publicholiday ph = (Publicholiday)
                 getSession().createQuery("from Publicholiday p where p.refdate = ?").setDate(0, dt).uniqueResult();
-
-        if (ph != null) {
-            publicHoliday = ph.getName();
-        }
-
-        return publicHoliday;
+        return Optional.ofNullable(ph);
     }
 
     /**
