@@ -318,21 +318,38 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
             );
 
-            timereportService.createTimereports(
-                authorizedUser,
-                form.getEmployeeContractId(),
-                employeeorderId,
-                referencedayRefDate,
-                form.getComment(),
-                Boolean.TRUE.equals(form.getTraining()),
-                form.getSelectedHourDuration(),
-                form.getSelectedMinuteDuration(),
-                SORT_OF_REPORT_WORK,
-                form.getCosts(),
-                Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
-            );
+            long timeReportId = form.getId();
+            // TODO maybe find a better way to identify timereports in edit
+            if(timeReportId > 0) {
+                timereportService.updateTimereport(
+                    authorizedUser,
+                    timeReportId,
+                    form.getEmployeeContractId(),
+                    employeeorderId,
+                    referencedayRefDate,
+                    form.getComment(),
+                    Boolean.TRUE.equals(form.getTraining()),
+                    form.getSelectedHourDuration(),
+                    form.getSelectedMinuteDuration(),
+                    SORT_OF_REPORT_WORK,
+                    form.getCosts()
+                );
+            } else {
+                timereportService.createTimereports(
+                    authorizedUser,
+                    form.getEmployeeContractId(),
+                    employeeorderId,
+                    referencedayRefDate,
+                    form.getComment(),
+                    Boolean.TRUE.equals(form.getTraining()),
+                    form.getSelectedHourDuration(),
+                    form.getSelectedMinuteDuration(),
+                    SORT_OF_REPORT_WORK,
+                    form.getCosts(),
+                    Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
+                );
+            }
 
-            long timeReportId = -1;
             final Timereport timereport;
             if (request.getSession().getAttribute("trId") != null) {
                 timeReportId = Long.parseLong(request.getSession().getAttribute("trId").toString());

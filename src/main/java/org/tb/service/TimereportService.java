@@ -109,9 +109,45 @@ public class TimereportService {
     timereportsToSave.forEach(t -> log.info("Saving Timereport {}", t.getTimeReportAsString()));
   }
 
+  @Transactional
   public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs, int numberOfSerialDays) {
+      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs) {
+    Timereport timereport = timereportDAO.getTimereportById(timereportId);
+    DataValidation.notNull(timereport, "timereportId must match a timereport");
+    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+    DataValidation.notNull(employeecontract, "employeeContractById must match an employee contract");
+    Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
+    DataValidation.notNull(employeeorder, "employeeOrderId must match an employee order");
+    DataValidation.notNull(referenceDay, "reference day must not be null");
+    Referenceday referenceday = referencedayDAO.getOrAddReferenceday(referenceDay);
+    DataValidation.notNull(taskDescription, "taskDescription must at least be an empty string");
+    DataValidation.isTrue(durationHours >= 0, "durationHours must be 0 at minimum");
+    DataValidation.isTrue(durationMinutes >= 0, "durationMinutes must be 0 at minimum");
+    DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, "At least one of durationHours and durationMinutes must be greater than 0");
+    DataValidation.isTrue(SORT_OF_REPORT_WORK.equals(sortOfReport), "sortOfReport must be " + SORT_OF_REPORT_WORK);
+    DataValidation.isTrue(costs >= 0.0, "costs must be greater than or equal to 0");
 
+    timereport.setEmployeecontract(employeecontract);
+    timereport.setEmployeeorder(employeeorder);
+    timereport.setSuborder(employeeorder.getSuborder());
+    timereport.setReferenceday(referenceday);
+    timereport.setTaskdescription(taskDescription.trim());
+    timereport.setTraining(trainingFlag);
+    timereport.setDurationhours(durationHours);
+    timereport.setDurationminutes(durationMinutes);
+    timereport.setSortofreport(sortOfReport);
+    timereport.setCosts(costs);
+
+    List<Timereport> timereportsToSave = new ArrayList<>();
+    timereportsToSave.add(timereport);
+    timereportsToSave.forEach(t -> log.info("checking Timereport {}", t.getTimeReportAsString()));
+
+    checkAuthorization(timereportsToSave, authorizedUser);
+    validateContract(timereportsToSave);
+    validateOrder(timereportsToSave);
+    validateEmployeeorderBudget(timereportsToSave);
+
+    timereportsToSave.forEach(t -> log.info("Updating Timereport {}", t.getTimeReportAsString()));
   }
 
   private void setSequencenumber(Timereport timereport) {

@@ -189,6 +189,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         }
         reportForm.setComment(tr.getTaskdescription());
         reportForm.setTraining(tr.getTraining());
+        reportForm.setId(tr.getId());
     }
 
     @Override
