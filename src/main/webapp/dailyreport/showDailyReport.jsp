@@ -832,6 +832,7 @@
 							</td>
 						</c:otherwise>
 					</c:choose>
+					</tr>
 				</html:form>
 			</c:forEach>
 			<tr>

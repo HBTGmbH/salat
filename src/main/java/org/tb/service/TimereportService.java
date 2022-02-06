@@ -215,6 +215,7 @@ public class TimereportService {
     });
   }
 
+  // TODO validation of budgets of timereports that are edited differs as the already booked time must be substracted before
   private void validateEmployeeorderBudget(List<Timereport> timereportsToSave) throws LogicException {
     // one timereport exists at least and all share the same suborder & employeeorder
     Employeeorder employeeorder = timereportsToSave.get(0).getEmployeeorder();
@@ -222,6 +223,11 @@ public class TimereportService {
       return; // no budget defined!
     }
     long debitMinutes = (long) (employeeorder.getDebithours() * MINUTES_PER_HOUR);
+    // increase debit minutes of timereport exists (update case) by the time of the existing timereport in database,
+    // because this time is read from the database, too. This is a trick to circumvent this special case
+    if(timereportsToSave.size() == 1 && timereportsToSave.get(0).getId() > 0) {
+      // FIXME continue here
+    }
     switch(employeeorder.getDebithoursunit()) {
       case DEBITHOURS_UNIT_MONTH:
         Map<YearMonth, Integer> minutesPerYearMonth = timereportsToSave.stream()
