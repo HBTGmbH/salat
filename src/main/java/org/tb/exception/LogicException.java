@@ -4,7 +4,7 @@ public class LogicException extends RuntimeException {
   public LogicException(String message, Throwable e) {
     super(message, e);
   }
-  public LogicException(Throwable e) {
-    super(e);
+  public LogicException(String message) {
+    super(message);
   }
 }
