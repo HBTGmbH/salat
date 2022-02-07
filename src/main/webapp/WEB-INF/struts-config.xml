@@ -85,7 +85,7 @@
 			<forward name="success" path="/auth/login.jsp" />
 		</action>
 
-		<action path="/CreateDailyReport" validate="true" name="addDailyReportForm">
+		<action path="/CreateDailyReport" name="addDailyReportForm">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>

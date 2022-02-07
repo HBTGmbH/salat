@@ -73,7 +73,7 @@ public class AddDailyReportForm extends ActionForm {
         // end time must be later than begin time when entering hours:minute
         int begin = selectedHourBegin * MINUTES_PER_HOUR + selectedMinuteBegin;
         int end = selectedHourEnd * MINUTES_PER_HOUR + selectedMinuteEnd;
-        if (begin >= end) {
+        if (end < begin) {
             errors.add("selectedHourBegin", new ActionMessage("form.timereport.error.endbeforebegin"));
         }
 

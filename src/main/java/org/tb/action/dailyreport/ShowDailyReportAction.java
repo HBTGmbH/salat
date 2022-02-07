@@ -1,8 +1,5 @@
 package org.tb.action.dailyreport;
 
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_BL;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_PV;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.text.ParseException;
@@ -31,7 +28,6 @@ import javax.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -63,7 +59,6 @@ import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
@@ -86,20 +81,21 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final EmployeeorderDAO employeeorderDAO;
     private final WorkingdayDAO workingdayDAO;
     private final EmployeeDAO employeeDAO;
-    private final ReferencedayDAO referencedayDAO;
     private final SuborderHelper suborderHelper;
     private final CustomerorderHelper customerorderHelper;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
+    private final AuthorizedUser authorizedUser;
 
     @Autowired
     public ShowDailyReportAction(AfterLogin afterLogin,
         CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
         EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
         EmployeeorderDAO employeeorderDAO,
-        WorkingdayDAO workingdayDAO, EmployeeDAO employeeDAO, ReferencedayDAO referencedayDAO,
+        WorkingdayDAO workingdayDAO, EmployeeDAO employeeDAO,
         SuborderHelper suborderHelper, CustomerorderHelper customerorderHelper,
-        TimereportHelper timereportHelper, TimereportService timereportService) {
+        TimereportHelper timereportHelper, TimereportService timereportService,
+        AuthorizedUser authorizedUser) {
         super(afterLogin);
         this.customerorderDAO = customerorderDAO;
         this.timereportDAO = timereportDAO;
@@ -108,11 +104,11 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         this.employeeorderDAO = employeeorderDAO;
         this.workingdayDAO = workingdayDAO;
         this.employeeDAO = employeeDAO;
-        this.referencedayDAO = referencedayDAO;
         this.suborderHelper = suborderHelper;
         this.customerorderHelper = customerorderHelper;
         this.timereportHelper = timereportHelper;
         this.timereportService = timereportService;
+        this.authorizedUser = authorizedUser;
     }
 
     /**
@@ -163,15 +159,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             return errors;
         }
 
-        // TODO get authorizedUser from session
-        Employee loginEmployee = loginEmployeeContract.getEmployee();
-        AuthorizedUser authorizedUser = new AuthorizedUser(
-            loginEmployee.getId(),
-            loginEmployee.getSign(),
-            loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
-            loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
-        );
-
         // FIXME consider shifting all time reports in a single transaction
         List<Long> problematicTimereportIds = new ArrayList<>();
         ids.forEach(id -> {
@@ -199,15 +186,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 .map(this::safeParse)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
-            // TODO get authorizedUser from session
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-            AuthorizedUser authorizedUser = new AuthorizedUser(
-                loginEmployee.getId(),
-                loginEmployee.getSign(),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
-            );
 
             try {
                 timereportService.deleteTimereports(timereportIds, authorizedUser);
@@ -292,7 +270,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private ActionForward doPrint(ActionMapping mapping, HttpSession session, ShowDailyReportForm reportForm) {
         //*** task for print view ***
         //conversion and localization of day values
-        Map<String, String> monthMap = new HashMap<String, String>();
+        Map<String, String> monthMap = new HashMap<>();
         monthMap.put("Jan", "main.timereport.select.month.jan.text");
         monthMap.put("Feb", "main.timereport.select.month.feb.text");
         monthMap.put("Mar", "main.timereport.select.month.mar.text");
@@ -438,7 +416,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 orders = customerorderDAO.getCustomerordersByEmployeeContractId(employeeContractId);
                 request.getSession().setAttribute("currentEmployeeContract", employeecontractDAO.getEmployeeContractById(employeeContractId));
             }
-            List<Suborder> suborders = new LinkedList<Suborder>();
+            List<Suborder> suborders = new LinkedList<>();
             Customerorder customerorder = customerorderDAO.getCustomerorderBySign(orderSign);
             if (orders.contains(customerorder)) {
                 suborders = customerorder.getSuborders();
@@ -535,7 +513,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
 
                 if (reportForm.getEmployeeContractId() == -1) {
-                    request.getSession().setAttribute("currentEmployeeId", -1l);
+                    request.getSession().setAttribute("currentEmployeeId", -1);
                     request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
                     request.getSession().setAttribute("currentEmployeeContract", null);
                 } else {
@@ -665,9 +643,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     /**
      * Called if no special task is given, called from menu eg. Prepares everything to show timereports of
      * logged-in user.
-     *
-     * @param request
-     * @param reportForm
      */
     private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
         String forward = "success";
@@ -804,14 +779,14 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             if (request.getSession().getAttribute("timereportComparator") != null) {
                 @SuppressWarnings("unchecked")
                 Comparator<Timereport> comparator = (Comparator<Timereport>) request.getSession().getAttribute("timereportComparator");
-                Collections.sort(timereports, comparator);
+                timereports.sort(comparator);
             }
             request.getSession().setAttribute("timereports", timereports);
             request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
             // calculate Working Day End
             request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
             // orders
-            List<Customerorder> orders = null;
+            List<Customerorder> orders;
             if (employeeId != null && employeeId == -1) {
                 orders = customerorderDAO.getCustomerorders();
             } else {
@@ -827,7 +802,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
         // set current order = all orders
         request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-        request.getSession().setAttribute("currentOrderId", -1l);
+        request.getSession().setAttribute("currentOrderId", -1);
         return forward;
     }
 

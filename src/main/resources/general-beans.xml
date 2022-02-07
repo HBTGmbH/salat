@@ -116,6 +116,19 @@
 			<value>classpath:/hibernate.cfg.xml</value>
 		</property>
 
+		<property name="eventListeners">
+			<map>
+				<entry>
+					<key><value>pre-insert</value></key>
+					<ref bean="updateEditDetailsOnInsertOrUpdateListener" />
+				</entry>
+				<entry>
+					<key><value>pre-update</value></key>
+					<ref bean="updateEditDetailsOnInsertOrUpdateListener" />
+				</entry>
+			</map>
+		</property>
+
 		<property name="hibernateProperties">
 			<props>
 				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>

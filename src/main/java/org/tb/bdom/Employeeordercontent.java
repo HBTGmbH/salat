@@ -17,7 +17,7 @@ import java.util.Date;
 @EqualsAndHashCode(of = "id")
 @Table(name = "EMPLOYEEORDERCONTENT")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Employeeordercontent implements Serializable {
+public class Employeeordercontent extends EditDetails implements Serializable {
     private static final long serialVersionUID = 1L; // 2L;
 
     @Id
@@ -71,11 +71,6 @@ public class Employeeordercontent implements Serializable {
     private String arrangement;
     private Boolean committed_mgmt;
     private Boolean committed_emp;
-    private Date created;
-    private String createdby;
-    private Date lastupdate;
-    private String lastupdatedby;
-    private Integer updatecounter;
 
     public Boolean getCommitted_emp() {
         return committed_emp != null && committed_emp;

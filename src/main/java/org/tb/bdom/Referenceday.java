@@ -1,20 +1,19 @@
 package org.tb.bdom;
 
+import static javax.persistence.TemporalType.DATE;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Temporal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Data
 @Entity
@@ -27,7 +26,8 @@ public class Referenceday implements Serializable {
     @GeneratedValue
     private long id;
 
-    private java.sql.Date refdate;
+    @Temporal(DATE)
+    private Date refdate;
 
     private Boolean workingday;
     /**

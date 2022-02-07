@@ -16,7 +16,7 @@ import org.tb.util.SecureHashUtils;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Employee implements Serializable {
+public class Employee extends EditDetails implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -50,26 +50,6 @@ public class Employee implements Serializable {
      * status of the employee (e.g., admin, ma, bl
      */
     private String status;
-    /**
-     * Creation Date
-     */
-    private java.util.Date created;
-    /**
-     * Last Update
-     */
-    private java.util.Date lastupdate;
-    /**
-     * Created By
-     */
-    private String createdby;
-    /**
-     * Updated By
-     */
-    private String lastupdatedby;
-    /**
-     * Update Counter
-     */
-    private Integer updatecounter;
     /**
      * Password change required
      */

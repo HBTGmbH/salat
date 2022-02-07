@@ -16,7 +16,7 @@ import java.text.SimpleDateFormat;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Overtime implements Serializable {
+public class Overtime extends EditDetails implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -29,13 +29,6 @@ public class Overtime implements Serializable {
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     private Employeecontract employeecontract;
     private String comment;
-    private java.util.Date created;
-    private String createdby;
     private Double time;
-
-    public String getCreatedString() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        return simpleDateFormat.format(created);
-    }
 
 }
