@@ -567,4 +567,40 @@ public class DateUtils {
         return Date.from(zonedDateTime.toInstant());
     }
 
+    public static Date now() {
+        return new Date();
+    }
+
+    public static Date max(Date date1, Date date2) {
+        if(date1.compareTo(date2) > 1) {
+            return date1;
+        }
+        return date2;
+    }
+
+    public static Date min(Date date1, Date date2) {
+        if(date1.compareTo(date2) < 1) {
+            return date1;
+        }
+        return date2;
+    }
+
+    public static int getDayOfWeek(Date date) {
+        Calendar calendar = getCalendar();
+        calendar.setTime(date);
+        return calendar.get(DAY_OF_WEEK);
+    }
+
+    public static int getWeekdaysDistance(Date begin, Date end) {
+        Calendar calendar = getCalendar();
+        calendar.setTime(begin);
+        int distance = 0;
+        while(calendar.getTime().before(end)) {
+            if(calendar.get(DAY_OF_WEEK) != SUNDAY && calendar.get(DAY_OF_WEEK) != SATURDAY) {
+                distance++;
+            }
+            calendar.add(DATE, 1);
+        }
+        return distance;
+    }
 }

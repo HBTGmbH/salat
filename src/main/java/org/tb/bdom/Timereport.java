@@ -59,16 +59,16 @@ public class Timereport extends EditDetails implements Serializable {
     private Double costs;
     private Boolean training; // TODO switch to boolean
     private int sequencenumber;
-    private java.util.Date released;
     /**
      * Sign of the releasing person
      */
     private String releasedby;
-    private java.util.Date accepted;
+    private java.util.Date released;
     /**
      * Sign of the accepting person
      */
     private String acceptedby;
+    private java.util.Date accepted;
 
     public Timereport getTwin() {
         Timereport timereport = new Timereport();

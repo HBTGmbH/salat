@@ -1,23 +1,34 @@
 package org.tb.service;
 
 import static java.lang.Boolean.TRUE;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.SATURDAY;
+import static java.util.Calendar.SUNDAY;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingDouble;
 import static java.util.stream.Collectors.summingInt;
 import static org.tb.ErrorCode.*;
 import static org.tb.GlobalConstants.*;
+import static org.tb.util.DateUtils.format;
 import static org.tb.util.DateUtils.getFirstDay;
 import static org.tb.util.DateUtils.getLastDay;
 import static org.tb.util.DateUtils.getYear;
 import static org.tb.util.DateUtils.getYearMonth;
+import static org.tb.util.DateUtils.max;
+import static org.tb.util.DateUtils.min;
 
+import java.text.SimpleDateFormat;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.bdom.AuthorizedUser;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Overtime;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
@@ -36,6 +48,7 @@ import org.tb.exception.InvalidDataException;
 import org.tb.exception.BusinessRuleException;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.TimereportDAO;
@@ -52,6 +65,7 @@ public class TimereportService {
   private EmployeeorderDAO employeeorderDAO;
   private TimereportDAO timereportDAO;
   private PublicholidayDAO publicholidayDAO;
+  private OvertimeDAO overtimeDAO;
 
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
       boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs, int numberOfSerialDays)
@@ -122,6 +136,47 @@ public class TimereportService {
         .forEach(timereportDAO::deleteTimereportById);
   }
 
+  public long calculateOvertimeMinutes(Date start, Date end, long employeecontractId, boolean useOverTimeAdjustment) {
+
+    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+
+    // do not consider invalid(outside of the validity of the contract) days
+    Date effectiveStart = max(start, employeecontract.getValidFrom());
+    Date effectiveEnd = min(end, employeecontract.getValidUntil());
+
+    if(effectiveStart.after(effectiveEnd)) {
+      log.warn("Cannot calculate overtime when start is after end");
+      return 0;
+    }
+
+    // count work days between effective days
+    long effectivePublicHolidayCount = publicholidayDAO.getPublicHolidaysBetween(effectiveStart, effectiveEnd)
+        .stream()
+        .map(Publicholiday::getRefdate)
+        .map(DateUtils::getDayOfWeek)
+        .filter(dow -> dow != SATURDAY && dow != SUNDAY)
+        .count();
+    long weekdays = DateUtils.getWeekdaysDistance(effectiveStart, effectiveEnd);
+    long effectiveWorkDays = weekdays - effectivePublicHolidayCount;
+
+    // calculate working time
+    long dailyWorkingTimeInMinutes = (long)(employeecontract.getDailyWorkingTime() * MINUTES_PER_HOUR);
+    long expectedWorkingTimeInMinutes = dailyWorkingTimeInMinutes * effectiveWorkDays;
+    long actualWorkingTimeInMinutes = timereportDAO.getTotalDurationMinutesForEmployeecontract(employeecontractId, effectiveStart, effectiveEnd);
+    if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
+      Double overtime = overtimeDAO.getOvertimesByEmployeeContractId(employeecontractId)
+          .stream()
+          //.filter(o -> o.getRefDate()) TODO introduce this date to allow to provide a date when the adjustment is effective
+          .map(Overtime::getTime)
+          .collect(summingDouble(Double::doubleValue));
+      long overtimeInMinutes = (long) (overtime * MINUTES_PER_HOUR);
+      actualWorkingTimeInMinutes += overtimeInMinutes;
+    }
+
+    long overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
+    return overtimeMinutes;
+  }
+
   private void checkAndSaveTimereports(AuthorizedUser authorizedUser, List<Timereport> timereports) {
     timereports.forEach(t -> log.info("checking Timereport {}", t.getTimeReportAsString()));
 
@@ -131,16 +186,31 @@ public class TimereportService {
     validateOrderBusinessRules(timereports);
     validateEmployeeorderBudget(timereports);
 
-    timereports.forEach(t -> log.info("Saving Timereport {}", t.getTimeReportAsString()));
-    // FIXME implement save after old code removed from salat
+    timereports.forEach(t -> {
+      log.info("Saving Timereport {}", t.getTimeReportAsString());
+      timereportDAO.saveOrUpdate(t);
+    });
 
-    // TODO overtime calculation
-    /*
-    // recompute overtimeStatic and store it in employeecontract
-    double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
-        employeecontract, true);
-    employeecontract.setOvertimeStatic(otStatic / 60.0);
-     */
+    // recompute overtimeStatic and store it in employeecontract if change made before release date
+    java.sql.Date reportReleaseDate = timereports.get(0).getEmployeecontract().getReportReleaseDate();
+    Optional<java.sql.Date> match = timereports.stream()
+        .map(Timereport::getReferenceday)
+        .map(Referenceday::getRefdate)
+        .filter(d -> !d.after(reportReleaseDate))
+        .findAny();
+    if(match.isPresent()) {
+      Employeecontract employeecontract = timereports.get(0).getEmployeecontract();
+      long overtimeMinutes = calculateOvertimeMinutes(employeecontract.getValidFrom(),
+          reportReleaseDate,
+          employeecontract.getId(),
+          true);
+      double overtimeStaticNew = (double) overtimeMinutes / MINUTES_PER_HOUR;
+      log.info("Overtime for employeecontract {} changed from {} to {}",
+          employeecontract.getId(),
+          employeecontract.getOvertimeStatic(),
+          overtimeStaticNew);
+      employeecontract.setOvertimeStatic(overtimeStaticNew); // TODO refactor to hour + minutes
+    }
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,

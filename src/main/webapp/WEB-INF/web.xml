@@ -33,6 +33,18 @@
 	</servlet-mapping>
 
 	<filter>
+		<filter-name>SpringRequestContextFilter</filter-name>
+		<filter-class>org.springframework.web.filter.RequestContextFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>SpringRequestContextFilter</filter-name>
+		<url-pattern>/do/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>SpringRequestContextFilter</filter-name>
+		<url-pattern>/rest/*</url-pattern>
+	</filter-mapping>
+	<filter>
 		<filter-name>HibernateFilter</filter-name>
 		<filter-class>org.springframework.orm.hibernate3.support.OpenSessionInViewFilter</filter-class>
 		<init-param>
@@ -46,7 +58,11 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HibernateFilter</filter-name>
-		<url-pattern>/*</url-pattern>
+		<url-pattern>/do/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>HibernateFilter</filter-name>
+		<url-pattern>/rest/*</url-pattern>
 	</filter-mapping>
 	<filter>
 		<filter-name>PerformanceLoggingFilter</filter-name>
@@ -58,7 +74,11 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>PerformanceLoggingFilter</filter-name>
-		<url-pattern>/*</url-pattern>
+		<url-pattern>/do/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>PerformanceLoggingFilter</filter-name>
+		<url-pattern>/rest/*</url-pattern>
 	</filter-mapping>
 	<servlet>
 		<servlet-name>action</servlet-name>

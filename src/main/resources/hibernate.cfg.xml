@@ -3,7 +3,6 @@
     "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
 	<session-factory>
-		<property name="hibernate.hbm2ddl.auto">update</property>
 
 		<mapping class="org.tb.bdom.Customer"/>
 		<mapping class="org.tb.bdom.Employee"/>
@@ -20,5 +19,6 @@
 		<mapping class="org.tb.bdom.Workingday" />	
 		<mapping class="org.tb.bdom.Overtime" />
 		<mapping class="org.tb.bdom.Statusreport" />
+
 	</session-factory>
 </hibernate-configuration>

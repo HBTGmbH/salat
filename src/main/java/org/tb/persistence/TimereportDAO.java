@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -130,6 +131,24 @@ public class TimereportDAO extends AbstractDAO {
                 + "and tr.referenceday.refdate >= :fromDate "
                 + "and tr.referenceday.refdate <= :untilDate")
             .setLong("employeeorderId", employeeorderId)
+            .setDate("fromDate", fromDate)
+            .setDate("untilDate", untilDate)
+            .setCacheable(true)
+            .uniqueResult();
+        return objectToLong(totalMinutes);
+    }
+
+    /**
+     * Gets the sum of all duration minutes WITH considering the hours.
+     */
+    public long getTotalDurationMinutesForEmployeecontract(long employeecontractId, java.util.Date fromDate, java.util.Date untilDate) {
+        Object totalMinutes = getSession()
+            .createQuery("select sum(durationminutes) + 60 * sum(durationhours) "
+                + "from Timereport tr "
+                + "where tr.employeecontract.id = :employeecontractId "
+                + "and tr.referenceday.refdate >= :fromDate "
+                + "and tr.referenceday.refdate <= :untilDate")
+            .setLong("employeecontractId", employeecontractId)
             .setDate("fromDate", fromDate)
             .setDate("untilDate", untilDate)
             .setCacheable(true)
@@ -605,6 +624,12 @@ public class TimereportDAO extends AbstractDAO {
             deleted = true;
         }
         return deleted;
+    }
+
+    public void saveOrUpdate(Timereport timereport) {
+        Session session = getSession();
+        session.saveOrUpdate(timereport);
+        session.flush();
     }
 
 }

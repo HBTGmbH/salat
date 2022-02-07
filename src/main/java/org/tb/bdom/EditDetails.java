@@ -1,9 +1,12 @@
 package org.tb.bdom;
 
+import static javax.persistence.TemporalType.TIMESTAMP;
+
+import java.util.Date;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
-
-import javax.persistence.MappedSuperclass;
 
 /**
  * contains information about creation edits made to database columns common to some database tables
@@ -14,8 +17,10 @@ import javax.persistence.MappedSuperclass;
 @Setter
 @MappedSuperclass
 abstract public class EditDetails {
-    private java.util.Date created;
-    private java.util.Date lastupdate;
+    @Temporal(TIMESTAMP)
+    private Date created;
+    @Temporal(TIMESTAMP)
+    private Date lastupdate;
     private String createdby;
     private String lastupdatedby;
     private Integer updatecounter;

@@ -1,50 +1,33 @@
 package org.tb.action.dailyreport;
 
-import static org.apache.struts.action.ActionMessages.GLOBAL_MESSAGE;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_BL;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_PV;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
-
 import java.io.IOException;
-import java.sql.Date;
 import java.util.List;
-import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.AuthorizedUser;
-import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
 import org.tb.exception.AuthorizationException;
 import org.tb.exception.BusinessRuleException;
 import org.tb.exception.InvalidDataException;
+import org.tb.form.ShowDailyReportForm;
+import org.tb.form.UpdateDailyReportForm;
 import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
-import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.service.TimereportService;
-import org.tb.util.DateUtils;
-import org.tb.form.ShowDailyReportForm;
-import org.tb.form.UpdateDailyReportForm;
 
 /**
  * action class for updating a timereport directly from daily display
@@ -58,30 +41,30 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
     private final SuborderDAO suborderDAO;
     private final CustomerorderDAO customerorderDAO;
     private final TimereportDAO timereportDAO;
-    private final PublicholidayDAO publicholidayDAO;
     private final WorkingdayDAO workingdayDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final EmployeecontractDAO employeecontractDAO;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
+    private final AuthorizedUser authorizedUser;
 
     @Autowired
     public UpdateDailyReportAction(AfterLogin afterLogin, SuborderDAO suborderDAO,
         CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
-        PublicholidayDAO publicholidayDAO, WorkingdayDAO workingdayDAO,
+        WorkingdayDAO workingdayDAO,
         EmployeeorderDAO employeeorderDAO,
         EmployeecontractDAO employeecontractDAO, TimereportHelper timereportHelper,
-        TimereportService timereportService) {
+        TimereportService timereportService, AuthorizedUser authorizedUser) {
         super(afterLogin);
         this.suborderDAO = suborderDAO;
         this.customerorderDAO = customerorderDAO;
         this.timereportDAO = timereportDAO;
-        this.publicholidayDAO = publicholidayDAO;
         this.workingdayDAO = workingdayDAO;
         this.employeeorderDAO = employeeorderDAO;
         this.employeecontractDAO = employeecontractDAO;
         this.timereportHelper = timereportHelper;
         this.timereportService = timereportService;
+        this.authorizedUser = authorizedUser;
     }
 
     @Override
@@ -89,29 +72,13 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
         if (request.getParameter("trId") != null) {
             long trId = Long.parseLong(request.getParameter("trId"));
             Timereport tr = timereportDAO.getTimereportById(trId);
-            Date theDate = tr.getReferenceday().getRefdate();
             Employeecontract ec = tr.getEmployeecontract();
-
-            ActionMessages errorMessages = validateFormData(request, reportForm, theDate, tr);
-            if (errorMessages.size() > 0) {
-                return mapping.getInputForward();
-            }
 
             tr.setTaskdescription(reportForm.getComment());
             tr.setDurationhours(reportForm.getSelectedDurationHour());
             tr.setDurationminutes(reportForm.getSelectedDurationMinute());
             tr.setCosts(reportForm.getCosts());
             tr.setTraining(reportForm.getTraining());
-
-            // TODO get authorizedUser from session
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
-            AuthorizedUser authorizedUser = new AuthorizedUser(
-                loginEmployee.getId(),
-                loginEmployee.getSign(),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
-            );
 
             try {
                 timereportService.updateTimereport(
@@ -130,50 +97,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                 addToErrors(request, e.getErrorCode());
                 return mapping.getInputForward();
-            }
-
-            //check if report's order is vacation but not Overtime compensation
-            if (tr.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-                    && !tr.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                //fill VacationView with data
-                Employeeorder vacationOrder = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(ec.getId(), tr.getSuborder().getId(), theDate);
-                VacationViewer vacationView = new VacationViewer(ec);
-                vacationView.setSuborderSign(vacationOrder.getSuborder().getSign());
-                if (vacationOrder.getDebithours() != null) {
-                    vacationView.setBudget(vacationOrder.getDebithours());
-                } else { //should not happen since debit hours of yearly vacation order is generated automatically when the order is created
-                    vacationOrder.setDebithours(vacationOrder.getEmployeecontract().getVacationEntitlement() * vacationOrder.getEmployeecontract().getDailyWorkingTime());
-                    vacationView.setBudget(vacationOrder.getDebithours());
-                }
-                List<Timereport> timereports = timereportDAO.getTimereportsBySuborderIdAndEmployeeContractId(vacationOrder.getSuborder().getId(), ec.getId());
-                for (Timereport timereport : timereports) {
-                    if (tr.getId() != timereport.getId()) {
-                        vacationView.addVacationMinutes(60 * timereport.getDurationhours());
-                        vacationView.addVacationMinutes(timereport.getDurationminutes());
-                    }
-                }
-                vacationView.addVacationMinutes(60 * tr.getDurationhours());
-                vacationView.addVacationMinutes(tr.getDurationminutes());
-                //check if current timereport would overrun vacation budget of corresponding year of suborder
-                if (vacationView.isVacationBudgetExceeded()) {
-                    request.getSession().setAttribute("vacationBudgetOverrun", true);
-                    return mapping.findForward("success");
-                } else {
-                    request.getSession().setAttribute("vacationBudgetOverrun", false);
-                    timereportDAO.save(tr, loginEmployee, true);
-                }
-
-            } else {
-                // save updated report
-                request.getSession().setAttribute("vacationBudgetOverrun", false);
-                timereportDAO.save(tr, loginEmployee, true);
-            }
-
-            if (tr.getStatus().equalsIgnoreCase(GlobalConstants.TIMEREPORT_STATUS_CLOSED) && loginEmployee.getStatus().equalsIgnoreCase("adm")) {
-                // recompute overtimeStatic and store it in employeecontract
-                double otStatic = timereportHelper.calculateOvertime(ec.getValidFrom(), ec.getReportAcceptanceDate(), ec, true);
-                ec.setOvertimeStatic(otStatic / 60.0);
-                employeecontractDAO.save(ec, loginEmployee);
             }
 
             // get updated list of timereports from DB
@@ -244,62 +167,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
         }
 
         return mapping.findForward("error");
-    }
-
-    /**
-     * validates the form data (syntax and logic)
-     */
-    private ActionMessages validateFormData(HttpServletRequest request,
-                                            UpdateDailyReportForm reportForm,
-                                            Date theDate,
-                                            Timereport theTimereport) {
-
-        ActionMessages errors = getErrors(request);
-        if (errors == null) {
-            errors = new ActionMessages();
-        }
-
-        // if sort of report is not 'W' reports are only allowed for workdays
-        // e.g., vacation cannot be set on a Sunday
-        if (!theTimereport.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
-            boolean valid = DateUtils.isWeekday(theDate);
-
-            // checks for public holidays
-            if (valid) {
-                Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(theDate);
-                if (publicHoliday.isPresent()) {
-                    valid = false;
-                }
-            }
-
-            if (!valid) {
-                errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.invalidday"));
-            }
-        }
-
-        if (theTimereport.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
-            // check costs format		
-            if (!GenericValidator.isDouble(reportForm.getCosts().toString()) ||
-                    !GenericValidator.isInRange(reportForm.getCosts(),
-                            0.0, GlobalConstants.MAX_COSTS)) {
-                errors.add("costs", new ActionMessage("form.timereport.error.costs.wrongformat"));
-            }
-        }
-
-        // check comment length
-        if (!GenericValidator.maxLength(reportForm.getComment(), GlobalConstants.COMMENT_MAX_LENGTH)) {
-            errors.add("comment", new ActionMessage("form.timereport.error.comment.toolarge"));
-        }
-
-        // check if comment is necessary
-        Boolean commentnecessary = theTimereport.getSuborder().getCommentnecessary();
-        if (commentnecessary && (reportForm.getComment() == null || reportForm.getComment().trim().equals(""))) {
-            errors.add("comment", new ActionMessage("form.timereport.error.comment.necessary"));
-        }
-
-        saveErrors(request, errors);
-
-        return errors;
     }
 
     @Override

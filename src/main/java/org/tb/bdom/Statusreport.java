@@ -16,7 +16,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "STATUSREPORT")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Statusreport implements Serializable {
+public class Statusreport extends EditDetails implements Serializable {
     private static final long serialVersionUID = 1L; // 3L;
 
     @Id
@@ -93,11 +93,6 @@ public class Statusreport implements Serializable {
     private String notes;
     private java.util.Date released;
     private java.util.Date accepted;
-    private java.util.Date created;
-    private String createdby;
-    private java.util.Date lastupdate;
-    private String lastupdatedby;
-    private Integer updatecounter;
 
     public Byte getOverallStatus() {
         Byte status = 0;

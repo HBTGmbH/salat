@@ -14,7 +14,7 @@ import java.io.Serializable;
 @Entity
 @EqualsAndHashCode(of = "description")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Invoice implements Serializable {
+public class Invoice extends EditDetails implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -27,10 +27,5 @@ public class Invoice implements Serializable {
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     private Customer customer;
     private String description;
-    private java.util.Date created;
-    private java.util.Date lastupdate;
-    private String createdby;
-    private String lastupdatedby;
-    private Integer updatecounter;
 
 }

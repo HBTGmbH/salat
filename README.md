@@ -47,6 +47,7 @@ Start local database only, without Salat:
 Clean rebuild of compose containers: `docker-compose build --no-cache`
 
 ### DB Migrations
+```
 drop table referenceday_timereport;
 drop table worklog;
 drop table worklogmemory;
@@ -56,6 +57,9 @@ alter table timereport drop column TICKET_ID;
 drop table ticket;
 alter table employee drop column jira_oauthtoken;
 drop table monthlyreport;
-
+alter table overtime add column lastupdate datetime DEFAULT NULL;
+alter table overtime add column lastupdatedby varchar(255) COLLATE utf8_bin;
+alter table overtime add column updatecounter int(11) DEFAULT NULL;
+```
 
 

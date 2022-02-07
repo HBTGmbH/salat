@@ -2,7 +2,6 @@ package org.tb.action.dailyreport;
 
 import static org.tb.util.DateUtils.getDateFormStrings;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;

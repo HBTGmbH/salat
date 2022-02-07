@@ -1,9 +1,6 @@
 package org.tb.action.dailyreport;
 
 import static java.lang.Boolean.TRUE;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_BL;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_PV;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.MINUTE_INCREMENT;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
@@ -11,19 +8,14 @@ import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import java.io.IOException;
 import java.sql.Date;
 import java.text.ParseException;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
@@ -32,8 +24,6 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
-import org.tb.bdom.Publicholiday;
-import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
@@ -46,12 +36,9 @@ import org.tb.helper.AfterLogin;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.SuborderHelper;
 import org.tb.helper.TimereportHelper;
-import org.tb.helper.VacationViewer;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.PublicholidayDAO;
-import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
@@ -71,35 +58,33 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
     private final SuborderDAO suborderDAO;
     private final CustomerorderDAO customerorderDAO;
     private final TimereportDAO timereportDAO;
-    private final ReferencedayDAO referencedayDAO;
-    private final PublicholidayDAO publicholidayDAO;
     private final WorkingdayDAO workingdayDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final SuborderHelper suborderHelper;
     private final CustomerorderHelper customerorderHelper;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
+    private final AuthorizedUser authorizedUser;
 
     @Autowired
     public StoreDailyReportAction(AfterLogin afterLogin, EmployeecontractDAO employeecontractDAO,
         SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
-        ReferencedayDAO referencedayDAO, PublicholidayDAO publicholidayDAO,
         WorkingdayDAO workingdayDAO, EmployeeorderDAO employeeorderDAO,
         SuborderHelper suborderHelper, CustomerorderHelper customerorderHelper,
-        TimereportHelper timereportHelper, TimereportService timereportService) {
+        TimereportHelper timereportHelper, TimereportService timereportService,
+        AuthorizedUser authorizedUser) {
         super(afterLogin);
         this.employeecontractDAO = employeecontractDAO;
         this.suborderDAO = suborderDAO;
         this.customerorderDAO = customerorderDAO;
         this.timereportDAO = timereportDAO;
-        this.referencedayDAO = referencedayDAO;
-        this.publicholidayDAO = publicholidayDAO;
         this.workingdayDAO = workingdayDAO;
         this.employeeorderDAO = employeeorderDAO;
         this.suborderHelper = suborderHelper;
         this.customerorderHelper = customerorderHelper;
         this.timereportHelper = timereportHelper;
         this.timereportService = timereportService;
+        this.authorizedUser = authorizedUser;
     }
 
     @SuppressWarnings("unchecked")
@@ -281,15 +266,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 employeeorderId = employeeorders.get(0).getId();
             }
 
-            // TODO get authorizedUser from session
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-            AuthorizedUser authorizedUser = new AuthorizedUser(
-                loginEmployee.getId(),
-                loginEmployee.getSign(),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
-            );
-
             long timeReportId = form.getId();
             // TODO maybe find a better way to identify timereports in edit
             if(timeReportId > 0) {
@@ -384,7 +360,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 if (request.getSession().getAttribute("lastEmployeeContractId") != null) {
                     continueForm.setEmployeeContractId((Long) request.getSession().getAttribute("lastEmployeeContractId"));
                 } else {
-                    continueForm.setEmployeeContractId(loginEmployee.getId());
+                    continueForm.setEmployeeContractId(form.getEmployeeContractId());
                 }
                 request.getSession().removeAttribute("lastSuborderId");
                 request.getSession().removeAttribute("lastOrder");
