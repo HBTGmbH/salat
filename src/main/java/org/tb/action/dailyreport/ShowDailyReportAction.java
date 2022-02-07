@@ -31,8 +31,8 @@ import javax.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.hibernate.HibernateException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
@@ -49,6 +49,11 @@ import org.tb.bdom.comparators.TimereportByOrderAscComparator;
 import org.tb.bdom.comparators.TimereportByOrderDescComparator;
 import org.tb.bdom.comparators.TimereportByRefdayAscComparator;
 import org.tb.bdom.comparators.TimereportByRefdayDescComparator;
+import org.tb.exception.AuthorizationException;
+import org.tb.exception.BusinessRuleException;
+import org.tb.exception.ErrorCodeException;
+import org.tb.exception.InvalidDataException;
+import org.tb.form.ShowDailyReportForm;
 import org.tb.helper.AfterLogin;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.EmployeeHelper;
@@ -64,7 +69,6 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.service.TimereportService;
 import org.tb.util.DateUtils;
-import org.tb.form.ShowDailyReportForm;
 
 /**
  * Action class for a timereport to be shown in the daily display
@@ -147,33 +151,42 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
      * @return null if successful, else a list of problematic timereports
      */
     private Collection<Long> massShiftDays(String[] sIds, String byDays, Employeecontract loginEmployeeContract, boolean authorized) {
-        try {
-            int days = Integer.parseInt(byDays);
+        int days = Integer.parseInt(byDays);
 
-            List<Long> ids = Arrays.stream(sIds)
-                    .map(this::safeParse)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+        List<Long> ids = Arrays.stream(sIds)
+                .map(this::safeParse)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
-            Collection<Long> errors = checkShiftedDays(ids, days, loginEmployeeContract, authorized);
-            if (!errors.isEmpty()) {
-                return errors;
-            }
-
-            // TODO get authorizedUser from session
-            Employee loginEmployee = loginEmployeeContract.getEmployee();
-            AuthorizedUser authorizedUser = new AuthorizedUser(
-                loginEmployee.getId(),
-                loginEmployee.getSign(),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
-                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
-            );
-
-            ids.forEach(id -> timereportService.shiftDays(id, days, authorizedUser));
-            return null;
-        } catch (HibernateException | NumberFormatException e) {
-            return Collections.emptyList();
+        Collection<Long> errors = checkShiftedDays(ids, days, loginEmployeeContract, authorized);
+        if (!errors.isEmpty()) {
+            return errors;
         }
+
+        // TODO get authorizedUser from session
+        Employee loginEmployee = loginEmployeeContract.getEmployee();
+        AuthorizedUser authorizedUser = new AuthorizedUser(
+            loginEmployee.getId(),
+            loginEmployee.getSign(),
+            loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
+            loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
+        );
+
+        // FIXME consider shifting all time reports in a single transaction
+        List<Long> problematicTimereportIds = new ArrayList<>();
+        ids.forEach(id -> {
+            try {
+                timereportService.shiftDays(id, days, authorizedUser);
+            } catch (ErrorCodeException e) {
+                log.error(e.getMessage(), e);
+                problematicTimereportIds.add(id);
+            }
+        });
+
+        if(problematicTimereportIds.isEmpty()) {
+            return null;
+        }
+        return problematicTimereportIds;
     }
 
     @Override
@@ -196,7 +209,12 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
             );
 
-            timereportService.deleteTimereports(timereportIds, authorizedUser);
+            try {
+                timereportService.deleteTimereports(timereportIds, authorizedUser);
+            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                addToErrors(request, e.getErrorCode());
+                return mapping.getInputForward();
+            }
 
             task = "refreshTimereports";
         } else if ("massshiftdays".equalsIgnoreCase(task)) {

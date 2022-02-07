@@ -5,7 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.tb.exception.LogicException;
+import org.tb.exception.TechnicalException;
 
 @Slf4j
 public class SecureHashUtils {
@@ -44,7 +44,7 @@ public class SecureHashUtils {
             encryptMsg = md.digest(text.getBytes());    // solving the MD5-Hash
         } catch (NoSuchAlgorithmException e) {
             log.error("MD5 not supported!", e);
-            throw new LogicException("MD5 not supported", e);
+            throw new TechnicalException("MD5 not supported by JVM", e);
         }
 
         String swap = "";        // swap-string for the result

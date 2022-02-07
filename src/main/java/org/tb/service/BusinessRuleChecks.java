@@ -1,20 +1,21 @@
 package org.tb.service;
 
 import lombok.experimental.UtilityClass;
-import org.tb.exception.LogicException;
+import org.tb.ErrorCode;
+import org.tb.exception.BusinessRuleException;
 
 @UtilityClass
 public class BusinessRuleChecks {
 
-  public static void isTrue(boolean expression, String message) {
+  public static void isTrue(boolean expression, ErrorCode errorCode) {
     if (expression == false) {
-      throw new LogicException(message);
+      throw new BusinessRuleException(errorCode);
     }
   }
 
-  public static void notEmpty(Object object, String message) {
-    if (object == null) {
-      throw new LogicException(message);
+  public static void notEmpty(String value, ErrorCode errorCode) {
+    if (value == null || value.trim().isEmpty()) {
+      throw new BusinessRuleException(errorCode);
     }
   }
 }

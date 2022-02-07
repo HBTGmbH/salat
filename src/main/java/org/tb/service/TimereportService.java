@@ -3,16 +3,8 @@ package org.tb.service;
 import static java.lang.Boolean.TRUE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
-import static org.tb.GlobalConstants.COMMENT_MAX_LENGTH;
-import static org.tb.GlobalConstants.DEBITHOURS_UNIT_MONTH;
-import static org.tb.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
-import static org.tb.GlobalConstants.DEBITHOURS_UNIT_YEAR;
-import static org.tb.GlobalConstants.MAX_COSTS;
-import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
-import static org.tb.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static org.tb.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
-import static org.tb.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.ErrorCode.*;
+import static org.tb.GlobalConstants.*;
 import static org.tb.util.DateUtils.getFirstDay;
 import static org.tb.util.DateUtils.getLastDay;
 import static org.tb.util.DateUtils.getYear;
@@ -41,7 +33,7 @@ import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.exception.AuthorizationException;
 import org.tb.exception.InvalidDataException;
-import org.tb.exception.LogicException;
+import org.tb.exception.BusinessRuleException;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.PublicholidayDAO;
@@ -63,7 +55,7 @@ public class TimereportService {
 
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
       boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs, int numberOfSerialDays)
-  throws AuthorizationException, InvalidDataException, LogicException {
+  throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     Timereport timereportTemplate = new Timereport();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
@@ -85,59 +77,20 @@ public class TimereportService {
   }
 
   public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs) {
+      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs)
+      throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportDAO.getTimereportById(timereportId);
-    DataValidation.notNull(timereport, "timereportId must match a timereport");
+    DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, sortOfReport, costs, timereport);
     checkAndSaveTimereports(authorizedUser, Collections.singletonList(timereport));
   }
 
-  private void checkAndSaveTimereports(AuthorizedUser authorizedUser, List<Timereport> timereports) {
-    timereports.forEach(t -> log.info("checking Timereport {}", t.getTimeReportAsString()));
-
-    checkAuthorization(timereports, authorizedUser);
-    validateTimeReportingBusinessRules(timereports);
-    validateContractBusinessRules(timereports);
-    validateOrderBusinessRules(timereports);
-    validateEmployeeorderBudget(timereports);
-
-    timereports.forEach(t -> log.info("Saving Timereport {}", t.getTimeReportAsString()));
-    // FIXME implement save after old code removed from salat
-  }
-
-  private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs,
-      Timereport timereport) {
-    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
-    DataValidation.notNull(employeecontract, "employeeContractById must match an employee contract");
-    Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
-    DataValidation.notNull(employeeorder, "employeeOrderId must match an employee order");
-    DataValidation.notNull(referenceDay, "reference day must not be null");
-    Referenceday referenceday = referencedayDAO.getOrAddReferenceday(referenceDay);
-    DataValidation.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, "taskDescription out of valid length range");
-    DataValidation.isTrue(durationHours >= 0, "durationHours must be 0 at minimum");
-    DataValidation.isTrue(durationMinutes >= 0, "durationMinutes must be 0 at minimum");
-    DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, "At least one of durationHours and durationMinutes must be greater than 0");
-    DataValidation.isTrue(SORT_OF_REPORT_WORK.equals(sortOfReport), "sortOfReport must be " + SORT_OF_REPORT_WORK);
-    DataValidation.isInRange(costs, 0.0, MAX_COSTS, "costs out of valid range");
-
-    timereport.setEmployeecontract(employeecontract);
-    timereport.setEmployeeorder(employeeorder);
-    timereport.setSuborder(employeeorder.getSuborder());
-    timereport.setReferenceday(referenceday);
-    timereport.setTaskdescription(taskDescription.trim());
-    timereport.setTraining(trainingFlag);
-    timereport.setDurationhours(durationHours);
-    timereport.setDurationminutes(durationMinutes);
-    timereport.setSortofreport(sortOfReport);
-    timereport.setCosts(costs);
-  }
-
   /**
    * shifts a timereport by days
    */
-  public void shiftDays(long timereportId, int amountDays, AuthorizedUser authorizedUser) {
+  public void shiftDays(long timereportId, int amountDays, AuthorizedUser authorizedUser)
+      throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportDAO.getTimereportById(timereportId);
     Referenceday referenceday = timereport.getReferenceday();
     Date shiftedDate = DateUtils.addDays(referenceday.getRefdate(), amountDays);
@@ -159,7 +112,8 @@ public class TimereportService {
    *
    * @param timereportIds ids of the timereports
    */
-  public void deleteTimereports(List<Long> timereportIds, AuthorizedUser authorizedUser) {
+  public void deleteTimereports(List<Long> timereportIds, AuthorizedUser authorizedUser)
+      throws AuthorizationException, InvalidDataException, BusinessRuleException{
     List<Timereport> timereports = timereportIds.stream().map(timereportDAO::getTimereportById)
         .collect(Collectors.toList());
     checkAuthorization(timereports, authorizedUser);
@@ -168,8 +122,49 @@ public class TimereportService {
         .forEach(timereportDAO::deleteTimereportById);
   }
 
+  private void checkAndSaveTimereports(AuthorizedUser authorizedUser, List<Timereport> timereports) {
+    timereports.forEach(t -> log.info("checking Timereport {}", t.getTimeReportAsString()));
+
+    checkAuthorization(timereports, authorizedUser);
+    validateTimeReportingBusinessRules(timereports);
+    validateContractBusinessRules(timereports);
+    validateOrderBusinessRules(timereports);
+    validateEmployeeorderBudget(timereports);
+
+    timereports.forEach(t -> log.info("Saving Timereport {}", t.getTimeReportAsString()));
+    // FIXME implement save after old code removed from salat
+  }
+
+  private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
+      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs,
+      Timereport timereport) {
+    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+    DataValidation.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+    Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
+    DataValidation.notNull(employeeorder, TR_EMPLOYEE_ORDER_NOT_FOUND);
+    DataValidation.notNull(referenceDay, TR_REFERENCE_DAY_NULL);
+    Referenceday referenceday = referencedayDAO.getOrAddReferenceday(referenceDay);
+    DataValidation.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
+    DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
+    DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
+    DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
+    DataValidation.isTrue(SORT_OF_REPORT_WORK.equals(sortOfReport), TR_SORT_OF_REPORT_INVALID);
+    DataValidation.isInRange(costs, 0.0, MAX_COSTS, TR_COSTS_INVALID);
+
+    timereport.setEmployeecontract(employeecontract);
+    timereport.setEmployeeorder(employeeorder);
+    timereport.setSuborder(employeeorder.getSuborder());
+    timereport.setReferenceday(referenceday);
+    timereport.setTaskdescription(taskDescription.trim());
+    timereport.setTraining(trainingFlag);
+    timereport.setDurationhours(durationHours);
+    timereport.setDurationminutes(durationMinutes);
+    timereport.setSortofreport(sortOfReport);
+    timereport.setCosts(costs);
+  }
+
   private void setSequencenumber(Timereport timereport) {
-    BusinessRuleChecks.isTrue(timereport.getSequencenumber() == 0, "sequencenumber already set on timereport");
+    BusinessRuleChecks.isTrue(timereport.getSequencenumber() == 0, TR_SEQUENCE_NUMBER_ALREADY_SET);
     List<Timereport> existingTimereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
         timereport.getEmployeecontract().getId(),
         timereport.getReferenceday().getRefdate()
@@ -219,21 +214,21 @@ public class TimereportService {
     timereports.forEach(t -> {
       if(TIMEREPORT_STATUS_CLOSED.equals(t.getStatus()) &&
           !authorizedUser.isAdmin()) {
-        throw new AuthorizationException("closed time reports can only be saved by admins.");
+        throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
       }
       if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
           !authorizedUser.isManager() &&
           !authorizedUser.isAdmin()) {
-        throw new AuthorizationException("committed time reports can only be saved by admins and managers.");
+        throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
       }
       if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
               authorizedUser.getEmployeeId() != t.getEmployeecontract().getEmployee().getId()) {
-        throw new AuthorizationException("open time reports can only be saved by the employee herself.");
+        throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
       }
     });
   }
 
-  private void validateEmployeeorderBudget(List<Timereport> timereports) throws LogicException {
+  private void validateEmployeeorderBudget(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same suborder & employeeorder
     Employeeorder employeeorder = timereports.get(0).getEmployeeorder();
     if(employeeorder.getDebithoursunit() == null) {
@@ -259,7 +254,7 @@ public class TimereportService {
               getLastDay(yearMonth)
           );
           BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
-              "debit minutes of employee order exceeded for month " + yearMonth);
+              TR_MONTH_BUDGET_EXCEEDED);
         });
         break;
       case DEBITHOURS_UNIT_YEAR:
@@ -273,7 +268,7 @@ public class TimereportService {
               getLastDay(year)
           );
           BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
-              "debit minutes of employee order exceeded for year " + year);
+              TR_YEAR_BUDGET_EXCEEDED);
         });
         break;
       case DEBITHOURS_UNIT_TOTALTIME:
@@ -284,7 +279,7 @@ public class TimereportService {
         long alreadyReportedMinutes = timereportDAO
             .getTotalDurationMinutesForEmployeeOrder(employeeorder.getId());
         BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
-            "debit minutes of employee order exceeded (total)");
+            TR_TOTAL_BUDGET_EXCEEDED);
         break;
       default:
         throw new IllegalStateException(
@@ -294,27 +289,27 @@ public class TimereportService {
     }
   }
 
-  private void validateOrderBusinessRules(List<Timereport> timereports) throws LogicException {
+  private void validateOrderBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereports.get(0);
     Date refdate = timereport.getReferenceday().getRefdate();
     Suborder suborder = timereport.getSuborder();
     Employeeorder employeeorder = timereport.getEmployeeorder();
     if(TRUE.equals(suborder.getCommentnecessary())) {
-      BusinessRuleChecks.notEmpty(timereport.getTaskdescription(), "taskDescription must not be empty to meet the requirements of the related suborder");
+      BusinessRuleChecks.notEmpty(timereport.getTaskdescription(), TR_SUBORDER_COMMENT_MANDATORY);
     }
     BusinessRuleChecks.isTrue(
         employeeorder.isValidAt(refdate),
-        "referenceday must fit to the employee order's date validity - check also suborder and customer order"
+        TR_EMPLOYEE_ORDER_INVALID_REF_DATE
     );
   }
 
-  private void validateContractBusinessRules(List<Timereport> timereports) throws LogicException {
+  private void validateContractBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereports.get(0);
     Date refdate = timereport.getReferenceday().getRefdate();
     BusinessRuleChecks.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
-        "employee contract must be valid for the reference day of the time report");
+        TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE);
   }
 
   private void validateTimeReportingBusinessRules(List<Timereport> timereports) {
@@ -322,7 +317,7 @@ public class TimereportService {
       Year reportedYear = getYear(timereport.getReferenceday().getRefdate());
       // check date range (must be in current, previous or next year)
       BusinessRuleChecks.isTrue(Math.abs(DateUtils.getCurrentYear() - reportedYear.getValue()) <= 1,
-          "Time reports must be modified only in the current, the previous or the next year");
+          TR_YEAR_OUT_OF_RANGE);
     });
   }
 

@@ -1,5 +1,6 @@
 package org.tb.action.dailyreport;
 
+import static org.apache.struts.action.ActionMessages.GLOBAL_MESSAGE;
 import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
 import static org.tb.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static org.tb.GlobalConstants.EMPLOYEE_STATUS_PV;
@@ -27,6 +28,9 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.exception.AuthorizationException;
+import org.tb.exception.BusinessRuleException;
+import org.tb.exception.InvalidDataException;
 import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.helper.VacationViewer;
@@ -109,19 +113,24 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
             );
 
-            timereportService.updateTimereport(
-                authorizedUser,
-                trId,
-                tr.getEmployeecontract().getId(),
-                tr.getEmployeeorder().getId(),
-                tr.getReferenceday().getRefdate(),
-                reportForm.getComment(),
-                Boolean.TRUE.equals(reportForm.getTraining()),
-                reportForm.getSelectedDurationHour(),
-                reportForm.getSelectedDurationMinute(),
-                tr.getSortofreport(),
-                reportForm.getCosts()
-            );
+            try {
+                timereportService.updateTimereport(
+                    authorizedUser,
+                    trId,
+                    tr.getEmployeecontract().getId(),
+                    tr.getEmployeeorder().getId(),
+                    tr.getReferenceday().getRefdate(),
+                    reportForm.getComment(),
+                    Boolean.TRUE.equals(reportForm.getTraining()),
+                    reportForm.getSelectedDurationHour(),
+                    reportForm.getSelectedDurationMinute(),
+                    tr.getSortofreport(),
+                    reportForm.getCosts()
+                );
+            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                addToErrors(request, e.getErrorCode());
+                return mapping.getInputForward();
+            }
 
             //check if report's order is vacation but not Overtime compensation
             if (tr.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
