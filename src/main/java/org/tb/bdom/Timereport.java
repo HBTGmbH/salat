@@ -57,7 +57,7 @@ public class Timereport extends EditDetails implements Serializable {
     private String taskdescription;
     private String status;
     private Double costs;
-    private Boolean training;
+    private Boolean training; // TODO switch to boolean
     private int sequencenumber;
     private java.util.Date released;
     /**

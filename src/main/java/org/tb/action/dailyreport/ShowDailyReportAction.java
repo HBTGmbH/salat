@@ -1,5 +1,8 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
+import static org.tb.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static org.tb.GlobalConstants.EMPLOYEE_STATUS_PV;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.text.ParseException;
@@ -33,10 +36,10 @@ import org.hibernate.HibernateException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
+import org.tb.bdom.AuthorizedUser;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
-import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
@@ -55,12 +58,11 @@ import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
-import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
+import org.tb.service.TimereportService;
 import org.tb.util.DateUtils;
 import org.tb.form.ShowDailyReportForm;
 
@@ -84,6 +86,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final SuborderHelper suborderHelper;
     private final CustomerorderHelper customerorderHelper;
     private final TimereportHelper timereportHelper;
+    private final TimereportService timereportService;
 
     @Autowired
     public ShowDailyReportAction(AfterLogin afterLogin,
@@ -92,7 +95,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         EmployeeorderDAO employeeorderDAO,
         WorkingdayDAO workingdayDAO, EmployeeDAO employeeDAO, ReferencedayDAO referencedayDAO,
         SuborderHelper suborderHelper, CustomerorderHelper customerorderHelper,
-        TimereportHelper timereportHelper) {
+        TimereportHelper timereportHelper, TimereportService timereportService) {
         super(afterLogin);
         this.customerorderDAO = customerorderDAO;
         this.timereportDAO = timereportDAO;
@@ -105,6 +108,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         this.suborderHelper = suborderHelper;
         this.customerorderHelper = customerorderHelper;
         this.timereportHelper = timereportHelper;
+        this.timereportService = timereportService;
     }
 
     /**
@@ -116,46 +120,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             return Long.parseLong(sValue);
         } catch (NumberFormatException e) {
             return null;
-        }
-    }
-
-    /**
-     * deletes many timereports at once
-     *
-     * @param ids ids of the timereports
-     * @return true, if deleting was successful, false otherwise
-     */
-    private boolean massDelete(String[] ids) {
-        try {
-            Arrays.stream(ids)
-                    .map(this::safeParse)
-                    .filter(Objects::nonNull)
-                    .forEach(timereportDAO::deleteTimereportById);
-            return true;
-        } catch (HibernateException e) {
-            return false;
-        }
-    }
-
-    /**
-     * shifts a timereport by days
-     */
-    private void shiftDays(long trId, int days, long ecId, Employee loginEmployee) {
-        Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
-        if (ec != null) {
-            Timereport tr = timereportDAO.getTimereportById(trId);
-            Referenceday refDay = tr.getReferenceday();
-            LocalDate newLocalDate = refDay.getRefdate().toLocalDate().plusDays(days);
-            java.sql.Date newDate = java.sql.Date.valueOf(newLocalDate);
-
-            Referenceday newRefDay = referencedayDAO.getReferencedayByDate(newDate);
-            if (newRefDay == null) {
-                // new referenceday to be added in database
-                referencedayDAO.addReferenceday(newDate);
-                newRefDay = referencedayDAO.getReferencedayByDate(newDate);
-            }
-            tr.setReferenceday(newRefDay);
-            timereportDAO.save(tr, loginEmployee, true);
         }
     }
 
@@ -182,7 +146,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
      *
      * @return null if successful, else a list of problematic timereports
      */
-    private Collection<Long> massShiftDays(String[] sIds, String byDays, long ecId, Employeecontract loginEmployeeContract, boolean authorized) {
+    private Collection<Long> massShiftDays(String[] sIds, String byDays, Employeecontract loginEmployeeContract, boolean authorized) {
         try {
             int days = Integer.parseInt(byDays);
 
@@ -196,7 +160,16 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 return errors;
             }
 
-            ids.forEach(id -> shiftDays(id, days, ecId, loginEmployeeContract.getEmployee()));
+            // TODO get authorizedUser from session
+            Employee loginEmployee = loginEmployeeContract.getEmployee();
+            AuthorizedUser authorizedUser = new AuthorizedUser(
+                loginEmployee.getId(),
+                loginEmployee.getSign(),
+                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
+                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
+            );
+
+            ids.forEach(id -> timereportService.shiftDays(id, days, authorizedUser));
             return null;
         } catch (HibernateException | NumberFormatException e) {
             return Collections.emptyList();
@@ -209,20 +182,31 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         if ("massdelete".equalsIgnoreCase(task)) {
             // delete the selected ids from the database and continue as if this was a refreshTimereports task
             String sIds = request.getParameter("ids");
+            List<Long> timereportIds = Arrays.stream(sIds.split(","))
+                .map(this::safeParse)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
-            if (!massDelete(sIds.split(","))) {
-                return mapping.findForward("error");
-            }
+            // TODO get authorizedUser from session
+            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+            AuthorizedUser authorizedUser = new AuthorizedUser(
+                loginEmployee.getId(),
+                loginEmployee.getSign(),
+                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM),
+                loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV)
+            );
+
+            timereportService.deleteTimereports(timereportIds, authorizedUser);
+
             task = "refreshTimereports";
         } else if ("massshiftdays".equalsIgnoreCase(task)) {
             // shift the selected ids by "byDays" and continue as if this was a refreshTimereports task
             String sIds = request.getParameter("ids");
             String days = request.getParameter("byDays");
 
-            long employeeContractId = reportForm.getEmployeeContractId();
             Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
             Boolean authorized = (Boolean) request.getSession().getAttribute("employeeAuthorized");
-            Collection<Long> errors = massShiftDays(sIds.split(","), days, employeeContractId, loginEmployeecontract, authorized);
+            Collection<Long> errors = massShiftDays(sIds.split(","), days, loginEmployeecontract, authorized);
             if (errors != null) {
                 if (!errors.isEmpty()) {
                     request.setAttribute("failedMassEditIds", errors);

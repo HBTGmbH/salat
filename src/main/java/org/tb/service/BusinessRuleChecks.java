@@ -1,7 +1,6 @@
 package org.tb.service;
 
 import lombok.experimental.UtilityClass;
-import org.tb.exception.InvalidDataException;
 import org.tb.exception.LogicException;
 
 @UtilityClass
