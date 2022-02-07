@@ -1,16 +1,22 @@
 package org.tb.bdom;
 
+import static java.lang.Math.max;
+import static javax.persistence.TemporalType.DATE;
+
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.GlobalConstants;
-
-import javax.persistence.*;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-
-import static java.lang.Math.max;
 
 @Getter
 @Setter
@@ -26,7 +32,8 @@ public class Workingday implements Serializable {
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
     private Employeecontract employeecontract;
-    private java.sql.Date refday;
+    @Temporal(DATE)
+    private Date refday;
     private int Starttimehour;
     private int Starttimeminute;
     private int breakhours;

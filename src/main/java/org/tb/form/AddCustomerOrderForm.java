@@ -1,5 +1,7 @@
 package org.tb.form;
 
+import static org.tb.util.DateUtils.today;
+
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
@@ -49,8 +51,8 @@ public class AddCustomerOrderForm extends ActionForm {
         sign = "";
         description = "";
         shortdescription = "";
-        validFrom = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
-        validUntil = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
+        validFrom = DateUtils.format(today()); // 'yyyy-mm-dd'
+        validUntil = DateUtils.format(today()); // 'yyyy-mm-dd'
         responsibleCustomerTechnical = "";
         responsibleCustomerContractually = "";
         if (null != request.getSession().getAttribute("currentEmployeeId") && (Long) request.getSession().getAttribute("currentEmployeeId") != -1

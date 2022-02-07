@@ -1,5 +1,8 @@
 package org.tb.action.admin;
 
+import static org.tb.util.DateUtils.parse;
+
+import java.util.Date;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.tb.GlobalConstants;
@@ -12,7 +15,6 @@ import org.tb.form.AddCustomerOrderForm;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
@@ -129,11 +131,11 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerOrd
 
             Date untilDate;
             if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
-                untilDate = Date.valueOf(coForm.getValidUntil());
+                untilDate = parse(coForm.getValidUntil(), (Date)null);
             } else {
                 untilDate = null;
             }
-            Date fromDate = Date.valueOf(coForm.getValidFrom());
+            Date fromDate = parse(coForm.getValidFrom(), (Date)null);
 
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
@@ -438,12 +440,12 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerOrd
         }
 
         // check, if dates fit to existing timereports
-        java.util.Date fromDate = DateUtils.parse(coForm.getValidFrom(), e -> {
+        java.util.Date fromDate = parse(coForm.getValidFrom(), e -> {
             throw new RuntimeException(e);
         });
         java.util.Date untilDate = null;
         if(coForm.getValidUntil() != null && !coForm.getValidUntil().trim().isEmpty()) {
-            untilDate = DateUtils.parse(coForm.getValidUntil(), e -> {
+            untilDate = parse(coForm.getValidUntil(), e -> {
                 throw new RuntimeException(e);
             });
         }

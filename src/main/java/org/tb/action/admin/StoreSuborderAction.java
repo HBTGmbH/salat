@@ -1,5 +1,8 @@
 package org.tb.action.admin;
 
+import static org.tb.util.DateUtils.parse;
+
+import java.util.Date;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.slf4j.Logger;
@@ -15,7 +18,6 @@ import org.tb.form.AddSuborderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.Date;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -298,13 +300,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             so.setTrainingFlag(addSuborderForm.getTrainingFlag());
 
             if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().equals("")) {
-                Date fromDate = Date.valueOf(addSuborderForm.getValidFrom());
+                Date fromDate = parse(addSuborderForm.getValidFrom(), (Date)null);
                 so.setFromDate(fromDate);
             } else {
                 so.setFromDate(so.getCustomerorder().getFromDate());
             }
             if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
-                Date untilDate = Date.valueOf(addSuborderForm.getValidUntil());
+                Date untilDate = parse(addSuborderForm.getValidUntil(), (Date)null);
                 so.setUntilDate(untilDate);
             } else {
                 so.setUntilDate(null);

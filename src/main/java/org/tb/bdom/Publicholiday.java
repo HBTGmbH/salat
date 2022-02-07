@@ -1,5 +1,9 @@
 package org.tb.bdom;
 
+import static javax.persistence.TemporalType.DATE;
+
+import java.util.Date;
+import javax.persistence.Temporal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -10,7 +14,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.io.Serializable;
-import java.sql.Date;
 
 @Data
 @Entity
@@ -24,7 +27,8 @@ public class Publicholiday implements Serializable {
     @GeneratedValue
     private long id;
 
-    private java.sql.Date refdate;
+    @Temporal(DATE)
+    private Date refdate;
     private String name;
 
     public Publicholiday(Date refdate, String name) {

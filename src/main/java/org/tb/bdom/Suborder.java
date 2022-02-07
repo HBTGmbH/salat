@@ -1,5 +1,8 @@
 package org.tb.bdom;
 
+import static javax.persistence.TemporalType.DATE;
+
+import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Cache;
@@ -12,7 +15,6 @@ import org.tb.persistence.TimereportDAO;
 import javax.persistence.Entity;
 import javax.persistence.*;
 import java.io.Serializable;
-import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,7 +76,9 @@ public class Suborder extends EditDetails implements Serializable {
     private Double hourly_rate;
     private Boolean standard;
     private Boolean commentnecessary;
+    @Temporal(DATE)
     private Date fromDate;
+    @Temporal(DATE)
     private Date untilDate;
     private Double debithours;
     private Byte debithoursunit;
@@ -291,12 +295,13 @@ public class Suborder extends EditDetails implements Serializable {
         final TimereportDAO visitorTimereportDAO = timereportDAO;
 
         /* create visitor to collect suborders */
-        SuborderVisitor allInvalidTimeReportsCollector = new SuborderVisitor() {
-
-            public void visitSuborder(Suborder suborder) {
-                allInvalidTimeReports.addAll(visitorTimereportDAO.getTimereportsBySuborderIdInvalidForDates(visitorBeginDate, visitorEndDate, suborder.getId()));
-            }
-        };
+        SuborderVisitor allInvalidTimeReportsCollector = suborder -> allInvalidTimeReports.addAll(
+            visitorTimereportDAO.getTimereportsBySuborderIdInvalidForDates(
+                visitorBeginDate,
+                visitorEndDate,
+                suborder.getId()
+            )
+        );
 
         /* start visiting */
         acceptVisitor(allInvalidTimeReportsCollector);

@@ -1,10 +1,12 @@
 package org.tb.helper;
 
+import static org.tb.util.DateUtils.addDays;
+import static org.tb.util.DateUtils.getBeginOfMonth;
+import static org.tb.util.DateUtils.today;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.util.UrlUtils.absoluteUrl;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -29,7 +31,6 @@ import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.TimereportDAO;
-import org.tb.util.DateUtils;
 
 @Component
 @Slf4j
@@ -131,13 +132,13 @@ public class AfterLogin {
             java.util.Date now = new java.util.Date();
 
             for (Customerorder customerorder : customerOrders) {
-                java.sql.Date maxUntilDate = statusReportDAO.getMaxUntilDateForCustomerOrderId(customerorder.getId());
+                Date maxUntilDate = statusReportDAO.getMaxUntilDateForCustomerOrderId(customerorder.getId());
 
                 if (maxUntilDate == null) {
                     maxUntilDate = customerorder.getFromDate();
                 }
 
-                java.sql.Date checkDate = new java.sql.Date(maxUntilDate.getTime());
+                Date checkDate = maxUntilDate;
 
                 GregorianCalendar calendar = new GregorianCalendar();
                 calendar.setTime(checkDate);
@@ -225,7 +226,7 @@ public class AfterLogin {
             if (employeecontract.getReportAcceptanceDate() == null || employeecontract.getReportAcceptanceDate().equals(employeecontract.getValidFrom())) {
                 dynamicDate = employeecontract.getValidFrom();
             } else {
-                dynamicDate = DateUtils.addDays(employeecontract.getReportAcceptanceDate(), 1);
+                dynamicDate = addDays(employeecontract.getReportAcceptanceDate(), 1);
             }
             int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, new Date(), employeecontract, true);
             overtime = otStaticMinutes + overtimeDynamic;
@@ -242,14 +243,14 @@ public class AfterLogin {
         session.setAttribute("overtime", overtimeString);
 
         //overtime this month
-        Date start = java.sql.Date.valueOf(LocalDate.now().withDayOfMonth(1));
-        Date currentDate = java.sql.Date.valueOf(LocalDate.now());
+        Date start = getBeginOfMonth(today());
+        Date currentDate = today();
 
-        java.sql.Date validFrom = employeecontract.getValidFrom();
+        Date validFrom = employeecontract.getValidFrom();
         if (validFrom.after(start) && !validFrom.after(currentDate)) {
             start = validFrom;
         }
-        java.sql.Date validUntil = employeecontract.getValidUntil();
+        Date validUntil = employeecontract.getValidUntil();
         if (validUntil != null && validUntil.before(currentDate) && !validUntil.before(start)) {
             currentDate = validUntil;
         }

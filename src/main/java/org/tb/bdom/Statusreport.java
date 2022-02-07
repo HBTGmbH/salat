@@ -1,5 +1,8 @@
 package org.tb.bdom;
 
+import static javax.persistence.TemporalType.DATE;
+
+import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -51,8 +54,10 @@ public class Statusreport extends EditDetails implements Serializable {
 
     private Byte sort;
     private Byte phase;
-    private java.sql.Date fromdate;
-    private java.sql.Date untildate;
+    @Temporal(DATE)
+    private Date fromdate;
+    @Temporal(DATE)
+    private Date untildate;
     private String allocator;
     private Byte trend;
     private Byte trendstatus;
@@ -91,8 +96,10 @@ public class Statusreport extends EditDetails implements Serializable {
     private String miscellaneous_action;
     private Byte miscellaneous_status;
     private String notes;
-    private java.util.Date released;
-    private java.util.Date accepted;
+    @Temporal(DATE)
+    private Date released;
+    @Temporal(DATE)
+    private Date accepted;
 
     public Byte getOverallStatus() {
         Byte status = 0;

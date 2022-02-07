@@ -1,24 +1,26 @@
 package org.tb.action.admin;
 
-import org.apache.struts.action.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
+import org.tb.form.AddStatusReportForm;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.StatusReportDAO;
-import org.tb.form.AddStatusReportForm;
+import org.tb.util.DateUtils;
 import org.tb.util.MailSender;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.sql.Date;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
 
 public class StoreStatusReportAction extends StatusReportAction<AddStatusReportForm> {
 
@@ -115,7 +117,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                 Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
                 currentReport.setReleasedby(employeeDAO.getEmployeeById(loginEmployee.getId()));
-                currentReport.setReleased(new Date(new java.util.Date().getTime()));
+                currentReport.setReleased(DateUtils.today());
 
                 statusReportDAO.save(currentReport, loginEmployee);
 
@@ -259,11 +261,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                     fromDate = lastKnownReport.getFromdate();
                     reportForm.setValidUntil(simpleDateFormat.format(lastKnownReport.getUntildate()));
                 } else {
-                    fromDate = lastKnownReport.getUntildate();
-                    GregorianCalendar calendar = new GregorianCalendar();
-                    calendar.setTime(fromDate);
-                    calendar.add(Calendar.DATE, 1);
-                    fromDate.setTime(calendar.getTimeInMillis());
+                    fromDate = DateUtils.addDays(lastKnownReport.getUntildate(), 1);
                 }
             }
             reportForm.setValidFrom(simpleDateFormat.format(fromDate));

@@ -4,7 +4,6 @@ import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -119,14 +118,13 @@ public class TimereportHelper {
 
     public ActionMessages validateNewDate(
             ActionMessages errors,
-            java.sql.Date theNewDate,
+            Date theNewDate,
             Timereport timereport,
             Employeecontract loginEmployeeContract,
             boolean authorized) {
-        LocalDate localDate = theNewDate.toLocalDate();
 
         // check date range (must be in current or previous year)
-        if (DateUtils.getCurrentYear() - localDate.getYear() >= 2) {
+        if (DateUtils.getCurrentYear() - DateUtils.getYear(theNewDate).getValue() >= 2) {
             errors.add("referenceday", new ActionMessage("form.timereport.error.date.invalidyear"));
         }
 
@@ -253,7 +251,7 @@ public class TimereportHelper {
         return beginTime;
     }
 
-    public int[] determineTimesToDisplay(long ecId, java.sql.Date date, Workingday workingday, Timereport tr) {
+    public int[] determineTimesToDisplay(long ecId, Date date, Workingday workingday, Timereport tr) {
         List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
             int hourBegin = workingday.getStarttimehour();
@@ -533,7 +531,7 @@ public class TimereportHelper {
         }
         long expectedWorkingTimeInMinutes = (long) dailyWorkingTime * diffDays;
         long actualWorkingTimeInMinutes = 0;
-        List<Timereport> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), new java.sql.Date(start.getTime()), new java.sql.Date(end.getTime()));
+        List<Timereport> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end);
         if (reports != null) {
             for (Timereport timereport : reports) {
                 actualWorkingTimeInMinutes += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
@@ -575,7 +573,7 @@ public class TimereportHelper {
             if (weekday != 1 && weekday != 7) {
                 // weekday is no sa, su
                 Date laborDay = calendar.getTime();
-                Optional<Publicholiday> publicholiday = publicholidayDAO.getPublicHoliday(new java.sql.Date(laborDay.getTime()));
+                Optional<Publicholiday> publicholiday = publicholidayDAO.getPublicHoliday(laborDay);
                 if (!publicholiday.isPresent()) {
                     // labor day is not a holiday
                     dates.add(laborDay);

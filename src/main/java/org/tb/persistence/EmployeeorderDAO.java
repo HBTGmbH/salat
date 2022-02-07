@@ -44,7 +44,7 @@ public class EmployeeorderDAO extends AbstractDAO {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(long employeecontractId, String customerOrderSign, java.sql.Date date) {
+    public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndCustomerOrderSignAndDate(long employeecontractId, String customerOrderSign, Date date) {
         return getSession().createQuery("select eo from Employeeorder eo " +
                                                 "where eo.employeecontract.id = ? " +
                                                 "and eo.suborder.customerorder.sign = ? " +
@@ -58,7 +58,7 @@ public class EmployeeorderDAO extends AbstractDAO {
                            .list();
     }
 
-    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, java.sql.Date date) {
+    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, Date date) {
         LOG.debug("starting read vacation list");
         List vacationEoList = getSession().createQuery("select eo from Employeeorder eo " +
                                                                "where eo.employeecontract.id = :ecId " +

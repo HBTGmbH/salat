@@ -2,13 +2,10 @@ package org.tb.bdom;
 
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.tb.GlobalConstants;
 import org.tb.persistence.TimereportDAO;
-
-import java.sql.Date;
-import java.text.DecimalFormat;
-import org.tb.util.TimeFormatUtils;
 
 @RequiredArgsConstructor
 public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {

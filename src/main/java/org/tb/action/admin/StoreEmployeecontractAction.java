@@ -1,5 +1,7 @@
 package org.tb.action.admin;
 
+import static org.tb.util.DateUtils.parse;
+
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.tb.GlobalConstants;
@@ -11,7 +13,6 @@ import org.tb.form.AddEmployeeContractForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -244,13 +245,13 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             }
 
             if (ecForm.getValidUntil() != null && !ecForm.getValidUntil().trim().equals("")) {
-                Date untilDate = Date.valueOf(ecForm.getValidUntil());
+                Date untilDate = parse(ecForm.getValidUntil(), (Date) null);
                 ec.setValidUntil(untilDate);
             } else {
                 ec.setValidUntil(null);
             }
 
-            Date fromDate = Date.valueOf(ecForm.getValidFrom());
+            Date fromDate = parse(ecForm.getValidFrom(), (Date) null);
             ec.setValidFrom(fromDate);
 
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
@@ -620,15 +621,15 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         }
 
         // check, if dates fit to existing timereports
-        Date sqlUntilDate = null;
+        Date untilDate = null;
         if (newContractValidUntil != null) {
-            sqlUntilDate = new java.sql.Date(newContractValidUntil.getTime());
+            untilDate = newContractValidUntil;
         }
         if (ecId == null) {
             ecId = 0L;
         }
         List<Timereport> timereportsInvalidForDates = timereportDAO.
-                getTimereportsByEmployeeContractIdInvalidForDates(new java.sql.Date(newContractValidFrom.getTime()), sqlUntilDate, ecId);
+                getTimereportsByEmployeeContractIdInvalidForDates(newContractValidFrom, untilDate, ecId);
         if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
             request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
             errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));

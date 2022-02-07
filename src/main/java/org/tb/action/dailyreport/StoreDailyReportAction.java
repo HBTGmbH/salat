@@ -6,9 +6,9 @@ import static org.tb.GlobalConstants.MINUTE_INCREMENT;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.text.ParseException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -136,7 +136,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             Boolean workingDayAvailable = (Boolean) request.getSession().getAttribute("workingDayIsAvailable");
             if (TRUE == workingDayAvailable) {
-                java.sql.Date referenceDay = DateUtils.parseSqlDate(form.getReferenceday(), DateUtils.todaySqlDate());
+                Date referenceDay = DateUtils.parse(form.getReferenceday(), DateUtils.today());
                 Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContract.getId());
 
                 // set the begin time as the end time of the latest existing timereport of current employee
@@ -154,7 +154,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 int currentMinutes = DateUtils.getCurrentMinutes();
                 // round down to next minute increment
                 currentMinutes = currentMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
-                Date today = DateUtils.todaySqlDate();
+                Date today = DateUtils.today();
                 if (standardOrder) {
                     int minutes = form.getSelectedHourBegin() * MINUTES_PER_HOUR + form.getSelectedMinuteBegin();
                     minutes += dailyWorkingTimeMinutes;
@@ -238,9 +238,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         if (refreshWorkdayAvailability) {
             // search for adequate workingday and set status in session
-            java.sql.Date selectedDate = DateUtils.parseSqlDate(form.getReferenceday(), DateUtils.todaySqlDate());
+            Date selectedDate = DateUtils.parse(form.getReferenceday(), DateUtils.today());
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, employeeContract.getId());
-            boolean workingDayIsAvailable = workingday != null && DateUtils.todaySqlDate().equals(selectedDate);
+            boolean workingDayIsAvailable = workingday != null && DateUtils.today().equals(selectedDate);
             request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
         }
 
@@ -320,7 +320,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 // set new ShowDailyReportForm with saved filter settings
                 ShowDailyReportForm continueForm = new ShowDailyReportForm();
 
-                java.sql.Date referenceday = DateUtils.parseSqlDate(form.getReferenceday(), DateUtils.todaySqlDate());
+                Date referenceday = DateUtils.parse(form.getReferenceday(), DateUtils.today());
                 // TODO pruefen, warum diese Felder gebraucht werden
                 continueForm.setDay(DateUtils.getDayString(referenceday));
                 continueForm.setMonth(DateUtils.getMonthShortString(referenceday));

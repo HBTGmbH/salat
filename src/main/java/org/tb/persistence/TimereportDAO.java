@@ -1,17 +1,22 @@
 package org.tb.persistence;
 
+import static org.tb.util.DateUtils.getBeginOfMonth;
+import static org.tb.util.DateUtils.getEndOfMonth;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
 
 @Component
 public class TimereportDAO extends AbstractDAO {
@@ -202,51 +207,6 @@ public class TimereportDAO extends AbstractDAO {
     }
 
     /**
-     * Gets a list of Timereports by month/year.
-     * month must have format EEE here, e.g. 'Jan' !
-     */
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByMonthAndYear(Date dateOfMonthAndYear) {
-        LocalDate localDateStartOfMonth = dateOfMonthAndYear.toLocalDate().withDayOfMonth(1);
-        Date startOfMonth = Date.valueOf(localDateStartOfMonth);
-
-        LocalDate localDateEndOfMonth = localDateStartOfMonth
-                .plusMonths(1)
-                .minusDays(1);
-        Date endOfMonth = Date.valueOf(localDateEndOfMonth);
-
-        return getSession()
-                .createQuery("from Timereport where referenceday.refdate >= ? and referenceday.refdate <= ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-                .setDate(0, startOfMonth)
-                .setDate(1, endOfMonth)
-                .setCacheable(true)
-                .list();
-    }
-
-    /**
-     * Gets a list of Timereports by employee contract id and month/year.
-     */
-    @SuppressWarnings("unchecked")
-    public List<Timereport> getTimereportsByMonthAndYearAndEmployeeContractId(long contractId, Date dateOfMonthAndYear) {
-        LocalDate localDateStartOfMonth = dateOfMonthAndYear.toLocalDate().withDayOfMonth(1);
-        Date startOfMonth = Date.valueOf(localDateStartOfMonth);
-
-        LocalDate localDateEndOfMonth = localDateStartOfMonth
-                .plusMonths(1)
-                .minusDays(1);
-        Date endOfMonth = Date.valueOf(localDateEndOfMonth);
-
-        return getSession()
-                .createQuery("from Timereport where employeecontract.id = ? and referenceday.refdate >= ? and referenceday.refdate <= ? order by employeecontract.employee.sign asc, referenceday.refdate desc, sequencenumber asc")
-                .setLong(0, contractId)
-                .setDate(1, startOfMonth)
-                .setDate(2, endOfMonth)
-                .setCacheable(true)
-                .list();
-
-    }
-
-    /**
      * Gets a list of Timereports by employee contract id and date.
      */
     @SuppressWarnings("unchecked")
@@ -402,7 +362,7 @@ public class TimereportDAO extends AbstractDAO {
             allTimereports = getSession().createQuery("from Timereport t " +
                     "where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.suborder.id = ? " +
                     "order by employeecontract.employee.sign asc, referenceday.refdate asc, sequencenumber asc")
-                    .setLong(0, contractId).setDate(1, begin).setLong(3, suborderId).setCacheable(true).list();
+                    .setLong(0, contractId).setDate(1, begin).setLong(2, suborderId).setCacheable(true).list();
         } else {
             if (begin.equals(end)) {
                 allTimereports = getSession().createQuery("from Timereport t " +
@@ -522,9 +482,8 @@ public class TimereportDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public Timereport getLastAcceptedTimereportByDateAndEmployeeContractId(Date end, long ecId) {
-        LocalDate localDate = end.toLocalDate();
-        Date firstDay = Date.valueOf(localDate.withDayOfMonth(1));
-        Date lastDay = Date.valueOf(localDate.withDayOfMonth(localDate.lengthOfMonth()));
+        Date firstDay = getBeginOfMonth(end);
+        Date lastDay = getEndOfMonth(end);
         List<Timereport> timereportList = getSession().createQuery("from Timereport t " +
                 "where t.accepted is not null and t.employeeorder.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? " +
                 "order by t.referenceday.refdate desc")

@@ -97,11 +97,11 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerOrde
 
         Date fromDate = new Date(co.getFromDate().getTime()); // convert to java.util.Date
         //coForm.setValidFrom(DateUtils.getDateString(fromDate));
-        coForm.setValidFrom(DateUtils.getSqlDateString(fromDate));
+        coForm.setValidFrom(DateUtils.format(fromDate));
         if (co.getUntilDate() != null) {
             Date untilDate = new Date(co.getUntilDate().getTime()); // convert to java.util.Date
             //coForm.setValidUntil(DateUtils.getDateString(untilDate));
-            coForm.setValidUntil(DateUtils.getSqlDateString(untilDate));
+            coForm.setValidUntil(DateUtils.format(untilDate));
         } else {
             coForm.setValidUntil("");
         }

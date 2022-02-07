@@ -1,7 +1,10 @@
 package org.tb.util;
 
+import java.time.ZoneId;
+import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tb.GlobalConstants;
 import org.tb.bdom.Publicholiday;
 import org.tb.persistence.PublicholidayDAO;
 
@@ -36,7 +39,7 @@ public class HolidaysUtil {
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern(DATE_FORMAT);
         Scanner scanner = new Scanner(is);
-        Collection<LocalDate> result = new ArrayList<LocalDate>();
+        Collection<LocalDate> result = new ArrayList<>();
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine().trim();
             if (line.isEmpty() || line.startsWith("#")) continue;
@@ -71,28 +74,28 @@ public class HolidaysUtil {
         LocalDate newYearsEve = easterSunday.withMonth(12).withDayOfMonth(31);
         LocalDate reformationDay = easterSunday.withMonth(10).withDayOfMonth(31);
 
-        Collection<Publicholiday> holidays = new ArrayList<Publicholiday>();
-        holidays.add(new Publicholiday(localDateToSQLDate(newYear), "Neujahr"));
-        holidays.add(new Publicholiday(localDateToSQLDate(goodFriday), "Karfreitag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(easterSunday), "Ostersonntag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(easterMonday), "Ostermontag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(mayTheFirst), "Maifeiertag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(ascension), "Christi Himmelfahrt"));
-        holidays.add(new Publicholiday(localDateToSQLDate(whitSunday), "Pfingstsonntag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(whitMonday), "Pfingstmontag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(reunification), "Tag der Deutschen Einheit"));
+        Collection<Publicholiday> holidays = new ArrayList<>();
+        holidays.add(new Publicholiday(localDateToDate(newYear), "Neujahr"));
+        holidays.add(new Publicholiday(localDateToDate(goodFriday), "Karfreitag"));
+        holidays.add(new Publicholiday(localDateToDate(easterSunday), "Ostersonntag"));
+        holidays.add(new Publicholiday(localDateToDate(easterMonday), "Ostermontag"));
+        holidays.add(new Publicholiday(localDateToDate(mayTheFirst), "Maifeiertag"));
+        holidays.add(new Publicholiday(localDateToDate(ascension), "Christi Himmelfahrt"));
+        holidays.add(new Publicholiday(localDateToDate(whitSunday), "Pfingstsonntag"));
+        holidays.add(new Publicholiday(localDateToDate(whitMonday), "Pfingstmontag"));
+        holidays.add(new Publicholiday(localDateToDate(reunification), "Tag der Deutschen Einheit"));
         if (easterSunday.getYear() >= 2017) {
-            holidays.add(new Publicholiday(localDateToSQLDate(reformationDay), "Reformationstag"));
+            holidays.add(new Publicholiday(localDateToDate(reformationDay), "Reformationstag"));
         }
-        holidays.add(new Publicholiday(localDateToSQLDate(firstChristmasDay), "1. Weihnachtstag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(secondChristmasDay), "2. Weihnachtstag"));
-        holidays.add(new Publicholiday(localDateToSQLDate(christmasEve), "Heiligabend"));
-        holidays.add(new Publicholiday(localDateToSQLDate(newYearsEve), "Silverster"));
+        holidays.add(new Publicholiday(localDateToDate(firstChristmasDay), "1. Weihnachtstag"));
+        holidays.add(new Publicholiday(localDateToDate(secondChristmasDay), "2. Weihnachtstag"));
+        holidays.add(new Publicholiday(localDateToDate(christmasEve), "Heiligabend"));
+        holidays.add(new Publicholiday(localDateToDate(newYearsEve), "Silverster"));
 
         return holidays;
     }
 
-    private static java.sql.Date localDateToSQLDate(LocalDate input) {
-        return java.sql.Date.valueOf(input);
+    private static Date localDateToDate(LocalDate input) {
+        return Date.from(input.atStartOfDay(ZoneId.of(GlobalConstants.DEFAULT_TIMEZONE_ID)).toInstant());
     }
 }
