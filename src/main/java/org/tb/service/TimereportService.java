@@ -133,6 +133,14 @@ public class TimereportService {
 
     timereports.forEach(t -> log.info("Saving Timereport {}", t.getTimeReportAsString()));
     // FIXME implement save after old code removed from salat
+
+    // TODO overtime calculation
+    /*
+    // recompute overtimeStatic and store it in employeecontract
+    double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+        employeecontract, true);
+    employeecontract.setOvertimeStatic(otStatic / 60.0);
+     */
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
@@ -147,7 +155,6 @@ public class TimereportService {
     DataValidation.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
     DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
-    DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
     DataValidation.isTrue(SORT_OF_REPORT_WORK.equals(sortOfReport), TR_SORT_OF_REPORT_INVALID);
     DataValidation.isInRange(costs, 0.0, MAX_COSTS, TR_COSTS_INVALID);
 
@@ -318,6 +325,14 @@ public class TimereportService {
       // check date range (must be in current, previous or next year)
       BusinessRuleChecks.isTrue(Math.abs(DateUtils.getCurrentYear() - reportedYear.getValue()) <= 1,
           TR_YEAR_OUT_OF_RANGE);
+
+      Integer durationHours = timereport.getDurationhours();
+      Integer durationMinutes = timereport.getDurationminutes();
+      if(timereport.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+        DataValidation.isTrue(durationHours == 0 && durationMinutes == 0, TR_DURATION_OVERTIME_COMPENSATION_INVALID);
+      } else {
+        DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
+      }
     });
   }
 

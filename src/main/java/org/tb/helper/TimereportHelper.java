@@ -48,30 +48,6 @@ public class TimereportHelper {
     private final OvertimeDAO overtimeDAO;
 
     /**
-     * calculates worktime from begin/end times in form
-     *
-     * @return decimal hours
-     */
-    public double calculateTime(AddDailyReportForm form) {
-        double worktime; // FIXME migrate to BigDecimal or better not use double in any case
-
-        if (form.getSelectedHourDuration() != 0 || form.getSelectedMinuteDuration() != 0) {
-            worktime = form.getSelectedHourDuration() * 1. + form.getSelectedMinuteDuration() / 60.;
-        } else {
-            int hours = form.getSelectedHourEnd() - form.getSelectedHourBegin();
-            int minutes = form.getSelectedMinuteEnd() - form.getSelectedMinuteBegin();
-
-            if (minutes < 0) {
-                hours -= 1;
-                minutes += MINUTES_PER_HOUR;
-            }
-            worktime = hours * 1. + minutes / 60.;
-        }
-
-        return worktime;
-    }
-
-    /**
      * refreshes hours after change of begin/end times
      */
     public void refreshHours(AddDailyReportForm reportForm) {
