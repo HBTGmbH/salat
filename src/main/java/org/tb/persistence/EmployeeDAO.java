@@ -30,8 +30,7 @@ public class EmployeeDAO extends AbstractDAO {
     /**
      * Registers an employee in the system.
      */
-    public void registerEmployee(String username, String password)
-            throws EmployeeAlreadyExistsException {
+    public void registerEmployee(String username, String password) {
 
         Assert.notNull(username, "loginname");
         Assert.notNull(password, "password");

@@ -1,28 +1,41 @@
 package org.tb.util;
 
+import static java.time.LocalTime.MIN;
+import static java.time.format.TextStyle.SHORT;
+import static java.util.Calendar.DATE;
+import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.DAY_OF_WEEK;
+import static java.util.Calendar.DECEMBER;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONDAY;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.SATURDAY;
+import static java.util.Calendar.SUNDAY;
+import static java.util.Calendar.WEEK_OF_YEAR;
+import static java.util.Calendar.YEAR;
+import static java.util.Locale.ENGLISH;
 import static java.util.TimeZone.getTimeZone;
 import static org.tb.GlobalConstants.DEFAULT_TIMEZONE_ID;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.GlobalConstants.STARTING_YEAR;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.Month;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -69,37 +82,37 @@ public class DateUtils {
     }
 
     public static int getCurrentYear() {
-        return getCalendar().get(Calendar.YEAR);
+        return getCalendar().get(YEAR);
     }
 
     public static int getCurrentMonth() {
-        return getCalendar().get(Calendar.MONTH) + 1;
+        return getCalendar().get(MONTH) + 1;
     }
 
     public static String getDoW(Date date) {
         Calendar calendar = getCalendar();
         calendar.setTime(date);
-        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-        return DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+        int dayOfWeek = calendar.get(DAY_OF_WEEK);
+        return DayOfWeek.of(dayOfWeek).getDisplayName(SHORT, ENGLISH);
     }
 
     public static String getYearString(Date dt) {
         Calendar calendar = getCalendar();
         calendar.setTime(dt);
-        return String.valueOf(calendar.get(Calendar.YEAR));
+        return String.valueOf(calendar.get(YEAR));
     }
 
     public static String getMonthShortString(Date dt) {
         Calendar calendar = getCalendar();
         calendar.setTime(dt);
-        int month = calendar.get(Calendar.MONTH) + 1; // Calendar has 0 - 11 months
-        return Month.of(month).getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+        int month = calendar.get(MONTH) + 1; // Calendar has 0 - 11 months
+        return Month.of(month).getDisplayName(SHORT, ENGLISH);
     }
 
     public static String getDayString(Date dt) {
         Calendar calendar = getCalendar();
         calendar.setTime(dt);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int day = calendar.get(DAY_OF_MONTH);
         if (day >= 10) {
             return Integer.toString(day);
         } else {
@@ -158,8 +171,8 @@ public class DateUtils {
     public static boolean isWeekday(Date dt) {
         Calendar calendar = getCalendar();
         calendar.setTime(dt);
-        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-        return Calendar.SATURDAY != dayOfWeek && Calendar.SUNDAY != dayOfWeek;
+        int dayOfWeek = calendar.get(DAY_OF_WEEK);
+        return SATURDAY != dayOfWeek && SUNDAY != dayOfWeek;
     }
 
     /*
@@ -168,7 +181,7 @@ public class DateUtils {
     public static List<OptionItem> getYearsToDisplay() {
         List<OptionItem> theList = new ArrayList<>();
 
-        for (int i = GlobalConstants.STARTING_YEAR; i <= getCurrentYear() + 1; i++) {
+        for (int i = STARTING_YEAR; i <= getCurrentYear() + 1; i++) {
             String yearString = Integer.toString(i);
             theList.add(new OptionItem(yearString, yearString));
         }
@@ -214,29 +227,29 @@ public class DateUtils {
             int year;
             if (yearString != null) {
                 year = Integer.parseInt(yearString);
-                calendar.set(year, Calendar.DECEMBER, 31);
+                calendar.set(year, DECEMBER, 31);
             } else {
-                calendar.set(Calendar.MONTH, Calendar.DECEMBER);
-                calendar.set(Calendar.DAY_OF_MONTH, 31);
-                year = calendar.get(Calendar.YEAR);
+                calendar.set(MONTH, DECEMBER);
+                calendar.set(DAY_OF_MONTH, 31);
+                year = calendar.get(YEAR);
             }
 
             List<OptionItem> theList = mapCalendarWeeks.get(year);
             if (theList == null) {
-                int lastWeekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
+                int lastWeekOfYear = calendar.get(WEEK_OF_YEAR);
 
                 while (lastWeekOfYear == 1) {
-                    calendar.add(Calendar.DATE, -1);
-                    lastWeekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
+                    calendar.add(DATE, -1);
+                    lastWeekOfYear = calendar.get(WEEK_OF_YEAR);
                 }
 
                 theList = new ArrayList<>();
                 for (int i = 1; i <= lastWeekOfYear; i++) {
-                    calendar.set(Calendar.WEEK_OF_YEAR, i);
-                    calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                    calendar.set(WEEK_OF_YEAR, i);
+                    calendar.set(DAY_OF_WEEK, MONDAY);
                     StringBuilder sb = new StringBuilder();
                     sb.append("KW").append(i).append(" (").append(getDateFormat().format(calendar.getTime()));
-                    calendar.add(Calendar.DATE, 6);
+                    calendar.add(DATE, 6);
                     sb.append("-").append(getDateFormat().format(calendar.getTime())).append(")");
                     theList.add(new OptionItem(i, sb.toString()));
                 }
@@ -314,7 +327,7 @@ public class DateUtils {
     public static int getLastDayOfMonth(Date date) {
         Calendar calendar = getCalendar();
         calendar.setTime(date);
-        return calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        return calendar.getActualMaximum(DAY_OF_MONTH);
     }
 
     /**
@@ -344,7 +357,7 @@ public class DateUtils {
     public static Date addDays(Date originalDate, int changeDays) {
         Calendar calendar = getCalendar();
         calendar.setTime(originalDate);
-        calendar.add(Calendar.DAY_OF_MONTH, changeDays);
+        calendar.add(DAY_OF_MONTH, changeDays);
         return calendar.getTime();
     }
 
@@ -438,7 +451,7 @@ public class DateUtils {
             Calendar calendar = getCalendar();
             calendar.set(year, month - 1, day); // month is 0 - 11 in Calendar
             Date calculatedDate = calendar.getTime();
-            return org.apache.commons.lang.time.DateUtils.truncate(calculatedDate, Calendar.DAY_OF_MONTH);
+            return org.apache.commons.lang.time.DateUtils.truncate(calculatedDate, DAY_OF_MONTH);
         } catch (NumberFormatException e) {
             // any of the parseInt methods did throw this, handle
             if(useCurrentDateForFailure) {
@@ -450,12 +463,12 @@ public class DateUtils {
 
     public static Date today() {
         Date date = new Date();
-        return org.apache.commons.lang.time.DateUtils.truncate(date, Calendar.DAY_OF_MONTH);
+        return org.apache.commons.lang.time.DateUtils.truncate(date, DAY_OF_MONTH);
     }
 
     public static java.sql.Date todaySqlDate() {
         Date date = new Date();
-        return new java.sql.Date(org.apache.commons.lang.time.DateUtils.truncate(date, Calendar.DAY_OF_MONTH).getTime());
+        return new java.sql.Date(org.apache.commons.lang.time.DateUtils.truncate(date, DAY_OF_MONTH).getTime());
     }
 
     public static String format(Date date) {
@@ -503,11 +516,11 @@ public class DateUtils {
     }
 
     public static int getCurrentMinutes() {
-        return getCalendar().get(Calendar.MINUTE);
+        return getCalendar().get(MINUTE);
     }
 
     public static int getCurrentHours() {
-        return getCalendar().get(Calendar.HOUR_OF_DAY);
+        return getCalendar().get(HOUR_OF_DAY);
     }
 
     public static java.sql.Date toSqlDate(Date date) {
@@ -515,38 +528,42 @@ public class DateUtils {
     }
 
     public static YearMonth getYearMonth(Date date) {
-        LocalDate localDate = date.toInstant().atZone(ZoneId.of(DEFAULT_TIMEZONE_ID)).toLocalDate();
-        return YearMonth.from(localDate);
+        Calendar calendar = getCalendar();
+        calendar.setTime(date);
+        int year = calendar.get(YEAR);
+        int month = calendar.get(MONTH) + 1;
+        return YearMonth.of(year, month);
     }
 
     public static Date getFirstDay(YearMonth yearMonth) {
         LocalDate localDate = LocalDate.of(yearMonth.getYear(), yearMonth.getMonthValue(), 1);
-        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
         return Date.from(zonedDateTime.toInstant());
     }
 
     public static Date getLastDay(YearMonth yearMonth) {
         LocalDate localDate = LocalDate.of(yearMonth.getYear(), yearMonth.getMonthValue(), 1);
         localDate = localDate.withDayOfMonth(localDate.lengthOfMonth());
-        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
         return Date.from(zonedDateTime.toInstant());
     }
 
     public static Year getYear(Date date) {
-        LocalDate localDate = date.toInstant().atZone(ZoneId.of(DEFAULT_TIMEZONE_ID)).toLocalDate();
-        return Year.from(localDate);
+        Calendar calendar = getCalendar();
+        calendar.setTime(date);
+        return Year.of(calendar.get(YEAR));
     }
 
     public static Date getFirstDay(Year year) {
         LocalDate localDate = LocalDate.of(year.getValue(), 1, 1);
-        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
         return Date.from(zonedDateTime.toInstant());
     }
 
     public static Date getLastDay(Year year) {
         LocalDate localDate = LocalDate.of(year.getValue(), 12, 1);
         localDate = localDate.withDayOfMonth(localDate.lengthOfMonth());
-        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDate, MIN, ZoneId.of(DEFAULT_TIMEZONE_ID));
         return Date.from(zonedDateTime.toInstant());
     }
 

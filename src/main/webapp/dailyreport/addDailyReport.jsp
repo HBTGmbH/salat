@@ -119,7 +119,8 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <br>
-<html:form action="/StoreDailyReport" styleId="StoreDailyReportForm">	
+<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
+<html:form action="/StoreDailyReport" styleId="StoreDailyReportForm">
 	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
 		key="main.general.entertimereportproperties.text" />:<br></span>
 	<br>

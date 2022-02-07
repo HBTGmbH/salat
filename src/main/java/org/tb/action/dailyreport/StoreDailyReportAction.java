@@ -37,6 +37,9 @@ import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
+import org.tb.exception.AuthorizationException;
+import org.tb.exception.BusinessRuleException;
+import org.tb.exception.InvalidDataException;
 import org.tb.form.AddDailyReportForm;
 import org.tb.form.ShowDailyReportForm;
 import org.tb.helper.AfterLogin;
@@ -102,32 +105,12 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
     @SuppressWarnings("unchecked")
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        log.info("Task: {}", request.getParameter("task"));
-        log.info("Employeecontract.Id: {}", form.getEmployeeContractId());
-        log.info("Referenceday: {}", form.getReferenceday());
-        log.info("SetDate.howMuch: {}", request.getParameter("howMuch"));
-        log.info("NumberOfSerialDays: {}", form.getNumberOfSerialDays());
-        log.info("Customerorder.Id: {}", form.getOrderId());
-        log.info("Suborder.Id: {}", form.getSuborderSignId());
-        log.info("Begin: {}:{}", form.getSelectedHourBegin(), form.getSelectedMinuteBegin());
-        log.info("End: {}:{}", form.getSelectedHourEnd(), form.getSelectedMinuteEnd());
-        log.info("Duration: {}:{}", form.getSelectedHourDuration(), form.getSelectedMinuteDuration());
-        log.info("Costs: {}", form.getCosts());
-        log.info("Training: {}", form.getTraining());
-        log.info("Comment: {}", form.getComment());
-
         boolean refreshOrders = false;
         boolean refreshSuborders = false;
         boolean refreshWorkdayAvailability = false;
 
         // TODO split logic into different methods
         Employeecontract employeeContract = getEmployeeContractAndSetSessionVars(request);
-        /* TODO move to pre store checks?
-        if ((employeeContract  == null) {
-            request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
-            return mapping.findForward("error");
-        }
-        */
 
         // task for setting the date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
@@ -285,6 +268,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 request.getParameter("task").equals("save") ||
                 request.getParameter("trId") != null) {
 
+            ActionMessages errors = getErrors(request);
+            if (errors == null) {
+                errors = new ActionMessages();
+            }
 
             // 'main' task - prepare everything to store the report.
             // I.e., copy properties from the form into the timereport before saving.
@@ -321,33 +308,43 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             long timeReportId = form.getId();
             // TODO maybe find a better way to identify timereports in edit
             if(timeReportId > 0) {
-                timereportService.updateTimereport(
-                    authorizedUser,
-                    timeReportId,
-                    form.getEmployeeContractId(),
-                    employeeorderId,
-                    referencedayRefDate,
-                    form.getComment(),
-                    Boolean.TRUE.equals(form.getTraining()),
-                    form.getSelectedHourDuration(),
-                    form.getSelectedMinuteDuration(),
-                    SORT_OF_REPORT_WORK,
-                    form.getCosts()
-                );
+                try {
+                    timereportService.updateTimereport(
+                        authorizedUser,
+                        timeReportId,
+                        form.getEmployeeContractId(),
+                        employeeorderId,
+                        referencedayRefDate,
+                        form.getComment(),
+                        Boolean.TRUE.equals(form.getTraining()),
+                        form.getSelectedHourDuration(),
+                        form.getSelectedMinuteDuration(),
+                        SORT_OF_REPORT_WORK,
+                        form.getCosts()
+                    );
+                } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                    addToErrors(request, e.getErrorCode());
+                    return mapping.getInputForward();
+                }
             } else {
-                timereportService.createTimereports(
-                    authorizedUser,
-                    form.getEmployeeContractId(),
-                    employeeorderId,
-                    referencedayRefDate,
-                    form.getComment(),
-                    Boolean.TRUE.equals(form.getTraining()),
-                    form.getSelectedHourDuration(),
-                    form.getSelectedMinuteDuration(),
-                    SORT_OF_REPORT_WORK,
-                    form.getCosts(),
-                    Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
-                );
+                try {
+                    timereportService.createTimereports(
+                        authorizedUser,
+                        form.getEmployeeContractId(),
+                        employeeorderId,
+                        referencedayRefDate,
+                        form.getComment(),
+                        Boolean.TRUE.equals(form.getTraining()),
+                        form.getSelectedHourDuration(),
+                        form.getSelectedMinuteDuration(),
+                        SORT_OF_REPORT_WORK,
+                        form.getCosts(),
+                        Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
+                    );
+                } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                    addToErrors(request, e.getErrorCode());
+                    return mapping.getInputForward();
+                }
             }
 
             final Timereport timereport;
@@ -364,10 +361,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
             }
 
-            ActionMessages errors = getErrors(request);
-            if (errors == null) {
-                errors = new ActionMessages();
-            }
             ActionMessages errorMessages = validateFormData(request, form, timeReportId, employeecontract.getId(), hours, errors);
             if (errorMessages.size() > 0) {
                 return mapping.getInputForward();

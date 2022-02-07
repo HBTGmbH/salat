@@ -1,10 +1,15 @@
 package org.tb.exception;
 
-public class InvalidDataException extends RuntimeException {
-  public InvalidDataException(String message) {
-    super(message);
+import org.tb.ErrorCode;
+
+public class InvalidDataException extends ErrorCodeException {
+
+  public InvalidDataException(ErrorCode errorCode) {
+    super(errorCode);
   }
-  public InvalidDataException(String message, Throwable cause) {
-    super(message, cause);
+
+  public InvalidDataException(ErrorCode errorCode, Throwable cause) {
+    super(errorCode, cause);
   }
+
 }

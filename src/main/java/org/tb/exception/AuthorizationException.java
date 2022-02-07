@@ -1,10 +1,15 @@
 package org.tb.exception;
 
-public class AuthorizationException extends RuntimeException {
-  public AuthorizationException(String message) {
-    super(message);
+import org.tb.ErrorCode;
+
+public class AuthorizationException extends ErrorCodeException {
+
+  public AuthorizationException(ErrorCode errorCode) {
+    super(errorCode);
   }
-  public AuthorizationException(String message, Throwable cause) {
-    super(message, cause);
+
+  public AuthorizationException(ErrorCode errorCode, Throwable cause) {
+    super(errorCode, cause);
   }
+
 }
