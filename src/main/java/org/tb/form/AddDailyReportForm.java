@@ -1,11 +1,14 @@
 package org.tb.form;
 
+import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
@@ -60,6 +63,24 @@ public class AddDailyReportForm extends ActionForm {
     }
 
     @Override
+    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
+        ActionErrors errors = new ActionErrors();
+        boolean dateValid = DateUtils.validateDate(referenceday);
+        if (!dateValid) {
+            errors.add("referenceday", new ActionMessage("form.timereport.error.date.wrongformat"));
+        }
+
+        // end time must be later than begin time when entering hours:minute
+        int begin = selectedHourBegin * MINUTES_PER_HOUR + selectedMinuteBegin;
+        int end = selectedHourEnd * MINUTES_PER_HOUR + selectedMinuteEnd;
+        if (begin >= end) {
+            errors.add("selectedHourBegin", new ActionMessage("form.timereport.error.endbeforebegin"));
+        }
+
+        return errors;
+    }
+
+    @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         try {
             Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
@@ -83,7 +104,7 @@ public class AddDailyReportForm extends ActionForm {
         selectedMinuteBegin = 0;
         selectedHourEnd = 0;
         selectedMinuteEnd = 0;
-        referenceday = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
+        referenceday = DateUtils.format(DateUtils.today());
         hours = 8.0;
         costs = 0.0;
         training = false;
