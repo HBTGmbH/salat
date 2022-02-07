@@ -173,7 +173,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         }
 
         if (employeecontract.getReportAcceptanceDate() == null) {
-            java.sql.Date validFromDate = employeecontract.getValidFrom();
+            Date validFromDate = employeecontract.getValidFrom();
             employeecontract.setReportAcceptanceDate(validFromDate);
             // create tmp employee
             Employee tmp = new Employee();
@@ -181,7 +181,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             employeecontractDAO.save(employeecontract, tmp);
         }
         if (employeecontract.getReportReleaseDate() == null) {
-            java.sql.Date validFromDate = employeecontract.getValidFrom();
+            Date validFromDate = employeecontract.getValidFrom();
             employeecontract.setReportReleaseDate(validFromDate);
             // create tmp employee
             Employee tmp = new Employee();
@@ -293,9 +293,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     }
 
                     Employeeorder employeeorder = new Employeeorder();
-
-                    java.sql.Date sqlFromDate = new java.sql.Date(fromDate.getTime());
-                    employeeorder.setFromDate(sqlFromDate);
+                    employeeorder.setFromDate(fromDate);
 
                     // untilDate should not overreach a future employee contract
                     if (untilDate == null) {
@@ -307,8 +305,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     }
 
                     if (untilDate != null) {
-                        java.sql.Date sqlUntilDate = new java.sql.Date(untilDate.getTime());
-                        employeeorder.setUntilDate(sqlUntilDate);
+                        employeeorder.setUntilDate(untilDate);
                     }
                     if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
                         && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {

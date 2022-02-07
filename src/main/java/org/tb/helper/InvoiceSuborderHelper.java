@@ -16,8 +16,8 @@ public class InvoiceSuborderHelper extends Suborder {
 
     private static final long serialVersionUID = 1L;
     private final TimereportDAO timereportDAO;
-    private final java.sql.Date fromDate;
-    private final java.sql.Date untilDate;
+    private final Date fromDate;
+    private final Date untilDate;
     private final boolean invoicebox;
     private Suborder suborder;
     private List<InvoiceTimereportHelper> invoiceTimereportViewHelperList;
@@ -25,7 +25,7 @@ public class InvoiceSuborderHelper extends Suborder {
     private int layer;
     private InvoiceSuborderActualHoursVisitor visitor = null;
 
-    public InvoiceSuborderHelper(Suborder suborder, TimereportDAO timereportDAO, java.sql.Date fromDate, java.sql.Date untilDate, boolean invoicebox) {
+    public InvoiceSuborderHelper(Suborder suborder, TimereportDAO timereportDAO, Date fromDate, Date untilDate, boolean invoicebox) {
         if (suborder == null) {
             throw new IllegalArgumentException("suborder must not be null!");
         }
@@ -132,7 +132,7 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getAllChildren();
     }
 
-    public List<Timereport> getAllTimeReportsInvalidForDates(java.sql.Date begin, java.sql.Date end, TimereportDAO timereportDAO) {
+    public List<Timereport> getAllTimeReportsInvalidForDates(Date begin, Date end, TimereportDAO timereportDAO) {
         return suborder.getAllTimeReportsInvalidForDates(begin, end, timereportDAO);
     }
 
@@ -230,11 +230,11 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setEmployeeorders(employeeorders);
     }
 
-    public java.sql.Date getFromDate() {
+    public Date getFromDate() {
         return suborder.getFromDate();
     }
 
-    public void setFromDate(java.sql.Date fromDate) {
+    public void setFromDate(Date fromDate) {
         suborder.setFromDate(fromDate);
     }
 
@@ -358,11 +358,11 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setTimereports(timereports);
     }
 
-    public java.sql.Date getUntilDate() {
+    public Date getUntilDate() {
         return suborder.getUntilDate();
     }
 
-    public void setUntilDate(java.sql.Date untilDate) {
+    public void setUntilDate(Date untilDate) {
         suborder.setUntilDate(untilDate);
     }
 

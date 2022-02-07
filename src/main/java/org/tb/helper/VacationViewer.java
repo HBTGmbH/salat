@@ -2,21 +2,21 @@ package org.tb.helper;
 
 import static java.math.RoundingMode.DOWN;
 import static java.util.Locale.GERMAN;
+import static org.tb.util.DateUtils.today;
 import static org.tb.util.TimeFormatUtils.timeFormatHours;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpSession;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.TimereportDAO;
-
-import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 public class VacationViewer implements Serializable {
 
@@ -116,7 +116,7 @@ public class VacationViewer implements Serializable {
      */
     public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO) {
 
-        java.sql.Date today = java.sql.Date.valueOf(LocalDate.now());
+        Date today = today();
 
         List<VacationViewer> vacations = new ArrayList<VacationViewer>();
 

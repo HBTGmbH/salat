@@ -1,10 +1,9 @@
 package org.tb.persistence.utils;
 
-import java.time.LocalDate;
 import java.util.Date;
-
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
+import org.tb.util.DateUtils;
 
 public class TestUtilsEmployeecontract {
 
@@ -14,7 +13,7 @@ public class TestUtilsEmployeecontract {
 		ec.setCreatedby("kd");
 		ec.setDailyWorkingTime(8.0);
 		ec.setEmployee(employee);
-		ec.setValidFrom(java.sql.Date.valueOf(LocalDate.of(2017, 1, 1)));
+		ec.setValidFrom(DateUtils.parse("2017-01-01", (Date)null));
 		ec.setSupervisor(employee);
 		
 		return ec;

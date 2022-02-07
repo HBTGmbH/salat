@@ -78,7 +78,7 @@ public class StatusReportDAO extends AbstractDAO {
      * that are associated with the given customerOrderId, senderId.
      */
     @SuppressWarnings("unchecked")
-    public List<Statusreport> getUnreleasedFinalStatusReports(long customerOrderId, long senderId, java.sql.Date date) {
+    public List<Statusreport> getUnreleasedFinalStatusReports(long customerOrderId, long senderId, Date date) {
         return getSession().createQuery("from Statusreport sr " +
                 "where sort = 3 " +
                 "and released is null " +
@@ -97,7 +97,7 @@ public class StatusReportDAO extends AbstractDAO {
      * that are associated with the given customerOrderId, senderId.
      */
     @SuppressWarnings("unchecked")
-    public List<Statusreport> getUnreleasedPeriodicalStatusReports(long customerOrderId, long senderId, java.sql.Date date) {
+    public List<Statusreport> getUnreleasedPeriodicalStatusReports(long customerOrderId, long senderId, Date date) {
         return getSession().createQuery("from Statusreport sr " +
                 "where sort = 1 " +
                 "and released is null " +
@@ -125,13 +125,12 @@ public class StatusReportDAO extends AbstractDAO {
                 .list();
     }
 
-    public java.sql.Date getMaxUntilDateForCustomerOrderId(long coId) {
-        Date date = (Date) getSession().createSQLQuery("select max(untildate) from statusreport " +
+    public Date getMaxUntilDateForCustomerOrderId(long coId) {
+        return  (Date) getSession().createSQLQuery("select max(untildate) from statusreport " +
                 "where sort = 1 and released is not null " +
                 "and customerorder = ?")
                 .setLong(0, coId)
                 .uniqueResult();
-        return (date == null ? null : new java.sql.Date(date.getTime()));
     }
 
 

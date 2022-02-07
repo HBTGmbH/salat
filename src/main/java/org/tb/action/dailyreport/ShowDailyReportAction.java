@@ -1,5 +1,6 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.util.DateUtils.parse;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.text.ParseException;
@@ -130,8 +131,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         Collection<Long> errors = new ArrayList<>();
         ids.forEach(id -> {
             Timereport timereport = timereportDAO.getTimereportById(id);
-            LocalDate shiftedDate = timereport.getReferenceday().getRefdate().toLocalDate().plusDays(days);
-            ActionMessages actionErrors = timereportHelper.validateNewDate(new ActionMessages(), java.sql.Date.valueOf(shiftedDate),
+            Date shiftedDate = DateUtils.addDays(timereport.getReferenceday().getRefdate(), days);
+            ActionMessages actionErrors = timereportHelper.validateNewDate(new ActionMessages(), shiftedDate,
                 timereport, loginEmployeeContract, authorized);
             if (!actionErrors.isEmpty()) {
                 errors.add(id);
@@ -677,8 +678,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("currentDay", reportForm.getDay());
             request.getSession().setAttribute("currentMonth", reportForm.getMonth());
             request.getSession().setAttribute("currentYear", reportForm.getYear());
-            String sqlDateString = reportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
-            java.sql.Date sqlDate = java.sql.Date.valueOf(sqlDateString);
+            String dateString = reportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
+            Date date = parse(dateString, (Date)null);
             Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
             if (currentEmployeeId == null || currentEmployeeId == 0) {
                 currentEmployeeId = loginEmployee.getId();
@@ -687,9 +688,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             List<Timereport> timereports;
             if (currentEmployeeId == -1) {
                 // all employees
-                timereports = timereportDAO.getTimereportsByDate(sqlDate);
+                timereports = timereportDAO.getTimereportsByDate(date);
             } else {
-                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), sqlDate);
+                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
             }
             String laborTimeString = timereportHelper.calculateLaborTime(timereports);
             request.getSession().setAttribute("labortime", laborTimeString);
@@ -716,7 +717,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             }
             request.getSession().setAttribute("timereports", timereports);
         } else {
-            java.sql.Date refDate = java.sql.Date.valueOf(LocalDate.now());
+            Date refDate = DateUtils.today();
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
             if (workingday != null) {
                 // show break time, quitting time and working day ends on
@@ -763,14 +764,14 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("startdate", dateString);
             reportForm.setEnddate(dateString);
             request.getSession().setAttribute("enddate", dateString);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(dateString);
+            Date date = parse(dateString, (Date)null);
 
             Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
             List<Timereport> timereports;
             if (employeeId != null && employeeId == -1) {
-                timereports = timereportDAO.getTimereportsByDate(sqlDate);
+                timereports = timereportDAO.getTimereportsByDate(date);
             } else {
-                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), sqlDate);
+                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
             }
             String laborTimeString = timereportHelper.calculateLaborTime(timereports);
             request.getSession().setAttribute("labortime", laborTimeString);

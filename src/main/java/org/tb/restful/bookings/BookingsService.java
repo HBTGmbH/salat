@@ -3,20 +3,33 @@ package org.tb.restful.bookings;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 
-import org.jboss.resteasy.spi.BadRequestException;
-import org.tb.GlobalConstants;
-import org.tb.bdom.*;
-import org.tb.persistence.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import org.jboss.resteasy.spi.BadRequestException;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Referenceday;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
+import org.tb.persistence.EmployeeDAO;
+import org.tb.persistence.EmployeecontractDAO;
+import org.tb.persistence.EmployeeorderDAO;
+import org.tb.persistence.ReferencedayDAO;
+import org.tb.persistence.TimereportDAO;
+import org.tb.util.DateUtils;
 
 @Path("/rest/buchungen/")
 public class BookingsService {
@@ -64,7 +77,7 @@ public class BookingsService {
         if (date == null) date = new Date();
 
         Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
-        List<Timereport> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), new java.sql.Date(date.getTime()));
+        List<Timereport> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -99,16 +112,9 @@ public class BookingsService {
 
         Timereport timereport = new Timereport();
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-        Referenceday referenceday = referencedayDAO.getReferencedayByDate(sdf.parse(booking.getDate()));
-        java.sql.Date datesql = new java.sql.Date(sdf.parse(booking.getDate()).getTime());
+        // FIXME use TimereportService
         // Check if the reference day already exists and if not add a new one
-        if (referenceday == null) {
-            referencedayDAO.addReferenceday(datesql);
-            referenceday = referencedayDAO.getReferencedayByDate(datesql);
-        }
-
+        Referenceday referenceday = referencedayDAO.getOrAddReferenceday(DateUtils.parse(booking.getDate()));
         timereport.setEmployeeorder(eo);
         timereport.setEmployeecontract(eo.getEmployeecontract());
         timereport.setCreatedby(eo.getEmployeecontract().getEmployee().getSign());

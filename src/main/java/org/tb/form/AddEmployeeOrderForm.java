@@ -1,19 +1,15 @@
 package org.tb.form;
 
+import java.util.Date;
+import javax.annotation.Nonnull;
+import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 
 /**
  * Form for adding an employee order
@@ -55,8 +51,8 @@ public class AddEmployeeOrderForm extends ActionForm {
 
         sign = "";
         status = "";
-        validFrom = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
-        validUntil = DateUtils.getSqlDateString(new java.util.Date()); // 'yyyy-mm-dd'
+        validFrom = DateUtils.format(DateUtils.today()); // 'yyyy-mm-dd'
+        validUntil = DateUtils.format(DateUtils.today()); // 'yyyy-mm-dd'
         debithours = null;
         debithoursunit = null;
         if (!extraCall) {
@@ -75,11 +71,10 @@ public class AddEmployeeOrderForm extends ActionForm {
         }
         Date coFromDate = customerorder.getFromDate();
         Date coUntilDate = customerorder.getUntilDate();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        String coFromDateString = simpleDateFormat.format(coFromDate);
+        String coFromDateString = DateUtils.format(coFromDate);
         String coUntilDateString;
         if (coUntilDate != null) {
-            coUntilDateString = simpleDateFormat.format(coUntilDate);
+            coUntilDateString = DateUtils.format(coUntilDate);
         } else {
             coUntilDateString = "";
         }

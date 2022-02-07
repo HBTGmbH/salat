@@ -1,15 +1,43 @@
 package org.tb.service;
 
 import static java.lang.Boolean.TRUE;
-import static java.util.Calendar.MINUTE;
 import static java.util.Calendar.SATURDAY;
 import static java.util.Calendar.SUNDAY;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingDouble;
 import static java.util.stream.Collectors.summingInt;
-import static org.tb.ErrorCode.*;
-import static org.tb.GlobalConstants.*;
-import static org.tb.util.DateUtils.format;
+import static org.tb.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
+import static org.tb.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
+import static org.tb.ErrorCode.TR_COSTS_INVALID;
+import static org.tb.ErrorCode.TR_DURATION_HOURS_INVALID;
+import static org.tb.ErrorCode.TR_DURATION_INVALID;
+import static org.tb.ErrorCode.TR_DURATION_MINUTES_INVALID;
+import static org.tb.ErrorCode.TR_DURATION_OVERTIME_COMPENSATION_INVALID;
+import static org.tb.ErrorCode.TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE;
+import static org.tb.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
+import static org.tb.ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE;
+import static org.tb.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
+import static org.tb.ErrorCode.TR_MONTH_BUDGET_EXCEEDED;
+import static org.tb.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
+import static org.tb.ErrorCode.TR_REFERENCE_DAY_NULL;
+import static org.tb.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
+import static org.tb.ErrorCode.TR_SORT_OF_REPORT_INVALID;
+import static org.tb.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
+import static org.tb.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
+import static org.tb.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
+import static org.tb.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
+import static org.tb.ErrorCode.TR_YEAR_BUDGET_EXCEEDED;
+import static org.tb.ErrorCode.TR_YEAR_OUT_OF_RANGE;
+import static org.tb.GlobalConstants.COMMENT_MAX_LENGTH;
+import static org.tb.GlobalConstants.DEBITHOURS_UNIT_MONTH;
+import static org.tb.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
+import static org.tb.GlobalConstants.DEBITHOURS_UNIT_YEAR;
+import static org.tb.GlobalConstants.MAX_COSTS;
+import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+import static org.tb.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
+import static org.tb.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
+import static org.tb.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static org.tb.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.util.DateUtils.getFirstDay;
 import static org.tb.util.DateUtils.getLastDay;
 import static org.tb.util.DateUtils.getYear;
@@ -17,18 +45,14 @@ import static org.tb.util.DateUtils.getYearMonth;
 import static org.tb.util.DateUtils.max;
 import static org.tb.util.DateUtils.min;
 
-import java.text.SimpleDateFormat;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -44,8 +68,8 @@ import org.tb.bdom.Referenceday;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.exception.AuthorizationException;
-import org.tb.exception.InvalidDataException;
 import org.tb.exception.BusinessRuleException;
+import org.tb.exception.InvalidDataException;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
@@ -164,17 +188,17 @@ public class TimereportService {
     long expectedWorkingTimeInMinutes = dailyWorkingTimeInMinutes * effectiveWorkDays;
     long actualWorkingTimeInMinutes = timereportDAO.getTotalDurationMinutesForEmployeecontract(employeecontractId, effectiveStart, effectiveEnd);
     if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
-      Double overtime = overtimeDAO.getOvertimesByEmployeeContractId(employeecontractId)
+      double overtime = overtimeDAO.getOvertimesByEmployeeContractId(employeecontractId)
           .stream()
           //.filter(o -> o.getRefDate()) TODO introduce this date to allow to provide a date when the adjustment is effective
           .map(Overtime::getTime)
-          .collect(summingDouble(Double::doubleValue));
+          .mapToDouble(Double::doubleValue)
+          .sum();
       long overtimeInMinutes = (long) (overtime * MINUTES_PER_HOUR);
       actualWorkingTimeInMinutes += overtimeInMinutes;
     }
 
-    long overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
-    return overtimeMinutes;
+    return actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
   }
 
   private void checkAndSaveTimereports(AuthorizedUser authorizedUser, List<Timereport> timereports) {
@@ -192,8 +216,8 @@ public class TimereportService {
     });
 
     // recompute overtimeStatic and store it in employeecontract if change made before release date
-    java.sql.Date reportReleaseDate = timereports.get(0).getEmployeecontract().getReportReleaseDate();
-    Optional<java.sql.Date> match = timereports.stream()
+    Date reportReleaseDate = timereports.get(0).getEmployeecontract().getReportReleaseDate();
+    Optional<Date> match = timereports.stream()
         .map(Timereport::getReferenceday)
         .map(Referenceday::getRefdate)
         .filter(d -> !d.after(reportReleaseDate))

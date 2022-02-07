@@ -1,6 +1,7 @@
 package org.tb.persistence;
 
-import java.lang.ref.Reference;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -9,9 +10,6 @@ import org.springframework.stereotype.Component;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
 import org.tb.util.DateUtils;
-
-import java.util.Date;
-import java.util.List;
 
 /**
  * DAO class for 'Referenceday'
@@ -85,7 +83,7 @@ public class ReferencedayDAO extends AbstractDAO {
      */
     public void addReferenceday(Date dt) {
         Referenceday rd = new Referenceday();
-        rd.setRefdate(new java.sql.Date(dt.getTime()));
+        rd.setRefdate(new Date(dt.getTime()));
 
         // set day of week
         String dow = DateUtils.getDoW(dt);

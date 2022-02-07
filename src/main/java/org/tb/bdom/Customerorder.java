@@ -1,5 +1,8 @@
 package org.tb.bdom;
 
+import static javax.persistence.TemporalType.DATE;
+
+import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Cache;
@@ -11,7 +14,6 @@ import org.tb.bdom.comparators.SubOrderComparator;
 import javax.persistence.Entity;
 import javax.persistence.*;
 import java.io.Serializable;
-import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -73,7 +75,9 @@ public class Customerorder extends EditDetails implements Serializable {
      * Orderer of Customer
      */
     private String order_customer;
+    @Temporal(DATE)
     private Date fromDate;
+    @Temporal(DATE)
     private Date untilDate;
     private String sign;
     private String description;

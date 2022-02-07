@@ -43,14 +43,6 @@ import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.tb.GlobalConstants;
 
-/**
- * @author oda
- * <p>
- * The important thing to know for most of the methods extracting date info is:
- * - java.utilDate.toString() looks like: 'Wed Aug 16 00:00:00 CET 2006' or
- * 'Wed Aug 16 00:00:00 CEST 2006' (daylight saving time!)
- * - java.sql.Date.toString()looks like:  '2006-08-16'
- */
 @Slf4j
 public class DateUtils {
 
@@ -149,15 +141,8 @@ public class DateUtils {
         return Integer.parseInt(st);
     }
 
-    // FIXME remove
-    @Deprecated
-    public static String getSqlDateString(java.util.Date utilDate) {
-        // gets sql date in format yyyy-mm-dd from java.util.Date
-        return getDateFormat().format(utilDate);
-    }
-
     /**
-     * validates if date string has correct sql date format 'yyyy-mm-dd'
+     * validates if date string has correct date format 'yyyy-mm-dd'
      */
     public static boolean validateDate(String dateString) {
         try {
@@ -192,10 +177,10 @@ public class DateUtils {
     /*
      * builds up a list of string with current and previous years since startyear of contract
      */
-    public static List<OptionItem> getYearsSinceContractStartToDisplay(java.sql.Date validFrom) {
+    public static List<OptionItem> getYearsSinceContractStartToDisplay(Date validFrom) {
         List<OptionItem> theList = new ArrayList<>();
 
-        int startyear = Integer.parseInt(getYearString(validFrom));
+        int startyear = getYear(validFrom).getValue();
         for (int i = startyear; i <= getCurrentYear() + 1; i++) {
             String yearString = "" + i;
             theList.add(new OptionItem(yearString, yearString));
@@ -318,6 +303,28 @@ public class DateUtils {
         String value = Integer.toString(i);
         String label = i < 10 ? "0" + i : Integer.toString(i);
         return new OptionItem(value, label);
+    }
+
+    /**
+     * gets the last day of a given month
+     * E.g., month given as string '02', last day is either 28 or 29
+     */
+    public static Date getBeginOfMonth(Date date) {
+        Calendar calendar = getCalendar();
+        calendar.setTime(date);
+        calendar.set(DAY_OF_MONTH, 1);
+        return calendar.getTime();
+    }
+
+    /**
+     * gets the last day of a given month
+     * E.g., month given as string '02', last day is either 28 or 29
+     */
+    public static Date getEndOfMonth(Date date) {
+        Calendar calendar = getCalendar();
+        calendar.setTime(date);
+        calendar.set(DAY_OF_MONTH, calendar.getActualMaximum(DAY_OF_MONTH));
+        return calendar.getTime();
     }
 
     /**
@@ -466,11 +473,6 @@ public class DateUtils {
         return org.apache.commons.lang.time.DateUtils.truncate(date, DAY_OF_MONTH);
     }
 
-    public static java.sql.Date todaySqlDate() {
-        Date date = new Date();
-        return new java.sql.Date(org.apache.commons.lang.time.DateUtils.truncate(date, DAY_OF_MONTH).getTime());
-    }
-
     public static String format(Date date) {
         return getDateFormat().format(date);
     }
@@ -495,36 +497,12 @@ public class DateUtils {
         }
     }
 
-    public static java.sql.Date parseSqlDate(String date, Function<ParseException, java.sql.Date> exceptionHandler) {
-        try {
-            return parseSqlDate(date);
-        } catch (ParseException e) {
-            return exceptionHandler.apply(e);
-        }
-    }
-
-    public static java.sql.Date parseSqlDate(String date) throws ParseException {
-        return new java.sql.Date(getDateFormat().parse(date).getTime());
-    }
-
-    public static java.sql.Date parseSqlDate(String date, java.sql.Date parseExceptionValue) {
-        try {
-            return parseSqlDate(date);
-        } catch (ParseException e) {
-            return parseExceptionValue;
-        }
-    }
-
     public static int getCurrentMinutes() {
         return getCalendar().get(MINUTE);
     }
 
     public static int getCurrentHours() {
         return getCalendar().get(HOUR_OF_DAY);
-    }
-
-    public static java.sql.Date toSqlDate(Date date) {
-        return new java.sql.Date(date.getTime());
     }
 
     public static YearMonth getYearMonth(Date date) {

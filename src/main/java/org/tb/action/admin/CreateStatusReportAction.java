@@ -1,23 +1,21 @@
 package org.tb.action.admin;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
+import org.tb.form.AddStatusReportForm;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.StatusReportDAO;
-import org.tb.form.AddStatusReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
+import org.tb.util.DateUtils;
 
 public class CreateStatusReportAction extends StatusReportAction<AddStatusReportForm> {
 
@@ -113,11 +111,7 @@ public class CreateStatusReportAction extends StatusReportAction<AddStatusReport
         Date fromDate = selectedCustomerOrder.getFromDate();
         if (statusReports != null && !statusReports.isEmpty()) {
             Statusreport lastKnownReport = statusReports.get(statusReports.size() - 1);
-            fromDate = lastKnownReport.getUntildate();
-            GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTime(fromDate);
-            calendar.add(Calendar.DATE, 1);
-            fromDate.setTime(calendar.getTimeInMillis());
+            fromDate = DateUtils.addDays(lastKnownReport.getUntildate(), 1);
         }
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 

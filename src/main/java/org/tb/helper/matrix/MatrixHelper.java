@@ -316,20 +316,18 @@ public class MatrixHelper {
     }
 
     private List<Timereport> queryTimereports(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId) {
-        java.sql.Date beginSqlDate = new java.sql.Date(dateFirst.getTime());
-        java.sql.Date endSqlDate = new java.sql.Date(dateLast.getTime());
         //choice of timereports by date, employeecontractid and/or customerorderid
         if (method == 1 || method == 3) {
             if (employeeContractId == -1) {
-                return trDAO.getTimereportsByDates(beginSqlDate, endSqlDate);
+                return trDAO.getTimereportsByDates(dateFirst, dateLast);
             } else {
-                return trDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, beginSqlDate, endSqlDate);
+                return trDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast);
             }
         } else if (method == 2 || method == 4) {
             if (employeeContractId == -1) {
-                return trDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, customerOrderId);
+                return trDAO.getTimereportsByDatesAndCustomerOrderId(dateFirst, dateLast, customerOrderId);
             } else {
-                return trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeeContractId, beginSqlDate, endSqlDate, customerOrderId);
+                return trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeeContractId, dateFirst, dateLast, customerOrderId);
             }
         } else {
             throw new RuntimeException("this should not happen!");
@@ -447,7 +445,7 @@ public class MatrixHelper {
 
             isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
             if (isAcceptanceWarning) {
-                Timereport timereport = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), employeeContract.getId());
+                Timereport timereport = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, employeeContract.getId());
                 if (timereport != null) {
                     Employee employee = eDAO.getEmployeeBySign(timereport.getAcceptedby());
                     acceptedBy = employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")";
@@ -540,7 +538,7 @@ public class MatrixHelper {
             }
             results.put("acceptance", isAcceptanceWarning);
             if (isAcceptanceWarning) {
-                Timereport tr = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), Objects.requireNonNull(currentEc).getId());
+                Timereport tr = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, Objects.requireNonNull(currentEc).getId());
                 Employee employee = eDAO.getEmployeeBySign(tr.getAcceptedby());
                 results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
             }
@@ -602,7 +600,7 @@ public class MatrixHelper {
             if (!ec.getAcceptanceWarningByDate(dateLast)) {
                 if (ec.getReportAcceptanceDate() != null && !dateLast.after(ec.getReportAcceptanceDate())) {
                     newAcceptance = true;
-                    Employee employee = eDAO.getEmployeeBySign(trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(new java.sql.Date(dateLast.getTime()), ec.getId()).getAcceptedby());
+                    Employee employee = eDAO.getEmployeeBySign(trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, ec.getId()).getAcceptedby());
                     results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
                 }
             }

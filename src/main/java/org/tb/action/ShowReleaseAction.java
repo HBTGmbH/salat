@@ -25,7 +25,6 @@ import org.tb.form.ShowReleaseForm;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
@@ -41,7 +40,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     private EmployeeDAO employeeDAO;
     private PublicholidayDAO publicholidayDAO;
     private OvertimeDAO overtimeDAO;
-    private EmployeeorderDAO employeeorderDAO;
     private TimereportHelper timereportHelper;
 
     public void setTimereportHelper(TimereportHelper timereportHelper) {
@@ -66,10 +64,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
     public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
         this.overtimeDAO = overtimeDAO;
-    }
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
     }
 
     @Override
@@ -188,15 +182,13 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             request.getSession().setAttribute("releaseYear",
                     releaseForm.getYear());
 
-            java.util.Date releaseDate = (java.util.Date) request.getSession()
+            Date releaseDate = (Date) request.getSession()
                     .getAttribute("releaseDate");
-            java.sql.Date sqlReleaseDate = new java.sql.Date(releaseDate
-                    .getTime());
 
             // set status in timereports
             List<Timereport> timereports = timereportDAO
                     .getOpenTimereportsByEmployeeContractIdBeforeDate(
-                            employeecontract.getId(), sqlReleaseDate);
+                            employeecontract.getId(), releaseDate);
             for (Timereport timereport : timereports) {
                 timereport
                         .setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
@@ -210,7 +202,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     getDayList(releaseDateFromContract));
 
             // store new release date in employee contract
-            employeecontract.setReportReleaseDate(sqlReleaseDate);
+            employeecontract.setReportReleaseDate(releaseDate);
             employeecontractDAO.save(employeecontract, loginEmployee);
             // contract was saved after RELEASE
             // build recipient for releasemail for BL
@@ -265,11 +257,10 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 return mapping.getInputForward();
             }
 
-            java.util.Date acceptanceDate = (java.util.Date) request.getSession().getAttribute("acceptanceDate");
-            java.sql.Date sqlAcceptanceDate = new java.sql.Date(acceptanceDate.getTime());
+            Date acceptanceDate = (Date) request.getSession().getAttribute("acceptanceDate");
 
             // set status in timereports
-            List<Timereport> timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontract.getId(), sqlAcceptanceDate);
+            List<Timereport> timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontract.getId(), acceptanceDate);
             for (Timereport timereport : timereports) {
                 timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
                 timereport.setAcceptedby(loginEmployee.getSign());
@@ -281,7 +272,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             request.getSession().setAttribute("acceptanceDays", getDayList(acceptanceDateFromContract));
 
             // set new acceptance date in employee contract
-            employeecontract.setReportAcceptanceDate(sqlAcceptanceDate);
+            employeecontract.setReportAcceptanceDate(acceptanceDate);
             //compute overtimeStatic and set it in employee contract
             double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                     employeecontract, true);
@@ -303,33 +294,32 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     false);
 
             if (reopenDate == null) {
-                reopenDate = new Date();
+                reopenDate = DateUtils.today();
             }
-            java.sql.Date sqlReopenDate = new java.sql.Date(reopenDate.getTime());
 
             // set status in timereports
-            List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontract.getId(), sqlReopenDate);
+            List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontract.getId(), reopenDate);
             for (Timereport timereport : timereports) {
                 timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
                 timereportDAO.save(timereport, loginEmployee, false);
             }
 
-            long timeMillis = sqlReopenDate.getTime();
+            long timeMillis = reopenDate.getTime();
             timeMillis -= 12 * 60 * 60 * 1000;
-            sqlReopenDate.setTime(timeMillis);
+            reopenDate.setTime(timeMillis);
             // String newReopenDateString = format.format(sqlReopenDate);
 
-            if (sqlReopenDate.before(releaseDateFromContract)) {
-                employeecontract.setReportReleaseDate(sqlReopenDate);
-                releaseDateFromContract = sqlReopenDate;
+            if (reopenDate.before(releaseDateFromContract)) {
+                employeecontract.setReportReleaseDate(reopenDate);
+                releaseDateFromContract = reopenDate;
                 String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
                 releaseForm.setDay(releaseDateArray[0]);
                 releaseForm.setMonth(releaseDateArray[1]);
                 releaseForm.setYear(releaseDateArray[2]);
             }
-            if (sqlReopenDate.before(acceptanceDateFromContract)) {
-                employeecontract.setReportAcceptanceDate(sqlReopenDate);
-                acceptanceDateFromContract = sqlReopenDate;
+            if (reopenDate.before(acceptanceDateFromContract)) {
+                employeecontract.setReportAcceptanceDate(reopenDate);
+                acceptanceDateFromContract = reopenDate;
                 String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
                 releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
                 releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);

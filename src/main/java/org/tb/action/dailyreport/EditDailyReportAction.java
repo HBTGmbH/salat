@@ -136,8 +136,8 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         reportForm.reset(mapping, request);
         reportForm.setEmployeeContractId(ec.getId());
 
-        reportForm.setReferenceday(DateUtils.getSqlDateString(utilDate));
-        java.sql.Date reportDate = tr.getReferenceday().getRefdate();
+        reportForm.setReferenceday(DateUtils.format(utilDate));
+        Date reportDate = tr.getReferenceday().getRefdate();
         Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(reportDate, ec.getId());
 
         boolean workingDayIsAvailable = false;

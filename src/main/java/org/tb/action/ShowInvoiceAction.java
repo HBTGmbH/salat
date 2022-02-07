@@ -108,8 +108,6 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             List<Suborder> suborderListTemp = new LinkedList<>();
             Date dateFirst;
             Date dateLast;
-            java.sql.Date sqlDateFirst;
-            java.sql.Date sqlDateLast;
             if (!showInvoiceForm.getOrder().equals("CHOOSE ORDER")) {
                 if (selectedView.equals(GlobalConstants.VIEW_MONTHLY) || selectedView.equals(GlobalConstants.VIEW_WEEKLY)) {
                     // generate dates for monthly view mode
@@ -146,8 +144,6 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
                     suborderList.sort(SubOrderComparator.INSTANCE);
-                    sqlDateFirst = new java.sql.Date(dateFirst.getTime());
-                    sqlDateLast = new java.sql.Date(dateLast.getTime());
                     // remove suborders that are not valid sometime between dateFirst and dateLast
                     suborderList.removeIf(so -> so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst));
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
@@ -180,35 +176,33 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     // remove suborders that are not valid sometime between dateFirst and dateLast
                     suborderList.removeIf(so -> so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst));
                     suborderList.sort(SubOrderComparator.INSTANCE);
-                    sqlDateFirst = new java.sql.Date(dateFirst.getTime());
-                    sqlDateLast = new java.sql.Date(dateLast.getTime());
                 } else {
                     throw new RuntimeException("no view type selected");
                 }
                 // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
                 if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 } else if (showInvoiceForm.isFixedpricebox()) {
                     for (Suborder suborder : suborderList) {
                         if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 } else if (showInvoiceForm.isInvoicebox()) {
                     for (Suborder suborder : suborderList) {
                         if (!suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 } else {
                     for (Suborder suborder : suborderList) {
                         if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, sqlDateFirst, sqlDateLast, showInvoiceForm));
+                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 }
                 request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
                 request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
@@ -396,7 +390,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             // selected view and selected dates
             if (showInvoiceForm.getFromDay() == null || showInvoiceForm.getFromMonth() == null || showInvoiceForm.getFromYear() == null) {
                 // set standard dates and view
-                java.sql.Date today = java.sql.Date.valueOf(LocalDate.now());
+                Date today = DateUtils.today();
                 showInvoiceForm.setFromDay("01");
                 showInvoiceForm.setFromMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setFromYear(DateUtils.getYearString(today));
@@ -428,7 +422,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         return mapping.findForward("success");
     }
 
-    private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderHelper> invoiceSuborderViewHelperList, java.sql.Date dateFirst, java.sql.Date dateLast,
+    private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderHelper> invoiceSuborderViewHelperList, Date dateFirst, Date dateLast,
                                   ShowInvoiceForm invoiceForm) {
         List<String> suborderIdList = new ArrayList<>(suborderList.size());
         List<String> timereportIdList = new ArrayList<>();

@@ -1,12 +1,10 @@
 package org.tb.bdom.comparators;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import org.tb.bdom.Customerorder;
+import static lombok.AccessLevel.PRIVATE;
 
 import java.util.Comparator;
-
-import static lombok.AccessLevel.PRIVATE;
+import lombok.NoArgsConstructor;
+import org.tb.bdom.Customerorder;
 
 @NoArgsConstructor(access = PRIVATE)
 public class CustomerOrderComparator implements Comparator<Customerorder> {

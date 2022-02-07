@@ -1,5 +1,8 @@
 package org.tb.bdom;
 
+import static javax.persistence.TemporalType.DATE;
+
+import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Cache;
@@ -10,7 +13,6 @@ import org.tb.GlobalConstants;
 import javax.persistence.Entity;
 import javax.persistence.*;
 import java.io.Serializable;
-import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -32,14 +34,19 @@ public class Employeecontract extends EditDetails implements Serializable {
     @JoinColumn(name = "SUPERVISOR_ID")
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     private Employee supervisor;
+    @Temporal(DATE)
     private Date validFrom;
+    @Temporal(DATE)
     private Date validUntil;
     private Double dailyWorkingTime;
     private Boolean freelancer;
     private String taskDescription;
+    @Temporal(DATE)
     private Date fixedUntil;
-    private java.sql.Date reportAcceptanceDate;
-    private java.sql.Date reportReleaseDate;
+    @Temporal(DATE)
+    private Date reportAcceptanceDate;
+    @Temporal(DATE)
+    private Date reportReleaseDate;
     private Boolean hide;
     /**
      * static overtime from begin of employeecontract to reportAcceptanceDate

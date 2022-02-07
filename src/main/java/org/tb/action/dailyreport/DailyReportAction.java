@@ -129,8 +129,6 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         } catch (Exception e) {
             throw new RuntimeException("date cannot be parsed for form", e);
         }
-        java.sql.Date beginSqlDate = new java.sql.Date(beginDate.getTime());
-        java.sql.Date endSqlDate = new java.sql.Date(endDate.getTime());
 
         // test, if an order is select, the selected employee is not associated with
         long employeeContractId = reportForm.getEmployeeContractId();
@@ -169,8 +167,8 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         if (reportForm.getOrder() == null || reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS)) {
             // get the timereports for specific date, all orders
             timereports = ec == null
-                    ? timereportDAO.getTimereportsByDates(beginSqlDate, endSqlDate)  // all employees
-                    : timereportDAO.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginSqlDate, endSqlDate); // specific employee
+                    ? timereportDAO.getTimereportsByDates(beginDate, endDate)  // all employees
+                    : timereportDAO.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginDate, endDate); // specific employee
 
         } else {
             Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
@@ -187,12 +185,12 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {
                 // get the timereports for specific date, specific order
                 timereports = ec == null
-                        ? timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginSqlDate, endSqlDate, orderId) //all employees
-                        : timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ec.getId(), beginSqlDate, endSqlDate, orderId); // specific employee
+                        ? timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId) //all employees
+                        : timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ec.getId(), beginDate, endDate, orderId); // specific employee
             } else {
                 timereports = ec == null
-                        ? timereportDAO.getTimereportsByDatesAndSuborderId(beginSqlDate, endSqlDate, reportForm.getSuborderId()) //all employees
-                        : timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), beginSqlDate, endSqlDate, reportForm.getSuborderId()); // specific employee
+                        ? timereportDAO.getTimereportsByDatesAndSuborderId(beginDate, endDate, reportForm.getSuborderId()) //all employees
+                        : timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), beginDate, endDate, reportForm.getSuborderId()); // specific employee
             }
         }
 
@@ -293,9 +291,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         String monthString = reportForm.getMonth();
         String yearString = reportForm.getYear();
 
-        Date tmp = getDateFormStrings(dayString, monthString, yearString, true);
-
-        java.sql.Date refDate = new java.sql.Date(tmp.getTime());
+        Date refDate = getDateFormStrings(dayString, monthString, yearString, true);
 
         Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
         if (workingday == null && nullPruefung) {
