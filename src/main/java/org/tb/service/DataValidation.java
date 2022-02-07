@@ -18,4 +18,16 @@ public class DataValidation {
     }
   }
 
+  public static void isInRange(double value, double min, double max, String message) {
+    if(value < min || value > max) {
+      throw new InvalidDataException(message);
+    }
+  }
+
+  public static void lengthIsInRange(String value, int min, int max, String message) {
+    if(value == null || value.length() < min || value.length() > max) {
+      throw new InvalidDataException(message);
+    }
+  }
+
 }
