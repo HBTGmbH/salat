@@ -202,7 +202,7 @@ public class TimereportService {
   }
 
   private void checkAndSaveTimereports(AuthorizedUser authorizedUser, List<Timereport> timereports) {
-    timereports.forEach(t -> log.info("checking Timereport {}", t.getTimeReportAsString()));
+    timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
     checkAuthorization(timereports, authorizedUser);
     validateTimeReportingBusinessRules(timereports);
@@ -211,7 +211,7 @@ public class TimereportService {
     validateEmployeeorderBudget(timereports);
 
     timereports.forEach(t -> {
-      log.info("Saving Timereport {}", t.getTimeReportAsString());
+      log.debug("Saving Timereport {}", t.getTimeReportAsString());
       timereportDAO.saveOrUpdate(t);
     });
 
