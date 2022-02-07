@@ -1,6 +1,7 @@
 package org.tb.bdom;
 
 import java.io.Serializable;
+import java.util.Date;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -63,12 +64,12 @@ public class Timereport extends EditDetails implements Serializable {
      * Sign of the releasing person
      */
     private String releasedby;
-    private java.util.Date released;
+    private Date released;
     /**
      * Sign of the accepting person
      */
     private String acceptedby;
-    private java.util.Date accepted;
+    private Date accepted;
 
     public Timereport getTwin() {
         Timereport timereport = new Timereport();
