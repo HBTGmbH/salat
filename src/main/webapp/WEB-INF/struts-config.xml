@@ -75,13 +75,15 @@
 
 	<action-mappings>
 
-		<action path="/LoginEmployee" input="/auth/login.jsp" validate="true" name="loginEmployeeForm">
+		<action path="/LoginEmployee" input="/auth/login.jsp" validate="true" name="loginEmployeeForm"
+			type="org.tb.action.LoginEmployeeAction">
 			<forward name="success" path="/showWelcome.jsp" redirect="true" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="password" path="/user/showSettings.jsp" />
 		</action>
 
-		<action path="/LogoutEmployee" name="logoutEmployeeForm">
+		<action path="/LogoutEmployee" name="logoutEmployeeForm"
+			type="org.tb.action.LogoutEmployeeAction">
 			<forward name="success" path="/auth/login.jsp" />
 		</action>
 
@@ -396,8 +398,8 @@
 	<!-- ============================================= Controller Configuration -->
 
 	<controller
-		processorClass="org.springframework.web.struts.DelegatingRequestProcessor"
-		nocache="false" />
+		processorClass="org.tb.struts.DelegatingRequestProcessor"
+		nocache="true" />
 
 	<!-- ======================================== Message Resources Definitions -->
 
