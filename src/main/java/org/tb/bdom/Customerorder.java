@@ -2,48 +2,50 @@ package org.tb.bdom;
 
 import static javax.persistence.TemporalType.DATE;
 
-import java.util.Date;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.*;
-import org.tb.GlobalConstants;
-import org.tb.bdom.comparators.SubOrderComparator;
-
-import javax.persistence.Entity;
-import javax.persistence.*;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.tb.GlobalConstants;
+import org.tb.bdom.comparators.SubOrderComparator;
 
 /**
  * Bean for table 'customerorder'.
  *
  * @author oda
  */
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = "sign", callSuper = false)
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Customerorder extends EditDetails implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Customerorder extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "CUSTOMER_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Customer customer;
 
     /**
      * list of suborders, associated to this customerorder
      */
     @OneToMany(mappedBy = "customerorder")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Suborder> suborders;
 
@@ -59,7 +61,7 @@ public class Customerorder extends EditDetails implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "RESPONSIBLE_HBT_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employee responsible_hbt;
 
     /**
@@ -68,7 +70,7 @@ public class Customerorder extends EditDetails implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "RESPONSIBLE_HBT_CONTRACTUALLY_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employee respEmpHbtContract;
 
     /**

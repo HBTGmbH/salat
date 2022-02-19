@@ -2,6 +2,8 @@ package org.tb.bdom;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
@@ -11,17 +13,14 @@ import javax.persistence.Table;
 import javax.persistence.*;
 import java.io.Serializable;
 
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = "id")
 @Table(name = "EMPLOYEEORDERCONTENT")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Employeeordercontent extends EditDetails implements Serializable {
-    private static final long serialVersionUID = 1L; // 2L;
+public class Employeeordercontent extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L; // 2L;
 
     /**
      * Responsible Contract HBT
@@ -29,7 +28,7 @@ public class Employeeordercontent extends EditDetails implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "CONTACT_CONTRACT_HBT")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employee contactContractHbt;
 
     /**
@@ -38,7 +37,7 @@ public class Employeeordercontent extends EditDetails implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "CONTACT_TECH_HBT")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employee contactTechHbt;
 
     /**
@@ -47,7 +46,7 @@ public class Employeeordercontent extends EditDetails implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "COMMITTEDBY_MGMT")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employee committedby_mgmt;
 
     /**
@@ -56,7 +55,7 @@ public class Employeeordercontent extends EditDetails implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "COMMITTEDBY_EMP")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employee committedby_emp;
 
     private String description;

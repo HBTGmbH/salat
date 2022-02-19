@@ -1,31 +1,32 @@
 package org.tb.bdom;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.*;
-
-import javax.persistence.Entity;
-import javax.persistence.*;
 import java.io.Serializable;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = "description")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Invoice extends EditDetails implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Invoice extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "CUSTOMER_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Customer customer;
+
     private String description;
 
 }

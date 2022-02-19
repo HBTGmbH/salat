@@ -2,33 +2,37 @@ package org.tb.bdom;
 
 import static javax.persistence.TemporalType.DATE;
 
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.util.LinkedList;
+import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.tb.GlobalConstants;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
-import javax.persistence.Entity;
-import javax.persistence.*;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.LinkedList;
-import java.util.List;
-
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = "id", callSuper = false)
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Suborder extends EditDetails implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Suborder extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id = -1;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
@@ -39,7 +43,7 @@ public class Suborder extends EditDetails implements Serializable {
      * list of timereports, associated to this suborder
      */
     @OneToMany(mappedBy = "suborder")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Timereport> timereports;
 
@@ -47,12 +51,12 @@ public class Suborder extends EditDetails implements Serializable {
      * list of employeeorders, associated to this suborder
      */
     @OneToMany(mappedBy = "suborder")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Employeeorder> employeeorders;
 
     @OneToMany(mappedBy = "parentorder")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Suborder> suborders;
 
@@ -355,7 +359,7 @@ public class Suborder extends EditDetails implements Serializable {
      */
     @Override
     public String toString() {
-        return "Suborder_" + id + ": (" + sign + " " + description + ")";
+        return "Suborder_" + getId() + ": (" + sign + " " + description + ")";
     }
 
     public Suborder copy(boolean copyroot, String creator) {

@@ -2,8 +2,6 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import javax.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,12 +14,10 @@ import org.tb.util.SecureHashUtils;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Employee extends EditDetails implements Serializable {
+public class Employee extends AuditedEntity implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue
-    private long id;
     /**
      * registration first and last name of the employee
      */

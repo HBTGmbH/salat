@@ -3,6 +3,9 @@ package org.tb.bdom;
 import static javax.persistence.TemporalType.TIMESTAMP;
 
 import java.util.Date;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.Version;
@@ -12,16 +15,22 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.Persistable;
 
 /**
- * contains information about creation edits made to database columns common to some database tables
+ * Contains information about creation edits made to database columns common to
+ * some database tables.
  *
  * @author kd
  */
 @Getter
 @Setter
 @MappedSuperclass
-abstract public class EditDetails {
+abstract public class AuditedEntity implements Persistable<Long> {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @CreatedDate
     @Temporal(TIMESTAMP)
@@ -39,5 +48,10 @@ abstract public class EditDetails {
 
     @Version
     private Integer updatecounter;
+
+    @Override
+    public boolean isNew() {
+        return id == null;
+    }
 
 }

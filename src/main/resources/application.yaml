@@ -1,0 +1,27 @@
+server.servlet.session.timeout: 660m
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/salat
+    username: salattest
+    password: salattest
+    hikari:
+      connection-timeout: 1000
+      minimum-idle: 0
+      maximum-pool-size: 2
+  jpa:
+    generate-ddl: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    open-in-view: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
