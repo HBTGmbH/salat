@@ -12,19 +12,18 @@ import javax.persistence.Id;
 import javax.persistence.Temporal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = "refdate")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Referenceday implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Referenceday extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @Temporal(DATE)
     private Date refdate;

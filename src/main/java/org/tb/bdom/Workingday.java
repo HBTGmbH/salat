@@ -21,17 +21,15 @@ import org.tb.GlobalConstants;
 @Getter
 @Setter
 @Entity
-public class Workingday implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Workingday extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
     private Employeecontract employeecontract;
+
     @Temporal(DATE)
     private Date refday;
     private int Starttimehour;
@@ -47,12 +45,8 @@ public class Workingday implements Serializable {
     public boolean equals(Object obj) {
         if (obj instanceof Workingday) {
             Workingday other = (Workingday) obj;
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-            String refdateString = simpleDateFormat.format(refday);
-            String otherString = simpleDateFormat.format(other.getRefday());
-
-            return refdateString.equals(otherString) &&
-                    employeecontract.getId() == other.getEmployeecontract().getId();
+            return refday.equals(other.refday) &&
+                employeecontract.getId() == other.getEmployeecontract().getId();
         }
         return false;
     }

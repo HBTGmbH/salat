@@ -21,35 +21,32 @@ import org.tb.util.DateUtils;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Timereport extends EditDetails implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Timereport extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "REFERENCEDAY_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Referenceday referenceday;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employeecontract employeecontract;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "SUBORDER_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Suborder suborder;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEEORDER_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employeeorder employeeorder;
 
     private Integer durationhours;

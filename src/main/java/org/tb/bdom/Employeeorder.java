@@ -2,47 +2,49 @@ package org.tb.bdom;
 
 import static javax.persistence.TemporalType.DATE;
 
-import java.util.Date;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.*;
-import org.tb.GlobalConstants;
-
-import javax.persistence.Entity;
-import javax.persistence.*;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.Temporal;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.tb.GlobalConstants;
 import org.tb.util.DateUtils;
 
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = {}, callSuper = true)
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Employeeorder extends EditDetails implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Employeeorder extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "SUBORDER_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Suborder suborder;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employeecontract employeecontract;
 
     @OneToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEEORDERCONTENT_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employeeordercontent employeeOrderContent;
 
     /**
