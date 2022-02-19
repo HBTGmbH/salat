@@ -1,25 +1,22 @@
 package org.tb.bdom;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import java.io.Serializable;
+import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import java.io.Serializable;
-import java.util.List;
-
-@Data
+@Getter
+@Setter
 @Entity
-@EqualsAndHashCode(of = "name", callSuper = false)
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-@ToString(exclude = { "customerorders", "invoices" })
 public class Customer extends EditDetails implements Serializable {
     private static final long serialVersionUID = 1L;
 
