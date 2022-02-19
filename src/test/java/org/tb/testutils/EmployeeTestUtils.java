@@ -1,5 +1,6 @@
-package org.tb.persistence.utils;
+package org.tb.testutils;
 
+import lombok.experimental.UtilityClass;
 import org.tb.bdom.Employee;
 
 /**
@@ -8,7 +9,8 @@ import org.tb.bdom.Employee;
  * @author kd
  *
  */
-public class TestUtilsEmployee {
+@UtilityClass
+public class EmployeeTestUtils {
 
 	public static final String TESTY_SIGN = "testy";
 	

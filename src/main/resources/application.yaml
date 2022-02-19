@@ -24,4 +24,6 @@ management:
     web:
       exposure:
         include: "*"
-
+salat:
+  url: localhost
+  mail-host: localhost

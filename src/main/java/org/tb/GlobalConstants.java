@@ -220,13 +220,4 @@ public class GlobalConstants {
     public static final String ZERO_DHM = "00:00:00";
     public static final String ZERO_HM = "00:00";
 
-    public static final String SALAT_URL;
-    public static final String MAIL_HOST;
-
-    // Static initializer
-    static {
-        // set the constants
-        SALAT_URL = System.getenv("SALAT_URL").trim();
-        MAIL_HOST = System.getenv("SALAT_MAIL_HOST").trim();
-    }
 }

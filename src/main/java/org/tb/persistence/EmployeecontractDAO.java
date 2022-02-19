@@ -16,12 +16,15 @@ public class EmployeecontractDAO extends AbstractDAO {
 
     private final VacationDAO vacationDAO;
     private final OvertimeDAO overtimeDAO;
+    private final EmployeecontractRepository employeecontractRepository;
 
     @Autowired
-    public EmployeecontractDAO(SessionFactory sessionFactory, VacationDAO vacationDAO, OvertimeDAO overtimeDAO) {
+    public EmployeecontractDAO(SessionFactory sessionFactory, VacationDAO vacationDAO, OvertimeDAO overtimeDAO,
+        EmployeecontractRepository employeecontractRepository) {
         super(sessionFactory);
         this.vacationDAO = vacationDAO;
         this.overtimeDAO = overtimeDAO;
+        this.employeecontractRepository = employeecontractRepository;
     }
 
     /**
@@ -43,10 +46,7 @@ public class EmployeecontractDAO extends AbstractDAO {
      * @return Employeecontract
      */
     public Employeecontract getEmployeeContractById(long id) {
-        return (Employeecontract) getSession()
-                .createQuery("from Employeecontract ec where ec.id = ?")
-                .setLong(0, id)
-                .uniqueResult();
+        return employeecontractRepository.findById(id).orElse(null);
     }
 
     /**
@@ -80,37 +80,7 @@ public class EmployeecontractDAO extends AbstractDAO {
      * @param ec
      */
     public void save(Employeecontract ec, Employee loginEmployee) {
-        if (loginEmployee == null) {
-            throw new RuntimeException("the login-user must be passed to the db");
-        }
-        Session session = getSession();
-
-        java.util.Date creationDate = ec.getCreated();
-        if (creationDate == null) {
-            ec.setCreated(new java.util.Date());
-            ec.setCreatedby(loginEmployee.getSign());
-        } else {
-            ec.setLastupdate(new java.util.Date());
-            ec.setLastupdatedby(loginEmployee.getSign());
-            Integer updateCounter = ec.getUpdatecounter();
-            updateCounter = updateCounter == null ? 1 : updateCounter + 1;
-            ec.setUpdatecounter(updateCounter);
-        }
-
-        if (session.contains(ec)) {
-            // existing and attached to session
-            session.saveOrUpdate(ec);
-        } else {
-            if (ec.getId() != 0L) {
-                // existing but detached from session
-                session.merge(ec);
-            } else {
-                // new object -> persist it!
-                session.saveOrUpdate(ec);
-            }
-        }
-
-        session.flush();
+        employeecontractRepository.save(ec);
     }
 
     /**
@@ -370,9 +340,7 @@ public class EmployeecontractDAO extends AbstractDAO {
             }
 
             // finally, go for deletion of employeecontract
-            Session session = getSession();
-            session.delete(ec);
-            session.flush();
+            employeecontractRepository.delete(ec);
             return true;
         }
         return false;

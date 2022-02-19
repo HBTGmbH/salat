@@ -12,9 +12,12 @@ import java.util.List;
 @Component
 public class OvertimeDAO extends AbstractDAO {
 
+    private final OvertimeRepository overtimeRepository;
+
     @Autowired
-    public OvertimeDAO(SessionFactory sessionFactory) {
+    public OvertimeDAO(SessionFactory sessionFactory, OvertimeRepository overtimeRepository) {
         super(sessionFactory);
+        this.overtimeRepository = overtimeRepository;
     }
 
     /**
@@ -30,7 +33,7 @@ public class OvertimeDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Overtime> getOvertimesByEmployeeContractId(long employeeContractId) {
-        return getSession().createQuery("from Overtime where employeecontract.id = ? order by employeecontract.id asc, created asc").setLong(0, employeeContractId).list();
+        return overtimeRepository.findAllByEmployeecontractId(employeeContractId);
     }
 
     /**
