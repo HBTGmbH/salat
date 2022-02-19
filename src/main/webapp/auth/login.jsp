@@ -28,9 +28,11 @@ while(names.hasMoreElements()) {
 </head>
 <body>
 <div align="right">
-<font size="1pt"> 
-   	<bean:resource id="versionTxt" name="/WEB-INF/classes/version.txt" />
-   	<bean:write name="versionTxt" />
+<font size="1pt">
+	<c:out value="${buildProperties.version}" />
+	<c:out value="${buildProperties.time}" />
+	<c:out value="${gitProperties.branch}" />
+	<c:out value="${gitProperties.shortCommitId}" />
 </font>
 </div>
 <b>

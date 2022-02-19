@@ -31,9 +31,11 @@ window.onload=startList;
     <td class="noBborderStyle" align="center" width="25%"></td>
     <td class="noBborderStyle" align="center" valign="top" width="50%" title="<bean:message key='main.general.mainmenu.menu.subtext' />"><span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.menu.text" /></span></td>
     <td class="noBborderStyle" align="right" valign="top" width="25%">
-		<font size="1pt"> 
-		   	<bean:resource id="versionTxt" name="/WEB-INF/classes/version.txt" />
-		   	<bean:write name="versionTxt" />
+		<font size="1pt">
+		   	<c:out value="${buildProperties.version}" />
+			<c:out value="${buildProperties.time}" />
+			<c:out value="${gitProperties.branch}" />
+			<c:out value="${gitProperties.shortCommitId}" />
 		</font>
 	</td>
   </tr>
