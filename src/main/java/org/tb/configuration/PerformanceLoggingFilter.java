@@ -1,4 +1,4 @@
-package org.tb.util;
+package org.tb.configuration;
 
 import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
 
