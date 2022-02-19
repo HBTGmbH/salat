@@ -9,6 +9,8 @@ import org.tb.bdom.Employee;
  *
  */
 public class TestUtilsEmployee {
+
+	public static final String TESTY_SIGN = "testy";
 	
 	/**
 	 * creates a basic Employee-object, filled with test data

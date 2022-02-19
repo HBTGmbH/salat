@@ -1,49 +1,49 @@
 package org.tb.persistence;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.tb.persistence.utils.TestUtilsEmployee.TESTY_SIGN;
+
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.persistence.utils.TestUtilsEmployee;
 import org.tb.persistence.utils.TestUtilsEmployeecontract;
 
-public class EmployeecontractDAOTest extends AbstractDAOTest {
+@DataJpaTest
+@DisplayNameGeneration(ReplaceUnderscores.class)
+public class EmployeecontractDAOTest {
+
+	@Autowired
+	private EmployeeDAO employeeDAO;
+
+	@Autowired
+	private EmployeecontractDAO employeecontractDAO;
 
 	@Test
-	public void testSave() {
-		Employee employee = TestUtilsEmployee.createEmployee("testy");
-
+	public void employee_contract_can_be_saved_and_gets_id() {
+		Employee employee = TestUtilsEmployee.createEmployee(TESTY_SIGN);
 		employeeDAO.save(employee, employee);
-		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employee.getId());
 
 		Employeecontract ec = TestUtilsEmployeecontract.createEmployeecontract(employee);
 		employeecontractDAO.save(ec, employee);
-		Assert.assertNotNull("after persisting the new Employeecontract-object-id should not be null!", ec.getId());
+
+		assertThat(ec.getId()).isNotNull();
 	}
 
 	@Test
-	public void testDelete() {
-		Employee employee = TestUtilsEmployee.createEmployee("testy");
-
+	public void employee_contract_can_be_deleted() {
+		Employee employee = TestUtilsEmployee.createEmployee(TESTY_SIGN);
 		employeeDAO.save(employee, employee);
-		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employee.getId());
 
 		Employeecontract ec = TestUtilsEmployeecontract.createEmployeecontract(employee);
 		employeecontractDAO.save(ec, employee);
-		Assert.assertNotNull("after persisting the new Employeecontract-object-id should not be null!", ec.getId());
 	
-		Assert.assertTrue("the test employeecontract could not be deleted from the database!", employeecontractDAO.deleteEmployeeContractById(ec.getId()));
+		assertThat(employeecontractDAO.deleteEmployeeContractById(ec.getId())).isTrue();
+		assertThat(employeecontractDAO.getEmployeeContractById(ec.getId())).isNull();
 	}
 
-	@Test
-	public void testSaveAndNotDelete_failure() {
-		Employee employee = TestUtilsEmployee.createEmployee("testy");
-
-		employeeDAO.save(employee, employee);
-		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employee.getId());
-
-		Employeecontract ec = TestUtilsEmployeecontract.createEmployeecontract(employee);
-		employeecontractDAO.save(ec, employee);
-		Assert.assertNotNull("after persisting the new Employeecontract-object-id should not be null!", ec.getId());
-	}
 }

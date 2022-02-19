@@ -1,77 +1,82 @@
 package org.tb.persistence;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.tb.persistence.utils.TestUtilsEmployee.TESTY_SIGN;
+
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.tb.bdom.Employee;
 import org.tb.persistence.utils.TestUtilsEmployee;
 
-public class EmployeeDAOTest extends AbstractDAOTest {
+@DataJpaTest
+@DisplayNameGeneration(ReplaceUnderscores.class)
+public class EmployeeDAOTest {
+
+	@Autowired
+	private EmployeeDAO employeeDAO;
 
 	/**
-	 * Prüft, dass die Datenbank noch keinen Mitarbeiter "testy" enthält 
+	 * PrÃ¼ft, dass die Datenbank noch keinen Mitarbeiter "testy" enthÃ¤lt
 	 */
 	@Test
-	public void testDB_should_not_contain_employee_testy() {
+	public void test_db_should_not_contain_employee_testy() {
 		Employee employee = employeeDAO.getEmployeeBySign(TESTY_SIGN);
-		Assert.assertNull("There should not be an Employee with sign '" + TESTY_SIGN +"' in the database!", employee);
+		assertThat(employee).isNull();
 	}
 
 	/**
 	 * Testet das Anlegen eines Mitarbeiters im SALAT 
 	 */
 	@Test
-	public void testSave() {
+	public void new_employee_has_id_set() {
 		Employee employee = TestUtilsEmployee.createEmployee(TESTY_SIGN);
-		
 		employeeDAO.save(employee, employee);
-		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employee.getId());
+		assertThat(employee.getId()).isNotNull();
 	}
 
 	/**
-	 * Testet das laden eines Mitarbeiters im SALAT über dessen ID 
+	 * Testet das laden eines Mitarbeiters im SALAT Ã¼ber dessen ID
 	 */
 	@Test
-	public void testGetEmployeeById() {
+	public void employee_gets_loaded_by_id() {
 		Employee employee = TestUtilsEmployee.createEmployee(TESTY_SIGN);
 		
 		employeeDAO.save(employee, employee);
 		Long employeeId = employee.getId();
-		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employeeId);
 
 		employee = employeeDAO.getEmployeeById(employeeId);
-		Assert.assertNotNull("Could not find recently created Employee-object in the database", employee);
+		assertThat(employee).isNotNull();
 	}
 
 	/**
-	 * Testet das laden eines Mitarbeiters im SALAT über dessen Kürzel 
+	 * Testet das laden eines Mitarbeiters im SALAT Ã¼ber dessen KÃ¼rzel
 	 */
 	@Test
-	public void testGetEmployeeBySign() {
+	public void employee_gets_loaded_by_sign() {
 		Employee employee = TestUtilsEmployee.createEmployee(TESTY_SIGN);
 		
 		employeeDAO.save(employee, employee);
-		Long employeeId = employee.getId();
-		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employeeId);
+		employee.getId();
 
 		employee = employeeDAO.getEmployeeBySign(TESTY_SIGN);
-		Assert.assertNotNull("Could not find recently created Employee-object in the database", employee);
+		assertThat(employee).isNotNull();
 	}
 
 	/**
-	 * Testet das Löschen eines Mitarbeiters im SALAT 
+	 * Testet das LÃ¶schen eines Mitarbeiters im SALAT
 	 */
 	@Test
-	public void testDelete() {
+	public void employee_is_deleted_in_test_db() {
 		Employee employee = TestUtilsEmployee.createEmployee(TESTY_SIGN);
 		
 		employeeDAO.save(employee, employee);
 		Long employeeId = employee.getId();
-		Assert.assertNotNull("after persisting the new Employee-object-id should not be null!", employeeId);
 		
-		Assert.assertTrue("the test employee could not be deleted from the database!", employeeDAO.deleteEmployeeById(employeeId));
-		
-		employee = employeeDAO.getEmployeeById(employeeId);
-		Assert.assertNull("Recently deleted Employee-object is still in the database!", employee);
+		assertThat(employeeDAO.deleteEmployeeById(employeeId)).isTrue();
+		assertThat(employeeDAO.getEmployeeById(employeeId)).isNull();
 	}
 	
 }
