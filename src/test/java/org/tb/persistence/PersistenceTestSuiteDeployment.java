@@ -1,13 +1,10 @@
 package org.tb.persistence;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	EmployeeDAOTest.class,
-	EmployeecontractDAOTest.class
-})
+@Suite
+@SelectClasses({ EmployeeDAOTest.class, EmployeecontractDAOTest.class })
 public class PersistenceTestSuiteDeployment {
 
 }

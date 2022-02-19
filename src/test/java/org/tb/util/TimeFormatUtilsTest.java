@@ -1,48 +1,59 @@
 package org.tb.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.tb.util.TimeFormatUtils.*;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
+import org.junit.jupiter.api.Test;
 
-public class TimeFormatUtilsTest extends TestCase {
+@DisplayNameGeneration(ReplaceUnderscores.class)
+public class TimeFormatUtilsTest {
 
-  public void testDecimalFormatHours() {
-    assertEquals("8,50", decimalFormatHours(8.5));
-    assertEquals("2,44", decimalFormatHours(2.44));
-    assertEquals("2,50", decimalFormatHours(2.501));
-    assertEquals("0,44", decimalFormatHours(0.44));
-    assertEquals("0,40", decimalFormatHours(0.4));
+  @Test
+  public void decimal_hours_should_format_with_comma() {
+    assertThat(decimalFormatHours(8.5)).isEqualTo("8,50");
+    assertThat(decimalFormatHours(2.44)).isEqualTo("2,44");
+    assertThat(decimalFormatHours(2.501)).isEqualTo("2,50");
+    assertThat(decimalFormatHours(0.44)).isEqualTo("0,44");
+    assertThat(decimalFormatHours(0.4)).isEqualTo("0,40");
   }
 
-  public void testDecimalFormatHoursAndMinutes() {
-    assertEquals("8,50", decimalFormatHoursAndMinutes(8, 30));
-    assertEquals("0,50", decimalFormatHoursAndMinutes(0, 30));
-    assertEquals("2,85", decimalFormatHoursAndMinutes(2, 51));
-    assertEquals("3,87", decimalFormatHoursAndMinutes(3, 52));
+  @Test
+  public void hours_and_minutes_should_format_with_comma() {
+    assertThat(decimalFormatHoursAndMinutes(8, 30)).isEqualTo("8,50");
+    assertThat(decimalFormatHoursAndMinutes(0, 30)).isEqualTo("0,50");
+    assertThat(decimalFormatHoursAndMinutes(2, 51)).isEqualTo("2,85");
+    assertThat(decimalFormatHoursAndMinutes(3, 52)).isEqualTo("3,87");
   }
 
-  public void testTimeFormatHoursAndMinutes() {
-    assertEquals("8:30", timeFormatHoursAndMinutes(8, 30));
-    assertEquals("-8:30", timeFormatHoursAndMinutes(-8, -30));
-    assertEquals("0:03", timeFormatHoursAndMinutes(0, 3));
+  @Test
+  public void hours_and_minutes_should_format_as_time() {
+    assertThat(timeFormatHoursAndMinutes(8, 30)).isEqualTo("8:30");
+    assertThat(timeFormatHoursAndMinutes(-8, -30)).isEqualTo("-8:30");
+    assertThat(timeFormatHoursAndMinutes(0, 3)).isEqualTo("0:03");
   }
 
-  public void testTimeFormatMinutes() {
-    assertEquals("4:30", timeFormatMinutes(270));
-    assertEquals("-4:30", timeFormatMinutes(-270));
-    assertEquals("0:03", timeFormatMinutes(3));
+  @Test
+  public void minutes_should_format_as_time() {
+    assertThat(timeFormatMinutes(270)).isEqualTo("4:30");
+    assertThat(timeFormatMinutes(-270)).isEqualTo("-4:30");
+    assertThat(timeFormatMinutes(3)).isEqualTo("0:03");
   }
 
-  public void testDecimalFormatMinutes() {
-    assertEquals("4,50", decimalFormatMinutes(270));
-    assertEquals("4,53", decimalFormatMinutes(272));
-    assertEquals("0,05", decimalFormatMinutes(3));
+  @Test
+  public void minutes_should_format_as_decimal_hours_with_comma() {
+    assertThat(decimalFormatMinutes(270)).isEqualTo("4,50");
+    assertThat(decimalFormatMinutes(272)).isEqualTo("4,53");
+    assertThat(decimalFormatMinutes(3)).isEqualTo("0,05");
   }
 
-  public void testTimeFormatHours() {
-    assertEquals("3:00", timeFormatHours(3));
-    assertEquals("3:30", timeFormatHours(3.5));
-    assertEquals("3:45", timeFormatHours(3.75));
-    assertEquals("2:46", timeFormatHours(2.7641));
+  @Test
+  public void decimal_hours_should_format_as_time() {
+    assertThat(timeFormatHours(3)).isEqualTo("3:00");
+    assertThat(timeFormatHours(3.5)).isEqualTo("3:30");
+    assertThat(timeFormatHours(3.75)).isEqualTo("3:45");
+    assertThat(timeFormatHours(2.7641)).isEqualTo("2:46");
   }
+
 }
