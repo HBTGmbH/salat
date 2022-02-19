@@ -462,8 +462,8 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
         // for a new suborder, check if the sign already exists
         if (suborderId == 0L) {
-            // Liste aller Children der übergeordneten Suborder
-            // ggf. gibt es keine übergeordnete Suborder (=null?)
+            // Liste aller Children der Ã¼bergeordneten Suborder
+            // ggf. gibt es keine Ã¼bergeordnete Suborder (=null?)
             // dann die untergeordneten Suboders der Customerorder.
             List<Suborder> suborders;
             if (addSuborderForm.getParentId() == null) {

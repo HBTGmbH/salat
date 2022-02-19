@@ -74,7 +74,7 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerOrde
     }
 
     /**
-     * fills customer order form with properties of given cústomer
+     * fills customer order form with properties of given customer
      */
     private void setFormEntries(HttpServletRequest request, AddCustomerOrderForm coForm, Customerorder co) {
 
