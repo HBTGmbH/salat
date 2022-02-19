@@ -25,11 +25,9 @@ import org.tb.form.ShowReleaseForm;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.OvertimeDAO;
-import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.service.SimpleMailService;
 import org.tb.util.DateUtils;
-import org.tb.util.MailSender;
 import org.tb.util.OptionItem;
 
 @Slf4j
@@ -38,9 +36,12 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     private EmployeecontractDAO employeecontractDAO;
     private TimereportDAO timereportDAO;
     private EmployeeDAO employeeDAO;
-    private PublicholidayDAO publicholidayDAO;
-    private OvertimeDAO overtimeDAO;
     private TimereportHelper timereportHelper;
+    private SimpleMailService simpleMailService;
+
+    public void setSimpleMailService(SimpleMailService simpleMailService) {
+        this.simpleMailService = simpleMailService;
+    }
 
     public void setTimereportHelper(TimereportHelper timereportHelper) {
         this.timereportHelper = timereportHelper;
@@ -56,14 +57,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
     public void setEmployeeDAO(EmployeeDAO employeeDAO) {
         this.employeeDAO = employeeDAO;
-    }
-
-    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
-        this.publicholidayDAO = publicholidayDAO;
-    }
-
-    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-        this.overtimeDAO = overtimeDAO;
     }
 
     @Override
@@ -211,7 +204,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 Employee recipient = employeecontract.getSupervisor();
                 Employee from = employeecontract.getEmployee();
                 try {
-                    MailSender.sendSalatBuchungenReleasedMail(recipient, from);
+                    simpleMailService.sendSalatBuchungenReleasedMail(recipient, from);
                 } catch (Exception e) {
                     log.error("sending release mail failed!!!");
                 }
@@ -226,7 +219,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             Employee recipient = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
 
             // * revipient = Empfaenger, loginEmployee = Absender
-            MailSender.sendSalatBuchungenToReleaseMail(recipient, loginEmployee);
+            simpleMailService.sendSalatBuchungenToReleaseMail(recipient, loginEmployee);
 
             request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
         }
@@ -242,7 +235,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             Employee recipient = currentEmployeeContract.getSupervisor();
             // sender of the mail
             if (recipient != null) {
-                MailSender.sendSalatBuchungenToAcceptanceMail(recipient, contEmployee, loginEmployee);
+                simpleMailService.sendSalatBuchungenToAcceptanceMail(recipient, contEmployee, loginEmployee);
                 request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
             } else {
                 // do nothing, Supervisor must not be null
