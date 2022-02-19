@@ -1,22 +1,45 @@
-package org.tb.util;
+package org.tb.service;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
+import org.springframework.stereotype.Service;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
+import org.tb.configuration.SalatProperties;
 
 /**
  * Builds the various emails
  *
  * @author la
  */
-public class SimpleMailFactory {
+@Service
+@RequiredArgsConstructor
+public class SimpleMailService {
 
-    private static SimpleEmail createBasicEmail(String subject, StringBuilder message, Employee sender, Employee recipient) throws EmailException {
+    private final SalatProperties salatProperties;
+
+    public void sendStatusReportReleasedEmail(Statusreport report) throws EmailException {
+        createStatusReportReleasedMail(report).send();
+    }
+
+    public void sendSalatBuchungenToReleaseMail(Employee recipient, Employee sender) throws EmailException {
+        createSalatBuchungenToReleaseMail(recipient, sender).send();
+    }
+
+    public void sendSalatBuchungenToAcceptanceMail(Employee recipient, Employee coworker, Employee sender) throws EmailException {
+        createSalatBuchungenToAcceptanceMail(recipient, coworker, sender).send();
+    }
+
+    public void sendSalatBuchungenReleasedMail(Employee recipient, Employee sender) throws EmailException {
+        createSalatBuchungenReleasedMail(recipient, sender).send();
+    }
+
+    private SimpleEmail createBasicEmail(String subject, StringBuilder message, Employee sender, Employee recipient) throws EmailException {
         SimpleEmail mail = new SimpleEmail();
-        mail.setHostName(GlobalConstants.MAIL_HOST);
+        mail.setHostName(salatProperties.getMailHost());
         mail.setCharset(org.apache.commons.mail.EmailConstants.UTF_8);
         mail.setFrom(sender.getEmailAddress(), sender.getName());
         mail.addTo(recipient.getEmailAddress(), recipient.getName());
@@ -32,7 +55,7 @@ public class SimpleMailFactory {
     }
 
     /* Email for released report */
-    public static SimpleEmail createStatusReportReleasedMail(Statusreport report) throws EmailException {
+    private SimpleEmail createStatusReportReleasedMail(Statusreport report) throws EmailException {
         String subject = "Statusbericht zum Auftrag " + report.getCustomerorder().getSignAndDescription() + " freigegeben";
         StringBuilder message = new StringBuilder("Hallo ");
         message.append(report.getRecipient().getFirstname());
@@ -46,7 +69,7 @@ public class SimpleMailFactory {
     }
 
     /* Email for Salatbuchungen to release */
-    public static SimpleEmail createSalatBuchungenToReleaseMail(Employee recipient, Employee sender) throws EmailException {
+    private SimpleEmail createSalatBuchungenToReleaseMail(Employee recipient, Employee sender) throws EmailException {
         String subject = "Freigabe: SALAT freigeben";
         StringBuilder message = new StringBuilder();
         if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
@@ -62,7 +85,7 @@ public class SimpleMailFactory {
         return createBasicEmail(subject, message, sender, recipient);
     }
 
-    public static Email createSalatBuchungenToAcceptanceMail(Employee recipient, Employee coworker, Employee sender) throws EmailException {
+    private Email createSalatBuchungenToAcceptanceMail(Employee recipient, Employee coworker, Employee sender) throws EmailException {
         String subject = "SALAT: freigegebene Buchungen abnehmen";
         StringBuilder message = new StringBuilder();
         if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
@@ -85,7 +108,7 @@ public class SimpleMailFactory {
         return createBasicEmail(subject, message, sender, recipient);
     }
 
-    public static Email createSalatBuchungenReleasedMail(Employee recipient, Employee sender) throws EmailException {
+    private Email createSalatBuchungenReleasedMail(Employee recipient, Employee sender) throws EmailException {
         String subject = "SALAT: Buchungen durch " + sender.getSign() + " freigegeben";
         StringBuilder message = new StringBuilder();
         if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {

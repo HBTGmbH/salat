@@ -1,5 +1,9 @@
 package org.tb.persistence;
 
+import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -11,20 +15,18 @@ import org.springframework.util.Assert;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Component
 public class EmployeeDAO extends AbstractDAO {
 
     private final EmployeecontractDAO employeecontractDAO;
-    private final List<String> adminNames;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
-    public EmployeeDAO(SessionFactory sessionFactory, EmployeecontractDAO employeecontractDAO, List<String> adminNames) {
+    public EmployeeDAO(SessionFactory sessionFactory, EmployeecontractDAO employeecontractDAO,
+        EmployeeRepository employeeRepository) {
         super(sessionFactory);
         this.employeecontractDAO = employeecontractDAO;
-        this.adminNames = adminNames;
+        this.employeeRepository = employeeRepository;
     }
 
     /**
@@ -73,22 +75,21 @@ public class EmployeeDAO extends AbstractDAO {
      * Checks if the given employee is an administrator.
      */
     public boolean isAdmin(Employee employee) {
-        return adminNames.contains(employee.getSign());
+        return EMPLOYEE_STATUS_ADM.equals(employee.getStatus());
     }
 
     /**
      * Gets the employee from the given sign (unique).
      */
     public Employee getEmployeeBySign(String sign) {
-        return (Employee) getSession().createQuery(
-                "from Employee p where p.sign = ?").setString(0, sign).uniqueResult();
+        return employeeRepository.findBySign(sign).orElse(null);
     }
 
     /**
      * Gets the employee with the given id.
      */
     public Employee getEmployeeById(long id) {
-        return (Employee) getSession().createQuery("from Employee em where em.id = ?").setLong(0, id).uniqueResult();
+        return employeeRepository.findById(id).orElse(null);
     }
 
     /**
@@ -168,51 +169,22 @@ public class EmployeeDAO extends AbstractDAO {
      * Saves the given employee and sets creation-/update-user and creation-/update-date.
      */
     public void save(Employee employee, Employee loginEmployee) {
-        if (loginEmployee == null) {
-            throw new RuntimeException("the login-user must be passed to the db");
-        }
-        Session session = getSession();
-        java.util.Date creationDate = employee.getCreated();
-        if (creationDate == null) {
-            employee.setCreated(new java.util.Date());
-            employee.setCreatedby(loginEmployee.getSign());
-        } else {
-            employee.setLastupdate(new java.util.Date());
-            employee.setLastupdatedby(loginEmployee.getSign());
-            Integer updateCounter = employee.getUpdatecounter();
-            updateCounter = (updateCounter == null) ? 1 : updateCounter + 1;
-            employee.setUpdatecounter(updateCounter);
-        }
-
-        if (session.contains(employee)) {
-            // existing and attached to session
-            session.saveOrUpdate(employee);
-        } else {
-            if (employee.getId() != 0L) {
-                // existing but detached from session
-                session.merge(employee);
-            } else {
-                // new object -> persist it!
-                session.saveOrUpdate(employee);
-            }
-        }
-
-        session.flush();
+        employeeRepository.save(employee);
     }
 
     /**
      * Deletes the given employee.
      */
-    public boolean deleteEmployeeById(long emId) {
-        Employee emToDelete = getEmployeeById(emId);
+    public boolean deleteEmployeeById(long employeeId) {
+        Employee emToDelete = getEmployeeById(employeeId);
 
-        List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsByFilters(true, null, emId);
-
+        List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsByFilters(
+            true,
+            null,
+            employeeId
+        );
         if (employeeContracts == null || employeeContracts.isEmpty()) {
-            Session session = getSession();
-            session.delete(emToDelete);
-            session.flush();
-
+            employeeRepository.delete(emToDelete);
             return true;
         }
 

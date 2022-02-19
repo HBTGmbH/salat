@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -19,14 +20,20 @@ import org.tb.form.AddStatusReportForm;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.StatusReportDAO;
+import org.tb.service.SimpleMailService;
 import org.tb.util.DateUtils;
-import org.tb.util.MailSender;
 
+@Component
 public class StoreStatusReportAction extends StatusReportAction<AddStatusReportForm> {
 
     private StatusReportDAO statusReportDAO;
     private CustomerorderDAO customerorderDAO;
     private EmployeeDAO employeeDAO;
+    private SimpleMailService simpleMailService;
+
+    public void setSimpleMailService(SimpleMailService simpleMailService) {
+        this.simpleMailService = simpleMailService;
+    }
 
     public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
         this.statusReportDAO = statusReportDAO;
@@ -134,7 +141,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                 request.getSession().setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "statusreport.actioninfo.released.text"));
 
                 // send acknowledgement email for mitarbeiter wich have his statusberich released 
-                MailSender.sendStatusReportReleasedEmail(currentReport);
+                simpleMailService.sendStatusReportReleasedEmail(currentReport);
 
                 // set current report
                 request.getSession().setAttribute("currentStatusReport", currentReport);
