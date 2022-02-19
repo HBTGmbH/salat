@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @EnableJpaRepositories
-@EnableJpaAuditing(auditorAwareRef = "loginEmployeeAuditorAware")
+@EnableJpaAuditing(auditorAwareRef = "authorizedUserAuditorAware")
 @EnableTransactionManagement
 @SpringBootApplication(exclude = { SecurityAutoConfiguration.class, ManagementWebSecurityAutoConfiguration.class})
 public class SalatApplication {

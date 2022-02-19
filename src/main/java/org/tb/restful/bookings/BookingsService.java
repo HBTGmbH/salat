@@ -9,7 +9,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.text.ParseException;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,17 +20,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.bdom.AuthorizedUser;
-import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Timereport;
 import org.tb.exception.AuthorizationException;
 import org.tb.exception.BusinessRuleException;
 import org.tb.exception.InvalidDataException;
-import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.ReferencedayDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.service.TimereportService;
 import org.tb.util.DateUtils;
@@ -40,38 +36,34 @@ import org.tb.util.DateUtils;
 @RequiredArgsConstructor
 public class BookingsService {
 
-    private final EmployeeDAO employeeDAO;
     private final EmployeecontractDAO employeecontractDAO;
     private final TimereportDAO timereportDAO;
     private final EmployeeorderDAO employeeorderDAO;
-    private final ReferencedayDAO referencedayDAO;
     private final TimereportService timereportService;
+    private final AuthorizedUser authorizedUser;
 
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     public List<Booking> getBookings(
-        @RequestParam("datum") Date date,
-        @RequestParam("mitarbeiter") String employeeStr
+        @RequestParam("datum") Date refDate
     ) {
-        Long employeeId = null;
-        Employee employee;
-        if (employeeStr != null) {
-            employee = employeeDAO.getEmployeeBySign(employeeStr);
-            if (employee == null) {
-                return Collections.emptyList();
-            }
-            employeeId = employee.getId();
-        }
-        if (date == null) date = DateUtils.today();
-
-        // FIXME check that provided employeeId matches the authenticated user?
-
-        Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
-        if(ec == null) {
-            return Collections.emptyList();
+        if(!authorizedUser.isAuthenticated()) {
+            throw new ResponseStatusException(UNAUTHORIZED);
         }
 
-        List<Timereport> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
+        if (refDate == null) refDate = DateUtils.today();
+        Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(
+            authorizedUser.getEmployeeId(),
+            refDate
+        );
+        if(employeecontract == null) {
+            throw new ResponseStatusException(NOT_FOUND);
+        }
+
+        List<Timereport> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
+            employeecontract.getId(),
+            refDate
+        );
         return timeReports.stream()
             .map(tr ->
                 Booking.builder()
@@ -94,19 +86,15 @@ public class BookingsService {
     @GetMapping(path = "/list", consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
     public void createBooking(@RequestBody Booking booking) {
+        if(!authorizedUser.isAuthenticated()) {
+            throw new ResponseStatusException(UNAUTHORIZED);
+        }
+
         Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(booking.getEmployeeorderId());
         if (employeeorder == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + booking.getEmployeeorderId());
         }
-        // FIXME check that provided Employeeorder.employee.id matches the authenticated user
 
-        AuthorizedUser authorizedUser = new AuthorizedUser();
-        authorizedUser.setEmployeeId(employeeorder.getEmployeecontract().getEmployee().getId());
-        authorizedUser.setSign(employeeorder.getEmployeecontract().getEmployee().getSign());
-        authorizedUser.setAuthenticated(true); // TODO introduce real authentication
-        authorizedUser.setAdmin(employeeorder.getEmployeecontract().getEmployee().getRestricted());
-        authorizedUser.setManager(employeeorder.getEmployeecontract().getEmployee().getRestricted());
-        authorizedUser.setRestricted(employeeorder.getEmployeecontract().getEmployee().getRestricted());
         try {
             timereportService.createTimereports(
                 authorizedUser,
