@@ -29,7 +29,7 @@ public class EditCustomerAction extends LoginRequiredAction<AddCustomerForm> {
         Customer cu = customerDAO.getCustomerById(cuId);
         request.getSession().setAttribute("cuId", cu.getId());
 
-        // fill the form with properties of cústomer to be edited
+        // fill the form with properties of customer to be edited
         setFormEntries(cuForm, cu);
 
         // forward to customer add/edit form
@@ -37,7 +37,7 @@ public class EditCustomerAction extends LoginRequiredAction<AddCustomerForm> {
     }
 
     /**
-     * fills customer form with properties of given cústomer
+     * fills customer form with properties of given customer
      */
     private void setFormEntries(AddCustomerForm customerForm, Customer cu) {
         customerForm.setName(cu.getName());

@@ -106,7 +106,7 @@ public class MatrixHelper {
             long durationHours = timeReport.getDurationhours();
             long durationMinutes = timeReport.getDurationminutes();
 
-            // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Überstundenausgleich" into it
+            // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Ãœberstundenausgleich" into it
             // -> needed because overtime compensation should be shown in matrix overview! (taskdescription as if-clause in jsp!)
             if (timeReport.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 if (taskdescription.length() == 0) {

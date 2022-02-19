@@ -54,7 +54,7 @@ public class Timereport extends EditDetails implements Serializable {
 
     private Integer durationhours;
     private Integer durationminutes;
-    private String sortofreport; // TODO was steckt hinter diesem Konzept? kl‰ren!
+    private String sortofreport; // TODO was steckt hinter diesem Konzept? kl√§ren!
     private String taskdescription;
     private String status;
     private Double costs;

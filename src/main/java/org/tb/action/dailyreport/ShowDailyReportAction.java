@@ -251,7 +251,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         } else {
             //*** initialisation ***
             init(request, reportForm);
-            //TODO: Hier bitte findForward zurückgeben.
+            //TODO: Hier bitte findForward zurÃ¼ckgeben.
             if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
                 // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
                 String date = request.getParameter("year") + "-" + DateUtils.getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
@@ -728,7 +728,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setSelectedBreakHour(workingday.getBreakhours());
                 reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
             } else {
-                // don´t show break time, quitting time and working day ends
+                // don't show break time, quitting time and working day ends
                 // on the showdailyreport.jsp
                 request.getSession().setAttribute("visibleworkingday", false);
                 reportForm.setSelectedWorkHourBegin(0);
