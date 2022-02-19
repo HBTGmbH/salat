@@ -1,14 +1,10 @@
 package org.tb.restful.hello;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@Setter
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class Person {
-
-    private String name;
-
+    private final String name;
 }

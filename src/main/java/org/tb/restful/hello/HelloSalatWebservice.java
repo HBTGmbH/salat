@@ -1,25 +1,25 @@
 package org.tb.restful.hello;
 
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
 @RequiredArgsConstructor
-@Path("/rest/HelloSalatWebservice")
+@RestController("/rest/HelloSalatWebservice")
 public class HelloSalatWebservice {
 
     private final EmployeeDAO employeeDAO;
 
-    @GET
-    @Path("/sayHello")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Message sayHello(@QueryParam("sign") String sign) {
+    @GetMapping(path = "/sayHello", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(OK)
+    public Message sayHello(@RequestParam("sign") String sign) {
         Employee employee = employeeDAO.getEmployeeBySign(sign);
         if (employee != null) {
           return new Message("Hello!", new Person(employee.getFirstname()));
