@@ -14,18 +14,16 @@ import java.io.Serializable;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Vacation implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Vacation extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Employeecontract employeecontract;
+
     private Integer year;
     private Integer entitlement;
     private Integer used;

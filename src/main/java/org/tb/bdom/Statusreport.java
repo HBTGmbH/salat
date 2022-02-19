@@ -19,17 +19,14 @@ import java.io.Serializable;
 @Entity
 @Table(name = "STATUSREPORT")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Statusreport extends EditDetails implements Serializable {
-    private static final long serialVersionUID = 1L; // 3L;
+public class Statusreport extends AuditedEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private long id;
+    private static final long serialVersionUID = 1L;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "CUSTOMERORDER")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     private Customerorder customerorder;
 
     @ManyToOne

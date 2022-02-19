@@ -254,7 +254,7 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setHourly_rate(hourly_rate);
     }
 
-    public long getId() {
+    public Long getId() {
         return suborder.getId();
     }
 

@@ -3,8 +3,6 @@ package org.tb.bdom;
 import java.io.Serializable;
 import java.util.List;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,29 +15,29 @@ import org.hibernate.annotations.CascadeType;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Customer extends EditDetails implements Serializable {
+public class Customer extends AuditedEntity implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue
-    private long id = -1;
     private String name;
     private String shortname;
     private String address;
 
     /**
+     * TODO check removal
      * list of customerorders, associated to this customer
      */
     @OneToMany(mappedBy = "customer")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Customerorder> customerorders;
 
     /**
+     * TODO check removal
      * list of invoices, associated to this customer
      */
     @OneToMany(mappedBy = "customer")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(CascadeType.SAVE_UPDATE)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Invoice> invoices;
 
