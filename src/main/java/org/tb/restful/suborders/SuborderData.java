@@ -1,16 +1,14 @@
 package org.tb.restful.suborders;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@Setter
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SuborderData {
 
-    private long id;
-    private String label;
-    private boolean commentRequired;
+    private final long id;
+    private final String label;
+    private final boolean commentRequired;
 
 }

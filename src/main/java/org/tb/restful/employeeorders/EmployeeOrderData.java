@@ -1,12 +1,12 @@
 package org.tb.restful.employeeorders;
 
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 import org.tb.restful.suborders.SuborderData;
 
 @Getter
-@Setter
+@RequiredArgsConstructor
 public class EmployeeOrderData {
-    private SuborderData suborder;
-    private long employeeorderId;
+    private final SuborderData suborder;
+    private final long employeeorderId;
 }

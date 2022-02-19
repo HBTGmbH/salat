@@ -1,65 +1,64 @@
 package org.tb.restful.suborders;
 
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.util.DateUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-@Path("/rest/SubordersService")
+@RestController("/rest/SubordersService")
+@RequiredArgsConstructor
 public class SubordersService {
 
-    private EmployeecontractDAO employeecontractDAO;
-    private SuborderDAO suborderDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final SuborderDAO suborderDAO;
 
-    @GET
-    @Path("/availableSuborders")
-    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+    @GetMapping(path = "/availableSuborders", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(OK)
     public List<SuborderData> getAvailableSuborders(
-            @Context HttpServletRequest request,
-            @QueryParam("refDate") Date refDate) {
+        @RequestParam("refDate") Date refDate,
+        @RequestParam("employeeId") long employeeId
+    ) {
+        if (refDate == null) refDate = DateUtils.today();
 
-        if (refDate == null) refDate = new Date();
+        // FIXME check that provided employeeId matches the authenticated user
 
-        Long employeeId = (Long) request.getSession()
-                .getAttribute("employeeId");
-        Employeecontract ec = employeecontractDAO
-                .getEmployeeContractByEmployeeIdAndDate(employeeId, refDate);
+        Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(
+            employeeId,
+            refDate
+        );
+
         // The method getSubordersByEmployeeContractIdWithValidEmployeeOrders
         // was added to the SuborderDao class!!!
-        List<Suborder> suborders = suborderDAO
-                .getSubordersByEmployeeContractIdWithValidEmployeeOrders(
-                        ec.getId(), refDate);
+        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(
+            ec.getId(),
+            refDate
+        );
 
         List<SuborderData> suborderResult = new ArrayList<>(suborders.size());
-
-        for (Suborder suborder : suborders) {
-            // Filtering valid suborders with not required description
-            String suborderLabel = suborder.getCustomerorder().getSign() + "/"
-                    + suborder.getSign() + " " + suborder.getShortdescription();
-            suborderResult.add(new SuborderData(suborder.getId(),
-                    suborderLabel, suborder.getCommentnecessary()));
-        }
-
-        return suborderResult;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
+        return suborders.stream()
+            .map(s -> {
+                String suborderLabel = s.getCustomerorder().getSign() +
+                    "/" +
+                    s.getSign() +
+                    " " +
+                    s.getShortdescription();
+                return new SuborderData(s.getId(), suborderLabel, s.getCommentnecessary());
+            })
+            .collect(Collectors.toList());
     }
 
 }

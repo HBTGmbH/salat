@@ -1,5 +1,16 @@
 package org.tb.restful.employeeorders;
 
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
@@ -7,65 +18,46 @@ import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.restful.suborders.SuborderData;
+import org.tb.util.DateUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-@Path("/rest/employeeorders")
+@RestController("/rest/employeeorders")
+@RequiredArgsConstructor
 public class EmployeeOrdersService {
 
-    private EmployeecontractDAO employeecontractDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private SuborderDAO suborderDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final SuborderDAO suborderDAO;
 
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-
-    @GET
-    @Path("/validOrders")
-    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+    @GetMapping(path = "/validOrders", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(OK)
     public List<EmployeeOrderData> getValidEmployeeOrders(
-            @Context HttpServletRequest request,
-            @QueryParam("refDate") Date refDate) {
+        @RequestParam("refDate") Date refDate,
+        @RequestParam("employeeId") long employeeId
+    ) {
+        if (refDate == null) refDate = DateUtils.today();
 
-        if (refDate == null) refDate = new Date();
+        // FIXME check that provided employeeId matches the authenticated user
 
-        Long employeeId = (Long) request.getSession().getAttribute("employeeId");
         Employeecontract ec = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, refDate);
         // The method getSubordersByEmployeeContractIdWithValidEmployeeOrders
         // was added to the SuborderDao class!!!
         List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(ec.getId(), refDate);
 
-        List<EmployeeOrderData> employeeorderResult = new ArrayList<>(suborders.size());
-
-        for (Suborder suborder : suborders) {
-            // Filtering valid suborders with not required description
-            Employeeorder eo = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(ec.getId(), suborder.getId(), refDate);
-            String suborderLabel = suborder.getCustomerorder().getSign() + "/" + suborder.getSign() + " " + suborder.getShortdescription();
-            EmployeeOrderData data = new EmployeeOrderData();
-            data.setEmployeeorderId(eo.getId());
-            data.setSuborder(new SuborderData(suborder.getId(), suborderLabel, suborder.getCommentnecessary()));
-            employeeorderResult.add(data);
-        }
-
-        return employeeorderResult;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
+        final Date requestedRefDate = refDate; // make final for stream processing
+        return suborders.stream()
+            .map(s -> {
+                Employeeorder eo = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+                    ec.getId(),
+                    s.getId(),
+                    requestedRefDate
+                );
+                String suborderLabel = s.getCustomerorder().getSign() + "/" + s.getSign() + " " + s.getShortdescription();
+                return new EmployeeOrderData(
+                    new SuborderData(s.getId(), suborderLabel, s.getCommentnecessary()),
+                    eo.getId()
+                );
+            })
+            .collect(Collectors.toList());
     }
 
 }
