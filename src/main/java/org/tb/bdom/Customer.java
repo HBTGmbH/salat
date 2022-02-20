@@ -32,15 +32,6 @@ public class Customer extends AuditedEntity implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Customerorder> customerorders;
 
-    /**
-     * TODO check removal
-     * list of invoices, associated to this customer
-     */
-    @OneToMany(mappedBy = "customer")
-    @Cascade(CascadeType.SAVE_UPDATE)
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Invoice> invoices;
-
     public String getShortname() {
         if (shortname == null || shortname.equals("")) {
             if (name.length() > 12) {
