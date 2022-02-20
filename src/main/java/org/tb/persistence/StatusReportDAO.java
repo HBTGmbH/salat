@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import java.util.Collections;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,6 +153,11 @@ public class StatusReportDAO extends AbstractDAO {
             srDeleted = true;
         }
         return srDeleted;
+    }
+
+    public List<Statusreport> getStatusReportByEmployeeorderId(long employeeorderId) {
+        // FIXME implement
+        return Collections.emptyList();
     }
 
 }
