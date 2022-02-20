@@ -1,4 +1,4 @@
-package org.tb.form;
+package org.tb.action.order;
 
 import static org.tb.util.DateUtils.today;
 
@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @Getter
 @Setter
-public class AddCustomerOrderForm extends ActionForm {
+public class AddCustomerorderForm extends ActionForm {
     private static final long serialVersionUID = 1L; // 3158661302891965253L;
 
     private long id;
@@ -55,13 +55,16 @@ public class AddCustomerOrderForm extends ActionForm {
         validUntil = DateUtils.format(today()); // 'yyyy-mm-dd'
         responsibleCustomerTechnical = "";
         responsibleCustomerContractually = "";
-        if (null != request.getSession().getAttribute("currentEmployeeId") && (Long) request.getSession().getAttribute("currentEmployeeId") != -1
-                && (Long) request.getSession().getAttribute("currentEmployeeId") != 0) {
-            employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+        Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
+        if (currentEmployeeId != null && currentEmployeeId != -1 && currentEmployeeId > 0) {
+            employeeId = currentEmployeeId;
         } else {
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-            employeeId = loginEmployee.getId();
-
+            if(loginEmployee != null) {
+                employeeId = loginEmployee.getId();
+            } else {
+                employeeId = -1;
+            }
         }
         respContrEmployeeId = employeeId;
 

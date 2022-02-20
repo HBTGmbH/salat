@@ -1,5 +1,6 @@
 package org.tb.persistence;
 
+import static org.tb.GlobalConstants.INVOICE_YES;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 
 import java.util.Date;
@@ -22,10 +23,6 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long> {
       + "t.employeeorder.suborder.sign asc")
   List<Timereport> findAllByEmployeecontractIdAndReferencedayBetween(long employeecontractId, Date begin, Date end);
 
-  @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
-      + "where tr.suborder.id = :suborderId and tr.employeecontract.id = :employeecontractId")
-  Optional<Long> getReportedMinutesForSuborderAndEmployeeContract(long suborderId, long employeecontractId);
-
   @Query("select t from Timereport t "
       + "where t.employeecontract.id = :employeecontractId "
       + "and (t.referenceday.refdate < t.employeecontract.validFrom "
@@ -45,5 +42,13 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long> {
       + "and t.durationminutes = 0 and t.durationhours = 0 "
       + "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, Date releaseDate);
+
+  @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
+      + "where tr.suborder.id = :suborderId and tr.employeecontract.id = :employeecontractId")
+  Optional<Long> getReportedMinutesForSuborderAndEmployeeContract(long suborderId, long employeecontractId);
+
+  @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
+      + "where tr.suborder.invoice = '" + INVOICE_YES + "' and tr.employeeorder.suborder.customerorder.id = :customerorderId")
+  Optional<Long> getReportedMinutesForCustomerorder(long customerorderId);
 
 }

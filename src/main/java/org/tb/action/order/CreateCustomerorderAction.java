@@ -1,5 +1,6 @@
-package org.tb.action.admin;
+package org.tb.action.order;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
@@ -10,7 +11,6 @@ import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.form.AddCustomerOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,27 +22,15 @@ import java.util.List;
  * @author oda
  */
 @Component
-public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomerOrderForm> {
+@RequiredArgsConstructor
+public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
-    private EmployeeDAO employeeDAO;
-    private CustomerDAO customerDAO;
-    private CustomerorderDAO customerorderDAO;
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
-
-    public void setCustomerDAO(CustomerDAO customerDAO) {
-        this.customerDAO = customerDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
+    private final EmployeeDAO employeeDAO;
+    private final CustomerDAO customerDAO;
+    private final CustomerorderDAO customerorderDAO;
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerOrderForm addForm, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm addForm, HttpServletRequest request, HttpServletResponse response) {
         // form presettings
         Long customerId = (Long) request.getSession().getAttribute("customerorderCustomerId");
 
@@ -54,7 +42,7 @@ public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomerOr
         // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
-        AddCustomerOrderForm customerOrderForm = addForm;
+        AddCustomerorderForm customerOrderForm = addForm;
 
         // get list of existing customers and customer orders
         List<Customer> customers = customerDAO.getCustomers();

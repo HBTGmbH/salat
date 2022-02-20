@@ -1,4 +1,4 @@
-package org.tb.form;
+package org.tb.action.order;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @Getter
 @Setter
-public class ShowCustomerOrderForm extends ActionForm {
+public class ShowCustomerorderForm extends ActionForm {
     private static final long serialVersionUID = 1L; // 1906438218934586588L;
 
     private Boolean show;

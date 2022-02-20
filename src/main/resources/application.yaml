@@ -1,4 +1,8 @@
-server.servlet.session.timeout: 660m
+server:
+  servlet:
+    session:
+      persistent: false
+      timeout: 660m
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/salat
