@@ -1,8 +1,9 @@
-package org.tb.action.admin;
+package org.tb.action.order;
 
 import static org.tb.util.DateUtils.parse;
 
 import java.util.Date;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,6 @@ import org.tb.bdom.*;
 import org.tb.persistence.*;
 import org.tb.util.DateUtils;
 import org.tb.action.LoginRequiredAction;
-import org.tb.form.AddCustomerOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,48 +27,19 @@ import java.util.List;
  * @author oda
  */
 @Component
-public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerOrderForm> {
+@RequiredArgsConstructor
+public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
-    private CustomerDAO customerDAO;
-    private SuborderDAO suborderDAO;
-    private TimereportDAO timereportDAO;
-    private CustomerorderDAO customerorderDAO;
-
-    private EmployeeDAO employeeDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private EmployeecontractDAO employeecontractDAO;
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setCustomerDAO(CustomerDAO customerDAO) {
-        this.customerDAO = customerDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
-
+    private final CustomerDAO customerDAO;
+    private final SuborderDAO suborderDAO;
+    private final TimereportDAO timereportDAO;
+    private final CustomerorderDAO customerorderDAO;
+    private final EmployeeDAO employeeDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final EmployeecontractDAO employeecontractDAO;
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerOrderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
         /* remove list with timereports out of range */
@@ -301,11 +272,11 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerOrd
     /**
      * resets the 'add report' form to default values
      */
-    private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddCustomerOrderForm coForm) {
+    private void doResetActions(ActionMapping mapping, HttpServletRequest request, AddCustomerorderForm coForm) {
         coForm.reset(mapping, request);
     }
 
-    private ActionMessages valiDate(HttpServletRequest request, AddCustomerOrderForm coForm, String which) {
+    private ActionMessages valiDate(HttpServletRequest request, AddCustomerorderForm coForm, String which) {
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();
@@ -339,7 +310,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerOrd
     /**
      * validates the form data (syntax and logic)
      */
-    private ActionMessages validateFormData(HttpServletRequest request, AddCustomerOrderForm coForm) throws IOException {
+    private ActionMessages validateFormData(HttpServletRequest request, AddCustomerorderForm coForm) throws IOException {
 
         ActionMessages errors = getErrors(request);
         if (errors == null) {

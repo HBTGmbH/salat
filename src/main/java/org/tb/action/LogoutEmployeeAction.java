@@ -2,6 +2,7 @@ package org.tb.action;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -15,13 +16,10 @@ import org.tb.persistence.EmployeeDAO;
  * @author oda
  */
 @Component
+@RequiredArgsConstructor
 public class LogoutEmployeeAction extends LoginRequiredAction<ActionForm> {
 
-    private EmployeeDAO employeeDAO;
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
+    private final EmployeeDAO employeeDAO;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -30,12 +28,12 @@ public class LogoutEmployeeAction extends LoginRequiredAction<ActionForm> {
             employeeDAO.save(loginEmployee, loginEmployee);
         }
 
-        request.getSession().invalidate();
         request.getSession().removeAttribute("currentEmployee");
         request.getSession().removeAttribute("currentOrder");
         request.getSession().removeAttribute("employees");
         request.getSession().removeAttribute("currentEmployee");
         request.getSession().removeAttribute("report");
+        request.getSession().invalidate();
         return mapping.findForward("success");
     }
 
