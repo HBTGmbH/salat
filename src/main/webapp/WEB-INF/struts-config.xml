@@ -87,12 +87,14 @@
 			<forward name="success" path="/auth/login.jsp" />
 		</action>
 
-		<action path="/CreateDailyReport" name="addDailyReportForm">
+		<action path="/CreateDailyReport" name="addDailyReportForm"
+			type="org.tb.action.dailyreport.CreateDailyReportAction">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/StoreDailyReport" input="/dailyreport/addDailyReport.jsp" validate="true" name="addDailyReportForm">
+		<action path="/StoreDailyReport" input="/dailyreport/addDailyReport.jsp" validate="true"
+			name="addDailyReportForm" type="org.tb.action.dailyreport.StoreDailyReportAction">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" redirect="true" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="showDaily" path="/dailyreport/showDailyReport.jsp" />
@@ -101,7 +103,8 @@
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/UpdateDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true" name="updateDailyReportForm">
+		<action path="/UpdateDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true"
+			name="updateDailyReportForm" type="org.tb.action.dailyreport.UpdateDailyReportAction">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
@@ -109,17 +112,20 @@
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditDailyReport" name="addDailyReportForm">
+		<action path="/EditDailyReport" name="addDailyReportForm"
+			type="org.tb.action.dailyreport.EditDailyReportAction">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteTimereportFromDailyDisplay" input="/dailyreport/showDailyReport.jsp" name="showDailyReportForm">
+		<action path="/DeleteTimereportFromDailyDisplay" input="/dailyreport/showDailyReport.jsp"
+			name="showDailyReportForm" type="org.tb.action.dailyreport.DeleteTimereportFromDailyDisplayAction">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true" name="showDailyReportForm">
+		<action path="/ShowDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true"
+			name="showDailyReportForm" type="org.tb.action.dailyreport.ShowDailyReportAction">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="newreport" path="/dailyreport/addDailyReport.jsp" />
@@ -127,65 +133,74 @@
 			<forward name="print" path="/dailyreport/showDailyReportPrint.jsp" />
 		</action>
 
-		<action path="/ShowSettings" input="/user/showSettings.jsp" validate="true" name="showSettingsForm">
+		<action path="/ShowSettings" input="/user/showSettings.jsp" validate="true"
+			name="showSettingsForm" type="org.tb.action.ShowSettingsAction">
 			<forward name="success" path="/user/showSettings.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowWelcome" input="/showWelcome.jsp" validate="true" name="showWelcomeForm">
+		<action path="/ShowWelcome" input="/showWelcome.jsp" validate="true"
+			name="showWelcomeForm" type="org.tb.action.ShowWelcomeAction">
 			<forward name="login" path="/auth/login.jsp" />
 			<forward name="success" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowRelease" input="/dailyreport/showRelease.jsp" validate="true" name="showReleaseForm">
+		<action path="/ShowRelease" input="/dailyreport/showRelease.jsp" validate="true"
+			name="showReleaseForm" type="org.tb.action.ShowReleaseAction">
 			<forward name="success" path="/dailyreport/showRelease.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowMatrix" input="/dailyreport/showMatrix.jsp" validate="true" name="showMatrixForm">
+		<action path="/ShowMatrix" input="/dailyreport/showMatrix.jsp" validate="true"
+			name="showMatrixForm" type="org.tb.action.ShowMatrixAction">
 			<forward name="success" path="/dailyreport/showMatrix.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="print" path="/dailyreport/showMatrixPrint.jsp" />
 		</action>
 
-		<action path="/ShowInvoice" input="/invoice/showInvoice.jsp" validate="true" name="showInvoiceForm">
+		<action path="/ShowInvoice" input="/invoice/showInvoice.jsp" validate="true"
+			name="showInvoiceForm" type="org.tb.action.ShowInvoiceAction">
 			<forward name="success" path="/invoice/showInvoice.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="print" path="/invoice/showInvoicePrint.jsp" />
 		</action>
 		
-		<action path="/ShowTraining" input="/dailyreport/showTraining.jsp" validate="true" name="showTrainingForm">
+		<action path="/ShowTraining" input="/dailyreport/showTraining.jsp" validate="true"
+			name="showTrainingForm" type="org.tb.action.ShowTrainingAction">
 			<forward name="success" path="/dailyreport/showTraining.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 		</action>
 
 		<!-- Customer -->
-		<action path="/CreateCustomer" validate="true" name="addCustomerForm">
+		<action path="/CreateCustomer" validate="true" name="addCustomerForm"
+			type="org.tb.action.admin.CreateCustomerAction">
 			<forward name="success" path="/customer/addCustomer.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditCustomer" name="addCustomerForm">
+		<action path="/EditCustomer" name="addCustomerForm" type="org.tb.action.admin.EditCustomerAction">
 			<forward name="success" path="/customer/addCustomer.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteCustomer" input="/customer/showCustomer.jsp" name="addCustomerForm">
+		<action path="/DeleteCustomer" input="/customer/showCustomer.jsp" name="addCustomerForm"
+			type="org.tb.action.admin.DeleteCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowCustomer" name="showCustomerForm">
+		<action path="/ShowCustomer" name="showCustomerForm" type="org.tb.action.admin.ShowCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/StoreCustomer" input="/customer/addCustomer.jsp" validate="true" name="addCustomerForm">
+		<action path="/StoreCustomer" input="/customer/addCustomer.jsp" validate="true"
+			name="addCustomerForm" type="org.tb.action.admin.StoreCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/customer/addCustomer.jsp" />
@@ -193,28 +208,33 @@
 		</action>
 
 		<!-- Customerorder -->
-		<action path="/CreateCustomerorder" name="addCustomerOrderForm">
+		<action path="/CreateCustomerorder" name="addCustomerOrderForm"
+			type="org.tb.action.admin.CreateCustomerorderAction">
 			<forward name="success" path="/order/addCustomerOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditCustomerorder" name="addCustomerOrderForm">
+		<action path="/EditCustomerorder" name="addCustomerOrderForm"
+			type="org.tb.action.admin.EditCustomerorderAction">
 			<forward name="success" path="/order/addCustomerOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteCustomerorder" input="/order/showCustomerOrder.jsp" name="showCustomerOrderForm">
+		<action path="/DeleteCustomerorder" input="/order/showCustomerOrder.jsp"
+			name="showCustomerOrderForm" type="org.tb.action.admin.DeleteCustomerorderAction">
 			<forward name="success" path="/order/showCustomerOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowCustomerorder" name="showCustomerOrderForm">
+		<action path="/ShowCustomerorder" name="showCustomerOrderForm"
+			type="org.tb.action.admin.ShowCustomerorderAction">
 			<forward name="success" path="/order/showCustomerOrder.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/StoreCustomerorder" input="/order/addCustomerOrder.jsp" validate="true" name="addCustomerOrderForm">
+		<action path="/StoreCustomerorder" input="/order/addCustomerOrder.jsp" validate="true"
+			name="addCustomerOrderForm" type="org.tb.action.admin.StoreCustomerorderAction">
 			<forward name="success" path="/order/showCustomerOrder.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/order/addCustomerOrder.jsp" />
@@ -223,28 +243,32 @@
 		</action>
 
 		<!-- Suborder -->
-		<action path="/CreateSuborder" validate="true" name="addSuborderForm">
+		<action path="/CreateSuborder" validate="true" name="addSuborderForm"
+			type="org.tb.action.admin.CreateSuborderAction">
 			<forward name="success" path="/order/addSuborder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditSuborder" name="addSuborderForm">
+		<action path="/EditSuborder" name="addSuborderForm"
+			type="org.tb.action.admin.EditSuborderAction">
 			<forward name="success" path="/order/addSuborder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteSuborder" input="/order/showSuborder.jsp" name="showSuborderForm">
+		<action path="/DeleteSuborder" input="/order/showSuborder.jsp" name="showSuborderForm"
+			type="org.tb.action.admin.DeleteSuborderAction">
 			<forward name="success" path="/order/showSuborder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowSuborder" name="showSuborderForm">
+		<action path="/ShowSuborder" name="showSuborderForm" type="org.tb.action.admin.ShowSuborderAction">
 			<forward name="success" path="/order/showSuborder.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/StoreSuborder" input="/order/addSuborder.jsp" validate="true" name="addSuborderForm">
+		<action path="/StoreSuborder" input="/order/addSuborder.jsp" validate="true"
+			name="addSuborderForm" type="org.tb.action.admin.StoreSuborderAction">
 			<forward name="success" path="/order/showSuborder.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/order/addSuborder.jsp" />
@@ -252,75 +276,88 @@
 		</action>
 
 		<!-- Employeeorder -->
-		<action path="/CreateEmployeeorder" validate="true" name="addEmployeeOrderForm">
+		<action path="/CreateEmployeeorder" validate="true" name="addEmployeeOrderForm"
+			type="org.tb.action.admin.CreateEmployeeorderAction">
 			<forward name="success" path="/order/addEmployeeOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditEmployeeorder" name="addEmployeeOrderForm">
+		<action path="/EditEmployeeorder" name="addEmployeeOrderForm"
+			type="org.tb.action.admin.EditEmployeeorderAction">
 			<forward name="success" path="/order/addEmployeeOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteEmployeeorder" input="/order/showEmployeeOrder.jsp" name="showEmployeeOrderForm">
+		<action path="/DeleteEmployeeorder" input="/order/showEmployeeOrder.jsp"
+			name="showEmployeeOrderForm" type="org.tb.action.admin.DeleteEmployeeorderAction">
 			<forward name="success" path="/order/showEmployeeOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowEmployeeorder" name="showEmployeeOrderForm">
+		<action path="/ShowEmployeeorder" name="showEmployeeOrderForm"
+			type="org.tb.action.admin.ShowEmployeeorderAction">
 			<forward name="success" path="/order/showEmployeeOrder.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/StoreEmployeeorder" input="/order/addEmployeeOrder.jsp" validate="true" name="addEmployeeOrderForm">
+		<action path="/StoreEmployeeorder" input="/order/addEmployeeOrder.jsp" validate="true"
+			name="addEmployeeOrderForm" type="org.tb.action.admin.StoreEmployeeorderAction">
 			<forward name="success" path="/order/showEmployeeOrder.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/order/addEmployeeOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 		
-		<action path="/GenerateMultipleEmployeeorders" input="/order/generateMultipleEmployeeorders.jsp" name="generateMultipleEmployeeordersForm">
+		<action path="/GenerateMultipleEmployeeorders" input="/order/generateMultipleEmployeeorders.jsp"
+			name="generateMultipleEmployeeordersForm" type="org.tb.action.admin.GenerateMultipleEmployeeordersAction">
 			<forward name="start" path="/order/generateMultipleEmployeeorders.jsp"/>
 			<forward name="success" path="/order/showEmployeeOrder.jsp" redirect="true"/>
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 		</action>
 		
 		<!-- EmployeeOrderContent -->
-		<action path="/EditEmployeeOrderContent" name="addEmployeeOrderContentForm">
+		<action path="/EditEmployeeOrderContent" name="addEmployeeOrderContentForm"
+			type="org.tb.action.admin.EditEmployeeOrderContentAction">
 			<forward name="success" path="/order/addEmployeeOrderContent.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 		
-		<action path="/StoreEmployeeOrderContent" input="/order/addEmployeeOrderContent.jsp" name="addEmployeeOrderContentForm">
+		<action path="/StoreEmployeeOrderContent" input="/order/addEmployeeOrderContent.jsp"
+			name="addEmployeeOrderContentForm" type="org.tb.action.admin.StoreEmployeeOrderContentAction">
 			<forward name="success" path="/order/addEmployeeOrderContent.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="back" path="/order/showEmployeeOrder.jsp" />
 		</action>
 
 		<!-- Employeecontract -->
-		<action path="/CreateEmployeecontract" name="addEmployeeContractForm">
+		<action path="/CreateEmployeecontract" name="addEmployeeContractForm"
+			type="org.tb.action.admin.CreateEmployeecontractAction">
 			<forward name="success" path="/employee/addEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditEmployeecontract" name="addEmployeeContractForm">
+		<action path="/EditEmployeecontract" name="addEmployeeContractForm"
+			type="org.tb.action.admin.EditEmployeecontractAction">
 			<forward name="success" path="/employee/addEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteEmployeecontract" input="/employee/showEmployeeContract.jsp" name="addEmployeeContractForm">
+		<action path="/DeleteEmployeecontract" input="/employee/showEmployeeContract.jsp"
+			name="addEmployeeContractForm" type="org.tb.action.admin.DeleteEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowEmployeecontract" name="showEmployeeContractForm">
+		<action path="/ShowEmployeecontract" name="showEmployeeContractForm"
+			type="org.tb.action.admin.ShowEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/StoreEmployeecontract" input="/employee/addEmployeeContract.jsp" validate="true" name="addEmployeeContractForm">
+		<action path="/StoreEmployeecontract" input="/employee/addEmployeeContract.jsp" validate="true"
+			name="addEmployeeContractForm" type="org.tb.action.admin.StoreEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployeeContract.jsp" />
@@ -328,28 +365,32 @@
 		</action>
 
 		<!-- Employee -->
-		<action path="/CreateEmployee" validate="true" name="addEmployeeForm">
+		<action path="/CreateEmployee" validate="true" name="addEmployeeForm"
+			type="org.tb.action.admin.CreateEmployeeAction">
 			<forward name="success" path="/employee/addEmployee.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditEmployee" name="addEmployeeForm">
+		<action path="/EditEmployee" name="addEmployeeForm"
+			type="org.tb.action.admin.EditEmployeeAction">
 			<forward name="success" path="/employee/addEmployee.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteEmployee" input="/employee/showEmployee.jsp" name="addEmployeeForm">
+		<action path="/DeleteEmployee" input="/employee/showEmployee.jsp" name="addEmployeeForm"
+			type="org.tb.action.admin.DeleteEmployeeAction">
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowEmployee" name="showEmployeeForm">
+		<action path="/ShowEmployee" name="showEmployeeForm" type="org.tb.action.admin.ShowEmployeeAction">
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="backtomenu" path="/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/StoreEmployee" input="/employee/addEmployee.jsp" validate="true" name="addEmployeeForm">
+		<action path="/StoreEmployee" input="/employee/addEmployee.jsp" validate="true"
+			type="org.tb.action.admin.StoreEmployeeAction" name="addEmployeeForm">
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="cancel" path="/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployee.jsp" />
@@ -358,33 +399,38 @@
 
 		<!-- Admin -->
 		<action path="/ShowAdminOptions" input="/admin/adminoptions.jsp"
-			validate="false" name="showAdminOptionsForm">
+			type="org.tb.action.admin.ShowAdminOptionsAction" validate="false" name="showAdminOptionsForm">
 			<forward name="success" path="/admin/adminoptions.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<!-- Status Report -->
-		<action path="/ShowStatusReport" validate="true" name="showStatusReportForm">
+		<action path="/ShowStatusReport" validate="true" name="showStatusReportForm"
+			type="org.tb.action.admin.ShowStatusReportAction">
 			<forward name="success" path="/statusreport/showStatusReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/CreateStatusReport" validate="true" name="addStatusReportForm">
+		<action path="/CreateStatusReport" validate="true" name="addStatusReportForm"
+			type="org.tb.action.admin.CreateStatusReportAction">
 			<forward name="success" path="/statusreport/addStatusReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditStatusReport" name="addStatusReportForm">
+		<action path="/EditStatusReport" name="addStatusReportForm"
+			type="org.tb.action.admin.EditStatusReportAction">
 			<forward name="success" path="/statusreport/addStatusReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteStatusReport" input="/statusreport/showStatusReport.jsp" name="addStatusReportForm">
+		<action path="/DeleteStatusReport" input="/statusreport/showStatusReport.jsp"
+			type="org.tb.action.admin.DeleteStatusReportAction" name="addStatusReportForm">
 			<forward name="success" path="/statusreport/showStatusReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 		
-		<action path="/StoreStatusReport" input="/statusreport/addStatusReport.jsp" validate="true" name="addStatusReportForm">
+		<action path="/StoreStatusReport" input="/statusreport/addStatusReport.jsp" validate="true"
+			type="org.tb.action.admin.ShowStatusReportAction" name="addStatusReportForm">
 			<forward name="success" path="/statusreport/addStatusReport.jsp" />
 			<forward name="back" path="/statusreport/showStatusReport.jsp" />
 			<forward name="cancel" path="/statusreport/showStatusReport.jsp" />
