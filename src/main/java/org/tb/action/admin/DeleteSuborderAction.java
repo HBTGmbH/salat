@@ -4,6 +4,7 @@ import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.SuborderViewDecorator;
@@ -21,6 +22,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
     private static final Logger LOG = LoggerFactory.getLogger(DeleteSuborderAction.class);
 

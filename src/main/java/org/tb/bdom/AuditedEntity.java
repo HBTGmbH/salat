@@ -3,6 +3,7 @@ package org.tb.bdom;
 import static javax.persistence.TemporalType.TIMESTAMP;
 
 import java.util.Date;
+import java.util.Objects;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -52,6 +53,25 @@ abstract public class AuditedEntity implements Persistable<Long> {
     @Override
     public boolean isNew() {
         return id == null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if(id == null) return false;
+        AuditedEntity that = (AuditedEntity) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        if(id == null) return 0;
+        return Objects.hash(id);
     }
 
 }

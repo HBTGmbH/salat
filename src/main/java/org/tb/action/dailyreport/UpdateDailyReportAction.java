@@ -34,7 +34,7 @@ import org.tb.service.TimereportService;
  *
  * @author oda
  */
-@Component("/UpdateDailyReport")
+@Component
 @Slf4j
 public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReportForm> {
 

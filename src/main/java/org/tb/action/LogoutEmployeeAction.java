@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 
@@ -13,6 +14,7 @@ import org.tb.persistence.EmployeeDAO;
  *
  * @author oda
  */
+@Component
 public class LogoutEmployeeAction extends LoginRequiredAction<ActionForm> {
 
     private EmployeeDAO employeeDAO;

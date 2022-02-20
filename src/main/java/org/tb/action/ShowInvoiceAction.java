@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.action.dailyreport.DailyReportAction;
 import org.tb.bdom.Customerorder;
@@ -41,6 +42,7 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.util.DateUtils;
 import org.tb.util.ExcelArchivierer;
 
+@Component
 public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
 
     private CustomerorderDAO customerorderDAO;

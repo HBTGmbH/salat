@@ -1,6 +1,7 @@
 package org.tb.action.admin;
 
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
@@ -16,6 +17,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
     private EmployeeDAO employeeDAO;

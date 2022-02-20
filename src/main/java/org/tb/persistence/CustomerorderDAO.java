@@ -23,11 +23,14 @@ import java.util.Map.Entry;
 public class CustomerorderDAO extends AbstractDAO {
 
     private final SuborderDAO suborderDAO;
+    private final CustomerorderRepository customerorderRepository;
 
     @Autowired
-    public CustomerorderDAO(SessionFactory sessionFactory, SuborderDAO suborderDAO) {
+    public CustomerorderDAO(SessionFactory sessionFactory, SuborderDAO suborderDAO,
+        CustomerorderRepository customerorderRepository) {
         super(sessionFactory);
         this.suborderDAO = suborderDAO;
+        this.customerorderRepository = customerorderRepository;
     }
 
     /**
@@ -139,16 +142,14 @@ public class CustomerorderDAO extends AbstractDAO {
     }
 
     /**
-     * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible and statusreports are neccesary.
+     * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible and statusreports are necessary.
      */
-    @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(long responsibleHbtId) {
-        return getSession().createQuery("from Customerorder " +
-                "where responsible_hbt.id = ? " +
-                "and (statusreport = 4 " +
-                "or statusreport = 6 " +
-                "or statusreport = 12) " +
-                "order by sign").setLong(0, responsibleHbtId).list();
+        var statusreports = new ArrayList<Integer>();
+        statusreports.add(4);
+        statusreports.add(6);
+        statusreports.add(12);
+        return customerorderRepository.findAllByResponsibleHbtAndStatusReportIn(responsibleHbtId, statusreports);
     }
 
     /**

@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -28,6 +29,7 @@ import org.tb.form.ShowTrainingForm;
 /**
  * Action class for trainings to be shown on separate page
  */
+@Component
 public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
     private final static String TRAINING_ID = "i976";

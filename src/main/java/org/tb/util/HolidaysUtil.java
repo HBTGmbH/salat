@@ -2,6 +2,7 @@ package org.tb.util;
 
 import java.time.ZoneId;
 import java.util.Date;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tb.GlobalConstants;
@@ -21,10 +22,10 @@ import java.util.Scanner;
  *
  * @author kd
  */
+@Slf4j
 public class HolidaysUtil {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PublicholidayDAO.class);
-    private static final String EASTERN_SUNDAYS_RESOURCE_NAME = "/eastern.csv";
+    private static final String EASTERN_SUNDAYS_RESOURCE_NAME = "eastern.csv";
     private static final String DATE_FORMAT = "dd.MM.yyyy";
 
     /**
@@ -33,7 +34,7 @@ public class HolidaysUtil {
     public static Collection<LocalDate> loadEasterSundayDates() {
         InputStream is = PublicholidayDAO.class.getClassLoader().getResourceAsStream(EASTERN_SUNDAYS_RESOURCE_NAME);
         if (is == null) {
-            LOG.error("Could no load resource '{}'!", EASTERN_SUNDAYS_RESOURCE_NAME);
+            log.error("Could no load resource '{}'!", EASTERN_SUNDAYS_RESOURCE_NAME);
             return Collections.emptyList();
         }
 
@@ -47,7 +48,7 @@ public class HolidaysUtil {
                 LocalDate eastern = LocalDate.parse(line, dtf);
                 result.add(eastern);
             } catch (IllegalArgumentException e) {
-                LOG.error("Could not parse '{}' to date from resource/file '{}'", line, EASTERN_SUNDAYS_RESOURCE_NAME);
+                log.error("Could not parse '{}' to date from resource/file '{}'", line, EASTERN_SUNDAYS_RESOURCE_NAME);
             }
         }
         scanner.close();
@@ -98,4 +99,5 @@ public class HolidaysUtil {
     private static Date localDateToDate(LocalDate input) {
         return Date.from(input.atStartOfDay(ZoneId.of(GlobalConstants.DEFAULT_TIMEZONE_ID)).toInstant());
     }
+
 }

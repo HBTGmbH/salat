@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Customer;
 import org.tb.persistence.CustomerDAO;
 import org.tb.action.LoginRequiredAction;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
+@Component
 public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
 
     private CustomerDAO customerDAO;

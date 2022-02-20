@@ -25,7 +25,7 @@ import org.tb.bdom.Warning;
 @Slf4j
 public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAction<F> {
 
-    private AuthorizedUser authorizedUser;
+    protected AuthorizedUser authorizedUser;
 
     @Override
     public final ActionForward executeWithForm(ActionMapping mapping, F form, HttpServletRequest request, HttpServletResponse response) throws Exception {

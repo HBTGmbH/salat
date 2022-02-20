@@ -31,8 +31,8 @@ import org.tb.form.ShowDailyReportForm;
  *
  * @author oda
  */
-@Component("/DeleteTimereportFromDailyDisplay")
 @Slf4j
+@Component
 public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<ShowDailyReportForm> {
 
     private final CustomerorderDAO customerorderDAO;

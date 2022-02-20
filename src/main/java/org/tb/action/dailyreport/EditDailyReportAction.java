@@ -35,8 +35,8 @@ import org.tb.form.AddDailyReportForm;
  *
  * @author oda
  */
-@Component("/EditDailyReport")
 @Slf4j
+@Component
 public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final TimereportDAO timereportDAO;

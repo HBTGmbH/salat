@@ -71,8 +71,9 @@ import org.tb.util.DateUtils;
  *
  * @author oda, th
  */
-@Component("/ShowDailyReport")
+
 @Slf4j
+@Component
 public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm> {
 
     private final CustomerorderDAO customerorderDAO;
