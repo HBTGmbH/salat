@@ -15,11 +15,11 @@ public class AuthorizedUser implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private boolean authenticated = false;
-  private long employeeId = -1;
-  private String sign = null;
-  private boolean restricted = false;
-  private boolean admin = false;
-  private boolean manager = false;
+  private boolean authenticated;
+  private Long employeeId;
+  private String sign;
+  private boolean restricted;
+  private boolean admin;
+  private boolean manager;
 
 }

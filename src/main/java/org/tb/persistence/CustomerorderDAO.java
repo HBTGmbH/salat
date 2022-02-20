@@ -1,18 +1,36 @@
 package org.tb.persistence;
 
-import org.apache.commons.lang.StringUtils;
-import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.tb.bdom.Customerorder;
-import org.tb.bdom.Employee;
-import org.tb.bdom.Suborder;
-import org.tb.bdom.comparators.CustomerOrderComparator;
+import static java.lang.Boolean.TRUE;
+import static org.springframework.data.domain.Sort.Direction.ASC;
 
-import java.util.*;
-import java.util.Map.Entry;
+import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.ListJoin;
+import javax.persistence.criteria.Predicate;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Component;
+import org.tb.bdom.Customer_;
+import org.tb.bdom.Customerorder;
+import org.tb.bdom.Customerorder_;
+import org.tb.bdom.Employee;
+import org.tb.bdom.Employee_;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeecontract_;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Employeeorder_;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Suborder_;
+import org.tb.util.DateUtils;
 
 /**
  * DAO class for 'Customerorder'
@@ -20,125 +38,100 @@ import java.util.Map.Entry;
  * @author oda
  */
 @Component
-public class CustomerorderDAO extends AbstractDAO {
+@RequiredArgsConstructor
+public class CustomerorderDAO {
 
     private final SuborderDAO suborderDAO;
     private final CustomerorderRepository customerorderRepository;
-
-    @Autowired
-    public CustomerorderDAO(SessionFactory sessionFactory, SuborderDAO suborderDAO,
-        CustomerorderRepository customerorderRepository) {
-        super(sessionFactory);
-        this.suborderDAO = suborderDAO;
-        this.customerorderRepository = customerorderRepository;
-    }
 
     /**
      * Gets the customerorder for the given id.
      */
     public Customerorder getCustomerorderById(long id) {
-        return (Customerorder) getSession().createQuery("from Customerorder co where co.id = ?").setLong(0, id).uniqueResult();
+        return customerorderRepository.findById(id).orElse(null);
     }
 
     /**
      * Gets the customerorder for the given sign.
      */
     public Customerorder getCustomerorderBySign(String sign) {
-        return (Customerorder) getSession().createQuery("from Customerorder c where c.sign = ?").setString(0, sign).uniqueResult();
+        return customerorderRepository.findBySign(sign).orElse(null);
     }
 
     /**
      * Get a list of all Customerorders ordered by their sign.
      */
-    @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerorders() {
-        return getSession().createQuery("from Customerorder order by sign").list();
+        return Lists.newArrayList(customerorderRepository.findAll(Sort.by(Customerorder_.SIGN)));
     }
 
     /**
      * Get a list of all vivible Customerorders ordered by their sign.
      */
-    @SuppressWarnings("unchecked")
     public List<Customerorder> getVisibleCustomerorders() {
-        Date now = new Date();
-        return getSession().createQuery("from Customerorder where (hide = null or hide = false) or (fromDate <= ? and (untilDate = null or untilDate >= ? )) order by sign").setDate(0, now)
-                .setDate(1, now).list();
+        return customerorderRepository.findAllValidAtAndNotHidden(DateUtils.now());
     }
 
-    private List<Customerorder> createQuery(Long customerId, String filter, Date fromDate, Date untilDate) {
-        Map<String, Object> args = new HashMap<String, Object>();
-        List<String> clauses = new ArrayList<String>();
+    private Specification<Customerorder> showOnlyValid() {
+        Date now = DateUtils.now();
+        return (root, query, builder) -> {
+            var fromDateLess = builder.lessThanOrEqualTo(root.get(Customerorder_.fromDate), now);
+            var untilDateNullOrGreater = builder.or(
+                builder.isNull(root.get(Customerorder_.untilDate)),
+                builder.greaterThanOrEqualTo(root.get(Customerorder_.untilDate), now)
+            );
+            var notHidden = builder.notEqual(root.get(Customerorder_.hide), TRUE);
+            return builder.and(fromDateLess, untilDateNullOrGreater, notHidden);
+        };
+    }
 
-        if (customerId != null) {
-            clauses.add("(co.customer.id = :customerId)");
-            args.put("customerId", customerId);
-        }
+    private Specification<Customerorder> matchingCustomerId(long customerId) {
+        return (root, query, builder) -> builder.equal(root.join(Customerorder_.customer).get(Customer_.id), customerId);
+    }
 
-        if (fromDate != null) {
-            clauses.add("(fromDate <= :fromDate)");
-            args.put("fromDate", fromDate);
-        }
-
-        if (untilDate != null) {
-            clauses.add("(untilDate = null or untilDate >= :untilDate)");
-            args.put("untilDate", untilDate);
-        }
-
-        if (filter != null) {
-            clauses.add("(upper(sign) like :filter " +
-                    "or upper(description) like :filter " +
-                    "or upper(responsible_customer_contractually) like :filter " +
-                    "or upper(responsible_customer_technical) like :filter " +
-                    "or upper(order_customer) like :filter " +
-                    "or upper(customer.name) like :filter " +
-                    "or upper(customer.shortname) like :filter " +
-                    "or upper(responsible_hbt.firstname) like :filter " +
-                    "or upper(responsible_hbt.lastname) like :filter)");
-            args.put("filter", filter);
-        }
-
-        StringBuilder sb = new StringBuilder("from Customerorder co ");
-        if (!clauses.isEmpty()) {
-            sb.append("where (");
-            sb.append(StringUtils.join(clauses, " and "));
-            sb.append(")");
-        }
-        sb.append(" order by sign");
-
-        Query query = getSession().createQuery(sb.toString());
-        for (Entry<String, Object> entry : args.entrySet()) {
-            query = query.setParameter(entry.getKey(), entry.getValue());
-        }
-
-        @SuppressWarnings("unchecked")
-        List<Customerorder> result = query.list();
-        return result;
+    private Specification<Customerorder> filterMatches(String filter) {
+        final var filterValue = ('%' + filter + '%').toUpperCase();
+        return (root, query, builder) -> builder.or(
+            builder.like(builder.upper(root.get(Customerorder_.sign)), filterValue),
+            builder.like(builder.upper(root.get(Customerorder_.description)), filterValue),
+            builder.like(builder.upper(root.get(Customerorder_.responsible_customer_contractually)), filterValue),
+            builder.like(builder.upper(root.get(Customerorder_.responsible_customer_technical)), filterValue),
+            builder.like(builder.upper(root.get(Customerorder_.order_customer)), filterValue),
+            builder.like(builder.upper(root.join(Customerorder_.customer).get(Customer_.name)), filterValue),
+            builder.like(builder.upper(root.join(Customerorder_.customer).get(Customer_.shortname)), filterValue),
+            builder.like(builder.upper(root.join(Customerorder_.responsible_hbt).get(Employee_.firstname)), filterValue),
+            builder.like(builder.upper(root.join(Customerorder_.responsible_hbt).get(Employee_.lastname)), filterValue),
+            builder.like(builder.upper(root.join(Customerorder_.respEmpHbtContract).get(Employee_.firstname)), filterValue),
+            builder.like(builder.upper(root.join(Customerorder_.respEmpHbtContract).get(Employee_.lastname)), filterValue)
+        );
     }
 
     /**
      * Get a list of all Customerorders fitting to the given filters ordered by their sign.
      */
-    public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
-        Date now = (showInvalid == null || !showInvalid) ? new Date() : null;
-
-        if (customerId != null && customerId == -1) customerId = null;
-
-        boolean isFilter = filter != null && !filter.trim().isEmpty();
-        if (isFilter) {
-            filter = "%" + filter.toUpperCase() + "%";
-        } else {
-            filter = null;
-        }
-
-        return createQuery(customerId, filter, now, now);
+    public List<Customerorder> getCustomerordersByFilters(final Boolean showInvalid, final String filter, final Long customerId) {
+        var order = new Order(ASC, Customerorder_.SIGN).ignoreCase();
+        return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
+            Set<Predicate> predicates = new HashSet<>();
+            if(!TRUE.equals(showInvalid)) {
+                predicates.add(showOnlyValid().toPredicate(root, query, builder));
+            }
+            if(customerId != null && customerId > 0) {
+                predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
+            }
+            boolean isFilter = filter != null && !filter.trim().isEmpty();
+            if(isFilter) {
+                predicates.add(filterMatches(filter).toPredicate(root, query, builder));
+            }
+            return builder.and(predicates.toArray(new Predicate[0]));
+        }, Sort.by(order));
     }
 
     /**
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
      */
-    @SuppressWarnings("unchecked")
     public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
-        return getSession().createQuery("from Customerorder where responsible_hbt.id = ? order by sign").setLong(0, responsibleHbtId).list();
+        return customerorderRepository.findAllByResponsibleHbt(responsibleHbtId);
     }
 
     /**
@@ -155,51 +148,39 @@ public class CustomerorderDAO extends AbstractDAO {
     /**
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
      */
-    @SuppressWarnings("unchecked")
     public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
-        Date now = new Date();
-        return getSession().createQuery("from Customerorder where responsible_hbt.id = ? " +
-                "and ((hide = null or hide = false) " +
-                "or (fromDate <= ? and (untilDate = null or untilDate >= ? ))) " +
-                "order by sign").setLong(0, responsibleHbtId).setDate(1, now).setDate(2, now).list();
+        final var now = DateUtils.now();
+        return customerorderRepository.findAllByResponsibleHbt(responsibleHbtId).stream()
+            .filter(c -> !TRUE.equals(c.getHide()))
+            .filter(c -> !c.getFromDate().after(now))
+            .filter(c -> c.getUntilDate() == null || !c.getUntilDate().before(now))
+            .sorted(Comparator.comparing(Customerorder::getSign))
+            .collect(Collectors.toList());
     }
 
     /**
      * Gets a list of all Customerorders by employee contract id.
      */
     public List<Customerorder> getCustomerordersByEmployeeContractId(long contractId) {
-        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractId(contractId);
-        List<Customerorder> allCustomerorders = new ArrayList<>();
-        outer:
-        for (Suborder so : suborders) {
-            Customerorder co = so.getCustomerorder();
-            // check if order was already added to list with other suborder
-            for (Customerorder coInList : allCustomerorders) {
-                if (coInList.getId() == co.getId()) {
-                    continue outer;
-                }
-            }
-            allCustomerorders.add(co);
-        }
-        allCustomerorders.sort(CustomerOrderComparator.INSTANCE);
-        return allCustomerorders;
+        return suborderDAO.getSubordersByEmployeeContractId(contractId).stream()
+            .map(Suborder::getCustomerorder)
+            .distinct()
+            .sorted(Comparator.comparing(Customerorder::getSign))
+            .collect(Collectors.toList());
     }
 
-    @SuppressWarnings("unchecked")
-    public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, Date date) {
-        return getSession().createSQLQuery("select distinct {co.*} from customerorder co, employeeorder eo, suborder so " +
-                "where so.id = eo.suborder_id " +
-                "and co.id = so.customerorder_id " +
-                "and eo.employeecontract_id = ? " +
-                "and eo.fromdate <= ? " +
-                "and (eo.untildate is null " +
-                "or eo.untildate >= ?) " +
-                "order by co.sign asc, co.description")
-                .addEntity("co", Customerorder.class)
-                .setLong(0, employeeContractId)
-                .setDate(1, date)
-                .setDate(2, date)
-                .list();
+    public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final Date date) {
+        return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
+            ListJoin<Suborder, Employeeorder> employeeorderJoin = root.join(Customerorder_.suborders).join(Suborder_.employeeorders);
+            Join<Employeeorder, Employeecontract> employeecontractJoin = employeeorderJoin.join(Employeeorder_.employeecontract);
+            var employeeContractIdEqual = builder.equal(employeecontractJoin.get(Employeecontract_.id), employeeContractId);
+            var fromDateLess = builder.lessThanOrEqualTo(employeeorderJoin.get(Employeeorder_.fromDate), date);
+            var untilDateNullOrGreater = builder.or(
+                builder.isNull(employeeorderJoin.get(Employeeorder_.untilDate)),
+                builder.greaterThanOrEqualTo(employeeorderJoin.get(Employeeorder_.untilDate), date)
+            );
+            return builder.and(employeeContractIdEqual, fromDateLess, untilDateNullOrGreater);
+        }, Sort.by(Customerorder_.SIGN, Customerorder_.DESCRIPTION));
     }
 
     /**
@@ -213,50 +194,22 @@ public class CustomerorderDAO extends AbstractDAO {
      * Saves the given order and sets creation-/update-user and creation-/update-date.
      */
     public void save(Customerorder co, Employee loginEmployee) {
-        if (loginEmployee == null) {
-            throw new RuntimeException("the login-user must be passed to the db");
-        }
-        Session session = getSession();
-        java.util.Date creationDate = co.getCreated();
-        if (creationDate == null) {
-            co.setCreated(new java.util.Date());
-            co.setCreatedby(loginEmployee.getSign());
-        } else {
-            co.setLastupdate(new java.util.Date());
-            co.setLastupdatedby(loginEmployee.getSign());
-            Integer updateCounter = co.getUpdatecounter();
-            updateCounter = updateCounter == null ? 1 : updateCounter + 1;
-            co.setUpdatecounter(updateCounter);
-        }
-        session.saveOrUpdate(co);
-        session.flush();
-        session.clear();
+        customerorderRepository.save(co);
     }
 
     /**
      * Deletes the given customer order.
      */
     public boolean deleteCustomerorderById(long coId) {
-        List<Customerorder> allCustomerorders = getCustomerorders();
+        var customerorder = getCustomerorderById(coId);
 
-        for (Customerorder co : allCustomerorders) {
-            if (co.getId() == coId) {
-                // check if related suborders exist - if so, no deletion possible
-                List<Suborder> allSuborders = suborderDAO.getSuborders(false);
-                for (Suborder so : allSuborders) {
-                    if (so.getCustomerorder().getId() == coId) {
-                        return false;
-                    }
-                }
-
-                Session session = getSession();
-                session.delete(co);
-                session.flush();
-                return true;
-            }
+        // check if related suborders exist - if so, no deletion possible
+        if (!customerorder.getSuborders().isEmpty()) {
+            return false;
         }
 
-        return false;
+        customerorderRepository.delete(customerorder);
+        return true;
     }
 
 }

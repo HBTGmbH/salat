@@ -1,5 +1,6 @@
-package org.tb.action.admin;
+package org.tb.action.order;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,6 @@ import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.util.DateUtils;
 import org.tb.action.LoginRequiredAction;
-import org.tb.form.AddCustomerOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,26 +24,15 @@ import java.util.List;
  * @author oda
  */
 @Component
-public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerOrderForm> {
+@RequiredArgsConstructor
+public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
-    private CustomerorderDAO customerorderDAO;
-    private CustomerDAO customerDAO;
-    private EmployeeDAO employeeDAO;
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setCustomerDAO(CustomerDAO customerDAO) {
-        this.customerDAO = customerDAO;
-    }
+    private final CustomerorderDAO customerorderDAO;
+    private final CustomerDAO customerDAO;
+    private final EmployeeDAO employeeDAO;
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerOrderForm coForm, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) {
 
         //		 remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
@@ -78,7 +67,7 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerOrde
     /**
      * fills customer order form with properties of given customer
      */
-    private void setFormEntries(HttpServletRequest request, AddCustomerOrderForm coForm, Customerorder co) {
+    private void setFormEntries(HttpServletRequest request, AddCustomerorderForm coForm, Customerorder co) {
 
         coForm.setCurrency(co.getCurrency());
         coForm.setCustomerId(co.getCustomer().getId());

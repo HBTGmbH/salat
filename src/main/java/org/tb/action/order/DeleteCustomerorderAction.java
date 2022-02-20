@@ -1,5 +1,6 @@
-package org.tb.action.admin;
+package org.tb.action.order;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.springframework.stereotype.Component;
@@ -8,7 +9,6 @@ import org.tb.bdom.Customerorder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.form.ShowCustomerOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,21 +21,14 @@ import java.util.List;
  * @author oda
  */
 @Component
-public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomerOrderForm> {
+@RequiredArgsConstructor
+public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomerorderForm> {
 
-    private CustomerorderDAO customerorderDAO;
-    private TimereportDAO timereportDAO;
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
+    private final CustomerorderDAO customerorderDAO;
+    private final TimereportDAO timereportDAO;
 
     @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ShowCustomerOrderForm orderForm, HttpServletRequest request, HttpServletResponse response) {
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowCustomerorderForm orderForm, HttpServletRequest request, HttpServletResponse response) {
 
         if (GenericValidator.isBlankOrNull(request.getParameter("coId")) ||
                 !GenericValidator.isLong(request.getParameter("coId"))) {

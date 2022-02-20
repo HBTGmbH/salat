@@ -1,5 +1,6 @@
-package org.tb.action.admin;
+package org.tb.action.order;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
@@ -10,7 +11,6 @@ import org.tb.persistence.CustomerDAO;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.action.LoginRequiredAction;
-import org.tb.form.ShowCustomerOrderForm;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,27 +23,16 @@ import java.util.List;
  * @author oda
  */
 @Component
-public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerOrderForm> {
+@RequiredArgsConstructor
+public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerorderForm> {
 
-    private CustomerorderDAO customerorderDAO;
-    private CustomerDAO customerDAO;
-    private TimereportDAO timereportDAO;
-
-    public void setCustomerDAO(CustomerDAO customerDAO) {
-        this.customerDAO = customerDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
+    private final CustomerorderDAO customerorderDAO;
+    private final CustomerDAO customerDAO;
+    private final TimereportDAO timereportDAO;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
-        ShowCustomerOrderForm orderForm, HttpServletRequest request,
+        ShowCustomerorderForm orderForm, HttpServletRequest request,
         HttpServletResponse response) {
 
         List<Customer> customers = customerDAO.getCustomersOrderedByShortName();

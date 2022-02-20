@@ -117,11 +117,7 @@ public class TimereportDAO extends AbstractDAO {
      * Gets the sum of all duration minutes WITH consideration of the hours.
      */
     public long getTotalDurationMinutesForCustomerOrder(long coId) {
-        return objectToLong(getSession()
-                .createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr " +
-                        "where tr.employeeorder.suborder.customerorder.id = ?")
-                .setLong(0, coId)
-                .uniqueResult());
+        return timereportRepository.getReportedMinutesForCustomerorder(coId).orElse(0L);
     }
 
     /**
