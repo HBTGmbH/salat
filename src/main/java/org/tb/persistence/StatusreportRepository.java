@@ -30,4 +30,6 @@ public interface StatusreportRepository extends CrudRepository<Statusreport, Lon
       + "order by s.customerorder.sign asc, s.sort asc, s.fromdate asc, s.untildate asc, s.sender.sign asc")
   List<Statusreport> getReleasedStatusReportsByRecipientId(long employeeId);
 
+  List<Statusreport> findAllByCustomerorderId(long customerorderId);
+
 }

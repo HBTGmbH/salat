@@ -27,7 +27,6 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeecontract_;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Employeeorder_;
-import org.tb.bdom.Statusreport;
 import org.tb.bdom.Suborder_;
 import org.tb.bdom.Timereport;
 import org.tb.util.DateUtils;
@@ -39,7 +38,6 @@ public class EmployeeorderDAO {
     private static final Logger LOG = LoggerFactory.getLogger(EmployeeorderDAO.class);
 
     private final TimereportDAO timereportDAO;
-    private final StatusReportDAO statusReportDAO;
     private final EmployeeorderRepository employeeorderRepository;
 
     /**
@@ -293,12 +291,6 @@ public class EmployeeorderDAO {
      */
     public boolean deleteEmployeeorderById(long eoId) {
         boolean deleteOk = true;
-
-        // check if related status reports exist - if so, no deletion possible
-        List<Statusreport> statusreports = statusReportDAO.getStatusReportByEmployeeorderId(eoId);
-        if (statusreports != null && !statusreports.isEmpty()) {
-            deleteOk = false;
-        }
 
         List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeOrderId(eoId);
         if (timereports != null && !timereports.isEmpty()) {

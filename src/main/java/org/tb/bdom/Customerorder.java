@@ -21,6 +21,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.GlobalConstants;
 import org.tb.bdom.comparators.SubOrderComparator;
+import org.tb.util.DateUtils;
 
 /**
  * Bean for table 'customerorder'.
@@ -144,8 +145,11 @@ public class Customerorder extends AuditedEntity implements Serializable {
      * @return Returns true, if the {@link Customerorder} is currently valid, false otherwise.
      */
     public boolean getCurrentlyValid() {
-        java.util.Date now = new java.util.Date();
-        return !now.before(getFromDate()) && (getUntilDate() == null || !now.after(getUntilDate()));
+        return isValidAt(DateUtils.now());
+    }
+
+    public boolean isValidAt(java.util.Date date) {
+        return !date.before(getFromDate()) && (getUntilDate() == null || !date.after(getUntilDate()));
     }
 
 }
