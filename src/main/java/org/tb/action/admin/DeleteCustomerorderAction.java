@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.CustomerOrderViewDecorator;
 import org.tb.bdom.Customerorder;
 import org.tb.persistence.CustomerorderDAO;
@@ -19,6 +20,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomerOrderForm> {
 
     private CustomerorderDAO customerorderDAO;

@@ -1,6 +1,7 @@
 package org.tb.action.admin;
 
 import org.apache.struts.action.ActionForm;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Employee;

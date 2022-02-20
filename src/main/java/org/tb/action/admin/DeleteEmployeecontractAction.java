@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
+@Component
 public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm> {
 
     private EmployeecontractDAO employeecontractDAO;

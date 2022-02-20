@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.persistence.CustomerDAO;
 import org.tb.action.LoginRequiredAction;
 import org.tb.form.ShowCustomerForm;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
+@Component
 public class ShowCustomerAction extends LoginRequiredAction<ShowCustomerForm> {
 
     private CustomerDAO customerDAO;

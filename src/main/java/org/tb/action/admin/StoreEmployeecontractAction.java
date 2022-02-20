@@ -4,6 +4,7 @@ import static org.tb.util.DateUtils.parse;
 
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
@@ -22,6 +23,7 @@ import java.util.*;
  *
  * @author oda
  */
+@Component
 public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployeeContractForm> {
 
     private EmployeeDAO employeeDAO;

@@ -1,12 +1,18 @@
 package org.tb.persistence;
 
+import static org.tb.GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION;
+import static org.tb.GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION;
+import static org.tb.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
+import static org.tb.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
+
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
@@ -19,13 +25,16 @@ import java.util.List;
 @Component
 public class EmployeeorderDAO extends AbstractDAO {
 
-    private final TimereportDAO timereportDAO;
     private static final Logger LOG = LoggerFactory.getLogger(EmployeeorderDAO.class);
+    private final TimereportDAO timereportDAO;
+    private final EmployeeorderRepository employeeorderRepository;
 
     @Autowired
-    public EmployeeorderDAO(SessionFactory sessionFactory, TimereportDAO timereportDAO) {
+    public EmployeeorderDAO(SessionFactory sessionFactory, TimereportDAO timereportDAO,
+        EmployeeorderRepository employeeorderRepository) {
         super(sessionFactory);
         this.timereportDAO = timereportDAO;
+        this.employeeorderRepository = employeeorderRepository;
     }
 
     /**
@@ -35,12 +44,8 @@ public class EmployeeorderDAO extends AbstractDAO {
         return (Employeeorder) getSession().createQuery("select eo from Employeeorder eo where eo.id = ?").setLong(0, id).uniqueResult();
     }
 
-    @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeordersForEmployeeordercontentWarning(Employeecontract ec) {
-        //		return (List<Employeeorder>) getSession().createQuery("from Employeeorder eo where eo.employeeOrderContent.contactTechHbt.id = ? or eo.employeecontract.id = ?").setLong(0, ec.getEmployee().getId()).setLong(1, ec.getId()).list();
-        return getSession()
-                .createQuery("select eo from Employeeorder eo where (eo.employeeOrderContent.committed_emp != true and eo.employeecontract.id = ?) or (eo.employeeOrderContent.committed_mgmt != true and eo.employeeOrderContent.contactTechHbt.id = ?)")
-                .setLong(0, ec.getId()).setLong(1, ec.getEmployee().getId()).list();
+        return employeeorderRepository.findAllByEmployeeIdAndEmployeeOrderContentUncommitted(ec.getEmployee().getId());
     }
 
     @SuppressWarnings("unchecked")
@@ -58,23 +63,25 @@ public class EmployeeorderDAO extends AbstractDAO {
                            .list();
     }
 
-    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, Date date) {
+    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final Date date) {
         LOG.debug("starting read vacation list");
-        List vacationEoList = getSession().createQuery("select eo from Employeeorder eo " +
-                                                               "where eo.employeecontract.id = :ecId " +
-                                                               "and ((eo.suborder.customerorder.sign in (:remVacation,:extraVacation)) or (eo.suborder.customerorder.sign = :vacation and eo.suborder.sign != :overtime)) " +
-                                                               "and eo.fromDate <= :date " +
-                                                               "and (eo.untilDate is null " +
-                                                               "or eo.untilDate >= :date )")
-                                          .setParameter("ecId", employeecontractId)
-                                          .setParameter("remVacation", GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION)
-                                          .setParameter("extraVacation", GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION)
-                                          .setParameter("vacation", GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-                                          .setParameter("overtime", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)
-                                          .setParameter("date", date)
-                                          .list();
+        var customerOrderSigns = new ArrayList<String>();
+        customerOrderSigns.add(CUSTOMERORDER_SIGN_REMAINING_VACATION);
+        customerOrderSigns.add(CUSTOMERORDER_SIGN_EXTRA_VACATION);
+        customerOrderSigns.add(CUSTOMERORDER_SIGN_VACATION);
+        var employeeorders= employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
+            employeecontractId,
+            customerOrderSigns
+        );
+
+        employeeorders = employeeorders.stream()
+            .filter(eo -> !eo.getFromDate().after(date))
+            .filter(eo -> eo.getUntilDate() == null || !eo.getUntilDate().before(date))
+            .filter(eo -> !eo.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
+            .collect(Collectors.toList());
+
         LOG.debug("read vacations.");
-        return vacationEoList;
+        return employeeorders;
     }
 
     /**
@@ -108,8 +115,10 @@ public class EmployeeorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId, long suborderId) {
-        return getSession().createQuery("select eo from Employeeorder eo where eo.employeecontract.id = ? and eo.suborder.id = ? order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                           .setLong(0, employeeContractId).setLong(1, suborderId).list();
+        return employeeorderRepository.findAllByEmployeecontractIdAndSuborderId(
+            employeeContractId,
+            suborderId
+        );
     }
 
     /**
@@ -117,11 +126,11 @@ public class EmployeeorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, Date date) {
-        return getSession().createQuery("select eo from Employeeorder eo where eo.employeecontract.id = ? and " +
-                                                "eo.suborder.id = ? and  " +
-                                                "eo.fromDate <= ? and (eo.untilDate >= ? or eo.untilDate = null or eo.untilDate = '') " +
-                                                "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                           .setLong(0, employeeContractId).setLong(1, suborderId).setDate(2, date).setDate(3, date).list();
+        return employeeorderRepository.findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(
+            employeeContractId,
+            suborderId,
+            date
+        );
     }
 
     /**
@@ -129,11 +138,11 @@ public class EmployeeorderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, Date date) {
-        return getSession().createQuery("select eo from Employeeorder eo where eo.employeecontract.id = ? and " +
-                                                "eo.suborder.id = ? and  " +
-                                                " (eo.untilDate >= ? or eo.untilDate = null or eo.untilDate = '') " +
-                                                "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-                           .setLong(0, employeeContractId).setLong(1, suborderId).setDate(2, date).list();
+        return employeeorderRepository.findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(
+            employeeContractId,
+            suborderId,
+            date
+        );
     }
 
     /**

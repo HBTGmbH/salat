@@ -50,8 +50,8 @@ import org.tb.util.DateUtils;
  *
  * @author oda
  */
-@Component("/StoreDailyReport")
 @Slf4j
+@Component
 public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final EmployeecontractDAO employeecontractDAO;

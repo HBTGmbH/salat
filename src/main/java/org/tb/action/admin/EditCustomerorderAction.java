@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Customer;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -22,6 +23,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerOrderForm> {
 
     private CustomerorderDAO customerorderDAO;

@@ -18,7 +18,7 @@ public abstract class AdminRequiredAction<F extends ActionForm> extends LoginReq
 
     @Override
     protected final ActionForward executeAuthenticated(ActionMapping mapping, F form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (request.getSession().getAttribute("admin") != null) {
+        if (!authorizedUser.isAdmin()) {
             return executeAdminAuthenticated(mapping, form, request, response);
         } else {
             return mapping.findForward("login");

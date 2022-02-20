@@ -14,9 +14,13 @@ import java.util.List;
 @Component
 public class StatusReportDAO extends AbstractDAO {
 
+    private final StatusreportRepository statusreportRepository;
+
     @Autowired
-    public StatusReportDAO(SessionFactory sessionFactory) {
+    public StatusReportDAO(SessionFactory sessionFactory,
+        StatusreportRepository statusreportRepository) {
         super(sessionFactory);
+        this.statusreportRepository = statusreportRepository;
     }
 
     /**
@@ -62,75 +66,35 @@ public class StatusReportDAO extends AbstractDAO {
     /**
      * Get a list of all released final {@link Statusreport}s associated with the given {@link Customerorder}.
      */
-    @SuppressWarnings("unchecked")
     public List<Statusreport> getReleasedFinalStatusReportsByCustomerOrderId(long coId) {
-        return getSession().createQuery("from Statusreport sr " +
-                "where sort = 3 " +
-                "and released is not null " +
-                "and customerorder.id = ? " +
-                "order by sr.customerorder.sign asc, sr.sort asc, sr.fromdate asc, sr.untildate asc, sr.sender.sign asc")
-                .setLong(0, coId)
-                .list();
+        return statusreportRepository.getReleasedFinalStatusReportsByCustomerOrderId(coId);
     }
 
     /**
      * Get a list of all unreleased final {@link Statusreport}s with an untildate > the given date,
      * that are associated with the given customerOrderId, senderId.
      */
-    @SuppressWarnings("unchecked")
     public List<Statusreport> getUnreleasedFinalStatusReports(long customerOrderId, long senderId, Date date) {
-        return getSession().createQuery("from Statusreport sr " +
-                "where sort = 3 " +
-                "and released is null " +
-                "and sr.customerorder.id = ? " +
-                "and sr.sender.id = ? " +
-                "and sr.untildate > ? " +
-                "order by sr.untildate desc")
-                .setLong(0, customerOrderId)
-                .setLong(1, senderId)
-                .setDate(2, date)
-                .list();
+        return statusreportRepository.getUnreleasedFinalStatusReports(customerOrderId, senderId, date);
     }
 
     /**
      * Get a list of all unreleased periodical {@link Statusreport}s with an untildate > the given date,
      * that are associated with the given customerOrderId, senderId.
      */
-    @SuppressWarnings("unchecked")
     public List<Statusreport> getUnreleasedPeriodicalStatusReports(long customerOrderId, long senderId, Date date) {
-        return getSession().createQuery("from Statusreport sr " +
-                "where sort = 1 " +
-                "and released is null " +
-                "and sr.customerorder.id = ? " +
-                "and sr.sender.id = ? " +
-                "and sr.untildate > ? " +
-                "order by sr.untildate desc")
-                .setLong(0, customerOrderId)
-                .setLong(1, senderId)
-                .setDate(2, date)
-                .list();
+        return statusreportRepository.getUnreleasedPeriodicalStatusReports(customerOrderId, senderId, date);
     }
 
     /**
      * Get a list of all released but not accepted {@link Statusreport}s associated with the given recipient.
      */
-    @SuppressWarnings("unchecked")
     public List<Statusreport> getReleasedStatusReportsByRecipientId(long employeeId) {
-        return getSession().createQuery("from Statusreport sr " +
-                "where released is not null " +
-                "and accepted is null " +
-                "and recipient.id = ? " +
-                "order by sr.customerorder.sign asc, sr.sort asc, sr.fromdate asc, sr.untildate asc, sr.sender.sign asc")
-                .setLong(0, employeeId)
-                .list();
+        return statusreportRepository.getReleasedStatusReportsByRecipientId(employeeId);
     }
 
     public Date getMaxUntilDateForCustomerOrderId(long coId) {
-        return  (Date) getSession().createSQLQuery("select max(untildate) from statusreport " +
-                "where sort = 1 and released is not null " +
-                "and customerorder = ?")
-                .setLong(0, coId)
-                .uniqueResult();
+        return statusreportRepository.getMaxUntilDateForCustomerOrderId(coId).orElse(null);
     }
 
 

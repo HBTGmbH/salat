@@ -3,6 +3,7 @@ package org.tb.action.admin;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Component
 public class ShowAdminOptionsAction extends LoginRequiredAction<ActionForm> {
 
     private TimereportDAO timereportDAO;

@@ -17,6 +17,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -31,6 +32,7 @@ import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
 
 @Slf4j
+@Component
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
     private EmployeecontractDAO employeecontractDAO;

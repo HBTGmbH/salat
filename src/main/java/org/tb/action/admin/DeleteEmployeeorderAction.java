@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.persistence.EmployeecontractDAO;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author oda
  */
+@Component
 public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrderForm> {
 
     private EmployeeorderDAO employeeorderDAO;

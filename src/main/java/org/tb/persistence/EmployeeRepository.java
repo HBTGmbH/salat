@@ -10,4 +10,6 @@ public interface EmployeeRepository extends CrudRepository<Employee, Long> {
 
   Optional<Employee> findBySign(String sign);
 
+  Optional<Employee> findByLoginname(String loginname);
+
 }

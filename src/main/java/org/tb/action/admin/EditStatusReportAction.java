@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
+@Component
 public class EditStatusReportAction extends StatusReportAction<AddStatusReportForm> {
 
     private EmployeeDAO employeeDAO;

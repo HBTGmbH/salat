@@ -1,5 +1,10 @@
 package org.tb.persistence;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -11,16 +16,19 @@ import org.springframework.stereotype.Component;
 import org.tb.bdom.*;
 import org.tb.bdom.comparators.SubOrderComparator;
 
-import java.util.*;
 import java.util.Map.Entry;
+import org.tb.util.DateUtils;
 
 @Component
 public class SuborderDAO extends AbstractDAO {
     private static final Logger LOG = LoggerFactory.getLogger(SuborderDAO.class);
 
+    private final SuborderRepository suborderRepository;
+
     @Autowired
-    public SuborderDAO(SessionFactory sessionFactory) {
+    public SuborderDAO(SessionFactory sessionFactory, SuborderRepository suborderRepository) {
         super(sessionFactory);
+        this.suborderRepository = suborderRepository;
     }
 
     /**
@@ -259,16 +267,7 @@ public class SuborderDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Suborder> getStandardSuborders() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return getSession()
-                .createQuery("from Suborder where standard = ? and (untilDate = null or untilDate >= ? ) order by sign")
-                .setBoolean(0, true)
-                .setDate(1, cal.getTime())
-                .list();
+        return suborderRepository.findAllStandardSubordersByUntilDateGreaterThanEqual(DateUtils.today());
     }
 
     /**

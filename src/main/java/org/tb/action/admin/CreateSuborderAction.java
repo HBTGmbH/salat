@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Customerorder;
@@ -21,6 +22,7 @@ import java.util.List;
  *
  * @author oda, th
  */
+@Component
 public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
     private CustomerorderDAO customerorderDAO;

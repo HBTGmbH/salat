@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Warning;
@@ -19,6 +20,7 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.action.dailyreport.DailyReportAction;
 import org.tb.form.ShowWelcomeForm;
 
+@Component
 public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
     private OvertimeDAO overtimeDAO;

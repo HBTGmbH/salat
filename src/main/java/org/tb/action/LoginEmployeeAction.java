@@ -1,35 +1,34 @@
 package org.tb.action;
 
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+import static org.tb.GlobalConstants.SYSTEM_SIGN;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Warning;
+import org.tb.form.LoginEmployeeForm;
 import org.tb.helper.AfterLogin;
-import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
-import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.persistence.TimereportDAO;
 import org.tb.util.SecureHashUtils;
-import org.tb.form.LoginEmployeeForm;
 
 /**
  * Action class for the login of an employee
@@ -37,60 +36,16 @@ import org.tb.form.LoginEmployeeForm;
  * @author oda, th
  */
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
 
-    private static final String SYSTEM_SIGN = "system";
-
-    private EmployeeDAO employeeDAO;
-    private PublicholidayDAO publicholidayDAO;
-    private EmployeecontractDAO employeecontractDAO;
-    private SuborderDAO suborderDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private OvertimeDAO overtimeDAO;
-    private TimereportDAO timereportDAO;
-    private CustomerorderDAO customerorderDAO;
-    private StatusReportDAO statusReportDAO;
-    private AfterLogin afterLogin;
-
-    public void setAfterLogin(AfterLogin afterLogin) {
-        this.afterLogin = afterLogin;
-    }
-
-    public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
-        this.statusReportDAO = statusReportDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-        this.overtimeDAO = overtimeDAO;
-    }
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-
-    public void setSuborderDAO(SuborderDAO suborderDAO) {
-        this.suborderDAO = suborderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
-
-    public void setEmployeeDAO(EmployeeDAO employeeDAO) {
-        this.employeeDAO = employeeDAO;
-    }
-
-    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
-        this.publicholidayDAO = publicholidayDAO;
-    }
+    private final EmployeeDAO employeeDAO;
+    private final PublicholidayDAO publicholidayDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final SuborderDAO suborderDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final AfterLogin afterLogin;
 
     @Override
     public ActionForward executeWithForm(ActionMapping mapping, LoginEmployeeForm loginEmployeeForm, HttpServletRequest request, HttpServletResponse response) throws Exception {

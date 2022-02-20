@@ -3,6 +3,7 @@ package org.tb.action.admin;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction<AddEmployeeOrderContentForm> {
 
     private EmployeeorderDAO employeeorderDAO;
