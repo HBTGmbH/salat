@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
@@ -17,6 +18,7 @@ import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.util.DateUtils;
 
+@Component
 public class CreateStatusReportAction extends StatusReportAction<AddStatusReportForm> {
 
     private EmployeeDAO employeeDAO;

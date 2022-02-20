@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.Optional;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
@@ -25,6 +26,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrderForm> {
 
     private EmployeecontractDAO employeecontractDAO;

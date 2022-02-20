@@ -1,12 +1,13 @@
 package org.tb.persistence;
 
+import static org.tb.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.util.DateUtils.getBeginOfMonth;
 import static org.tb.util.DateUtils.getEndOfMonth;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +22,12 @@ import org.tb.bdom.Timereport;
 @Component
 public class TimereportDAO extends AbstractDAO {
 
+    private final TimereportRepository timereportRepository;
+
     @Autowired
-    public TimereportDAO(SessionFactory sessionFactory) {
+    public TimereportDAO(SessionFactory sessionFactory, TimereportRepository timereportRepository) {
         super(sessionFactory);
+        this.timereportRepository = timereportRepository;
     }
 
     /**
@@ -71,12 +75,7 @@ public class TimereportDAO extends AbstractDAO {
     }
 
     public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {
-        Object totalMinutes = getSession()
-                .createQuery("select sum(tr.durationminutes)+60*sum(tr.durationhours) from Timereport tr where tr.suborder.id = ? and tr.employeecontract.id = ?")
-                .setLong(0, soId)
-                .setLong(1, ecId)
-                .uniqueResult();
-        return objectToLong(totalMinutes);
+        return timereportRepository.getReportedMinutesForSuborderAndEmployeeContract(soId, ecId).orElse(0L);
     }
 
     /**
@@ -225,24 +224,8 @@ public class TimereportDAO extends AbstractDAO {
      *
      * @return Returns a {@link List} with all {@link Timereport}s, that fulfill the criteria.
      */
-    @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsOutOfRangeForEmployeeContract(Employeecontract employeecontract) {
-        long employeeContractId = employeecontract.getId();
-        Date contractBegin = employeecontract.getValidFrom();
-        Date contractEnd = employeecontract.getValidUntil();
-        List<Timereport> allTimereports = new ArrayList<Timereport>();
-        if (contractEnd == null) {
-            allTimereports = getSession().createQuery("from Timereport t " +
-                    "where t.employeecontract.id = ? and t.referenceday.refdate < ? " +
-                    "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
-                    .setLong(0, employeeContractId).setDate(1, contractBegin).setCacheable(true).list();
-        } else {
-            allTimereports = getSession().createQuery("from Timereport t " +
-                    "where t.employeecontract.id = ? and (t.referenceday.refdate < ? or  t.referenceday.refdate > ?) " +
-                    "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
-                    .setLong(0, employeeContractId).setDate(1, contractBegin).setDate(2, contractEnd).setCacheable(true).list();
-        }
-        return allTimereports;
+        return timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingEmployeecontractValidity(employeecontract.getId());
     }
 
     /**
@@ -252,13 +235,8 @@ public class TimereportDAO extends AbstractDAO {
      *
      * @return Returns a {@link List} with all {@link Timereport}s, that fulfill the criteria.
      */
-    @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsOutOfRangeForEmployeeOrder(Employeecontract employeecontract) {
-        long employeeContractId = employeecontract.getId();
-        return (List<Timereport>) getSession().createQuery("from Timereport t " +
-                "where t.employeecontract.id = ? and (t.referenceday.refdate < t.employeeorder.fromDate or t.referenceday.refdate > t.employeeorder.untilDate) " +
-                "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
-                .setLong(0, employeeContractId).setCacheable(true).list();
+        return timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingEmployeeorderValidity(employeecontract.getId());
     }
 
     /**
@@ -266,12 +244,13 @@ public class TimereportDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsWithoutDurationForEmployeeContractId(long ecId, Date releaseDate) {
-        /*  sql: function changed to just get zero-duration-timereports that were made after the last releasedate, since only those can be changed by the employee himself and therefore the earlier ones should not be shown as warning */
-        return getSession()
-                .createQuery("from Timereport t where t.employeecontract.id = ?  and t.referenceday.refdate >= ?"
-                        + "and t.suborder.sign not like ? and durationminutes = 0 and durationhours = 0"
-                        + "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
-                .setLong(0, ecId).setDate(1, releaseDate).setString(2, GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION).setCacheable(true).list();
+        var timereports = timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(
+            ecId,
+            releaseDate
+        );
+        return timereports.stream()
+            .filter(t -> t.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
+            .collect(Collectors.toList());
     }
 
     /**
@@ -317,19 +296,7 @@ public class TimereportDAO extends AbstractDAO {
      */
     @SuppressWarnings("unchecked")
     public List<Timereport> getTimereportsByDatesAndEmployeeContractId(long contractId, Date begin, Date end) {
-        List<Timereport> allTimereports;
-        if (begin.equals(end)) {
-            allTimereports = getSession().createQuery("from Timereport t " +
-                    "where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? " +
-                    "order by t.employeecontract.employee.sign asc, t.referenceday.refdate asc, t.sequencenumber asc")
-                    .setLong(0, contractId).setDate(1, begin).setDate(2, end).setCacheable(true).list();
-        } else {
-            allTimereports = getSession().createQuery("from Timereport t " +
-                    "where t.employeecontract.id = ? and t.referenceday.refdate >= ? and t.referenceday.refdate <= ? " +
-                    "order by t.employeecontract.employee.sign asc, t.referenceday.refdate asc, t.employeeorder.suborder.customerorder.sign asc, t.employeeorder.suborder.sign asc")
-                    .setLong(0, contractId).setDate(1, begin).setDate(2, end).setCacheable(true).list();
-        }
-        return allTimereports;
+        return timereportRepository.findAllByEmployeecontractIdAndReferencedayBetween(contractId, begin, end);
     }
 
     /**

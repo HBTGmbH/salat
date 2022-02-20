@@ -1,5 +1,7 @@
 package org.tb.persistence;
 
+import static org.tb.GlobalConstants.SYSTEM_SIGN;
+
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.AuditorAware;
@@ -17,7 +19,7 @@ public class AuthorizedUserAuditorAware implements AuditorAware<String> {
     if(authorizedUser.isAuthenticated()) {
       return Optional.of(authorizedUser.getSign());
     }
-    return Optional.of("system");
+    return Optional.of(SYSTEM_SIGN);
   }
 
 }

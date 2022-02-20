@@ -1,6 +1,7 @@
 package org.tb.action.admin;
 
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Customer;
@@ -17,6 +18,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
 
     private CustomerDAO customerDAO;

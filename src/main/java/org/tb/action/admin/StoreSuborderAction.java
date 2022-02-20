@@ -7,6 +7,7 @@ import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.CustomerorderDAO;
@@ -30,6 +31,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
     private static final Logger LOG = LoggerFactory.getLogger(StoreSuborderAction.class);
 

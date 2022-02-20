@@ -33,8 +33,8 @@ import org.tb.form.AddDailyReportForm;
  *
  * @author oda
  */
-@Component("/CreateDailyReport")
 @Slf4j
+@Component
 public class CreateDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final EmployeecontractDAO employeecontractDAO;

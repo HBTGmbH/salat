@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Statusreport;
 import org.tb.persistence.CustomerorderDAO;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
+@Component
 public class ShowStatusReportAction extends LoginRequiredAction<ShowStatusReportForm> {
 
     private StatusReportDAO statusReportDAO;

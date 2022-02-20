@@ -11,6 +11,8 @@ import java.util.Properties;
  */
 public class GlobalConstants {
 
+    public static final String SYSTEM_SIGN = "system";
+
     public static final int STARTING_YEAR = 2007;
 
     public static final double MAX_HOURS_PER_DAY = 10.0;

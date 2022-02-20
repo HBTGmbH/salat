@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
 import org.tb.form.ShowEmployeeOrderForm;
@@ -15,6 +16,7 @@ import java.util.List;
  *
  * @author oda
  */
+@Component
 public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrderForm> {
 
     private EmployeeorderDAO employeeorderDAO;

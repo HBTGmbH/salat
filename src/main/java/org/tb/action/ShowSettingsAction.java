@@ -6,12 +6,14 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.util.SecureHashUtils;
 import org.tb.form.ShowSettingsForm;
 
+@Component
 public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
 
     private EmployeeDAO employeeDAO;

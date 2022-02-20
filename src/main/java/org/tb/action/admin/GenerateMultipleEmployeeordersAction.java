@@ -1,6 +1,7 @@
 package org.tb.action.admin;
 
 import org.apache.struts.action.*;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
@@ -16,6 +17,7 @@ import java.util.List;
  *
  * @author sql
  */
+@Component
 public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<GenerateMultipleEmployeeordersForm> {
 
     private SuborderDAO suborderDAO;

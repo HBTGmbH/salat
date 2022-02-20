@@ -2,6 +2,7 @@ package org.tb.action.admin;
 
 import org.apache.struts.action.*;
 import org.apache.struts.util.MessageResources;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpSession;
 import java.util.Locale;
 import java.util.Objects;
 
+@Component
 public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction<AddEmployeeOrderContentForm> {
 
     private EmployeeOrderContentDAO employeeOrderContentDAO;

@@ -3,6 +3,7 @@ package org.tb.action.admin;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.bdom.Statusreport;
 import org.tb.persistence.StatusReportDAO;
 
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
+@Component
 public class DeleteStatusReportAction extends StatusReportAction<ActionForm> {
 
     private StatusReportDAO statusReportDAO;

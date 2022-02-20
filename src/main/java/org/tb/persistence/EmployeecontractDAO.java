@@ -1,15 +1,23 @@
 package org.tb.persistence;
 
+import java.util.Comparator;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.junit.platform.commons.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.bdom.*;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import org.tb.util.DateUtils;
 
 @Component
 public class EmployeecontractDAO extends AbstractDAO {
@@ -31,12 +39,7 @@ public class EmployeecontractDAO extends AbstractDAO {
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
      */
     public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
-        return (Employeecontract) getSession()
-                .createQuery("from Employeecontract e where e.employee.id = ? and e.validFrom <= ? and (e.validUntil >= ? or e.validUntil = null)")
-                .setLong(0, employeeId)
-                .setDate(1, date)
-                .setDate(2, date)
-                .uniqueResult();
+        return employeecontractRepository.findByEmployeeIdAndValidAt(employeeId, date).orElse(null);
     }
 
     /**
@@ -250,16 +253,14 @@ public class EmployeecontractDAO extends AbstractDAO {
      *
      * @return List<Employeecontract>
      */
-    @SuppressWarnings("unchecked")
     public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
-        java.util.Date date = new Date();
-        Boolean hide = false;
-        return getSession()
-                .createQuery("from Employeecontract e where hide = ? or hide = null or (validFrom <= ? and (validUntil >= ? or validUntil = null)) order by employee.sign asc, validFrom asc")
-                .setBoolean(0, hide)
-                .setDate(1, date)
-                .setDate(2, date)
-                .list();
+        var contracts = employeecontractRepository.findAllValidAtAndNotHidden(DateUtils.now());
+        contracts.sort(
+            Comparator
+                .comparing((Employeecontract a) -> a.getEmployee().getSign().toLowerCase())
+                .thenComparing(Employeecontract::getValidFrom)
+        );
+        return contracts;
     }
 
     @SuppressWarnings("unchecked")

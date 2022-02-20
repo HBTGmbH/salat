@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.action.dailyreport.DailyReportAction;
 import org.tb.bdom.Employee;
@@ -21,6 +22,7 @@ import org.tb.persistence.PublicholidayDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
+@Component
 public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
     private CustomerorderDAO customerorderDAO;
