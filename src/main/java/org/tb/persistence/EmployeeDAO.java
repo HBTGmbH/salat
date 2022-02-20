@@ -1,63 +1,25 @@
 package org.tb.persistence;
 
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
+import static org.springframework.data.domain.Sort.Direction.ASC;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.criterion.Restrictions;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.tb.bdom.Employee;
+import org.tb.bdom.Employee_;
 import org.tb.bdom.Employeecontract;
 
 @Component
-public class EmployeeDAO extends AbstractDAO {
+@RequiredArgsConstructor
+public class EmployeeDAO {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
-
-    @Autowired
-    public EmployeeDAO(SessionFactory sessionFactory, EmployeecontractDAO employeecontractDAO,
-        EmployeeRepository employeeRepository) {
-        super(sessionFactory);
-        this.employeecontractDAO = employeecontractDAO;
-        this.employeeRepository = employeeRepository;
-    }
-
-    /**
-     * Registers an employee in the system.
-     */
-    public void registerEmployee(String username, String password) {
-
-        Assert.notNull(username, "loginname");
-        Assert.notNull(password, "password");
-
-        Session session = getSession();
-        Transaction trx = null;
-        try {
-            trx = session.beginTransaction();
-            Employeecontract employee = new Employeecontract();
-            session.save(employee);
-            trx.commit();
-        } catch (HibernateException ex) {
-            if (trx != null)
-                try {
-                    trx.rollback();
-                } catch (HibernateException exRb) {
-                }
-            throw new RuntimeException(ex.getMessage());
-        } finally {
-            try {
-                session.flush();
-            } catch (Exception exCl) {
-            }
-        }
-    }
 
     /**
      * Retrieves the employee with the given loginname.
@@ -67,13 +29,6 @@ public class EmployeeDAO extends AbstractDAO {
     public Employee getLoginEmployee(String loginname) {
         Assert.notNull(loginname, "loginname");
         return employeeRepository.findByLoginname(loginname).orElse(null);
-    }
-
-    /**
-     * Checks if the given employee is an administrator.
-     */
-    public boolean isAdmin(Employee employee) {
-        return EMPLOYEE_STATUS_ADM.equals(employee.getStatus());
     }
 
     /**
@@ -128,38 +83,28 @@ public class EmployeeDAO extends AbstractDAO {
     /**
      * Get a list of all Employees ordered by lastname.
      */
-    @SuppressWarnings("unchecked")
     public List<Employee> getEmployees() {
-        return getSession().createQuery("from Employee p order by upper(p.lastname)").list();
+        var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
+        return Lists.newArrayList(employeeRepository.findAll(Sort.by(order)));
     }
-
 
     /**
      * Get a list of all Employees fitting to the given filter ordered by lastname.
      */
-    @SuppressWarnings("unchecked")
     public List<Employee> getEmployeesByFilter(String filter) {
-        List<Employee> employees = null;
+        var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
         if (filter == null || filter.trim().equals("")) {
-            employees = getSession().createQuery("from Employee p " + "order by upper(p.lastname)").list();
+            return Lists.newArrayList(employeeRepository.findAll(Sort.by(order)));
         } else {
-            filter = "%" + filter.toUpperCase() + "%";
-            employees = getSession().createQuery("from Employee p where " +
-                    "upper(id) like ? " +
-                    "or upper(loginname) like ? " +
-                    "or upper(firstname) like ? " +
-                    "or upper(lastname) like ? " +
-                    "or upper(sign) like ? " +
-                    "or upper(status) like ? " +
-                    "order by upper(p.lastname)")
-                    .setString(0, filter)
-                    .setString(1, filter)
-                    .setString(2, filter)
-                    .setString(3, filter)
-                    .setString(4, filter)
-                    .setString(5, filter).list();
+            var filterValue = "%" + filter.toUpperCase() + "%";
+            return employeeRepository.findAll((root, query, builder) -> builder.or(
+                builder.like(builder.upper(root.get(Employee_.loginname)), filterValue),
+                builder.like(builder.upper(root.get(Employee_.firstname)), filterValue),
+                builder.like(builder.upper(root.get(Employee_.lastname)), filterValue),
+                builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
+                builder.like(builder.upper(root.get(Employee_.status)), filterValue)
+            ));
         }
-        return employees;
     }
 
 
