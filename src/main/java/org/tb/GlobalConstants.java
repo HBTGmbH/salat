@@ -1,9 +1,5 @@
 package org.tb;
 
-import java.io.IOException;
-import java.time.ZoneId;
-import java.util.Properties;
-
 /**
  * Global Salat constants
  *
