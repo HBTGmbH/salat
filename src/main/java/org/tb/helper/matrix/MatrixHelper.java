@@ -10,16 +10,25 @@
  */
 package org.tb.helper.matrix;
 
+import static java.util.Calendar.SATURDAY;
+import static java.util.Calendar.SUNDAY;
+import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.util.DateUtils.getDateAsStringArray;
 import static org.tb.util.DateUtils.getDateFormStrings;
+import static org.tb.util.DateUtils.today;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.tb.GlobalConstants;
 import org.tb.bdom.*;
 import org.tb.persistence.*;
 import org.tb.util.DateUtils;
 import org.tb.action.dailyreport.ShowMatrixForm;
-
-import java.util.*;
 
 public class MatrixHelper {
 
@@ -122,7 +131,7 @@ public class MatrixHelper {
         for (MergedReport mergedReport : mergedReportList) {
             mergedReport.fillBookingDaysWithNull(dateFirst, dateLast);
             mergedReport.setSum();
-            Collections.sort(mergedReport.getBookingDay());
+            Collections.sort(mergedReport.getBookingDays());
         }
 
         List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
@@ -183,36 +192,36 @@ public class MatrixHelper {
     private double fillDayHoursCount(Date dateFirst, Date dateLast, Date validFrom, Date validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
 
-        Calendar cal = GregorianCalendar.getInstance();
-        cal.setTime(dateFirst);
+        Date dateLoop = dateFirst;
         int day = 0;
-        while (cal.getTime().after(dateFirst) && cal.getTime().before(dateLast) || cal.getTime().equals(dateFirst)
-                || cal.getTime().equals(dateLast)) {
+        while (dateLoop.after(dateFirst) && dateLoop.before(dateLast) || dateLoop.equals(dateFirst)
+                || dateLoop.equals(dateLast)) {
             day++;
-            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, cal.getTime()));
-            cal.add(Calendar.DAY_OF_MONTH, 1);
+            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, dateLoop));
+            dateLoop = DateUtils.addDays(dateLoop, 1);
         }
 
         day = 0;
-        cal.setTime(dateFirst);
+        dateLoop = dateFirst;
         double dayHoursTarget = 0.0;
-        while (cal.getTime().after(dateFirst) && cal.getTime().before(dateLast) || cal.getTime().equals(dateFirst)
-                || cal.getTime().equals(dateLast)) {
+        while (dateLoop.after(dateFirst) && dateLoop.before(dateLast) || dateLoop.equals(dateFirst)
+                || dateLoop.equals(dateLast)) {
             day++;
             boolean dayIsPublicHoliday = false;
             //counting weekdays for dayhourstargettime
-            if (cal.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SATURDAY && cal.get(GregorianCalendar.DAY_OF_WEEK) != GregorianCalendar.SUNDAY) {
+            var dayOfWeek = DateUtils.getDayOfWeek(dateLoop);
+            if (dayOfWeek != SATURDAY && dayOfWeek != SUNDAY) {
                 for (Publicholiday publicHoliday : publicHolidayList) {
-                    if (publicHoliday.getRefdate().equals(cal.getTime())) {
+                    if (publicHoliday.getRefdate().equals(dateLoop)) {
                         dayIsPublicHoliday = true;
                         break;
                     }
                 }
                 if (!dayIsPublicHoliday && (
-                        cal.getTime().after(validFrom) &&
-                                cal.getTime().before(validUntil) ||
-                                cal.getTime().equals(validFrom) ||
-                                cal.getTime().equals(validUntil))) {
+                    dateLoop.after(validFrom) &&
+                    dateLoop.before(validUntil) ||
+                    dateLoop.equals(validFrom) ||
+                    dateLoop.equals(validUntil))) {
                     dayHoursTarget++;
                 }
             }
@@ -220,41 +229,40 @@ public class MatrixHelper {
             for (DayAndWorkingHourCount dayAndWorkingHourCount : dayHoursCount) {
                 if (dayAndWorkingHourCount.getDay() == day) {
                     for (Publicholiday publicHoliday : publicHolidayList) {
-                        if (publicHoliday.getRefdate().equals(cal.getTime())) {
+                        if (publicHoliday.getRefdate().equals(dateLoop)) {
                             dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setPublicHoliday(true);
                             dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setPublicHolidayName(publicHoliday.getName());
                         }
                     }
-                    if (cal.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY || cal.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY) {
+                    if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
                         dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setSatSun(true);
                     }
-                    dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setWeekDay(WEEK_DAYS_MAP.get(cal.get(Calendar.DAY_OF_WEEK)));
+                    dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
                 }
             }
-            cal.add(Calendar.DAY_OF_MONTH, 1);
+            dateLoop = DateUtils.addDays(dateLoop, 1);
         }
         return dayHoursTarget;
     }
 
     private void handlePublicHolidays(Date dateFirst, Date dateLast, List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(dateFirst);
+        Date dateLoop = dateFirst;
         int day = 0;
-        while (cal.getTime().after(dateFirst) && cal.getTime().before(dateLast) || cal.getTime().equals(dateFirst)
-                || cal.getTime().equals(dateLast)) {
+        while (dateLoop.after(dateFirst) && dateLoop.before(dateLast) || dateLoop.equals(dateFirst)
+                || dateLoop.equals(dateLast)) {
             day++;
             for (MergedReport mergedReport : mergedReportList) {
-                for (BookingDay bookingDay : mergedReport.getBookingDay()) {
-                    if (bookingDay.getDate().equals(cal.getTime())) {
-                        //                        if (!dayHoursCount.isEmpty()) {
-                        if (cal.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SATURDAY || cal.get(GregorianCalendar.DAY_OF_WEEK) == GregorianCalendar.SUNDAY) {
+                for (BookingDay bookingDay : mergedReport.getBookingDays()) {
+                    if (bookingDay.getDate().equals(dateLoop)) {
+                        var dayOfWeek = DateUtils.getDayOfWeek(dateLoop);
+                        if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
                             bookingDay.setSatSun(true);
                         }
                         for (int i = 0; i < dayHoursCount.size(); i++) {
                             DayAndWorkingHourCount dayAndWorkingHourCount = dayHoursCount.get(i);
                             if (dayAndWorkingHourCount.getDay() == day) {
                                 DayAndWorkingHourCount otherDayAndWorkingHourCount = new DayAndWorkingHourCount(day,
-                                        (bookingDay.getDurationHours() * 60 + bookingDay.getDurationMinutes() + dayAndWorkingHourCount.getWorkingHour() * 60) / 60, bookingDay
+                                        (bookingDay.getDurationHours() * MINUTES_PER_HOUR + bookingDay.getDurationMinutes() + dayAndWorkingHourCount.getWorkingHour() * MINUTES_PER_HOUR) / MINUTES_PER_HOUR, bookingDay
                                         .getDate());
                                 otherDayAndWorkingHourCount.setPublicHoliday(dayAndWorkingHourCount.isPublicHoliday());
                                 otherDayAndWorkingHourCount.setPublicHolidayName(dayAndWorkingHourCount.getPublicHolidayName());
@@ -262,7 +270,7 @@ public class MatrixHelper {
                                 otherDayAndWorkingHourCount.setWeekDay(dayAndWorkingHourCount.getWeekDay());
                                 dayHoursCount.set(i, otherDayAndWorkingHourCount);
                                 for (Publicholiday publicHoliday : publicHolidayList) {
-                                    if (publicHoliday.getRefdate().equals(cal.getTime())) {
+                                    if (publicHoliday.getRefdate().equals(dateLoop)) {
                                         bookingDay.setPublicHoliday(true);
                                     }
                                 }
@@ -272,7 +280,7 @@ public class MatrixHelper {
                 }
 
             }
-            cal.add(Calendar.DAY_OF_MONTH, 1);
+            dateLoop = DateUtils.addDays(dateLoop, 1);
         }
     }
 
@@ -284,7 +292,7 @@ public class MatrixHelper {
                 MergedReport mergedReport = mergedReportList.get(mergedReportIndex);
                 if ((mergedReport.getCustomOrder().getSign() + mergedReport.getSubOrder().getSign()).equals(timeReport.getSuborder().getCustomerorder().getSign()
                         + timeReport.getSuborder().getSign())) {
-                    for (BookingDay tempBookingDay : mergedReport.getBookingDay()) {
+                    for (BookingDay tempBookingDay : mergedReport.getBookingDays()) {
                         if (tempBookingDay.getDate().equals(date)) {
                             mergedReport.mergeBookingDay(tempBookingDay, date, durationHours, durationMinutes, taskdescription);
                             return;
@@ -343,13 +351,13 @@ public class MatrixHelper {
         try {
             if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
                 dateFirst = getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
-                int maxDays = getMaxDays(dateFirst);
+                int maxDays = DateUtils.getMonthDays(dateFirst);
                 String maxDayString = getTwoDigitStr(maxDays);
                 dateLast = getDateFormStrings(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), false);
             } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
                 dateFirst = getDateFormStrings(reportForm.getFromDay(), reportForm.getFromMonth(), reportForm.getFromYear(), false);
                 if (reportForm.getUntilDay() == null || reportForm.getUntilMonth() == null || reportForm.getUntilYear() == null) {
-                    int maxDays = getMaxDays(dateFirst);
+                    int maxDays = DateUtils.getMonthDays(dateFirst);
                     String maxDayString = getTwoDigitStr(maxDays);
                     reportForm.setUntilDay(maxDayString);
                     reportForm.setUntilMonth(reportForm.getFromMonth());
@@ -473,9 +481,7 @@ public class MatrixHelper {
         results.put("lastDay", reportForm.getUntilDay());
         results.put("lastMonth", reportForm.getUntilMonth());
         results.put("lastYear", reportForm.getUntilYear());
-        GregorianCalendar gc = new GregorianCalendar();
-        gc.setTime(dateFirst);
-        results.put("daysofmonth", gc.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
+        results.put("daysofmonth", DateUtils.getMonthDays(dateFirst));
 
         return results;
     }
@@ -516,7 +522,7 @@ public class MatrixHelper {
 
             Date dateFirst = initStartEndDate("01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
-            maxDays = getMaxDays(dateFirst);
+            maxDays = DateUtils.getMonthDays(dateFirst);
             String maxDayString = getTwoDigitStr(maxDays);
             Date dateLast = initStartEndDate(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
@@ -548,7 +554,7 @@ public class MatrixHelper {
 
             // call from main menu: set current month, year,
             // orders, suborders...
-            Date dt = new Date();
+            Date dt = DateUtils.today();
             // get day string (e.g., '31') from java.util.Date
             String dayString = dt.toString().substring(8, 10);
             // get month string (e.g., 'Jan') from java.util.Date
@@ -565,7 +571,7 @@ public class MatrixHelper {
             if (reportForm.getFromMonth() == null || reportForm.getFromMonth().trim().equalsIgnoreCase("")) {
                 String month = currentMonth;
                 if (month == null || month.trim().equals("")) {
-                    Date date = new Date();
+                    Date date = today();
                     String[] dateArray = getDateAsStringArray(date);
                     month = dateArray[1];
                 }
@@ -590,7 +596,7 @@ public class MatrixHelper {
 
             Date dateFirst = initStartEndDate("01", currMonth, yearString, monthString, yearString);
 
-            maxDays = getMaxDays(dateFirst);
+            maxDays = DateUtils.getMonthDays(dateFirst);
             String maxDayString = getTwoDigitStr(maxDays);
             Date dateLast = initStartEndDate(maxDayString, currMonth, yearString, monthString, yearString);
 
@@ -636,16 +642,11 @@ public class MatrixHelper {
     }
 
     private Date initStartEndDate(String startEndStr, String currMonth, String currYear, String monthString, String yearString) {
-        try {
-            if (currMonth != null) {
-                return getDateFormStrings(startEndStr, currMonth, currYear, false);
-            } else {
-                return getDateFormStrings(startEndStr, monthString, yearString, false);
-            }
-        } catch (Exception e) {
-            System.out.println("this should not happen");
+        if (currMonth != null) {
+            return getDateFormStrings(startEndStr, currMonth, currYear, false);
+        } else {
+            return getDateFormStrings(startEndStr, monthString, yearString, false);
         }
-        return new Date();
     }
 
     public boolean isHandlingError(String key) {
@@ -658,12 +659,6 @@ public class MatrixHelper {
             return acceptanceDate != null && !dateLast.after(acceptanceDate);
         }
         return false;
-    }
-
-    private int getMaxDays(Date date) {
-        GregorianCalendar gc = new GregorianCalendar();
-        gc.setTime(date);
-        return gc.getActualMaximum(Calendar.DAY_OF_MONTH);
     }
 
     private String getTwoDigitStr(int i) {

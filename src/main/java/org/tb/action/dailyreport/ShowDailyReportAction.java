@@ -1,21 +1,19 @@
 package org.tb.action.dailyreport;
 
 import static org.tb.util.DateUtils.parse;
+import static org.tb.util.DateUtils.today;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -454,18 +452,11 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                         ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                     }
                     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-                    Date date = new Date();
-                    try {
-                        date = simpleDateFormat.parse(reportForm.getEnddate());
-                    } catch (ParseException e) {
-                        throw new RuntimeException("this should not happen!");
-                    }
+                    Date date = DateUtils.parse(reportForm.getEnddate(), e -> {
+                        throw new RuntimeException(e);
+                    });
                     if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
-                        GregorianCalendar gc = new GregorianCalendar();
-                        gc.setTime(date);
-                        int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
-                        gc.set(Calendar.DATE, maxday);
-                        date = gc.getTime();
+                        date = DateUtils.getEndOfMonth(date);
                     }
                     request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
                     int overtime;
@@ -715,7 +706,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
             // call from main menu: set current month, year, timereports,
             // orders, suborders...
-            Date dt = new Date();
+            Date dt = today();
             // get day string (e.g., '31') from java.util.Date
             String dayString = dt.toString().substring(8, 10);
             // get month string (e.g., 'Jan') from java.util.Date

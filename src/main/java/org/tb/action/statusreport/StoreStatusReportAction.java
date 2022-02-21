@@ -1,8 +1,10 @@
 package org.tb.action.statusreport;
 
+import static org.tb.util.DateUtils.addDays;
+import static org.tb.util.DateUtils.today;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -43,27 +45,21 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
             int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? reportForm.getValidUntil() : reportForm.getValidFrom();
-            int day, month, year;
-            Calendar cal = Calendar.getInstance();
 
+            Date newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, reportForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                day = Integer.parseInt(datum.substring(8));
-                month = Integer.parseInt(datum.substring(5, 7));
-                year = Integer.parseInt(datum.substring(0, 4));
-
-                cal.set(Calendar.DATE, day);
-                cal.set(Calendar.MONTH, month - 1);
-                cal.set(Calendar.YEAR, year);
-
-                cal.add(Calendar.DATE, howMuch);
+                newValue = DateUtils.parse(datum, today());
+                newValue = addDays(newValue, 1);
+            } else {
+                newValue = today();
             }
 
-            datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+            datum = DateUtils.format(newValue);
 
             request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
 

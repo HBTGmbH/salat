@@ -1,10 +1,11 @@
 package org.tb.action.order;
 
+import static org.tb.util.DateUtils.addDays;
 import static org.tb.util.DateUtils.parse;
+import static org.tb.util.DateUtils.today;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,8 +55,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         /* remove list with timereports out of range */
         request.getSession().removeAttribute("timereportsOutOfRange");
 
@@ -65,27 +64,21 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? coForm.getValidUntil() : coForm.getValidFrom();
-            int day, month, year;
-            Calendar cal = Calendar.getInstance();
 
+            Date newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, coForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                day = Integer.parseInt(datum.substring(8));
-                month = Integer.parseInt(datum.substring(5, 7));
-                year = Integer.parseInt(datum.substring(0, 4));
-
-                cal.set(Calendar.DATE, day);
-                cal.set(Calendar.MONTH, month - 1);
-                cal.set(Calendar.YEAR, year);
-
-                cal.add(Calendar.DATE, howMuch);
+                newValue = DateUtils.parse(datum, today());
+                newValue = addDays(newValue, 1);
+            } else {
+                newValue = today();
             }
 
-            datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+            datum = DateUtils.format(newValue);
 
             request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
 
