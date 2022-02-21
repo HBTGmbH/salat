@@ -8,10 +8,10 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
@@ -20,7 +20,6 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
-import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -28,7 +27,6 @@ import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.form.AddDailyReportForm;
 
 /**
  * Action class for editing of a timereport
@@ -37,6 +35,7 @@ import org.tb.form.AddDailyReportForm;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final TimereportDAO timereportDAO;
@@ -45,20 +44,6 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
     private final EmployeecontractDAO employeecontractDAO;
     private final WorkingdayDAO workingdayDAO;
     private final TimereportHelper timereportHelper;
-
-    @Autowired
-    public EditDailyReportAction(AfterLogin afterLogin, TimereportDAO timereportDAO,
-        CustomerorderDAO customerorderDAO, SuborderDAO suborderDAO,
-        EmployeecontractDAO employeecontractDAO, WorkingdayDAO workingdayDAO,
-        TimereportHelper timereportHelper) {
-        super(afterLogin);
-        this.timereportDAO = timereportDAO;
-        this.customerorderDAO = customerorderDAO;
-        this.suborderDAO = suborderDAO;
-        this.employeecontractDAO = employeecontractDAO;
-        this.workingdayDAO = workingdayDAO;
-        this.timereportHelper = timereportHelper;
-    }
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {

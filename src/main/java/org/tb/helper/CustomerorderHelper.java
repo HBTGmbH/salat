@@ -13,8 +13,8 @@ import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.form.AddDailyReportForm;
-import org.tb.form.ShowDailyReportForm;
+import org.tb.action.dailyreport.AddDailyReportForm;
+import org.tb.action.dailyreport.ShowDailyReportForm;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;

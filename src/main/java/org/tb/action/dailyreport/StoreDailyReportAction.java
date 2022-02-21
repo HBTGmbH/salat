@@ -13,10 +13,10 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.AuthorizedUser;
@@ -30,9 +30,6 @@ import org.tb.bdom.Workingday;
 import org.tb.exception.AuthorizationException;
 import org.tb.exception.BusinessRuleException;
 import org.tb.exception.InvalidDataException;
-import org.tb.form.AddDailyReportForm;
-import org.tb.form.ShowDailyReportForm;
-import org.tb.helper.AfterLogin;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.SuborderHelper;
 import org.tb.helper.TimereportHelper;
@@ -52,6 +49,7 @@ import org.tb.util.DateUtils;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final EmployeecontractDAO employeecontractDAO;
@@ -66,28 +64,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
 
-    @Autowired
-    public StoreDailyReportAction(AfterLogin afterLogin, EmployeecontractDAO employeecontractDAO,
-        SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
-        WorkingdayDAO workingdayDAO, EmployeeorderDAO employeeorderDAO,
-        SuborderHelper suborderHelper, CustomerorderHelper customerorderHelper,
-        TimereportHelper timereportHelper, TimereportService timereportService,
-        AuthorizedUser authorizedUser) {
-        super(afterLogin);
-        this.employeecontractDAO = employeecontractDAO;
-        this.suborderDAO = suborderDAO;
-        this.customerorderDAO = customerorderDAO;
-        this.timereportDAO = timereportDAO;
-        this.workingdayDAO = workingdayDAO;
-        this.employeeorderDAO = employeeorderDAO;
-        this.suborderHelper = suborderHelper;
-        this.customerorderHelper = customerorderHelper;
-        this.timereportHelper = timereportHelper;
-        this.timereportService = timereportService;
-        this.authorizedUser = authorizedUser;
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
         boolean refreshOrders = false;

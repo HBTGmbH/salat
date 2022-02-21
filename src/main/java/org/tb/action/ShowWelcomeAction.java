@@ -3,70 +3,23 @@ package org.tb.action;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.action.dailyreport.DailyReportAction;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Warning;
 import org.tb.helper.AfterLogin;
-import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
-import org.tb.persistence.EmployeeorderDAO;
-import org.tb.persistence.OvertimeDAO;
-import org.tb.persistence.PublicholidayDAO;
-import org.tb.persistence.StatusReportDAO;
-import org.tb.persistence.TimereportDAO;
-import org.tb.action.dailyreport.DailyReportAction;
-import org.tb.form.ShowWelcomeForm;
 
 @Component
+@RequiredArgsConstructor
 public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
-    private OvertimeDAO overtimeDAO;
-    private TimereportDAO timereportDAO;
-    private EmployeecontractDAO employeecontractDAO;
-    private EmployeeorderDAO employeeorderDAO;
-    private PublicholidayDAO publicholidayDAO;
-    private CustomerorderDAO customerorderDAO;
-    private StatusReportDAO statusReportDAO;
-    private AfterLogin afterLogin;
-
-    public ShowWelcomeAction(AfterLogin afterLogin) {
-        super(afterLogin);
-    }
-
-    public void setAfterLogin(AfterLogin afterLogin) {
-        this.afterLogin = afterLogin;
-    }
-
-    public void setStatusReportDAO(StatusReportDAO statusReportDAO) {
-        this.statusReportDAO = statusReportDAO;
-    }
-
-    public void setCustomerorderDAO(CustomerorderDAO customerorderDAO) {
-        this.customerorderDAO = customerorderDAO;
-    }
-
-    public void setPublicholidayDAO(PublicholidayDAO publicholidayDAO) {
-        this.publicholidayDAO = publicholidayDAO;
-    }
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-
-    public void setEmployeecontractDAO(EmployeecontractDAO employeecontractDAO) {
-        this.employeecontractDAO = employeecontractDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
-
-    public void setOvertimeDAO(OvertimeDAO overtimeDAO) {
-        this.overtimeDAO = overtimeDAO;
-    }
+    private final EmployeecontractDAO employeecontractDAO;
+    private final AfterLogin afterLogin;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
