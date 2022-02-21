@@ -170,7 +170,7 @@ public class CustomerorderDAO {
     }
 
     public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final Date date) {
-        return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
+        return customerorderRepository.findAll((root, query, builder) -> {
             ListJoin<Suborder, Employeeorder> employeeorderJoin = root.join(Customerorder_.suborders).join(Suborder_.employeeorders);
             Join<Employeeorder, Employeecontract> employeecontractJoin = employeeorderJoin.join(Employeeorder_.employeecontract);
             var employeeContractIdEqual = builder.equal(employeecontractJoin.get(Employeecontract_.id), employeeContractId);
@@ -179,6 +179,7 @@ public class CustomerorderDAO {
                 builder.isNull(employeeorderJoin.get(Employeeorder_.untilDate)),
                 builder.greaterThanOrEqualTo(employeeorderJoin.get(Employeeorder_.untilDate), date)
             );
+            query.distinct(true);
             return builder.and(employeeContractIdEqual, fromDateLess, untilDateNullOrGreater);
         }, Sort.by(Customerorder_.SIGN, Customerorder_.DESCRIPTION));
     }
