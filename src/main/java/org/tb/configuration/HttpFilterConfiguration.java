@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
 import org.tb.bdom.AuthorizedUser;
 import org.tb.persistence.EmployeeDAO;
 import org.tb.persistence.EmployeeRepository;
@@ -28,6 +29,14 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<PerformanceLoggingFilter>();
         registrationBean.setFilter(new PerformanceLoggingFilter());
         registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+        return registrationBean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<OpenEntityManagerInViewFilter> openEntityManagerInViewFilter(){
+        var registrationBean = new FilterRegistrationBean<OpenEntityManagerInViewFilter>();
+        registrationBean.setFilter(new OpenEntityManagerInViewFilter());
+        registrationBean.addUrlPatterns("/do/*");
         return registrationBean;
     }
 
