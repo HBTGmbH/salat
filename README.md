@@ -7,8 +7,6 @@ DATABASE_USERNAME
 DATABASE_PASSWORD
 DATABASE_HOST
 DATABASE_NAME
-SALAT_URL
-SALAT_MAIL_HOST
 ```
 
 The following is an example for local testing with the included docker-compose file:
@@ -18,8 +16,6 @@ DATABASE_USERNAME=salattest
 DATABASE_PASSWORD=salattest
 DATABASE_HOST=localhost
 DATABASE_NAME=salat
-SALAT_URL=localhost
-SALAT_MAIL_HOST=localhost
 ```
 
 ## Run locally

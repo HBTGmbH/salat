@@ -25,10 +25,6 @@ jobs:
           DATABASE_PASSWORD: salattest
           DATABASE_HOST: db
           DATABASE_NAME: salat
-          SALAT_URL: localhost
-          SALAT_JIRA_CONSUMER_KEY: test
-          SALAT_JIRA_CONSUMER_PRIVATE_KEY: test
-          SALAT_MAIL_HOST: localhost
           JPDA_ADDRESS: "*:8000"
       db:
         image: ghcr.io/hbtgmbh/salat-testdb:${{ inputs.db_tag }}
