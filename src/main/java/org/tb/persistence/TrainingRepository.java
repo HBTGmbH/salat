@@ -15,7 +15,7 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
       select t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes) from Timereport t
       where t.employeecontract.freelancer is false and t.employeecontract.dailyWorkingTime > 0
       and t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end  and t.training = true
-      group by t.employeecontract.id"
+      group by t.employeecontract.id
   """)
   List<Object[]> getProjectTrainingTimesByDates(Date begin, Date end);
   
