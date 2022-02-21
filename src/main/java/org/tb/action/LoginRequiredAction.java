@@ -25,6 +25,7 @@ import org.tb.bdom.Warning;
 @Slf4j
 public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAction<F> {
 
+    @Autowired
     protected AuthorizedUser authorizedUser;
 
     @Override
@@ -70,11 +71,6 @@ public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAct
      */
     protected boolean isAllowedForRestrictedUsers() {
         return false;
-    }
-
-    @Autowired
-    public void setAuthorizedUser(AuthorizedUser authorizedUser) {
-        this.authorizedUser = authorizedUser;
     }
 
 }

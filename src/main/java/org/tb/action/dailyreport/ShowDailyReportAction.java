@@ -26,11 +26,11 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.AuthorizedUser;
@@ -50,8 +50,6 @@ import org.tb.exception.AuthorizationException;
 import org.tb.exception.BusinessRuleException;
 import org.tb.exception.ErrorCodeException;
 import org.tb.exception.InvalidDataException;
-import org.tb.form.ShowDailyReportForm;
-import org.tb.helper.AfterLogin;
 import org.tb.helper.CustomerorderHelper;
 import org.tb.helper.EmployeeHelper;
 import org.tb.helper.SuborderHelper;
@@ -74,6 +72,7 @@ import org.tb.util.DateUtils;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm> {
 
     private final CustomerorderDAO customerorderDAO;
@@ -88,30 +87,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
-
-    @Autowired
-    public ShowDailyReportAction(AfterLogin afterLogin,
-        CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
-        EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
-        EmployeeorderDAO employeeorderDAO,
-        WorkingdayDAO workingdayDAO, EmployeeDAO employeeDAO,
-        SuborderHelper suborderHelper, CustomerorderHelper customerorderHelper,
-        TimereportHelper timereportHelper, TimereportService timereportService,
-        AuthorizedUser authorizedUser) {
-        super(afterLogin);
-        this.customerorderDAO = customerorderDAO;
-        this.timereportDAO = timereportDAO;
-        this.employeecontractDAO = employeecontractDAO;
-        this.suborderDAO = suborderDAO;
-        this.employeeorderDAO = employeeorderDAO;
-        this.workingdayDAO = workingdayDAO;
-        this.employeeDAO = employeeDAO;
-        this.suborderHelper = suborderHelper;
-        this.customerorderHelper = customerorderHelper;
-        this.timereportHelper = timereportHelper;
-        this.timereportService = timereportService;
-        this.authorizedUser = authorizedUser;
-    }
 
     /**
      * parses a string to a long value and returns its value
