@@ -3,29 +3,27 @@
 The following environment variables must be set in each environment/stage:
 
 ```
-DATABASE_USERNAME
-DATABASE_PASSWORD
-DATABASE_HOST
-DATABASE_NAME
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+SPRING_DATASOURCE_URL
 ```
 
 The following is an example for local testing with the included docker-compose file:
 
 ```
-DATABASE_USERNAME=salattest
-DATABASE_PASSWORD=salattest
-DATABASE_HOST=localhost
-DATABASE_NAME=salat
+SPRING_DATASOURCE_USERNAME=salattest
+SPRING_DATASOURCE_PASSWORD=salattest
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
 ```
 
 ## Run locally
 
 Steps to start Salat locally:
 
-1. Build the .war-file: `./mvnw -D"maven.test.skip=true" package`
+1. Build the .war-file: `./mvnw spring-boot:build-image`
 2. Run docker-compose: `docker-compose up`
-3. Open in browser: http://localhost:8080/tb
-   1. Valid credentials in the test-dataset are: admin/admin, bm/bm, tt/tt
+3. Open in browser: http://localhost:8080
+4. Valid credentials in the test-dataset are: admin/admin, bm/bm, tt/tt
 
 Shutdown:
 1. Stop docker-compose: CTRL+C
@@ -39,23 +37,3 @@ Start local database only, without Salat:
 
 
 ### Troubleshooting
-
-Clean rebuild of compose containers: `docker-compose build --no-cache`
-
-### DB Migrations
-```
-drop table referenceday_timereport;
-drop table worklog;
-drop table worklogmemory;
-drop table ticket_timereport;
-alter table timereport drop foreign key FKDA2C766119CE4732;
-alter table timereport drop column TICKET_ID;
-drop table ticket;
-alter table employee drop column jira_oauthtoken;
-drop table monthlyreport;
-alter table overtime add column lastupdate datetime DEFAULT NULL;
-alter table overtime add column lastupdatedby varchar(255) COLLATE utf8_bin;
-alter table overtime add column updatecounter int(11) DEFAULT NULL;
-```
-
-

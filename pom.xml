@@ -196,6 +196,9 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					<image>
+						<name>ghcr.io/hbtgmbh/salat</name>
+					</image>
 				</configuration>
 				<executions>
 					<execution>
