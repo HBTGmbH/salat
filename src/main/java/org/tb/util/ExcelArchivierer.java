@@ -1,6 +1,8 @@
 package org.tb.util;
 
 
+import static org.tb.util.DateUtils.today;
+
 import org.apache.poi.hssf.usermodel.HSSFDataFormatter;
 import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -283,7 +285,7 @@ public class ExcelArchivierer {
         if (invoiceTimereportViewHelper.getReferenceday().getRefdate() != null) {
             cell.setCellValue(invoiceTimereportViewHelper.getReferenceday().getRefdate());
         } else {
-            cell.setCellValue(new Date()); // should not happen
+            cell.setCellValue(today()); // should not happen
         }
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("date")));
         colIndex++;

@@ -1,11 +1,12 @@
 package org.tb.action.employee;
 
+import static org.tb.util.DateUtils.addDays;
 import static org.tb.util.DateUtils.parse;
+import static org.tb.util.DateUtils.today;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -54,8 +55,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeContractForm ecForm, HttpServletRequest request, HttpServletResponse response) {
-        SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         //			 remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
@@ -65,27 +64,21 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             int howMuch = Integer.parseInt(request.getParameter("howMuch"));
 
             String datum = which.equals("until") ? ecForm.getValidUntil() : ecForm.getValidFrom();
-            int day, month, year;
-            Calendar cal = Calendar.getInstance();
 
+            Date newValue;
             if (howMuch != 0) {
-                ActionMessages errorMessages = valiDate(request, ecForm, which);
+                ActionMessages errorMessages = validateDate(request, ecForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                day = Integer.parseInt(datum.substring(8));
-                month = Integer.parseInt(datum.substring(5, 7));
-                year = Integer.parseInt(datum.substring(0, 4));
-
-                cal.set(Calendar.DATE, day);
-                cal.set(Calendar.MONTH, month - 1);
-                cal.set(Calendar.YEAR, year);
-
-                cal.add(Calendar.DATE, howMuch);
+                newValue = DateUtils.parse(datum, today());
+                newValue = addDays(newValue, 1);
+            } else {
+                newValue = today();
             }
 
-            datum = howMuch == 0 ? format.format(new java.util.Date()) : format.format(cal.getTime());
+            datum = DateUtils.format(newValue);
 
             request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
 
@@ -375,7 +368,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     ecForm.setInitialOvertime("0.0");
                 }
                 // the ecForm entry is checked before
-                overtime.setTime(new Double(ecForm.getInitialOvertime()));
+                overtime.setTime(Double.valueOf(ecForm.getInitialOvertime()));
                 overtimeDAO.save(overtime, loginEmployee);
             }
 
@@ -440,7 +433,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         ecForm.reset(mapping, request);
     }
 
-    private ActionMessages valiDate(HttpServletRequest request, AddEmployeeContractForm ecForm, String which) {
+    private ActionMessages validateDate(HttpServletRequest request, AddEmployeeContractForm ecForm, String which) {
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();

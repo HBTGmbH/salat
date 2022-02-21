@@ -1,13 +1,12 @@
 package org.tb.helper;
 
+import static java.util.Calendar.SATURDAY;
+import static java.util.Calendar.SUNDAY;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+import static org.tb.util.DateUtils.today;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -18,13 +17,13 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
+import org.tb.action.dailyreport.AddDailyReportForm;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Overtime;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
-import org.tb.action.dailyreport.AddDailyReportForm;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;
@@ -439,7 +438,7 @@ public class TimereportHelper {
      */
     public int calculateOvertimeTotal(Employeecontract employeecontract) {
 
-        Date today = new Date();
+        Date today = today();
 
         Date contractBegin = employeecontract.getValidFrom();
 
@@ -450,25 +449,13 @@ public class TimereportHelper {
     public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
         // do not consider invalid(outside of the validity of the contract) days
-        if (employeecontract.getValidUntil() != null && end.after(employeecontract.getValidUntil()))
+        if (employeecontract.getValidUntil() != null && end.after(employeecontract.getValidUntil())) {
             end = employeecontract.getValidUntil();
-        if (employeecontract.getValidFrom() != null && start.before(employeecontract.getValidFrom()))
+        }
+
+        if (employeecontract.getValidFrom() != null && start.before(employeecontract.getValidFrom())) {
             start = employeecontract.getValidFrom();
-
-        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-        String year = yearFormat.format(start);
-
-        SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
-        String month = monthFormat.format(start);
-        int monthIntValue = Integer.parseInt(month);
-
-        SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
-        String day = dayFormat.format(start);
-
-        GregorianCalendar calendar = new GregorianCalendar();
-
-        calendar.clear();
-        calendar.set(new Integer(year), monthIntValue - 1, new Integer(day));
+        }
 
         // So = 1
         // Mo = 2
@@ -477,50 +464,18 @@ public class TimereportHelper {
         // Do = 5
         // Fr = 6
         // Sa = 7
-        int firstday = calendar.get(Calendar.DAY_OF_WEEK);
+        int startDayOfWeek = DateUtils.getDayOfWeek(start);
 
         int numberOfHolidays = 0;
-
-        List<Publicholiday> holidays = publicholidayDAO.getPublicHolidaysBetween(start, end);
-        for (Publicholiday publicholiday : holidays) {
-            calendar.setTimeInMillis(publicholiday.getRefdate().getTime());
-            if (calendar.get(Calendar.DAY_OF_WEEK) != 1 && calendar.get(Calendar.DAY_OF_WEEK) != 7) {
+        var holidays = publicholidayDAO.getPublicHolidaysBetween(start, end);
+        for (var publicholiday : holidays) {
+            var dayOfWeek = DateUtils.getDayOfWeek(publicholiday.getRefdate());
+            if (dayOfWeek != SATURDAY && dayOfWeek != SUNDAY) {
                 numberOfHolidays += 1;
             }
         }
 
-        long diffMillis;
-        long diffDays;
-
-        diffMillis = end.getTime() - start.getTime();
-        diffDays = (diffMillis + 60 * 60 * 1000) / (24 * 60 * 60 * 1000);
-        // 1 hour added because of possible differences caused by sommertime/wintertime
-
-        // add 1 day (number of days are needed, not the difference)
-        diffDays += 1;
-
-        if (diffDays < 0) {
-            // throw new RuntimeException("implementation error while calculating overtime");
-            return 0;
-        }
-        long weeks = diffDays / 7; // how many complete weeks?
-        long days = diffDays % 7; // days of incomplete week
-        diffDays = diffDays - weeks * 2; // subtract weekends of complete weeks
-
-        // check weekdays of incomplete week
-        if (days > 0) {
-            if (firstday == 1) {
-                // firstday is a sunday
-                diffDays -= 1;
-            } else {
-                if (firstday + days == 8) {
-                    diffDays -= 1;
-                } else if (firstday + days > 8) {
-                    diffDays -= 2;
-                }
-            }
-        }
-
+        var diffDays = DateUtils.getWeekdaysDistance(start, end);
         // substract holidays
         diffDays -= numberOfHolidays;
 
@@ -559,31 +514,4 @@ public class TimereportHelper {
         }
     }
 
-    public List<Date> getDatesForTimePeriod(Date startDate, int numberOfLaborDays) {
-        List<Date> dates = new ArrayList<>(numberOfLaborDays);
-        GregorianCalendar calendar = new GregorianCalendar();
-        int loopcounter = 0;
-        for (int i = 0; i < numberOfLaborDays; i++) {
-            calendar.clear();
-            calendar.setTime(startDate);
-            int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
-            calendar.set(Calendar.DAY_OF_YEAR, dayOfYear + loopcounter);
-            loopcounter++;
-            int weekday = calendar.get(Calendar.DAY_OF_WEEK);
-            if (weekday != 1 && weekday != 7) {
-                // weekday is no sa, su
-                Date laborDay = calendar.getTime();
-                Optional<Publicholiday> publicholiday = publicholidayDAO.getPublicHoliday(laborDay);
-                if (!publicholiday.isPresent()) {
-                    // labor day is not a holiday
-                    dates.add(laborDay);
-                } else {
-                    i--;
-                }
-            } else {
-                i--;
-            }
-        }
-        return dates;
-    }
 }

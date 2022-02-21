@@ -2,12 +2,11 @@ package org.tb.action.dailyreport;
 
 import static org.tb.util.DateUtils.getDateAsStringArray;
 import static org.tb.util.DateUtils.getDateFormStrings;
+import static org.tb.util.DateUtils.today;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -94,7 +93,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         if (employeecontract == null) {
             employeecontract = employeecontractDAO
                     .getEmployeeContractByEmployeeIdAndDate(loginEmployee
-                            .getId(), new Date());
+                            .getId(), today());
         }
 
         /* check if supervisor has been set before, if not use isSupervisor or employeeAuthorized for preselecting employeecontracts shown*/
@@ -213,7 +212,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             // build recipient for acceptancemail
             // Contract from Employee
             Employee contEmployee = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
-            Employeecontract currentEmployeeContract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(contEmployee.getId(), new Date());
+            Employeecontract currentEmployeeContract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(contEmployee.getId(), today());
 
             // BL
             Employee recipient = currentEmployeeContract.getSupervisor();
@@ -472,7 +471,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (date == null) {
-            date = new Date();
+            date = today();
         }
         request.getSession().setAttribute("releaseDate", date);
 
@@ -514,7 +513,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (date == null) {
-            date = new Date();
+            date = today();
         }
         request.getSession().setAttribute("acceptanceDate", date);
 
@@ -558,9 +557,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
      * fitting to the given date (month, year).
      */
     private List<OptionItem> getDayList(Date date) {
-        GregorianCalendar gc = new GregorianCalendar();
-        gc.setTime(date);
-        int maxDays = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
+        int maxDays = DateUtils.getMonthDays(date);
         List<OptionItem> days = new ArrayList<>();
 
         String dayValue;

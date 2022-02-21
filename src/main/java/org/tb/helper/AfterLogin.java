@@ -8,9 +8,7 @@ import static org.tb.util.UrlUtils.absoluteUrl;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import javax.servlet.ServletContext;
@@ -31,6 +29,7 @@ import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.StatusReportDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.util.DateUtils;
 
 @Component
 @Slf4j
@@ -139,11 +138,7 @@ public class AfterLogin {
                 }
 
                 Date checkDate = maxUntilDate;
-
-                GregorianCalendar calendar = new GregorianCalendar();
-                calendar.setTime(checkDate);
-                calendar.add(Calendar.MONTH, 12 / customerorder.getStatusreport());
-                checkDate.setTime(calendar.getTimeInMillis());
+                checkDate = DateUtils.addMonths(checkDate, 12 / customerorder.getStatusreport());
 
                 // final report due warning
                 List<Statusreport> finalReports = statusReportDAO.getReleasedFinalStatusReportsByCustomerOrderId(customerorder.getId());
@@ -228,7 +223,7 @@ public class AfterLogin {
             } else {
                 dynamicDate = addDays(employeecontract.getReportAcceptanceDate(), 1);
             }
-            int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, new Date(), employeecontract, true);
+            int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, today(), employeecontract, true);
             overtime = otStaticMinutes + overtimeDynamic;
             // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
         } else {

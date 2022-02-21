@@ -11,7 +11,7 @@ public class EmployeecontractTestUtils {
 
 	public static Employeecontract createEmployeecontract(Employee employee) {
 		Employeecontract ec = new Employeecontract();
-		ec.setCreated(new Date());
+		ec.setCreated(DateUtils.now());
 		ec.setCreatedby("kd");
 		ec.setDailyWorkingTime(8.0);
 		ec.setEmployee(employee);

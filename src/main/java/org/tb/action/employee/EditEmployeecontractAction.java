@@ -1,5 +1,7 @@
 package org.tb.action.employee;
 
+import static org.tb.util.DateUtils.today;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -60,7 +62,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
 
         // set day string for overime
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        Date now = new Date();
+        Date now = today();
         request.getSession().setAttribute("dateString", simpleDateFormat.format(now));
 
         // forward to employee contract add/edit form

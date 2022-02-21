@@ -3,10 +3,8 @@ package org.tb.action.dailyreport;
 import static org.tb.util.DateUtils.getDateFormStrings;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionForm;
@@ -28,6 +26,7 @@ import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
+import org.tb.util.DateUtils;
 import org.tb.util.OptionItem;
 
 public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
@@ -89,44 +88,30 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         /* make sure that the form is set in the http session, it could be a newly created object */
         request.getSession().setAttribute("showDailyReportForm", reportForm);
 
-        try {
+        switch (selectedView) {
+            case GlobalConstants.VIEW_DAILY:
+                request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
 
-            switch (selectedView) {
-                case GlobalConstants.VIEW_DAILY:
-                    request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
-
-                    beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
-                    endDate = beginDate;
-                    break;
-                case GlobalConstants.VIEW_MONTHLY:
-                    request.getSession().setAttribute("view", GlobalConstants.VIEW_MONTHLY);
-                    beginDate = getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear(), true);
-                    GregorianCalendar gc = new GregorianCalendar();
-                    gc.setTime(beginDate);
-                    int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
-                    String maxDayString = "";
-                    if (maxday < 10) {
-                        maxDayString += "0";
-                    }
-                    maxDayString += maxday;
-                    endDate = getDateFormStrings(maxDayString, reportForm.getMonth(), reportForm.getYear(), true);
-                    break;
-                case GlobalConstants.VIEW_CUSTOM:
-                    request.getSession().setAttribute("view", GlobalConstants.VIEW_CUSTOM);
-                    beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
-                    if (reportForm.getLastday() == null || reportForm.getLastmonth() == null || reportForm.getLastyear() == null) {
-                        reportForm.setLastday(reportForm.getDay());
-                        reportForm.setLastmonth(reportForm.getMonth());
-                        reportForm.setLastyear(reportForm.getYear());
-                    }
-                    endDate = getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear(), true);
-                    break;
-                default:
-                    throw new RuntimeException("no view type selected");
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("date cannot be parsed for form", e);
+                beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                endDate = beginDate;
+                break;
+            case GlobalConstants.VIEW_MONTHLY:
+                request.getSession().setAttribute("view", GlobalConstants.VIEW_MONTHLY);
+                beginDate = getDateFormStrings("1", reportForm.getMonth(), reportForm.getYear(), true);
+                endDate = DateUtils.getEndOfMonth(beginDate);
+                break;
+            case GlobalConstants.VIEW_CUSTOM:
+                request.getSession().setAttribute("view", GlobalConstants.VIEW_CUSTOM);
+                beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                if (reportForm.getLastday() == null || reportForm.getLastmonth() == null || reportForm.getLastyear() == null) {
+                    reportForm.setLastday(reportForm.getDay());
+                    reportForm.setLastmonth(reportForm.getMonth());
+                    reportForm.setLastyear(reportForm.getYear());
+                }
+                endDate = getDateFormStrings(reportForm.getLastday(), reportForm.getLastmonth(), reportForm.getLastyear(), true);
+                break;
+            default:
+                throw new RuntimeException("no view type selected");
         }
 
         // test, if an order is select, the selected employee is not associated with

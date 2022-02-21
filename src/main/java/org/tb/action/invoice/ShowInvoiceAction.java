@@ -4,10 +4,9 @@ import static org.tb.util.DateUtils.getDateFormStrings;
 import static org.tb.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -86,24 +85,12 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     try {
                         if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
                             dateFirst = getDateFormStrings("1", showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
-                            GregorianCalendar gc = new GregorianCalendar();
-                            gc.setTime(dateFirst);
-                            int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
-                            String maxDayString = "";
-                            if (maxday < 10) {
-                                maxDayString += "0";
-                            }
-                            maxDayString += maxday;
-                            dateLast = getDateFormStrings(maxDayString, showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
+                            dateLast = DateUtils.getEndOfMonth(dateFirst);
                         } else {
-                            int kw = showInvoiceForm.getFromWeek();
-                            Calendar cal = Calendar.getInstance();
-                            cal.set(Calendar.YEAR, Integer.parseInt(showInvoiceForm.getFromYear()));
-                            cal.set(Calendar.WEEK_OF_YEAR, kw);
-                            cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                            dateFirst = cal.getTime();
-                            cal.add(Calendar.DATE, 6);
-                            dateLast = cal.getTime();
+                            int week = showInvoiceForm.getFromWeek();
+                            int year = Integer.parseInt(showInvoiceForm.getFromYear());
+                            dateFirst = DateUtils.getBeginOfWeek(year, week);
+                            dateLast = DateUtils.addDays(dateFirst, 6);
                         }
                     } catch (Exception e) {
                         throw new RuntimeException("date cannot be parsed from form");
@@ -123,9 +110,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     try {
                         dateFirst = getDateFormStrings(showInvoiceForm.getFromDay(), showInvoiceForm.getFromMonth(), showInvoiceForm.getFromYear(), false);
                         if (showInvoiceForm.getUntilDay() == null || showInvoiceForm.getUntilMonth() == null || showInvoiceForm.getUntilYear() == null) {
-                            GregorianCalendar gc = new GregorianCalendar();
-                            gc.setTime(dateFirst);
-                            int maxday = gc.getActualMaximum(Calendar.DAY_OF_MONTH);
+                            int maxday = DateUtils.getMonthDays(dateFirst);
                             String maxDayString = "";
                             if (maxday < 10) {
                                 maxDayString += "0";
@@ -179,13 +164,11 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
                 request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
                 request.getSession().setAttribute("customeraddress", customerOrder.getCustomer().getAddress());
-                GregorianCalendar gc = new GregorianCalendar();
-                gc.setTime(dateFirst);
-                request.getSession().setAttribute("dateMonth", monthMap.get(String.valueOf(gc.get(Calendar.MONTH))));
-                request.getSession().setAttribute("dateYear", gc.get(Calendar.YEAR));
-                request.getSession().setAttribute("dateFirst", gc.get(Calendar.DATE) + "." + (gc.get(Calendar.MONTH) + 1) + "." + gc.get(Calendar.YEAR));
-                gc.setTime(dateLast);
-                request.getSession().setAttribute("dateLast", gc.get(Calendar.DATE) + "." + (gc.get(Calendar.MONTH) + 1) + "." + gc.get(Calendar.YEAR));
+                YearMonth yearMonth = DateUtils.getYearMonth(dateFirst);
+                request.getSession().setAttribute("dateMonth", monthMap.get(String.valueOf(yearMonth.getMonthValue() - 1)));
+                request.getSession().setAttribute("dateYear", yearMonth.getYear());
+                request.getSession().setAttribute("dateFirst", DateUtils.format(dateFirst));
+                request.getSession().setAttribute("dateLast", DateUtils.format(dateLast));
                 request.getSession().setAttribute("currentOrderObject", customerOrder);
             } else {
                 request.setAttribute("errorMessage", "No customer order selected. Please choose.");

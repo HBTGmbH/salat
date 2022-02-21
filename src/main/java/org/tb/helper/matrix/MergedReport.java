@@ -2,20 +2,20 @@ package org.tb.helper.matrix;
 
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.util.List;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
+import org.tb.util.DateUtils;
 
 public class MergedReport implements Comparable<MergedReport> {
     private Customerorder customOrder;
     private Suborder subOrder;
     private double sumHours;
     private long sumMinutes;
-    private final ArrayList<BookingDay> bookingDay = new ArrayList<>();
+    private final List<BookingDay> bookingDays = new ArrayList<>();
 
     public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, Date date, long durationHours, long durationMinutes) {
         this.subOrder = subOrder;
@@ -24,20 +24,21 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     public int getCountOfDays() {
-        return bookingDay.size();
+        return bookingDays.size();
     }
 
     public void mergeBookingDay(BookingDay tempBookingDay, Date date, long durationHours, long durationMinutes, String taskdescription) {
-        bookingDay.set(bookingDay.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes, tempBookingDay.getTaskdescription() + taskdescription));
+        bookingDays.set(
+            bookingDays.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes, tempBookingDay.getTaskdescription() + taskdescription));
     }
 
     public void addBookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
-        bookingDay.add(new BookingDay(date, durationHours, durationMinutes, taskdescription));
+        bookingDays.add(new BookingDay(date, durationHours, durationMinutes, taskdescription));
     }
 
     public void setSum() {
         sumMinutes = 0;
-        for (BookingDay tempBookingDay : bookingDay) {
+        for (BookingDay tempBookingDay : bookingDays) {
             sumMinutes += tempBookingDay.getDurationHours() * 60 + tempBookingDay.getDurationMinutes();
         }
         sumHours = (double)sumMinutes / 60;
@@ -48,25 +49,24 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     public void fillBookingDaysWithNull(Date dateFirst, Date dateLast) {
-        Calendar gc = GregorianCalendar.getInstance();
-        gc.setTime(dateFirst);
-        while ((gc.getTime().after(dateFirst) && gc.getTime().before(dateLast)) || gc.getTime().equals(dateFirst) || gc.getTime().equals(dateLast)) {
+        Date compareDate = dateFirst;
+        while ((compareDate.after(dateFirst) && compareDate.before(dateLast)) || compareDate.equals(dateFirst) || compareDate.equals(dateLast)) {
             boolean dateAvailable = false;
-            for (BookingDay tempBookingDay : bookingDay) {
-                if (tempBookingDay.getDate().equals(gc.getTime())) {
+            for (BookingDay tempBookingDay : bookingDays) {
+                if (tempBookingDay.getDate().equals(compareDate)) {
                     dateAvailable = true;
                     break;
                 }
             }
             if (!dateAvailable) {
-                addBookingDay(gc.getTime(), 0, 0, null);
+                addBookingDay(compareDate, 0, 0, null);
             }
-            gc.add(Calendar.DAY_OF_WEEK, 1);
+            compareDate = DateUtils.addDays(compareDate, 1);
         }
     }
 
-    public ArrayList<BookingDay> getBookingDay() {
-        return bookingDay;
+    public List<BookingDay> getBookingDays() {
+        return bookingDays;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class MergedReport implements Comparable<MergedReport> {
                 .append(customOrder.getSign())
                 .append(subOrder.getSign())
                 .append(" - ");
-        for (BookingDay temp : bookingDay) {
+        for (BookingDay temp : bookingDays) {
             sb.append(temp.getDate())
                     .append("-")
                     .append(temp.getDurationHours())

@@ -1,19 +1,15 @@
 package org.tb.persistence;
 
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Referenceday;
+import org.tb.util.DateUtils;
 import org.tb.util.HolidaysUtil;
-
-import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 
 /**
  * DAO class for 'Publicholiday'
@@ -52,10 +48,7 @@ public class PublicholidayDAO {
 
         int maxYear = 0;
         for (Publicholiday holiday : holidays) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(holiday.getRefdate());
-
-            maxYear = Math.max(maxYear, cal.get(Calendar.YEAR));
+            maxYear = Math.max(maxYear, DateUtils.getYear(holiday.getRefdate()).getValue());
         }
 
         for (LocalDate easterSunday : HolidaysUtil.loadEasterSundayDates()) {
