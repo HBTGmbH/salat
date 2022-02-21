@@ -8,10 +8,10 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
@@ -19,14 +19,12 @@ import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Workingday;
 import org.tb.bdom.comparators.SubOrderByDescriptionComparator;
-import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.DateUtils;
-import org.tb.form.AddDailyReportForm;
 
 /**
  * Action class for creation of a timereport
@@ -35,27 +33,14 @@ import org.tb.form.AddDailyReportForm;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class CreateDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final CustomerorderDAO customerorderDAO;
     private final SuborderDAO suborderDAO;
     private final WorkingdayDAO workingdayDAO;
-    private final AfterLogin afterLogin;
     private final TimereportHelper timereportHelper;
-
-    @Autowired
-    public CreateDailyReportAction(AfterLogin afterLogin, EmployeecontractDAO employeecontractDAO,
-        CustomerorderDAO customerorderDAO, SuborderDAO suborderDAO, WorkingdayDAO workingdayDAO,
-        AfterLogin afterLogin1, TimereportHelper timereportHelper) {
-        super(afterLogin);
-        this.employeecontractDAO = employeecontractDAO;
-        this.customerorderDAO = customerorderDAO;
-        this.suborderDAO = suborderDAO;
-        this.workingdayDAO = workingdayDAO;
-        this.afterLogin = afterLogin1;
-        this.timereportHelper = timereportHelper;
-    }
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) {

@@ -2,6 +2,7 @@ package org.tb.action.order;
 
 import static org.tb.util.DateUtils.today;
 
+import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
@@ -9,8 +10,6 @@ import org.apache.struts.action.ActionMapping;
 import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.util.DateUtils;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Form for adding a customer order

@@ -9,10 +9,10 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.tb.GlobalConstants;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Customerorder;
@@ -21,7 +21,6 @@ import org.tb.bdom.Employeeorder;
 import org.tb.bdom.Suborder;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
-import org.tb.form.ShowDailyReportForm;
 import org.tb.helper.AfterLogin;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -31,10 +30,10 @@ import org.tb.persistence.TimereportDAO;
 import org.tb.persistence.WorkingdayDAO;
 import org.tb.util.OptionItem;
 
-@RequiredArgsConstructor
 public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
-    private final AfterLogin afterLogin;
+    @Autowired
+    private AfterLogin afterLogin;
 
     protected void addErrorAtTheBottom(HttpServletRequest request, ActionMessages errors, ActionMessage message) {
         errors.add("status", message);
@@ -318,4 +317,5 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         }
         return days;
     }
+
 }

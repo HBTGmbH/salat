@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
 import org.tb.bdom.AuthorizedUser;
@@ -17,9 +17,6 @@ import org.tb.bdom.Workingday;
 import org.tb.exception.AuthorizationException;
 import org.tb.exception.BusinessRuleException;
 import org.tb.exception.InvalidDataException;
-import org.tb.form.ShowDailyReportForm;
-import org.tb.form.UpdateDailyReportForm;
-import org.tb.helper.AfterLogin;
 import org.tb.helper.TimereportHelper;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
@@ -34,8 +31,9 @@ import org.tb.service.TimereportService;
  *
  * @author oda
  */
-@Component
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReportForm> {
 
     private final SuborderDAO suborderDAO;
@@ -47,25 +45,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
-
-    @Autowired
-    public UpdateDailyReportAction(AfterLogin afterLogin, SuborderDAO suborderDAO,
-        CustomerorderDAO customerorderDAO, TimereportDAO timereportDAO,
-        WorkingdayDAO workingdayDAO,
-        EmployeeorderDAO employeeorderDAO,
-        EmployeecontractDAO employeecontractDAO, TimereportHelper timereportHelper,
-        TimereportService timereportService, AuthorizedUser authorizedUser) {
-        super(afterLogin);
-        this.suborderDAO = suborderDAO;
-        this.customerorderDAO = customerorderDAO;
-        this.timereportDAO = timereportDAO;
-        this.workingdayDAO = workingdayDAO;
-        this.employeeorderDAO = employeeorderDAO;
-        this.employeecontractDAO = employeecontractDAO;
-        this.timereportHelper = timereportHelper;
-        this.timereportService = timereportService;
-        this.authorizedUser = authorizedUser;
-    }
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, UpdateDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {

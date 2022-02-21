@@ -24,7 +24,7 @@ import org.tb.bdom.Overtime;
 import org.tb.bdom.Publicholiday;
 import org.tb.bdom.Timereport;
 import org.tb.bdom.Workingday;
-import org.tb.form.AddDailyReportForm;
+import org.tb.action.dailyreport.AddDailyReportForm;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.OvertimeDAO;
 import org.tb.persistence.PublicholidayDAO;

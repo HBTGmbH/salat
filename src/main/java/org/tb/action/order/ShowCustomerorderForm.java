@@ -1,11 +1,10 @@
 package org.tb.action.order;
 
+import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Form for showing all customer orders.

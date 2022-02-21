@@ -1,6 +1,12 @@
 package org.tb.action.admin;
 
-import org.apache.struts.action.ActionForm;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
@@ -11,29 +17,16 @@ import org.tb.bdom.Timereport;
 import org.tb.persistence.EmployeeorderDAO;
 import org.tb.persistence.TimereportDAO;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 @Component
-public class ShowAdminOptionsAction extends LoginRequiredAction<ActionForm> {
+@RequiredArgsConstructor
+public class ShowAdminOptionsAction extends LoginRequiredAction<ShowAdminOptionsForm> {
 
-    private TimereportDAO timereportDAO;
-    private EmployeeorderDAO employeeorderDAO;
-
-    public void setEmployeeorderDAO(EmployeeorderDAO employeeorderDAO) {
-        this.employeeorderDAO = employeeorderDAO;
-    }
-
-    public void setTimereportDAO(TimereportDAO timereportDAO) {
-        this.timereportDAO = timereportDAO;
-    }
+    private final TimereportDAO timereportDAO;
+    private final EmployeeorderDAO employeeorderDAO;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
-                                                 ActionForm form, HttpServletRequest request,
+                                                 ShowAdminOptionsForm form, HttpServletRequest request,
                                                  HttpServletResponse response) throws Exception {
 
         request.getSession().removeAttribute("setemployeeorderresults");
@@ -46,7 +39,7 @@ public class ShowAdminOptionsAction extends LoginRequiredAction<ActionForm> {
             Date start = new Date();
             List<String> problems = new ArrayList<>();
 
-            List<Timereport> timereports = timereportDAO.getOrderedTimereports();
+            List<Timereport> timereports = Collections.emptyList(); // FIXME is this feature still in use???
             List<Timereport> unassignedTimereports = new ArrayList<>();
             int total = timereports.size();
             int unassignable = 0;
