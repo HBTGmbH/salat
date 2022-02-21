@@ -6,13 +6,20 @@ import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.tb.bdom.Timereport;
 
 @Repository
-public interface TimereportRepository extends CrudRepository<Timereport, Long> {
+public interface TimereportRepository extends CrudRepository<Timereport, Long>, JpaSpecificationExecutor<Timereport> {
+
+  List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdate(long employeecontractId, Date refDate);
+
+  List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdateIsGreaterThanEqual(long employeecontractId, Date refDate);
+
+  List<Timereport> findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(long employeecontractId, String status, Date date);
 
   @Query("select t from Timereport t "
       + "where t.employeecontract.id = :employeecontractId and "
@@ -50,5 +57,38 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long> {
   @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
       + "where tr.suborder.invoice = '" + INVOICE_YES + "' and tr.employeeorder.suborder.customerorder.id = :customerorderId")
   Optional<Long> getReportedMinutesForCustomerorder(long customerorderId);
+
+  @Query("""
+      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr 
+      where tr.employeeorder.suborder.id in (:ids)
+  """)
+  Optional<Long> getReportedMinutesForSuborders(List<Long> ids);
+
+  @Query("""
+      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+      and tr.employeeorder.suborder.id = :suborderId
+  """)
+  Optional<Long> getReportedMinutesForSuborderAndBetween(long suborderId, Date begin, Date end);
+
+  @Query("""
+      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+      and tr.employeeorder.id = :employeeorderId
+  """)
+  Optional<Long> getReportedMinutesForEmployeeorderAndBetween(long employeeorderId, Date begin, Date end);
+
+  @Query("""
+      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.employeeorder.id = :employeeorderId
+  """)
+  Optional<Long> getReportedMinutesForEmployeeorder(long employeeorderId);
+
+  @Query("""
+      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+      and tr.employeeorder.employeecontract.id = :employeecontractId
+  """)
+  Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, Date begin, Date end);
 
 }
