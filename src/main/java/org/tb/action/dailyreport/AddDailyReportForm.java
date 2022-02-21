@@ -2,6 +2,7 @@ package org.tb.action.dailyreport;
 
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+import static org.tb.util.DateUtils.today;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -51,7 +52,7 @@ public class AddDailyReportForm extends ActionForm {
 
     public AddDailyReportForm() {
         SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        setReferenceday(format.format(new Date()));
+        setReferenceday(format.format(today()));
     }
 
     public Double getHours() {

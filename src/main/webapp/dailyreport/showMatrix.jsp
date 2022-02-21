@@ -349,7 +349,7 @@
 			<tr class="matrix">
 				<td class="matrix"><c:out value="${mergedreport.customOrder.sign}"></c:out><br><c:out value="${mergedreport.subOrder.sign}" /></td>
 				<td class="matrix"><c:out value="${mergedreport.customOrder.shortdescription}"></c:out><br><c:out value="${mergedreport.subOrder.shortdescription}" /></td>
-				<c:forEach var="bookingday" items="${mergedreport.bookingDay}">
+				<c:forEach var="bookingday" items="${mergedreport.bookingDays}">
 					<c:if test="${bookingday.satSun==true}">
 						<c:if test="${bookingday.publicHoliday==true}">
 							<td title="${fn:escapeXml(bookingday.taskdescription)}"

@@ -69,6 +69,17 @@ public class DateUtils {
         return calendar;
     }
 
+    /**
+     * Month is 0-based.
+     */
+    public static Date of(int year, int month, int day) {
+        Calendar calendar = getCalendar();
+        calendar.set(YEAR, year);
+        calendar.set(MONTH, month);
+        calendar.set(DAY_OF_MONTH, day);
+        return org.apache.commons.lang.time.DateUtils.truncate(calendar.getTime(), DAY_OF_MONTH);
+    }
+
     public static String getCurrentYearString() {
         return Integer.toString(getCurrentYear());
     }
@@ -313,7 +324,7 @@ public class DateUtils {
         Calendar calendar = getCalendar();
         calendar.setTime(date);
         calendar.set(DAY_OF_MONTH, 1);
-        return calendar.getTime();
+        return org.apache.commons.lang.time.DateUtils.truncate(calendar.getTime(), DAY_OF_MONTH);
     }
 
     /**
@@ -324,7 +335,7 @@ public class DateUtils {
         Calendar calendar = getCalendar();
         calendar.setTime(date);
         calendar.set(DAY_OF_MONTH, calendar.getActualMaximum(DAY_OF_MONTH));
-        return calendar.getTime();
+        return org.apache.commons.lang.time.DateUtils.truncate(calendar.getTime(), DAY_OF_MONTH);
     }
 
     /**
@@ -358,13 +369,20 @@ public class DateUtils {
     }
 
     /**
-     * Takes a Date and a number of days. Changes the Date by adding (changeDays is positive) or subtracting (changeDays is negative)
+     * Takes a Date and a number of days. Changes the Date by adding (amount is positive) or subtracting (amount is negative)
      * the number of days to it. For example, you have some Date and need the next day: input parameters are (date, 1).
      */
-    public static Date addDays(Date originalDate, int changeDays) {
+    public static Date addDays(Date originalDate, int amount) {
         Calendar calendar = getCalendar();
         calendar.setTime(originalDate);
-        calendar.add(DAY_OF_MONTH, changeDays);
+        calendar.add(DAY_OF_MONTH, amount);
+        return calendar.getTime();
+    }
+
+    public static Date addMonths(Date originalDate, int amount) {
+        Calendar calendar = getCalendar();
+        calendar.setTime(originalDate);
+        calendar.add(MONTH, amount);
         return calendar.getTime();
     }
 
@@ -373,7 +391,7 @@ public class DateUtils {
      *
      * @return Returns an array of strings with the day at index 0, month at index 1 and year at index 2.
      */
-    public static String[] getDateAsStringArray(java.util.Date date) {
+    public static String[] getDateAsStringArray(Date date) {
         SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
         SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
         SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
@@ -580,5 +598,19 @@ public class DateUtils {
             calendar.add(DATE, 1);
         }
         return distance;
+    }
+
+    public static int getMonthDays(Date date) {
+        Calendar calendar = getCalendar();
+        calendar.setTime(date);
+        return calendar.getActualMaximum(DAY_OF_MONTH);
+    }
+
+    public static Date getBeginOfWeek(int year, int week) {
+        Calendar cal = getCalendar();
+        cal.set(Calendar.YEAR, year);
+        cal.set(Calendar.WEEK_OF_YEAR, week);
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        return org.apache.commons.lang.time.DateUtils.truncate(cal.getTime(), DAY_OF_MONTH);
     }
 }

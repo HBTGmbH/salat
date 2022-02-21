@@ -28,7 +28,7 @@ public class GlobalConstants {
     public static final String DEFAULT_CURRENCY = "EUR";
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String DEFAULT_DATE_FORMAT_GERMAN = "dd.MM.yyyy";
-    public static final String DEFAULT_TIMEZONE_ID = ZoneId.systemDefault().toString(); // "Europe/Berlin";
+    public static final String DEFAULT_TIMEZONE_ID = "Europe/Berlin";
 
     public static final int MINUTE_INCREMENT = 5;
 

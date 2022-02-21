@@ -4,9 +4,7 @@ import static javax.persistence.TemporalType.DATE;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -152,7 +150,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      */
     public boolean getReleaseWarning() {
         boolean releaseWarning = false;
-        GregorianCalendar calendar = new GregorianCalendar();
         Date release = getReportReleaseDate();
 
         if (release == null) {
@@ -160,24 +157,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             return false;
         }
 
-        java.util.Date now = new java.util.Date();
-        int month = calendar.get(Calendar.MONTH);
-        int year = calendar.get(Calendar.YEAR);
-
-        if (month == 0) {
-            year--;
-            month = 11;
-        } else {
-            month--;
-        }
-        calendar.clear();
-        calendar.set(Calendar.MONTH, month);
-        calendar.set(Calendar.YEAR, year);
-        int date = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
-        calendar.set(Calendar.DATE, date);
-        now = calendar.getTime();
-
-        if (release.before(now)) {
+        Date endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
+        if (release.before(endOfPreviousMonth)) {
             releaseWarning = true;
         }
         return releaseWarning;
@@ -191,7 +172,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      */
     public boolean getAcceptanceWarning() {
         boolean acceptanceWarning = false;
-        GregorianCalendar calendar = new GregorianCalendar();
         Date acceptance = getReportAcceptanceDate();
 
         if (acceptance == null) {
@@ -199,24 +179,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             return false;
         }
 
-        java.util.Date now = new java.util.Date();
-        int month = calendar.get(Calendar.MONTH);
-        int year = calendar.get(Calendar.YEAR);
-
-        if (month == 0) {
-            year--;
-            month = 11;
-        } else {
-            month--;
-        }
-        calendar.clear();
-        calendar.set(Calendar.MONTH, month);
-        calendar.set(Calendar.YEAR, year);
-        int date = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
-        calendar.set(Calendar.DATE, date);
-        now = calendar.getTime();
-
-        if (acceptance.before(now)) {
+        Date endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
+        if (acceptance.before(endOfPreviousMonth)) {
             acceptanceWarning = true;
         }
         return acceptanceWarning;
@@ -237,33 +201,17 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      *
      * @return Returns true, if the contract is not accepted until the last day of the preceding month, false otherwise.
      */
-    public boolean getAcceptanceWarningByDate(java.util.Date now) {
+    public boolean getAcceptanceWarningByDate(Date date) {
         boolean acceptanceWarning = false;
-        GregorianCalendar calendar = new GregorianCalendar();
         Date acceptance = getReportAcceptanceDate();
 
         if (acceptance == null) {
             // new contract without initial login
             acceptance = validFrom;
         }
-        calendar.setTime(now);
-        int month = calendar.get(Calendar.MONTH);
-        int year = calendar.get(Calendar.YEAR);
 
-        if (month == 0) {
-            year--;
-            month = 11;
-        } else {
-            month--;
-        }
-        calendar.clear();
-        calendar.set(Calendar.MONTH, month);
-        calendar.set(Calendar.YEAR, year);
-        int date = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
-        calendar.set(Calendar.DATE, date);
-        now = calendar.getTime();
-
-        if (acceptance.before(now)) {
+        Date endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(date, -1));
+        if (acceptance.before(endOfPreviousMonth)) {
             acceptanceWarning = true;
         }
         return acceptanceWarning;

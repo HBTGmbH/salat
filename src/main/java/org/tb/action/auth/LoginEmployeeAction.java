@@ -2,6 +2,7 @@ package org.tb.action.auth;
 
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.GlobalConstants.SYSTEM_SIGN;
+import static org.tb.util.DateUtils.today;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -75,7 +76,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             // check if user is internal or extern
             setEmployeeIsInternalAttribute(request);
 
-            Date date = new Date();
+            Date date = today();
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
             if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
                 return loginFailed(request, "form.login.error.invalidcontract", mapping);

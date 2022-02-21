@@ -1,6 +1,7 @@
 package org.tb.action.dailyreport;
 
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
+import static org.tb.util.DateUtils.today;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -119,7 +120,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         if (workingDayIsAvailable) {
             // set end time in reportform
-            today = new Date();
+            today = today();
             SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
             SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
 

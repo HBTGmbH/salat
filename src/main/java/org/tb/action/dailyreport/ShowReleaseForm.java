@@ -1,6 +1,7 @@
 package org.tb.action.dailyreport;
 
 import static org.tb.util.DateUtils.getDateAsStringArray;
+import static org.tb.util.DateUtils.today;
 
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
@@ -30,8 +31,8 @@ public class ShowReleaseForm extends ActionForm {
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-        Date releaseDate = new Date();
-        Date acceptanceDate = new Date();
+        Date releaseDate = today();
+        Date acceptanceDate = today();
         if (employeecontract != null) {
             //			employeeContractId = employeecontract.getId();
             releaseDate = employeecontract.getReportReleaseDate();

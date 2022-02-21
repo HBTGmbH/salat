@@ -1,5 +1,7 @@
 package org.tb.action.admin;
 
+import static org.tb.util.DateUtils.today;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -36,7 +38,7 @@ public class ShowAdminOptionsAction extends LoginRequiredAction<ShowAdminOptions
         if ((request.getParameter("task") != null)
                 && (request.getParameter("task").equals("SetEmployeeOrderInTimereports"))) {
 
-            Date start = new Date();
+            Date start = today();
             List<String> problems = new ArrayList<>();
 
             List<Timereport> timereports = Collections.emptyList(); // FIXME is this feature still in use???
@@ -90,7 +92,7 @@ public class ShowAdminOptionsAction extends LoginRequiredAction<ShowAdminOptions
                 }
             }
 
-            Date end = new Date();
+            Date end = today();
             long millis = end.getTime() - start.getTime();
             long sec = millis / 1000;
             long min = sec / 60;
