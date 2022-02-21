@@ -17,7 +17,7 @@ public class PerformanceLoggingFilter extends HttpFilter {
         long startTime = System.currentTimeMillis();
         super.doFilter(request, response, chain);
         long duration = System.currentTimeMillis() - startTime;
-        log.info(request.getRequestURI() + " took " + duration + "ms.");
+        log.debug(request.getRequestURI() + " took " + duration + "ms.");
     }
 
 }
