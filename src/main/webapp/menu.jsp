@@ -34,8 +34,11 @@ window.onload=startList;
 		<font size="1pt">
 		   	<c:out value="${buildProperties.version}" />
 			<c:out value="${buildProperties.time}" />
+			<br/>
 			<c:out value="${gitProperties.branch}" />
 			<c:out value="${gitProperties.shortCommitId}" />
+			<br/>
+			Server Datum/Zeit: <c:out value="${serverTimeHelper.serverTime}" />
 		</font>
 	</td>
   </tr>
