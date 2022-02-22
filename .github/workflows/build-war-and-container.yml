@@ -46,11 +46,13 @@ jobs:
             type=ref,event=pr
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
       - name: Build Docker image
-        run: ./mvnw -B spring-boot:build-image -Dspring-boot.build-image.imageName=docker.io/hbt/salat:ci
+        run: ./mvnw -B spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/hbtgmbh/salat:ci
+      - name: Push Docker image with ci tag (required by tag-push-action)
+        run: ./mvnw -B spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/hbtgmbh/salat:ci
       - name: Push Docker image
         uses: akhilerm/tag-push-action@v2.0.0
         with:
-          src: docker.io/hbt/salat:ci
+          src: ghcr.io/hbtgmbh/salat:ci
           dst: |
             ${{ steps.meta.outputs.tags }}
       - name: Extract metadata (tags, labels) for Docker
