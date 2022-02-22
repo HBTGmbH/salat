@@ -29,7 +29,7 @@ jobs:
           JPDA_ADDRESS: "*:8000"
     steps:
       - name: install curl
-        run: apt-get update; apt-get install curl -y
+        run: apt-get update; apt-get install curl -y 
       - name: sleep 10 seconds to wait for server to become live
         run: sleep 10
       - name: run curl against salat
