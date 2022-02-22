@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: install curl
         run: apt-get update; apt-get install curl -y 
+      - name: sleep 10 seconds to wait for server to become live
+        run: sleep 10
       - name: run curl against salat
         run: curl -I salat:8080/tb/ | head -n 1 | cut -d ' ' -f2 > curl_result_docker
       - name: show result of curl
