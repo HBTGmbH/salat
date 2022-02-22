@@ -1,21 +1,14 @@
 version: "3.9"  # optional since v1.27.0
 services:
   salat:
-    build: .
-    command:
-      - catalina.sh
-      - jpda
-      - run
+    image: docker.io/hbt/salat:latest
     ports:
       - "8080:8080"
       - "8000:8000"
     environment:
-      DATABASE_USERNAME: salattest
-      DATABASE_PASSWORD: salattest
-      DATABASE_HOST: db
-      DATABASE_NAME: salat
-      SALAT_URL: localhost
-      SALAT_MAIL_HOST: localhost
+      SPRING_DATASOURCE_USERNAME: salattest
+      SPRING_DATASOURCE_PASSWORD: salattest
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
       JPDA_ADDRESS: "*:8000"
     depends_on:
       - db

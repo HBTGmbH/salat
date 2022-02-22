@@ -23,14 +23,6 @@ jobs:
           - 8080:8080
           - 8000:8000
         env:
-          DATABASE_USERNAME: salattest
-          DATABASE_PASSWORD: salattest
-          DATABASE_HOST: db
-          DATABASE_NAME: salat
-          SALAT_URL: localhost
-          SALAT_JIRA_CONSUMER_KEY: test
-          SALAT_JIRA_CONSUMER_PRIVATE_KEY: test
-          SALAT_MAIL_HOST: localhost
           SPRING_DATASOURCE_USERNAME: salattest
           SPRING_DATASOURCE_PASSWORD: salattest
           SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
