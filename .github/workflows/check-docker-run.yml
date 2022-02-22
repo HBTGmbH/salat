@@ -25,7 +25,7 @@ jobs:
         env:
           SPRING_DATASOURCE_USERNAME: salattest
           SPRING_DATASOURCE_PASSWORD: salattest
-          SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
+          SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
           JPDA_ADDRESS: "*:8000"
     steps:
       - name: install curl

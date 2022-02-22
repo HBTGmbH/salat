@@ -13,7 +13,7 @@ The following is an example for local testing with the included docker-compose f
 ```
 SPRING_DATASOURCE_USERNAME=salattest
 SPRING_DATASOURCE_PASSWORD=salattest
-SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
 ```
 
 ## Run locally
