@@ -21,10 +21,9 @@ jobs:
           - 8080:8080
           - 8000:8000
         env:
-          DATABASE_USERNAME: salattest
-          DATABASE_PASSWORD: salattest
-          DATABASE_HOST: db
-          DATABASE_NAME: salat
+          SPRING_DATASOURCE_USERNAME: salattest
+          SPRING_DATASOURCE_PASSWORD: salattest
+          SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
           JPDA_ADDRESS: "*:8000"
       db:
         image: ghcr.io/hbtgmbh/salat-testdb:${{ inputs.db_tag }}
