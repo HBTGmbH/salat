@@ -11,9 +11,9 @@ spring:
     hikari:
       connection-timeout: 1000
       minimum-idle: 0
-      maximum-pool-size: 2
+      maximum-pool-size: 20
   jpa:
-    generate-ddl: true
+    generate-ddl: false
     show-sql: false
     properties:
       hibernate:
@@ -22,6 +22,7 @@ spring:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+      ddl-auto: validate
     open-in-view: true
 management:
   endpoints:
