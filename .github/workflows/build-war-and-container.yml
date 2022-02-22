@@ -24,7 +24,7 @@ jobs:
         with:
           java-version: 17
       - name: Build with Maven
-        run: ./mvnw -B -Dmaven.test.skip=true package
+        run: ./mvnw -B package
       - name: Publish to Github
         run: ./mvnw -B -Dmaven.test.skip=true deploy
         env:
@@ -46,9 +46,9 @@ jobs:
             type=ref,event=pr
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
       - name: Build Docker image
-        run: ./mvnw -B spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/hbtgmbh/salat:ci
+        run: ./mvnw -B -Dmaven.test.skip=true -Dspring-boot.build-image.imageName=ghcr.io/hbtgmbh/salat:ci spring-boot:build-image
       - name: Push Docker image with ci tag (required by tag-push-action)
-        run: ./mvnw -B spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/hbtgmbh/salat:ci
+        run: docker push ghcr.io/hbtgmbh/salat:ci
       - name: Push Docker image
         uses: akhilerm/tag-push-action@v2.0.0
         with:
