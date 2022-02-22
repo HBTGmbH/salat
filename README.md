@@ -20,7 +20,7 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
 
 Steps to start Salat locally:
 
-1. Build the .war-file: `./mvnw spring-boot:build-image`
+1. Build the .war-file: `./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=docker.io/hbt/salat:latest`
 2. Run docker-compose: `docker-compose up`
 3. Open in browser: http://localhost:8080
 4. Valid credentials in the test-dataset are: admin/admin, bm/bm, tt/tt
