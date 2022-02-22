@@ -14,7 +14,9 @@ jobs:
   run:
     runs-on: ubuntu-latest
     container: ubuntu
-    services: 
+    services:
+      db:
+        image: ghcr.io/hbtgmbh/salat-testdb:${{ inputs.db_tag }}
       salat:
         image: ghcr.io/hbtgmbh/salat:${{ inputs.salat_tag }}
         ports:
@@ -25,8 +27,6 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: salattest
           SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
           JPDA_ADDRESS: "*:8000"
-      db:
-        image: ghcr.io/hbtgmbh/salat-testdb:${{ inputs.db_tag }}
     steps:
       - name: install curl
         run: apt-get update; apt-get install curl -y 
