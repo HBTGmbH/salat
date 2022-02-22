@@ -29,6 +29,9 @@ jobs:
           SALAT_JIRA_CONSUMER_KEY: test
           SALAT_JIRA_CONSUMER_PRIVATE_KEY: test
           SALAT_MAIL_HOST: localhost
+          SPRING_DATASOURCE_USERNAME: salattest
+          SPRING_DATASOURCE_PASSWORD: salattest
+          SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
           JPDA_ADDRESS: "*:8000"
       db:
         image: ghcr.io/hbtgmbh/salat-testdb:${{ inputs.db_tag }}
