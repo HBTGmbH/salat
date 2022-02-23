@@ -11,6 +11,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Temporal;
@@ -74,6 +75,8 @@ public class Suborder extends AuditedEntity implements Serializable {
     private String suborder_customer;
     private char invoice;
     private String sign;
+    @Lob
+    @Column(columnDefinition = "text")
     private String description;
     private String shortdescription;
     private String currency;
