@@ -13,6 +13,8 @@ package org.tb.helper.matrix;
 import static java.util.Calendar.SATURDAY;
 import static java.util.Calendar.SUNDAY;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.GlobalConstants.SUBORDER_INVOICE_YES;
+import static org.tb.util.DateUtils.format;
 import static org.tb.util.DateUtils.getDateAsStringArray;
 import static org.tb.util.DateUtils.getDateFormStrings;
 import static org.tb.util.DateUtils.today;
@@ -197,7 +199,7 @@ public class MatrixHelper {
         while (dateLoop.after(dateFirst) && dateLoop.before(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
-            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, dateLoop));
+            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, format(dateLoop)));
             dateLoop = DateUtils.addDays(dateLoop, 1);
         }
 
@@ -314,7 +316,7 @@ public class MatrixHelper {
 
         ArrayList<Timereport> tempTimeReportList = new ArrayList<>();
         for (Timereport timeReport : timeReportList) {
-            boolean invoice = timeReport.getSuborder().getInvoice() == 'Y';
+            boolean invoice = timeReport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES;
             if ((invoiceable && invoice) || (nonInvoiceable && !invoice)) {
                 tempTimeReportList.add(timeReport);
             }
@@ -325,13 +327,13 @@ public class MatrixHelper {
 
     private List<Timereport> queryTimereports(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId) {
         //choice of timereports by date, employeecontractid and/or customerorderid
-        if (method == 1 || method == 3) {
+        if (method == 1 || method == 3) { // FIXME magic numbers
             if (employeeContractId == -1) {
                 return trDAO.getTimereportsByDates(dateFirst, dateLast);
             } else {
                 return trDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast);
             }
-        } else if (method == 2 || method == 4) {
+        } else if (method == 2 || method == 4) { // FIXME magic numbers
             if (employeeContractId == -1) {
                 return trDAO.getTimereportsByDatesAndCustomerOrderId(dateFirst, dateLast, customerOrderId);
             } else {

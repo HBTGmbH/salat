@@ -8,6 +8,7 @@ import static org.tb.util.DateUtils.today;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -258,7 +259,7 @@ public class TimereportHelper {
             hourBegin += workingday.getBreakhours();
             minuteBegin += workingday.getBreakminutes();
             for (Timereport timereport : timereports) {
-                if (timereport.getId() == tr.getId()) {
+                if (Objects.equals(timereport.getId(), tr.getId())) {
                     break;
                 }
                 hourBegin += timereport.getDurationhours();

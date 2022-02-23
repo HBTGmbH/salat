@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.TagSupport;
@@ -171,9 +172,9 @@ public class TreeTag extends TagSupport {
         for (Suborder suborder : filteredHierarchy) {
             // testing, if there are any children for this node:
             if ((suborder.getParentorder() != null
-                    && suborder.getParentorder().getId() == parentID)  // -->  This case is a leaf which has a suborder as parent
+                 && Objects.equals(suborder.getParentorder().getId(), parentID))  // -->  This case is a leaf which has a suborder as parent
                     || (suborder.getParentorder() == null
-                    && suborder.getCustomerorder().getId() == parentID  // -->  This case is leaf which has the main project as parent
+                    && Objects.equals(suborder.getCustomerorder().getId(), parentID)  // -->  This case is leaf which has the main project as parent
                     && thisLevel == 1)) {
                 // some things must be prepaired
                 String colorForInvalidSubs = suborder.getCurrentlyValid() ? "" : " style=\"color:gray\" ";
@@ -183,7 +184,7 @@ public class TreeTag extends TagSupport {
                 //     and deprecated suborders!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 //
                 //--------------------------------------------------------------------------------
-                boolean editable = enabled && (this.currentSuborderID == null || this.currentSuborderID != suborder.getId());
+                boolean editable = enabled && (this.currentSuborderID == null || !Objects.equals(this.currentSuborderID, suborder.getId()));
                 String name = Integer.toString(rand.nextInt());
                 String workingChangeFunctionStr = changeFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));
                 String workingDeleteFunctionStr = deleteFunctionString.replaceFirst(this.defaultString, Long.toString(suborder.getId()));

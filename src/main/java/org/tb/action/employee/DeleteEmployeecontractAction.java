@@ -1,5 +1,6 @@
 package org.tb.action.employee;
 
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm
             return mapping.getInputForward();
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        if (ec.getEmployee().getId() == loginEmployee.getId()) {
+        if (Objects.equals(ec.getEmployee().getId(), loginEmployee.getId())) {
             errors.add(null, new ActionMessage("form.employeecontract.error.delete.isloginemployee"));
             saveErrors(request, errors);
             return mapping.getInputForward();

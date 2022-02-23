@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -326,15 +327,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             ec.setHide(ecForm.getHide());
             ec.setDailyWorkingTime(ecForm.getDailyworkingtime());
 
-            // if necessary, add new monthly report for current month
-            //				if ((ec.getMonthlyreports() == null) || (ec.getMonthlyreports().size() <= 0)) {					
-            //					List<Monthlyreport> mrList = new ArrayList<Monthlyreport>();
-            //					Monthlyreport mr = monthlyreportDAO.setNewReport
-            //								(ec, DateUtils.getCurrentYear(), DateUtils.getCurrentMonth());
-            //					mrList.add(mr);
-            //					ec.setMonthlyreports(mrList);
-            //				} 
-
             // if necessary, add new vacation for current year
             Vacation va = null;
             if (ec.getVacations() == null || ec.getVacations().size() <= 0) {
@@ -511,7 +503,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContracts();
             for (Object element : allEmployeecontracts) {
                 Employeecontract ec = (Employeecontract) element;
-                if (ec.getEmployee().getId() == theEmployee.getId() && ec.getId() != employeecontract.getId()) {
+                if (Objects.equals(ec.getEmployee().getId(), theEmployee.getId()) && !Objects.equals(ec.getId(), employeecontract.getId())) {
                     // contract for the same employee found but not the same contract - check overleap
                     java.util.Date existingContractValidFrom = ec.getValidFrom();
                     java.util.Date existingContractValidUntil = ec.getValidUntil();

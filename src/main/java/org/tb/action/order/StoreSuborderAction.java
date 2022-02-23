@@ -10,6 +10,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -449,7 +450,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         // for a new suborder, check if the sign already exists
-        if (suborderId == 0L) {
+        if (Objects.equals(suborderId, 0L)) {
             // Liste aller Children der übergeordneten Suborder
             // ggf. gibt es keine übergeordnete Suborder (=null?)
             // dann die untergeordneten Suboders der Customerorder.
@@ -579,11 +580,11 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
         }
 
-        // check time period for hierachical higher suborders
+        // check time period for hierarchical higher suborders
         Suborder parentSuborder = null;
         if (addSuborderForm.getParentId() != null && addSuborderForm.getParentId() != 0 && addSuborderForm.getParentId() != -1) {
             parentSuborder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
-            if (parentSuborder != null && parentSuborder.getCustomerorder().getId() == addSuborderForm.getCustomerorderId()) {
+            if (parentSuborder != null && Objects.equals(parentSuborder.getCustomerorder().getId(), addSuborderForm.getCustomerorderId())) {
                 // check validity period
                 Date parentFromDate = parentSuborder.getFromDate();
                 Date parentUntilDate = parentSuborder.getUntilDate();
