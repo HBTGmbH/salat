@@ -1,6 +1,7 @@
 package org.tb.bdom;
 
 import static javax.persistence.TemporalType.DATE;
+import static javax.persistence.TemporalType.TIMESTAMP;
 
 import java.util.Date;
 import lombok.Getter;
@@ -58,44 +59,78 @@ public class Statusreport extends AuditedEntity implements Serializable {
     private String allocator;
     private Byte trend;
     private Byte trendstatus;
+    @Lob
+    @Column(columnDefinition = "text")
     private String needforaction_text;
     private String needforaction_source;
     private Byte needforaction_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String aim_text;
     private String aim_source;
+    @Lob
+    @Column(columnDefinition = "text")
     private String aim_action;
     private Byte aim_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String budget_resources_date_text;
     private String budget_resources_date_source;
+    @Lob
+    @Column(columnDefinition = "text")
     private String budget_resources_date_action;
     private Byte budget_resources_date_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String riskmonitoring_text;
     private String riskmonitoring_source;
+    @Lob
+    @Column(columnDefinition = "text")
     private String riskmonitoring_action;
     private Byte riskmonitoring_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String changedirective_text;
     private String changedirective_source;
+    @Lob
+    @Column(columnDefinition = "text")
     private String changedirective_action;
     private Byte changedirective_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String communication_text;
     private String communication_source;
+    @Lob
+    @Column(columnDefinition = "text")
     private String communication_action;
     private Byte communication_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String improvement_text;
     private String improvement_source;
+    @Lob
+    @Column(columnDefinition = "text")
     private String improvement_action;
     private Byte improvement_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String customerfeedback_text;
     private String customerfeedback_source;
     private Byte customerfeedback_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String miscellaneous_text;
     private String miscellaneous_source;
+    @Lob
+    @Column(columnDefinition = "text")
     private String miscellaneous_action;
     private Byte miscellaneous_status;
+    @Lob
+    @Column(columnDefinition = "text")
     private String notes;
-    @Temporal(DATE)
+    @Temporal(TIMESTAMP)
     private Date released;
-    @Temporal(DATE)
+    @Temporal(TIMESTAMP)
     private Date accepted;
 
     public Byte getOverallStatus() {

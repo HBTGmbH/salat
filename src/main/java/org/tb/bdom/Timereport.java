@@ -2,10 +2,12 @@ package org.tb.bdom;
 
 import java.io.Serializable;
 import java.util.Date;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,6 +54,8 @@ public class Timereport extends AuditedEntity implements Serializable {
     private Integer durationhours;
     private Integer durationminutes;
     private String sortofreport; // TODO was steckt hinter diesem Konzept? klären!
+    @Lob
+    @Column(columnDefinition = "text")
     private String taskdescription;
     private String status;
     private Double costs;
