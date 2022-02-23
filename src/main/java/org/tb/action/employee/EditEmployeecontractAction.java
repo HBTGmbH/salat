@@ -2,7 +2,6 @@ package org.tb.action.employee;
 
 import static org.tb.util.DateUtils.today;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -61,9 +60,8 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("totalovertime", totalOvertime);
 
         // set day string for overime
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         Date now = today();
-        request.getSession().setAttribute("dateString", simpleDateFormat.format(now));
+        request.getSession().setAttribute("dateString", DateUtils.format(now));
 
         // forward to employee contract add/edit form
         return mapping.findForward("success");
@@ -104,10 +102,10 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
             ecForm.setYearlyvacation(GlobalConstants.VACATION_PER_YEAR);
         }
 
-        Date fromDate = new Date(ec.getValidFrom().getTime()); // convert to java.util.Date
+        Date fromDate = ec.getValidFrom();
         ecForm.setValidFrom(DateUtils.format(fromDate));
         if (ec.getValidUntil() != null) {
-            Date untilDate = new Date(ec.getValidUntil().getTime()); // convert to java.util.Date
+            Date untilDate = ec.getValidUntil();
             ecForm.setValidUntil(DateUtils.format(untilDate));
         }
     }

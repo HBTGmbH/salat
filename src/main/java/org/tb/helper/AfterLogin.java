@@ -1,12 +1,12 @@
 package org.tb.helper;
 
 import static org.tb.util.DateUtils.addDays;
+import static org.tb.util.DateUtils.format;
 import static org.tb.util.DateUtils.getBeginOfMonth;
 import static org.tb.util.DateUtils.today;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.util.UrlUtils.absoluteUrl;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -124,8 +124,6 @@ public class AfterLogin {
     private void addWarnings(Employeecontract employeecontract, MessageResources resources, Locale locale, List<Warning> warnings) {
         // statusreport due warning
         List<Customerorder> customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(employeecontract.getEmployee().getId());
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         if (customerOrders != null && !customerOrders.isEmpty()) {
 
             java.util.Date now = new java.util.Date();
@@ -167,7 +165,7 @@ public class AfterLogin {
                     // show warning
                     Warning warning = new Warning();
                     warning.setSort(resources.getMessage(locale, "main.info.warning.statusreport.due"));
-                    warning.setText(customerorder.getSign() + " " + customerorder.getShortdescription() + " (" + simpleDateFormat.format(checkDate) + ")");
+                    warning.setText(customerorder.getSign() + " " + customerorder.getShortdescription() + " (" + format(checkDate) + ")");
                     List<Statusreport> unreleasedReports = statusReportDAO.getUnreleasedPeriodicalStatusReports(customerorder.getId(), employeecontract.getEmployee().getId(), maxUntilDate);
                     if (unreleasedReports != null && !unreleasedReports.isEmpty()) {
                         if (unreleasedReports.size() == 1) {
@@ -196,9 +194,9 @@ public class AfterLogin {
                         + statusreport.getCustomerorder().getShortdescription()
                         + " (ID:" + statusreport.getId() + " "
                         + resources.getMessage(locale, "statusreport.from.text")
-                        + ":" + simpleDateFormat.format(statusreport.getFromdate()) + " "
+                        + ":" + format(statusreport.getFromdate()) + " "
                         + resources.getMessage(locale, "statusreport.until.text")
-                        + ":" + simpleDateFormat.format(statusreport.getUntildate()) + " "
+                        + ":" + format(statusreport.getUntildate()) + " "
                         + resources.getMessage(locale, "statusreport.from.text")
                         + ":" + statusreport.getSender().getName() + " "
                         + resources.getMessage(locale, "statusreport.to.text")
@@ -258,8 +256,7 @@ public class AfterLogin {
         String monthlyOvertimeString = timeFormatMinutes(monthlyOvertime);
         session.setAttribute("monthlyOvertime", monthlyOvertimeString);
 
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
-        session.setAttribute("overtimeMonth", format.format(start));
+        session.setAttribute("overtimeMonth", DateUtils.format(start, "yyyy-MM"));
 
         //vacation v2 extracted to VacationViewer:
         VacationViewer vw = new VacationViewer(employeecontract);

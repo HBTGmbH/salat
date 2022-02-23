@@ -5,7 +5,6 @@ import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -490,13 +489,12 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         "form.timereport.error.date.wrongformat"));
             }
         }
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         java.util.Date newContractValidFrom;
         java.util.Date newContractValidUntil = null;
         try {
-            newContractValidFrom = simpleDateFormat.parse(dateFromString);
+            newContractValidFrom = DateUtils.parse(dateFromString);
             if (!dateUntilString.equals("")) {
-                newContractValidUntil = simpleDateFormat.parse(dateUntilString);
+                newContractValidUntil = DateUtils.parse(dateUntilString);
             }
         } catch (ParseException e) {
             // this is not expected...
@@ -665,12 +663,9 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             ecForm.setYearlyvacation(GlobalConstants.VACATION_PER_YEAR);
         }
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
-        ecForm.setValidFrom(dateFormat.format(ec.getValidFrom()));
-
+        ecForm.setValidFrom(DateUtils.format(ec.getValidFrom()));
         if (ec.getValidUntil() != null) {
-            ecForm.setValidUntil(dateFormat.format(ec.getValidUntil()));
+            ecForm.setValidUntil(DateUtils.format(ec.getValidUntil()));
         }
     }
 }

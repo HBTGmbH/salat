@@ -4,8 +4,6 @@ import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.util.DateUtils.today;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +11,6 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Employeecontract;
 import org.tb.util.DateUtils;
 
@@ -51,8 +48,7 @@ public class AddDailyReportForm extends ActionForm {
     private String action;
 
     public AddDailyReportForm() {
-        SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        setReferenceday(format.format(today()));
+        setReferenceday(DateUtils.format(today()));
     }
 
     public Double getHours() {

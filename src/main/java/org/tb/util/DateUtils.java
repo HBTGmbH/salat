@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -495,6 +496,32 @@ public class DateUtils {
         return getDateFormat().format(date);
     }
 
+    public static String format(Date date, String pattern) {
+        SimpleDateFormat format = new SimpleDateFormat(pattern);
+        format.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE_ID));
+        return format.format(date);
+    }
+
+    public static String formatMinutes(Date date) {
+        return format(date, "mm");
+    }
+
+    public static String formatHours(Date date) {
+        return format(date, "HH");
+    }
+
+    public static String formatDayOfMonth(Date date) {
+        return format(date, "dd");
+    }
+
+    public static String formatMonth(Date date) {
+        return format(date, "MM");
+    }
+
+    public static String formatYear(Date date) {
+        return format(date, "yyyy");
+    }
+
     public static Date parse(String date, Function<ParseException, Date> exceptionHandler) {
         try {
             return parse(date);
@@ -613,4 +640,5 @@ public class DateUtils {
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         return org.apache.commons.lang.time.DateUtils.truncate(cal.getTime(), DAY_OF_MONTH);
     }
+
 }

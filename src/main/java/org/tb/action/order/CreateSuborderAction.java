@@ -1,6 +1,5 @@
 package org.tb.action.order;
 
-import java.text.SimpleDateFormat;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,6 +14,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.util.DateUtils;
 
 /**
  * action class for creating a new suborder
@@ -104,11 +104,10 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             suborderForm.setHourlyRate(customerorder.getHourly_rate());
             suborderForm.setCurrency(customerorder.getCurrency());
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-            suborderForm.setValidFrom(simpleDateFormat.format(customerorder.getFromDate()));
+            suborderForm.setValidFrom(DateUtils.format(customerorder.getFromDate()));
 
             if (customerorder.getUntilDate() != null) {
-                suborderForm.setValidUntil(simpleDateFormat.format(customerorder.getUntilDate()));
+                suborderForm.setValidUntil(DateUtils.format(customerorder.getUntilDate()));
             } else {
                 suborderForm.setValidUntil("");
             }

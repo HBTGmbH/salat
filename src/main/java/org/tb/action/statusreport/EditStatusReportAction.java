@@ -1,6 +1,7 @@
 package org.tb.action.statusreport;
 
-import java.text.SimpleDateFormat;
+import static org.tb.util.DateUtils.format;
+
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -8,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
 import org.tb.persistence.CustomerorderDAO;
@@ -76,8 +76,6 @@ public class EditStatusReportAction extends StatusReportAction<AddStatusReportFo
         // is report ready for acceptance
         request.getSession().setAttribute("isReportReadyForAcceptance", isReportReadyForAcceptance(statusreport.getId(), statusReportDAO, request));
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         // set form entries
         reportForm.setAim_action(statusreport.getAim_action());
         reportForm.setAim_source(statusreport.getAim_source());
@@ -103,7 +101,7 @@ public class EditStatusReportAction extends StatusReportAction<AddStatusReportFo
 
         reportForm.setCustomerOrderId(statusreport.getCustomerorder().getId());
 
-        reportForm.setValidFrom(simpleDateFormat.format(statusreport.getFromdate()));
+        reportForm.setValidFrom(format(statusreport.getFromdate()));
 
         reportForm.setImprovement_action(statusreport.getImprovement_action());
         reportForm.setImprovement_source(statusreport.getImprovement_source());
@@ -143,7 +141,7 @@ public class EditStatusReportAction extends StatusReportAction<AddStatusReportFo
         reportForm.setTrend(statusreport.getTrend());
         reportForm.setTrendstatus(statusreport.getTrendstatus());
 
-        reportForm.setValidUntil(simpleDateFormat.format(statusreport.getUntildate()));
+        reportForm.setValidUntil(format(statusreport.getUntildate()));
 
         return mapping.findForward("success");
     }

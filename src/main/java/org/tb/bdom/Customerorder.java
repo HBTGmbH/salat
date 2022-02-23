@@ -1,9 +1,9 @@
 package org.tb.bdom;
 
 import static javax.persistence.TemporalType.DATE;
+import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
@@ -19,7 +19,6 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.GlobalConstants;
 import org.tb.bdom.comparators.SubOrderComparator;
 import org.tb.util.DateUtils;
 
@@ -105,8 +104,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
     public String getFormattedUntilDate() {
         Date untilDate = getUntilDate();
         if (untilDate != null) {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-            return simpleDateFormat.format(untilDate);
+            return format(untilDate);
         }
         return "";
     }

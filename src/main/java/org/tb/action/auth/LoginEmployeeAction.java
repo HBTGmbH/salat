@@ -2,9 +2,9 @@ package org.tb.action.auth;
 
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.GlobalConstants.SYSTEM_SIGN;
+import static org.tb.util.DateUtils.formatYear;
 import static org.tb.util.DateUtils.today;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -76,8 +76,8 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             // check if user is internal or extern
             setEmployeeIsInternalAttribute(request);
 
-            Date date = today();
-            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), date);
+            Date today = today();
+            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), today);
             if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
                 return loginFailed(request, "form.login.error.invalidcontract", mapping);
             }
@@ -93,13 +93,9 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             publicholidayDAO.checkPublicHolidaysForCurrentYear();
 
             // check if employee has an employee contract and is has employee orders for all standard suborders
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
-            String dateString = simpleDateFormat.format(date);
-            date = simpleDateFormat.parse(dateString);
-
             if (employeecontract != null) {
                 request.getSession().setAttribute("employeeHasValidContract", true);
-                handleEmployeeWithValidContract(request, loginEmployee, date, employeecontract, dateString);
+                handleEmployeeWithValidContract(request, loginEmployee, today, employeecontract);
             } else {
                 request.getSession().setAttribute("employeeHasValidContract", false);
             }
@@ -120,12 +116,12 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         }
     }
 
-    private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee, Date date,
-        Employeecontract employeecontract, String dateString) {
+    private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee, Date today,
+        Employeecontract employeecontract) {
         // auto generate employee orders
         if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
             Boolean.FALSE.equals(employeecontract.getFreelancer())) {
-            generateEmployeeOrders(date, employeecontract, dateString);
+            generateEmployeeOrders(today, employeecontract);
         }
 
         if (employeecontract.getReportAcceptanceDate() == null) {
@@ -183,7 +179,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         request.getSession().setAttribute("clientIntern", isInternal);
     }
 
-    private void generateEmployeeOrders(Date date, Employeecontract employeecontract, String dateString2) {
+    private void generateEmployeeOrders(Date today, Employeecontract employeecontract) {
         List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
         if (standardSuborders != null && !standardSuborders.isEmpty()) {
             // test if employeeorder exists
@@ -191,12 +187,12 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                 List<Employeeorder> employeeorders = employeeorderDAO
                     .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(
                         employeecontract.getId(), suborder
-                            .getId(), date);
+                            .getId(), today);
                 if (employeeorders == null || employeeorders.isEmpty()) {
 
                     // do not create an employeeorder for past years "URLAUB" !
                     if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-                        && !dateString2.startsWith(suborder.getSign())) {
+                        && !formatYear(today).startsWith(suborder.getSign())) {
                         continue;
                     }
 
@@ -208,7 +204,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     for (Employeeorder eo : invalidEmployeeorders) {
 
                         // employeeorder starts in the future
-                        if (eo.getFromDate() != null && eo.getFromDate().after(date)
+                        if (eo.getFromDate() != null && eo.getFromDate().after(today)
                             && (dateUntil == null || dateUntil.after(eo.getFromDate()))) {
 
                             dateUntil = eo.getFromDate();
@@ -216,7 +212,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                         }
 
                         // employeeorder ends in the past
-                        if (eo.getUntilDate() != null && eo.getUntilDate().before(date)
+                        if (eo.getUntilDate() != null && eo.getUntilDate().before(today)
                             && (dateFrom == null || dateFrom.before(eo.getUntilDate()))) {
 
                             dateFrom = eo.getUntilDate();

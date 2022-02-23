@@ -1,9 +1,9 @@
 package org.tb.bdom;
 
 import static javax.persistence.TemporalType.DATE;
+import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -18,7 +18,6 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.GlobalConstants;
 import org.tb.util.DateUtils;
 
 @Getter
@@ -74,18 +73,17 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     }
 
     public String getEmployeeOrderAsString() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         if (getUntilDate() != null) {
             return "EO[" + getEmployeecontract().getEmployee().getSign() + " | "
                     + getSuborder().getCustomerorder().getSign() + " / "
                     + getSuborder().getSign() + " | "
-                    + simpleDateFormat.format(getFromDate()) + " - "
-                    + simpleDateFormat.format(getUntilDate()) + "]";
+                    + format(getFromDate()) + " - "
+                    + format(getUntilDate()) + "]";
         } else {
             return "EO[" + getEmployeecontract().getEmployee().getSign() + " | "
                     + getSuborder().getCustomerorder().getSign() + " / "
                     + getSuborder().getSign() + " | "
-                    + simpleDateFormat.format(getFromDate()) + " - offen]";
+                    + format(getFromDate()) + " - offen]";
         }
     }
 

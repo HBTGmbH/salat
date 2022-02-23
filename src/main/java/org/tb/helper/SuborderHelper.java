@@ -1,23 +1,23 @@
 package org.tb.helper;
 
+import static org.tb.util.DateUtils.parse;
+
 import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
+import org.tb.action.dailyreport.AddDailyReportForm;
+import org.tb.action.dailyreport.ShowDailyReportForm;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.action.dailyreport.AddDailyReportForm;
-import org.tb.action.dailyreport.ShowDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Helper class for suborder handling which does not directly deal with persistence
@@ -49,10 +49,9 @@ public class SuborderHelper {
         }
 
         String dateString = reportForm.getReferenceday();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         Date date;
         try {
-            date = simpleDateFormat.parse(dateString);
+            date = parse(dateString);
         } catch (ParseException e) {
             throw new RuntimeException("error while parsing date");
         }

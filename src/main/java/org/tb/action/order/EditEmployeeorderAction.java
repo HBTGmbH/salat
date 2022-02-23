@@ -1,6 +1,5 @@
 package org.tb.action.order;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -18,6 +17,7 @@ import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.EmployeeorderDAO;
+import org.tb.util.DateUtils;
 
 /**
  * action class for editing an employee order
@@ -121,10 +121,9 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
 
         eoForm.setSign(eo.getSign());
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        eoForm.setValidFrom(simpleDateFormat.format(eo.getFromDate()));
+        eoForm.setValidFrom(DateUtils.format(eo.getFromDate()));
         if (eo.getUntilDate() != null) {
-            eoForm.setValidUntil(simpleDateFormat.format(eo.getUntilDate()));
+            eoForm.setValidUntil(DateUtils.format(eo.getUntilDate()));
         } else {
             eoForm.setValidUntil("");
         }

@@ -3,10 +3,10 @@ package org.tb.bdom;
 import static javax.persistence.TemporalType.DATE;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -22,9 +22,9 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.GlobalConstants;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
+import org.tb.util.DateUtils;
 
 @Getter
 @Setter
@@ -128,10 +128,7 @@ public class Suborder extends AuditedEntity implements Serializable {
     }
 
     public Boolean getCommentnecessary() {
-        if (commentnecessary == null) {
-            return false;
-        }
-        return commentnecessary;
+        return Objects.requireNonNullElse(commentnecessary, false);
     }
 
     public String getShortdescription() {
@@ -166,10 +163,9 @@ public class Suborder extends AuditedEntity implements Serializable {
     }
 
     public String getTimeString() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        String result = simpleDateFormat.format(getFromDate()) + " - ";
+        String result = DateUtils.format(getFromDate()) + " - ";
         if (getUntilDate() != null) {
-            result += simpleDateFormat.format(getUntilDate());
+            result += DateUtils.format(getUntilDate());
         }
         return result;
     }
@@ -191,8 +187,7 @@ public class Suborder extends AuditedEntity implements Serializable {
     public String getFormattedUntilDate() {
         Date untilDate = getUntilDate();
         if (untilDate != null) {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-            return simpleDateFormat.format(untilDate);
+            return DateUtils.format(untilDate);
         }
         return "";
     }
@@ -203,11 +198,10 @@ public class Suborder extends AuditedEntity implements Serializable {
 
     public String getSignAndDescriptionWithExpirationDate() {
         String result = getSign() + " - " + getShortdescription();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         Date from = getFromDate();
         Date until = getUntilDate();
         if (from != null && until != null) {
-            result += " (" + simpleDateFormat.format(from) + " - " + simpleDateFormat.format(until) + ")";
+            result += " (" + DateUtils.format(from) + " - " + DateUtils.format(until) + ")";
         }
         return result;
     }
@@ -271,15 +265,10 @@ public class Suborder extends AuditedEntity implements Serializable {
     public List<Suborder> getAllChildren() {
 
         /* build up result list */
-        final List<Suborder> allChildren = new LinkedList<Suborder>();
+        final List<Suborder> allChildren = new LinkedList<>();
 
         /* create visitor to collect suborders */
-        SuborderVisitor allChildrenCollector = new SuborderVisitor() {
-
-            public void visitSuborder(Suborder suborder) {
-                allChildren.add(suborder);
-            }
-        };
+        SuborderVisitor allChildrenCollector = allChildren::add;
 
         /* start visiting */
         acceptVisitor(allChildrenCollector);
@@ -325,19 +314,16 @@ public class Suborder extends AuditedEntity implements Serializable {
         final Suborder visitorRootSuborder = rootSuborder;
 
         /* create visitor to collect suborders */
-        SuborderVisitor customerOrderSetter = new SuborderVisitor() {
-
-            public void visitSuborder(Suborder suborder) {
-                // do not modify root suborder
-                if (visitorRootSuborder.getId() != suborder.getId()) {
-                    Suborder suborderToModify = visitorSuborderDAO
-                            .getSuborderById(suborder.getId());
-                    if (suborderToModify != null) {
-                        suborderToModify.setCustomerorder(customerorderToSet);
-                        // save suborder
-                        visitorSuborderDAO.save(suborderToModify,
-                                visitorLoginEmployee);
-                    }
+        SuborderVisitor customerOrderSetter = suborder -> {
+            // do not modify root suborder
+            if (visitorRootSuborder.getId() != suborder.getId()) {
+                Suborder suborderToModify = visitorSuborderDAO
+                        .getSuborderById(suborder.getId());
+                if (suborderToModify != null) {
+                    suborderToModify.setCustomerorder(customerorderToSet);
+                    // save suborder
+                    visitorSuborderDAO.save(suborderToModify,
+                            visitorLoginEmployee);
                 }
             }
         };
@@ -354,9 +340,6 @@ public class Suborder extends AuditedEntity implements Serializable {
         }
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return "Suborder_" + getId() + ": (" + sign + " " + description + ")";

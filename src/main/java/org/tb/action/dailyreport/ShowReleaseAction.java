@@ -4,7 +4,6 @@ import static org.tb.util.DateUtils.getDateAsStringArray;
 import static org.tb.util.DateUtils.getDateFormStrings;
 import static org.tb.util.DateUtils.today;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
@@ -440,13 +439,10 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     getDayList(releaseDateFromContract));
         }
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
-        String releasedUntil = simpleDateFormat.format(releaseDateFromContract);
+        String releasedUntil = DateUtils.format(releaseDateFromContract);
         request.getSession().setAttribute("releasedUntil", releasedUntil);
 
-        String acceptedUntil = simpleDateFormat
-                .format(acceptanceDateFromContract);
+        String acceptedUntil = DateUtils.format(acceptanceDateFromContract);
         request.getSession().setAttribute("acceptedUntil", acceptedUntil);
 
         return mapping.findForward("success");

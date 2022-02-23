@@ -1,7 +1,6 @@
 package org.tb.action.dailyreport;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -43,9 +42,8 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowTrainingForm trainingForm, HttpServletRequest request, HttpServletResponse response) throws ParseException {
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        Date startdate = simpleDateFormat.parse(trainingForm.getStartdate());
-        Date enddate = simpleDateFormat.parse(trainingForm.getEnddate());
+        Date startdate = DateUtils.parse(trainingForm.getStartdate());
+        Date enddate = DateUtils.parse(trainingForm.getEnddate());
 
         //check for refresh
         if (request.getParameter("task") != null && request.getParameter("task").equals("refresh")) {

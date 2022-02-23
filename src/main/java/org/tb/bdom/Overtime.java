@@ -1,7 +1,6 @@
 package org.tb.bdom;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -13,7 +12,6 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.GlobalConstants;
 import org.tb.util.DateUtils;
 
 @Getter

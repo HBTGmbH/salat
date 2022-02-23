@@ -1,6 +1,7 @@
 package org.tb.action.statusreport;
 
-import java.text.SimpleDateFormat;
+import static org.tb.util.DateUtils.format;
+
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -9,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.GlobalConstants;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Statusreport;
@@ -101,7 +101,6 @@ public class CreateStatusReportAction extends StatusReportAction<AddStatusReport
             Statusreport lastKnownReport = statusReports.get(statusReports.size() - 1);
             fromDate = DateUtils.addDays(lastKnownReport.getUntildate(), 1);
         }
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
         byte one = 1;
 
@@ -116,8 +115,8 @@ public class CreateStatusReportAction extends StatusReportAction<AddStatusReport
                     .getId());
         }
 
-        reportForm.setValidFrom(simpleDateFormat.format(fromDate));
-        reportForm.setValidUntil(simpleDateFormat.format(new java.util.Date()));
+        reportForm.setValidFrom(format(fromDate));
+        reportForm.setValidUntil(format(new java.util.Date()));
         //new report -> status green (1)
         reportForm.setAim_status(one);
         reportForm.setBudget_resources_date_status(one);
