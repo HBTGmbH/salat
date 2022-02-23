@@ -180,7 +180,7 @@ CREATE TABLE `employeecontract` (
 
 LOCK TABLES `employeecontract` WRITE;
 /*!40000 ALTER TABLE `employeecontract` DISABLE KEYS */;
-INSERT INTO `employeecontract` VALUES (5970,'2006-12-28 13:32:40','adm',0,NULL,'\0','\0','2014-11-25 16:54:24','adm',0,'2006-01-01','2011-08-30','technischer Benutzer',15,'\0','2006-01-01',NULL,1680,1680),(154850,'2014-01-07 12:31:30','adm',8,NULL,'\0','\0','2017-04-19 12:40:11','adm',0,'2016-11-30','2017-03-31','Entwickler, Berater',59,'\0','2019-08-29',NULL,154830,1680),(180661,'2019-09-11 04:47:04','adm',8,NULL,'\0','\0','2019-09-11 04:47:22','system',0,'2019-01-01','2019-01-01','Sinnlose Aufträge verteilen',2,'\0','2019-01-01',NULL,178367,NULL),(180662,'2019-09-11 04:54:21','bm',8,NULL,'\0','\0','2019-09-11 04:58:12','bm',0,'2019-01-01','2019-01-01','Entwickler, Berater',3,'\0','2019-09-11',NULL,178368,178367);
+INSERT INTO `employeecontract` VALUES (5970,'2006-12-28 13:32:40','adm',0,NULL,'\0','\0','2014-11-25 16:54:24','adm',0,'2006-01-01','2011-08-30','technischer Benutzer',15,'\0','2006-01-01',NULL,1680,1680),(180661,'2019-09-11 04:47:04','adm',8,NULL,'\0','\0','2019-09-11 04:47:22','system',0,'2019-01-01','2019-01-01','Sinnlose Aufträge verteilen',2,'\0','2019-01-01',NULL,178367,NULL),(180662,'2019-09-11 04:54:21','bm',8,NULL,'\0','\0','2019-09-11 04:58:12','bm',0,'2019-01-01','2019-01-01','Entwickler, Berater',3,'\0','2019-09-11',NULL,178368,178367);
 /*!40000 ALTER TABLE `employeecontract` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -604,7 +604,7 @@ CREATE TABLE `vacation` (
 
 LOCK TABLES `vacation` WRITE;
 /*!40000 ALTER TABLE `vacation` DISABLE KEYS */;
-INSERT INTO `vacation` VALUES (154840,30,0,2014,154850),(180651,30,0,2019,180661),(180652,30,0,2019,180662);
+INSERT INTO `vacation` VALUES (180651,30,0,2019,180661),(180652,30,0,2019,180662);
 /*!40000 ALTER TABLE `vacation` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -649,3 +649,33 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2019-09-11  7:07:08
+
+alter table referenceday add column createdby varchar(255) null;
+alter table referenceday add column lastupdatedby varchar(255) null;
+alter table referenceday add column lastupdate datetime null;
+alter table referenceday add column created datetime null;
+alter table referenceday add column updatecounter int null;
+
+alter table vacation add column createdby varchar(255) null;
+alter table vacation add column lastupdatedby varchar(255) null;
+alter table vacation add column lastupdate datetime null;
+alter table vacation add column created datetime null;
+alter table vacation add column updatecounter int null;
+
+alter table workingday add column createdby varchar(255) null;
+alter table workingday add column lastupdatedby varchar(255) null;
+alter table workingday add column lastupdate datetime null;
+alter table workingday add column created datetime null;
+alter table workingday add column updatecounter int null;
+
+alter table publicholiday add column createdby varchar(255) null;
+alter table publicholiday add column lastupdatedby varchar(255) null;
+alter table publicholiday add column lastupdate datetime null;
+alter table publicholiday add column created datetime null;
+alter table publicholiday add column updatecounter int null;
+
+alter table overtime add column lastupdatedby varchar(255) null;
+alter table overtime add column lastupdate datetime null;
+alter table overtime add column updatecounter int null;
+
+drop table invoice;
