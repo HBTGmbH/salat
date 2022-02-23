@@ -1,5 +1,8 @@
 package org.tb.bdom;
 
+import static org.tb.GlobalConstants.SUBORDER_INVOICE_NO;
+import static org.tb.GlobalConstants.SUBORDER_INVOICE_YES;
+
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.tb.GlobalConstants;
@@ -19,7 +22,7 @@ public class SuborderViewDecorator extends Suborder {
     private Double durationNotInvoiceable;
 
     private static void generateListOfDescendants(Suborder so, boolean isInvoiceable, List<Long> listOfDescendents) {
-        if (isInvoiceable != (so.getInvoice() == 'y' || so.getInvoice() == 'Y')) {
+        if (isInvoiceable != (so.getInvoice() == SUBORDER_INVOICE_YES)) {
             return;
         }
         listOfDescendents.add(so.getId());
@@ -45,7 +48,7 @@ public class SuborderViewDecorator extends Suborder {
 
     public double getDuration() {
         if (this.duration == null) {
-            if (suborder.getInvoice() == 'n' || suborder.getInvoice() == 'N') {
+            if (suborder.getInvoice() == SUBORDER_INVOICE_NO) {
                 return 0;
             }
 
@@ -59,7 +62,7 @@ public class SuborderViewDecorator extends Suborder {
 
     public double getDurationNotInvoiceable() {
         if (this.durationNotInvoiceable == null) {
-            if (suborder.getInvoice() == 'y' || suborder.getInvoice() == 'Y') {
+            if (suborder.getInvoice() == SUBORDER_INVOICE_YES) {
                 return 0;
             }
 

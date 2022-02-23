@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMessage;
@@ -162,7 +163,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
                     : suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orderId, reportForm.getShowOnlyValid());
             request.getSession().setAttribute("suborders", suborders);
 
-            if (suborders.stream().noneMatch(suborder -> suborder.getId() == reportForm.getSuborderId())) {
+            if (suborders.stream().noneMatch(suborder -> Objects.equals(suborder.getId(), reportForm.getSuborderId()))) {
                 reportForm.setSuborderId(-1);
             }
 

@@ -5,6 +5,7 @@ import static javax.persistence.TemporalType.DATE;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -42,7 +43,7 @@ public class Workingday extends AuditedEntity implements Serializable {
         if (obj instanceof Workingday) {
             Workingday other = (Workingday) obj;
             return refday.equals(other.refday) &&
-                employeecontract.getId() == other.getEmployeecontract().getId();
+                   Objects.equals(employeecontract.getId(), other.getEmployeecontract().getId());
         }
         return false;
     }

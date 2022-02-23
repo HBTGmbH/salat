@@ -5,12 +5,13 @@ import static org.tb.util.TimeFormatUtils.timeFormatHoursAndMinutes;
 import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
+import org.tb.util.DateUtils;
 
 @Getter
 @Setter
 public class BookingDay implements Comparable<BookingDay> {
 
-    private final Date date;
+    private final String date;
     private final long durationHours;
     private final long durationMinutes;
     private final String taskdescription;
@@ -18,7 +19,7 @@ public class BookingDay implements Comparable<BookingDay> {
     private boolean publicHoliday;
 
     public BookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
-        this.date = new Date(date.getTime()); // kr: this is required, because JPA provides sql Date objects and equals is not compatible
+        this.date = DateUtils.format(date);
         this.durationHours = durationHours;
         this.durationMinutes = durationMinutes;
         this.satSun = false;

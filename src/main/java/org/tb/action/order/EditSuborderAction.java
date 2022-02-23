@@ -1,6 +1,7 @@
 package org.tb.action.order;
 
 import java.util.List;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -77,19 +78,16 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         } else {
             soForm.setParentId(so.getCustomerorder().getId());
         }
-        try {
-            Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
-            if (tempSubOrder != null && tempSubOrder.getCustomerorder().getId() == so.getCustomerorder().getId()) {
-                soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
-                request.getSession().setAttribute("suborderParent", tempSubOrder);
-            } else {
-                Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
-                soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
-                request.getSession().setAttribute("suborderParent", tempOrder);
-            }
-            request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
-        } catch (Throwable th) {
+        Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
+        if (tempSubOrder != null && Objects.equals(tempSubOrder.getCustomerorder().getId(), so.getCustomerorder().getId())) {
+            soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+            request.getSession().setAttribute("suborderParent", tempSubOrder);
+        } else {
+            Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
+            soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
+            request.getSession().setAttribute("suborderParent", tempOrder);
         }
+        request.getSession().setAttribute("parentDescriptionAndSign", soForm.getParentDescriptionAndSign());
 
         soForm.setValidFrom(DateUtils.format(so.getFromDate()));
         if (so.getUntilDate() != null) {

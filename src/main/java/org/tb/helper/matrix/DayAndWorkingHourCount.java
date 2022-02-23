@@ -10,13 +10,13 @@ import java.util.Date;
 public class DayAndWorkingHourCount {
     private int day;
     private double workingHour;
-    private Date date;
+    private String date;
     private boolean publicHoliday;
     private boolean satSun;
     private String weekDay;
     private String publicHolidayName;
 
-    public DayAndWorkingHourCount(int day, double workingHour, Date date) {
+    public DayAndWorkingHourCount(int day, double workingHour, String date) {
         this.day = day;
         this.date = date;
         this.workingHour = workingHour;

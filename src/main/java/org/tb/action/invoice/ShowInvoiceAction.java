@@ -141,7 +141,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 } else if (showInvoiceForm.isFixedpricebox()) {
                     for (Suborder suborder : suborderList) {
-                        if (suborder.getInvoice() == 'Y' || suborder.getFixedPrice()) {
+                        if (suborder.getInvoice() == GlobalConstants.SUBORDER_INVOICE_YES || suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
@@ -155,7 +155,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 } else {
                     for (Suborder suborder : suborderList) {
-                        if (suborder.getInvoice() == 'Y' && !suborder.getFixedPrice()) {
+                        if (suborder.getInvoice() == GlobalConstants.SUBORDER_INVOICE_YES && !suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }

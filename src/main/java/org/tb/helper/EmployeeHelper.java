@@ -1,5 +1,6 @@
 package org.tb.helper;
 
+import java.util.Objects;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeecontract;
 import org.tb.persistence.EmployeeDAO;
@@ -26,7 +27,7 @@ public class EmployeeHelper {
         List<Employee> employees = ed.getEmployees();
         List<Employee> optionList = new ArrayList<Employee>();
         for (Employee emp : employees) {
-            if (emp.getId() == loginEmployee.getId()) {
+            if (Objects.equals(emp.getId(), loginEmployee.getId())) {
                 optionList.add(emp);
             } else {
                 if ((loginEmployee.getStatus().equalsIgnoreCase("bl")) ||
