@@ -1,11 +1,11 @@
 package org.tb.action.order;
 
-import java.text.SimpleDateFormat;
+import static org.tb.util.DateUtils.format;
+
 import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionForm;
-import org.tb.GlobalConstants;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.EmployeeOrderViewDecorator;
 import org.tb.bdom.Employeecontract;
@@ -267,8 +267,6 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
         java.util.Date soFromDate = null;
         java.util.Date soUntilDate = null;
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         if (employeecontract != null) {
             ecFromDate = employeecontract.getValidFrom();
             ecUntilDate = employeecontract.getValidUntil();
@@ -281,27 +279,27 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
         // set from date
         if (ecFromDate != null && soFromDate != null) {
             if (ecFromDate.before(soFromDate)) {
-                employeeOrderForm.setValidFrom(simpleDateFormat.format(soFromDate));
+                employeeOrderForm.setValidFrom(format(soFromDate));
             } else {
-                employeeOrderForm.setValidFrom(simpleDateFormat.format(ecFromDate));
+                employeeOrderForm.setValidFrom(format(ecFromDate));
             }
         } else if (ecFromDate != null) {
-            employeeOrderForm.setValidFrom(simpleDateFormat.format(ecFromDate));
+            employeeOrderForm.setValidFrom(format(ecFromDate));
         } else if (soFromDate != null) {
-            employeeOrderForm.setValidFrom(simpleDateFormat.format(soFromDate));
+            employeeOrderForm.setValidFrom(format(soFromDate));
         }
 
         // set until date
         if (ecUntilDate != null && soUntilDate != null) {
             if (ecUntilDate.after(soUntilDate)) {
-                employeeOrderForm.setValidUntil(simpleDateFormat.format(soUntilDate));
+                employeeOrderForm.setValidUntil(format(soUntilDate));
             } else {
-                employeeOrderForm.setValidUntil(simpleDateFormat.format(ecUntilDate));
+                employeeOrderForm.setValidUntil(format(ecUntilDate));
             }
         } else if (ecUntilDate != null) {
-            employeeOrderForm.setValidUntil(simpleDateFormat.format(ecUntilDate));
+            employeeOrderForm.setValidUntil(format(ecUntilDate));
         } else if (soUntilDate != null) {
-            employeeOrderForm.setValidUntil(simpleDateFormat.format(soUntilDate));
+            employeeOrderForm.setValidUntil(format(soUntilDate));
         } else {
             employeeOrderForm.setValidUntil("");
         }

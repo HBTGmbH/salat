@@ -1,6 +1,5 @@
 package org.tb.action.order;
 
-import java.text.SimpleDateFormat;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,6 +14,7 @@ import org.tb.bdom.Employee;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.SuborderDAO;
+import org.tb.util.DateUtils;
 
 /**
  * action class for editing a suborder
@@ -91,10 +91,9 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         } catch (Throwable th) {
         }
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        soForm.setValidFrom(simpleDateFormat.format(so.getFromDate()));
+        soForm.setValidFrom(DateUtils.format(so.getFromDate()));
         if (so.getUntilDate() != null) {
-            soForm.setValidUntil(simpleDateFormat.format(so.getUntilDate()));
+            soForm.setValidUntil(DateUtils.format(so.getUntilDate()));
         } else {
             soForm.setValidUntil("");
         }

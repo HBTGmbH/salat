@@ -5,7 +5,6 @@ import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -54,8 +53,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
     public ActionForward executeAuthenticated(ActionMapping mapping,
         AddEmployeeOrderForm eoForm, HttpServletRequest request,
         HttpServletResponse response) {
-
-        SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
 
         // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
@@ -378,17 +375,16 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             errors = new ActionMessages();
         }
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         java.util.Date validFromDate = null;
         java.util.Date validUntilDate = null;
         try {
-            validFromDate = simpleDateFormat.parse(eoForm.getValidFrom());
+            validFromDate = parse(eoForm.getValidFrom());
         } catch (ParseException e) {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
         if (eoForm.getValidUntil() != null && !eoForm.getValidUntil().equals("".trim())) {
             try {
-                validUntilDate = simpleDateFormat.parse(eoForm.getValidUntil());
+                validUntilDate = parse(eoForm.getValidUntil());
             } catch (ParseException e) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }

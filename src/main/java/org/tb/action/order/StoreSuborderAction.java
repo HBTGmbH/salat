@@ -1,12 +1,12 @@
 package org.tb.action.order;
 
 import static org.tb.util.DateUtils.addDays;
+import static org.tb.util.DateUtils.format;
 import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,8 +55,6 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         AddSuborderForm addSuborderForm, HttpServletRequest request,
         HttpServletResponse response) {
 
-        SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
@@ -80,7 +78,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 newValue = today();
             }
 
-            datum = DateUtils.format(newValue);
+            datum = format(newValue);
 
             request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
 
@@ -517,10 +515,8 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
         // check date formats
         Date suborderFromDate = null;
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         try {
-            suborderFromDate = new Date(simpleDateFormat.parse(addSuborderForm.getValidFrom()).getTime());
+            suborderFromDate = DateUtils.parse(addSuborderForm.getValidFrom());
         } catch (ParseException e) {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
@@ -528,7 +524,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         Date suborderUntilDate = null;
         if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
             try {
-                suborderUntilDate = new Date(simpleDateFormat.parse(addSuborderForm.getValidUntil()).getTime());
+                suborderUntilDate = DateUtils.parse(addSuborderForm.getValidUntil());
             } catch (ParseException e) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
@@ -641,11 +637,10 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             soForm.setHourlyRate(co.getHourly_rate());
             soForm.setCurrency(co.getCurrency());
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-            soForm.setValidFrom(simpleDateFormat.format(co.getFromDate()));
+            soForm.setValidFrom(format(co.getFromDate()));
 
             if (co.getUntilDate() != null) {
-                soForm.setValidUntil(simpleDateFormat.format(co.getUntilDate()));
+                soForm.setValidUntil(format(co.getUntilDate()));
             } else {
                 soForm.setValidUntil("");
             }

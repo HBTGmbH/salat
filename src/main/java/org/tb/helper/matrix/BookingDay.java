@@ -18,7 +18,7 @@ public class BookingDay implements Comparable<BookingDay> {
     private boolean publicHoliday;
 
     public BookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
-        this.date = new Date(date.getTime());
+        this.date = new Date(date.getTime()); // kr: this is required, because JPA provides sql Date objects and equals is not compatible
         this.durationHours = durationHours;
         this.durationMinutes = durationMinutes;
         this.satSun = false;

@@ -1,25 +1,25 @@
 package org.tb.helper;
 
+import static org.tb.util.DateUtils.parse;
+
 import java.text.ParseException;
 import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.GlobalConstants;
+import org.tb.action.dailyreport.AddDailyReportForm;
+import org.tb.action.dailyreport.ShowDailyReportForm;
 import org.tb.bdom.Customerorder;
 import org.tb.bdom.Employeecontract;
 import org.tb.bdom.Suborder;
 import org.tb.persistence.CustomerorderDAO;
 import org.tb.persistence.EmployeecontractDAO;
 import org.tb.persistence.SuborderDAO;
-import org.tb.action.dailyreport.AddDailyReportForm;
-import org.tb.action.dailyreport.ShowDailyReportForm;
-
-import javax.servlet.http.HttpServletRequest;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Helper class for customer order handling which does not directly deal with persistence
@@ -49,10 +49,9 @@ public class CustomerorderHelper {
         request.getSession().setAttribute("suborders", Collections.emptyList());
 
         String dateString = reportForm.getReferenceday();
-        SimpleDateFormat dateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         Date date;
         try {
-            date = dateFormat.parse(dateString);
+            date = parse(dateString);
         } catch (ParseException e) {
             return false;
         }

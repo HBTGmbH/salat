@@ -1,10 +1,11 @@
 package org.tb.action.statusreport;
 
 import static org.tb.util.DateUtils.addDays;
+import static org.tb.util.DateUtils.format;
+import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -36,9 +37,6 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, AddStatusReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        SimpleDateFormat format = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        boolean backAction = false;
-
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
             String which = request.getParameter("which").toLowerCase();
@@ -53,13 +51,13 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                     return mapping.getInputForward();
                 }
 
-                newValue = DateUtils.parse(datum, today());
+                newValue = parse(datum, today());
                 newValue = addDays(newValue, 1);
             } else {
                 newValue = today();
             }
 
-            datum = DateUtils.format(newValue);
+            datum = format(newValue);
 
             request.getSession().setAttribute(which.equals("until") ? "validUntil" : "validFrom", datum);
 
@@ -151,7 +149,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                 Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
                 currentReport.setAcceptedby(employeeDAO.getEmployeeById(loginEmployee.getId()));
-                currentReport.setAccepted(new Date(new java.util.Date().getTime()));
+                currentReport.setAccepted(DateUtils.now());
 
                 statusReportDAO.save(currentReport, loginEmployee);
 
@@ -237,19 +235,18 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
             // refresh fromdate
             List<Statusreport> existingReports = statusReportDAO.getStatusReportsByCustomerOrderId(selectedCustomerOrder.getId());
             Date fromDate = selectedCustomerOrder.getFromDate();
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
             if (existingReports != null && !existingReports.isEmpty()) {
                 Statusreport lastKnownReport = existingReports.get(existingReports.size() - 1);
 
                 if (request.getSession().getAttribute("currentStatusReport") != null &&
                         ((Statusreport) request.getSession().getAttribute("currentStatusReport")).getId() == lastKnownReport.getId()) {
                     fromDate = lastKnownReport.getFromdate();
-                    reportForm.setValidUntil(simpleDateFormat.format(lastKnownReport.getUntildate()));
+                    reportForm.setValidUntil(format(lastKnownReport.getUntildate()));
                 } else {
                     fromDate = DateUtils.addDays(lastKnownReport.getUntildate(), 1);
                 }
             }
-            reportForm.setValidFrom(simpleDateFormat.format(fromDate));
+            reportForm.setValidFrom(format(fromDate));
 
             // remove actionInfo
             request.getSession().removeAttribute("actionInfo");
@@ -293,8 +290,6 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
 
     private boolean formEntriesEqualDB(Long srId, AddStatusReportForm reportForm) {
         Statusreport statusreport = statusReportDAO.getStatusReportById(srId);
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         try {
             return reportForm.getAim_action().equals(statusreport.getAim_action()) &&
                     reportForm.getAim_source().equals(statusreport.getAim_source()) &&
@@ -313,8 +308,8 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                     reportForm.getCommunication_source().equals(statusreport.getCommunication_source()) &&
                     reportForm.getCommunication_status().equals(statusreport.getCommunication_status()) &&
                     reportForm.getCommunication_text().equals(statusreport.getCommunication_text()) &&
-                    reportForm.getCustomerOrderId() == statusreport.getCustomerorder().getId() &&
-                    reportForm.getValidFrom().equals(simpleDateFormat.format(statusreport.getFromdate())) &&
+                    reportForm.getCustomerOrderId().equals(statusreport.getCustomerorder().getId()) &&
+                    reportForm.getValidFrom().equals(format(statusreport.getFromdate())) &&
                     reportForm.getImprovement_action().equals(statusreport.getImprovement_action()) &&
                     reportForm.getImprovement_source().equals(statusreport.getImprovement_source()) &&
                     reportForm.getImprovement_status().equals(statusreport.getImprovement_status()) &&
@@ -330,16 +325,16 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                     reportForm.getNeedforaction_status().equals(statusreport.getNeedforaction_status()) &&
                     reportForm.getNeedforaction_text().equals(statusreport.getNeedforaction_text()) &&
                     reportForm.getPhase().equals(statusreport.getPhase()) &&
-                    reportForm.getRecipientId() == statusreport.getRecipient().getId() &&
+                    reportForm.getRecipientId().equals(statusreport.getRecipient().getId()) &&
                     reportForm.getRiskmonitoring_action().equals(statusreport.getRiskmonitoring_action()) &&
                     reportForm.getRiskmonitoring_source().equals(statusreport.getRiskmonitoring_source()) &&
                     reportForm.getRiskmonitoring_status().equals(statusreport.getRiskmonitoring_status()) &&
                     reportForm.getRiskmonitoring_text().equals(statusreport.getRiskmonitoring_text()) &&
-                    reportForm.getSenderId() == statusreport.getSender().getId() &&
+                    reportForm.getSenderId().equals(statusreport.getSender().getId()) &&
                     reportForm.getSort().equals(statusreport.getSort()) &&
                     reportForm.getTrend().equals(statusreport.getTrend()) &&
                     reportForm.getTrendstatus().equals(statusreport.getTrendstatus()) &&
-                    reportForm.getValidUntil().equals(simpleDateFormat.format(statusreport.getUntildate()));
+                    reportForm.getValidUntil().equals(format(statusreport.getUntildate()));
         } catch (NullPointerException e) {
             return false;
         }
@@ -387,9 +382,8 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
         currentReport.setRecipient(employeeDAO.getEmployeeById(reportForm.getRecipientId()));
 
         // get dates from validate later
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        Date reportFromDate = new Date(simpleDateFormat.parse(reportForm.getValidFrom()).getTime());
-        Date reportUntilDate = new Date(simpleDateFormat.parse(reportForm.getValidUntil()).getTime());
+        Date reportFromDate = parse(reportForm.getValidFrom());
+        Date reportUntilDate = parse(reportForm.getValidUntil());
         currentReport.setFromdate(reportFromDate);
         currentReport.setUntildate(reportUntilDate);
 
@@ -516,20 +510,18 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
             errors = new ActionMessages();
         }
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-
         // check dates
         String fromDateString = reportForm.getValidFrom();
         java.util.Date fromDate = null;
         try {
-            fromDate = simpleDateFormat.parse(fromDateString);
+            fromDate = parse(fromDateString);
         } catch (java.text.ParseException exception) {
             errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.invalid.text"));
         }
         String untilDateString = reportForm.getValidUntil();
         java.util.Date untilDate = null;
         try {
-            untilDate = simpleDateFormat.parse(untilDateString);
+            untilDate = parse(untilDateString);
         } catch (java.text.ParseException exception) {
             errors.add("untildate", new ActionMessage("form.statusreport.error.untildate.invalid.text"));
         }

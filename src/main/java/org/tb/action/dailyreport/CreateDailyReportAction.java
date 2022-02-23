@@ -1,9 +1,9 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.GlobalConstants.MINUTE_INCREMENT;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.util.DateUtils.today;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -97,14 +97,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         }
 
         // workingday should only be available for today
-        java.util.Date today = new java.util.Date();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
-        String todayString = simpleDateFormat.format(today);
-        try {
-            today = simpleDateFormat.parse(todayString);
-        } catch (Exception e) {
-            throw new RuntimeException("this should never happen...!");
-        }
+        Date today = DateUtils.today();
         if (!selectedDate.equals(today)) {
             workingDayIsAvailable = false;
         }
@@ -121,19 +114,13 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         if (workingDayIsAvailable) {
             // set end time in reportform
             today = today();
-            SimpleDateFormat minuteFormat = new SimpleDateFormat("mm");
-            SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
 
-            int hour = new Integer(hourFormat.format(today));
-            int minute = new Integer(minuteFormat.format(today));
-            minute = minute / 5 * 5;
+            int hour = Integer.parseInt(DateUtils.formatHours(today));
+            int minute = Integer.parseInt(DateUtils.formatMinutes(today));
 
-            todayString = simpleDateFormat.format(today);
-            try {
-                today = simpleDateFormat.parse(todayString);
-            } catch (Exception e) {
-                throw new RuntimeException("this should never happen...!");
-            }
+            // ensure time is of a minute increment to be compatible with available
+            // options in form (special kind of rounding)
+            minute = minute / MINUTE_INCREMENT * MINUTE_INCREMENT;
 
             if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
                 form.setSelectedMinuteEnd(minute);
@@ -149,7 +136,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         }
 
         // init form with selected Date
-        form.setReferenceday(simpleDateFormat.format(selectedDate));
+        form.setReferenceday(DateUtils.format(selectedDate));
 
         // init form with first order and corresponding suborders
         List<Suborder> theSuborders;
@@ -185,7 +172,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().removeAttribute("trId");
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("matrix")) {
-            form.setReferenceday(todayString);
+            form.setReferenceday(DateUtils.format(today));
         }
 
         // init the rest of the form

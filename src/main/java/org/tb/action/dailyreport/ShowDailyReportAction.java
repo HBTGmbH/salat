@@ -1,12 +1,13 @@
 package org.tb.action.dailyreport;
 
+import static org.tb.util.DateUtils.format;
+import static org.tb.util.DateUtils.formatDayOfMonth;
+import static org.tb.util.DateUtils.formatMonth;
+import static org.tb.util.DateUtils.formatYear;
 import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -309,22 +310,17 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             reportForm.setLastyear(reportForm.getYear());
             reportForm.setEnddate(reportForm.getStartdate());
         } else {
-            LocalDate startdate;
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern(GlobalConstants.DEFAULT_DATE_FORMAT);
+            Date startdate;
             if (reportForm.getStartdate() != null) {
-                try {
-                    startdate = LocalDate.parse(reportForm.getStartdate(), dtf);
-                } catch (DateTimeParseException e) {
-                    startdate = LocalDate.now();
-                }
+                startdate = DateUtils.parse(reportForm.getStartdate(), today());
             } else {
-                startdate = LocalDate.now();
+                startdate = today();
             }
 
-            LocalDate enddate;
+            Date enddate;
             if (reportForm.getEnddate() != null) {
                 try {
-                    enddate = LocalDate.parse(reportForm.getEnddate(), dtf);
+                    enddate = DateUtils.parse(reportForm.getEnddate(), today());
                 } catch (DateTimeParseException e) {
                     enddate = startdate;
                 }
@@ -345,12 +341,12 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 }
             }
             // no monthly view -> parse startdate and set day/month/year-fields
-            String day = (startdate.getDayOfMonth() > 9 ? "" : "0") + startdate.getDayOfMonth();
-            String month = (startdate.getMonthValue() > 9 ? "" : "0") + startdate.getMonthValue();
+            String day = formatDayOfMonth(startdate);
+            String month = formatMonth(startdate);
             reportForm.setDay(day);
             reportForm.setMonth(month);
-            reportForm.setYear("" + startdate.getYear());
-            reportForm.setStartdate(dtf.format(startdate));
+            reportForm.setYear(formatYear(startdate));
+            reportForm.setStartdate(format(startdate));
             if (view == null || GlobalConstants.VIEW_DAILY.equals(view)) {
                 // daily view -> synchronize enddate and fields with startdate
                 reportForm.setLastday(reportForm.getDay());
@@ -358,14 +354,14 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setLastyear(reportForm.getYear());
                 reportForm.setEnddate(reportForm.getStartdate());
             } else if (GlobalConstants.VIEW_CUSTOM.equals(view)) {
-                if (!enddate.isBefore(startdate)) {
+                if (!enddate.before(startdate)) {
                     // custom view -> parse enddate and set lastday/-month/-year-fields
-                    day = (enddate.getDayOfMonth() > 9 ? "" : "0") + enddate.getDayOfMonth();
-                    month = (enddate.getMonthValue() > 9 ? "" : "0") + enddate.getMonthValue();
+                    day = formatDayOfMonth(enddate);
+                    month = formatMonth(enddate);
                     reportForm.setLastday(day);
                     reportForm.setLastmonth(month);
                     reportForm.setLastyear("" + enddate.getYear());
-                    reportForm.setEnddate(dtf.format(enddate));
+                    reportForm.setEnddate(format(enddate));
                 } else {
                     // custom view -> parse startdate and set lastday/-month/-year-fields
                     // failsafe if enddate is before startdate
@@ -451,7 +447,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     if (ec.getId() != reportForm.getEmployeeContractId()) {
                         ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                     }
-                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
                     Date date = DateUtils.parse(reportForm.getEnddate(), e -> {
                         throw new RuntimeException(e);
                     });
@@ -471,7 +466,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     }
                     boolean overtimeUntilIsNeg = overtime < 0;
                     request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);
-                    request.getSession().setAttribute("enddate", simpleDateFormat.format(date));
+                    request.getSession().setAttribute("enddate", DateUtils.format(date));
                     String overtimeString = timeFormatMinutes(overtime);
                     request.getSession().setAttribute("overtimeUntil", overtimeString);
                 }
@@ -599,11 +594,11 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         return mapping.findForward("success");
     }
 
-    private LocalDate changeDate(LocalDate date, int change) {
+    private Date changeDate(Date date, int change) {
         if (change != 0) {
-            date = date.plusDays(change);
+            date = DateUtils.addDays(date, change);
         } else {
-            date = LocalDate.now();
+            date = today();
         }
         return date;
     }

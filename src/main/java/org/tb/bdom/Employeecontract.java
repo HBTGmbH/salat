@@ -1,9 +1,9 @@
 package org.tb.bdom;
 
 import static javax.persistence.TemporalType.DATE;
+import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
@@ -99,29 +99,26 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     }
 
     public String getReportAcceptanceDateString() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         if (reportAcceptanceDate != null) {
-            return simpleDateFormat.format(reportAcceptanceDate);
+            return format(reportAcceptanceDate);
         } else {
-            return simpleDateFormat.format(validFrom);
+            return format(validFrom);
         }
     }
 
     public String getReportReleaseDateString() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         if (reportReleaseDate != null) {
-            return simpleDateFormat.format(reportReleaseDate);
+            return format(reportReleaseDate);
         } else {
-            return simpleDateFormat.format(validFrom);
+            return format(validFrom);
         }
     }
 
     public String getTimeString() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(GlobalConstants.DEFAULT_DATE_FORMAT);
         if (validUntil == null) {
-            return simpleDateFormat.format(validFrom) + " - ";
+            return format(validFrom) + " - ";
         }
-        return simpleDateFormat.format(validFrom) + " - " + simpleDateFormat.format(validUntil);
+        return format(validFrom) + " - " + format(validUntil);
     }
 
     public boolean getOpenEnd() {
