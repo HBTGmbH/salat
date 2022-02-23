@@ -47,6 +47,8 @@ public class SalatApplication {
   public DatabaseStartupValidator databaseStartupValidator(DataSource dataSource) {
     var dsv = new DatabaseStartupValidator();
     dsv.setDataSource(dataSource);
+    dsv.setInterval(15);
+    dsv.setTimeout(120);
     return dsv;
   }
 
