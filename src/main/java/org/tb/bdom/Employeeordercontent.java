@@ -1,17 +1,20 @@
 package org.tb.bdom;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.io.Serializable;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.*;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.*;
-import java.io.Serializable;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 @Getter
 @Setter
@@ -58,14 +61,26 @@ public class Employeeordercontent extends AuditedEntity implements Serializable 
     @Cascade(CascadeType.SAVE_UPDATE)
     private Employee committedby_emp;
 
+    @Lob
+    @Column(columnDefinition = "text")
     private String description;
+    @Lob
+    @Column(columnDefinition = "text")
     private String task;
+    @Lob
+    @Column(columnDefinition = "text")
     private String boundary;
+    @Lob
+    @Column(columnDefinition = "text")
     private String procedure;
     private Integer qm_process_id;
     private String contact_contract_customer;
     private String contact_tech_customer;
+    @Lob
+    @Column(columnDefinition = "text")
     private String additional_risks;
+    @Lob
+    @Column(columnDefinition = "text")
     private String arrangement;
     private Boolean committed_mgmt;
     private Boolean committed_emp;
