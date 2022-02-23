@@ -37,3 +37,18 @@ Start local database only, without Salat:
 
 
 ### Troubleshooting
+
+#### BuildProperties
+Falls die Meldung
+
+    Consider defining a bean of type 'org.springframework.boot.info.BuildProperties' in your configuration.
+
+kommt. Einfach einmal
+
+    mvn package
+
+ausführen. Hintergrund: Maven erzeugt eine Datei build-info.properties. Diese fehlt ggf. weil die 
+IDE (auch mit Maven Integration) diese Datei nicht erzeugt. Bei IntelliJ IDEA bei Klaus wird diese
+Datei nicht erzeugt.
+
+(by Klaus)
