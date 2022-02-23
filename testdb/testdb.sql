@@ -135,7 +135,7 @@ CREATE TABLE `employee` (
 
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
-INSERT INTO `employee` VALUES (1680,'2006-12-27 13:24:28','adm','salat','m','admin','2019-09-11 04:47:09','adm','admin','21232f297a57a5a743894a0e4a801fc3','\0','adm','adm',151),(178367,'2019-09-11 04:43:54','adm','Bossy','f','Bossmann','2019-09-11 04:58:16','bm','bm','126cfbcd4d16ae6d25c9bfcae76d8ee4','\0','bm','adm',5),(178368,'2019-09-11 04:48:00','bm','Testy','m','Testmann','2019-09-11 04:57:39','tt','tt','126cfbcd4d16ae6d25c9bfcae76d8ee4','\0','tt','ma',2);
+INSERT INTO `employee` VALUES (1680,'2006-12-27 13:24:28','adm','salat','m','admin','2019-09-11 04:47:09','adm','admin','21232f297a57a5a743894a0e4a801fc3','\0','adm','adm',151),(178367,'2019-09-11 04:43:54','adm','Bossy','f','Bossmann','2019-09-11 04:58:16','bm','bm','084243855820f9ca47f466f645784636','\0','bm','adm',5),(178368,'2019-09-11 04:48:00','bm','Testy','m','Testmann','2019-09-11 04:57:39','tt','tt','accc9105df5383111407fd5b41255e23','\0','tt','ma',2);
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 
