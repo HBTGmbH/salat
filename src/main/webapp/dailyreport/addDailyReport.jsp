@@ -77,12 +77,7 @@
 		document.forms[0].submit();
 	}
 	
-	function setUpdateSortofreportAction(form) {	
- 		form.action = "../do/StoreDailyReport?task=updateSortOfReport";
-		form.submit();
-	}	
-	
-	function setUpdateHoursAction(form) {	
+	function setUpdateHoursAction(form) {
  		form.action = "../do/StoreDailyReport?task=refreshHours";
 		form.submit();
 	}	

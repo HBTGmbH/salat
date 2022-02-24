@@ -1,9 +1,7 @@
 package org.tb.action.dailyreport;
 
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
-
-import java.util.ArrayList;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -150,20 +148,15 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
             reportForm.setSelectedMinuteDuration(tr.getDurationminutes());
         }
 
-        reportForm.setSortOfReport(tr.getSortofreport());
-        request.getSession().setAttribute("report", tr.getSortofreport());
-
-        if (tr.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
-            if (tr.getSuborder() != null && tr.getSuborder().getCustomerorder() != null) {
-                reportForm.setSuborder(tr.getSuborder().getSign());
-                reportForm.setSuborderSignId(tr.getSuborder().getId());
-                reportForm.setSuborderDescriptionId(tr.getSuborder().getId());
-                reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
-                reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());
-            }
-            reportForm.setCosts(tr.getCosts());
-            reportForm.setStatus(tr.getStatus());
+        if (tr.getSuborder() != null && tr.getSuborder().getCustomerorder() != null) {
+            reportForm.setSuborder(tr.getSuborder().getSign());
+            reportForm.setSuborderSignId(tr.getSuborder().getId());
+            reportForm.setSuborderDescriptionId(tr.getSuborder().getId());
+            reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
+            reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());
         }
+        reportForm.setCosts(tr.getCosts());
+        reportForm.setStatus(tr.getStatus());
         reportForm.setComment(tr.getTaskdescription());
         reportForm.setTraining(tr.getTraining());
         reportForm.setId(tr.getId());

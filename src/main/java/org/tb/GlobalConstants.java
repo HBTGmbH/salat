@@ -54,8 +54,6 @@ public class GlobalConstants {
     public static final char SUBORDER_INVOICE_NO = 'N';
     public static final char SUBORDER_INVOICE_UNDEFINED = 'U';
 
-    public static final String SORT_OF_REPORT_WORK = "W";
-
     public static final int EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH = 256;
     public static final int EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH = 256;
 

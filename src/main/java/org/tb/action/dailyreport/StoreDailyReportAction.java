@@ -3,12 +3,11 @@ package org.tb.action.dailyreport;
 import static java.lang.Boolean.TRUE;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.MINUTE_INCREMENT;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Collections;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -172,11 +171,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             setSubOrder(suborder, request, form);
         }
 
-        if (request.getParameter("task") != null && request.getParameter("task").equalsIgnoreCase("updateSortOfReport")) {
-            // updates the sort of report
-            request.getSession().setAttribute("report", form.getSortOfReport());
-        }
-
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshHours")) {
             // refreshes the hours displayed after a change of duration period
             timereportHelper.refreshHours(form);
@@ -256,7 +250,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         Boolean.TRUE.equals(form.getTraining()),
                         form.getSelectedHourDuration(),
                         form.getSelectedMinuteDuration(),
-                        SORT_OF_REPORT_WORK,
                         form.getCosts()
                     );
                 } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
@@ -274,7 +267,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         Boolean.TRUE.equals(form.getTraining()),
                         form.getSelectedHourDuration(),
                         form.getSelectedMinuteDuration(),
-                        SORT_OF_REPORT_WORK,
                         form.getCosts(),
                         Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
                     );
@@ -555,7 +547,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         request.getSession().setAttribute("orders", orders);
         request.getSession().setAttribute("suborders", suborders);
-        request.getSession().setAttribute("report", SORT_OF_REPORT_WORK);
     }
 
     private boolean workStartedEarlier(int beginHours, int beginMinutes, int currentHours, int currentMinutes) {

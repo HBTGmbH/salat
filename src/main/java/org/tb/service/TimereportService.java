@@ -20,7 +20,6 @@ import static org.tb.ErrorCode.TR_MONTH_BUDGET_EXCEEDED;
 import static org.tb.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
 import static org.tb.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static org.tb.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
-import static org.tb.ErrorCode.TR_SORT_OF_REPORT_INVALID;
 import static org.tb.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static org.tb.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
 import static org.tb.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
@@ -33,7 +32,6 @@ import static org.tb.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
 import static org.tb.GlobalConstants.DEBITHOURS_UNIT_YEAR;
 import static org.tb.GlobalConstants.MAX_COSTS;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
@@ -45,11 +43,11 @@ import static org.tb.util.DateUtils.getYearMonth;
 import static org.tb.util.DateUtils.max;
 import static org.tb.util.DateUtils.min;
 
+import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -92,12 +90,12 @@ public class TimereportService {
   private OvertimeDAO overtimeDAO;
 
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs, int numberOfSerialDays)
+      boolean trainingFlag, int durationHours, int durationMinutes, double costs, int numberOfSerialDays)
   throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     Timereport timereportTemplate = new Timereport();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, sortOfReport, costs, timereportTemplate);
+        durationMinutes, costs, timereportTemplate);
 
     // create a timereport for every serial day requested - in most cases this is 1
     List<Timereport> timereportsToSave = new ArrayList<>();
@@ -115,12 +113,12 @@ public class TimereportService {
   }
 
   public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs)
+      boolean trainingFlag, int durationHours, int durationMinutes, double costs)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportDAO.getTimereportById(timereportId);
     DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, sortOfReport, costs, timereport);
+        durationMinutes, costs, timereport);
     checkAndSaveTimereports(authorizedUser, Collections.singletonList(timereport));
   }
 
@@ -141,7 +139,6 @@ public class TimereportService {
         TRUE.equals(timereport.getTraining()),
         timereport.getDurationhours(),
         timereport.getDurationminutes(),
-        timereport.getSortofreport(),
         timereport.getCosts());
   }
 
@@ -238,7 +235,7 @@ public class TimereportService {
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs,
+      boolean trainingFlag, int durationHours, int durationMinutes, double costs,
       Timereport timereport) {
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
     DataValidation.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
@@ -249,7 +246,6 @@ public class TimereportService {
     DataValidation.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
     DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
-    DataValidation.isTrue(SORT_OF_REPORT_WORK.equals(sortOfReport), TR_SORT_OF_REPORT_INVALID);
     DataValidation.isInRange(costs, 0.0, MAX_COSTS, TR_COSTS_INVALID);
 
     timereport.setEmployeecontract(employeecontract);
@@ -260,7 +256,6 @@ public class TimereportService {
     timereport.setTraining(trainingFlag);
     timereport.setDurationhours(durationHours);
     timereport.setDurationminutes(durationMinutes);
-    timereport.setSortofreport(sortOfReport);
     timereport.setCosts(costs);
   }
 

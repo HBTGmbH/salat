@@ -1,7 +1,6 @@
 package org.tb.bdom;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -52,7 +51,6 @@ public class Timereport extends AuditedEntity implements Serializable {
 
     private Integer durationhours;
     private Integer durationminutes;
-    private String sortofreport; // TODO was steckt hinter diesem Konzept? klären!
     @Lob
     @Column(columnDefinition = "text")
     private String taskdescription;
@@ -77,7 +75,6 @@ public class Timereport extends AuditedEntity implements Serializable {
         timereport.setDurationhours(durationhours);
         timereport.setDurationminutes(durationminutes);
         timereport.setEmployeecontract(employeecontract);
-        timereport.setSortofreport(sortofreport);
         timereport.setStatus(status);
         timereport.setSuborder(suborder);
         timereport.setTaskdescription(taskdescription);

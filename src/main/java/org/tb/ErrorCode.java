@@ -1,7 +1,5 @@
 package org.tb;
 
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
-
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -17,7 +15,6 @@ public enum ErrorCode {
   TR_DURATION_HOURS_INVALID("TR-0006","durationHours must be 0 at minimum"),
   TR_DURATION_MINUTES_INVALID("TR-0007","durationMinutes must be 0 at minimum"),
   TR_DURATION_INVALID("TR-0008","At least one of durationHours and durationMinutes must be greater than 0"),
-  TR_SORT_OF_REPORT_INVALID("TR-0009","sortOfReport must be " + SORT_OF_REPORT_WORK),
   TR_COSTS_INVALID("TR-0010","costs out of valid range"),
   TR_SEQUENCE_NUMBER_ALREADY_SET("TR-0011","sequencenumber already set on timereport"),
   TR_CLOSED_TIME_REPORT_REQ_ADMIN("TR-0012","closed time reports can only be saved by admins."),
