@@ -18,7 +18,7 @@
 
 <tag>
 <name>tree</name>
-<tagclass>org.tb.jsptags.TreeTag</tagclass>
+<tagclass>org.tb.common.jsptags.TreeTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <info>Outputs node in a HTML menu tree</info>
 

@@ -5,9 +5,8 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
-import org.tb.bdom.AuthorizedUser;
-import org.tb.persistence.EmployeeDAO;
-import org.tb.persistence.EmployeeRepository;
+import org.tb.auth.AuthorizedUser;
+import org.tb.employee.EmployeeRepository;
 
 @Configuration
 @RequiredArgsConstructor

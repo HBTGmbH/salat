@@ -65,7 +65,7 @@ while(names.hasMoreElements()) {
 			<td class="noBborderStyle"><bean:message key="main.general.employeesign.text" />:</td>
 			<td class="noBborderStyle"><html:text
 				property="loginname"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.EMPLOYEE_LOGINNAME_MAX_LENGTH %>" /></td>
+				maxlength="<%=\" /></td>
 		</tr>
 		<tr>
 			<td class="noBborderStyle"><bean:message key="main.general.password.text" />:</td>

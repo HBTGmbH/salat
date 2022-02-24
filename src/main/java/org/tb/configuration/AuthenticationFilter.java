@@ -1,9 +1,9 @@
 package org.tb.configuration;
 
 import static java.lang.Boolean.TRUE;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_ADM;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_BL;
-import static org.tb.GlobalConstants.EMPLOYEE_STATUS_PV;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -13,9 +13,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.tb.bdom.AuthorizedUser;
-import org.tb.bdom.Employee;
-import org.tb.persistence.EmployeeRepository;
+import org.tb.auth.AuthorizedUser;
+import org.tb.employee.Employee;
+import org.tb.employee.EmployeeRepository;
 
 @Slf4j
 @RequiredArgsConstructor

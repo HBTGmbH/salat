@@ -1,0 +1,146 @@
+package org.tb.dailyreport;
+
+import java.io.IOException;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.springframework.stereotype.Component;
+import org.tb.auth.AuthorizedUser;
+import org.tb.common.GlobalConstants;
+import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.InvalidDataException;
+import org.tb.dailyreport.viewhelper.TimereportHelper;
+import org.tb.employee.Employeecontract;
+import org.tb.employee.EmployeecontractDAO;
+import org.tb.order.CustomerorderDAO;
+import org.tb.order.EmployeeorderDAO;
+import org.tb.order.SuborderDAO;
+
+/**
+ * action class for updating a timereport directly from daily display
+ *
+ * @author oda
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReportForm> {
+
+    private final SuborderDAO suborderDAO;
+    private final CustomerorderDAO customerorderDAO;
+    private final TimereportDAO timereportDAO;
+    private final WorkingdayDAO workingdayDAO;
+    private final EmployeeorderDAO employeeorderDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final TimereportHelper timereportHelper;
+    private final TimereportService timereportService;
+    private final AuthorizedUser authorizedUser;
+
+    @Override
+    public ActionForward executeAuthenticated(ActionMapping mapping, UpdateDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (request.getParameter("trId") != null) {
+            long trId = Long.parseLong(request.getParameter("trId"));
+            Timereport tr = timereportDAO.getTimereportById(trId);
+            Employeecontract ec = tr.getEmployeecontract();
+
+            tr.setTaskdescription(reportForm.getComment());
+            tr.setDurationhours(reportForm.getSelectedDurationHour());
+            tr.setDurationminutes(reportForm.getSelectedDurationMinute());
+            tr.setTraining(reportForm.getTraining());
+
+            try {
+                timereportService.updateTimereport(
+                    authorizedUser,
+                    trId,
+                    tr.getEmployeecontract().getId(),
+                    tr.getEmployeeorder().getId(),
+                    tr.getReferenceday().getRefdate(),
+                    reportForm.getComment(),
+                    Boolean.TRUE.equals(reportForm.getTraining()),
+                    reportForm.getSelectedDurationHour(),
+                    reportForm.getSelectedDurationMinute()
+                );
+            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                addToErrors(request, e.getErrorCode());
+                return mapping.getInputForward();
+            }
+
+            // get updated list of timereports from DB
+            ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();
+            showDailyReportForm.setDay((String) request.getSession().getAttribute("currentDay"));
+            showDailyReportForm.setMonth((String) request.getSession().getAttribute("currentMonth"));
+            showDailyReportForm.setYear((String) request.getSession().getAttribute("currentYear"));
+            showDailyReportForm.setLastday((String) request.getSession().getAttribute("lastDay"));
+            showDailyReportForm.setLastmonth((String) request.getSession().getAttribute("lastMonth"));
+            showDailyReportForm.setLastyear((String) request.getSession().getAttribute("lastYear"));
+            showDailyReportForm.setEmployeeContractId(ec.getId());
+            showDailyReportForm.setView((String) request.getSession().getAttribute("view"));
+            showDailyReportForm.setOrder((String) request.getSession().getAttribute("currentOrder"));
+            showDailyReportForm.setStartdate((String) request.getSession().getAttribute("startdate"));
+            showDailyReportForm.setEnddate((String) request.getSession().getAttribute("enddate"));
+
+            Long currentSuborderId = (Long) request.getSession().getAttribute("currentSuborderId");
+            if (currentSuborderId == null || currentSuborderId == 0) {
+                currentSuborderId = -1L;
+            }
+            showDailyReportForm.setSuborderId(currentSuborderId);
+
+            refreshTimereports(
+                    request,
+                    showDailyReportForm,
+                    customerorderDAO,
+                    timereportDAO,
+                    employeecontractDAO,
+                    suborderDAO,
+                    employeeorderDAO
+            );
+            @SuppressWarnings("unchecked")
+            List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+
+            request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
+            request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+
+            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
+
+            // save values from the data base into form-bean, when working day != null
+            if (workingday != null) {
+
+                //show break time, quitting time and working day ends on the showdailyreport.jsp
+                request.getSession().setAttribute("visibleworkingday", true);
+
+                showDailyReportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
+                showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
+                showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
+                showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+            } else {
+
+                //show�t break time, quitting time and working day ends on the showdailyreport.jsp
+                request.getSession().setAttribute("visibleworkingday", false);
+
+                showDailyReportForm.setSelectedWorkHourBegin(0);
+                showDailyReportForm.setSelectedWorkMinuteBegin(0);
+                showDailyReportForm.setSelectedBreakHour(0);
+                showDailyReportForm.setSelectedBreakMinute(0);
+            }
+
+            request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+
+            //refresh overtime
+            refreshVacationAndOvertime(request, ec);
+
+            return mapping.findForward("success");
+        }
+
+        return mapping.findForward("error");
+    }
+
+    @Override
+    protected boolean isAllowedForRestrictedUsers() {
+        return true;
+    }
+}
