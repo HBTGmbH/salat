@@ -146,7 +146,7 @@
 				<b><bean:message key="main.suborder.sign.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:text property="sign" size="40" maxlength="<%=\"\" + org.tb.GlobalConstants.SUBORDER_SIGN_MAX_LENGTH %>" />
+				<html:text property="sign" size="40" maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.SUBORDER_SIGN_MAX_LENGTH) %>" />
 				<span style="color:red"><html:errors property="sign" /></span>
 				<html:submit onclick="setStoreAction(this.form, 'generateSign')" styleId="button" titleKey="main.suborder.generatesign.text">
 					<bean:message key="main.suborder.generatesign.text" />

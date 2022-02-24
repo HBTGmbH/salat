@@ -747,7 +747,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
         // set current order = all orders
         request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-        request.getSession().setAttribute("currentOrderId", -1);
+        request.getSession().setAttribute("currentOrderId", -1L);
         return forward;
     }
 

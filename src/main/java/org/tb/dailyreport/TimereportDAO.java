@@ -16,17 +16,15 @@ import javax.persistence.criteria.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.bdom.Customerorder_;
-import org.tb.bdom.Employee_;
-import org.tb.bdom.Employeecontract_;
-import org.tb.bdom.Employeeorder_;
-import org.tb.bdom.Referenceday_;
-import org.tb.bdom.Suborder_;
-import org.tb.bdom.Timereport_;
 import org.tb.employee.Employee;
+import org.tb.employee.Employee_;
 import org.tb.employee.Employeecontract;
+import org.tb.employee.Employeecontract_;
 import org.tb.order.Customerorder;
+import org.tb.order.Customerorder_;
+import org.tb.order.Employeeorder_;
 import org.tb.order.Suborder;
+import org.tb.order.Suborder_;
 
 @Component
 @RequiredArgsConstructor

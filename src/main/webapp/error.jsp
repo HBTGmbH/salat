@@ -1,5 +1,5 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib prefix="html" uri="http://jakarta.apache.org/struts/tags-html-el" %>
+<%@ taglib prefix="html" uri="http://struts.apache.org/tags-html-el" %>
 
 <html:html>
 <head>

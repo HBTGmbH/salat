@@ -42,7 +42,7 @@
 				key="main.employee.firstname.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="firstname" size="30"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.EMPLOYEE_FIRSTNAME_MAX_LENGTH %>" />
+				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_FIRSTNAME_MAX_LENGTH) %>" />
 			<span style="color:red"><html:errors property="firstname" /></span></td>
 		</tr>
 
@@ -51,7 +51,7 @@
 				key="main.employee.lastname.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="lastname" size="30"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.EMPLOYEE_LASTNAME_MAX_LENGTH %>" />
+				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_LASTNAME_MAX_LENGTH) %>" />
 			<span style="color:red"><html:errors property="lastname" /></span></td>
 		</tr>
 
@@ -60,7 +60,7 @@
 				key="main.employee.sign.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="sign" size="30"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.EMPLOYEE_SIGN_MAX_LENGTH %>" />
+				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_SIGN_MAX_LENGTH) %>" />
 			<span style="color:red"><html:errors property="sign" /></span></td>
 		</tr>
 
@@ -69,7 +69,7 @@
 				key="main.employee.loginname.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="loginname" size="30"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.EMPLOYEE_LOGINNAME_MAX_LENGTH %>" />
+				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_LOGINNAME_MAX_LENGTH) %>" />
 			<span style="color:red"><html:errors property="loginname" /></span></td>
 		</tr>
 
