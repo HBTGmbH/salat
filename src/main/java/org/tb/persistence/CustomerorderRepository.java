@@ -23,7 +23,7 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
 
   @Query("""
       select c from Customerorder c where (c.hide is null or c.hide = false)
-      or (c.fromLocalDate <= :date and (c.untilLocalDate is null or c.untilLocalDate >= :date))
+      or (c.fromDate <= :date and (c.untilDate is null or c.untilDate >= :date))
       order by c.sign
   """)
   List<Customerorder> findAllValidAtAndNotHidden(LocalDate date);

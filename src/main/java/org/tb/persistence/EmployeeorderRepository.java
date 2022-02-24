@@ -14,8 +14,8 @@ public interface EmployeeorderRepository extends CrudRepository<Employeeorder, L
 
   @Query("select eo from Employeeorder eo where "
       + "eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId and "
-      + "(eo.untilLocalDate >= :date or eo.untilLocalDate is null) "
-      + "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromLocalDate asc")
+      + "(eo.untilDate >= :date or eo.untilDate is null) "
+      + "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
   List<Employeeorder> findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(long employeeContractId, long suborderId, LocalDate date);
 
   List<Employeeorder> findAllByEmployeecontractId(long employeeContractId);

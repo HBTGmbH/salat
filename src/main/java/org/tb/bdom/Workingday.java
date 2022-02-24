@@ -1,7 +1,6 @@
 package org.tb.bdom;
 
 import static java.lang.Math.max;
-import static javax.persistence.TemporalType.DATE;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -9,7 +8,6 @@ import java.util.Objects;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Fetch;
@@ -27,7 +25,6 @@ public class Workingday extends AuditedEntity implements Serializable {
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
     private Employeecontract employeecontract;
 
-    @Temporal(DATE)
     private LocalDate refday;
     private int Starttimehour;
     private int Starttimeminute;

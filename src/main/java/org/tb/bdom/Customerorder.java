@@ -1,6 +1,5 @@
 package org.tb.bdom;
 
-import static javax.persistence.TemporalType.DATE;
 import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
@@ -10,7 +9,6 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -77,9 +75,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
      * Orderer of Customer
      */
     private String order_customer;
-    @Temporal(DATE)
     private LocalDate fromDate;
-    @Temporal(DATE)
     private LocalDate untilDate;
     private String sign;
     private String description;
