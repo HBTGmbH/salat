@@ -20,8 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.bdom.Customerorder_;
-import org.tb.bdom.Suborder_;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.Employee;
 

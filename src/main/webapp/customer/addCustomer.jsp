@@ -42,7 +42,7 @@
 				key="main.customer.name.text" /></b></td>
 			<td align="left" class="noBborderStyle"><html:text
 				property="name" size="40"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.CUSTOMERNAME_MAX_LENGTH %>" />
+				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.CUSTOMERNAME_MAX_LENGTH) %>" />
 			<span style="color:red"><html:errors property="name" /></span></td>
 		</tr>
 		<tr>

@@ -10,7 +10,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.tb.bdom.Employee_;
 
 @Component
 @RequiredArgsConstructor

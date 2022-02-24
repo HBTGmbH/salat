@@ -19,15 +19,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.bdom.Customer_;
-import org.tb.bdom.Customerorder_;
-import org.tb.bdom.Employee_;
-import org.tb.bdom.Employeecontract_;
-import org.tb.bdom.Employeeorder_;
-import org.tb.bdom.Suborder_;
 import org.tb.common.util.DateUtils;
+import org.tb.customer.Customer_;
 import org.tb.employee.Employee;
+import org.tb.employee.Employee_;
 import org.tb.employee.Employeecontract;
+import org.tb.employee.Employeecontract_;
 
 /**
  * DAO class for 'Customerorder'

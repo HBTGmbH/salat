@@ -68,7 +68,7 @@
 				key="main.settings.password.new.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:password
 				property="newpassword" size="30"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH %>" />
+				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH) %>" />
 			<span style="color:red"><html:errors property="newpassword" /></span></td>
 		</tr>
 		<tr>
@@ -76,7 +76,7 @@
 				key="main.settings.password.confirm.text" />:</b></td>
 			<td align="left" class="noBborderStyle"><html:password
 				property="confirmpassword" size="30"
-				maxlength="<%=\"\" + org.tb.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH %>" />
+				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH) %>" />
 			<span style="color:red"><html:errors
 				property="confirmpassword" /></span></td>
 		</tr>
