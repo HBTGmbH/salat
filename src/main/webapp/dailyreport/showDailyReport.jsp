@@ -552,9 +552,6 @@
 						</th>
 					</c:otherwise>
 				</c:choose>
-				<th align="center">
-					<b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2" /></b>
-				</th>
 			</tr>
 		
 			<tr>
@@ -596,9 +593,6 @@
 				</th>
 				<th align="center" title="<bean:message key='main.headlinedescription.dailyoverview.hours.text' />">
 					<b><bean:message key="main.timereport.monthly.hours.text" /></b>
-				</th>
-				<th align="center" title="<bean:message	key="main.headlinedescription.dailyoverview.costs.text" />">
-					<b><bean:message key="main.timereport.monthly.costs.text" /></b>
 				</th>
 				<th align="center" title="<bean:message	key='main.headlinedescription.dailyoverview.saveeditdelete.text' />">
 					<b><bean:message key="main.timereport.monthly.saveeditdelete.text" /></b>
@@ -777,11 +771,7 @@
 									<html:options collection="minutes" property="value"	labelProperty="label" />
 								</html:select>
 							</td>
-		
-							<!-- Kosten -->
-							<td align="center">
-								<html:text property="costs" size="4" value="${timereport.costs}" />
-							</td>
+
 							<!-- Bearbeiten -->
 							<td align="center">
 								<html:image	onclick="confirmSave(this.form, ${timereport.id})" src="../images/Save.gif" alt="Speichern" title="Speichern" />
@@ -817,10 +807,6 @@
 							<td align="center" nowrap>
 								<c:if test='${timereport.durationhours < 10}'>0</c:if><c:out value="${timereport.durationhours}" />:<c:if test='${timereport.durationminutes < 10}'>0</c:if><c:out value="${timereport.durationminutes}" />
 							</td>
-							<!-- Kosten -->
-							<td align="center">
-								<fmt:formatNumber value="${timereport.costs}" minFractionDigits="2" />
-							</td>
 							<!-- Bearbeiten -->
 							<td align="center">
 								<img width="12px" height="12px" src="../images/verbot.gif" alt="Delete Timereport" />
@@ -849,9 +835,6 @@
 						</th>
 					</c:otherwise>
 				</c:choose>
-				<th align="center">
-					<b><fmt:formatNumber value="${dailycosts}" minFractionDigits="2" /></b>
-				</th>
 				<td class="massedit invisible" align="center">
 					<html:form action="/ShowDailyReport" style="margin-bottom:0">
 						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
@@ -897,7 +880,6 @@
 			<b>
 				<html:errors property="trSuborderId" footer="<br>" />
 				<html:errors property="selectedHourEnd" footer="<br>" /> 
-				<html:errors property="costs" footer="<br>" />
 				<html:errors property="status" footer="<br>" />
 				<br>
 				<html:errors property="comment" footer="<br>" />

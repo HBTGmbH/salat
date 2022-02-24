@@ -19,6 +19,5 @@ public class Booking {
     private String suborderSign;
     private String orderSign;
     private String date;
-    private double costs;
 
 }

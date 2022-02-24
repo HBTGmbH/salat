@@ -38,7 +38,6 @@ public class ShowDailyReportForm extends ActionForm {
     private String order;
     private String suborder;
     private String status;
-    private Double costs;
     private Boolean training;
     private Boolean showOvertimeUntil;
     private int selectedHourBegin;

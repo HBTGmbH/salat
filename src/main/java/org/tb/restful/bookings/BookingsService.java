@@ -67,7 +67,6 @@ public class BookingsService {
             .map(tr ->
                 Booking.builder()
                     .employeeorderId(tr.getEmployeeorder().getId())
-                    .costs(tr.getCosts())
                     .date(DateUtils.format(tr.getReferenceday().getRefdate()))
                     .orderLabel(tr.getSuborder().getCustomerorder().getShortdescription())
                     .suborderLabel(tr.getSuborder().getDescription())
@@ -104,7 +103,6 @@ public class BookingsService {
                 booking.isTraining(),
                 booking.getHours(),
                 booking.getMinutes(),
-                0.0,
                 1
             );
         } catch (ParseException e) {

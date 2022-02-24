@@ -15,7 +15,6 @@ public class GlobalConstants {
 
     public static final double MAX_HOURS_PER_DAY = 10.0;
 
-    public static final double MAX_COSTS = 1.0E8;
     public static final double MAX_HOURLY_RATE = 1000.0;
     public static final double MAX_DEBITHOURS = 10000.0;
     public static final double MAX_OVERTIME = 10000.0;

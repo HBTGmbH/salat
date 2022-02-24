@@ -56,7 +56,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             tr.setTaskdescription(reportForm.getComment());
             tr.setDurationhours(reportForm.getSelectedDurationHour());
             tr.setDurationminutes(reportForm.getSelectedDurationMinute());
-            tr.setCosts(reportForm.getCosts());
             tr.setTraining(reportForm.getTraining());
 
             try {
@@ -69,8 +68,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                     reportForm.getComment(),
                     Boolean.TRUE.equals(reportForm.getTraining()),
                     reportForm.getSelectedDurationHour(),
-                    reportForm.getSelectedDurationMinute(),
-                    reportForm.getCosts()
+                    reportForm.getSelectedDurationMinute()
                 );
             } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                 addToErrors(request, e.getErrorCode());
@@ -111,7 +109,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
 
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
 
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday().getRefdate(), ec.getId());
 

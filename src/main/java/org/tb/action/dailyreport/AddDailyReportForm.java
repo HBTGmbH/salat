@@ -30,7 +30,6 @@ public class AddDailyReportForm extends ActionForm {
     private String suborder;
     private String status;
     private Double hours;
-    private Double costs;
     private Boolean training;
     private int selectedHourBegin;
     private int selectedMinuteBegin;
@@ -99,7 +98,6 @@ public class AddDailyReportForm extends ActionForm {
         selectedMinuteEnd = 0;
         referenceday = DateUtils.format(DateUtils.today());
         hours = 8.0;
-        costs = 0.0;
         training = false;
         numberOfSerialDays = 0;
     }

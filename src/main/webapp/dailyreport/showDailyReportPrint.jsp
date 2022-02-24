@@ -117,10 +117,6 @@
 			title="<bean:message
 			key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
 			key="main.timereport.monthly.hours.text" /></b></th>
-		<th class="matrix" align="center"
-			title="<bean:message
-			key="main.headlinedescription.dailyoverview.costs.text" />"><b><bean:message
-			key="main.timereport.monthly.costs.text" /></b></th>
 	</tr>
 
 	<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
@@ -179,9 +175,6 @@
 					value="${timereport.durationhours}" />:<c:if test="${!(timereport.durationminutes eq '0')}"><c:out
 					value="${timereport.durationminutes}" /></c:if><c:if test="${timereport.durationminutes eq '0'}">00</c:if></td>
 
-				<!-- Kosten -->
-				<td class="matrix" align="center"><fmt:formatNumber value="${timereport.costs}" minFractionDigits="2"/></td>
-
 			</tr>
 
 		</html:form>
@@ -200,8 +193,6 @@
 					value="${labortime}"></c:out></b></th>
 			</c:otherwise>
 		</c:choose>
-		<th class="matrix" align="center"><b>
-		<fmt:formatNumber minFractionDigits="2"	value="${dailycosts}"/></b></th>
 	</tr>
 </table>
 </body>

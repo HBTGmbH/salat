@@ -276,7 +276,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
             request.getSession().setAttribute("reportForm", reportForm);
             return mapping.findForward("success");
         }
@@ -292,7 +291,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
             request.getSession().setAttribute("reportForm", reportForm);
             return mapping.findForward("success");
         }
@@ -473,7 +471,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
                 request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
                 request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-                request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
 
                 if (reportForm.getEmployeeContractId() == -1) {
                     request.getSession().setAttribute("currentEmployeeId", -1);
@@ -657,7 +654,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             String laborTimeString = timereportHelper.calculateLaborTime(timereports);
             request.getSession().setAttribute("labortime", laborTimeString);
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
             // refresh workingday
             Workingday workingday;
             try {
@@ -737,7 +733,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             String laborTimeString = timereportHelper.calculateLaborTime(timereports);
             request.getSession().setAttribute("labortime", laborTimeString);
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
             if (request.getSession().getAttribute("timereportComparator") != null) {
                 @SuppressWarnings("unchecked")
                 Comparator<Timereport> comparator = (Comparator<Timereport>) request.getSession().getAttribute("timereportComparator");
