@@ -70,7 +70,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                     Boolean.TRUE.equals(reportForm.getTraining()),
                     reportForm.getSelectedDurationHour(),
                     reportForm.getSelectedDurationMinute(),
-                    tr.getSortofreport(),
                     reportForm.getCosts()
                 );
             } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {

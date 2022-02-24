@@ -1,6 +1,5 @@
 package org.tb.action.auth;
 
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.GlobalConstants.SYSTEM_SIGN;
 import static org.tb.util.DateUtils.formatYear;
 import static org.tb.util.DateUtils.today;
@@ -85,7 +84,6 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             request.getSession().setAttribute("loginEmployee", loginEmployee);
             String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
             request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
-            request.getSession().setAttribute("report", SORT_OF_REPORT_WORK);
             request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
             request.getSession().setAttribute("employeeAuthorized", employeeHasAuthorization(loginEmployee));
 

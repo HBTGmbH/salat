@@ -1,0 +1,154 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: kr
+      comment: Remove not used tables
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: monthlyreport
+      changes:
+        - dropColumn:
+            tableName: employee
+            columnName: jira_oauthtoken
+        - dropColumn:
+            tableName: timereport
+            columnName: TICKET_ID
+        - dropTable:
+            tableName: monthlyreport
+            cascadeConstraints: true
+        - dropTable:
+            tableName: projectid
+            cascadeConstraints: true
+        - dropTable:
+            tableName: referenceday_timereport
+            cascadeConstraints: true
+        - dropTable:
+            tableName: ticket
+            cascadeConstraints: true
+        - dropTable:
+            tableName: worklog
+            cascadeConstraints: true
+        - dropTable:
+            tableName: worklogmemory
+            cascadeConstraints: true
+  - changeSet:
+      id: 2
+      author: kr
+      comment: Add audit columns to align all entities
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: referenceday
+              columnName: createdby
+      changes:
+        - addColumn:
+            tableName: referenceday
+            columns:
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+        - addColumn:
+            tableName: vacation
+            columns:
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+        - addColumn:
+            tableName: workingday
+            columns:
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+        - addColumn:
+            tableName: publicholiday
+            columns:
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+        - addColumn:
+            tableName: overtime
+            columns:
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+  - changeSet:
+      id: 3
+      author: kr
+      comment: Drop not used table invoice
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: invoice
+      changes:
+        - dropTable:
+            cascadeConstraints: true
+            tableName: invoice
+  - changeSet:
+      id: 4
+      author: kr
+      comment: #37 remove sort of work
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: timereport
+            columnName: sortofreport
+      changes:
+        -  dropColumn:
+             tableName:  timereport
+             columnName:  sortofreport

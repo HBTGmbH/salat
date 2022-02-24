@@ -1,11 +1,10 @@
 package org.tb.action.dailyreport;
 
 import static org.tb.GlobalConstants.MINUTE_INCREMENT;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.util.DateUtils.today;
 
-import java.util.ArrayList;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -80,7 +79,6 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set attributes to be analyzed by target jsp
         request.getSession().setAttribute("orders", orders);
-        request.getSession().setAttribute("report", SORT_OF_REPORT_WORK);
         request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
         request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());
         request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());

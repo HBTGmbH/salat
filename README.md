@@ -52,3 +52,6 @@ IDE (auch mit Maven Integration) diese Datei nicht erzeugt. Bei IntelliJ IDEA be
 Datei nicht erzeugt.
 
 (by Klaus)
+
+#### Samlung DB-Änderungen
+alter table timereport drop column sortofreport;

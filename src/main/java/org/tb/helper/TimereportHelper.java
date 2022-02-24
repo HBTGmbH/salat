@@ -3,7 +3,6 @@ package org.tb.helper;
 import static java.util.Calendar.SATURDAY;
 import static java.util.Calendar.SUNDAY;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.util.DateUtils.today;
 
 import java.time.LocalDate;
@@ -128,47 +127,16 @@ public class TimereportHelper {
             errors.add("referenceday", new ActionMessage("form.timereport.error.date.invalidyear"));
         }
 
-        // check if report types for one day are unique and if there is no time overlap with other work reports
-        List<Timereport> dailyReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(timereport.getEmployeecontract().getId(), theNewDate);
-        if (dailyReports != null && dailyReports.size() > 0) {
-            for (Timereport tr : dailyReports) {
-                if (tr.getId() != timereport.getId()) { // do not check report against itself in case of edit
-                    // uniqueness of types
-                    // actually not checked - e.g., combination of sickness and work on ONE day should be valid
-                    // but: vacation or sickness MUST occur only once per day
-                    if (!timereport.getSortofreport().equals(SORT_OF_REPORT_WORK) && !tr.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
-                        errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.special.alreadyexisting"));
-                        break;
-                    }
-                }
-            }
-        }
-
         // if sort of report is not 'W' reports are only allowed for workdays
         // e.g., vacation cannot be set on a Sunday
-        if (!timereport.getSortofreport().equals(SORT_OF_REPORT_WORK)) {
-            boolean valid = DateUtils.isWeekday(theNewDate);
+        boolean valid = DateUtils.isWeekday(theNewDate);
 
-            // checks for public holidays
-            if (valid) {
-                Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(theNewDate);
-                if (publicHoliday.isPresent()) {
-                    valid = false;
-                }
+        // checks for public holidays
+        if (valid) {
+            Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(theNewDate);
+            if (publicHoliday.isPresent()) {
+                valid = false;
             }
-
-            if (!valid) {
-                errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.invalidday"));
-            } else {
-                // for new report, check if other reports already exist for selected day
-                if (timereport.getId() == -1) {
-                    List<Timereport> allReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(timereport.getEmployeecontract().getId(), theNewDate);
-                    if (allReports.size() > 0) {
-                        errors.add("sortOfReport", new ActionMessage("form.timereport.error.sortofreport.othersexisting"));
-                    }
-                }
-            }
-
         }
 
         // check date vs release status

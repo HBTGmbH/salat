@@ -1,7 +1,6 @@
 package org.tb.action.dailyreport;
 
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.util.DateUtils.today;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,7 +25,6 @@ public class AddDailyReportForm extends ActionForm {
 
     private long id;
     private String referenceday;
-    private String sortOfReport;
     private String comment;
     private String order;
     private String suborder;
@@ -93,7 +91,6 @@ public class AddDailyReportForm extends ActionForm {
         order = "";
         suborder = "";
         status = "";
-        sortOfReport = SORT_OF_REPORT_WORK;
         selectedHourDuration = 0;
         selectedMinuteDuration = 0;
         selectedHourBegin = 0;

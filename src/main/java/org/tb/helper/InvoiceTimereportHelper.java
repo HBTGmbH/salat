@@ -4,9 +4,11 @@ import static org.tb.util.TimeFormatUtils.timeFormatHoursAndMinutes;
 
 import java.time.LocalDateTime;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.tb.bdom.*;
-
-import java.time.LocalDate;
+import org.tb.bdom.Employeecontract;
+import org.tb.bdom.Employeeorder;
+import org.tb.bdom.Referenceday;
+import org.tb.bdom.Suborder;
+import org.tb.bdom.Timereport;
 
 public class InvoiceTimereportHelper {
 
@@ -100,10 +102,6 @@ public class InvoiceTimereportHelper {
 
     public int getSequencenumber() {
         return timereport.getSequencenumber();
-    }
-
-    public String getSortofreport() {
-        return timereport.getSortofreport();
     }
 
     public String getStatus() {

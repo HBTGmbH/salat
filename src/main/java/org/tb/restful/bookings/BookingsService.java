@@ -6,7 +6,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -105,7 +104,6 @@ public class BookingsService {
                 booking.isTraining(),
                 booking.getHours(),
                 booking.getMinutes(),
-                SORT_OF_REPORT_WORK,
                 0.0,
                 1
             );

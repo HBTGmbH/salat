@@ -577,11 +577,6 @@
 						<c:out value="${timereportSortModus}" />
 					</c:if>
 				</th>
-				<%--
-						<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.sortofreport.text' />">
-							<b><bean:message key="main.timereport.monthly.sortofreport.text" /></b>
-						</th>
-				--%>
 				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.customerorder.text' />">
 					<html:link href="../do/ShowDailyReport?task=sort&column=order">
 						<b><bean:message key="main.timereport.monthly.customerorder.text" /></b>
