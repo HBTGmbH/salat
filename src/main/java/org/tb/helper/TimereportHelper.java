@@ -158,7 +158,7 @@ public class TimereportHelper {
         }
 
         if (!loginEmployeeContract.getEmployee().getSign().equals("adm")) {
-            if (authorized && loginEmployeeContract.getId() != timereport.getEmployeecontract().getId()) {
+            if (authorized && !Objects.equals(loginEmployeeContract.getId(), timereport.getEmployeecontract().getId())) {
                 if (releaseDate.isBefore(theNewDate) || firstday) {
                     errors.add("release", new ActionMessage("form.timereport.error.not.released"));
                 }

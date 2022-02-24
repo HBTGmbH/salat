@@ -3,6 +3,7 @@ package org.tb.action.dailyreport;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +55,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         // make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
         // if the current suborder is overtime compensation.
         if (request.getSession().getAttribute("overtimeCompensation") == null
-                || request.getSession().getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+            || !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
             request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
         }
 

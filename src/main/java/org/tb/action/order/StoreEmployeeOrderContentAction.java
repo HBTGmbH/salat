@@ -410,12 +410,12 @@ public class StoreEmployeeOrderContentAction extends EmployeeOrderContentAction<
                     contentForm.getContact_tech_customer())) {
                 return false;
             }
-            if (eoContent.getContactContractHbt().getId() != contentForm
-                    .getContact_contract_hbt_emp_id()) {
+            if (!Objects.equals(eoContent.getContactContractHbt().getId(), contentForm
+                .getContact_contract_hbt_emp_id())) {
                 return false;
             }
-            if (eoContent.getContactTechHbt().getId() != contentForm
-                    .getContact_tech_hbt_emp_id()) {
+            if (!Objects.equals(eoContent.getContactTechHbt().getId(), contentForm
+                .getContact_tech_hbt_emp_id())) {
                 return false;
             }
             if (!eoContent.getDescription()

@@ -5,6 +5,7 @@ import static org.tb.util.DateUtils.parse;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -118,7 +119,7 @@ public class SuborderHelper {
             reportForm.setSelectedHourDuration(0);
             reportForm.setSelectedMinuteDuration(0);
             if (session.getAttribute("overtimeCompensation") == null ||
-                    session.getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+                    !Objects.equals(session.getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 session.setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
             }
         } else {

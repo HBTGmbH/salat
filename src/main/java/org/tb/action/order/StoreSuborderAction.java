@@ -148,11 +148,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 soId = -1L;
             }
             if (suborders != null) {
-                if (tempSubOrder != null && (tempOrder == null || tempSubOrder.getCustomerorder().getId() == tempOrder.getId())) {
+                if (tempSubOrder != null && (tempOrder == null || Objects.equals(
+                    tempSubOrder.getCustomerorder().getId(), tempOrder.getId()))) {
                     int version = 1;
                     DecimalFormat df = new DecimalFormat("00");
                     for (Suborder suborder : suborders) {
-                        if (suborder.getParentorder() != null && suborder.getParentorder().getId() == tempSubOrder.getId()) {
+                        if (suborder.getParentorder() != null && Objects.equals(suborder.getParentorder().getId(),
+                            tempSubOrder.getId())) {
                             if (suborder.getSign().equals(tempSubOrder.getSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
                                 version++;
                             }
@@ -163,7 +165,8 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                     int version = 1;
                     DecimalFormat df = new DecimalFormat("00");
                     for (Suborder suborder : suborders) {
-                        if (suborder.getParentorder() == null && suborder.getCustomerorder().getId() == tempOrder.getId()) {
+                        if (suborder.getParentorder() == null && Objects.equals(suborder.getCustomerorder().getId(),
+                            tempOrder.getId())) {
                             if (suborder.getSign().equals(tempOrder.getSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
                                 version++;
                             }
@@ -265,8 +268,8 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 so = suborderDAO.getSuborderById(soId);
 
                 if (so.getSuborders() != null
-                        && !so.getSuborders().isEmpty()
-                        && so.getCustomerorder().getId() != customerorder.getId()) {
+                    && !so.getSuborders().isEmpty()
+                    && !Objects.equals(so.getCustomerorder().getId(), customerorder.getId())) {
                     // set customerorder in all descendants					
                     so.setCustomerOrderForAllDescendants(customerorder, suborderDAO, loginEmployee, so);
                 }
