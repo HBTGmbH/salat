@@ -15,7 +15,7 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
   @Query("""
     select distinct so from Suborder so
     inner join fetch so.customerorder co
-    where so.standard is true and (so.untilLocalDate is null or so.untilLocalDate >= :refDate)
+    where so.standard is true and (so.untilDate is null or so.untilDate >= :refDate)
     order by co.sign asc, so.sign asc
   """)
   List<Suborder> findAllStandardSubordersByUntilDateGreaterThanEqual(LocalDate refDate);
@@ -34,7 +34,7 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
     inner join eo.suborder so
     inner join fetch so.customerorder co
     where eo.employeecontract.id = :employeecontractId
-    and eo.fromLocalDate <= :date and (eo.untilLocalDate is null or eo.untilLocalDate >= :date)
+    and eo.fromDate <= :date and (eo.untilDate is null or eo.untilDate >= :date)
     order by co.sign asc, so.sign asc
   """)
   List<Suborder> findAllByEmployeecontractIdAndEmployeeorderValidAt(long employeecontractId, LocalDate date);
@@ -45,7 +45,7 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
     inner join fetch so.customerorder co
     where eo.employeecontract.id = :employeecontractId
     and so.customerorder.id = :customerorderId
-    and eo.fromLocalDate <= :date and (eo.untilLocalDate is null or eo.untilLocalDate >= :date)
+    and eo.fromDate <= :date and (eo.untilDate is null or eo.untilDate >= :date)
     order by co.sign asc, so.sign asc
   """)
   List<Suborder> findAllByEmployeecontractIdAndCustomerorderIdAndEmployeeorderValidAt(long employeecontractId, long customerorderId, LocalDate date);

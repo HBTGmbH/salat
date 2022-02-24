@@ -703,12 +703,11 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             // orders, suborders...
             LocalDate dt = today();
             // get day string (e.g., '31') from java.time.LocalDate
-            String dayString = dt.toString().substring(8, 10);
+            String dayString = formatDayOfMonth(dt);
             // get month string (e.g., 'Jan') from java.time.LocalDate
-            String monthString = dt.toString().substring(4, 7);
+            String monthString = formatMonth(dt);
             // get year string (e.g., '2006') from java.time.LocalDate
-            int length = dt.toString().length();
-            String yearString = dt.toString().substring(length - 4, length);
+            String yearString = formatYear(dt);
             request.getSession().setAttribute("currentDay", dayString);
             request.getSession().setAttribute("currentMonth", monthString);
             request.getSession().setAttribute("currentYear", yearString);

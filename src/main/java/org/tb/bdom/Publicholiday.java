@@ -1,21 +1,13 @@
 package org.tb.bdom;
 
-import static javax.persistence.TemporalType.DATE;
-
+import java.io.Serializable;
 import java.time.LocalDate;
-import javax.persistence.Temporal;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import javax.persistence.Entity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import java.io.Serializable;
 
 @Getter
 @Setter
@@ -26,7 +18,6 @@ public class Publicholiday extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Temporal(DATE)
     private LocalDate refdate;
     private String name;
 

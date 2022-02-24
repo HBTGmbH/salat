@@ -15,6 +15,9 @@ import static java.util.Calendar.SUNDAY;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SUBORDER_INVOICE_YES;
 import static org.tb.util.DateUtils.format;
+import static org.tb.util.DateUtils.formatDayOfMonth;
+import static org.tb.util.DateUtils.formatMonth;
+import static org.tb.util.DateUtils.formatYear;
 import static org.tb.util.DateUtils.getDateAsStringArray;
 import static org.tb.util.DateUtils.getDateFormStrings;
 import static org.tb.util.DateUtils.today;
@@ -558,12 +561,11 @@ public class MatrixHelper {
             // orders, suborders...
             LocalDate dt = DateUtils.today();
             // get day string (e.g., '31') from java.time.LocalDate
-            String dayString = dt.toString().substring(8, 10);
+            String dayString = formatDayOfMonth(dt);
             // get month string (e.g., 'Jan') from java.time.LocalDate
-            String monthString = dt.toString().substring(4, 7);
+            String monthString = formatMonth(dt);
             // get year string (e.g., '2006') from java.time.LocalDate
-            int length = dt.toString().length();
-            String yearString = dt.toString().substring(length - 4, length);
+            String yearString = formatYear(dt);
 
             if (currentMonth != null && NUMBER_TO_SHORT_MONTH.containsKey(currentMonth)) {
                 currentMonth = NUMBER_TO_SHORT_MONTH.get(currentMonth);

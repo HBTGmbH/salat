@@ -1,7 +1,5 @@
 package org.tb.bdom;
 
-import static javax.persistence.TemporalType.DATE;
-
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -14,7 +12,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -83,9 +80,7 @@ public class Suborder extends AuditedEntity implements Serializable {
     private Double hourly_rate;
     private Boolean standard;
     private Boolean commentnecessary;
-    @Temporal(DATE)
     private LocalDate fromDate;
-    @Temporal(DATE)
     private LocalDate untilDate;
     private Double debithours;
     private Byte debithoursunit;

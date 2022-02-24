@@ -1,6 +1,5 @@
 package org.tb.bdom;
 
-import static javax.persistence.TemporalType.DATE;
 import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
@@ -11,7 +10,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
-import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -37,18 +35,13 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Cascade(CascadeType.SAVE_UPDATE)
     private Employee supervisor;
 
-    @Temporal(DATE)
     private LocalDate validFrom;
-    @Temporal(DATE)
     private LocalDate validUntil;
     private Double dailyWorkingTime;
     private Boolean freelancer;
     private String taskDescription;
-    @Temporal(DATE)
     private LocalDate fixedUntil;
-    @Temporal(DATE)
     private LocalDate reportAcceptanceDate;
-    @Temporal(DATE)
     private LocalDate reportReleaseDate;
     private Boolean hide;
     /**

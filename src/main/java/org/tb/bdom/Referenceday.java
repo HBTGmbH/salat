@@ -1,13 +1,10 @@
 package org.tb.bdom;
 
-import static javax.persistence.TemporalType.DATE;
-
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import javax.persistence.Entity;
-import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -21,7 +18,6 @@ public class Referenceday extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Temporal(DATE)
     private LocalDate refdate;
 
     private Boolean workingday;

@@ -39,13 +39,13 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   @Query("select t from Timereport t "
       + "where t.employeecontract.id = :employeecontractId "
-      + "and (t.referenceday.refdate < t.employeeorder.fromLocalDate "
-      + "or t.employeeorder.untilLocalDate is not null and t.referenceday.refdate > t.employeeorder.untilDate) "
+      + "and (t.referenceday.refdate < t.employeeorder.fromDate "
+      + "or t.employeeorder.untilDate is not null and t.referenceday.refdate > t.employeeorder.untilDate) "
       + "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingEmployeeorderValidity(long employeecontractId);
 
   @Query("select t from Timereport t where t.employeecontract.id = :employeecontractId "
-      + "and t.referenceday.refdate >= :releaseLocalDate "
+      + "and t.referenceday.refdate >= :releaseDate "
       + "and t.durationminutes = 0 and t.durationhours = 0 "
       + "order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc")
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, LocalDate releaseDate);

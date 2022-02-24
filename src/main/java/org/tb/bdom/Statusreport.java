@@ -1,19 +1,21 @@
 package org.tb.bdom;
 
-import static javax.persistence.TemporalType.DATE;
-import static javax.persistence.TemporalType.TIMESTAMP;
-
+import java.io.Serializable;
 import java.time.LocalDate;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.*;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.*;
-import java.io.Serializable;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 @Getter
 @Setter
@@ -52,9 +54,7 @@ public class Statusreport extends AuditedEntity implements Serializable {
 
     private Byte sort;
     private Byte phase;
-    @Temporal(DATE)
     private LocalDate fromdate;
-    @Temporal(DATE)
     private LocalDate untildate;
     private String allocator;
     private Byte trend;
@@ -128,9 +128,7 @@ public class Statusreport extends AuditedEntity implements Serializable {
     @Lob
     @Column(columnDefinition = "text")
     private String notes;
-    @Temporal(TIMESTAMP)
     private LocalDate released;
-    @Temporal(TIMESTAMP)
     private LocalDate accepted;
 
     public Byte getOverallStatus() {

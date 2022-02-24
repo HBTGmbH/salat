@@ -1,6 +1,5 @@
 package org.tb.bdom;
 
-import static javax.persistence.TemporalType.DATE;
 import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
@@ -9,7 +8,6 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
-import javax.persistence.Temporal;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -52,9 +50,7 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     private String sign;
     private Double debithours;
     private Byte debithoursunit;
-    @Temporal(DATE)
     private LocalDate fromDate;
-    @Temporal(DATE)
     private LocalDate untilDate;
 
     public boolean getOpenEnd() {
