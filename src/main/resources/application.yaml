@@ -12,6 +12,7 @@ spring:
       connection-timeout: 1000
       minimum-idle: 0
       maximum-pool-size: 20
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     generate-ddl: false
     show-sql: false
@@ -24,6 +25,7 @@ spring:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
       ddl-auto: none
     open-in-view: true
+    database: mysql
 management:
   endpoints:
     web:

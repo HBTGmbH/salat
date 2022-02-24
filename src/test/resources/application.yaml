@@ -10,3 +10,4 @@ spring:
     properties:
       hibernate:
         format_sql: true
+    database: h2
