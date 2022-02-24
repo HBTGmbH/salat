@@ -40,10 +40,6 @@ public class InvoiceTimereportHelper {
         return timereport.getAcceptedby();
     }
 
-    public Double getCosts() {
-        return timereport.getCosts();
-    }
-
     public LocalDateTime getCreated() {
         return timereport.getCreated();
     }

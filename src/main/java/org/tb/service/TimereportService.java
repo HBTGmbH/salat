@@ -7,7 +7,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 import static org.tb.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
-import static org.tb.ErrorCode.TR_COSTS_INVALID;
 import static org.tb.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static org.tb.ErrorCode.TR_DURATION_INVALID;
 import static org.tb.ErrorCode.TR_DURATION_MINUTES_INVALID;
@@ -30,7 +29,6 @@ import static org.tb.GlobalConstants.COMMENT_MAX_LENGTH;
 import static org.tb.GlobalConstants.DEBITHOURS_UNIT_MONTH;
 import static org.tb.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
 import static org.tb.GlobalConstants.DEBITHOURS_UNIT_YEAR;
-import static org.tb.GlobalConstants.MAX_COSTS;
 import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
@@ -91,12 +89,12 @@ public class TimereportService {
   private OvertimeDAO overtimeDAO;
 
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, double costs, int numberOfSerialDays)
+      boolean trainingFlag, int durationHours, int durationMinutes, int numberOfSerialDays)
   throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     Timereport timereportTemplate = new Timereport();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, costs, timereportTemplate);
+        durationMinutes, timereportTemplate);
 
     // create a timereport for every serial day requested - in most cases this is 1
     List<Timereport> timereportsToSave = new ArrayList<>();
@@ -114,12 +112,12 @@ public class TimereportService {
   }
 
   public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, double costs)
+      boolean trainingFlag, int durationHours, int durationMinutes)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportDAO.getTimereportById(timereportId);
     DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
-        durationMinutes, costs, timereport);
+        durationMinutes, timereport);
     checkAndSaveTimereports(authorizedUser, Collections.singletonList(timereport));
   }
 
@@ -139,8 +137,7 @@ public class TimereportService {
         timereport.getTaskdescription(),
         TRUE.equals(timereport.getTraining()),
         timereport.getDurationhours(),
-        timereport.getDurationminutes(),
-        timereport.getCosts());
+        timereport.getDurationminutes());
   }
 
   /**
@@ -236,7 +233,7 @@ public class TimereportService {
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, int durationHours, int durationMinutes, double costs,
+      boolean trainingFlag, int durationHours, int durationMinutes,
       Timereport timereport) {
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
     DataValidation.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
@@ -247,7 +244,6 @@ public class TimereportService {
     DataValidation.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
     DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
-    DataValidation.isInRange(costs, 0.0, MAX_COSTS, TR_COSTS_INVALID);
 
     timereport.setEmployeecontract(employeecontract);
     timereport.setEmployeeorder(employeeorder);
@@ -257,7 +253,6 @@ public class TimereportService {
     timereport.setTraining(trainingFlag);
     timereport.setDurationhours(durationHours);
     timereport.setDurationminutes(durationMinutes);
-    timereport.setCosts(costs);
   }
 
   private void setSequencenumber(Timereport timereport) {

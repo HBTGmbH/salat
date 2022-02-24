@@ -24,7 +24,6 @@ public class UpdateDailyReportForm extends ActionForm {
     private String order;
     private String suborder;
     private String status;
-    private Double costs;
     private Boolean training;
     private int selectedDurationHour;
     private int selectedDurationMinute;

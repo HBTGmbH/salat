@@ -317,18 +317,6 @@
 				 </span>
 			</td>
 		</tr>
-
-		<tr>
-			<td align="left" class="noBborderStyle">
-				<b><bean:message key="main.timereport.costs.text" />:</b>
-			</td>
-			<td align="left" class="noBborderStyle">
-				<html:text property="costs" size="10" maxlength="8" />
-				<span style="color:red">
-					<html:errors property="costs" />
-				</span>
-			 </td>
-		</tr>
 			
 		<%-- Training Flag --%>
 		<tr>

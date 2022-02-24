@@ -175,7 +175,6 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         }
 
         // init the rest of the form
-        form.setCosts(0d);
         form.setTraining(false);
         form.setComment("");
 

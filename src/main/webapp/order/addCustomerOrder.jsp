@@ -350,10 +350,6 @@
 				title="<bean:message
 				key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
 				key="main.timereport.monthly.hours.text" /></b></th>
-			<th align="center"
-				title="<bean:message
-				key="main.headlinedescription.dailyoverview.costs.text" />"><b><bean:message
-				key="main.timereport.monthly.costs.text" /></b></th>
 		</tr>
 		
 		<c:forEach var="timereport" items="${timereportsOutOfRange}" varStatus="rowID">
@@ -497,8 +493,6 @@
 				test="${timereport.durationminutes < 10}">0</c:if><c:out
 				value="${timereport.durationminutes}" /></td>
 
-			<!-- Kosten -->
-			<td align="center"><c:out value="${timereport.costs}" /></td>
 			</tr>
 		</c:forEach>
 	</table>

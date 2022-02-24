@@ -75,7 +75,6 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
             List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-            request.getSession().setAttribute("dailycosts", timereportHelper.calculateDailyCosts(timereports));
             //refresh workingday
             Workingday workingday;
             try {

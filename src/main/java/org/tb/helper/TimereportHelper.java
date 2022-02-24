@@ -334,17 +334,6 @@ public class TimereportHelper {
     }
 
     /**
-     * @return Returns the sum of the costs of all given timereports.
-     */
-    public double calculateDailyCosts(List<Timereport> timereports) {
-        Double dailycosts = 0.0;
-        for (Timereport timereport : timereports) {
-            dailycosts += timereport.getCosts();
-        }
-        return dailycosts;
-    }
-
-    /**
      * @return Returns a string with the calculated quitting time (hh:mm). If something fails (may happen for missing workingday, etc.), "n/a" will be returned.
      */
     public String calculateQuittingTime(Workingday workingday, HttpServletRequest request, String timeSwitch) {

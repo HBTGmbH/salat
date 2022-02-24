@@ -156,7 +156,6 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
             reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
             reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());
         }
-        reportForm.setCosts(tr.getCosts());
         reportForm.setStatus(tr.getStatus());
         reportForm.setComment(tr.getTaskdescription());
         reportForm.setTraining(tr.getTraining());

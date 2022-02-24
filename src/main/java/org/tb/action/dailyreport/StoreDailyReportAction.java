@@ -250,8 +250,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         form.getComment(),
                         Boolean.TRUE.equals(form.getTraining()),
                         form.getSelectedHourDuration(),
-                        form.getSelectedMinuteDuration(),
-                        form.getCosts()
+                        form.getSelectedMinuteDuration()
                     );
                 } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                     addToErrors(request, e.getErrorCode());
@@ -268,7 +267,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         Boolean.TRUE.equals(form.getTraining()),
                         form.getSelectedHourDuration(),
                         form.getSelectedMinuteDuration(),
-                        form.getCosts(),
                         Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
                     );
                 } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
@@ -350,7 +348,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 request.getSession().setAttribute("labortime", ""); // TODO ? timereportHelper.calculateLaborTime(reports));
                 request.getSession().setAttribute("maxlabortime", false); // TODO ? timereportHelper.checkLaborTimeMaximum(existingTimereports, GlobalConstants.MAX_HOURS_PER_DAY));
-                request.getSession().setAttribute("dailycosts", 0.0); // TODO ? timereportHelper.calculateDailyCosts(existingTimereports));
                 request.getSession().setAttribute("quittingtime", ""); // TODO ? timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
 
                 //calculate Working Day End
@@ -391,9 +388,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 LocalDate selectedDate = getSelectedDateFromRequest(request);
 
-                //deleting comment, costs and days of serialBookings in the addDailyReport-Form
+                //deleting comment and days of serialBookings in the addDailyReport-Form
                 form.setComment("");
-                form.setCosts(0.0);
                 form.setNumberOfSerialDays(0);
 
                 if (workingday != null) {
@@ -534,7 +530,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             request.getSession().setAttribute("isEdit", false);
             reportForm.setSelectedHourDuration(timereport.getDurationhours());
             reportForm.setSelectedMinuteDuration(timereport.getDurationminutes());
-            reportForm.setCosts(timereport.getCosts());
             reportForm.setTraining(timereport.getTraining());
             reportForm.setComment(timereport.getTaskdescription());
         } else {

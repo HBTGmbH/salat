@@ -55,7 +55,6 @@ public class Timereport extends AuditedEntity implements Serializable {
     @Column(columnDefinition = "text")
     private String taskdescription;
     private String status;
-    private Double costs;
     private Boolean training; // TODO switch to boolean
     private int sequencenumber;
     /**
@@ -71,7 +70,6 @@ public class Timereport extends AuditedEntity implements Serializable {
 
     public Timereport getTwin() {
         Timereport timereport = new Timereport();
-        timereport.setCosts(costs);
         timereport.setDurationhours(durationhours);
         timereport.setDurationminutes(durationminutes);
         timereport.setEmployeecontract(employeecontract);
