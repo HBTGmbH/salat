@@ -4,7 +4,7 @@ import static javax.persistence.TemporalType.DATE;
 import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -78,9 +78,9 @@ public class Customerorder extends AuditedEntity implements Serializable {
      */
     private String order_customer;
     @Temporal(DATE)
-    private Date fromDate;
+    private LocalDate fromDate;
     @Temporal(DATE)
-    private Date untilDate;
+    private LocalDate untilDate;
     private String sign;
     private String description;
     private String shortdescription;
@@ -102,8 +102,8 @@ public class Customerorder extends AuditedEntity implements Serializable {
     }
 
     public String getFormattedUntilDate() {
-        Date untilDate = getUntilDate();
-        if (untilDate != null) {
+        LocalDate untilLocalDate = getUntilDate();
+        if (untilLocalDate != null) {
             return format(untilDate);
         }
         return "";
@@ -143,11 +143,11 @@ public class Customerorder extends AuditedEntity implements Serializable {
      * @return Returns true, if the {@link Customerorder} is currently valid, false otherwise.
      */
     public boolean getCurrentlyValid() {
-        return isValidAt(DateUtils.now());
+        return isValidAt(DateUtils.today());
     }
 
-    public boolean isValidAt(java.util.Date date) {
-        return !date.before(getFromDate()) && (getUntilDate() == null || !date.after(getUntilDate()));
+    public boolean isValidAt(LocalDate date) {
+        return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
     }
 
 }

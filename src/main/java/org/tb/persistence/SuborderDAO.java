@@ -6,7 +6,7 @@ import static org.springframework.data.domain.Sort.Direction.ASC;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -77,11 +77,11 @@ public class SuborderDAO {
      * @param date the date to check validity against
      * @return a distinct list of matching {@link Suborder}s
      */
-    public List<Suborder> getSubordersByEmployeeContractIdWithValidEmployeeOrders(long employeecontractId, Date date) {
+    public List<Suborder> getSubordersByEmployeeContractIdWithValidEmployeeOrders(long employeecontractId, LocalDate date) {
         return suborderRepository.findAllByEmployeecontractIdAndEmployeeorderValidAt(employeecontractId, date);
     }
 
-    public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, Date date) {
+    public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
         return suborderRepository.findAllByEmployeecontractIdAndCustomerorderIdAndEmployeeorderValidAt(employeecontractId, customerorderId, date);
     }
 
@@ -90,7 +90,7 @@ public class SuborderDAO {
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean onlyValid) {
         if (onlyValid) {
-            return getSubordersByCustomerorderId(customerorderId, DateUtils.now());
+            return getSubordersByCustomerorderId(customerorderId, DateUtils.today());
         } else {
             var order = new Order(ASC, Suborder_.SIGN);
             return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.by(order));
@@ -100,7 +100,7 @@ public class SuborderDAO {
     /**
      * Gets a list of Suborders by customer order id.
      */
-    public List<Suborder> getSubordersByCustomerorderId(long customerorderId, Date date) {
+    public List<Suborder> getSubordersByCustomerorderId(long customerorderId, LocalDate date) {
         var order = new Order(ASC, Suborder_.SIGN);
         return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.by(order)).stream()
             .filter(s -> s.isValidAt(date))
@@ -114,7 +114,7 @@ public class SuborderDAO {
      */
     public List<Suborder> getSuborders(boolean onlyValid) {
         if (onlyValid) {
-            return getSuborders(DateUtils.now());
+            return getSuborders(DateUtils.today());
         } else {
             return StreamSupport.stream(suborderRepository.findAll().spliterator(), false)
                 .sorted(comparing(Suborder::getSign))
@@ -125,7 +125,7 @@ public class SuborderDAO {
     /**
      * Get a list of all Suborders ordered by their sign.
      */
-    public List<Suborder> getSuborders(Date date) {
+    public List<Suborder> getSuborders(LocalDate date) {
         return StreamSupport.stream(suborderRepository.findAll().spliterator(), false)
             .filter(s -> s.isValidAt(date))
             .sorted(comparing(Suborder::getSign))
@@ -133,7 +133,7 @@ public class SuborderDAO {
     }
 
     private Specification<Suborder> showOnlyValid() {
-        Date now = DateUtils.now();
+        LocalDate now = DateUtils.today();
         return (root, query, builder) -> {
             var fromDateLess = builder.lessThanOrEqualTo(root.get(Suborder_.fromDate), now);
             var untilDateNullOrGreater = builder.or(

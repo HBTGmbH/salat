@@ -5,7 +5,7 @@ import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 
 import java.io.IOException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -64,14 +64,14 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
             String datum = which.equals("until") ? coForm.getValidUntil() : coForm.getValidFrom();
 
-            Date newValue;
+            LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, coForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                newValue = DateUtils.parse(datum, today());
+                newValue = DateUtils.parseOrDefault(datum, today());
                 newValue = addDays(newValue, 1);
             } else {
                 newValue = today();
@@ -108,13 +108,13 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                 coId = Long.parseLong(request.getSession().getAttribute("coId").toString());
             }
 
-            Date untilDate;
+            LocalDate untilDate;
             if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
-                untilDate = parse(coForm.getValidUntil(), (Date)null);
+                untilDate = DateUtils.parseOrNull(coForm.getValidUntil());
             } else {
                 untilDate = null;
             }
-            Date fromDate = parse(coForm.getValidFrom(), (Date)null);
+            LocalDate fromDate = DateUtils.parseOrNull(coForm.getValidFrom());
 
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
@@ -123,20 +123,20 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             if (suborders != null && !suborders.isEmpty()) {
                 for (Suborder so : suborders) {
                     boolean suborderchanged = false;
-                    if (so.getFromDate().before(fromDate)) {
+                    if (so.getFromDate().isBefore(fromDate)) {
                         so.setFromDate(fromDate);
                         suborderchanged = true;
                     }
-                    if (so.getUntilDate() != null && so.getUntilDate().before(fromDate)) {
+                    if (so.getUntilDate() != null && so.getUntilDate().isBefore(fromDate)) {
                         so.setUntilDate(fromDate);
                         suborderchanged = true;
                     }
                     if (untilDate != null) {
-                        if (so.getFromDate().after(untilDate)) {
+                        if (so.getFromDate().isAfter(untilDate)) {
                             so.setFromDate(untilDate);
                             suborderchanged = true;
                         }
-                        if (so.getUntilDate() == null || so.getUntilDate().after(untilDate)) {
+                        if (so.getUntilDate() == null || so.getUntilDate().isAfter(untilDate)) {
                             so.setUntilDate(untilDate);
                             suborderchanged = true;
                         }
@@ -151,20 +151,20 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                         if (employeeorders != null && !employeeorders.isEmpty()) {
                             for (Employeeorder employeeorder : employeeorders) {
                                 boolean changed = false;
-                                if (employeeorder.getFromDate().before(so.getFromDate())) {
+                                if (employeeorder.getFromDate().isBefore(so.getFromDate())) {
                                     employeeorder.setFromDate(so.getFromDate());
                                     changed = true;
                                 }
-                                if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().before(so.getFromDate())) {
+                                if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(so.getFromDate())) {
                                     employeeorder.setUntilDate(so.getFromDate());
                                     changed = true;
                                 }
                                 if (so.getUntilDate() != null) {
-                                    if (employeeorder.getFromDate().after(so.getUntilDate())) {
+                                    if (employeeorder.getFromDate().isAfter(so.getUntilDate())) {
                                         employeeorder.setFromDate(so.getUntilDate());
                                         changed = true;
                                     }
-                                    if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().after(so.getUntilDate())) {
+                                    if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(so.getUntilDate())) {
                                         employeeorder.setUntilDate(so.getUntilDate());
                                         changed = true;
                                     }
@@ -419,10 +419,10 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
         }
 
         // check, if dates fit to existing timereports
-        java.util.Date fromDate = parse(coForm.getValidFrom(), e -> {
+        LocalDate fromDate = parse(coForm.getValidFrom(), e -> {
             throw new RuntimeException(e);
         });
-        java.util.Date untilDate = null;
+        LocalDate untilDate = null;
         if(coForm.getValidUntil() != null && !coForm.getValidUntil().trim().isEmpty()) {
             untilDate = parse(coForm.getValidUntil(), e -> {
                 throw new RuntimeException(e);

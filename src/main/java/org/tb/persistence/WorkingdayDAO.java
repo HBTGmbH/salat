@@ -1,6 +1,6 @@
 package org.tb.persistence;
 
-import java.util.Date;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.bdom.Workingday;
@@ -11,7 +11,7 @@ public class WorkingdayDAO {
 
     private final WorkingdayRepository workingdayRepository;
 
-    public Workingday getWorkingdayByDateAndEmployeeContractId(Date refdate, long employeeContractId) {
+    public Workingday getWorkingdayByDateAndEmployeeContractId(LocalDate refdate, long employeeContractId) {
         return workingdayRepository.findByRefdayAndEmployeecontractId(refdate, employeeContractId).orElse(null);
     }
 

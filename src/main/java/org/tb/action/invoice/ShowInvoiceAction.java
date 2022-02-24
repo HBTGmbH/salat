@@ -6,7 +6,7 @@ import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,8 +77,8 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             List<Suborder> suborderList;
             Customerorder customerOrder;
             List<Suborder> suborderListTemp = new LinkedList<>();
-            Date dateFirst;
-            Date dateLast;
+            LocalDate dateFirst;
+            LocalDate dateLast;
             if (!showInvoiceForm.getOrder().equals("CHOOSE ORDER")) {
                 if (selectedView.equals(GlobalConstants.VIEW_MONTHLY) || selectedView.equals(GlobalConstants.VIEW_WEEKLY)) {
                     // generate dates for monthly view mode
@@ -104,7 +104,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     }
                     suborderList.sort(SubOrderComparator.INSTANCE);
                     // remove suborders that are not valid sometime between dateFirst and dateLast
-                    suborderList.removeIf(so -> so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst));
+                    suborderList.removeIf(so -> so.getFromDate().isAfter(dateLast) || so.getUntilDate() != null && so.getUntilDate().isBefore(dateFirst));
                 } else if (selectedView.equals(GlobalConstants.VIEW_CUSTOM)) {
                     // generate dates for a period of time in custom view mode
                     try {
@@ -131,7 +131,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                         suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
                     // remove suborders that are not valid sometime between dateFirst and dateLast
-                    suborderList.removeIf(so -> so.getFromDate().after(dateLast) || so.getUntilDate() != null && so.getUntilDate().before(dateFirst));
+                    suborderList.removeIf(so -> so.getFromDate().isAfter(dateLast) || so.getUntilDate() != null && so.getUntilDate().isBefore(dateFirst));
                     suborderList.sort(SubOrderComparator.INSTANCE);
                 } else {
                     throw new RuntimeException("no view type selected");
@@ -345,7 +345,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             // selected view and selected dates
             if (showInvoiceForm.getFromDay() == null || showInvoiceForm.getFromMonth() == null || showInvoiceForm.getFromYear() == null) {
                 // set standard dates and view
-                Date today = DateUtils.today();
+                LocalDate today = DateUtils.today();
                 showInvoiceForm.setFromDay("01");
                 showInvoiceForm.setFromMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setFromYear(DateUtils.getYearString(today));
@@ -377,7 +377,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         return mapping.findForward("success");
     }
 
-    private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderHelper> invoiceSuborderViewHelperList, Date dateFirst, Date dateLast,
+    private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderHelper> invoiceSuborderViewHelperList, LocalDate dateFirst, LocalDate dateLast,
                                   ShowInvoiceForm invoiceForm) {
         List<String> suborderIdList = new ArrayList<>(suborderList.size());
         List<String> timereportIdList = new ArrayList<>();

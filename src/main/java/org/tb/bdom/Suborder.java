@@ -3,7 +3,7 @@ package org.tb.bdom;
 import static javax.persistence.TemporalType.DATE;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -84,9 +84,9 @@ public class Suborder extends AuditedEntity implements Serializable {
     private Boolean standard;
     private Boolean commentnecessary;
     @Temporal(DATE)
-    private Date fromDate;
+    private LocalDate fromDate;
     @Temporal(DATE)
-    private Date untilDate;
+    private LocalDate untilDate;
     private Double debithours;
     private Byte debithoursunit;
     /**
@@ -148,7 +148,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         return shortdescription;
     }
 
-    public Date getFromDate() {
+    public LocalDate getFromDate() {
         if (fromDate == null) {
             if (parentorder != null) {
                 return parentorder.getFromDate();
@@ -177,7 +177,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         return getUntilDate() == null;
     }
 
-    public Date getUntilDate() {
+    public LocalDate getUntilDate() {
         if (untilDate == null) {
             if (parentorder != null) {
                 return parentorder.getUntilDate();
@@ -188,7 +188,7 @@ public class Suborder extends AuditedEntity implements Serializable {
     }
 
     public String getFormattedUntilDate() {
-        Date untilDate = getUntilDate();
+        LocalDate untilDate = getUntilDate();
         if (untilDate != null) {
             return DateUtils.format(untilDate);
         }
@@ -201,8 +201,8 @@ public class Suborder extends AuditedEntity implements Serializable {
 
     public String getSignAndDescriptionWithExpirationDate() {
         String result = getSign() + " - " + getShortdescription();
-        Date from = getFromDate();
-        Date until = getUntilDate();
+        LocalDate from = getFromDate();
+        LocalDate until = getUntilDate();
         if (from != null && until != null) {
             result += " (" + DateUtils.format(from) + " - " + DateUtils.format(until) + ")";
         }
@@ -213,12 +213,12 @@ public class Suborder extends AuditedEntity implements Serializable {
      * @return Returns true, if the {@link Suborder} is currently valid, false otherwise.
      */
     public boolean getCurrentlyValid() {
-        java.util.Date now = new java.util.Date();
+        java.time.LocalDate now = DateUtils.today();
         return isValidAt(now);
     }
 
-    public boolean isValidAt(java.util.Date date) {
-        return !date.before(getFromDate()) && (getUntilDate() == null || !date.after(getUntilDate()));
+    public boolean isValidAt(LocalDate date) {
+        return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
     }
 
     /**
@@ -231,17 +231,17 @@ public class Suborder extends AuditedEntity implements Serializable {
      */
     public boolean getTimePeriodFitsToUpperElement() {
         if (parentorder != null) {
-            return !this.getFromDate().before(parentorder.getFromDate())
+            return !this.getFromDate().isBefore(parentorder.getFromDate())
                     && (parentorder.getUntilDate() == null
                     || this.getUntilDate() != null
                     && parentorder.getUntilDate() != null
-                    && !this.getUntilDate().after(parentorder.getUntilDate()));
+                    && !this.getUntilDate().isAfter(parentorder.getUntilDate()));
         } else {
-            return !this.getFromDate().before(customerorder.getFromDate())
+            return !this.getFromDate().isBefore(customerorder.getFromDate())
                     && (customerorder.getUntilDate() == null
                     || this.getUntilDate() != null
                     && customerorder.getUntilDate() != null
-                    && !this.getUntilDate().after(customerorder.getUntilDate()));
+                    && !this.getUntilDate().isAfter(customerorder.getUntilDate()));
         }
     }
 
@@ -249,9 +249,9 @@ public class Suborder extends AuditedEntity implements Serializable {
      * @return Returns true, if the valitidy period fits to the validity period of the customer order
      */
     public boolean validityPeriodFitsToCustomerOrder() {
-        return !getFromDate().before(getCustomerorder().getFromDate()) &&
+        return !getFromDate().isBefore(getCustomerorder().getFromDate()) &&
                 (getCustomerorder().getUntilDate() == null ||
-                        getUntilDate() != null && !getUntilDate().after(getCustomerorder().getUntilDate()));
+                        getUntilDate() != null && !getUntilDate().isAfter(getCustomerorder().getUntilDate()));
     }
 
     public String getInvoiceString() {
@@ -283,11 +283,11 @@ public class Suborder extends AuditedEntity implements Serializable {
     /**
      * Gets all {@link Timereport}s associated to the {@link Suborder} or his children, that are invalid for the given dates.
      */
-    public List<Timereport> getAllTimeReportsInvalidForDates(Date begin, Date end, TimereportDAO timereportDAO) {
+    public List<Timereport> getAllTimeReportsInvalidForDates(LocalDate begin, LocalDate end, TimereportDAO timereportDAO) {
         /* build up result list */
         final List<Timereport> allInvalidTimeReports = new LinkedList<Timereport>();
-        final Date visitorBeginDate = begin;
-        final Date visitorEndDate = end;
+        final LocalDate visitorBeginDate = begin;
+        final LocalDate visitorEndDate = end;
         final TimereportDAO visitorTimereportDAO = timereportDAO;
 
         /* create visitor to collect suborders */
@@ -353,7 +353,7 @@ public class Suborder extends AuditedEntity implements Serializable {
 
         // set attrib values in copy
         copy.setCommentnecessary(commentnecessary);
-        copy.setCreated(new java.util.Date());
+        copy.setCreated(DateUtils.now());
         copy.setCreatedby(creator + "_treecopy");
         copy.setCurrency(currency);
         copy.setCustomerorder(customerorder);

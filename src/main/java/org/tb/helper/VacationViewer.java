@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpSession;
 import org.tb.bdom.Employeecontract;
@@ -116,7 +116,7 @@ public class VacationViewer implements Serializable {
      */
     public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO) {
 
-        Date today = today();
+        LocalDate today = today();
 
         List<VacationViewer> vacations = new ArrayList<VacationViewer>();
 

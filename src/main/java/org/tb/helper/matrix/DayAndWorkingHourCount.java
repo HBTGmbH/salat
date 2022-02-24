@@ -4,7 +4,7 @@ import static org.tb.util.TimeFormatUtils.timeFormatHours;
 
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Data
 public class DayAndWorkingHourCount {

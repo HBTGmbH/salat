@@ -5,7 +5,7 @@ import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.util.DateUtils.today;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -62,7 +62,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         }
 
         // get selected date for new report
-        Date selectedDate = getSelectedDateFromRequest(request);
+        LocalDate selectedDate = getSelectedDateFromRequest(request);
 
         Employeecontract matchingEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), selectedDate);
         if (matchingEC != null) {
@@ -97,7 +97,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         }
 
         // workingday should only be available for today
-        Date today = DateUtils.today();
+        LocalDate today = DateUtils.today();
         if (!selectedDate.equals(today)) {
             workingDayIsAvailable = false;
         }

@@ -4,7 +4,7 @@ import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
 
 import java.util.Collections;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +36,7 @@ public class EmployeecontractDAO {
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
      */
-    public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, Date date) {
+    public Employeecontract getEmployeeContractByEmployeeIdAndDate(long employeeId, LocalDate date) {
         return employeecontractRepository.findByEmployeeIdAndValidAt(employeeId, date).orElse(null);
     }
 
@@ -88,12 +88,12 @@ public class EmployeecontractDAO {
      * @return List<Employeecontract>
      */
     public List<Employeecontract> getTeamContracts(long supervisorId) {
-        Date now = DateUtils.now();
+        LocalDate now = DateUtils.today();
         return employeecontractRepository.findAllSupervisedValidAt(supervisorId, now);
     }
 
     private Specification<Employeecontract> showOnlyValid() {
-        Date now = DateUtils.now();
+        LocalDate now = DateUtils.today();
         return (root, query, builder) -> {
             var fromDateLess = builder.lessThanOrEqualTo(root.get(Employeecontract_.validFrom), now);
             var untilDateNullOrGreater = builder.or(
@@ -150,7 +150,7 @@ public class EmployeecontractDAO {
      * @return List<Employeecontract>
      */
     public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
-        return employeecontractRepository.findAllValidAtAndNotHidden(DateUtils.now()).stream()
+        return employeecontractRepository.findAllValidAtAndNotHidden(DateUtils.today()).stream()
             .sorted(comparing((Employeecontract a) -> a.getEmployee().getSign().toLowerCase())
                 .thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());

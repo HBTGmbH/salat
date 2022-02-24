@@ -6,7 +6,7 @@ import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -44,14 +44,14 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
 
             String datum = which.equals("until") ? reportForm.getValidUntil() : reportForm.getValidFrom();
 
-            Date newValue;
+            LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, reportForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                newValue = parse(datum, today());
+                newValue = DateUtils.parseOrDefault(datum, today());
                 newValue = addDays(newValue, 1);
             } else {
                 newValue = today();
@@ -149,7 +149,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                 Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
                 currentReport.setAcceptedby(employeeDAO.getEmployeeById(loginEmployee.getId()));
-                currentReport.setAccepted(DateUtils.now());
+                currentReport.setAccepted(DateUtils.today());
 
                 statusReportDAO.save(currentReport, loginEmployee);
 
@@ -234,7 +234,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
 
             // refresh fromdate
             List<Statusreport> existingReports = statusReportDAO.getStatusReportsByCustomerOrderId(selectedCustomerOrder.getId());
-            Date fromDate = selectedCustomerOrder.getFromDate();
+            LocalDate fromDate = selectedCustomerOrder.getFromDate();
             if (existingReports != null && !existingReports.isEmpty()) {
                 Statusreport lastKnownReport = existingReports.get(existingReports.size() - 1);
 
@@ -382,8 +382,8 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
         currentReport.setRecipient(employeeDAO.getEmployeeById(reportForm.getRecipientId()));
 
         // get dates from validate later
-        Date reportFromDate = parse(reportForm.getValidFrom());
-        Date reportUntilDate = parse(reportForm.getValidUntil());
+        LocalDate reportFromDate = parse(reportForm.getValidFrom());
+        LocalDate reportUntilDate = parse(reportForm.getValidUntil());
         currentReport.setFromdate(reportFromDate);
         currentReport.setUntildate(reportUntilDate);
 
@@ -512,20 +512,20 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
 
         // check dates
         String fromDateString = reportForm.getValidFrom();
-        java.util.Date fromDate = null;
+        LocalDate fromDate = null;
         try {
             fromDate = parse(fromDateString);
         } catch (java.text.ParseException exception) {
             errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.invalid.text"));
         }
         String untilDateString = reportForm.getValidUntil();
-        java.util.Date untilDate = null;
+        LocalDate untilDate = null;
         try {
             untilDate = parse(untilDateString);
         } catch (java.text.ParseException exception) {
             errors.add("untildate", new ActionMessage("form.statusreport.error.untildate.invalid.text"));
         }
-        if (fromDate != null && untilDate != null && !fromDate.before(untilDate)) {
+        if (fromDate != null && untilDate != null && !fromDate.isBefore(untilDate)) {
             errors.add("fromdate", new ActionMessage("form.statusreport.error.fromdate.notbefore.untildate.text"));
         }
 

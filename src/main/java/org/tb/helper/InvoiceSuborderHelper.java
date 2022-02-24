@@ -5,19 +5,20 @@ import static org.tb.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.util.TimeFormatUtils.timeFormatHours;
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.time.LocalDateTime;
 import org.tb.bdom.*;
 import org.tb.persistence.SuborderDAO;
 import org.tb.persistence.TimereportDAO;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 public class InvoiceSuborderHelper extends Suborder {
 
     private static final long serialVersionUID = 1L;
     private final TimereportDAO timereportDAO;
-    private final Date fromDate;
-    private final Date untilDate;
+    private final LocalDate fromDate;
+    private final LocalDate untilDate;
     private final boolean invoicebox;
     private Suborder suborder;
     private List<InvoiceTimereportHelper> invoiceTimereportViewHelperList;
@@ -25,7 +26,7 @@ public class InvoiceSuborderHelper extends Suborder {
     private int layer;
     private InvoiceSuborderActualHoursVisitor visitor = null;
 
-    public InvoiceSuborderHelper(Suborder suborder, TimereportDAO timereportDAO, Date fromDate, Date untilDate, boolean invoicebox) {
+    public InvoiceSuborderHelper(Suborder suborder, TimereportDAO timereportDAO, LocalDate fromDate, LocalDate untilDate, boolean invoicebox) {
         if (suborder == null) {
             throw new IllegalArgumentException("suborder must not be null!");
         }
@@ -132,7 +133,7 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getAllChildren();
     }
 
-    public List<Timereport> getAllTimeReportsInvalidForDates(Date begin, Date end, TimereportDAO timereportDAO) {
+    public List<Timereport> getAllTimeReportsInvalidForDates(LocalDate begin, LocalDate end, TimereportDAO timereportDAO) {
         return suborder.getAllTimeReportsInvalidForDates(begin, end, timereportDAO);
     }
 
@@ -144,11 +145,11 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setCommentnecessary(commentnecessary);
     }
 
-    public Date getCreated() {
+    public LocalDateTime getCreated() {
         return suborder.getCreated();
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(LocalDateTime created) {
         suborder.setCreated(created);
     }
 
@@ -230,11 +231,11 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setEmployeeorders(employeeorders);
     }
 
-    public Date getFromDate() {
+    public LocalDate getFromDate() {
         return suborder.getFromDate();
     }
 
-    public void setFromDate(Date fromDate) {
+    public void setFromDate(LocalDate fromDate) {
         suborder.setFromDate(fromDate);
     }
 
@@ -278,11 +279,11 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getInvoiceString();
     }
 
-    public Date getLastupdate() {
+    public LocalDateTime getLastupdate() {
         return suborder.getLastupdate();
     }
 
-    public void setLastupdate(Date lastupdate) {
+    public void setLastupdate(LocalDateTime lastupdate) {
         suborder.setLastupdate(lastupdate);
     }
 
@@ -358,11 +359,11 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setTimereports(timereports);
     }
 
-    public Date getUntilDate() {
+    public LocalDate getUntilDate() {
         return suborder.getUntilDate();
     }
 
-    public void setUntilDate(Date untilDate) {
+    public void setUntilDate(LocalDate untilDate) {
         suborder.setUntilDate(untilDate);
     }
 

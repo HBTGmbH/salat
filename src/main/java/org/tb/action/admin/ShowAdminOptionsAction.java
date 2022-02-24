@@ -1,10 +1,7 @@
 package org.tb.action.admin;
 
-import static org.tb.util.DateUtils.today;
-
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 import org.tb.action.LoginRequiredAction;
 import org.tb.bdom.Employee;
 import org.tb.bdom.Employeeorder;
@@ -38,7 +36,9 @@ public class ShowAdminOptionsAction extends LoginRequiredAction<ShowAdminOptions
         if ((request.getParameter("task") != null)
                 && (request.getParameter("task").equals("SetEmployeeOrderInTimereports"))) {
 
-            Date start = today();
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+
             List<String> problems = new ArrayList<>();
 
             List<Timereport> timereports = Collections.emptyList(); // FIXME is this feature still in use???
@@ -92,13 +92,9 @@ public class ShowAdminOptionsAction extends LoginRequiredAction<ShowAdminOptions
                 }
             }
 
-            Date end = today();
-            long millis = end.getTime() - start.getTime();
-            long sec = millis / 1000;
-            long min = sec / 60;
-            sec = sec % 60;
+            stopWatch.stop();
 
-            request.getSession().setAttribute("setemployeeorderresults", "result:  total reports: " + total + " updated: " + updated + " unassignable: " + unassignable + " unaltered: " + assigned + "    duration: " + min + ":" + sec + " minutes");
+            request.getSession().setAttribute("setemployeeorderresults", "result:  total reports: " + total + " updated: " + updated + " unassignable: " + unassignable + " unaltered: " + assigned + "    duration: " + stopWatch.shortSummary());
             request.getSession().setAttribute("unassignedreports", unassignedTimereports);
             request.getSession().setAttribute("problems", problems);
 

@@ -2,6 +2,7 @@ package org.tb.action.order;
 
 import static org.tb.util.DateUtils.format;
 
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -262,10 +263,10 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
         Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         Suborder suborder = (Suborder) request.getSession().getAttribute("selectedsuborder");
 
-        java.util.Date ecFromDate = null;
-        java.util.Date ecUntilDate = null;
-        java.util.Date soFromDate = null;
-        java.util.Date soUntilDate = null;
+        LocalDate ecFromDate = null;
+        LocalDate ecUntilDate = null;
+        LocalDate soFromDate = null;
+        LocalDate soUntilDate = null;
 
         if (employeecontract != null) {
             ecFromDate = employeecontract.getValidFrom();
@@ -278,7 +279,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
 
         // set from date
         if (ecFromDate != null && soFromDate != null) {
-            if (ecFromDate.before(soFromDate)) {
+            if (ecFromDate.isBefore(soFromDate)) {
                 employeeOrderForm.setValidFrom(format(soFromDate));
             } else {
                 employeeOrderForm.setValidFrom(format(ecFromDate));
@@ -291,7 +292,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
 
         // set until date
         if (ecUntilDate != null && soUntilDate != null) {
-            if (ecUntilDate.after(soUntilDate)) {
+            if (ecUntilDate.isAfter(soUntilDate)) {
                 employeeOrderForm.setValidUntil(format(soUntilDate));
             } else {
                 employeeOrderForm.setValidUntil(format(ecUntilDate));

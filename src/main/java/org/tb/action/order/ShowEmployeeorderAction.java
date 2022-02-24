@@ -47,32 +47,32 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                     boolean changed = false;
                     // 1) adjust to employeecontract
                     // 1.1) begin
-                    if (employeeorder.getFromDate().before(employeeorder.getEmployeecontract().getValidFrom())) {
+                    if (employeeorder.getFromDate().isBefore(employeeorder.getEmployeecontract().getValidFrom())) {
                         employeeorder.setFromDate(employeeorder.getEmployeecontract().getValidFrom());
                         changed = true;
                     }
                     // 1.2) end
                     if (employeeorder.getEmployeecontract().getValidUntil() != null &&
                             (employeeorder.getUntilDate() == null ||
-                                    employeeorder.getUntilDate().after(employeeorder.getEmployeecontract().getValidUntil()))) {
+                                    employeeorder.getUntilDate().isAfter(employeeorder.getEmployeecontract().getValidUntil()))) {
                         employeeorder.setUntilDate(employeeorder.getEmployeecontract().getValidUntil());
                         changed = true;
                     }
                     // 2) adjust to suborder
                     // 2.1) begin
-                    if (employeeorder.getFromDate().before(employeeorder.getSuborder().getFromDate())) {
+                    if (employeeorder.getFromDate().isBefore(employeeorder.getSuborder().getFromDate())) {
                         employeeorder.setFromDate(employeeorder.getSuborder().getFromDate());
                         changed = true;
                     }
                     // 2.2) end
                     if (employeeorder.getSuborder().getUntilDate() != null &&
                             (employeeorder.getUntilDate() == null ||
-                                    employeeorder.getUntilDate().after(employeeorder.getSuborder().getUntilDate()))) {
+                                    employeeorder.getUntilDate().isAfter(employeeorder.getSuborder().getUntilDate()))) {
                         employeeorder.setUntilDate(employeeorder.getSuborder().getUntilDate());
                         changed = true;
                     }
                     // 3) begin after end now?
-                    if (changed && !employeeorder.getFromDate().after(employeeorder.getUntilDate())) {
+                    if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
                         // 4) timereports out of range?
                         List<Timereport> timereportsInvalidForDates = timereportDAO.
                                 getTimereportsByEmployeeorderIdInvalidForDates(employeeorder.getFromDate(), employeeorder.getUntilDate(), employeeorder.getId());

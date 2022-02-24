@@ -5,7 +5,7 @@ import static org.tb.util.DateUtils.getDateFormStrings;
 import static org.tb.util.DateUtils.today;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -127,8 +127,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 employeecontract);
 
         // date from contract
-        Date releaseDateFromContract = employeecontract.getReportReleaseDate();
-        Date acceptanceDateFromContract = employeecontract
+        LocalDate releaseDateFromContract = employeecontract.getReportReleaseDate();
+        LocalDate acceptanceDateFromContract = employeecontract
                 .getReportAcceptanceDate();
 
         if (releaseDateFromContract == null) {
@@ -157,7 +157,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             request.getSession().setAttribute("releaseYear",
                     releaseForm.getYear());
 
-            Date releaseDate = (Date) request.getSession()
+            LocalDate releaseDate = (LocalDate) request.getSession()
                     .getAttribute("releaseDate");
 
             // set status in timereports
@@ -168,7 +168,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 timereport
                         .setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
                 timereport.setReleasedby(loginEmployee.getSign());
-                timereport.setReleased(new java.util.Date());
+                timereport.setReleased(DateUtils.now());
                 timereportDAO.save(timereport, loginEmployee, false);
             }
             releaseDateFromContract = releaseDate;
@@ -232,14 +232,14 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 return mapping.getInputForward();
             }
 
-            Date acceptanceDate = (Date) request.getSession().getAttribute("acceptanceDate");
+            LocalDate acceptanceDate = (LocalDate) request.getSession().getAttribute("acceptanceDate");
 
             // set status in timereports
             List<Timereport> timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontract.getId(), acceptanceDate);
             for (Timereport timereport : timereports) {
                 timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
                 timereport.setAcceptedby(loginEmployee.getSign());
-                timereport.setAccepted(new java.util.Date());
+                timereport.setAccepted(DateUtils.now());
                 timereportDAO.save(timereport, loginEmployee, false);
             }
             acceptanceDateFromContract = acceptanceDate;
@@ -262,7 +262,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
-            Date reopenDate;
+            LocalDate reopenDate;
 
             reopenDate = getDateFormStrings(releaseForm.getReopenDay(),
                     releaseForm.getReopenMonth(), releaseForm.getReopenYear(),
@@ -279,12 +279,11 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 timereportDAO.save(timereport, loginEmployee, false);
             }
 
-            long timeMillis = reopenDate.getTime();
-            timeMillis -= 12 * 60 * 60 * 1000;
-            reopenDate.setTime(timeMillis);
+            // TODO what happends here?
+            reopenDate = reopenDate.minusDays(1);
             // String newReopenDateString = format.format(sqlReopenDate);
 
-            if (reopenDate.before(releaseDateFromContract)) {
+            if (reopenDate.isBefore(releaseDateFromContract)) {
                 employeecontract.setReportReleaseDate(reopenDate);
                 releaseDateFromContract = reopenDate;
                 String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
@@ -292,7 +291,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 releaseForm.setMonth(releaseDateArray[1]);
                 releaseForm.setYear(releaseDateArray[2]);
             }
-            if (reopenDate.before(acceptanceDateFromContract)) {
+            if (reopenDate.isBefore(acceptanceDateFromContract)) {
                 employeecontract.setReportAcceptanceDate(reopenDate);
                 acceptanceDateFromContract = reopenDate;
                 String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
@@ -340,7 +339,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getDay());
 
-            Date selectedDate = getDateFormStrings("01", releaseForm
+            LocalDate selectedDate = getDateFormStrings("01", releaseForm
                     .getMonth(), releaseForm.getYear(), false);
 
             List<OptionItem> days = getDayList(selectedDate);
@@ -365,7 +364,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getAcceptanceDay());
 
-            Date selectedDate = getDateFormStrings("01", releaseForm
+            LocalDate selectedDate = getDateFormStrings("01", releaseForm
                             .getAcceptanceMonth(), releaseForm.getAcceptanceYear(),
                     false);
 
@@ -390,7 +389,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             int day = Integer.parseInt(releaseForm.getReopenDay());
 
-            Date selectedDate = getDateFormStrings("01", releaseForm
+            LocalDate selectedDate = getDateFormStrings("01", releaseForm
                     .getReopenMonth(), releaseForm.getReopenYear(), false);
 
             List<OptionItem> days = getDayList(selectedDate);
@@ -457,7 +456,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             errors = new ActionMessages();
         }
 
-        Date date = null;
+        LocalDate date = null;
         try {
             date = getDateFormStrings(releaseForm.getDay(), releaseForm
                     .getMonth(), releaseForm.getYear(), false);
@@ -471,14 +470,14 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
         request.getSession().setAttribute("releaseDate", date);
 
-        if (date.before(selectedEmployeecontract.getValidFrom())
+        if (date.isBefore(selectedEmployeecontract.getValidFrom())
                 || selectedEmployeecontract.getValidUntil() != null && date
-                .after(selectedEmployeecontract.getValidUntil())) {
+                .isAfter(selectedEmployeecontract.getValidUntil())) {
             errors.add("releasedate", new ActionMessage(
                     "form.release.error.date.invalid.foremployeecontract"));
         }
 
-        if (date.before(selectedEmployeecontract.getReportReleaseDate())) {
+        if (date.isBefore(selectedEmployeecontract.getReportReleaseDate())) {
             errors.add("releasedate", new ActionMessage(
                     "form.release.error.date.before.stored"));
         }
@@ -498,7 +497,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             errors = new ActionMessages();
         }
 
-        Date date = null;
+        LocalDate date = null;
         try {
             date = getDateFormStrings(releaseForm.getAcceptanceDay(),
                     releaseForm.getAcceptanceMonth(), releaseForm
@@ -513,24 +512,24 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
         request.getSession().setAttribute("acceptanceDate", date);
 
-        if (date.before(selectedEmployeecontract.getValidFrom())
+        if (date.isBefore(selectedEmployeecontract.getValidFrom())
                 || selectedEmployeecontract.getValidUntil() != null && date
-                .after(selectedEmployeecontract.getValidUntil())) {
+                .isAfter(selectedEmployeecontract.getValidUntil())) {
             errors.add("acceptancedate", new ActionMessage(
                     "form.release.error.date.invalid.foremployeecontract"));
         }
 
-        Date releaseDate = selectedEmployeecontract.getReportReleaseDate();
+        LocalDate releaseDate = selectedEmployeecontract.getReportReleaseDate();
         if (releaseDate == null) {
             releaseDate = selectedEmployeecontract.getValidFrom();
         }
 
-        if (date.after(releaseDate)) {
+        if (date.isAfter(releaseDate)) {
             errors.add("acceptancedate", new ActionMessage(
                     "form.release.error.date.before.release"));
         }
 
-        if (date.before(selectedEmployeecontract.getReportAcceptanceDate())) {
+        if (date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
             errors.add("acceptancedate", new ActionMessage(
                     "form.release.error.date.before.stored"));
         }
@@ -552,7 +551,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
      * Returns a list of days as {@link OptionItem}s ("01", "02", "03",...)
      * fitting to the given date (month, year).
      */
-    private List<OptionItem> getDayList(Date date) {
+    private List<OptionItem> getDayList(LocalDate date) {
         int maxDays = DateUtils.getMonthDays(date);
         List<OptionItem> days = new ArrayList<>();
 

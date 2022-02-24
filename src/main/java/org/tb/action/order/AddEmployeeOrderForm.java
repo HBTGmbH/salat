@@ -1,6 +1,6 @@
 package org.tb.action.order;
 
-import java.util.Date;
+import java.time.LocalDate;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
@@ -69,8 +69,8 @@ public class AddEmployeeOrderForm extends ActionForm {
         if (customerorder == null) {
             return;
         }
-        Date coFromDate = customerorder.getFromDate();
-        Date coUntilDate = customerorder.getUntilDate();
+        LocalDate coFromDate = customerorder.getFromDate();
+        LocalDate coUntilDate = customerorder.getUntilDate();
         String coFromDateString = DateUtils.format(coFromDate);
         String coUntilDateString;
         if (coUntilDate != null) {

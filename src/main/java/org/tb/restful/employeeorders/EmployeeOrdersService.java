@@ -5,7 +5,7 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class EmployeeOrdersService {
     @GetMapping(path = "/validOrders", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     public List<EmployeeOrderData> getValidEmployeeOrders(
-        @RequestParam("refDate") Date refDate
+        @RequestParam("refDate") LocalDate refDate
     ) {
         if(!authorizedUser.isAuthenticated()) {
           throw new ResponseStatusException(UNAUTHORIZED);
@@ -58,7 +58,7 @@ public class EmployeeOrdersService {
             refDate
         );
 
-        final Date requestedRefDate = refDate; // make final for stream processing
+        final LocalDate requestedRefDate = refDate; // make final for stream processing
         return suborders.stream()
             .map(s -> {
                 Employeeorder eo = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(

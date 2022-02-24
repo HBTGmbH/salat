@@ -2,10 +2,11 @@ package org.tb.helper;
 
 import static org.tb.util.TimeFormatUtils.timeFormatHoursAndMinutes;
 
+import java.time.LocalDateTime;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.tb.bdom.*;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class InvoiceTimereportHelper {
 
@@ -29,7 +30,7 @@ public class InvoiceTimereportHelper {
         this.visible = visible;
     }
 
-    public Date getAccepted() {
+    public LocalDateTime getAccepted() {
         return timereport.getAccepted();
     }
 
@@ -41,7 +42,7 @@ public class InvoiceTimereportHelper {
         return timereport.getCosts();
     }
 
-    public Date getCreated() {
+    public LocalDateTime getCreated() {
         return timereport.getCreated();
     }
 
@@ -77,7 +78,7 @@ public class InvoiceTimereportHelper {
         return timereport.getId();
     }
 
-    public Date getLastupdate() {
+    public LocalDateTime getLastupdate() {
         return timereport.getLastupdate();
     }
 
@@ -89,7 +90,7 @@ public class InvoiceTimereportHelper {
         return timereport.getReferenceday();
     }
 
-    public Date getReleased() {
+    public LocalDateTime getReleased() {
         return timereport.getReleased();
     }
 

@@ -49,7 +49,7 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,7 +91,7 @@ public class TimereportService {
   private PublicholidayDAO publicholidayDAO;
   private OvertimeDAO overtimeDAO;
 
-  public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
+  public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs, int numberOfSerialDays)
   throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
@@ -114,7 +114,7 @@ public class TimereportService {
     checkAndSaveTimereports(authorizedUser, timereportsToSave);
   }
 
-  public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
+  public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportDAO.getTimereportById(timereportId);
@@ -131,7 +131,7 @@ public class TimereportService {
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportDAO.getTimereportById(timereportId);
     Referenceday referenceday = timereport.getReferenceday();
-    Date shiftedDate = DateUtils.addDays(referenceday.getRefdate(), amountDays);
+    LocalDate shiftedDate = DateUtils.addDays(referenceday.getRefdate(), amountDays);
     updateTimereport(authorizedUser,
         timereport.getId(),
         timereport.getEmployeecontract().getId(),
@@ -160,15 +160,15 @@ public class TimereportService {
         .forEach(timereportDAO::deleteTimereportById);
   }
 
-  public long calculateOvertimeMinutes(Date start, Date end, long employeecontractId, boolean useOverTimeAdjustment) {
+  public long calculateOvertimeMinutes(LocalDate start, LocalDate end, long employeecontractId, boolean useOverTimeAdjustment) {
 
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
 
     // do not consider invalid(outside of the validity of the contract) days
-    Date effectiveStart = max(start, employeecontract.getValidFrom());
-    Date effectiveEnd = min(end, employeecontract.getValidUntil());
+    LocalDate effectiveStart = max(start, employeecontract.getValidFrom());
+    LocalDate effectiveEnd = min(end, employeecontract.getValidUntil());
 
-    if(effectiveStart.after(effectiveEnd)) {
+    if(effectiveStart.isAfter(effectiveEnd)) {
       log.warn("Cannot calculate overtime when start is after end");
       return 0;
     }
@@ -216,11 +216,11 @@ public class TimereportService {
     });
 
     // recompute overtimeStatic and store it in employeecontract if change made before release date
-    Date reportReleaseDate = timereports.get(0).getEmployeecontract().getReportReleaseDate();
-    Optional<Date> match = timereports.stream()
+    LocalDate reportReleaseDate = timereports.get(0).getEmployeecontract().getReportReleaseDate();
+    Optional<LocalDate> match = timereports.stream()
         .map(Timereport::getReferenceday)
         .map(Referenceday::getRefdate)
-        .filter(d -> !d.after(reportReleaseDate))
+        .filter(d -> !d.isAfter(reportReleaseDate))
         .findAny();
     if(match.isPresent()) {
       Employeecontract employeecontract = timereports.get(0).getEmployeecontract();
@@ -237,7 +237,7 @@ public class TimereportService {
     }
   }
 
-  private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, Date referenceDay, String taskDescription,
+  private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, int durationHours, int durationMinutes, String sortOfReport, double costs,
       Timereport timereport) {
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
@@ -279,13 +279,13 @@ public class TimereportService {
   }
 
   private void setStatus(Timereport timereport) {
-    Date acceptanceDate = timereport.getEmployeecontract().getReportAcceptanceDate();
-    Date releaseDate = timereport.getEmployeecontract().getReportReleaseDate();
+    LocalDate acceptanceDate = timereport.getEmployeecontract().getReportAcceptanceDate();
+    LocalDate releaseDate = timereport.getEmployeecontract().getReportReleaseDate();
 
-    if(acceptanceDate != null && !acceptanceDate.before(timereport.getReferenceday().getRefdate())) {
+    if(acceptanceDate != null && !acceptanceDate.isBefore(timereport.getReferenceday().getRefdate())) {
       // timereports created within the period of accepted reports will automatically get the closed status
       timereport.setStatus(TIMEREPORT_STATUS_CLOSED);
-    } else if(releaseDate != null && !releaseDate.before(timereport.getReferenceday().getRefdate())) {
+    } else if(releaseDate != null && !releaseDate.isBefore(timereport.getReferenceday().getRefdate())) {
       // timereports created within the period of released reports will automatically get the committed status
       timereport.setStatus(TIMEREPORT_STATUS_COMMITED);
     } else {
@@ -295,9 +295,9 @@ public class TimereportService {
 
   private Referenceday getNextWorkableDay(Referenceday referenceday) {
     Referenceday nextWorkableDay = null;
-    Date day = referenceday.getRefdate();
+    LocalDate day = referenceday.getRefdate();
     do {
-      Date nextDay = DateUtils.addDays(day, 1);
+      LocalDate nextDay = DateUtils.addDays(day, 1);
       if(DateUtils.isWeekday(nextDay)) {
         Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(nextDay);
         if(!publicHoliday.isPresent()) {
@@ -393,7 +393,7 @@ public class TimereportService {
   private void validateOrderBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereports.get(0);
-    Date refdate = timereport.getReferenceday().getRefdate();
+    LocalDate refdate = timereport.getReferenceday().getRefdate();
     Suborder suborder = timereport.getSuborder();
     Employeeorder employeeorder = timereport.getEmployeeorder();
     if(TRUE.equals(suborder.getCommentnecessary())) {
@@ -408,7 +408,7 @@ public class TimereportService {
   private void validateContractBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereports.get(0);
-    Date refdate = timereport.getReferenceday().getRefdate();
+    LocalDate refdate = timereport.getReferenceday().getRefdate();
     BusinessRuleChecks.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
         TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE);
   }

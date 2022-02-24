@@ -1,7 +1,7 @@
 package org.tb.action.dailyreport;
 
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,8 +42,8 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowTrainingForm trainingForm, HttpServletRequest request, HttpServletResponse response) throws ParseException {
 
-        Date startdate = DateUtils.parse(trainingForm.getStartdate());
-        Date enddate = DateUtils.parse(trainingForm.getEnddate());
+        LocalDate startdate = DateUtils.parse(trainingForm.getStartdate());
+        LocalDate enddate = DateUtils.parse(trainingForm.getEnddate());
 
         //check for refresh
         if (request.getParameter("task") != null && request.getParameter("task").equals("refresh")) {
@@ -77,7 +77,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
     }
 
     protected boolean refreshTraining(HttpServletRequest request, ShowTrainingForm trainingForm, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO,
-                                      Date startdate, Date enddate) {
+                                      LocalDate startdate, LocalDate enddate) {
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
         request.getSession().setAttribute("showTrainingForm", trainingForm);
@@ -118,7 +118,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
      * Called if no special task is given, called from menu eg. Prepares everything to show trainings of current year of
      * logged-in user.
      */
-    private String init(HttpServletRequest request, ShowTrainingForm trainingForm, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO, Date startdate, Date enddate) {
+    private String init(HttpServletRequest request, ShowTrainingForm trainingForm, EmployeecontractDAO employeecontractDAO, CustomerorderDAO customerorderDAO, LocalDate startdate, LocalDate enddate) {
         String forward = "success";
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
@@ -172,8 +172,8 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         return forward;
     }
 
-    private List<TrainingOverview> getTrainingOverviewsForAll(Date startdate,
-                                                              Date enddate, EmployeecontractDAO employeecontractDAO, Long orderID, List<Employeecontract> employeecontracts, String year) {
+    private List<TrainingOverview> getTrainingOverviewsForAll(LocalDate startdate,
+                                                              LocalDate enddate, EmployeecontractDAO employeecontractDAO, Long orderID, List<Employeecontract> employeecontracts, String year) {
         List<TrainingOverview> trainingOverviews = new LinkedList<>();
         List<Object[]> cTrain = trainingDAO.getCommonTrainingTimesByDates(employeecontractDAO, startdate, enddate, orderID);
         List<Object[]> pTrain = trainingDAO.getProjectTrainingTimesByDates(employeecontractDAO, startdate, enddate);
@@ -224,8 +224,8 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         return projTrain;
     }
 
-    private List<TrainingOverview> getTrainingOverviewByEmployeecontract(Date startdate,
-                                                                         Date enddate, Employeecontract ec, Long orderID, String year) {
+    private List<TrainingOverview> getTrainingOverviewByEmployeecontract(LocalDate startdate,
+                                                                         LocalDate enddate, Employeecontract ec, Long orderID, String year) {
         List<TrainingOverview> result = new LinkedList<>();
 
         Object[] cTT = trainingDAO.getCommonTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate, orderID);

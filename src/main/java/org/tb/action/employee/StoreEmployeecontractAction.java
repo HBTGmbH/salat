@@ -6,7 +6,7 @@ import static org.tb.util.DateUtils.today;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -65,14 +65,14 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
             String datum = which.equals("until") ? ecForm.getValidUntil() : ecForm.getValidFrom();
 
-            Date newValue;
+            LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = validateDate(request, ecForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                newValue = DateUtils.parse(datum, today());
+                newValue = DateUtils.parseOrDefault(datum, today());
                 newValue = addDays(newValue, 1);
             } else {
                 newValue = today();
@@ -235,13 +235,13 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             }
 
             if (ecForm.getValidUntil() != null && !ecForm.getValidUntil().trim().equals("")) {
-                Date untilDate = parse(ecForm.getValidUntil(), (Date) null);
+                LocalDate untilDate = DateUtils.parseOrNull(ecForm.getValidUntil());
                 ec.setValidUntil(untilDate);
             } else {
                 ec.setValidUntil(null);
             }
 
-            Date fromDate = parse(ecForm.getValidFrom(), (Date) null);
+            LocalDate fromDate = DateUtils.parseOrNull(ecForm.getValidFrom());
             ec.setValidFrom(fromDate);
 
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
@@ -251,21 +251,21 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             if (employeeorders != null && !employeeorders.isEmpty()) {
                 for (Employeeorder employeeorder : employeeorders) {
                     boolean changed = false;
-                    if (employeeorder.getFromDate().before(fromDate)) {
+                    if (employeeorder.getFromDate().isBefore(fromDate)) {
                         employeeorder.setFromDate(fromDate);
                         changed = true;
                     }
-                    if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().before(fromDate)) {
+                    if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(fromDate)) {
                         employeeorder.setUntilDate(fromDate);
                         changed = true;
                     }
                     // if enddate of employeecontract is set, check dates of corresponding employeeorders and adjust as needed
                     if (ec.getValidUntil() != null) {
-                        if (employeeorder.getFromDate().after(ec.getValidUntil())) {
+                        if (employeeorder.getFromDate().isAfter(ec.getValidUntil())) {
                             employeeorder.setFromDate(ec.getValidUntil());
                             changed = true;
                         }
-                        if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().after(ec.getValidUntil())) {
+                        if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(ec.getValidUntil())) {
                             employeeorder.setUntilDate(ec.getValidUntil());
                             changed = true;
                         }
@@ -293,13 +293,13 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     // if enddate of suborder is earlier than enddate of employeecontract 
                     // set enddate of employeeorder to enddate of suborder, else to enddate of employeecontract.
                     if (employeeorder.getSuborder().getUntilDate() != null && ec.getValidUntil() != null
-                            && employeeorder.getSuborder().getUntilDate().before(ec.getValidUntil())
+                            && employeeorder.getSuborder().getUntilDate().isBefore(ec.getValidUntil())
                             || employeeorder.getSuborder().getUntilDate() != null && ec.getValidUntil() == null) {
                         if (!employeeorder.getSuborder().getUntilDate().equals(employeeorder.getUntilDate())) {
                             employeeorder.setUntilDate(employeeorder.getSuborder().getUntilDate());
                             employeeorderDAO.save(employeeorder, loginEmployee);
                         }
-                    } else if (employeeorder.getUntilDate() != null && ec.getValidUntil() != null && employeeorder.getUntilDate().before(ec.getValidUntil())) {
+                    } else if (employeeorder.getUntilDate() != null && ec.getValidUntil() != null && employeeorder.getUntilDate().isBefore(ec.getValidUntil())) {
                         employeeorder.setUntilDate(ec.getValidUntil());
                         employeeorderDAO.save(employeeorder, loginEmployee);
                     } else if (employeeorder.getUntilDate() != null && ec.getValidUntil() == null) {
@@ -481,8 +481,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         "form.timereport.error.date.wrongformat"));
             }
         }
-        java.util.Date newContractValidFrom;
-        java.util.Date newContractValidUntil = null;
+        java.time.LocalDate newContractValidFrom;
+        java.time.LocalDate newContractValidUntil = null;
         try {
             newContractValidFrom = DateUtils.parse(dateFromString);
             if (!dateUntilString.equals("")) {
@@ -490,10 +490,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             }
         } catch (ParseException e) {
             // this is not expected...
-            throw new RuntimeException("Date cannot be parsed - fatal error!");
+            throw new RuntimeException("LocalDate cannot be parsed - fatal error!");
         }
 
-        if (newContractValidUntil != null && newContractValidFrom.after(newContractValidUntil)) {
+        if (newContractValidUntil != null && newContractValidFrom.isAfter(newContractValidUntil)) {
             errors.add("validFrom", new ActionMessage("form.employeecontract.error.endbeforebegin"));
         }
 
@@ -505,35 +505,35 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 Employeecontract ec = (Employeecontract) element;
                 if (Objects.equals(ec.getEmployee().getId(), theEmployee.getId()) && !Objects.equals(ec.getId(), employeecontract.getId())) {
                     // contract for the same employee found but not the same contract - check overleap
-                    java.util.Date existingContractValidFrom = ec.getValidFrom();
-                    java.util.Date existingContractValidUntil = ec.getValidUntil();
+                    java.time.LocalDate existingContractValidFrom = ec.getValidFrom();
+                    java.time.LocalDate existingContractValidUntil = ec.getValidUntil();
 
                     if (newContractValidUntil != null && existingContractValidUntil != null) {
-                        if (!newContractValidFrom.before(existingContractValidFrom)
-                                && !newContractValidFrom.after(existingContractValidUntil)) {
+                        if (!newContractValidFrom.isBefore(existingContractValidFrom)
+                                && !newContractValidFrom.isAfter(existingContractValidUntil)) {
                             // validFrom overleaps!
                             errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
                             break;
                         }
-                        if (!newContractValidUntil.before(existingContractValidFrom)
-                                && !newContractValidUntil.after(existingContractValidUntil)) {
+                        if (!newContractValidUntil.isBefore(existingContractValidFrom)
+                                && !newContractValidUntil.isAfter(existingContractValidUntil)) {
                             // validUntil overleaps!
                             errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
                             break;
                         }
-                        if (newContractValidFrom.before(existingContractValidFrom)
-                                && newContractValidUntil.after(existingContractValidUntil)) {
+                        if (newContractValidFrom.isBefore(existingContractValidFrom)
+                                && newContractValidUntil.isAfter(existingContractValidUntil)) {
                             // new Employee contract enclosures an existing one
                             errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
                             break;
                         }
                     } else if (newContractValidUntil == null && existingContractValidUntil != null) {
-                        if (!newContractValidFrom.after(existingContractValidUntil)) {
+                        if (!newContractValidFrom.isAfter(existingContractValidUntil)) {
                             errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
                             break;
                         }
                     } else if (newContractValidUntil != null) {
-                        if (!newContractValidUntil.before(existingContractValidFrom)) {
+                        if (!newContractValidUntil.isBefore(existingContractValidFrom)) {
                             errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
                             break;
                         }
@@ -601,7 +601,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         }
 
         // check, if dates fit to existing timereports
-        Date untilDate = null;
+        LocalDate untilDate = null;
         if (newContractValidUntil != null) {
             untilDate = newContractValidUntil;
         }

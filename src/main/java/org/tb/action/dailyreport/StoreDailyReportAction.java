@@ -8,7 +8,7 @@ import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Collections;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -77,13 +77,13 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
             int howMuch = Integer.parseInt(request.getParameter("howMuch"));
             String referenceDayFormValue = form.getReferenceday();
-            java.util.Date calculatedReferenceDay;
+            LocalDate calculatedReferenceDay;
 
             /* check if today is to be set or not, 0 indicates "set to today" */
             if(howMuch == 0) {
                 calculatedReferenceDay = DateUtils.today();
             } else {
-                calculatedReferenceDay = DateUtils.parse(referenceDayFormValue, DateUtils.today());
+                calculatedReferenceDay = DateUtils.parseOrDefault(referenceDayFormValue, DateUtils.today());
                 calculatedReferenceDay = DateUtils.addDays(calculatedReferenceDay, howMuch);
             }
 
@@ -112,7 +112,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             Boolean workingDayAvailable = (Boolean) request.getSession().getAttribute("workingDayIsAvailable");
             if (TRUE == workingDayAvailable) {
-                Date referenceDay = DateUtils.parse(form.getReferenceday(), DateUtils.today());
+                LocalDate referenceDay = DateUtils.parseOrDefault(form.getReferenceday(), DateUtils.today());
                 Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContract.getId());
 
                 // set the begin time as the end time of the latest existing timereport of current employee
@@ -130,7 +130,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 int currentMinutes = DateUtils.getCurrentMinutes();
                 // round down to next minute increment
                 currentMinutes = currentMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
-                Date today = DateUtils.today();
+                LocalDate today = DateUtils.today();
                 if (standardOrder) {
                     int minutes = form.getSelectedHourBegin() * MINUTES_PER_HOUR + form.getSelectedMinuteBegin();
                     minutes += dailyWorkingTimeMinutes;
@@ -214,7 +214,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         if (refreshWorkdayAvailability) {
             // search for adequate workingday and set status in session
-            Date selectedDate = DateUtils.parse(form.getReferenceday(), DateUtils.today());
+            LocalDate selectedDate = DateUtils.parseOrDefault(form.getReferenceday(), DateUtils.today());
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, employeeContract.getId());
             boolean workingDayIsAvailable = workingday != null && DateUtils.today().equals(selectedDate);
             request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
@@ -224,7 +224,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 request.getParameter("task").equals("save") ||
                 request.getParameter("trId") != null) {
 
-            java.util.Date referencedayRefDate;
+            LocalDate referencedayRefDate;
             try {
                 referencedayRefDate = DateUtils.parse(form.getReferenceday());
             } catch (ParseException e) {
@@ -296,7 +296,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 // set new ShowDailyReportForm with saved filter settings
                 ShowDailyReportForm continueForm = new ShowDailyReportForm();
 
-                Date referenceday = DateUtils.parse(form.getReferenceday(), DateUtils.today());
+                LocalDate referenceday = DateUtils.parseOrDefault(form.getReferenceday(), DateUtils.today());
                 // TODO pruefen, warum diese Felder gebraucht werden
                 continueForm.setDay(DateUtils.getDayString(referenceday));
                 continueForm.setMonth(DateUtils.getMonthShortString(referenceday));
@@ -396,7 +396,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
             } else { // Continue = true
 
-                java.util.Date selectedDate = getSelectedDateFromRequest(request);
+                LocalDate selectedDate = getSelectedDateFromRequest(request);
 
                 //deleting comment, costs and days of serialBookings in the addDailyReport-Form
                 form.setComment("");
@@ -410,7 +410,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     form.setSelectedHourBegin(beginHours);
                     form.setSelectedMinuteBegin(beginMinutes);
                     form.setNumberOfSerialDays(0);
-                    java.util.Date today = DateUtils.today();
+                    LocalDate today = DateUtils.today();
                     int currentHours = DateUtils.getCurrentHours();
                     int currentMinutes = DateUtils.getCurrentMinutes();
                     // round to next minute increment
@@ -514,7 +514,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
         String dateString = reportForm.getReferenceday();
-        java.util.Date date = DateUtils.parse(dateString, DateUtils.today());
+        LocalDate date = DateUtils.parseOrDefault(dateString, DateUtils.today());
 
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(loginEmployeeContract.getId(), date);
         List<Suborder> suborders;

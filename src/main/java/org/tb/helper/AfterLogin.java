@@ -8,7 +8,7 @@ import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.util.UrlUtils.absoluteUrl;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import javax.servlet.ServletContext;
@@ -126,23 +126,23 @@ public class AfterLogin {
         List<Customerorder> customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(employeecontract.getEmployee().getId());
         if (customerOrders != null && !customerOrders.isEmpty()) {
 
-            java.util.Date now = new java.util.Date();
+            LocalDate now = DateUtils.today();
 
             for (Customerorder customerorder : customerOrders) {
-                Date maxUntilDate = statusReportDAO.getMaxUntilDateForCustomerOrderId(customerorder.getId());
+                LocalDate maxUntilDate = statusReportDAO.getMaxUntilDateForCustomerOrderId(customerorder.getId());
 
                 if (maxUntilDate == null) {
                     maxUntilDate = customerorder.getFromDate();
                 }
 
-                Date checkDate = maxUntilDate;
+                LocalDate checkDate = maxUntilDate;
                 checkDate = DateUtils.addMonths(checkDate, 12 / customerorder.getStatusreport());
 
                 // final report due warning
                 List<Statusreport> finalReports = statusReportDAO.getReleasedFinalStatusReportsByCustomerOrderId(customerorder.getId());
                 if (customerorder.getStatusreport() > 0
                         && customerorder.getUntilDate() != null
-                        && !customerorder.getUntilDate().after(now)
+                        && !customerorder.getUntilDate().isAfter(now)
                         && (finalReports == null || finalReports.isEmpty())) {
                     Warning warning = new Warning();
                     warning.setSort(resources.getMessage(locale, "main.info.warning.statusreport.finalreport"));
@@ -161,7 +161,7 @@ public class AfterLogin {
                 }
 
                 // periodical report due warning
-                if (!checkDate.after(now) && (customerorder.getUntilDate() == null || customerorder.getUntilDate().after(checkDate))) {
+                if (!checkDate.isAfter(now) && (customerorder.getUntilDate() == null || customerorder.getUntilDate().isAfter(checkDate))) {
                     // show warning
                     Warning warning = new Warning();
                     warning.setSort(resources.getMessage(locale, "main.info.warning.statusreport.due"));
@@ -214,8 +214,8 @@ public class AfterLogin {
         int overtime;
         if (employeecontract.getUseOvertimeOld() != null && !employeecontract.getUseOvertimeOld()) {
             //use new overtime computation with static + dynamic overtime
-            //need the Date from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
-            Date dynamicDate;
+            //need the LocalDate from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
+            LocalDate dynamicDate;
             if (employeecontract.getReportAcceptanceDate() == null || employeecontract.getReportAcceptanceDate().equals(employeecontract.getValidFrom())) {
                 dynamicDate = employeecontract.getValidFrom();
             } else {
@@ -236,19 +236,19 @@ public class AfterLogin {
         session.setAttribute("overtime", overtimeString);
 
         //overtime this month
-        Date start = getBeginOfMonth(today());
-        Date currentDate = today();
+        LocalDate start = getBeginOfMonth(today());
+        LocalDate currentDate = today();
 
-        Date validFrom = employeecontract.getValidFrom();
-        if (validFrom.after(start) && !validFrom.after(currentDate)) {
+        LocalDate validFrom = employeecontract.getValidFrom();
+        if (validFrom.isAfter(start) && !validFrom.isAfter(currentDate)) {
             start = validFrom;
         }
-        Date validUntil = employeecontract.getValidUntil();
-        if (validUntil != null && validUntil.before(currentDate) && !validUntil.before(start)) {
+        LocalDate validUntil = employeecontract.getValidUntil();
+        if (validUntil != null && validUntil.isBefore(currentDate) && !validUntil.isBefore(start)) {
             currentDate = validUntil;
         }
         int monthlyOvertime = 0;
-        if (!(validUntil != null && validUntil.before(start) || validFrom.after(currentDate))) {
+        if (!(validUntil != null && validUntil.isBefore(start) || validFrom.isAfter(currentDate))) {
             monthlyOvertime = timereportHelper.calculateOvertime(start, currentDate, employeecontract, false);
         }
         boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;

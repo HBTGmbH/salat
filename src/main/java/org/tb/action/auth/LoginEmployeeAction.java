@@ -5,7 +5,7 @@ import static org.tb.GlobalConstants.SYSTEM_SIGN;
 import static org.tb.util.DateUtils.formatYear;
 import static org.tb.util.DateUtils.today;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -76,7 +76,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             // check if user is internal or extern
             setEmployeeIsInternalAttribute(request);
 
-            Date today = today();
+            LocalDate today = today();
             Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), today);
             if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
                 return loginFailed(request, "form.login.error.invalidcontract", mapping);
@@ -116,7 +116,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         }
     }
 
-    private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee, Date today,
+    private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee, LocalDate today,
         Employeecontract employeecontract) {
         // auto generate employee orders
         if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
@@ -125,7 +125,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         }
 
         if (employeecontract.getReportAcceptanceDate() == null) {
-            Date validFromDate = employeecontract.getValidFrom();
+            LocalDate validFromDate = employeecontract.getValidFrom();
             employeecontract.setReportAcceptanceDate(validFromDate);
             // create tmp employee
             Employee tmp = new Employee();
@@ -133,7 +133,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             employeecontractDAO.save(employeecontract, tmp);
         }
         if (employeecontract.getReportReleaseDate() == null) {
-            Date validFromDate = employeecontract.getValidFrom();
+            LocalDate validFromDate = employeecontract.getValidFrom();
             employeecontract.setReportReleaseDate(validFromDate);
             // create tmp employee
             Employee tmp = new Employee();
@@ -179,7 +179,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         request.getSession().setAttribute("clientIntern", isInternal);
     }
 
-    private void generateEmployeeOrders(Date today, Employeecontract employeecontract) {
+    private void generateEmployeeOrders(LocalDate today, Employeecontract employeecontract) {
         List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
         if (standardSuborders != null && !standardSuborders.isEmpty()) {
             // test if employeeorder exists
@@ -196,41 +196,41 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                         continue;
                     }
 
-                    // find latest untilDate of all employeeorders for this suborder
+                    // find latest untilLocalDate of all employeeorders for this suborder
                     List<Employeeorder> invalidEmployeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(
                         employeecontract.getId(), suborder.getId());
-                    Date dateUntil = null;
-                    Date dateFrom = null;
+                    LocalDate dateUntil = null;
+                    LocalDate dateFrom = null;
                     for (Employeeorder eo : invalidEmployeeorders) {
 
                         // employeeorder starts in the future
-                        if (eo.getFromDate() != null && eo.getFromDate().after(today)
-                            && (dateUntil == null || dateUntil.after(eo.getFromDate()))) {
+                        if (eo.getFromDate() != null && eo.getFromDate().isAfter(today)
+                            && (dateUntil == null || dateUntil.isAfter(eo.getFromDate()))) {
 
                             dateUntil = eo.getFromDate();
                             continue;
                         }
 
                         // employeeorder ends in the past
-                        if (eo.getUntilDate() != null && eo.getUntilDate().before(today)
-                            && (dateFrom == null || dateFrom.before(eo.getUntilDate()))) {
+                        if (eo.getUntilDate() != null && eo.getUntilDate().isBefore(today)
+                            && (dateFrom == null || dateFrom.isBefore(eo.getUntilDate()))) {
 
                             dateFrom = eo.getUntilDate();
                         }
                     }
 
                     // calculate time period
-                    Date ecFromDate = employeecontract.getValidFrom();
-                    Date ecUntilDate = employeecontract.getValidUntil();
-                    Date soFromDate = suborder.getFromDate();
-                    Date soUntilDate = suborder.getUntilDate();
-                    Date fromDate = ecFromDate.before(soFromDate) ? soFromDate : ecFromDate;
+                    LocalDate ecFromDate = employeecontract.getValidFrom();
+                    LocalDate ecUntilDate = employeecontract.getValidUntil();
+                    LocalDate soFromDate = suborder.getFromDate();
+                    LocalDate soUntilDate = suborder.getUntilDate();
+                    LocalDate fromDate = ecFromDate.isBefore(soFromDate) ? soFromDate : ecFromDate;
 
-                    // fromDate should not be before the ending of the most recent contract
-                    if (dateFrom != null && dateFrom.after(fromDate)) {
+                    // fromLocalDate should not be before the ending of the most recent contract
+                    if (dateFrom != null && dateFrom.isAfter(fromDate)) {
                         fromDate = dateFrom;
                     }
-                    Date untilDate = null;
+                    LocalDate untilDate = null;
 
                     if (ecUntilDate == null && soUntilDate == null) {
                         //untildate remains null
@@ -238,7 +238,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                         untilDate = soUntilDate;
                     } else if (soUntilDate == null) {
                         untilDate = ecUntilDate;
-                    } else if (ecUntilDate.before(soUntilDate)) {
+                    } else if (ecUntilDate.isBefore(soUntilDate)) {
                         untilDate = ecUntilDate;
                     } else {
                         untilDate = soUntilDate;
@@ -251,7 +251,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     if (untilDate == null) {
                         untilDate = dateUntil;
                     } else {
-                        if (dateUntil != null && dateUntil.before(untilDate)) {
+                        if (dateUntil != null && dateUntil.isBefore(untilDate)) {
                             untilDate = dateUntil;
                         }
                     }
@@ -277,7 +277,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     Employee tmp = new Employee();
                     tmp.setSign(SYSTEM_SIGN);
 
-                    if (untilDate == null || !fromDate.after(untilDate)) {
+                    if (untilDate == null || !fromDate.isAfter(untilDate)) {
                         employeeorderDAO.save(employeeorder, tmp);
                     }
 

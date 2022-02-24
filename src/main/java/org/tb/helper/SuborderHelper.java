@@ -3,7 +3,7 @@ package org.tb.helper;
 import static org.tb.util.DateUtils.parse;
 
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -49,7 +49,7 @@ public class SuborderHelper {
         }
 
         String dateString = reportForm.getReferenceday();
-        Date date;
+        LocalDate date;
         try {
             date = parse(dateString);
         } catch (ParseException e) {

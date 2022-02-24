@@ -7,7 +7,7 @@ import static org.tb.util.DateUtils.today;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -66,14 +66,14 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
             String datum = which.equals("until") ? addSuborderForm.getValidUntil() : addSuborderForm.getValidFrom();
 
-            Date newValue;
+            LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, addSuborderForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                newValue = DateUtils.parse(datum, today());
+                newValue = DateUtils.parseOrDefault(datum, today());
                 newValue = addDays(newValue, 1);
             } else {
                 newValue = today();
@@ -289,13 +289,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             so.setTrainingFlag(addSuborderForm.getTrainingFlag());
 
             if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().equals("")) {
-                Date fromDate = parse(addSuborderForm.getValidFrom(), (Date)null);
+                LocalDate fromDate = DateUtils.parseOrNull(addSuborderForm.getValidFrom());
                 so.setFromDate(fromDate);
             } else {
                 so.setFromDate(so.getCustomerorder().getFromDate());
             }
             if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
-                Date untilDate = parse(addSuborderForm.getValidUntil(), (Date)null);
+                LocalDate untilDate = DateUtils.parseOrNull(addSuborderForm.getValidUntil());
                 so.setUntilDate(untilDate);
             } else {
                 so.setUntilDate(null);
@@ -306,20 +306,20 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             if (employeeorders != null && !employeeorders.isEmpty()) {
                 for (Employeeorder employeeorder : employeeorders) {
                     boolean changed = false;
-                    if (employeeorder.getFromDate().before(so.getFromDate())) {
+                    if (employeeorder.getFromDate().isBefore(so.getFromDate())) {
                         employeeorder.setFromDate(so.getFromDate());
                         changed = true;
                     }
-                    if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().before(so.getFromDate())) {
+                    if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(so.getFromDate())) {
                         employeeorder.setUntilDate(so.getFromDate());
                         changed = true;
                     }
                     if (so.getUntilDate() != null) {
-                        if (employeeorder.getFromDate().after(so.getUntilDate())) {
+                        if (employeeorder.getFromDate().isAfter(so.getUntilDate())) {
                             employeeorder.setFromDate(so.getUntilDate());
                             changed = true;
                         }
-                        if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().after(so.getUntilDate())) {
+                        if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(so.getUntilDate())) {
                             employeeorder.setUntilDate(so.getUntilDate());
                             changed = true;
                         }
@@ -515,14 +515,14 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             errors.add("hourlyRate", new ActionMessage("form.suborder.error.hourlyrate.wrongformat"));
         }
         // check date formats
-        Date suborderFromDate = null;
+        LocalDate suborderFromDate = null;
         try {
             suborderFromDate = DateUtils.parse(addSuborderForm.getValidFrom());
         } catch (ParseException e) {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
 
-        Date suborderUntilDate = null;
+        LocalDate suborderUntilDate = null;
         if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
             try {
                 suborderUntilDate = DateUtils.parse(addSuborderForm.getValidUntil());
@@ -531,7 +531,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
         }
         if (suborderFromDate != null && suborderUntilDate != null) {
-            if (suborderUntilDate.before(suborderFromDate)) {
+            if (suborderUntilDate.isBefore(suborderFromDate)) {
                 errors.add("validUntil", new ActionMessage("form.suborder.error.date.untilbeforefrom"));
             }
         }
@@ -568,13 +568,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             errors.add("customerorder", new ActionMessage("form.suborder.error.customerorder.notfound"));
         } else {
             // check validity period
-            Date coFromDate = customerorder.getFromDate();
-            Date coUntilDate = customerorder.getUntilDate();
+            LocalDate coFromDate = customerorder.getFromDate();
+            LocalDate coUntilDate = customerorder.getUntilDate();
             if (suborderFromDate != null && coFromDate != null) {
-                if (suborderFromDate.before(coFromDate)) {
+                if (suborderFromDate.isBefore(coFromDate)) {
                     errors.add("validFrom", new ActionMessage("form.suborder.error.date.outofrange.order"));
                 }
-                if (!(coUntilDate == null || suborderUntilDate != null && !suborderUntilDate.after(coUntilDate))) {
+                if (!(coUntilDate == null || suborderUntilDate != null && !suborderUntilDate.isAfter(coUntilDate))) {
                     errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.order"));
                 }
             }
@@ -586,13 +586,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             parentSuborder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
             if (parentSuborder != null && Objects.equals(parentSuborder.getCustomerorder().getId(), addSuborderForm.getCustomerorderId())) {
                 // check validity period
-                Date parentFromDate = parentSuborder.getFromDate();
-                Date parentUntilDate = parentSuborder.getUntilDate();
+                LocalDate parentFromDate = parentSuborder.getFromDate();
+                LocalDate parentUntilDate = parentSuborder.getUntilDate();
                 if (suborderFromDate != null && parentFromDate != null) {
-                    if (suborderFromDate.before(parentFromDate)) {
+                    if (suborderFromDate.isBefore(parentFromDate)) {
                         errors.add("validFrom", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
                     }
-                    if (!(parentUntilDate == null || suborderUntilDate != null && !suborderUntilDate.after(parentUntilDate))) {
+                    if (!(parentUntilDate == null || suborderUntilDate != null && !suborderUntilDate.isAfter(parentUntilDate))) {
                         errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
                     }
                 }

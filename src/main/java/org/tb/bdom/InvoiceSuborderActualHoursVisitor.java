@@ -2,7 +2,7 @@ package org.tb.bdom;
 
 import static org.tb.util.TimeFormatUtils.timeFormatMinutes;
 
-import java.util.Date;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.tb.GlobalConstants;
 import org.tb.persistence.TimereportDAO;
@@ -11,8 +11,8 @@ import org.tb.persistence.TimereportDAO;
 public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
 
     private final TimereportDAO timereportDAO;
-    private final Date fromDate;
-    private final Date untilDate;
+    private final LocalDate fromDate;
+    private final LocalDate untilDate;
     private final boolean invoicebox;
     private Long durationMinutes;
 
