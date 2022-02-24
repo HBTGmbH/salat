@@ -1,7 +1,12 @@
 package org.tb.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.tb.util.TimeFormatUtils.*;
+import static org.tb.common.util.TimeFormatUtils.decimalFormatHours;
+import static org.tb.common.util.TimeFormatUtils.decimalFormatHoursAndMinutes;
+import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
+import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
+import static org.tb.common.util.TimeFormatUtils.timeFormatHoursAndMinutes;
+import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;

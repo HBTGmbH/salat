@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.stereotype.Component;
-import org.tb.helper.ServerTimeHelper;
+import org.tb.common.ServerTimeHelper;
 
 @Component
 @RequiredArgsConstructor

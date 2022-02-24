@@ -1,9 +1,9 @@
 package org.tb.testutils;
 
 import lombok.experimental.UtilityClass;
-import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
-import org.tb.util.DateUtils;
+import org.tb.common.util.DateUtils;
+import org.tb.employee.Employee;
+import org.tb.employee.Employeecontract;
 
 @UtilityClass
 public class EmployeecontractTestUtils {

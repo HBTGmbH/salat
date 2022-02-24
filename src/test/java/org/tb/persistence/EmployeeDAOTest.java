@@ -10,8 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.tb.bdom.AuthorizedUser;
-import org.tb.bdom.Employee;
+import org.tb.auth.AuthorizedUser;
+import org.tb.common.AuthorizedUserAuditorAware;
+import org.tb.employee.Employee;
+import org.tb.employee.EmployeeDAO;
+import org.tb.employee.EmployeecontractDAO;
 import org.tb.testutils.EmployeeTestUtils;
 
 @DataJpaTest

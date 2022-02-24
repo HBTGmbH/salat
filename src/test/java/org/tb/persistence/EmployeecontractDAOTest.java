@@ -9,8 +9,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.tb.bdom.Employee;
-import org.tb.bdom.Employeecontract;
+import org.tb.dailyreport.VacationDAO;
+import org.tb.employee.Employee;
+import org.tb.employee.EmployeeDAO;
+import org.tb.employee.Employeecontract;
+import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.OvertimeDAO;
 import org.tb.testutils.EmployeeTestUtils;
 import org.tb.testutils.EmployeecontractTestUtils;
 
