@@ -1,8 +1,9 @@
 package org.tb.action.statusreport;
 
 import static org.tb.util.DateUtils.format;
+import static org.tb.util.DateUtils.today;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,7 +97,7 @@ public class CreateStatusReportAction extends StatusReportAction<AddStatusReport
 
         List<Statusreport> statusReports = statusReportDAO.getStatusReportsByCustomerOrderId(selectedCustomerOrder.getId());
 
-        Date fromDate = selectedCustomerOrder.getFromDate();
+        LocalDate fromDate = selectedCustomerOrder.getFromDate();
         if (statusReports != null && !statusReports.isEmpty()) {
             Statusreport lastKnownReport = statusReports.get(statusReports.size() - 1);
             fromDate = DateUtils.addDays(lastKnownReport.getUntildate(), 1);
@@ -116,7 +117,7 @@ public class CreateStatusReportAction extends StatusReportAction<AddStatusReport
         }
 
         reportForm.setValidFrom(format(fromDate));
-        reportForm.setValidUntil(format(new java.util.Date()));
+        reportForm.setValidUntil(format(today()));
         //new report -> status green (1)
         reportForm.setAim_status(one);
         reportForm.setBudget_resources_date_status(one);

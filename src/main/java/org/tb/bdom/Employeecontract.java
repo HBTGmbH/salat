@@ -4,7 +4,7 @@ import static javax.persistence.TemporalType.DATE;
 import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -38,18 +38,18 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     private Employee supervisor;
 
     @Temporal(DATE)
-    private Date validFrom;
+    private LocalDate validFrom;
     @Temporal(DATE)
-    private Date validUntil;
+    private LocalDate validUntil;
     private Double dailyWorkingTime;
     private Boolean freelancer;
     private String taskDescription;
     @Temporal(DATE)
-    private Date fixedUntil;
+    private LocalDate fixedUntil;
     @Temporal(DATE)
-    private Date reportAcceptanceDate;
+    private LocalDate reportAcceptanceDate;
     @Temporal(DATE)
-    private Date reportReleaseDate;
+    private LocalDate reportReleaseDate;
     private Boolean hide;
     /**
      * static overtime from begin of employeecontract to reportAcceptanceDate
@@ -125,8 +125,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         return validUntil == null;
     }
 
-    public boolean isValidAt(java.util.Date date) {
-        return !date.before(validFrom) && (validUntil == null || !date.after(validUntil));
+    public boolean isValidAt(LocalDate date) {
+        return !date.isBefore(validFrom) && (validUntil == null || !date.isAfter(validUntil));
     }
 
     public Integer getVacationEntitlement() {
@@ -147,15 +147,15 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      */
     public boolean getReleaseWarning() {
         boolean releaseWarning = false;
-        Date release = getReportReleaseDate();
+        LocalDate release = getReportReleaseDate();
 
         if (release == null) {
             // new contract without initial login
             return false;
         }
 
-        Date endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
-        if (release.before(endOfPreviousMonth)) {
+        LocalDate endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
+        if (release.isBefore(endOfPreviousMonth)) {
             releaseWarning = true;
         }
         return releaseWarning;
@@ -169,15 +169,15 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      */
     public boolean getAcceptanceWarning() {
         boolean acceptanceWarning = false;
-        Date acceptance = getReportAcceptanceDate();
+        LocalDate acceptance = getReportAcceptanceDate();
 
         if (acceptance == null) {
             // new contract without initial login
             return false;
         }
 
-        Date endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
-        if (acceptance.before(endOfPreviousMonth)) {
+        LocalDate endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
+        if (acceptance.isBefore(endOfPreviousMonth)) {
             acceptanceWarning = true;
         }
         return acceptanceWarning;
@@ -187,9 +187,9 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      * @return Returns true, if the {@link Employeecontract} is currently valid, false otherwise.
      */
     public boolean getCurrentlyValid() {
-        Date now = DateUtils.now();
-        return !now.before(getValidFrom()) &&
-            (getValidUntil() == null || !now.after(getValidUntil()));
+        LocalDate now = DateUtils.today();
+        return !now.isBefore(getValidFrom()) &&
+            (getValidUntil() == null || !now.isAfter(getValidUntil()));
     }
 
     /**
@@ -198,17 +198,17 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      *
      * @return Returns true, if the contract is not accepted until the last day of the preceding month, false otherwise.
      */
-    public boolean getAcceptanceWarningByDate(Date date) {
+    public boolean getAcceptanceWarningByDate(LocalDate date) {
         boolean acceptanceWarning = false;
-        Date acceptance = getReportAcceptanceDate();
+        LocalDate acceptance = getReportAcceptanceDate();
 
         if (acceptance == null) {
             // new contract without initial login
             acceptance = validFrom;
         }
 
-        Date endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(date, -1));
-        if (acceptance.before(endOfPreviousMonth)) {
+        LocalDate endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(date, -1));
+        if (acceptance.isBefore(endOfPreviousMonth)) {
             acceptanceWarning = true;
         }
         return acceptanceWarning;

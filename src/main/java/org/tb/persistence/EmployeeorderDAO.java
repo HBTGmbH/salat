@@ -8,7 +8,7 @@ import static org.tb.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
 import static org.tb.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,7 +51,7 @@ public class EmployeeorderDAO {
         return employeeorderRepository.findAllByEmployeeIdAndEmployeeOrderContentUncommitted(ec.getEmployee().getId());
     }
 
-    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final Date date) {
+    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final LocalDate date) {
         LOG.debug("starting read vacation list");
         var customerOrderSigns = new ArrayList<String>();
         customerOrderSigns.add(CUSTOMERORDER_SIGN_REMAINING_VACATION);
@@ -63,8 +63,8 @@ public class EmployeeorderDAO {
         );
 
         employeeorders = employeeorders.stream()
-            .filter(eo -> !eo.getFromDate().after(date))
-            .filter(eo -> eo.getUntilDate() == null || !eo.getUntilDate().before(date))
+            .filter(eo -> !eo.getFromDate().isAfter(date))
+            .filter(eo -> eo.getUntilDate() == null || !eo.getUntilDate().isBefore(date))
             .filter(eo -> !eo.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
             .collect(Collectors.toList());
 
@@ -75,7 +75,7 @@ public class EmployeeorderDAO {
     /**
      * Returns the {@link Employeeorder} associated to the given employeecontractID and suborderId, that is valid for the given date.
      */
-    public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(long employeecontractId, long suborderId, Date date) {
+    public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(long employeecontractId, long suborderId, LocalDate date) {
         return employeeorderRepository.findAllByEmployeecontractIdAndSuborderId(employeecontractId, suborderId).stream()
             .filter(e -> e.isValidAt(date))
             .findFirst()
@@ -122,7 +122,7 @@ public class EmployeeorderDAO {
     /**
      * Gets the list of employeeorders for the given employee contract and suborder id and date.
      */
-    public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, Date date) {
+    public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, LocalDate date) {
         return employeeorderRepository.findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(
             employeeContractId,
             suborderId,
@@ -137,7 +137,7 @@ public class EmployeeorderDAO {
     /**
      * Gets the list of employeeorders for the given employee contract and suborder id and date.
      */
-    public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, Date date) {
+    public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, LocalDate date) {
         return employeeorderRepository.findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(
             employeeContractId,
             suborderId,
@@ -183,7 +183,7 @@ public class EmployeeorderDAO {
     }
 
     private Specification<Employeeorder> showOnlyValid() {
-        Date now = DateUtils.now();
+        LocalDate now = DateUtils.today();
         return (root, query, builder) -> {
             var fromDateLess = builder.lessThanOrEqualTo(root.get(Employeeorder_.fromDate), now);
             var untilDateNullOrGreater = builder.or(

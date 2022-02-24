@@ -1,6 +1,6 @@
 package org.tb.persistence;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -31,7 +31,7 @@ public class ReferencedayDAO {
      * Gets the referenceday for the given date. In case the
      * referenceday does not exists, create a new one.
      */
-    public Referenceday getOrAddReferenceday(Date refDate) {
+    public Referenceday getOrAddReferenceday(LocalDate refDate) {
         return referencedayRepository
             .findByRefdate(refDate)
             .orElseGet(() -> addReferenceday(refDate));
@@ -40,7 +40,7 @@ public class ReferencedayDAO {
     /**
      * Adds a referenceday to database at the time when it is first referenced in a new timereport.
      */
-    public Referenceday addReferenceday(Date date) {
+    public Referenceday addReferenceday(LocalDate date) {
         Referenceday rd = new Referenceday();
         rd.setRefdate(date);
 

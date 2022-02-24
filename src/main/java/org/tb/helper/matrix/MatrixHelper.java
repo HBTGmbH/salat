@@ -21,7 +21,7 @@ import static org.tb.util.DateUtils.today;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,14 +88,14 @@ public class MatrixHelper {
         this.eDAO = eDAO;
     }
 
-    public ReportWrapper getEmployeeMatrix(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
+    public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
         Employeecontract employeecontract = employeeContractId != -1 ? ecDAO.getEmployeeContractById(employeeContractId) : null;
-        Date validFrom = dateFirst;
-        Date validUntil = dateLast;
+        LocalDate validFrom = dateFirst;
+        LocalDate validUntil = dateLast;
         if (employeecontract != null) {
-            if (employeecontract.getValidFrom() != null && dateFirst.before(employeecontract.getValidFrom()))
+            if (employeecontract.getValidFrom() != null && dateFirst.isBefore(employeecontract.getValidFrom()))
                 validFrom = employeecontract.getValidFrom();
-            if (employeecontract.getValidUntil() != null && dateLast.after(employeecontract.getValidUntil()))
+            if (employeecontract.getValidUntil() != null && dateLast.isAfter(employeecontract.getValidUntil()))
                 validUntil = employeecontract.getValidUntil();
         }
 
@@ -113,7 +113,7 @@ public class MatrixHelper {
         //filling a list with new or merged 'mergedreports'
         for (Timereport timeReport : timeReportList) {
             String taskdescription = extendedTaskDescription(timeReport, employeecontract == null);
-            Date date = timeReport.getReferenceday().getRefdate();
+            LocalDate date = timeReport.getReferenceday().getRefdate();
             long durationHours = timeReport.getDurationhours();
             long durationMinutes = timeReport.getDurationminutes();
 
@@ -191,12 +191,12 @@ public class MatrixHelper {
         return sb.toString();
     }
 
-    private double fillDayHoursCount(Date dateFirst, Date dateLast, Date validFrom, Date validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
+    private double fillDayHoursCount(LocalDate dateFirst, LocalDate dateLast, LocalDate validFrom, LocalDate validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
 
-        Date dateLoop = dateFirst;
+        LocalDate dateLoop = dateFirst;
         int day = 0;
-        while (dateLoop.after(dateFirst) && dateLoop.before(dateLast) || dateLoop.equals(dateFirst)
+        while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
             dayHoursCount.add(new DayAndWorkingHourCount(day, 0, format(dateLoop)));
@@ -206,7 +206,7 @@ public class MatrixHelper {
         day = 0;
         dateLoop = dateFirst;
         double dayHoursTarget = 0.0;
-        while (dateLoop.after(dateFirst) && dateLoop.before(dateLast) || dateLoop.equals(dateFirst)
+        while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
             boolean dayIsPublicHoliday = false;
@@ -220,8 +220,8 @@ public class MatrixHelper {
                     }
                 }
                 if (!dayIsPublicHoliday && (
-                    dateLoop.after(validFrom) &&
-                    dateLoop.before(validUntil) ||
+                    dateLoop.isAfter(validFrom) &&
+                    dateLoop.isBefore(validUntil) ||
                     dateLoop.equals(validFrom) ||
                     dateLoop.equals(validUntil))) {
                     dayHoursTarget++;
@@ -247,10 +247,10 @@ public class MatrixHelper {
         return dayHoursTarget;
     }
 
-    private void handlePublicHolidays(Date dateFirst, Date dateLast, List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
-        Date dateLoop = dateFirst;
+    private void handlePublicHolidays(LocalDate dateFirst, LocalDate dateLast, List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
+        LocalDate dateLoop = dateFirst;
         int day = 0;
-        while (dateLoop.after(dateFirst) && dateLoop.before(dateLast) || dateLoop.equals(dateFirst)
+        while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
             for (MergedReport mergedReport : mergedReportList) {
@@ -287,7 +287,7 @@ public class MatrixHelper {
     }
 
     private void mergeTimereport(List<MergedReport> mergedReportList, Timereport timeReport, String taskdescription,
-                                 Date date, long durationHours, long durationMinutes) {
+                                 LocalDate date, long durationHours, long durationMinutes) {
         if (!mergedReportList.isEmpty()) {
             //search until timereport matching mergedreport; merge bookingdays in case of match
             for (int mergedReportIndex = 0; mergedReportIndex < mergedReportList.size(); mergedReportIndex++) {
@@ -325,7 +325,7 @@ public class MatrixHelper {
         timeReportList.addAll(tempTimeReportList);
     }
 
-    private List<Timereport> queryTimereports(Date dateFirst, Date dateLast, long employeeContractId, int method, long customerOrderId) {
+    private List<Timereport> queryTimereports(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId) {
         //choice of timereports by date, employeecontractid and/or customerorderid
         if (method == 1 || method == 3) { // FIXME magic numbers
             if (employeeContractId == -1) {
@@ -348,8 +348,8 @@ public class MatrixHelper {
         // selected view and selected dates
         Map<String, Object> results = new HashMap<>();
         String selectedView = reportForm.getMatrixview();
-        Date dateFirst;
-        Date dateLast;
+        LocalDate dateFirst;
+        LocalDate dateLast;
         try {
             if (selectedView.equals(GlobalConstants.VIEW_MONTHLY)) {
                 dateFirst = getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
@@ -449,8 +449,8 @@ public class MatrixHelper {
             results.put("currentEmployeeId", employeeContract.getEmployee().getId());
 
             // testing availability of the shown month
-            boolean isInvalid = ((employeeContract.getValidUntil() != null && dateFirst.after(employeeContract.getValidUntil()))
-                    || (employeeContract.getValidFrom() != null) && dateLast.before(employeeContract.getValidFrom()));
+            boolean isInvalid = ((employeeContract.getValidUntil() != null && dateFirst.isAfter(employeeContract.getValidUntil()))
+                    || (employeeContract.getValidFrom() != null) && dateLast.isBefore(employeeContract.getValidFrom()));
             results.put("invalid", isInvalid);
 
             isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
@@ -522,11 +522,11 @@ public class MatrixHelper {
             results.put("MonthKey", MONTH_MAP.get(reportForm.getFromMonth()));
             results.put("currentYear", reportForm.getFromYear());
 
-            Date dateFirst = initStartEndDate("01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
+            LocalDate dateFirst = initStartEndDate("01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
             maxDays = DateUtils.getMonthDays(dateFirst);
             String maxDayString = getTwoDigitStr(maxDays);
-            Date dateLast = initStartEndDate(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
+            LocalDate dateLast = initStartEndDate(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
             long ecId = -1L;
             boolean isAcceptanceWarning = false;
@@ -556,12 +556,12 @@ public class MatrixHelper {
 
             // call from main menu: set current month, year,
             // orders, suborders...
-            Date dt = DateUtils.today();
-            // get day string (e.g., '31') from java.util.Date
+            LocalDate dt = DateUtils.today();
+            // get day string (e.g., '31') from java.time.LocalDate
             String dayString = dt.toString().substring(8, 10);
-            // get month string (e.g., 'Jan') from java.util.Date
+            // get month string (e.g., 'Jan') from java.time.LocalDate
             String monthString = dt.toString().substring(4, 7);
-            // get year string (e.g., '2006') from java.util.Date
+            // get year string (e.g., '2006') from java.time.LocalDate
             int length = dt.toString().length();
             String yearString = dt.toString().substring(length - 4, length);
 
@@ -573,7 +573,7 @@ public class MatrixHelper {
             if (reportForm.getFromMonth() == null || reportForm.getFromMonth().trim().equalsIgnoreCase("")) {
                 String month = currentMonth;
                 if (month == null || month.trim().equals("")) {
-                    Date date = today();
+                    LocalDate date = today();
                     String[] dateArray = getDateAsStringArray(date);
                     month = dateArray[1];
                 }
@@ -596,17 +596,17 @@ public class MatrixHelper {
             results.put("lastMonth", monthString);
             results.put("lastYear", yearString);
 
-            Date dateFirst = initStartEndDate("01", currMonth, yearString, monthString, yearString);
+            LocalDate dateFirst = initStartEndDate("01", currMonth, yearString, monthString, yearString);
 
             maxDays = DateUtils.getMonthDays(dateFirst);
             String maxDayString = getTwoDigitStr(maxDays);
-            Date dateLast = initStartEndDate(maxDayString, currMonth, yearString, monthString, yearString);
+            LocalDate dateLast = initStartEndDate(maxDayString, currMonth, yearString, monthString, yearString);
 
             long ecId;
             boolean newAcceptance = false;
             ecId = ec.getId();
             if (!ec.getAcceptanceWarningByDate(dateLast)) {
-                if (ec.getReportAcceptanceDate() != null && !dateLast.after(ec.getReportAcceptanceDate())) {
+                if (ec.getReportAcceptanceDate() != null && !dateLast.isAfter(ec.getReportAcceptanceDate())) {
                     newAcceptance = true;
                     Employee employee = eDAO.getEmployeeBySign(trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, ec.getId()).getAcceptedby());
                     results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
@@ -643,7 +643,7 @@ public class MatrixHelper {
         return results;
     }
 
-    private Date initStartEndDate(String startEndStr, String currMonth, String currYear, String monthString, String yearString) {
+    private LocalDate initStartEndDate(String startEndStr, String currMonth, String currYear, String monthString, String yearString) {
         if (currMonth != null) {
             return getDateFormStrings(startEndStr, currMonth, currYear, false);
         } else {
@@ -655,10 +655,10 @@ public class MatrixHelper {
         return HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE.equals(key);
     }
 
-    private boolean checkAcceptanceWarning(Employeecontract ec, Date dateLast) {
+    private boolean checkAcceptanceWarning(Employeecontract ec, LocalDate dateLast) {
         if (!ec.getAcceptanceWarningByDate(dateLast)) {
-            Date acceptanceDate = ec.getReportAcceptanceDate();
-            return acceptanceDate != null && !dateLast.after(acceptanceDate);
+            LocalDate acceptanceDate = ec.getReportAcceptanceDate();
+            return acceptanceDate != null && !dateLast.isAfter(acceptanceDate);
         }
         return false;
     }

@@ -4,7 +4,7 @@ import static org.tb.util.DateUtils.parse;
 
 import java.text.ParseException;
 import java.util.Collections;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +49,7 @@ public class CustomerorderHelper {
         request.getSession().setAttribute("suborders", Collections.emptyList());
 
         String dateString = reportForm.getReferenceday();
-        Date date;
+        LocalDate date;
         try {
             date = parse(dateString);
         } catch (ParseException e) {

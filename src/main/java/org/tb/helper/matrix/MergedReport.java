@@ -7,7 +7,7 @@ import org.tb.bdom.Customerorder;
 import org.tb.bdom.Suborder;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import org.tb.util.DateUtils;
 
 public class MergedReport implements Comparable<MergedReport> {
@@ -17,7 +17,7 @@ public class MergedReport implements Comparable<MergedReport> {
     private long sumMinutes;
     private final List<BookingDay> bookingDays = new ArrayList<>();
 
-    public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, Date date, long durationHours, long durationMinutes) {
+    public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
         this.subOrder = subOrder;
         this.customOrder = customOrder;
         addBookingDay(date, durationHours, durationMinutes, taskdescription);
@@ -27,12 +27,12 @@ public class MergedReport implements Comparable<MergedReport> {
         return bookingDays.size();
     }
 
-    public void mergeBookingDay(BookingDay tempBookingDay, Date date, long durationHours, long durationMinutes, String taskdescription) {
+    public void mergeBookingDay(BookingDay tempBookingDay, LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
         bookingDays.set(
             bookingDays.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes, tempBookingDay.getTaskdescription() + taskdescription));
     }
 
-    public void addBookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
+    public void addBookingDay(LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
         bookingDays.add(new BookingDay(date, durationHours, durationMinutes, taskdescription));
     }
 
@@ -48,9 +48,9 @@ public class MergedReport implements Comparable<MergedReport> {
         return sumHours;
     }
 
-    public void fillBookingDaysWithNull(Date dateFirst, Date dateLast) {
-        Date compareDate = dateFirst;
-        while ((compareDate.after(dateFirst) && compareDate.before(dateLast)) || compareDate.equals(dateFirst) || compareDate.equals(dateLast)) {
+    public void fillBookingDaysWithNull(LocalDate dateFirst, LocalDate dateLast) {
+        LocalDate compareDate = dateFirst;
+        while ((compareDate.isAfter(dateFirst) && compareDate.isBefore(dateLast)) || compareDate.equals(dateFirst) || compareDate.equals(dateLast)) {
             boolean dateAvailable = false;
             for (BookingDay tempBookingDay : bookingDays) {
                 if (tempBookingDay.getDate().equals(compareDate)) {

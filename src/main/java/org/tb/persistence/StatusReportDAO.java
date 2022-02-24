@@ -3,7 +3,7 @@ package org.tb.persistence;
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -44,7 +44,7 @@ public class StatusReportDAO {
      * Get a list of all visible {@link Statusreport}s.
      */
     public List<Statusreport> getVisibleStatusReports() {
-        final Date now = DateUtils.now();
+        final LocalDate now = DateUtils.today();
         return StreamSupport.stream(statusreportRepository.findAll().spliterator(), false)
             .filter(sr -> !TRUE.equals(sr.getCustomerorder().getHide()))
             .filter(sr -> !sr.getCustomerorder().isValidAt(now))
@@ -80,7 +80,7 @@ public class StatusReportDAO {
      * Get a list of all unreleased final {@link Statusreport}s with an untildate > the given date,
      * that are associated with the given customerOrderId, senderId.
      */
-    public List<Statusreport> getUnreleasedFinalStatusReports(long customerOrderId, long senderId, Date date) {
+    public List<Statusreport> getUnreleasedFinalStatusReports(long customerOrderId, long senderId, LocalDate date) {
         return statusreportRepository.getUnreleasedFinalStatusReports(customerOrderId, senderId, date);
     }
 
@@ -88,7 +88,7 @@ public class StatusReportDAO {
      * Get a list of all unreleased periodical {@link Statusreport}s with an untildate > the given date,
      * that are associated with the given customerOrderId, senderId.
      */
-    public List<Statusreport> getUnreleasedPeriodicalStatusReports(long customerOrderId, long senderId, Date date) {
+    public List<Statusreport> getUnreleasedPeriodicalStatusReports(long customerOrderId, long senderId, LocalDate date) {
         return statusreportRepository.getUnreleasedPeriodicalStatusReports(customerOrderId, senderId, date);
     }
 
@@ -99,7 +99,7 @@ public class StatusReportDAO {
         return statusreportRepository.getReleasedStatusReportsByRecipientId(employeeId);
     }
 
-    public Date getMaxUntilDateForCustomerOrderId(long coId) {
+    public LocalDate getMaxUntilDateForCustomerOrderId(long coId) {
         return statusreportRepository.getMaxUntilDateForCustomerOrderId(coId).orElse(null);
     }
 

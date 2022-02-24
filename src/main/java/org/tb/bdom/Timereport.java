@@ -1,11 +1,10 @@
 package org.tb.bdom;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
@@ -65,12 +64,12 @@ public class Timereport extends AuditedEntity implements Serializable {
      * Sign of the releasing person
      */
     private String releasedby;
-    private Date released;
+    private LocalDateTime released;
     /**
      * Sign of the accepting person
      */
     private String acceptedby;
-    private Date accepted;
+    private LocalDateTime accepted;
 
     public Timereport getTwin() {
         Timereport timereport = new Timereport();
@@ -90,7 +89,8 @@ public class Timereport extends AuditedEntity implements Serializable {
     }
 
     public boolean getFitsToContract() {
-        return !referenceday.getRefdate().before(employeecontract.getValidFrom()) && (employeecontract.getValidUntil() == null || !referenceday.getRefdate().after(employeecontract.getValidUntil()));
+        return !referenceday.getRefdate().isBefore(employeecontract.getValidFrom())
+               && (employeecontract.getValidUntil() == null || !referenceday.getRefdate().isAfter(employeecontract.getValidUntil()));
     }
 
     public String getTimeReportAsString() {

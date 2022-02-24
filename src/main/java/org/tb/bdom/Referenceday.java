@@ -3,7 +3,7 @@ package org.tb.bdom;
 import static javax.persistence.TemporalType.DATE;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import javax.persistence.Entity;
@@ -22,7 +22,7 @@ public class Referenceday extends AuditedEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Temporal(DATE)
-    private Date refdate;
+    private LocalDate refdate;
 
     private Boolean workingday;
     /**

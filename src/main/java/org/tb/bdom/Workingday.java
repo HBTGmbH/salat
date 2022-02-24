@@ -4,7 +4,7 @@ import static java.lang.Math.max;
 import static javax.persistence.TemporalType.DATE;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Objects;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -28,7 +28,7 @@ public class Workingday extends AuditedEntity implements Serializable {
     private Employeecontract employeecontract;
 
     @Temporal(DATE)
-    private Date refday;
+    private LocalDate refday;
     private int Starttimehour;
     private int Starttimeminute;
     private int breakhours;

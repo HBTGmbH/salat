@@ -3,7 +3,7 @@ package org.tb.bdom;
 import static javax.persistence.TemporalType.DATE;
 import static javax.persistence.TemporalType.TIMESTAMP;
 
-import java.util.Date;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -53,9 +53,9 @@ public class Statusreport extends AuditedEntity implements Serializable {
     private Byte sort;
     private Byte phase;
     @Temporal(DATE)
-    private Date fromdate;
+    private LocalDate fromdate;
     @Temporal(DATE)
-    private Date untildate;
+    private LocalDate untildate;
     private String allocator;
     private Byte trend;
     private Byte trendstatus;
@@ -129,9 +129,9 @@ public class Statusreport extends AuditedEntity implements Serializable {
     @Column(columnDefinition = "text")
     private String notes;
     @Temporal(TIMESTAMP)
-    private Date released;
+    private LocalDate released;
     @Temporal(TIMESTAMP)
-    private Date accepted;
+    private LocalDate accepted;
 
     public Byte getOverallStatus() {
         Byte status = 0;

@@ -6,7 +6,7 @@ import static org.tb.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 import static org.tb.util.DateUtils.today;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -94,7 +94,7 @@ public class TimereportHelper {
         double dMinutes = (reportForm.getHours() -
                 Math.floor(reportForm.getHours())) * MINUTES_PER_HOUR;
 
-        int minutesEnd = reportForm.getSelectedMinuteBegin() + new Double(dMinutes).intValue();
+        int minutesEnd = reportForm.getSelectedMinuteBegin() + Double.valueOf(dMinutes).intValue();
 
         //		// clean possible truncation errors
         if (minutesEnd % GlobalConstants.MINUTE_INCREMENT != 0) {
@@ -118,7 +118,7 @@ public class TimereportHelper {
 
     public ActionMessages validateNewDate(
             ActionMessages errors,
-            Date theNewDate,
+            LocalDate theNewDate,
             Timereport timereport,
             Employeecontract loginEmployeeContract,
             boolean authorized) {
@@ -173,33 +173,33 @@ public class TimereportHelper {
 
         // check date vs release status
         Employeecontract employeecontract = timereport.getEmployeecontract();
-        Date releaseDate = employeecontract.getReportReleaseDate();
+        LocalDate releaseDate = employeecontract.getReportReleaseDate();
         if (releaseDate == null) {
             releaseDate = employeecontract.getValidFrom();
         }
-        Date acceptanceDate = employeecontract.getReportAcceptanceDate();
+        LocalDate acceptanceDate = employeecontract.getReportAcceptanceDate();
         if (acceptanceDate == null) {
             acceptanceDate = employeecontract.getValidFrom();
         }
 
         // check, if refDate is first day
         boolean firstday = false;
-        if (!releaseDate.after(employeecontract.getValidFrom()) &&
-                !theNewDate.after(employeecontract.getValidFrom())) {
+        if (!releaseDate.isAfter(employeecontract.getValidFrom()) &&
+                !theNewDate.isAfter(employeecontract.getValidFrom())) {
             firstday = true;
         }
 
         if (!loginEmployeeContract.getEmployee().getSign().equals("adm")) {
             if (authorized && loginEmployeeContract.getId() != timereport.getEmployeecontract().getId()) {
-                if (releaseDate.before(theNewDate) || firstday) {
+                if (releaseDate.isBefore(theNewDate) || firstday) {
                     errors.add("release", new ActionMessage("form.timereport.error.not.released"));
                 }
             } else {
-                if (!releaseDate.before(theNewDate) && !firstday) {
+                if (!releaseDate.isBefore(theNewDate) && !firstday) {
                     errors.add("release", new ActionMessage("form.timereport.error.released"));
                 }
             }
-            if (!theNewDate.after(acceptanceDate) && !firstday) {
+            if (!theNewDate.isAfter(acceptanceDate) && !firstday) {
                 errors.add("release", new ActionMessage("form.timereport.error.accepted"));
             }
         }
@@ -218,7 +218,7 @@ public class TimereportHelper {
     /**
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1].
      */
-    private int[] getWorkingTimeForDateAndEmployeeContract(Date date, long employeeContractId) {
+    private int[] getWorkingTimeForDateAndEmployeeContract(LocalDate date, long employeeContractId) {
         int[] workingTime = new int[2];
         List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         int hours = 0;
@@ -238,7 +238,7 @@ public class TimereportHelper {
     /**
      * @return Returns int[]  0=hours 1=minutes
      */
-    public int[] determineBeginTimeToDisplay(long ecId, Date date, Workingday workingday) {
+    public int[] determineBeginTimeToDisplay(long ecId, LocalDate date, Workingday workingday) {
         int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId);
         if (workingday != null) {
             beginTime[0] += workingday.getStarttimehour();
@@ -251,7 +251,7 @@ public class TimereportHelper {
         return beginTime;
     }
 
-    public int[] determineTimesToDisplay(long ecId, Date date, Workingday workingday, Timereport tr) {
+    public int[] determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, Timereport tr) {
         List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
             int hourBegin = workingday.getStarttimehour();
@@ -439,22 +439,22 @@ public class TimereportHelper {
      */
     public int calculateOvertimeTotal(Employeecontract employeecontract) {
 
-        Date today = today();
+        LocalDate today = today();
 
-        Date contractBegin = employeecontract.getValidFrom();
+        LocalDate contractBegin = employeecontract.getValidFrom();
 
         return calculateOvertime(contractBegin, today, employeecontract, true);
 
     }
 
-    public int calculateOvertime(Date start, Date end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
+    public int calculateOvertime(LocalDate start, LocalDate end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
         // do not consider invalid(outside of the validity of the contract) days
-        if (employeecontract.getValidUntil() != null && end.after(employeecontract.getValidUntil())) {
+        if (employeecontract.getValidUntil() != null && end.isAfter(employeecontract.getValidUntil())) {
             end = employeecontract.getValidUntil();
         }
 
-        if (employeecontract.getValidFrom() != null && start.before(employeecontract.getValidFrom())) {
+        if (employeecontract.getValidFrom() != null && start.isBefore(employeecontract.getValidFrom())) {
             start = employeecontract.getValidFrom();
         }
 
@@ -507,7 +507,7 @@ public class TimereportHelper {
             overtimeMinutes = (int) (actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes);
         }
 
-        if (end.getTime() >= start.getTime()) {
+        if (end.isAfter(start) || end.isEqual(start)) {
             return overtimeMinutes;
         } else {
             //startdate > enddate, should only happen when reopened on day of contractbegin (because then, enddate is set to (contractbegin - 1))

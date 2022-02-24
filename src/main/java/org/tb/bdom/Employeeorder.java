@@ -4,7 +4,7 @@ import static javax.persistence.TemporalType.DATE;
 import static org.tb.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -53,23 +53,23 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     private Double debithours;
     private Byte debithoursunit;
     @Temporal(DATE)
-    private Date fromDate;
+    private LocalDate fromDate;
     @Temporal(DATE)
-    private Date untilDate;
+    private LocalDate untilDate;
 
     public boolean getOpenEnd() {
         return getUntilDate() == null;
     }
 
-    public Date getUntilDate() {
+    public LocalDate getUntilDate() {
         if (untilDate == null) {
             return suborder.getUntilDate();
         }
         return untilDate;
     }
 
-    public boolean isValidAt(java.util.Date date) {
-        return !date.before(getFromDate()) && (getUntilDate() == null || !date.after(getUntilDate()));
+    public boolean isValidAt(java.time.LocalDate date) {
+        return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
     }
 
     public String getEmployeeOrderAsString() {
@@ -91,8 +91,8 @@ public class Employeeorder extends AuditedEntity implements Serializable {
      * @return Returns true, if the {@link Employeeorder} is currently valid, false otherwise.
      */
     public boolean getCurrentlyValid() {
-        Date today = DateUtils.today();
-        return !today.before(getFromDate()) && (getUntilDate() == null || !today.after(getUntilDate()));
+        LocalDate today = DateUtils.today();
+        return !today.isBefore(getFromDate()) && (getUntilDate() == null || !today.isAfter(getUntilDate()));
     }
 
     /**
@@ -100,7 +100,7 @@ public class Employeeorder extends AuditedEntity implements Serializable {
      */
     public boolean getFitsToSuperiorObjects() {
         // check from date
-        if (getFromDate().before(employeecontract.getValidFrom()) || getFromDate().before(suborder.getFromDate())) {
+        if (getFromDate().isBefore(employeecontract.getValidFrom()) || getFromDate().isBefore(suborder.getFromDate())) {
             return false;
         }
 
@@ -110,9 +110,9 @@ public class Employeeorder extends AuditedEntity implements Serializable {
         }
         return getUntilDate() == null ||
                 ((employeecontract.getValidUntil() == null ||
-                        !getUntilDate().after(employeecontract.getValidUntil())) &&
+                        !getUntilDate().isAfter(employeecontract.getValidUntil())) &&
                         (suborder.getUntilDate() == null ||
-                                !getUntilDate().after(suborder.getUntilDate())));
+                                !getUntilDate().isAfter(suborder.getUntilDate())));
     }
 
 }

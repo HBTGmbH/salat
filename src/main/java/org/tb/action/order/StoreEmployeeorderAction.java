@@ -5,7 +5,7 @@ import static org.tb.util.DateUtils.parse;
 import static org.tb.util.DateUtils.today;
 
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -76,14 +76,14 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
             String datum = which.equals("until") ? eoForm.getValidUntil() : eoForm.getValidFrom();
 
-            Date newValue;
+            LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, eoForm, which);
                 if (errorMessages.size() > 0) {
                     return mapping.getInputForward();
                 }
 
-                newValue = DateUtils.parse(datum, today());
+                newValue = DateUtils.parseOrDefault(datum, today());
                 newValue = addDays(newValue, 1);
             } else {
                 newValue = today();
@@ -204,12 +204,12 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             eo.setEmployeecontract(employeecontract);
             eo.setSuborder(suborderDAO.getSuborderById(eoForm.getSuborderId()));
 
-            Date fromDate = parse(eoForm.getValidFrom(), (Date)null);
+            LocalDate fromDate = DateUtils.parseOrNull(eoForm.getValidFrom());
 
             if (eoForm.getValidUntil() == null || eoForm.getValidUntil().trim().isEmpty()) {
                 eo.setUntilDate(null);
             } else {
-                Date untilDate = parse(eoForm.getValidUntil(), (Date)null);
+                LocalDate untilDate = DateUtils.parseOrNull(eoForm.getValidUntil());
                 eo.setUntilDate(untilDate);
             }
             eo.setFromDate(fromDate);
@@ -375,8 +375,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             errors = new ActionMessages();
         }
 
-        java.util.Date validFromDate = null;
-        java.util.Date validUntilDate = null;
+        java.time.LocalDate validFromDate = null;
+        java.time.LocalDate validUntilDate = null;
         try {
             validFromDate = parse(eoForm.getValidFrom());
         } catch (ParseException e) {
@@ -392,7 +392,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
         // check if begin is before end
         if (validFromDate != null && validUntilDate != null) {
-            if (validUntilDate.before(validFromDate)) {
+            if (validUntilDate.isBefore(validFromDate)) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.endbeforebegin"));
             }
         }
@@ -448,31 +448,31 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                     if (eoId != employeeorder.getId()) {
                         if (validUntilDate != null
                                 && employeeorder.getUntilDate() != null) {
-                            if (!validFromDate.before(employeeorder.getFromDate())
-                                    && !validFromDate.after(employeeorder.getUntilDate())) {
+                            if (!validFromDate.isBefore(employeeorder.getFromDate())
+                                    && !validFromDate.isAfter(employeeorder.getUntilDate())) {
                                 // validFrom overleaps!
                                 errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                                 break;
                             }
-                            if (!validUntilDate.before(employeeorder.getFromDate())
-                                    && !validUntilDate.after(employeeorder.getUntilDate())) {
+                            if (!validUntilDate.isBefore(employeeorder.getFromDate())
+                                    && !validUntilDate.isAfter(employeeorder.getUntilDate())) {
                                 // validUntil overleaps!
                                 errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                                 break;
                             }
-                            if (validFromDate.before(employeeorder.getFromDate())
-                                    && validUntilDate.after(employeeorder.getUntilDate())) {
+                            if (validFromDate.isBefore(employeeorder.getFromDate())
+                                    && validUntilDate.isAfter(employeeorder.getUntilDate())) {
                                 // new Employee order enclosures an existing one
                                 errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                                 break;
                             }
                         } else if (validUntilDate == null && employeeorder.getUntilDate() != null) {
-                            if (!validFromDate.after(employeeorder.getUntilDate())) {
+                            if (!validFromDate.isAfter(employeeorder.getUntilDate())) {
                                 errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                                 break;
                             }
                         } else if (validUntilDate != null) {
-                            if (!validUntilDate.before(employeeorder.getFromDate())) {
+                            if (!validUntilDate.isBefore(employeeorder.getFromDate())) {
                                 errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                                 break;
                             }
@@ -490,18 +490,18 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
         if (validFromDate != null) {
             Employeecontract ec = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
             Suborder suborder = suborderDAO.getSuborderById(eoForm.getSuborderId());
-            if (validFromDate.before(ec.getValidFrom())) {
+            if (validFromDate.isBefore(ec.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.employeeorder.error.date.outofrange.employeecontract"));
             }
-            if (validFromDate.before(suborder.getFromDate())) {
+            if (validFromDate.isBefore(suborder.getFromDate())) {
                 errors.add("validFrom", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
             }
             if (validUntilDate == null && ec.getValidUntil() != null || validUntilDate != null
-                    && ec.getValidUntil() != null && validUntilDate.after(ec.getValidUntil())) {
+                    && ec.getValidUntil() != null && validUntilDate.isAfter(ec.getValidUntil())) {
                 errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.employeecontract"));
             }
             if (validUntilDate == null && suborder.getUntilDate() != null || validUntilDate != null
-                    && suborder.getUntilDate() != null && validUntilDate.after(suborder.getUntilDate())) {
+                    && suborder.getUntilDate() != null && validUntilDate.isAfter(suborder.getUntilDate())) {
                 errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
             }
         }

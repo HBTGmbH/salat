@@ -2,7 +2,7 @@ package org.tb.action.employee;
 
 import static org.tb.util.DateUtils.today;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -60,7 +60,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("totalovertime", totalOvertime);
 
         // set day string for overime
-        Date now = today();
+        LocalDate now = today();
         request.getSession().setAttribute("dateString", DateUtils.format(now));
 
         // forward to employee contract add/edit form
@@ -102,10 +102,10 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
             ecForm.setYearlyvacation(GlobalConstants.VACATION_PER_YEAR);
         }
 
-        Date fromDate = ec.getValidFrom();
+        LocalDate fromDate = ec.getValidFrom();
         ecForm.setValidFrom(DateUtils.format(fromDate));
         if (ec.getValidUntil() != null) {
-            Date untilDate = ec.getValidUntil();
+            LocalDate untilDate = ec.getValidUntil();
             ecForm.setValidUntil(DateUtils.format(untilDate));
         }
     }

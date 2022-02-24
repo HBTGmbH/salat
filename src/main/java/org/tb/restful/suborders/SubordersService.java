@@ -6,7 +6,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class SubordersService {
     @GetMapping(path = "/availableSuborders", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     public List<SuborderData> getAvailableSuborders(
-        @RequestParam("refDate") Date refDate
+        @RequestParam("refDate") LocalDate refDate
     ) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);

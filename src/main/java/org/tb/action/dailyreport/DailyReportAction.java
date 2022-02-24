@@ -4,7 +4,7 @@ import static org.tb.util.DateUtils.getDateFormStrings;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
@@ -44,7 +44,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
     /**
      * @return Returns the date associated the request. If parsing fails, the current date is returned.
      */
-    protected Date getSelectedDateFromRequest(HttpServletRequest request) {
+    protected LocalDate getSelectedDateFromRequest(HttpServletRequest request) {
         String dayString = (String) request.getSession().getAttribute("currentDay");
         String monthString = (String) request.getSession().getAttribute("currentMonth");
         String yearString = (String) request.getSession().getAttribute("currentYear");
@@ -83,8 +83,8 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         if (selectedView == null) {
             selectedView = GlobalConstants.VIEW_DAILY;
         }
-        Date beginDate;
-        Date endDate;
+        LocalDate beginDate;
+        LocalDate endDate;
 
         /* make sure that the form is set in the http session, it could be a newly created object */
         request.getSession().setAttribute("showDailyReportForm", reportForm);
@@ -276,7 +276,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         String monthString = reportForm.getMonth();
         String yearString = reportForm.getYear();
 
-        Date refDate = getDateFormStrings(dayString, monthString, yearString, true);
+        LocalDate refDate = getDateFormStrings(dayString, monthString, yearString, true);
 
         Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
         if (workingday == null && nullPruefung) {

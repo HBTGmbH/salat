@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -106,7 +106,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         Collection<Long> errors = new ArrayList<>();
         ids.forEach(id -> {
             Timereport timereport = timereportDAO.getTimereportById(id);
-            Date shiftedDate = DateUtils.addDays(timereport.getReferenceday().getRefdate(), days);
+            LocalDate shiftedDate = DateUtils.addDays(timereport.getReferenceday().getRefdate(), days);
             ActionMessages actionErrors = timereportHelper.validateNewDate(new ActionMessages(), shiftedDate,
                 timereport, loginEmployeeContract, authorized);
             if (!actionErrors.isEmpty()) {
@@ -310,17 +310,17 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             reportForm.setLastyear(reportForm.getYear());
             reportForm.setEnddate(reportForm.getStartdate());
         } else {
-            Date startdate;
+            LocalDate startdate;
             if (reportForm.getStartdate() != null) {
-                startdate = DateUtils.parse(reportForm.getStartdate(), today());
+                startdate = DateUtils.parseOrDefault(reportForm.getStartdate(), today());
             } else {
                 startdate = today();
             }
 
-            Date enddate;
+            LocalDate enddate;
             if (reportForm.getEnddate() != null) {
                 try {
-                    enddate = DateUtils.parse(reportForm.getEnddate(), today());
+                    enddate = DateUtils.parseOrDefault(reportForm.getEnddate(), today());
                 } catch (DateTimeParseException e) {
                     enddate = startdate;
                 }
@@ -354,7 +354,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setLastyear(reportForm.getYear());
                 reportForm.setEnddate(reportForm.getStartdate());
             } else if (GlobalConstants.VIEW_CUSTOM.equals(view)) {
-                if (!enddate.before(startdate)) {
+                if (!enddate.isBefore(startdate)) {
                     // custom view -> parse enddate and set lastday/-month/-year-fields
                     day = formatDayOfMonth(enddate);
                     month = formatMonth(enddate);
@@ -447,7 +447,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     if (ec.getId() != reportForm.getEmployeeContractId()) {
                         ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                     }
-                    Date date = DateUtils.parse(reportForm.getEnddate(), e -> {
+                    LocalDate date = DateUtils.parse(reportForm.getEnddate(), e -> {
                         throw new RuntimeException(e);
                     });
                     if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
@@ -455,10 +455,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     }
                     request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
                     int overtime;
-                    if (ec.getReportAcceptanceDate().before(date) && ec.getUseOvertimeOld() == false) {
+                    if (ec.getReportAcceptanceDate().isBefore(date) && ec.getUseOvertimeOld() == false) {
                         Double overtimeStatic = ec.getOvertimeStatic();
                         int otStaticMinutes = (int) (overtimeStatic * 60);
-                        Date dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
+                        LocalDate dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
                         int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, date, ec, true);
                         overtime = otStaticMinutes + overtimeDynamic;
                     } else {
@@ -594,7 +594,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         return mapping.findForward("success");
     }
 
-    private Date changeDate(Date date, int change) {
+    private LocalDate changeDate(LocalDate date, int change) {
         if (change != 0) {
             date = DateUtils.addDays(date, change);
         } else {
@@ -641,7 +641,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("currentMonth", reportForm.getMonth());
             request.getSession().setAttribute("currentYear", reportForm.getYear());
             String dateString = reportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
-            Date date = parse(dateString, (Date)null);
+            LocalDate date = DateUtils.parseOrNull(dateString);
             Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
             if (currentEmployeeId == null || currentEmployeeId == 0) {
                 currentEmployeeId = loginEmployee.getId();
@@ -679,7 +679,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             }
             request.getSession().setAttribute("timereports", timereports);
         } else {
-            Date refDate = DateUtils.today();
+            LocalDate refDate = DateUtils.today();
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
             if (workingday != null) {
                 // show break time, quitting time and working day ends on
@@ -701,12 +701,12 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
             // call from main menu: set current month, year, timereports,
             // orders, suborders...
-            Date dt = today();
-            // get day string (e.g., '31') from java.util.Date
+            LocalDate dt = today();
+            // get day string (e.g., '31') from java.time.LocalDate
             String dayString = dt.toString().substring(8, 10);
-            // get month string (e.g., 'Jan') from java.util.Date
+            // get month string (e.g., 'Jan') from java.time.LocalDate
             String monthString = dt.toString().substring(4, 7);
-            // get year string (e.g., '2006') from java.util.Date
+            // get year string (e.g., '2006') from java.time.LocalDate
             int length = dt.toString().length();
             String yearString = dt.toString().substring(length - 4, length);
             request.getSession().setAttribute("currentDay", dayString);
@@ -726,7 +726,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("startdate", dateString);
             reportForm.setEnddate(dateString);
             request.getSession().setAttribute("enddate", dateString);
-            Date date = parse(dateString, (Date)null);
+            LocalDate date = DateUtils.parseOrNull(dateString);
 
             Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
             List<Timereport> timereports;

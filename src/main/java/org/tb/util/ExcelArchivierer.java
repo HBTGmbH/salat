@@ -1,26 +1,40 @@
 package org.tb.util;
 
 
-import static org.tb.util.DateUtils.today;
+import static org.tb.GlobalConstants.DEFAULT_TIMEZONE_ID;
 
+import java.io.IOException;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import javax.annotation.Nonnull;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFDataFormatter;
 import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.RichTextString;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.tb.GlobalConstants;
 import org.tb.action.invoice.ShowInvoiceForm;
 import org.tb.helper.InvoiceSuborderHelper;
 import org.tb.helper.InvoiceTimereportHelper;
-
-import javax.annotation.Nonnull;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * This Class saves the created excel workbook
@@ -203,7 +217,7 @@ public class ExcelArchivierer {
         dateCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
         dateCellStyle.setAlignment(HorizontalAlignment.RIGHT);
         DataFormat dateFormat = workbook.createDataFormat();
-        dateCellStyle.setDataFormat(dateFormat.getFormat(GlobalConstants.DEFAULT_DATE_FORMAT_GERMAN));
+        dateCellStyle.setDataFormat(dateFormat.getFormat(GlobalConstants.DEFAULT_EXCEL_DATE_FORMAT));
         cellStyleIndexes.put("date", dateCellStyle.getIndex());
     }
 
@@ -283,9 +297,16 @@ public class ExcelArchivierer {
         }
         Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
         if (invoiceTimereportViewHelper.getReferenceday().getRefdate() != null) {
-            cell.setCellValue(invoiceTimereportViewHelper.getReferenceday().getRefdate());
+            Date date = Date.from(
+                invoiceTimereportViewHelper
+                    .getReferenceday()
+                    .getRefdate()
+                    .atStartOfDay(ZoneId.of(DEFAULT_TIMEZONE_ID))
+                    .toInstant()
+            );
+            cell.setCellValue(date);
         } else {
-            cell.setCellValue(today()); // should not happen
+            cell.setCellValue((Date )null); // should not happen
         }
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("date")));
         colIndex++;

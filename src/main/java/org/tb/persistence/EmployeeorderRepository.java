@@ -1,6 +1,6 @@
 package org.tb.persistence;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -14,9 +14,9 @@ public interface EmployeeorderRepository extends CrudRepository<Employeeorder, L
 
   @Query("select eo from Employeeorder eo where "
       + "eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId and "
-      + "(eo.untilDate >= :date or eo.untilDate is null) "
-      + "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc")
-  List<Employeeorder> findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(long employeeContractId, long suborderId, Date date);
+      + "(eo.untilLocalDate >= :date or eo.untilLocalDate is null) "
+      + "order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromLocalDate asc")
+  List<Employeeorder> findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(long employeeContractId, long suborderId, LocalDate date);
 
   List<Employeeorder> findAllByEmployeecontractId(long employeeContractId);
 

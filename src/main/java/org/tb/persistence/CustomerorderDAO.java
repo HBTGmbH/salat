@@ -6,7 +6,7 @@ import static org.springframework.data.domain.Sort.Direction.ASC;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -69,11 +69,11 @@ public class CustomerorderDAO {
      * Get a list of all vivible Customerorders ordered by their sign.
      */
     public List<Customerorder> getVisibleCustomerorders() {
-        return customerorderRepository.findAllValidAtAndNotHidden(DateUtils.now());
+        return customerorderRepository.findAllValidAtAndNotHidden(DateUtils.today());
     }
 
     private Specification<Customerorder> showOnlyValid() {
-        Date now = DateUtils.now();
+        LocalDate now = DateUtils.today();
         return (root, query, builder) -> {
             var fromDateLess = builder.lessThanOrEqualTo(root.get(Customerorder_.fromDate), now);
             var untilDateNullOrGreater = builder.or(
@@ -149,11 +149,11 @@ public class CustomerorderDAO {
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
      */
     public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
-        final var now = DateUtils.now();
+        final var now = DateUtils.today();
         return customerorderRepository.findAllByResponsibleHbt(responsibleHbtId).stream()
             .filter(c -> !TRUE.equals(c.getHide()))
-            .filter(c -> !c.getFromDate().after(now))
-            .filter(c -> c.getUntilDate() == null || !c.getUntilDate().before(now))
+            .filter(c -> !c.getFromDate().isAfter(now))
+            .filter(c -> c.getUntilDate() == null || !c.getUntilDate().isBefore(now))
             .sorted(Comparator.comparing(Customerorder::getSign))
             .collect(Collectors.toList());
     }
@@ -169,7 +169,7 @@ public class CustomerorderDAO {
             .collect(Collectors.toList());
     }
 
-    public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final Date date) {
+    public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final LocalDate date) {
         return customerorderRepository.findAll((root, query, builder) -> {
             ListJoin<Suborder, Employeeorder> employeeorderJoin = root.join(Customerorder_.suborders).join(Suborder_.employeeorders);
             Join<Employeeorder, Employeecontract> employeecontractJoin = employeeorderJoin.join(Employeeorder_.employeecontract);

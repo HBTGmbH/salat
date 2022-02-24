@@ -98,15 +98,15 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                         Employeecontract ec = employeecontractDAO.getEmployeeContractById(Long.parseLong(ecID));
                         eo.setEmployeecontract(ec);
                         eo.setSuborder(so);
-                        if (so.getFromDate().before(ec.getValidFrom())) {
+                        if (so.getFromDate().isBefore(ec.getValidFrom())) {
                             eo.setFromDate(ec.getValidFrom());
                         } else {
                             eo.setFromDate(so.getFromDate());
                         }
-                        if (so.getUntilDate() != null && ec.getValidUntil() != null && so.getUntilDate().before(ec.getValidUntil())
+                        if (so.getUntilDate() != null && ec.getValidUntil() != null && so.getUntilDate().isBefore(ec.getValidUntil())
                                 || so.getUntilDate() != null && ec.getValidUntil() == null || so.getUntilDate() == null && ec.getValidUntil() == null) {
                             eo.setUntilDate(so.getUntilDate());
-                        } else if (so.getUntilDate() != null && ec.getValidUntil() != null && ec.getValidUntil().before(so.getUntilDate()) || so.getUntilDate() == null && ec.getValidUntil() != null) {
+                        } else if (so.getUntilDate() != null && ec.getValidUntil() != null && ec.getValidUntil().isBefore(so.getUntilDate()) || so.getUntilDate() == null && ec.getValidUntil() != null) {
                             eo.setUntilDate(ec.getValidUntil());
                         }
                         eo.setSign("");

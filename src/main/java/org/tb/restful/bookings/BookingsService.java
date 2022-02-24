@@ -9,7 +9,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +45,7 @@ public class BookingsService {
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     public List<Booking> getBookings(
-        @RequestParam("datum") Date refDate
+        @RequestParam("datum") LocalDate refDate
     ) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);

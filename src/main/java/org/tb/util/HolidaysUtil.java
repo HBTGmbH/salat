@@ -1,21 +1,14 @@
 package org.tb.util;
 
-import java.time.ZoneId;
-import java.util.Date;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.tb.GlobalConstants;
-import org.tb.bdom.Publicholiday;
-import org.tb.persistence.PublicholidayDAO;
-
 import java.io.InputStream;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Scanner;
+import lombok.extern.slf4j.Slf4j;
+import org.tb.bdom.Publicholiday;
+import org.tb.persistence.PublicholidayDAO;
 
 /**
  * Tool class for easier handling of new holidays
@@ -38,14 +31,13 @@ public class HolidaysUtil {
             return Collections.emptyList();
         }
 
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(DATE_FORMAT);
         Scanner scanner = new Scanner(is);
         Collection<LocalDate> result = new ArrayList<>();
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine().trim();
             if (line.isEmpty() || line.startsWith("#")) continue;
             try {
-                LocalDate eastern = LocalDate.parse(line, dtf);
+                LocalDate eastern = DateUtils.parse(line, DATE_FORMAT);
                 result.add(eastern);
             } catch (IllegalArgumentException e) {
                 log.error("Could not parse '{}' to date from resource/file '{}'", line, EASTERN_SUNDAYS_RESOURCE_NAME);
@@ -76,28 +68,24 @@ public class HolidaysUtil {
         LocalDate reformationDay = easterSunday.withMonth(10).withDayOfMonth(31);
 
         Collection<Publicholiday> holidays = new ArrayList<>();
-        holidays.add(new Publicholiday(localDateToDate(newYear), "Neujahr"));
-        holidays.add(new Publicholiday(localDateToDate(goodFriday), "Karfreitag"));
-        holidays.add(new Publicholiday(localDateToDate(easterSunday), "Ostersonntag"));
-        holidays.add(new Publicholiday(localDateToDate(easterMonday), "Ostermontag"));
-        holidays.add(new Publicholiday(localDateToDate(mayTheFirst), "Maifeiertag"));
-        holidays.add(new Publicholiday(localDateToDate(ascension), "Christi Himmelfahrt"));
-        holidays.add(new Publicholiday(localDateToDate(whitSunday), "Pfingstsonntag"));
-        holidays.add(new Publicholiday(localDateToDate(whitMonday), "Pfingstmontag"));
-        holidays.add(new Publicholiday(localDateToDate(reunification), "Tag der Deutschen Einheit"));
+        holidays.add(new Publicholiday(newYear, "Neujahr"));
+        holidays.add(new Publicholiday(goodFriday, "Karfreitag"));
+        holidays.add(new Publicholiday(easterSunday, "Ostersonntag"));
+        holidays.add(new Publicholiday(easterMonday, "Ostermontag"));
+        holidays.add(new Publicholiday(mayTheFirst, "Maifeiertag"));
+        holidays.add(new Publicholiday(ascension, "Christi Himmelfahrt"));
+        holidays.add(new Publicholiday(whitSunday, "Pfingstsonntag"));
+        holidays.add(new Publicholiday(whitMonday, "Pfingstmontag"));
+        holidays.add(new Publicholiday(reunification, "Tag der Deutschen Einheit"));
         if (easterSunday.getYear() >= 2017) {
-            holidays.add(new Publicholiday(localDateToDate(reformationDay), "Reformationstag"));
+            holidays.add(new Publicholiday(reformationDay, "Reformationstag"));
         }
-        holidays.add(new Publicholiday(localDateToDate(firstChristmasDay), "1. Weihnachtstag"));
-        holidays.add(new Publicholiday(localDateToDate(secondChristmasDay), "2. Weihnachtstag"));
-        holidays.add(new Publicholiday(localDateToDate(christmasEve), "Heiligabend"));
-        holidays.add(new Publicholiday(localDateToDate(newYearsEve), "Silverster"));
+        holidays.add(new Publicholiday(firstChristmasDay, "1. Weihnachtstag"));
+        holidays.add(new Publicholiday(secondChristmasDay, "2. Weihnachtstag"));
+        holidays.add(new Publicholiday(christmasEve, "Heiligabend"));
+        holidays.add(new Publicholiday(newYearsEve, "Silverster"));
 
         return holidays;
-    }
-
-    private static Date localDateToDate(LocalDate input) {
-        return Date.from(input.atStartOfDay(ZoneId.of(GlobalConstants.DEFAULT_TIMEZONE_ID)).toInstant());
     }
 
 }

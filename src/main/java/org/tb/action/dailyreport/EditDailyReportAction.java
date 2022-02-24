@@ -3,7 +3,7 @@ package org.tb.action.dailyreport;
 import static org.tb.GlobalConstants.SORT_OF_REPORT_WORK;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -87,7 +87,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
                                 AddDailyReportForm reportForm, Timereport tr) {
 
         Employeecontract ec = tr.getEmployeecontract();
-        Date utilDate = tr.getReferenceday().getRefdate();
+        LocalDate utilDate = tr.getReferenceday().getRefdate();
 
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
         List<Suborder> theSuborders = new ArrayList<>();
@@ -121,7 +121,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         reportForm.setEmployeeContractId(ec.getId());
 
         reportForm.setReferenceday(DateUtils.format(utilDate));
-        Date reportDate = tr.getReferenceday().getRefdate();
+        LocalDate reportDate = tr.getReferenceday().getRefdate();
         Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(reportDate, ec.getId());
 
         boolean workingDayIsAvailable = false;
@@ -130,7 +130,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         }
 
         // workingday should only be available for today
-        Date today = DateUtils.today();
+        LocalDate today = DateUtils.today();
         if (!utilDate.equals(today)) {
             workingDayIsAvailable = false;
         }

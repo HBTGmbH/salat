@@ -2,7 +2,7 @@ package org.tb.helper.matrix;
 
 import static org.tb.util.TimeFormatUtils.timeFormatHoursAndMinutes;
 
-import java.util.Date;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import org.tb.util.DateUtils;
@@ -18,7 +18,7 @@ public class BookingDay implements Comparable<BookingDay> {
     private boolean satSun;
     private boolean publicHoliday;
 
-    public BookingDay(Date date, long durationHours, long durationMinutes, String taskdescription) {
+    public BookingDay(LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
         this.date = DateUtils.format(date);
         this.durationHours = durationHours;
         this.durationMinutes = durationMinutes;

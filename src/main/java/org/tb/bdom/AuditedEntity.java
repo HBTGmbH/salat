@@ -2,7 +2,8 @@ package org.tb.bdom;
 
 import static javax.persistence.TemporalType.TIMESTAMP;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -35,11 +36,11 @@ abstract public class AuditedEntity implements Persistable<Long> {
 
     @CreatedDate
     @Temporal(TIMESTAMP)
-    private Date created;
+    private LocalDateTime created;
 
     @LastModifiedDate
     @Temporal(TIMESTAMP)
-    private Date lastupdate;
+    private LocalDateTime lastupdate;
 
     @CreatedBy
     private String createdby;
