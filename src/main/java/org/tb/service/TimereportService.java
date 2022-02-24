@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Setter;
@@ -318,7 +319,7 @@ public class TimereportService {
         throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
       }
       if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
-              authorizedUser.getEmployeeId() != t.getEmployeecontract().getEmployee().getId()) {
+              !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
         throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
       }
     });

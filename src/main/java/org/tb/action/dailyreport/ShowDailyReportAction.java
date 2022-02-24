@@ -234,7 +234,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             }
             //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
             if (request.getSession().getAttribute("overtimeCompensation") == null
-                    || request.getSession().getAttribute("overtimeCompensation") != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+                    || !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
             }
         }
@@ -444,7 +444,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 }
                 //check if overtime should be computed until enddate (not today)
                 if (reportForm.getShowOvertimeUntil()) {
-                    if (ec.getId() != reportForm.getEmployeeContractId()) {
+                    if (!Objects.equals(ec.getId(), reportForm.getEmployeeContractId())) {
                         ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                     }
                     LocalDate date = DateUtils.parse(reportForm.getEnddate(), e -> {

@@ -314,7 +314,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         /* create visitor to collect suborders */
         SuborderVisitor customerOrderSetter = suborder -> {
             // do not modify root suborder
-            if (visitorRootSuborder.getId() != suborder.getId()) {
+            if (!Objects.equals(visitorRootSuborder.getId(), suborder.getId())) {
                 Suborder suborderToModify = visitorSuborderDAO
                         .getSuborderById(suborder.getId());
                 if (suborderToModify != null) {

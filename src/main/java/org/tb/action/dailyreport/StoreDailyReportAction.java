@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -481,8 +482,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         if (suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
             reportForm.setSelectedHourDuration(0);
             reportForm.setSelectedMinuteDuration(0);
-            if (request.getSession().getAttribute("overtimeCompensation") == null || request.getSession().getAttribute("overtimeCompensation")
-                    != GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION) {
+            if (request.getSession().getAttribute("overtimeCompensation") == null ||
+                !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
             }
 

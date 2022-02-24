@@ -234,120 +234,113 @@
 		</tr>
 		
 		<!-- Customerorder and Suborder (drop-down-menues) -->
-		<logic:equal name="report" value="W" scope="session">
-			<tr>
-				<td align="left" class="noBborderStyle" nowrap="nowrap">
-					<b><bean:message key="main.timereport.customerorder.text" />&nbsp;/&nbsp;<bean:message key="main.timereport.suborder.text" />:</b>
-				</td>
+		<tr>
+			<td align="left" class="noBborderStyle" nowrap="nowrap">
+				<b><bean:message key="main.timereport.customerorder.text" />&nbsp;/&nbsp;<bean:message key="main.timereport.suborder.text" />:</b>
+			</td>
 
-				<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
-					<html:select property="orderId" onchange="setUpdateSubordersAction(this)" styleClass="make-select2 orderCls">
-						<html:options collection="orders" labelProperty="signAndDescription" property="id" />
+			<td align="left" class="noBborderStyle" nowrap="nowrap"  width="90%" >
+				<html:select property="orderId" onchange="setUpdateSubordersAction(this)" styleClass="make-select2 orderCls">
+					<html:options collection="orders" labelProperty="signAndDescription" property="id" />
+				</html:select>
+				<img id="favOrderBtn" class="favOrderBtn" src="../images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
+				<b> / </b>
+				<html:select property="suborderSignId" styleClass="mandatory make-select2 suborderCls" value="${currentSuborderId}"
+					onchange="adjustSuborderSignChangedAction(this.form)">
+					<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
+				</html:select>
+				<img id="favSuborderBtn" class="favOrderBtn" src="../images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
+				<span style="color:red">
+					<html:errors property="orderId" />
+					<html:errors property="suborderId" />
+				</span>
+			</td>
+		</tr>
+
+		<c:if test="${workingDayIsAvailable}">
+			<tr>
+				<td align="left" class="noBborderStyle">
+					<b><bean:message key="main.timereport.begin.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
+				</td>
+				<td align="left" class="noBborderStyle">
+					<html:select property="selectedHourBegin" onchange="setUpdateHoursAction(this.form)">
+						<html:options collection="hours" property="value" labelProperty="label" />
 					</html:select>
-					<img id="favOrderBtn" class="favOrderBtn" src="../images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
-					<b> / </b>
-					<html:select property="suborderSignId" styleClass="mandatory make-select2 suborderCls" value="${currentSuborderId}" 
-						onchange="adjustSuborderSignChangedAction(this.form)">
-						<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
+					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+					<html:select property="selectedMinuteBegin"	onchange="setUpdateHoursAction(this.form)">
+						<html:options collection="minutes" property="value"	labelProperty="label" />
 					</html:select>
-					<img id="favSuborderBtn" class="favOrderBtn" src="../images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
+					<i><bean:message key="main.timereport.optional.help.text" /></i>
 					<span style="color:red">
-						<html:errors property="orderId" />
-						<html:errors property="suborderId" />
+						<html:errors property="selectedHourBegin" />
 					</span>
 				</td>
 			</tr>
-			
-			<c:if test="${workingDayIsAvailable}">
-				<tr>
-					<td align="left" class="noBborderStyle">
-						<b><bean:message key="main.timereport.begin.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
-					</td>
-					<td align="left" class="noBborderStyle">
-						<html:select property="selectedHourBegin" onchange="setUpdateHoursAction(this.form)">
-							<html:options collection="hours" property="value" labelProperty="label" />
-						</html:select>
-						<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-						<html:select property="selectedMinuteBegin"	onchange="setUpdateHoursAction(this.form)">
-							<html:options collection="minutes" property="value"	labelProperty="label" />
-						</html:select>
-						<i><bean:message key="main.timereport.optional.help.text" /></i>
-						<span style="color:red">
-							<html:errors property="selectedHourBegin" />
-						</span>
-					</td>
-				</tr>
-				<tr>
-					<td align="left" class="noBborderStyle">
-						<b><bean:message key="main.timereport.end.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
-					</td>
-					<td align="left" class="noBborderStyle">
-						<html:select property="selectedHourEnd"	onchange="setUpdateHoursAction(this.form)">
-							<html:options collection="hours" property="value" labelProperty="label" />
-						</html:select>
-						<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-						<html:select property="selectedMinuteEnd" onchange="setUpdateHoursAction(this.form)">
-							<html:options collection="minutes" property="value"	labelProperty="label" />
-						</html:select>
-						<%--
-						<b><bean:message key="main.timereport.orduration.text" />:</b>
-	           		    <html:text property="hours" size="6" maxlength="6" onchange="setUpdatePeriodAction(this.form)"/>   
-						 --%>
-           			 	<i><bean:message key="main.timereport.optional.help.text" /></i>
-           			 	<span style="color:red">
-           			 		<html:errors property="selectedHourEnd" />
-           			 	</span>
-           			</td>
-				</tr>
-				<tr>
-					<td align="left" class="noBborderStyle">
-						<i><bean:message key="main.timereport.or.text" /></i>
-					</td>
-				</tr>
-			</c:if>
 			<tr>
 				<td align="left" class="noBborderStyle">
-					<b><bean:message key="main.timereport.duration.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
+					<b><bean:message key="main.timereport.end.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
 				</td>
 				<td align="left" class="noBborderStyle">
-					<html:select property="selectedHourDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
-						<html:options collection="hoursDuration" property="value" labelProperty="label" />
+					<html:select property="selectedHourEnd"	onchange="setUpdateHoursAction(this.form)">
+						<html:options collection="hours" property="value" labelProperty="label" />
 					</html:select>
 					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-					<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
-						<html:options collection="minutes" property="value" labelProperty="label" />
+					<html:select property="selectedMinuteEnd" onchange="setUpdateHoursAction(this.form)">
+						<html:options collection="minutes" property="value"	labelProperty="label" />
 					</html:select>
+					<i><bean:message key="main.timereport.optional.help.text" /></i>
 					<span style="color:red">
-           			 	<html:errors property="selectedDuration" />
-           			 </span>
+						<html:errors property="selectedHourEnd" />
+					</span>
 				</td>
 			</tr>
-
 			<tr>
 				<td align="left" class="noBborderStyle">
-					<b><bean:message key="main.timereport.costs.text" />:</b>
+					<i><bean:message key="main.timereport.or.text" /></i>
 				</td>
-				<td align="left" class="noBborderStyle">
-					<html:text property="costs" size="10" maxlength="8" />
-				 	<span style="color:red">
-				 		<html:errors property="costs" />
-				 	</span>
-				 </td>
 			</tr>
+		</c:if>
+		<tr>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.timereport.duration.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="selectedHourDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
+					<html:options collection="hoursDuration" property="value" labelProperty="label" />
+				</html:select>
+				<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+				<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
+					<html:options collection="minutes" property="value" labelProperty="label" />
+				</html:select>
+				<span style="color:red">
+					<html:errors property="selectedDuration" />
+				 </span>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.timereport.costs.text" />:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:text property="costs" size="10" maxlength="8" />
+				<span style="color:red">
+					<html:errors property="costs" />
+				</span>
+			 </td>
+		</tr>
 			
 		<%-- Training Flag --%>
-			<tr>
-					<td align="left" class="noBborderStyle">
-						<b><bean:message key="main.timereport.training.text"/>:</b>
-					</td>
-					<td align="left" class="noBborderStyle">
-						<html:checkbox property="training" /> 
-					</td>
-					
-			</tr>
+		<tr>
+				<td align="left" class="noBborderStyle">
+					<b><bean:message key="main.timereport.training.text"/>:</b>
+				</td>
+				<td align="left" class="noBborderStyle">
+					<html:checkbox property="training" />
+				</td>
+
+		</tr>
 				
-		</logic:equal>
-		
 		<tr>
 			<td align="left" valign="top" class="noBborderStyle">
 				<b><bean:message key="main.timereport.comment.text" />:</b>

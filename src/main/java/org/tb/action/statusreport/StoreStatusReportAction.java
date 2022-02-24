@@ -8,6 +8,7 @@ import static org.tb.util.DateUtils.today;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -239,7 +240,8 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                 Statusreport lastKnownReport = existingReports.get(existingReports.size() - 1);
 
                 if (request.getSession().getAttribute("currentStatusReport") != null &&
-                        ((Statusreport) request.getSession().getAttribute("currentStatusReport")).getId() == lastKnownReport.getId()) {
+                    Objects.equals(((Statusreport) request.getSession().getAttribute("currentStatusReport")).getId(),
+                        lastKnownReport.getId())) {
                     fromDate = lastKnownReport.getFromdate();
                     reportForm.setValidUntil(format(lastKnownReport.getUntildate()));
                 } else {
