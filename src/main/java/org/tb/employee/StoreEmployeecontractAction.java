@@ -335,12 +335,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 }
             }
 
-            if (newContract) {
-                // default-value for useOvertimeOld in new employeecontract: False
-                // useOvertimeOld is only needed at start of Release 1.83, because of the new overtime computation
-                ec.setUseOvertimeOld(false);
-            }
-
             employeecontractDAO.save(ec, loginEmployee);
 
             if (newContract) {

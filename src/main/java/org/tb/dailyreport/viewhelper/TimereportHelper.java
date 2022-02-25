@@ -391,19 +391,6 @@ public class TimereportHelper {
         }
     }
 
-    /**
-     * @return Returns the minutes of overtime, might be negative
-     */
-    public int calculateOvertimeTotal(Employeecontract employeecontract) {
-
-        LocalDate today = today();
-
-        LocalDate contractBegin = employeecontract.getValidFrom();
-
-        return calculateOvertime(contractBegin, today, employeecontract, true);
-
-    }
-
     public int calculateOvertime(LocalDate start, LocalDate end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
         // do not consider invalid(outside of the validity of the contract) days

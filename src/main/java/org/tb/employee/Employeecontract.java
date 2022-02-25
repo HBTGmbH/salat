@@ -50,14 +50,9 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     private LocalDate reportAcceptanceDate;
     private LocalDate reportReleaseDate;
     private Boolean hide;
-    /**
-     * static overtime from begin of employeecontract to reportAcceptanceDate
-     */
+
+    /** static overtime ranging from begin of employeecontract to reportAcceptanceDate */
     private int overtimeStaticMinutes;
-    /**
-     * boolean for new overtime computation: if true, overtimeStatic has not been set before
-     */
-    private Boolean useOvertimeOld; // FIXME remove??
 
     @OneToOne
     // FIXME check if ManyToOne?
@@ -223,9 +218,9 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             .doubleValue();
     }
 
-    public void setDailyWorkingTime(Double dailyworkingtime) {
+    public void setDailyWorkingTime(Double value) {
         dailyWorkingTimeMinutes = BigDecimal
-            .valueOf(dailyworkingtime)
+            .valueOf(value)
             .setScale(2)
             .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
             .setScale(0)
@@ -233,12 +228,21 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     }
 
     public double getOvertimeStatic() {
-        return 0;
+        return BigDecimal
+            .valueOf(overtimeStaticMinutes)
+            .setScale(2)
+            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .doubleValue();
     }
 
 
     public void setOvertimeStatic(double value) {
-
+        dailyWorkingTimeMinutes = BigDecimal
+            .valueOf(value)
+            .setScale(2)
+            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .setScale(0)
+            .intValue();
     }
 
 }

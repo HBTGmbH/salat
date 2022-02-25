@@ -1,5 +1,6 @@
 package org.tb.auth;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getBeginOfMonth;
@@ -211,24 +212,18 @@ public class AfterLogin {
 
     public void handleOvertime(Employeecontract employeecontract, HttpSession session) {
         double overtimeStatic = employeecontract.getOvertimeStatic();
-        int otStaticMinutes = (int) (overtimeStatic * 60);
+        int otStaticMinutes = (int) (overtimeStatic * MINUTES_PER_HOUR);
 
-        int overtime;
-        if (employeecontract.getUseOvertimeOld() != null && !employeecontract.getUseOvertimeOld()) {
-            //use new overtime computation with static + dynamic overtime
-            //need the LocalDate from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
-            LocalDate dynamicDate;
-            if (employeecontract.getReportAcceptanceDate() == null || employeecontract.getReportAcceptanceDate().equals(employeecontract.getValidFrom())) {
-                dynamicDate = employeecontract.getValidFrom();
-            } else {
-                dynamicDate = addDays(employeecontract.getReportAcceptanceDate(), 1);
-            }
-            int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, today(), employeecontract, true);
-            overtime = otStaticMinutes + overtimeDynamic;
-            // if after SALAT-Release 1.83, no Release was accepted yet, use old overtime computation
+        //use new overtime computation with static + dynamic overtime
+        //need the LocalDate from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
+        LocalDate dynamicDate;
+        if (employeecontract.getReportAcceptanceDate() == null || employeecontract.getReportAcceptanceDate().equals(employeecontract.getValidFrom())) {
+            dynamicDate = employeecontract.getValidFrom();
         } else {
-            overtime = timereportHelper.calculateOvertimeTotal(employeecontract);
+            dynamicDate = addDays(employeecontract.getReportAcceptanceDate(), 1);
         }
+        int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, today(), employeecontract, true);
+        int overtime = otStaticMinutes + overtimeDynamic;
 
         boolean overtimeIsNegative = overtime < 0;
 

@@ -337,3 +337,33 @@ databaseChangeLog:
         - dropColumn:
             tableName: employeecontract
             columnName: overtimeStatic
+  - changeSet:
+      id: 9
+      author: kr
+      comment: Introduce customer order debit hours in minutes
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: customerorder
+            columnName: debithours
+      changes:
+        - addColumn:
+            tableName: customerorder
+            columns:
+              - column:
+                  name: debitMinutes
+                  type: int
+        - update:
+            columns:
+              - column:
+                  name: debitMinutes
+                  valueComputed: ROUND(debithours * 60)
+            tableName: customerorder
+            where: debitMinutes is null
+        - addNotNullConstraint:
+            tableName: customerorder
+            columnName: debitMinutes
+            columnDataType: int
+        - dropColumn:
+            tableName: customerorder
+            columnName: debithours
