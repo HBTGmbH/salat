@@ -325,7 +325,7 @@ public class TimereportService {
     long debitMinutesTemp = (long) (employeeorder.getDebithours() * MINUTES_PER_HOUR);
     // increase debit minutes if timereport exists (update case) by the time of that timereport
     // because this time is read from the database query, too. This is a trick to circumvent this special case.
-    if(timereports.size() == 1 && timereports.get(0).getId() > 0) {
+    if(timereports.size() == 1 && !timereports.get(0).isNew()) {
       Timereport timereport = timereports.get(0);
       debitMinutesTemp += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
     }
