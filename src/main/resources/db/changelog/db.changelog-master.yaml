@@ -346,6 +346,10 @@ databaseChangeLog:
         - columnExists:
             tableName: customerorder
             columnName: debithours
+        - not:
+            - columnExists:
+                tableName: customerorder
+                columnName: debitMinutes
       changes:
         - addColumn:
             tableName: customerorder
@@ -360,10 +364,58 @@ databaseChangeLog:
                   valueComputed: ROUND(debithours * 60)
             tableName: customerorder
             where: debitMinutes is null
+        - update:
+            columns:
+              - column:
+                  name: debitMinutes
+                  valueNumeric: 0
+            tableName: customerorder
+            where: debitMinutes is null
         - addNotNullConstraint:
             tableName: customerorder
             columnName: debitMinutes
             columnDataType: int
         - dropColumn:
             tableName: customerorder
+            columnName: debithours
+  - changeSet:
+      id: 10
+      author: kr
+      comment: Introduce suborder debit hours in minutes
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: suborder
+            columnName: debithours
+        - not:
+            - columnExists:
+                tableName: suborder
+                columnName: debitMinutes
+      changes:
+        - addColumn:
+            tableName: suborder
+            columns:
+              - column:
+                  name: debitMinutes
+                  type: int
+        - update:
+            columns:
+              - column:
+                  name: debitMinutes
+                  valueComputed: ROUND(debithours * 60)
+            tableName: suborder
+            where: debitMinutes is null
+        - update:
+            columns:
+              - column:
+                  name: debitMinutes
+                  valueNumeric: 0
+            tableName: suborder
+            where: debitMinutes is null
+        - addNotNullConstraint:
+            tableName: suborder
+            columnName: debitMinutes
+            columnDataType: int
+        - dropColumn:
+            tableName: suborder
             columnName: debithours
