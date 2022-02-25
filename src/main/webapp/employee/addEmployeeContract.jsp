@@ -110,7 +110,7 @@
 		
 			<!-- JavaScript Stuff for popup calender -->
 			<script type="text/javascript" language="JavaScript"
-				src=""../scripts/"CalendarPopup.js"></script> <script type="text/javascript"
+				src="../scripts/CalendarPopup.js"></script> <script type="text/javascript"
 				language="JavaScript">
                     document.write(getCalendarStyles());
                 </script> <script type="text/javascript" language="JavaScript">

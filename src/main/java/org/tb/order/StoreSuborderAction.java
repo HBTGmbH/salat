@@ -297,30 +297,32 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
 
             // adjust employeeorders
-            List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
-            if (employeeorders != null && !employeeorders.isEmpty()) {
-                for (Employeeorder employeeorder : employeeorders) {
-                    boolean changed = false;
-                    if (employeeorder.getFromDate().isBefore(so.getFromDate())) {
-                        employeeorder.setFromDate(so.getFromDate());
-                        changed = true;
-                    }
-                    if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(so.getFromDate())) {
-                        employeeorder.setUntilDate(so.getFromDate());
-                        changed = true;
-                    }
-                    if (so.getUntilDate() != null) {
-                        if (employeeorder.getFromDate().isAfter(so.getUntilDate())) {
-                            employeeorder.setFromDate(so.getUntilDate());
+            if(!so.isNew()) {
+                List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
+                if (employeeorders != null && !employeeorders.isEmpty()) {
+                    for (Employeeorder employeeorder : employeeorders) {
+                        boolean changed = false;
+                        if (employeeorder.getFromDate().isBefore(so.getFromDate())) {
+                            employeeorder.setFromDate(so.getFromDate());
                             changed = true;
                         }
-                        if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(so.getUntilDate())) {
-                            employeeorder.setUntilDate(so.getUntilDate());
+                        if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(so.getFromDate())) {
+                            employeeorder.setUntilDate(so.getFromDate());
                             changed = true;
                         }
-                    }
-                    if (changed) {
-                        employeeorderDAO.save(employeeorder, loginEmployee);
+                        if (so.getUntilDate() != null) {
+                            if (employeeorder.getFromDate().isAfter(so.getUntilDate())) {
+                                employeeorder.setFromDate(so.getUntilDate());
+                                changed = true;
+                            }
+                            if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(so.getUntilDate())) {
+                                employeeorder.setUntilDate(so.getUntilDate());
+                                changed = true;
+                            }
+                        }
+                        if (changed) {
+                            employeeorderDAO.save(employeeorder, loginEmployee);
+                        }
                     }
                 }
             }

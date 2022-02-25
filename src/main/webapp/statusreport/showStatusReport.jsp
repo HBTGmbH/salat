@@ -4,8 +4,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-
-
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
 <html:html>
@@ -17,8 +16,8 @@
 <link rel="stylesheet" type="text/css" href="../style/tb.css" />
 <link href="../style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-<script src=""../scripts/"jquery-1.11.3.min.js"></script>
-<script src=""../scripts/"select2.full.min.js"></script>
+<script src="../scripts/jquery-1.11.3.min.js"></script>
+<script src="../scripts/select2.full.min.js"></script>
 
 <script type="text/javascript" language="JavaScript">	
 	
@@ -260,8 +259,8 @@
 						value="${statusreport.sender.sign}" /></td>
 
 					<!-- released -->
-					<td align="center" title="${statusreport.released}"><fmt:formatDate
-						value="${statusreport.released}" pattern="yyyy-MM-dd HH:mm" />&nbsp;
+					<td align="center" title="${statusreport.released}"><java8:formatLocalDateTime
+						value="${statusreport.released}" />&nbsp;
 					</td>
 
 					<!-- recipient -->
@@ -269,8 +268,8 @@
 						value="${statusreport.recipient.sign}" /></td>
 
 					<!-- accepted -->
-					<td align="center" title="${statusreport.accepted}"><fmt:formatDate
-						value="${statusreport.accepted}" pattern="yyyy-MM-dd HH:mm" />&nbsp;
+					<td align="center" title="${statusreport.accepted}"><java8:formatLocalDateTime
+						value="${statusreport.accepted}" />&nbsp;
 					</td>
 
 					<!-- edit, delete -->

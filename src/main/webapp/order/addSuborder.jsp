@@ -9,6 +9,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib uri="/WEB-INF/treeTag.tld" prefix="myjsp" %>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 
 <html:html>
 <head>
@@ -125,13 +126,13 @@
 			<td align="left" valign="top" class="noBborderStyle"> 
 				<b><c:out value="${parentDescriptionAndSign}"/></b>&nbsp;&nbsp;&nbsp;
 				<i>
-					(<fmt:formatDate value="${suborderParent.fromDate}" pattern="yyyy-MM-dd"/>&nbsp;-
+					(<java8:formatLocalDate value="${suborderParent.fromDate}"/>&nbsp;-
 					<c:choose>
 						<c:when test="${suborderParent.untilDate == null}">
 							<bean:message key="main.general.open.text" />)
 						</c:when>
 						<c:otherwise>
-							<fmt:formatDate value="${suborderParent.untilDate}" pattern="yyyy-MM-dd"/>)							
+							<java8:formatLocalDate value="${suborderParent.untilDate}"/>
 						</c:otherwise>
 					</c:choose>
 				</i>
@@ -161,7 +162,7 @@
 			<td align="left" class="noBborderStyle">
 				<!-- JavaScript Stuff for popup calender -->
 				<script type="text/javascript" language="JavaScript"
-					src=""../scripts/"CalendarPopup.js"></script> <script type="text/javascript"
+					src="../scripts/CalendarPopup.js"></script> <script type="text/javascript"
 					language="JavaScript">
                     document.write(getCalendarStyles());
                 </script> 

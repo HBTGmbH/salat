@@ -15,8 +15,8 @@
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.employeecontracts.text" /></title>
 <link href="../style/select2.min.css" rel="stylesheet" />
-<script src=""../scripts/"jquery-1.11.3.min.js"></script>
-<script src=""../scripts/"select2.full.min.js"></script>
+<script src="../scripts/jquery-1.11.3.min.js"></script>
+<script src="../scripts/select2.full.min.js"></script>
 <link rel="stylesheet" type="text/css" href="../style/tb.css" />
 <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
 

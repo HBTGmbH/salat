@@ -8,6 +8,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/sql" prefix="sql"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/xml" prefix="x"%>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html:html>
 <head>
@@ -17,8 +18,8 @@
 <link rel="stylesheet" type="text/css" href="../style/tb.css" />
 <link href="../style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-<script src=""../scripts/"jquery-1.11.3.min.js"></script>
-<script src=""../scripts/"select2.full.min.js"></script>
+<script src="../scripts/jquery-1.11.3.min.js"></script>
+<script src="../scripts/select2.full.min.js"></script>
 
 <script type="text/javascript" language="JavaScript">
 	
@@ -192,7 +193,7 @@
 			<td class="noBborderStyle" valign="top" align="left" colspan="2"> 
 				<!-- JavaScript Stuff for popup calender -->
 				<script type="text/javascript" language="JavaScript"
-					src=""../scripts/"CalendarPopup.js"></script> <script type="text/javascript"
+					src="../scripts/CalendarPopup.js"></script> <script type="text/javascript"
 					language="JavaScript">document.write(getCalendarStyles());
                 </script>
 				<script type="text/javascript" language="JavaScript">
@@ -726,12 +727,12 @@
 		<!-- report status -->		
 		<tr>
 			<td class="noBborderStyle" valign="top" align="left"><b><bean:message key="statusreport.released.text" />:</b></td>
-			<td class="noBborderStyle" valign="top" align="left" colspan="2"><fmt:formatDate value="${currentStatusReport.released}" pattern="yyyy-MM-dd HH:mm" /></td>
+			<td class="noBborderStyle" valign="top" align="left" colspan="2"><java8:formatLocalDateTime value="${currentStatusReport.released}" /></td>
 			<td class="noBborderStyle" valign="top" align="left"><c:out value="${currentStatusReport.releasedby.name}" /></td>
 		</tr>
 		<tr>
 			<td class="noBborderStyle" valign="top" align="left"><b><bean:message key="statusreport.accepted.text" />:</b></td>
-			<td class="noBborderStyle" valign="top" align="left" colspan="2"><fmt:formatDate value="${currentStatusReport.accepted}" pattern="yyyy-MM-dd HH:mm" /></td>
+			<td class="noBborderStyle" valign="top" align="left" colspan="2"><java8:formatLocalDateTime value="${currentStatusReport.accepted}" /></td>
 			<td class="noBborderStyle" valign="top" align="left"><c:out value="${currentStatusReport.acceptedby.name}" /></td>
 		</tr>
 						
