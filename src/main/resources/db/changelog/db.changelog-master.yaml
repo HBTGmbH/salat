@@ -142,7 +142,7 @@ databaseChangeLog:
   - changeSet:
       id: 4
       author: kr
-      comment: remove sort of work
+      comment: Remove sort of work
       preConditions:
         - onFail: MARK_RAN
         - columnExists:
@@ -155,23 +155,125 @@ databaseChangeLog:
   - changeSet:
       id: 5
       author: kr
-      comment: hourly rate feature removed
+      comment: Hourly rate feature removed
       preConditions:
         - onFail: MARK_RAN
         - columnExists:
             tableName: customerorder
             columnName: currency
       changes:
-        -  dropColumn:
-             tableName:  customerorder
-             columnName:  currency
-        -  dropColumn:
-             tableName:  customerorder
-             columnName:  hourly_rate
+        - dropColumn:
+            tableName:  customerorder
+            columnName:  currency
+        - dropColumn:
+            tableName:  customerorder
+            columnName:  hourly_rate
+        - dropColumn:
+            tableName:  suborder
+            columnName:  currency
+        - dropColumn:
+            tableName:  suborder
+            columnName:  hourly_rate
+  - changeSet:
+      id: 6
+      author: kr
+      comment: Ensure version column has at least value 0
       changes:
-        -  dropColumn:
-             tableName:  suborder
-             columnName:  currency
-        -  dropColumn:
-             tableName:  suborder
-             columnName:  hourly_rate
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: customer
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: customerorder
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: employee
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: employeecontract
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: employeeorder
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: employeeordercontent
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: overtime
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: publicholiday
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: referenceday
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: statusreport
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: suborder
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: timereport
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: vacation
+            where: updatecounter is null
+        - update:
+            columns:
+              - column:
+                  name: updatecounter
+                  value: 0
+            tableName: workingday
+            where: updatecounter is null
