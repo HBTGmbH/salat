@@ -1,8 +1,10 @@
 package org.tb.employee;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import javax.persistence.Entity;
@@ -41,7 +43,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     private LocalDate validFrom;
     private LocalDate validUntil;
-    private Double dailyWorkingTime;
+    private int dailyWorkingTimeMinutes;
     private Boolean freelancer;
     private String taskDescription;
     private LocalDate fixedUntil;
@@ -88,6 +90,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Vacation> vacations;
 
+
+
     public Boolean getFreelancer() {
         if (freelancer == null) {
             freelancer = false;
@@ -127,7 +131,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     }
 
     public Integer getVacationEntitlement() {
-        if (vacations != null && vacations.size() > 0) {
+        if (vacations != null && !vacations.isEmpty()) {
             // actually, vacation entitlement is a constant value
             // for an employee (not year-dependent), so just take the
             // first vacation entry to get the value
@@ -209,6 +213,23 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             acceptanceWarning = true;
         }
         return acceptanceWarning;
+    }
+
+    public Double getDailyWorkingTime() {
+        return BigDecimal
+            .valueOf(dailyWorkingTimeMinutes)
+            .setScale(2)
+            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .doubleValue();
+    }
+
+    public void setDailyWorkingTime(Double dailyworkingtime) {
+        dailyWorkingTimeMinutes = BigDecimal
+            .valueOf(dailyworkingtime)
+            .setScale(2)
+            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .setScale(0)
+            .intValue();
     }
 
 }

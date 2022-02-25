@@ -183,97 +183,122 @@ databaseChangeLog:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: customer
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: customerorder
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: employee
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: employeecontract
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: employeeorder
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: employeeordercontent
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: overtime
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: publicholiday
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: referenceday
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: statusreport
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: suborder
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: timereport
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: vacation
             where: updatecounter is null
         - update:
             columns:
               - column:
                   name: updatecounter
-                  value: 0
+                  valueNumeric: 0
             tableName: workingday
             where: updatecounter is null
+  - changeSet:
+      id: 7
+      author: kr
+      comment: Introduce daily working time in minutes
+      changes:
+        - addColumn:
+            tableName: employeecontract
+            columns:
+              - column:
+                  name: dailyWorkingTimeMinutes
+                  type: int
+        - update:
+            columns:
+              - column:
+                  name: dailyWorkingTimeMinutes
+                  valueComputed: ROUND(dailyWorkingTime * 60)
+            tableName: employeecontract
+            where: dailyWorkingTimeMinutes is null
+        - addNotNullConstraint:
+            tableName: employeecontract
+            columnName: dailyWorkingTimeMinutes
+            columnDataType: int
+        - dropColumn:
+            tableName: employeecontract
+            columnName: dailyWorkingTime
