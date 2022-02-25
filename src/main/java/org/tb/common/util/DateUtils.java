@@ -553,10 +553,6 @@ public class DateUtils {
         return date2;
     }
 
-    public static int getDayOfWeek(LocalDate date) {
-        return date.getDayOfWeek().getValue();
-    }
-
     public static int getWeekdaysDistance(LocalDate begin, LocalDate end) {
         var currentDate = begin;
         int distance = 0;

@@ -2,19 +2,20 @@ package org.tb.dailyreport.viewhelper.matrix;
 
 import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
 
+import java.time.LocalDate;
 import lombok.Data;
 
 @Data
 public class DayAndWorkingHourCount {
     private int day;
     private double workingHour;
-    private String date;
+    private LocalDate date;
     private boolean publicHoliday;
     private boolean satSun;
     private String weekDay;
     private String publicHolidayName;
 
-    public DayAndWorkingHourCount(int day, double workingHour, String date) {
+    public DayAndWorkingHourCount(int day, double workingHour, LocalDate date) {
         this.day = day;
         this.date = date;
         this.workingHour = workingHour;

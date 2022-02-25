@@ -10,8 +10,13 @@
  */
 package org.tb.dailyreport.viewhelper.matrix;
 
-import static java.util.Calendar.SATURDAY;
-import static java.util.Calendar.SUNDAY;
+import static java.time.DayOfWeek.FRIDAY;
+import static java.time.DayOfWeek.MONDAY;
+import static java.time.DayOfWeek.SATURDAY;
+import static java.time.DayOfWeek.SUNDAY;
+import static java.time.DayOfWeek.THURSDAY;
+import static java.time.DayOfWeek.TUESDAY;
+import static java.time.DayOfWeek.WEDNESDAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 import static org.tb.common.util.DateUtils.format;
@@ -22,6 +27,7 @@ import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,7 +60,7 @@ public class MatrixHelper {
     /**
      * conversion and localization of weekday values
      */
-    private static final Map<Integer, String> WEEK_DAYS_MAP = new HashMap<>();
+    private static final Map<DayOfWeek, String> WEEK_DAYS_MAP = new HashMap<>();
     /**
      * conversion and localization of day values
      */
@@ -75,13 +81,13 @@ public class MatrixHelper {
             NUMBER_TO_SHORT_MONTH.put(num_mon, mon);
         }
 
-        WEEK_DAYS_MAP.put(2, "main.matrixoverview.weekdays.monday.text");
-        WEEK_DAYS_MAP.put(3, "main.matrixoverview.weekdays.tuesday.text");
-        WEEK_DAYS_MAP.put(4, "main.matrixoverview.weekdays.wednesday.text");
-        WEEK_DAYS_MAP.put(5, "main.matrixoverview.weekdays.thursday.text");
-        WEEK_DAYS_MAP.put(6, "main.matrixoverview.weekdays.friday.text");
-        WEEK_DAYS_MAP.put(7, "main.matrixoverview.weekdays.saturday.text");
-        WEEK_DAYS_MAP.put(1, "main.matrixoverview.weekdays.sunday.text");
+        WEEK_DAYS_MAP.put(MONDAY, "main.matrixoverview.weekdays.monday.text");
+        WEEK_DAYS_MAP.put(TUESDAY, "main.matrixoverview.weekdays.tuesday.text");
+        WEEK_DAYS_MAP.put(WEDNESDAY, "main.matrixoverview.weekdays.wednesday.text");
+        WEEK_DAYS_MAP.put(THURSDAY, "main.matrixoverview.weekdays.thursday.text");
+        WEEK_DAYS_MAP.put(FRIDAY, "main.matrixoverview.weekdays.friday.text");
+        WEEK_DAYS_MAP.put(SATURDAY, "main.matrixoverview.weekdays.saturday.text");
+        WEEK_DAYS_MAP.put(SUNDAY, "main.matrixoverview.weekdays.sunday.text");
     }
 
     private final TimereportDAO trDAO;
@@ -205,13 +211,12 @@ public class MatrixHelper {
 
     private double fillDayHoursCount(LocalDate dateFirst, LocalDate dateLast, LocalDate validFrom, LocalDate validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
-
         LocalDate dateLoop = dateFirst;
         int day = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
-            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, format(dateLoop)));
+            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, dateLoop));
             dateLoop = DateUtils.addDays(dateLoop, 1);
         }
 
@@ -223,7 +228,7 @@ public class MatrixHelper {
             day++;
             boolean dayIsPublicHoliday = false;
             //counting weekdays for dayhourstargettime
-            var dayOfWeek = DateUtils.getDayOfWeek(dateLoop);
+            var dayOfWeek = dateLoop.getDayOfWeek();
             if (dayOfWeek != SATURDAY && dayOfWeek != SUNDAY) {
                 for (Publicholiday publicHoliday : publicHolidayList) {
                     if (publicHoliday.getRefdate().equals(dateLoop)) {
@@ -244,14 +249,14 @@ public class MatrixHelper {
                 if (dayAndWorkingHourCount.getDay() == day) {
                     for (Publicholiday publicHoliday : publicHolidayList) {
                         if (publicHoliday.getRefdate().equals(dateLoop)) {
-                            dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setPublicHoliday(true);
-                            dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setPublicHolidayName(publicHoliday.getName());
+                            dayAndWorkingHourCount.setPublicHoliday(true);
+                            dayAndWorkingHourCount.setPublicHolidayName(publicHoliday.getName());
                         }
                     }
                     if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
-                        dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setSatSun(true);
+                        dayAndWorkingHourCount.setSatSun(true);
                     }
-                    dayHoursCount.get(dayHoursCount.indexOf(dayAndWorkingHourCount)).setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
+                    dayAndWorkingHourCount.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
                 }
             }
             dateLoop = DateUtils.addDays(dateLoop, 1);
@@ -268,7 +273,7 @@ public class MatrixHelper {
             for (MergedReport mergedReport : mergedReportList) {
                 for (BookingDay bookingDay : mergedReport.getBookingDays()) {
                     if (bookingDay.getDate().equals(dateLoop)) {
-                        var dayOfWeek = DateUtils.getDayOfWeek(dateLoop);
+                        var dayOfWeek = dateLoop.getDayOfWeek();
                         if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
                             bookingDay.setSatSun(true);
                         }

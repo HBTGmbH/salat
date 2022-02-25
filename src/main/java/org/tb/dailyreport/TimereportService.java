@@ -1,8 +1,8 @@
 package org.tb.dailyreport;
 
 import static java.lang.Boolean.TRUE;
-import static java.util.Calendar.SATURDAY;
-import static java.util.Calendar.SUNDAY;
+import static java.time.DayOfWeek.SATURDAY;
+import static java.time.DayOfWeek.SUNDAY;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 import static org.tb.common.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
@@ -168,7 +168,7 @@ public class TimereportService {
     long effectivePublicHolidayCount = publicholidayDAO.getPublicHolidaysBetween(effectiveStart, effectiveEnd)
         .stream()
         .map(Publicholiday::getRefdate)
-        .map(DateUtils::getDayOfWeek)
+        .map(LocalDate::getDayOfWeek)
         .filter(dow -> dow != SATURDAY && dow != SUNDAY)
         .count();
     long weekdays = DateUtils.getWeekdaysDistance(effectiveStart, effectiveEnd);

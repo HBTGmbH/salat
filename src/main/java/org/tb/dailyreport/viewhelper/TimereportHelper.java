@@ -1,7 +1,7 @@
 package org.tb.dailyreport.viewhelper;
 
-import static java.util.Calendar.SATURDAY;
-import static java.util.Calendar.SUNDAY;
+import static java.time.DayOfWeek.SATURDAY;
+import static java.time.DayOfWeek.SUNDAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.today;
 
@@ -415,19 +415,10 @@ public class TimereportHelper {
             start = employeecontract.getValidFrom();
         }
 
-        // So = 1
-        // Mo = 2
-        // Di = 3
-        // Mi = 4
-        // Do = 5
-        // Fr = 6
-        // Sa = 7
-        int startDayOfWeek = DateUtils.getDayOfWeek(start);
-
         int numberOfHolidays = 0;
         var holidays = publicholidayDAO.getPublicHolidaysBetween(start, end);
         for (var publicholiday : holidays) {
-            var dayOfWeek = DateUtils.getDayOfWeek(publicholiday.getRefdate());
+            var dayOfWeek = publicholiday.getRefdate().getDayOfWeek();
             if (dayOfWeek != SATURDAY && dayOfWeek != SUNDAY) {
                 numberOfHolidays += 1;
             }

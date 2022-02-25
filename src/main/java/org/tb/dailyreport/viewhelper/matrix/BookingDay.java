@@ -11,7 +11,7 @@ import org.tb.common.util.DateUtils;
 @Setter
 public class BookingDay implements Comparable<BookingDay> {
 
-    private final String date;
+    private final LocalDate date;
     private final long durationHours;
     private final long durationMinutes;
     private final String taskdescription;
@@ -19,7 +19,7 @@ public class BookingDay implements Comparable<BookingDay> {
     private boolean publicHoliday;
 
     public BookingDay(LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
-        this.date = DateUtils.format(date);
+        this.date = date;
         this.durationHours = durationHours;
         this.durationMinutes = durationMinutes;
         this.satSun = false;

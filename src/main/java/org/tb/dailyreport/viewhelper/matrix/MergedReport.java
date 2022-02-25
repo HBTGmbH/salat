@@ -48,19 +48,19 @@ public class MergedReport implements Comparable<MergedReport> {
     }
 
     public void fillBookingDaysWithNull(LocalDate dateFirst, LocalDate dateLast) {
-        LocalDate compareDate = dateFirst;
-        while ((compareDate.isAfter(dateFirst) && compareDate.isBefore(dateLast)) || compareDate.equals(dateFirst) || compareDate.equals(dateLast)) {
+        LocalDate loopDate = dateFirst;
+        while ((loopDate.isAfter(dateFirst) && loopDate.isBefore(dateLast)) || loopDate.equals(dateFirst) || loopDate.equals(dateLast)) {
             boolean dateAvailable = false;
             for (BookingDay tempBookingDay : bookingDays) {
-                if (tempBookingDay.getDate().equals(compareDate)) {
+                if (tempBookingDay.getDate().equals(loopDate)) {
                     dateAvailable = true;
                     break;
                 }
             }
             if (!dateAvailable) {
-                addBookingDay(compareDate, 0, 0, null);
+                addBookingDay(loopDate, 0, 0, null);
             }
-            compareDate = DateUtils.addDays(compareDate, 1);
+            loopDate = DateUtils.addDays(loopDate, 1);
         }
     }
 
