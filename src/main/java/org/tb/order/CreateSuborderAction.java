@@ -89,16 +89,12 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
             request.getSession().setAttribute("currentOrderId", customerorder.getId());
             request.getSession().setAttribute("currentOrder", customerorder);
-            request.getSession().setAttribute("hourlyRate", customerorder.getHourly_rate());
             request.getSession().setAttribute("parentDescriptionAndSign", customerorder.getSignAndDescription());
             request.getSession().setAttribute("suborderParent", customerorder);
             request.getSession().setAttribute("currentSuborderID", null);
-            request.getSession().setAttribute("currency", customerorder.getCurrency());
 
             suborderForm.setParentDescriptionAndSign(customerorder.getSignAndDescription());
             suborderForm.setParentId(customerorder.getId());
-            suborderForm.setHourlyRate(customerorder.getHourly_rate());
-            suborderForm.setCurrency(customerorder.getCurrency());
 
             suborderForm.setValidFrom(DateUtils.format(customerorder.getFromDate()));
 

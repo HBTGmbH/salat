@@ -240,19 +240,6 @@
 			</td>
 		</tr>
 		
-		
-		<!-- hourly rate & currency -->
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.hourlyrate.text" /></b></td>
-			<td align="left" class="noBborderStyle"><html:text
-				property="hourlyRate" size="20" /> <html:select property="currency">
-					<html:option value="EUR">EUR</html:option>
-				</html:select> <span style="color:red"><html:errors
-				property="hourlyRate" /></span>
-			</td>
-		</tr>
-		
 		<!-- debithours -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

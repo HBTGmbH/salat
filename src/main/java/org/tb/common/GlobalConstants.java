@@ -15,14 +15,12 @@ public class GlobalConstants {
 
     public static final double MAX_HOURS_PER_DAY = 10.0;
 
-    public static final double MAX_HOURLY_RATE = 1000.0;
     public static final double MAX_DEBITHOURS = 10000.0;
     public static final double MAX_OVERTIME = 10000.0;
     public static final double MIN_OVERTIME = -10000.0;
 
     public static final int COMMENT_MAX_LENGTH = 32000;
 
-    public static final String DEFAULT_CURRENCY = "EUR";
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String DEFAULT_EXCEL_DATE_FORMAT = "dd.MM.yyyy";
     public static final String DEFAULT_TIMEZONE_ID = "Europe/Berlin";
@@ -42,7 +40,6 @@ public class GlobalConstants {
     public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 20;
     public static final int CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH = 64;
     public static final int CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH = 64;
-    public static final int CUSTOMERORDER_CURRENCY_MAX_LENGTH = 64;
 
     public static final int SUBORDER_SIGN_MAX_LENGTH = 16;
     public static final int SUBORDER_DESCRIPTION_MAX_LENGTH = 2048;

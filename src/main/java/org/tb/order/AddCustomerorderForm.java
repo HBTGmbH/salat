@@ -30,8 +30,6 @@ public class AddCustomerorderForm extends ActionForm {
     private String responsibleCustomerTechnical;
     private String responsibleCustomerContractually;
     private String orderCustomer;
-    private String currency;
-    private Double hourlyRate;
 
     private Double debithours;
     private Byte debithoursunit;
@@ -68,8 +66,6 @@ public class AddCustomerorderForm extends ActionForm {
         respContrEmployeeId = employeeId;
 
         orderCustomer = "";
-        currency = GlobalConstants.DEFAULT_CURRENCY;
-        hourlyRate = 0.0;
         debithours = null;
         debithoursunit = null;
         statusreport = 0;

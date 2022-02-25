@@ -165,14 +165,6 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setCreatedby(createdby);
     }
 
-    public String getCurrency() {
-        return suborder.getCurrency();
-    }
-
-    public void setCurrency(String currency) {
-        suborder.setCurrency(currency);
-    }
-
     public boolean getCurrentlyValid() {
         return suborder.getCurrentlyValid();
     }
@@ -249,14 +241,6 @@ public class InvoiceSuborderHelper extends Suborder {
 
     public void setHide(Boolean hide) {
         suborder.setHide(hide);
-    }
-
-    public Double getHourly_rate() {
-        return suborder.getHourly_rate();
-    }
-
-    public void setHourly_rate(Double hourly_rate) {
-        suborder.setHourly_rate(hourly_rate);
     }
 
     public Long getId() {

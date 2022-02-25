@@ -57,9 +57,7 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
      * fills suborder form with properties of given suborder
      */
     private void setFormEntries(HttpServletRequest request, AddSuborderForm soForm, Suborder so) {
-        soForm.setCurrency(so.getCurrency());
         soForm.setCustomerorderId(so.getCustomerorder().getId());
-        soForm.setHourlyRate(so.getHourly_rate());
         soForm.setSign(so.getSign());
         soForm.setDescription(so.getDescription());
         soForm.setShortdescription(so.getShortdescription());
@@ -106,8 +104,6 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         request.getSession().setAttribute("currentOrderId", so.getCustomerorder().getId());
         request.getSession().setAttribute("currentOrder", so.getCustomerorder());
         request.getSession().setAttribute("invoice", Character.toString(so.getInvoice()));
-        request.getSession().setAttribute("currency", so.getCurrency());
-        request.getSession().setAttribute("hourlyRate", so.getHourly_rate());
     }
 
 }

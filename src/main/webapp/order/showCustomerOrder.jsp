@@ -146,16 +146,6 @@
 			title="<bean:message
 			key="main.headlinedescription.orders.ordercustomer.text" />"><b><bean:message
 			key="main.customerorder.ordercustomer.text" /></b></th>
-		<!--  
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.orders.currency.text" />"><b><bean:message
-			key="main.customerorder.currency.text" /></b></th>
-		-->
-		<th align="left"
-			title="<bean:message
-			key="main.headlinedescription.orders.hourlyrate.text" />"><b><bean:message
-			key="main.customerorder.hourlyrate.text" /></b></th>
 		<th align="left"><b><bean:message
 			key="main.general.debithours.text" /></b></th>
 		<c:if test="${showActualHours}">
@@ -288,17 +278,6 @@
 					</c:choose>
 				</td>
 				<td><c:out value="${customerorder.order_customer}" /></td>
-				<td>
-					<c:choose>
-						<c:when test="${customerorder.hourly_rate == 0.0}">
-							&nbsp;
-						</c:when>
-						<c:otherwise>
-							<fmt:formatNumber value="${customerorder.hourly_rate}" minFractionDigits="2"/>&nbsp;<c:out value="${customerorder.currency}" />
-						</c:otherwise>
-					</c:choose>
-				</td>				
-				
 				<td><c:choose>
 					<c:when test="${customerorder.debithours == null}">
 							&nbsp;
@@ -391,16 +370,6 @@
 				</td>
 				<td style="color:gray"><c:out
 					value="${customerorder.order_customer}" /></td>
-				<td style="color:gray">
-					<c:choose>
-						<c:when test="${customerorder.hourly_rate == 0.0}">
-							&nbsp;
-						</c:when>
-						<c:otherwise>
-							<c:out value="${customerorder.hourly_rate}" />&nbsp;<c:out value="${customerorder.currency}" />
-						</c:otherwise>
-					</c:choose>
-				</td>	
 				<td style="color:gray">
 					<c:choose>
 						<c:when test="${customerorder.debithours == null}">

@@ -91,7 +91,7 @@
 				<b><bean:message key="main.suborder.customerorder.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="customerorderId" value="${currentOrderId}" onchange="setStoreAction(this.form,'refreshHourlyRate')">
+				<html:select property="customerorderId" value="${currentOrderId}">
 					<html:options collection="customerorders" labelProperty="signAndDescription" property="id" />
 				</html:select>
 				<span style="color:red">
@@ -301,22 +301,6 @@
 				</html:select> 
 				<span style="color:red">
 					<html:errors property="invoice" />
-				</span>
-			</td>
-		</tr>
-
-		<!-- hourly rate & currency -->
-		<tr>
-			<td align="left" class="noBborderStyle">
-				<b><bean:message key="main.suborder.hourlyrate.text" />:</b>
-			</td>
-			<td align="left" class="noBborderStyle">
-				<html:text property="hourlyRate" size="20" value="${hourlyRate}" />
-				<html:select property="currency">
-					<html:option value="EUR">EUR</html:option>
-				</html:select>
-				<span style="color:red">
-					<html:errors property="hourlyRate" />
 				</span>
 			</td>
 		</tr>

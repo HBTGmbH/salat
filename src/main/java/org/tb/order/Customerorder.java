@@ -82,8 +82,6 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private String sign;
     private String description;
     private String shortdescription;
-    private String currency;
-    private Double hourly_rate;
     private Double debithours;
     private Byte debithoursunit;
     private Integer statusreport;
