@@ -6,6 +6,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 	<head>
@@ -195,7 +196,7 @@
 												</td>
 											</c:if>
 											<td class="matrix">
-												<fmt:formatDate	value="${timereportviewhelper.referenceday.refdate}" pattern="dd.MM.yyyy" />
+												<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}"/>
 											</td>
 											<c:if test="${employeesignbox eq 'true' && timereportsbox eq 'true'}">
 												<td class="matrix">

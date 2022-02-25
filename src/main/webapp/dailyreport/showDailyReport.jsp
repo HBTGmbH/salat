@@ -6,6 +6,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -663,7 +664,7 @@
 								<tr>
 									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.created" />:</td>
 									<td class="info">
-										<fmt:formatDate pattern="yyyy-MM-dd HH:mm:ss" value="${timereport.created}" />
+										<java8:formatLocalDateTime value="${timereport.created}" />
 									</td>
 									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
 									<td class="info" valign="top">
@@ -673,7 +674,7 @@
 								<tr>
 									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.edited" />:</td>
 									<td class="info">
-										<fmt:formatDate pattern="yyyy-MM-dd HH:mm:ss" value="${timereport.lastupdate}" />
+										<java8:formatLocalDateTime value="${timereport.lastupdate}" />
 									</td>
 									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
 									<td class="info" valign="top">

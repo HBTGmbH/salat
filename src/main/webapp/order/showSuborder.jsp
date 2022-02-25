@@ -17,8 +17,8 @@
 <link rel="stylesheet" type="text/css" href="../style/tb.css" />
 <link href="../style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-<script src=""../scripts/"jquery-1.11.3.min.js" type="text/javascript"></script>
-<script src=""../scripts/"select2.full.min.js" type="text/javascript"></script>
+<script src="../scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script src="../scripts/select2.full.min.js" type="text/javascript"></script>
 
 <script type="text/javascript" language="JavaScript">
 

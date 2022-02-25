@@ -99,7 +99,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                 Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
                 currentReport.setReleasedby(employeeDAO.getEmployeeById(loginEmployee.getId()));
-                currentReport.setReleased(DateUtils.today());
+                currentReport.setReleased(DateUtils.now());
 
                 statusReportDAO.save(currentReport, loginEmployee);
 
@@ -148,7 +148,7 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
                 Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
                 currentReport.setAcceptedby(employeeDAO.getEmployeeById(loginEmployee.getId()));
-                currentReport.setAccepted(DateUtils.today());
+                currentReport.setAccepted(DateUtils.now());
 
                 statusReportDAO.save(currentReport, loginEmployee);
 

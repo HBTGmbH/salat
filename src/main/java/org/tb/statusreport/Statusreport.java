@@ -2,6 +2,7 @@ package org.tb.statusreport;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -131,8 +132,8 @@ public class Statusreport extends AuditedEntity implements Serializable {
     @Lob
     @Column(columnDefinition = "text")
     private String notes;
-    private LocalDate released;
-    private LocalDate accepted;
+    private LocalDateTime released;
+    private LocalDateTime accepted;
 
     public Byte getOverallStatus() {
         Byte status = 0;

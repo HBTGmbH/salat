@@ -18,8 +18,8 @@
 <link rel="stylesheet" type="text/css" href="../style/tb.css" />
 <link href="../style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-<script src=""../scripts/"jquery-1.11.3.min.js"></script>
-<script src=""../scripts/"select2.full.min.js"></script>
+<script src="../scripts/jquery-1.11.3.min.js"></script>
+<script src="../scripts/select2.full.min.js"></script>
 <script type="text/javascript" language="JavaScript">
 	
 	function setDate(which, howMuch) {
@@ -172,7 +172,7 @@
 			</td>
 			<td align="left" class="noBborderStyle">
 				<!-- JavaScript Stuff for popup calender -->
-				<script type="text/javascript" language="JavaScript" src=""../scripts/"CalendarPopup.js">
+				<script type="text/javascript" language="JavaScript" src="../scripts/CalendarPopup.js">
 				</script>
 				<script type="text/javascript" language="JavaScript">
                     document.write(getCalendarStyles());
