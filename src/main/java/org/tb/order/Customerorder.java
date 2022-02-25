@@ -1,8 +1,10 @@
 package org.tb.order;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import javax.persistence.Entity;
@@ -82,7 +84,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private String sign;
     private String description;
     private String shortdescription;
-    private Double debithours;
+    private int debitMinutes;
     private Byte debithoursunit;
     private Integer statusreport;
     /**
@@ -144,6 +146,23 @@ public class Customerorder extends AuditedEntity implements Serializable {
 
     public boolean isValidAt(LocalDate date) {
         return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
+    }
+
+    protected Double getDebithours() {
+        return BigDecimal
+            .valueOf(debitMinutes)
+            .setScale(2)
+            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .doubleValue();
+    }
+
+    public void setDebithours(Double value) {
+        debitMinutes = BigDecimal
+            .valueOf(value)
+            .setScale(2)
+            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .setScale(0)
+            .intValue();
     }
 
 }

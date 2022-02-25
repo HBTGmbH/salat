@@ -1,5 +1,6 @@
 package org.tb.dailyreport;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
@@ -440,16 +441,13 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                         date = DateUtils.getEndOfMonth(date);
                     }
                     request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
-                    int overtime;
-                    if (ec.getReportAcceptanceDate().isBefore(date) && ec.getUseOvertimeOld() == false) {
-                        Double overtimeStatic = ec.getOvertimeStatic();
-                        int otStaticMinutes = (int) (overtimeStatic * 60);
-                        LocalDate dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
-                        int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, date, ec, true);
-                        overtime = otStaticMinutes + overtimeDynamic;
-                    } else {
-                        overtime = timereportHelper.calculateOvertime(ec.getValidFrom(), date, ec, true);
-                    }
+
+                    double overtimeStatic = ec.getOvertimeStatic();
+                    int otStaticMinutes = (int) (overtimeStatic * MINUTES_PER_HOUR);
+                    LocalDate dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
+                    int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, date, ec, true);
+                    int overtime = otStaticMinutes + overtimeDynamic;
+
                     boolean overtimeUntilIsNeg = overtime < 0;
                     request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);
                     request.getSession().setAttribute("enddate", DateUtils.format(date));

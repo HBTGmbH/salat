@@ -1,5 +1,6 @@
 package org.tb.dailyreport;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
@@ -249,12 +250,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             //compute overtimeStatic and set it in employee contract
             double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                     employeecontract, true);
-            employeecontract.setOvertimeStatic(otStatic / 60.0);
-
-            //only used the first time a release is accepted after SALAT-Release 1.83:
-            if (employeecontract.getUseOvertimeOld() == null || employeecontract.getUseOvertimeOld()) {
-                employeecontract.setUseOvertimeOld(false);
-            }
+            employeecontract.setOvertimeStatic(otStatic / MINUTES_PER_HOUR);
 
             employeecontractDAO.save(employeecontract, loginEmployee);
         }
