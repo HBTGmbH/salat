@@ -423,23 +423,12 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             errors = new ActionMessages();
         }
 
-        String dateString = "";
         if (which.equals("from")) {
-            dateString = ecForm.getValidFrom().trim();
-        } else {
-            dateString = ecForm.getValidUntil().trim();
-        }
-
-        int minus = 0;
-        for (int i = 0; i < dateString.length(); i++) {
-            if (dateString.charAt(i) == '-') {
-                minus++;
-            }
-        }
-        if (dateString.length() != 10 || minus != 2) {
-            if (which.equals("from")) {
+            if(DateUtils.validateDate(ecForm.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
-            } else {
+            }
+        } else {
+            if(DateUtils.validateDate(ecForm.getValidUntil())) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }
@@ -461,15 +450,15 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
         // check date formats (must now be 'yyyy-MM-dd')
         String dateFromString = ecForm.getValidFrom().trim();
-        boolean dateError = DateUtils.validateDate(dateFromString);
-        if (dateError) {
+        boolean dateValid = DateUtils.validateDate(dateFromString);
+        if (!dateValid) {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
 
         String dateUntilString = ecForm.getValidUntil().trim();
         if (!dateUntilString.equals("")) {
-            dateError = DateUtils.validateDate(dateUntilString);
-            if (dateError) {
+            dateValid = DateUtils.validateDate(dateUntilString);
+            if (!dateValid) {
                 errors.add("validUntil", new ActionMessage(
                         "form.timereport.error.date.wrongformat"));
             }

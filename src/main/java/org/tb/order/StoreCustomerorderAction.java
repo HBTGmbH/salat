@@ -279,23 +279,12 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             errors = new ActionMessages();
         }
 
-        String dateString = "";
         if (which.equals("from")) {
-            dateString = coForm.getValidFrom().trim();
-        } else {
-            dateString = coForm.getValidUntil().trim();
-        }
-
-        int minus = 0;
-        for (int i = 0; i < dateString.length(); i++) {
-            if (dateString.charAt(i) == '-') {
-                minus++;
-            }
-        }
-        if (dateString.length() != 10 || minus != 2) {
-            if (which.equals("from")) {
+            if(DateUtils.validateDate(coForm.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
-            } else {
+            }
+        } else {
+            if(DateUtils.validateDate(coForm.getValidUntil())) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }
