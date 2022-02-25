@@ -53,11 +53,11 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     /**
      * static overtime from begin of employeecontract to reportAcceptanceDate
      */
-    private double overtimeStatic;
+    private int overtimeStaticMinutes;
     /**
      * boolean for new overtime computation: if true, overtimeStatic has not been set before
      */
-    private Boolean useOvertimeOld;
+    private Boolean useOvertimeOld; // FIXME remove??
 
     @OneToOne
     // FIXME check if ManyToOne?
@@ -230,6 +230,15 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
             .setScale(0)
             .intValue();
+    }
+
+    public double getOvertimeStatic() {
+        return 0;
+    }
+
+
+    public void setOvertimeStatic(double value) {
+
     }
 
 }

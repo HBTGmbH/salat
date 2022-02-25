@@ -1,20 +1,18 @@
 version: "3.9"  # optional since v1.27.0
 services:
   salat:
-    image: docker.io/hbt/salat:latest
+    image: ghcr.io/hbtgmbh/salat:latest
     ports:
       - "8080:8080"
-      - "8000:8000"
     environment:
       SPRING_DATASOURCE_USERNAME: salattest
       SPRING_DATASOURCE_PASSWORD: salattest
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false
-      JPDA_ADDRESS: "*:8000"
-    depends_on:
-      - db
-
-  db:
-    build: ./testdb
-    ports:
-      - "3306:3306" # not necessary, only so we can access the db from host computer.
-    command: --lower_case_table_names=1
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 1024M
