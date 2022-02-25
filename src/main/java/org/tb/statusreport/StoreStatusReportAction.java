@@ -473,23 +473,12 @@ public class StoreStatusReportAction extends StatusReportAction<AddStatusReportF
             errors = new ActionMessages();
         }
 
-        String dateString = "";
         if (which.equals("from")) {
-            dateString = reportForm.getValidFrom().trim();
-        } else {
-            dateString = reportForm.getValidUntil().trim();
-        }
-
-        int minus = 0;
-        for (int i = 0; i < dateString.length(); i++) {
-            if (dateString.charAt(i) == '-') {
-                minus++;
-            }
-        }
-        if (dateString.length() != 10 || minus != 2) {
-            if (which.equals("from")) {
+            if(DateUtils.validateDate(reportForm.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
-            } else {
+            }
+        } else {
+            if(DateUtils.validateDate(reportForm.getValidFrom())) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }

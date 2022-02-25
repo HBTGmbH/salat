@@ -368,8 +368,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             errors = new ActionMessages();
         }
 
-        java.time.LocalDate validFromDate = null;
-        java.time.LocalDate validUntilDate = null;
+        LocalDate validFromDate = null;
+        LocalDate validUntilDate = null;
         try {
             validFromDate = parse(eoForm.getValidFrom());
         } catch (ParseException e) {
