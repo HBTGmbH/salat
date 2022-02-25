@@ -281,6 +281,11 @@ databaseChangeLog:
       id: 7
       author: kr
       comment: Introduce daily working time in minutes
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employeecontract
+            columnName: dailyWorkingTime
       changes:
         - addColumn:
             tableName: employeecontract
@@ -302,3 +307,33 @@ databaseChangeLog:
         - dropColumn:
             tableName: employeecontract
             columnName: dailyWorkingTime
+  - changeSet:
+      id: 8
+      author: kr
+      comment: Introduce overtime static in minutes
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employeecontract
+            columnName: overtimeStatic
+      changes:
+        - addColumn:
+            tableName: employeecontract
+            columns:
+              - column:
+                  name: overtimeStaticMinutes
+                  type: int
+        - update:
+            columns:
+              - column:
+                  name: overtimeStaticMinutes
+                  valueComputed: ROUND(overtimeStatic * 60)
+            tableName: employeecontract
+            where: overtimeStaticMinutes is null
+        - addNotNullConstraint:
+            tableName: employeecontract
+            columnName: overtimeStaticMinutes
+            columnDataType: int
+        - dropColumn:
+            tableName: employeecontract
+            columnName: overtimeStatic
