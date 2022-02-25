@@ -78,8 +78,6 @@ public class Suborder extends AuditedEntity implements Serializable {
     @Column(columnDefinition = "text")
     private String description;
     private String shortdescription;
-    private String currency;
-    private Double hourly_rate;
     private Boolean standard;
     private Boolean commentnecessary;
     private LocalDate fromDate;
@@ -352,14 +350,12 @@ public class Suborder extends AuditedEntity implements Serializable {
         copy.setCommentnecessary(commentnecessary);
         copy.setCreated(DateUtils.now());
         copy.setCreatedby(creator + "_treecopy");
-        copy.setCurrency(currency);
         copy.setCustomerorder(customerorder);
         copy.setDebithours(debithours);
         copy.setDebithoursunit(debithoursunit);
         copy.setDescription(description);
         copy.setFromDate(fromDate);
         copy.setHide(hide);
-        copy.setHourly_rate(hourly_rate);
         copy.setInvoice(invoice);
         copy.setNoEmployeeOrderContent(noEmployeeOrderContent);
         copy.setShortdescription(shortdescription);

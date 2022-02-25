@@ -180,7 +180,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             }
 
             /* set attributes */
-            co.setCurrency(coForm.getCurrency());
             co.setCustomer(customerDAO.getCustomerById(coForm.getCustomerId()));
 
             co.setUntilDate(untilDate);
@@ -189,7 +188,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             co.setSign(coForm.getSign());
             co.setDescription(coForm.getDescription());
             co.setShortdescription(coForm.getShortdescription());
-            co.setHourly_rate(coForm.getHourlyRate());
             co.setOrder_customer(coForm.getOrderCustomer());
 
             co.setResponsible_customer_contractually(coForm.getResponsibleCustomerContractually());
@@ -378,13 +376,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
         }
         if (coForm.getResponsibleCustomerTechnical().length() <= 0) {
             errors.add("responsibleCustomerTechnical", new ActionMessage("form.customerorder.error.responsiblecustomer.required"));
-        }
-
-        // check hourly rate format		
-        if (!GenericValidator.isDouble(coForm.getHourlyRate().toString()) ||
-                !GenericValidator.isInRange(coForm.getHourlyRate(),
-                        0.0, GlobalConstants.MAX_HOURLY_RATE)) {
-            errors.add("hourlyRate", new ActionMessage("form.customerorder.error.hourlyrate.wrongformat"));
         }
 
         if (!GenericValidator.isDouble(coForm.getDebithours().toString()) ||

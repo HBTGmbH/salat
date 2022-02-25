@@ -24,8 +24,6 @@ public class AddSuborderForm extends ActionForm {
     private String shortdescription;
     private String suborder_customer;
     private char invoice;
-    private String currency;
-    private Double hourlyRate;
     private long customerorderId;
     private String action;
     private Boolean standard;
@@ -48,7 +46,6 @@ public class AddSuborderForm extends ActionForm {
         shortdescription = "";
         suborder_customer = "";
         invoice = GlobalConstants.INVOICE_YES;
-        currency = GlobalConstants.DEFAULT_CURRENCY;
         standard = false;
         commentnecessary = false;
         fixedPrice = false;

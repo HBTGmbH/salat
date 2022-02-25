@@ -202,7 +202,7 @@ public class TreeTag extends TagSupport {
                 } else {
                     sb.append(" ").append(endlessDate);
                 }
-                sb.append("]; ").append(suborder.getHourly_rate()).append(" ").append(suborder.getCurrency()).append("; ");
+                sb.append("]; ");
                 if (suborder.getDebithours() != null) {
                     sb.append(suborder.getDebithours());
                 } else {

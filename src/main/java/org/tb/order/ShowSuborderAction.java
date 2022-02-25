@@ -160,13 +160,6 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                             suborderDAO.save(so, loginEmployee);
                         }
                     }
-                    if (suborderForm.getSuborderOption().equals("alterhourlyrate")) {
-                        for (String soID : suborderIdArray) {
-                            Suborder so = suborderDAO.getSuborderById(Long.parseLong(soID));
-                            so.setHourly_rate(Double.parseDouble(suborderForm.getSuborderOptionValue()));
-                            suborderDAO.save(so, loginEmployee);
-                        }
-                    }
                 }
             }
             suborderForm.setSuborderOption("");
@@ -242,25 +235,6 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
             if (suborderForm.getSuborderOptionValue().length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
                 errors.add("suborderOption", new ActionMessage(
                         "form.suborder.error.suborder_customer.toolong"));
-            }
-        }
-
-        if (suborderForm.getSuborderOption().equals("alterhourlyrate")) {
-            if (suborderForm.getSuborderOptionValue().length() > GlobalConstants.CUSTOMERORDER_CURRENCY_MAX_LENGTH) {
-                errors.add("suborderOption", new ActionMessage(
-                        "form.suborder.error.currency.toolong"));
-            }
-            if (suborderForm.getSuborderOptionValue().length() <= 0) {
-                errors.add("suborderOption", new ActionMessage(
-                        "form.suborder.error.currency.required"));
-            }
-
-            // check hourly rate format
-            if (!GenericValidator.isDouble(suborderForm.getSuborderOptionValue())
-                    || !GenericValidator.isInRange(Double.parseDouble(suborderForm.getSuborderOptionValue()), 0.0,
-                    GlobalConstants.MAX_HOURLY_RATE)) {
-                errors.add("suborderOption", new ActionMessage(
-                        "form.suborder.error.hourlyrate.wrongformat"));
             }
         }
 

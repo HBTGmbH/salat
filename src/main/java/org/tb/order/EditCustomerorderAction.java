@@ -66,9 +66,7 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
      */
     private void setFormEntries(HttpServletRequest request, AddCustomerorderForm coForm, Customerorder co) {
 
-        coForm.setCurrency(co.getCurrency());
         coForm.setCustomerId(co.getCustomer().getId());
-        coForm.setHourlyRate(co.getHourly_rate());
         coForm.setOrderCustomer(co.getOrder_customer());
 
         coForm.setResponsibleCustomerContractually(co.getResponsible_customer_contractually());
