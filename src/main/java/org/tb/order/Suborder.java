@@ -1,6 +1,9 @@
 package org.tb.order;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,7 +85,7 @@ public class Suborder extends AuditedEntity implements Serializable {
     private Boolean commentnecessary;
     private LocalDate fromDate;
     private LocalDate untilDate;
-    private Double debithours;
+    private int debitMinutes;
     private Byte debithoursunit;
     /**
      * Hide in select boxes
@@ -351,7 +354,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         copy.setCreated(DateUtils.now());
         copy.setCreatedby(creator + "_treecopy");
         copy.setCustomerorder(customerorder);
-        copy.setDebithours(debithours);
+        copy.setDebitMinutes(debitMinutes);
         copy.setDebithoursunit(debithoursunit);
         copy.setDescription(description);
         copy.setFromDate(fromDate);
@@ -376,6 +379,23 @@ public class Suborder extends AuditedEntity implements Serializable {
             copy.addSuborder(childCopy);
         }
         return copy;
+    }
+
+    public Double getDebithours() {
+        return BigDecimal
+            .valueOf(debitMinutes)
+            .setScale(2)
+            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .doubleValue();
+    }
+
+    public void setDebithours(Double value) {
+        debitMinutes = BigDecimal
+            .valueOf(value)
+            .setScale(2)
+            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .setScale(0)
+            .intValue();
     }
 
 }
