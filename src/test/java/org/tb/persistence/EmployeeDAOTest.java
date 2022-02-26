@@ -1,8 +1,10 @@
 package org.tb.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 import static org.tb.testutils.EmployeeTestUtils.TESTY_SIGN;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,14 @@ public class EmployeeDAOTest {
 
 	@MockBean
 	private EmployeecontractDAO employeecontractDAO;
+
+	@MockBean
+	private AuthorizedUser authorizedUser;
+
+	@BeforeEach
+	public void initAuthorizedUser() {
+		when(authorizedUser.isAuthenticated()).thenReturn(false);
+	}
 
 	/**
 	 * Prüft, dass die Datenbank noch keinen Mitarbeiter "testy" enthält
