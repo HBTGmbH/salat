@@ -323,7 +323,7 @@ public class TimereportService {
     if(employeeorder.getDebithoursunit() == null) {
       return; // no budget defined!
     }
-    long debitMinutesTemp = (long) (employeeorder.getDebithours() * MINUTES_PER_HOUR);
+    long debitMinutesTemp = employeeorder.getDebithours().toMinutes();
     // increase debit minutes if timereport exists (update case) by the time of that timereport
     // because this time is read from the database query, too. This is a trick to circumvent this special case.
     if(timereports.size() == 1 && !timereports.get(0).isNew()) {

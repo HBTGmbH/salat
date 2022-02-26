@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
 import org.tb.employee.Employee;
@@ -61,7 +62,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, addSuborderForm, which);
-                if (errorMessages.size() > 0) {
+                if (!errorMessages.isEmpty()) {
                     return mapping.getInputForward();
                 }
 
@@ -222,7 +223,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         if (request.getParameter("task") != null && request.getParameter("task").equals("save") || request.getParameter("soId") != null) {
             //*** task for saving new suborder
             ActionMessages errorMessages = validateFormData(request, addSuborderForm);
-            if (errorMessages.size() > 0) {
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
@@ -306,11 +307,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 }
             }
 
-            if (addSuborderForm.getDebithours() == null || addSuborderForm.getDebithours() == 0.0) {
+            if (addSuborderForm.getDebithours() == null
+                || addSuborderForm.getDebithours().isEmpty()
+                || DurationUtils.parseDuration(addSuborderForm.getDebithours()).isZero()) {
                 so.setDebithours(null);
                 so.setDebithoursunit(null);
             } else {
-                so.setDebithours(addSuborderForm.getDebithours());
+                so.setDebithours(DurationUtils.parseDuration(addSuborderForm.getDebithours()));
                 so.setDebithoursunit(addSuborderForm.getDebithoursunit());
             }
 
@@ -488,23 +491,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
         }
         // check debit hours
-        if (!GenericValidator.isDouble(addSuborderForm.getDebithours().toString()) ||
-                !GenericValidator.isInRange(addSuborderForm.getDebithours(), 0.0, GlobalConstants.MAX_DEBITHOURS)) {
-
+        if (!DurationUtils.validateDuration(addSuborderForm.getDebithours())) {
             errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat"));
-        } else if (addSuborderForm.getDebithours() != null && addSuborderForm.getDebithours() != 0.0) {
-            double debithours = addSuborderForm.getDebithours() * 100000;
-            debithours += 0.5;
-            int debithours2 = (int) debithours;
-            int modulo = debithours2 % 5000;
-            addSuborderForm.setDebithours(debithours2 / 100000.0);
-
-            if (modulo != 0) {
-                errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat2"));
-            }
         }
 
-        if (addSuborderForm.getDebithours() != 0.0) {
+        if (addSuborderForm.getDebithours() != null
+            && addSuborderForm.getDebithours().isEmpty()
+            && !DurationUtils.parseDuration(addSuborderForm.getDebithours()).isZero()) {
             if (addSuborderForm.getDebithoursunit() == null ||
                     !(addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH ||
                             addSuborderForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR ||

@@ -5,9 +5,12 @@ import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.boot.convert.DurationFormat;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
 import org.tb.employee.Employee;
@@ -177,20 +180,20 @@ public class InvoiceSuborderHelper extends Suborder {
         suborder.setCustomerorder(order);
     }
 
-    public Double getDebithours() {
+    public Duration getDebithours() {
         return suborder.getDebithours();
     }
 
-    public void setDebithours(Double debithours) {
+    public void setDebithours(Duration debithours) {
         suborder.setDebithours(debithours);
     }
 
     public String getDebithoursString() {
         String result = "";
-        if (suborder.getDebithours() != null && suborder.getDebithours() != 0.0) {
-            result = timeFormatHours(suborder.getDebithours());
+        if (suborder.getDebithours() != null && !suborder.getDebithours().isZero()) {
+            result = DurationUtils.format(suborder.getDebithours());
             // add decimal value - helps the backoffice
-            result += " (" + decimalFormatHours(suborder.getDebithours()) + ")";
+            result += " (" + DurationUtils.decimalFormat((suborder.getDebithours())) + ")";
         }
         return result;
     }

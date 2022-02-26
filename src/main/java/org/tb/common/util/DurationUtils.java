@@ -26,7 +26,7 @@ public class DurationUtils {
   }
 
   public Duration parseDuration(String value) {
-    if(value == null || value.isEmpty()) {
+    if(value == null || value.trim().isEmpty()) {
       return Duration.ZERO;
     }
     boolean negative = value.startsWith("-");
@@ -53,7 +53,7 @@ public class DurationUtils {
   }
 
   public boolean validateDuration(String value) {
-    if(value == null || value.isEmpty()) {
+    if(value == null || value.trim().isEmpty()) {
       return true;
     }
     // cut leading minues
@@ -97,6 +97,10 @@ public class DurationUtils {
     } catch (NumberFormatException e) {
       return false;
     }
+  }
+
+  public static String decimalFormat(Duration duration) {
+    return null;
   }
 
 }

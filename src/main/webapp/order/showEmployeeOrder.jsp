@@ -6,6 +6,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -406,11 +407,11 @@
 
 				<td style="color: gray"><c:choose>
 					<c:when
-						test="${employeeorder.debithours == null || employeeorder.debithours == 0.0}">
+						test="${employeeorder.debithours == null || employeeorder.debithours.zero}">
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-						<fmt:formatNumber value="${employeeorder.debithours}"  minFractionDigits="2"/>
+						<java8:formatDuration value="${employeeorder.debithours}" />
 						<c:choose>
 							<c:when test="${employeeorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -431,14 +432,14 @@
 				<c:if test="${showActualHours}">
 					<td align="right">
 						<c:choose>
-							<c:when test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
+							<c:when test="${employeeorder.debithours != null && !employeeorder.debithours.zero && employeeorder.debithours.minus(employeeorder.duration).negative}">
 								<font color="#FF7777">
-									<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+									<java8:formatDuration value="${employeeorder.duration}" />
 								</font>
 							</c:when>
 							<c:otherwise>
 								<font color="#736F6E">
-									<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+									<java8:formatDuration value="${employeeorder.duration}" />
 								</font>
 							</c:otherwise>
 						</c:choose>
@@ -446,19 +447,16 @@
 					<td align="right" style="color: gray">
 						<c:choose>
 
-							<c:when test="${employeeorder.difference != null && (employeeorder.difference < 0.0 || employeeorder.difference >= 0.0)&&(employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12)}">
-									<font color="#0000FF"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							<c:when test="${employeeorder.difference != null && employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12}">
+									<font color="#0000FF"><java8:formatDuration value="${employeeorder.difference}" /></font>
 							</c:when>
 
-							<c:when test="${employeeorder.difference != null && employeeorder.difference < 0.0}">
-									<font color="#FF7777"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							<c:when test="${employeeorder.difference != null && employeeorder.difference.negative}">
+									<font color="#FF7777"><java8:formatDuration value="${employeeorder.difference}" /></font>
 							</c:when>
-							<c:when test="${employeeorder.difference != null && employeeorder.difference >= 0.0}">
-									<fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/>
+							<c:when test="${employeeorder.difference != null && !employeeorder.difference.negative}">
+									<java8:formatDuration value="${employeeorder.difference}" />
 							</c:when>
-							<c:otherwise>
-								&nbsp;
-							</c:otherwise>
 						</c:choose>
 					</td>
 				</c:if>
@@ -508,11 +506,11 @@
 
 				<td><c:choose>
 					<c:when
-						test="${employeeorder.debithours == null || employeeorder.debithours == 0.0}">
+						test="${employeeorder.debithours == null || employeeorder.debithours.zero}">
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-					<fmt:formatNumber value="${employeeorder.debithours}"  minFractionDigits="2"/>
+					<java8:formatDuration value="${employeeorder.debithours}" />
 						<c:choose>
 							<c:when test="${employeeorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -533,32 +531,29 @@
 				<c:if test="${showActualHours}">
 					<td align="right">
 						<c:choose>
-							<c:when test="${employeeorder.debithours != null && employeeorder.debithours != 0.0 && employeeorder.duration > employeeorder.debithours}">
+							<c:when test="${employeeorder.debithours != null && !employeeorder.debithours.zero && employeeorder.debithours.minus(employeeorder.duration).negative }">
 								<font color="#FF0000">
-									<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+									<java8:formatDuration value="${employeeorder.duration}" />
 								</font>
 							</c:when>
 							<c:otherwise>
-								<fmt:formatNumber value="${employeeorder.duration}"  minFractionDigits="2"/>
+								<java8:formatDuration value="${employeeorder.duration}" />
 							</c:otherwise>
 						</c:choose>
 					</td>
 					<td align="right">
 						<c:choose>
 
-							<c:when test="${employeeorder.difference != null && (employeeorder.difference < 0.0 || employeeorder.difference >= 0.0)&&(employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12)}">
-									<font color="#0000FF"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							<c:when test="${employeeorder.difference != null && employeeorder.debithoursunit != 0 && employeeorder.debithoursunit != 1 && employeeorder.debithoursunit != 12}">
+									<font color="#0000FF"><java8:formatDuration value="${employeeorder.difference}" /></font>
 							</c:when>
 
-							<c:when test="${employeeorder.difference != null && employeeorder.difference < 0.0}">
-									<font color="#FF0000"><fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/></font>
+							<c:when test="${employeeorder.difference != null && employeeorder.difference.negative}">
+									<font color="#FF0000"><java8:formatDuration value="${employeeorder.difference}" /></font>
 							</c:when>
-							<c:when test="${employeeorder.difference != null && employeeorder.difference >= 0.0}">
-									<fmt:formatNumber value="${employeeorder.difference}" minFractionDigits="2"/>
+							<c:when test="${employeeorder.difference != null && !employeeorder.difference.negative}">
+									<java8:formatDuration value="${employeeorder.difference}" />
 							</c:when>
-							<c:otherwise>
-								&nbsp;
-							</c:otherwise>
 						</c:choose>
 					</td>
 				</c:if>

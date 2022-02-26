@@ -5,8 +5,10 @@ import static org.tb.common.util.DateUtils.format;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -20,6 +22,7 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
+import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
 import org.tb.customer.Customer;
 import org.tb.employee.Employee;
@@ -84,7 +87,8 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private String sign;
     private String description;
     private String shortdescription;
-    private int debitMinutes;
+    @Convert(converter = DurationMinutesConverter.class)
+    private Duration debitMinutes;
     private Byte debithoursunit;
     private Integer statusreport;
     /**
@@ -148,21 +152,12 @@ public class Customerorder extends AuditedEntity implements Serializable {
         return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
     }
 
-    protected Double getDebithours() {
-        return BigDecimal
-            .valueOf(debitMinutes)
-            .setScale(2)
-            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .doubleValue();
+    public Duration getDebithours() {
+        return debitMinutes; // its a Duration - hours or minutes make no difference
     }
 
-    public void setDebithours(Double value) {
-        debitMinutes = BigDecimal
-            .valueOf(value)
-            .setScale(2)
-            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .setScale(0)
-            .intValue();
+    public void setDebithours(Duration value) {
+        debitMinutes = value; // its a Duration - hours or minutes make no difference
     }
 
 }

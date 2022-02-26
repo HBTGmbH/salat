@@ -4,6 +4,8 @@ import static org.tb.common.GlobalConstants.SYSTEM_SIGN;
 import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.today;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -258,10 +260,9 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     }
                     if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
                         && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                        employeeorder.setDebithours(employeecontract
-                            .getDailyWorkingTime()
-                            * employeecontract
-                            .getVacationEntitlement());
+                        // TODO reduce VacationEntitlement if contract is not running the whole year
+                        long vacationBudgetMinutes = employeecontract.getDailyWorkingTimeMinutes() * employeecontract.getVacationEntitlement();
+                        employeeorder.setDebithours(Duration.ofMinutes(vacationBudgetMinutes));
                         employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
                     } else {
                         // not decided yet

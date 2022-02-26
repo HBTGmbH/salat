@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.customer.CustomerDAO;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
@@ -60,7 +61,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, coForm, which);
-                if (errorMessages.size() > 0) {
+                if (!errorMessages.isEmpty()) {
                     return mapping.getInputForward();
                 }
 
@@ -88,7 +89,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                 request.getParameter("coId") != null) {
 
             ActionMessages errorMessages = validateFormData(request, coForm);
-            if (errorMessages.size() > 0) {
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
@@ -195,11 +196,13 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             co.setResponsible_hbt(employeeDAO.getEmployeeById(coForm.getEmployeeId()));
             co.setRespEmpHbtContract(employeeDAO.getEmployeeById(coForm.getRespContrEmployeeId()));
 
-            if (coForm.getDebithours() == null || coForm.getDebithours() == 0.0) {
+            if (coForm.getDebithours() == null
+                || coForm.getDebithours().isEmpty()
+                || DurationUtils.parseDuration(coForm.getDebithours()).isZero()) {
                 co.setDebithours(null);
                 co.setDebithoursunit(null);
             } else {
-                co.setDebithours(coForm.getDebithours());
+                co.setDebithours(DurationUtils.parseDuration(coForm.getDebithours()));
                 co.setDebithoursunit(coForm.getDebithoursunit());
             }
 
@@ -367,24 +370,13 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             errors.add("responsibleCustomerTechnical", new ActionMessage("form.customerorder.error.responsiblecustomer.required"));
         }
 
-        if (!GenericValidator.isDouble(coForm.getDebithours().toString()) ||
-                !GenericValidator.isInRange(coForm.getDebithours(),
-                        0.0, GlobalConstants.MAX_DEBITHOURS)) {
+        if (!DurationUtils.validateDuration(coForm.getDebithours())) {
             errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat"));
-        } else if (coForm.getDebithours() != null && coForm.getDebithours() != 0.0) {
-            double debithours = coForm.getDebithours() * 100000;
-            debithours += 0.5;
-
-            int debithours2 = (int) debithours;
-            int modulo = debithours2 % 5000;
-            coForm.setDebithours(debithours2 / 100000.0);
-
-            if (modulo != 0) {
-                errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat2"));
-            }
         }
 
-        if (coForm.getDebithours() != 0.0) {
+        if (coForm.getDebithours() != null
+            && coForm.getDebithours().isEmpty()
+            && !DurationUtils.parseDuration(coForm.getDebithours()).isZero()) {
             if (coForm.getDebithoursunit() == null || !(coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH ||
                     coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
                 errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.nounit"));

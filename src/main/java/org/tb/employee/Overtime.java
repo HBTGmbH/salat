@@ -39,7 +39,6 @@ public class Overtime extends AuditedEntity implements Serializable {
     private String comment;
 
     @Convert(converter = DurationMinutesConverter.class)
-    @Column(name = "timeMinutes")
     private Duration timeMinutes;
 
     public String getCreatedString() {

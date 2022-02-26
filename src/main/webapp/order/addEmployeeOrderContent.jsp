@@ -7,7 +7,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
-
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html:html>
@@ -127,11 +127,11 @@
 			</td>
 			<td class="noBborderStyle" colspan="2">
 				<c:choose>
-					<c:when test="${currentEmployeeOrder.debithours == null || currentEmployeeOrder.debithours == 0.0}">
+					<c:when test="${currentEmployeeOrder.debithours == null || currentEmployeeOrder.debithours.zero}">
 						./.
 					</c:when>
 					<c:otherwise>
-						<c:out value="${currentEmployeeOrder.debithours}" />
+						<java8:formatDuration value="${currentEmployeeOrder.debithours}" />
 						<c:choose>
 							<c:when test="${currentEmployeeOrder.debithoursunit == 0}">
 								/ <bean:message key="main.general.totaltime.text" />

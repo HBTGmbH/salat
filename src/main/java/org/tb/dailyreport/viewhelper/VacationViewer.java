@@ -9,10 +9,12 @@ import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpSession;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.TimereportDAO;
 import org.tb.employee.Employeecontract;
 import org.tb.order.Employeeorder;
@@ -23,18 +25,18 @@ public class VacationViewer implements Serializable {
     private static final long serialVersionUID = 1L;
     private final Employeecontract employeecontract;
     private String suborderSign;
-    private double budget;
+    private Duration budget;
     private int usedVacationMinutes;
 
     public VacationViewer(Employeecontract employeecontract) {
         this.employeecontract = employeecontract;
     }
 
-    public double getBudget() {
+    public Duration getBudget() {
         return budget;
     }
 
-    public void setBudget(double budget) {
+    public void setBudget(Duration budget) {
         this.budget = budget;
     }
 
@@ -59,7 +61,7 @@ public class VacationViewer implements Serializable {
     }
 
     public boolean isVacationBudgetExceeded() {
-        return usedVacationMinutes > (budget * 60);
+        return usedVacationMinutes > budget.toMinutes();
     }
 
     public String getUsedVacationString() {
@@ -86,14 +88,13 @@ public class VacationViewer implements Serializable {
 
     public String getBudgetVacationString() {
         StringBuilder budgetVacation = new StringBuilder();
-        budgetVacation.append(timeFormatHours(this.budget));
+        budgetVacation.append(DurationUtils.format(this.budget));
 
         BigDecimal dailyWorkingTimeMinutes = BigDecimal
             .valueOf(employeecontract.getDailyWorkingTime())
             .multiply(BigDecimal.valueOf(60));
         if(dailyWorkingTimeMinutes.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal usedVacationDays = BigDecimal.valueOf(this.budget)
-                .multiply(BigDecimal.valueOf(60))
+            BigDecimal usedVacationDays = BigDecimal.valueOf(this.budget.toMinutes())
                 .setScale(2, DOWN)
                 .divide(dailyWorkingTimeMinutes, DOWN);
             NumberFormat nf = NumberFormat.getNumberInstance(GERMAN);

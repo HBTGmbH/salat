@@ -4,6 +4,8 @@ package org.tb.common.util;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
@@ -148,7 +150,7 @@ public class ExcelArchivierer {
                     // ab hier ggf. Timereports ausgeben
                     List<InvoiceTimereportHelper> invoiceTimereportViewHelpers = invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList();
                     if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))
-                            && invoiceTimereportViewHelpers.size() > 0) {
+                        && !invoiceTimereportViewHelpers.isEmpty()) {
                         for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceTimereportViewHelpers) {
                             if (invoiceTimereportViewHelper.isVisible()) {
                                 rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereportViewHelper, request, factory);
@@ -258,7 +260,7 @@ public class ExcelArchivierer {
         if (request.getSession().getAttribute("targethoursbox") != null && ((Boolean) request.getSession().getAttribute("targethoursbox"))) {
             cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
             if (invoiceSuborderViewHelper.getDebithours() != null) {
-                cell.setCellValue(invoiceSuborderViewHelper.getDebithours() / 24);
+                cell.setCellValue((double) invoiceSuborderViewHelper.getDebithours().toMinutes() / 24);
             } else {
                 cell.setCellValue(0L);
             }

@@ -32,7 +32,7 @@ public class AddSuborderForm extends ActionForm {
     private Boolean trainingFlag;
     private String validFrom;
     private String validUntil;
-    private Double debithours;
+    private String debithours;
     private Byte debithoursunit;
     private Boolean hide;
     private Long parentId;
