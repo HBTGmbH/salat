@@ -25,7 +25,7 @@ public class DurationUtils {
     return sb.toString();
   }
 
-  public Duration parse(String value) {
+  public Duration parseDuration(String value) {
     if(value == null || value.isEmpty()) {
       return Duration.ZERO;
     }
@@ -52,7 +52,7 @@ public class DurationUtils {
     return Duration.ofMinutes(minutes);
   }
 
-  public boolean validate(String value) {
+  public boolean validateDuration(String value) {
     if(value == null || value.isEmpty()) {
       return true;
     }
