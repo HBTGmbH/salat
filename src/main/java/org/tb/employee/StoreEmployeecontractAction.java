@@ -377,11 +377,11 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         }
 
         if (which.equals("from")) {
-            if(DateUtils.validateDate(ecForm.getValidFrom())) {
+            if(!DateUtils.validateDate(ecForm.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         } else {
-            if(DateUtils.validateDate(ecForm.getValidUntil())) {
+            if(!DateUtils.validateDate(ecForm.getValidUntil())) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }

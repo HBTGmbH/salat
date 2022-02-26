@@ -383,11 +383,11 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         if (which.equals("from")) {
-            if(DateUtils.validateDate(soForm.getValidFrom())) {
+            if(!DateUtils.validateDate(soForm.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         } else {
-            if(DateUtils.validateDate(soForm.getValidFrom())) {
+            if(!DateUtils.validateDate(soForm.getValidFrom())) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }
