@@ -1,14 +1,18 @@
 package org.tb.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 import static org.tb.testutils.EmployeeTestUtils.TESTY_SIGN;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.tb.auth.AuthorizedUser;
 import org.tb.dailyreport.VacationDAO;
 import org.tb.employee.Employee;
 import org.tb.employee.EmployeeDAO;
@@ -28,6 +32,14 @@ public class EmployeecontractDAOTest {
 
 	@Autowired
 	private EmployeecontractDAO employeecontractDAO;
+
+	@MockBean
+	private AuthorizedUser authorizedUser;
+
+	@BeforeEach
+	public void initAuthorizedUser() {
+		when(authorizedUser.isAuthenticated()).thenReturn(false);
+	}
 
 	@Test
 	public void employee_contract_can_be_saved_and_gets_id() {
