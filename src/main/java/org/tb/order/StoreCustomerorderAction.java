@@ -283,11 +283,11 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
         }
 
         if (which.equals("from")) {
-            if(DateUtils.validateDate(coForm.getValidFrom())) {
+            if(!DateUtils.validateDate(coForm.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         } else {
-            if(DateUtils.validateDate(coForm.getValidUntil())) {
+            if(!DateUtils.validateDate(coForm.getValidUntil())) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }
@@ -308,14 +308,14 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
         //	check date formats (must now be 'yyyy-MM-dd')
         String dateFromString = coForm.getValidFrom().trim();
-        boolean dateError = DateUtils.validateDate(dateFromString);
+        boolean dateError = !DateUtils.validateDate(dateFromString);
         if (dateError) {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
 
         if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
             String dateUntilString = coForm.getValidUntil().trim();
-            dateError = DateUtils.validateDate(dateUntilString);
+            dateError = !DateUtils.validateDate(dateUntilString);
             if (dateError) {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
