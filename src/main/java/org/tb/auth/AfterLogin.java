@@ -36,7 +36,7 @@ import org.tb.statusreport.Statusreport;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = { @Autowired})
+@RequiredArgsConstructor
 public class AfterLogin {
 
     private final TimereportHelper timereportHelper;

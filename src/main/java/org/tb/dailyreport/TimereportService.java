@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,15 +76,15 @@ import org.tb.order.Suborder;
 @Slf4j
 @Component
 @Transactional
-@Setter(onMethod_ = { @Autowired })
+@RequiredArgsConstructor
 public class TimereportService {
 
-  private EmployeecontractDAO employeecontractDAO;
-  private ReferencedayDAO referencedayDAO;
-  private EmployeeorderDAO employeeorderDAO;
-  private TimereportDAO timereportDAO;
-  private PublicholidayDAO publicholidayDAO;
-  private OvertimeDAO overtimeDAO;
+  private final EmployeecontractDAO employeecontractDAO;
+  private final ReferencedayDAO referencedayDAO;
+  private final EmployeeorderDAO employeeorderDAO;
+  private final TimereportDAO timereportDAO;
+  private final PublicholidayDAO publicholidayDAO;
+  private final OvertimeDAO overtimeDAO;
 
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, int durationHours, int durationMinutes, int numberOfSerialDays)

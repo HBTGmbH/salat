@@ -37,7 +37,7 @@ import org.tb.order.EmployeeorderDAO;
  */
 @Component
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = { @Autowired})
+@RequiredArgsConstructor
 public class TimereportHelper {
 
     private final TimereportDAO timereportDAO;
