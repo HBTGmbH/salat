@@ -46,22 +46,5 @@ public class Overtime extends AuditedEntity implements Serializable {
         return DateUtils.formatDateTime(getCreated(), "yyyy-MM-dd HH:mm");
     }
 
-    public Double getTime() {
-        return BigDecimal
-            .valueOf(timeMinutes.toMinutes())
-            .setScale(2)
-            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .doubleValue();
-    }
-
-    public void setTime(Double value) {
-        timeMinutes = Duration.ofMinutes(BigDecimal
-            .valueOf(value)
-            .setScale(2)
-            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .setScale(0)
-            .intValue());
-    }
-
 }
 

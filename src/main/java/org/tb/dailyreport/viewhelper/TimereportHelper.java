@@ -435,7 +435,7 @@ public class TimereportHelper {
             List<Overtime> overtimes = overtimeDAO
                     .getOvertimesByEmployeeContractId(employeecontract.getId());
             for (Overtime ot : overtimes) {
-                overtimeAdjustmentMinutes += ot.getTime() * MINUTES_PER_HOUR;
+                overtimeAdjustmentMinutes += ot.getTimeMinutes().toMinutes();
             }
             overtimeMinutes = (int) (actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes);
         } else {

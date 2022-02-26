@@ -41,6 +41,7 @@ import static org.tb.common.util.DateUtils.getYearMonth;
 import static org.tb.common.util.DateUtils.max;
 import static org.tb.common.util.DateUtils.min;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -179,13 +180,12 @@ public class TimereportService {
     long expectedWorkingTimeInMinutes = dailyWorkingTimeInMinutes * effectiveWorkDays;
     long actualWorkingTimeInMinutes = timereportDAO.getTotalDurationMinutesForEmployeecontract(employeecontractId, effectiveStart, effectiveEnd);
     if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
-      double overtime = overtimeDAO.getOvertimesByEmployeeContractId(employeecontractId)
+      long overtimeInMinutes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontractId)
           .stream()
           //.filter(o -> o.getRefDate()) TODO introduce this date to allow to provide a date when the adjustment is effective
-          .map(Overtime::getTime)
-          .mapToDouble(Double::doubleValue)
+          .map(Overtime::getTimeMinutes)
+          .mapToLong(Duration::toMinutes)
           .sum();
-      long overtimeInMinutes = (long) (overtime * MINUTES_PER_HOUR);
       actualWorkingTimeInMinutes += overtimeInMinutes;
     }
 

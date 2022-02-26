@@ -46,9 +46,9 @@ public class AddEmployeeContractForm extends ActionForm {
         freelancer = Boolean.FALSE;
         hide = Boolean.FALSE;
         dailyworkingtime = 8.0;
-        initialOvertime = "0.0";
+        initialOvertime = "0:00";
         yearlyvacation = 30;
-        newOvertime = "0.0";
+        newOvertime = "0:00";
     }
 
 }

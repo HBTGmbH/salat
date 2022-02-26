@@ -497,7 +497,7 @@
 						<c:out value="${overtime.createdString}" />
 					</td>
 					<td align="center"> 
-						<c:out value="${overtime.time}" />
+						<c:out value="${overtime.timeMinutes}" />
 					</td>
 					<td align="left">
 						<c:out value="${overtime.comment}" />
