@@ -514,4 +514,29 @@ databaseChangeLog:
         - dropColumn:
             tableName: timereport
             columnName: costs
-
+  - changeSet:
+      id: 14
+      author: kr
+      comment: Minutes columns must be 0 at least
+      changes:
+      - update:
+          columns:
+            - column:
+                name: debitMinutes
+                valueNumeric: 0
+          tableName: customerorder
+          where: debitMinutes is null
+      - update:
+          columns:
+            - column:
+                name: debitMinutes
+                valueNumeric: 0
+          tableName: employeeorder
+          where: debitMinutes is null
+      - update:
+          columns:
+            - column:
+                name: debitMinutes
+                valueNumeric: 0
+          tableName: suborder
+          where: debitMinutes is null
