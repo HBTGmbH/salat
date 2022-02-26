@@ -1,6 +1,9 @@
 package org.tb.employee;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+
 import java.io.Serializable;
+import java.math.BigDecimal;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -30,10 +33,28 @@ public class Overtime extends AuditedEntity implements Serializable {
     private Employeecontract employeecontract;
 
     private String comment;
-    private Double time;
+    private int timeMinutes;
 
     public String getCreatedString() {
         return DateUtils.formatDateTime(getCreated(), "yyyy-MM-dd HH:mm");
     }
 
+    public Double getTime() {
+        return BigDecimal
+            .valueOf(timeMinutes)
+            .setScale(2)
+            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .doubleValue();
+    }
+
+    public void setTime(Double value) {
+        timeMinutes = BigDecimal
+            .valueOf(value)
+            .setScale(2)
+            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
+            .setScale(0)
+            .intValue();
+    }
+
 }
+

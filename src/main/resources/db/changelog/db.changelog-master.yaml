@@ -419,3 +419,44 @@ databaseChangeLog:
         - dropColumn:
             tableName: suborder
             columnName: debithours
+  - changeSet:
+      id: 11
+      author: kr
+      comment: Introduce overtime in minutes
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: overtime
+            columnName: time
+        - not:
+            - columnExists:
+                tableName: overtime
+                columnName: timeMinutes
+      changes:
+        - addColumn:
+            tableName: overtime
+            columns:
+              - column:
+                  name: timeMinutes
+                  type: int
+        - update:
+            columns:
+              - column:
+                  name: timeMinutes
+                  valueComputed: ROUND(time * 60)
+            tableName: overtime
+            where: timeMinutes is null
+        - update:
+            columns:
+              - column:
+                  name: timeMinutes
+                  valueNumeric: 0
+            tableName: overtime
+            where: timeMinutes is null
+        - addNotNullConstraint:
+            tableName: overtime
+            columnName: timeMinutes
+            columnDataType: int
+        - dropColumn:
+            tableName: overtime
+            columnName: time
