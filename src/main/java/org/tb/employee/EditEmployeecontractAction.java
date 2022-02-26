@@ -1,7 +1,10 @@
 package org.tb.employee;
 
+import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.DurationUtils.format;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.Vacation;
 
 /**
@@ -45,17 +49,16 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
 
         // get overtime-entries
         List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
-        double totalOvertime = 0.0;
+        Duration totalOvertime = Duration.ZERO;
         for (Overtime overtime : overtimes) {
-            totalOvertime += overtime.getTime();
+            totalOvertime = totalOvertime.plus(overtime.getTimeMinutes());
         }
-        totalOvertime = Math.rint(totalOvertime * 100) / 100;
         request.getSession().setAttribute("overtimes", overtimes);
-        request.getSession().setAttribute("totalovertime", totalOvertime);
+        request.getSession().setAttribute("totalovertime", format(totalOvertime));
 
         // set day string for overime
         LocalDate now = today();
-        request.getSession().setAttribute("dateString", DateUtils.format(now));
+        request.getSession().setAttribute("dateString", format(now));
 
         // forward to employee contract add/edit form
         return mapping.findForward("success");
@@ -97,10 +100,10 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         }
 
         LocalDate fromDate = ec.getValidFrom();
-        ecForm.setValidFrom(DateUtils.format(fromDate));
+        ecForm.setValidFrom(format(fromDate));
         if (ec.getValidUntil() != null) {
             LocalDate untilDate = ec.getValidUntil();
-            ecForm.setValidUntil(DateUtils.format(untilDate));
+            ecForm.setValidUntil(format(untilDate));
         }
     }
 

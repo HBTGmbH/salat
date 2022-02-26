@@ -2,8 +2,12 @@ package org.tb.employee;
 
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.DurationUtils.format;
+import static org.tb.common.util.DurationUtils.parse;
+import static org.tb.common.util.DurationUtils.validate;
 
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,6 +27,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
 import org.tb.dailyreport.Vacation;
@@ -99,68 +104,35 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             if (ecForm.getNewOvertime() != null) {
                 String overtimeString = ecForm.getNewOvertime();
 
-                try {
-                    // test wether there are too many numbers after point-seperator
-                    if (overtimeString.contains(".") && overtimeString.length() - overtimeString.indexOf(".") > 2) {
-                        //if yes, cut off
-                        overtimeDouble = Double.parseDouble(overtimeString.substring(0, overtimeString.indexOf('.') + 3));
-                    } else {
-                        overtimeDouble = Double.parseDouble(overtimeString);
-                    }
-
-                    if (overtimeDouble == 0) {
-                        errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
-                    }
-
-                    if (!GenericValidator.isDouble(overtimeString) ||
-                            !GenericValidator.isInRange(overtimeDouble,
-                                    GlobalConstants.MIN_OVERTIME, GlobalConstants.MAX_OVERTIME)) {
+                // validate comment
+                if (ecForm.getNewOvertimeComment().length() > GlobalConstants.EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH) {
+                    errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.toolong"));
+                } else if (ecForm.getNewOvertimeComment().trim().length() == 0) {
+                    errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.missing"));
+                }
+                if(!validate(overtimeString)) {
+                    errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+                } else {
+                    Duration overtimeMinutes = parse(overtimeString);
+                    if(overtimeMinutes.isZero()) {
                         errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
                     }
-
-                    ecForm.setNewOvertime("" + overtimeDouble);
-
-                    double time = overtimeDouble * 100000;
-
-                    if (time >= 0) {
-                        time += 0.5;
-                    } else {
-                        time -= 0.5;
-                    }
-                    int time2 = (int) time;
-                    int modulo = time2 % 5000;
-
-                    if (modulo != 0) {
-                        errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
-                    }
-                } catch (NumberFormatException e) {
-                    errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
+                }
+                if (errors.size() > 0) {
+                    saveErrors(request, errors);
+                    //setFormEntries(request, ecForm, ec); // warum????
+                    return mapping.getInputForward();
                 }
             }
 
-            // new comment
-            if (ecForm.getNewOvertimeComment().length() > GlobalConstants.EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH) {
-                errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.toolong"));
-            } else if (ecForm.getNewOvertimeComment().trim().length() == 0) {
-                errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.missing"));
-            }
-
-            saveErrors(request, errors);
-
-            //				 get employeecontract
-            long ecId;
-            ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
-            Employeecontract ec = employeecontractDAO.getEmployeeContractByIdInitializeEager(ecId);
-
-            if (errors.size() > 0) {
-                setFormEntries(request, ecForm, ec);
-                return mapping.getInputForward();
-            }
+            // validation completed -> create overtime entity and store it
+            long ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
+            Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
 
             Overtime overtime = new Overtime();
             overtime.setComment(ecForm.getNewOvertimeComment());
             overtime.setEmployeecontract(ec);
-            overtime.setTime(overtimeDouble);
+            overtime.setTimeMinutes(parse(ecForm.getNewOvertime()));
 
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
@@ -168,23 +140,16 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
             // refresh list of overtime adjustments
             List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
-            Double totalOvertime = 0.0;
+            Duration totalOvertime = Duration.ZERO;
             for (Overtime ot : overtimes) {
-                totalOvertime += ot.getTime();
+                totalOvertime = totalOvertime.plus(ot.getTimeMinutes());
             }
-            totalOvertime = Math.rint(totalOvertime * 100) / 100;
-            // optimizing totalOvertime
-            String tOString = totalOvertime.toString();
 
-            if (tOString.length() - tOString.indexOf(".") > 2) {
-                tOString = tOString.substring(0, tOString.indexOf(".") + 3);
-                totalOvertime = Double.parseDouble(tOString);
-            }
             request.getSession().setAttribute("overtimes", overtimes);
-            request.getSession().setAttribute("totalovertime", totalOvertime);
+            request.getSession().setAttribute("totalovertime", format(totalOvertime));
 
             // reset form
-            ecForm.setNewOvertime("0.0");
+            ecForm.setNewOvertime("0:00");
             ecForm.setNewOvertimeComment("");
 
             setFormEntries(request, ecForm, ec);
@@ -217,9 +182,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             }
 
             Employee theEmployee = employeeDAO.getEmployeeById(employeeId);
-
-            //				EmployeeHelper eh = new EmployeeHelper();
-
             ec.setEmployee(theEmployee);
 
             ActionMessages errorMessages = validateFormData(request, ecForm, theEmployee, ec);
@@ -343,10 +305,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 overtime.setEmployeecontract(ec);
                 // if no value is selected, set 0.0
                 if (ecForm.getInitialOvertime() == null) {
-                    ecForm.setInitialOvertime("0.0");
+                    ecForm.setInitialOvertime("0:00");
                 }
                 // the ecForm entry is checked before
-                overtime.setTime(Double.valueOf(ecForm.getInitialOvertime()));
+                overtime.setTimeMinutes(parse(ecForm.getInitialOvertime()));
                 overtimeDAO.save(overtime, loginEmployee);
             }
 
@@ -545,26 +507,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
         // check initial overtime
         if (ecForm.getInitialOvertime() != null) {
-            String initialOvertimeString = ecForm.getInitialOvertime();
-            try {
-                double initialOvertimeDouble = Double.parseDouble(initialOvertimeString);
-
-                if (!GenericValidator.isDouble(initialOvertimeString) ||
-                        !GenericValidator.isInRange(initialOvertimeDouble,
-                                GlobalConstants.MIN_OVERTIME, GlobalConstants.MAX_OVERTIME)) {
-                    errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
-                }
-
-                time = initialOvertimeDouble * 100000;
-                time += 0.5;
-                time2 = (int) time;
-                modulo = time2 % 5000;
-                ecForm.setInitialOvertime("" + time2 / 100000.0);
-
-                if (modulo != 0) {
-                    errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat2"));
-                }
-            } catch (NumberFormatException e) {
+            if (!validate(ecForm.getInitialOvertime())) {
                 errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
             }
         }

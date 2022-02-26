@@ -27,7 +27,7 @@ public class DurationUtils {
 
   public Duration parse(String value) {
     if(value == null || value.isEmpty()) {
-      return null;
+      return Duration.ZERO;
     }
     boolean negative = value.startsWith("-");
     if(negative) {
