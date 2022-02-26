@@ -3,6 +3,8 @@ package org.tb.common.util;
 import static java.lang.Math.abs;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import lombok.experimental.UtilityClass;
 
@@ -100,7 +102,23 @@ public class DurationUtils {
   }
 
   public static String decimalFormat(Duration duration) {
-    return null;
+    if(duration == null) {
+      return "";
+    }
+    if(duration.isZero()) {
+      return "0,00";
+    }
+    StringBuilder sb = new StringBuilder();
+    if(duration.isNegative()) {
+      sb.append('-');
+    }
+    sb.append(abs(duration.toHours())).append(',');
+    int minutesDecimal = BigDecimal.valueOf(duration.toMinutesPart())
+        .multiply(BigDecimal.valueOf(100))
+        .divide(BigDecimal.valueOf(MINUTES_PER_HOUR), RoundingMode.HALF_UP)
+        .intValueExact();
+    sb.append(String.format("%02d", abs(minutesDecimal)));
+    return sb.toString();
   }
 
 }
