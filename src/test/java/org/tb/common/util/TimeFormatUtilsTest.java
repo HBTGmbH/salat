@@ -1,4 +1,4 @@
-package org.tb.util;
+package org.tb.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatHours;

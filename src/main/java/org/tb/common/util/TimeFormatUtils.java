@@ -23,10 +23,12 @@ public class TimeFormatUtils {
     return timeMinutesFormat;
   });
 
+  @Deprecated
   public static String decimalFormatHours(double hoursDecimal) {
     return hoursDecimalFormatHolder.get().format(hoursDecimal);
   }
 
+  @Deprecated
   public static String decimalFormatMinutes(double minutesDecimal) {
     return hoursDecimalFormatHolder.get().format(minutesDecimal / 60);
   }
@@ -44,6 +46,7 @@ public class TimeFormatUtils {
     return timeFormatHoursAndMinutes(minutes / 60, minutes % 60);
   }
 
+  @Deprecated
   public static String timeFormatHours(double hoursDecimal) {
     BigDecimal minutesValue = BigDecimal.valueOf(hoursDecimal * 60).setScale(0, RoundingMode.HALF_UP);
     return timeFormatMinutes(minutesValue.longValue());

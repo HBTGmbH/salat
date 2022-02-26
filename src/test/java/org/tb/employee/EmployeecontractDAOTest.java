@@ -1,4 +1,4 @@
-package org.tb.persistence;
+package org.tb.employee;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
