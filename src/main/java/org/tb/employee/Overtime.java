@@ -4,6 +4,9 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Duration;
+import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -16,6 +19,7 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
+import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
 
 @Getter
@@ -33,7 +37,10 @@ public class Overtime extends AuditedEntity implements Serializable {
     private Employeecontract employeecontract;
 
     private String comment;
-    private int timeMinutes;
+
+    @Convert(converter = DurationMinutesConverter.class)
+    @Column(name = "timeMinutes")
+    private Duration timeMinutes;
 
     public String getCreatedString() {
         return DateUtils.formatDateTime(getCreated(), "yyyy-MM-dd HH:mm");
@@ -41,19 +48,19 @@ public class Overtime extends AuditedEntity implements Serializable {
 
     public Double getTime() {
         return BigDecimal
-            .valueOf(timeMinutes)
+            .valueOf(timeMinutes.toMinutes())
             .setScale(2)
             .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
             .doubleValue();
     }
 
     public void setTime(Double value) {
-        timeMinutes = BigDecimal
+        timeMinutes = Duration.ofMinutes(BigDecimal
             .valueOf(value)
             .setScale(2)
             .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
             .setScale(0)
-            .intValue();
+            .intValue());
     }
 
 }
