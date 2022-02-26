@@ -25,7 +25,7 @@ import org.tb.employee.EmployeecontractDAO;
  */
 @Component
 @Slf4j
-@RequiredArgsConstructor(onConstructor_ = { @Autowired})
+@RequiredArgsConstructor
 public class SuborderHelper {
 
     private final SuborderDAO suborderDAO;
