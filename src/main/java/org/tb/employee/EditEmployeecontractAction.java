@@ -1,8 +1,6 @@
 package org.tb.employee;
 
-import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.common.util.DurationUtils.format;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -54,11 +52,11 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
             totalOvertime = totalOvertime.plus(overtime.getTimeMinutes());
         }
         request.getSession().setAttribute("overtimes", overtimes);
-        request.getSession().setAttribute("totalovertime", format(totalOvertime));
+        request.getSession().setAttribute("totalovertime", DurationUtils.format(totalOvertime));
 
         // set day string for overime
         LocalDate now = today();
-        request.getSession().setAttribute("dateString", format(now));
+        request.getSession().setAttribute("dateString", DateUtils.format(now));
 
         // forward to employee contract add/edit form
         return mapping.findForward("success");
@@ -100,10 +98,10 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         }
 
         LocalDate fromDate = ec.getValidFrom();
-        ecForm.setValidFrom(format(fromDate));
+        ecForm.setValidFrom(DateUtils.format(fromDate));
         if (ec.getValidUntil() != null) {
             LocalDate untilDate = ec.getValidUntil();
-            ecForm.setValidUntil(format(untilDate));
+            ecForm.setValidUntil(DateUtils.format(untilDate));
         }
     }
 

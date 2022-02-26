@@ -2,9 +2,6 @@ package org.tb.employee;
 
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.common.util.DurationUtils.format;
-import static org.tb.common.util.DurationUtils.parse;
-import static org.tb.common.util.DurationUtils.validate;
 
 import java.text.ParseException;
 import java.time.Duration;
@@ -66,7 +63,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = validateDate(request, ecForm, which);
-                if (errorMessages.size() > 0) {
+                if (!errorMessages.isEmpty()) {
                     return mapping.getInputForward();
                 }
 
@@ -107,18 +104,18 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 // validate comment
                 if (ecForm.getNewOvertimeComment().length() > GlobalConstants.EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH) {
                     errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.toolong"));
-                } else if (ecForm.getNewOvertimeComment().trim().length() == 0) {
+                } else if (ecForm.getNewOvertimeComment().trim().isEmpty()) {
                     errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.missing"));
                 }
-                if(!validate(overtimeString)) {
+                if(!DurationUtils.validateDuration(overtimeString)) {
                     errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
                 } else {
-                    Duration overtimeMinutes = parse(overtimeString);
+                    Duration overtimeMinutes = DurationUtils.parseDuration(overtimeString);
                     if(overtimeMinutes.isZero()) {
                         errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
                     }
                 }
-                if (errors.size() > 0) {
+                if (!errors.isEmpty()) {
                     saveErrors(request, errors);
                     //setFormEntries(request, ecForm, ec); // warum????
                     return mapping.getInputForward();
@@ -132,7 +129,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             Overtime overtime = new Overtime();
             overtime.setComment(ecForm.getNewOvertimeComment());
             overtime.setEmployeecontract(ec);
-            overtime.setTimeMinutes(parse(ecForm.getNewOvertime()));
+            overtime.setTimeMinutes(DurationUtils.parseDuration(ecForm.getNewOvertime()));
 
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
@@ -146,7 +143,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             }
 
             request.getSession().setAttribute("overtimes", overtimes);
-            request.getSession().setAttribute("totalovertime", format(totalOvertime));
+            request.getSession().setAttribute("totalovertime", DurationUtils.format(totalOvertime));
 
             // reset form
             ecForm.setNewOvertime("0:00");
@@ -185,7 +182,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             ec.setEmployee(theEmployee);
 
             ActionMessages errorMessages = validateFormData(request, ecForm, theEmployee, ec);
-            if (errorMessages.size() > 0) {
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
@@ -308,7 +305,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     ecForm.setInitialOvertime("0:00");
                 }
                 // the ecForm entry is checked before
-                overtime.setTimeMinutes(parse(ecForm.getInitialOvertime()));
+                overtime.setTimeMinutes(DurationUtils.parseDuration(ecForm.getInitialOvertime()));
                 overtimeDAO.save(overtime, loginEmployee);
             }
 
@@ -507,7 +504,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
         // check initial overtime
         if (ecForm.getInitialOvertime() != null) {
-            if (!validate(ecForm.getInitialOvertime())) {
+            if (!DurationUtils.validateDuration(ecForm.getInitialOvertime())) {
                 errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
             }
         }
@@ -564,7 +561,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         ecForm.setFreelancer(ec.getFreelancer());
         ecForm.setHide(ec.getHide());
         ecForm.setDailyworkingtime(ec.getDailyWorkingTime());
-        if (ec.getVacations().size() > 0) {
+        if (!ec.getVacations().isEmpty()) {
             // actually, vacation entitlement is a constant value
             // for an employee (not year-dependent), so just take the
             // first vacation entry to set the form value

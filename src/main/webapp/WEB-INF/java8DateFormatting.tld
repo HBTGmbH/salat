@@ -35,4 +35,16 @@
     </attribute>
   </tag>
 
+  <tag>
+    <name>formatDuration</name>
+    <tagclass>org.tb.common.jsptags.FormatDurationTag</tagclass>
+    <bodycontent>empty</bodycontent>
+    <info>Formats a given Duration using DurationUtils</info>
+    <attribute>
+      <name>value</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+  </tag>
+
 </taglib>

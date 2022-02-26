@@ -7,6 +7,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 
 <html:html>
 <head>
@@ -454,7 +455,7 @@
 
 	<!-- overtime table -->
 	 
-<html:form action="/StoreEmployeecontract?task=storeOvertime">			
+<html:form action="/StoreEmployeecontract?task=storeOvertime">
 	<c:if test="${employeeContractContext eq 'edit'}">
 	<br>
 	<br>
@@ -463,10 +464,10 @@
 	<br>
 		<table class="center backgroundcolor">
 			<tr>
-				<td class="noBborderStyle" align="right">
+				<td class="noBborderStyle" style="text-align: right">
 					<b><bean:message key="main.employeecontract.overtime.total.text" />:</b>
 				</td>
-				<th>
+				<th style="text-align: right">
 					<c:out value="${totalovertime}" />
 				</th>
 			</tr>
@@ -493,26 +494,26 @@
 						<tr class="secondarycolor">
 					</c:otherwise>
 				</c:choose>
-					<td align="center"> 
+					<td style="text-align: right">
 						<c:out value="${overtime.createdString}" />
 					</td>
-					<td align="center"> 
-						<c:out value="${overtime.timeMinutes}" />
+					<td style="text-align: right">
+						<java8:formatDuration value="${overtime.timeMinutes}" />
 					</td>
-					<td align="left">
+					<td style="text-align: left">
 						<c:out value="${overtime.comment}" />
 					</td>
 				</tr>	
 			</c:forEach>
 			<tr>
-				<td align="center">
+				<td style="text-align: right">
 					<c:out value="${dateString}" />
 				</td>
-				<td>
-					<html:text property="newOvertime" size="10" /> 
+				<td style="text-align: right">
+					<html:text property="newOvertime" size="10" style="text-align: right" />
 				</td>					
 				<td>
-					<html:text property="newOvertimeComment" size="64" />
+					<html:text property="newOvertimeComment" size="64" style="text-align: left" />
 				</td>
 				<td class="noBborderStyle">
 					<html:submit styleId="button" styleClass="hiddencontent" titleKey="main.general.button.save.alttext.text">
@@ -521,12 +522,12 @@
 				</td>
 			</tr>
 			<tr>
-				<td class="noBborderStyle" align="right">
+				<td class="noBborderStyle" style="text-align: right">
 					<b><bean:message key="main.employeecontract.overtime.total.text" />:</b>
 				</td>
-				<th>
+				<td style="text-align: right">
 					<c:out value="${totalovertime}" />
-				</th>
+				</td>
 			</tr>
 			
 			<!-- error messages -->
