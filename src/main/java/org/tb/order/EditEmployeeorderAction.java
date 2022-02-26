@@ -10,6 +10,7 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.employee.Employee;
 import org.tb.employee.Employeecontract;
 import org.tb.employee.EmployeecontractDAO;
@@ -105,9 +106,8 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
         eoForm.setOrderId(eo.getSuborder().getCustomerorder().getId());
         eoForm.setSuborderId(eo.getSuborder().getId());
 
-        eoForm.setDebithours(eo.getDebithours());
-        if (eo.getDebithours() != null) {
-            eoForm.setDebithours(eo.getDebithours());
+        if (eo.getDebithours() != null && !eo.getDebithours().isZero()) {
+            eoForm.setDebithours(DurationUtils.format(eo.getDebitMinutes()));
             eoForm.setDebithoursunit(eo.getDebithoursunit());
         } else {
             eoForm.setDebithours(null);

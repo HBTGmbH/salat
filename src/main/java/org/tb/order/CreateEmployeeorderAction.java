@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
+import org.tb.common.util.DurationUtils;
 import org.tb.employee.Employee;
 import org.tb.employee.Employeecontract;
 import org.tb.employee.EmployeecontractDAO;
@@ -83,7 +84,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
         // init form with first order and corresponding suborders
         final List<Suborder> theSuborders = new ArrayList<>();
         request.getSession().setAttribute("suborders", theSuborders);
-        if (orderswithsuborders.size() > 0) {
+        if (!orderswithsuborders.isEmpty()) {
             Customerorder selectedCustomerorder;
 
             final Long orderId = (Long) request.getSession().getAttribute("currentOrderId");
@@ -121,24 +122,19 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
             if (!suborders.isEmpty()) {
                 request.getSession().setAttribute("selectedsuborder", suborders.get(0));
             }
-            if ((selectedCustomerorder.getSuborders() != null) && (selectedCustomerorder.getSuborders().size() > 0)) {
+            if ((selectedCustomerorder.getSuborders() != null) && (!selectedCustomerorder.getSuborders().isEmpty())) {
                 employeeOrderForm.setSuborder(selectedCustomerorder.getSuborders().get(0).getSign());
                 employeeOrderForm.setSuborderId(selectedCustomerorder.getSuborders().get(0).getId());
             }
 
-            /* suggest value */
-            if (Objects.requireNonNull(selectedCustomerorder.getSuborders()).size() > 0) {
-                employeeOrderForm.setDebithours(selectedCustomerorder.getSuborders().get(0).getDebithours());
-            } else {
-                employeeOrderForm.setDebithours(0.0);
-            }
-
-            employeeOrderForm.setDebithoursunit((byte) -1); // default: no unit set
-            if (selectedCustomerorder.getSuborders().size() > 0
-                    && selectedCustomerorder.getSuborders().get(0).getDebithours() != null
-                    && selectedCustomerorder.getSuborders().get(0).getDebithours() > 0.0) {
+            if (!selectedCustomerorder.getSuborders().isEmpty()
+                && selectedCustomerorder.getSuborders().get(0).getDebithours() != null
+                && !selectedCustomerorder.getSuborders().get(0).getDebithours().isZero()) {
+                employeeOrderForm.setDebithours(DurationUtils.format(selectedCustomerorder.getSuborders().get(0).getDebithours()));
                 /* set unit if applicable */
                 employeeOrderForm.setDebithoursunit(selectedCustomerorder.getSuborders().get(0).getDebithoursunit());
+            } else {
+                employeeOrderForm.setDebithoursunit(null);
             }
 
         }

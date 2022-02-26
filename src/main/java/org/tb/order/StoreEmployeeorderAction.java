@@ -4,7 +4,9 @@ import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 
+import java.math.BigDecimal;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -21,6 +23,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
 import org.tb.employee.Employee;
@@ -72,7 +75,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             LocalDate newValue;
             if (howMuch != 0) {
                 ActionMessages errorMessages = valiDate(request, eoForm, which);
-                if (errorMessages.size() > 0) {
+                if (!errorMessages.isEmpty()) {
                     return mapping.getInputForward();
                 }
 
@@ -126,10 +129,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                     Suborder suborder = so.get();
                     eoForm.setSuborderId(suborder.getId());
                     request.getSession().setAttribute("selectedsuborder", suborder);
-                    eoForm.setDebithours(suborder.getDebithours());
-                    if (suborder.getDebithours() != null && suborder.getDebithours() > 0.0) {
+                    if (suborder.getDebithours() != null && suborder.getDebithours().toMinutes() > 0) {
+                        eoForm.setDebithours(DurationUtils.format(suborder.getDebithours()));
                         /* set unit if applicable */
                         eoForm.setDebithoursunit(suborder.getDebithoursunit());
+                    } else {
+                        eoForm.setDebithours(null);
+                        eoForm.setDebithoursunit(null);
                     }
                 }
 
@@ -153,13 +159,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 request.getSession().setAttribute("selectedsuborder", so);
                 eoForm.setSuborderId(so.getId());
 
-                /* suggest value */
-                eoForm.setDebithours(so.getDebithours());
-
-                eoForm.setDebithoursunit((byte) -1); // default: no unit set
-                if (so.getDebithours() != null && so.getDebithours() > 0.0) {
+                if (so.getDebithours() != null && so.getDebithours().toMinutes() > 0) {
+                    eoForm.setDebithours(DurationUtils.format(so.getDebithours()));
                     /* set unit if applicable */
                     eoForm.setDebithoursunit(so.getDebithoursunit());
+                } else {
+                    eoForm.setDebithours(null);
+                    eoForm.setDebithoursunit(null);
                 }
             }
             // checkDatabaseForEmployeeOrder(request, eoForm,
@@ -188,7 +194,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             }
 
             ActionMessages errorMessages = validateFormData(request, eoForm, employeeorderDAO, employeecontractDAO, suborderDAO, eo.getId());
-            if (errorMessages.size() > 0) {
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
@@ -216,19 +222,20 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
                 if ("adm".equals(loginEmployee.getSign())) {
                     if (eoForm.getDebithours() == null
-                            || eoForm.getDebithours() == 0.0) {
+                        || eoForm.getDebithours().isEmpty()
+                        || DurationUtils.parseDuration(eoForm.getDebithours()).isZero()) {
                         eo.setDebithours(null);
                         eo.setDebithoursunit(null);
                     } else {
-                        eo.setDebithours(eoForm.getDebithours());
+                        eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));
                         eo.setDebithoursunit(eoForm.getDebithoursunit());
                     }
 
                 } else {
                     // TODO: code unreachable?
-                    eo.setDebithours(eo.getEmployeecontract()
-                            .getVacationEntitlement()
-                            * eo.getEmployeecontract().getDailyWorkingTime());
+                    Employeecontract contract = eo.getEmployeecontract();
+                    long vacationBudgetMinutes = contract.getVacationEntitlement() * contract.getDailyWorkingTimeMinutes();
+                    eo.setDebithours(Duration.ofMinutes(vacationBudgetMinutes));
                     eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
                 }
 
@@ -238,11 +245,12 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
             } else {
                 if (eoForm.getDebithours() == null
-                        || eoForm.getDebithours() == 0.0) {
+                    || eoForm.getDebithours().isEmpty()
+                    || DurationUtils.parseDuration(eoForm.getDebithours()).isZero()) {
                     eo.setDebithours(null);
                     eo.setDebithoursunit(null);
                 } else {
-                    eo.setDebithours(eoForm.getDebithours());
+                    eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));
                     eo.setDebithoursunit(eoForm.getDebithoursunit());
                 }
             }
@@ -403,24 +411,14 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
         Customerorder co = (Customerorder) request.getSession().getAttribute("selectedcustomerorder");
 
         if (co != null && !co.getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) && !co.getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
-            if (!GenericValidator.isDouble(eoForm.getDebithours().toString())
-                    || !GenericValidator.isInRange(eoForm.getDebithours(), 0.0, GlobalConstants.MAX_DEBITHOURS)) {
+            if (!DurationUtils.validateDuration(eoForm.getDebithours())) {
                 errors.add("debithours", new ActionMessage("form.employeeorder.error.debithours.wrongformat"));
-            } else if (eoForm.getDebithours() != null && eoForm.getDebithours() != 0.0) {
-                double debithours = eoForm.getDebithours() * 100000;
-                debithours += 0.5;
-
-                int debithours2 = (int) debithours;
-                int modulo = debithours2 % 5000;
-                eoForm.setDebithours(debithours2 / 100000.0);
-
-                if (modulo != 0) {
-                    errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.wrongformat2"));
-                }
             }
         }
 
-        if (eoForm.getDebithours() != null && eoForm.getDebithours() != 0.0) {
+        if (eoForm.getDebithours() != null
+            && eoForm.getDebithours().isEmpty()
+            && !DurationUtils.parseDuration(eoForm.getDebithours()).isZero()) {
             if (eoForm.getDebithoursunit() == null
                     || !(eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_MONTH
                     || eoForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || eoForm

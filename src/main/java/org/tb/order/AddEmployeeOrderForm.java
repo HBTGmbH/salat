@@ -1,5 +1,6 @@
 package org.tb.order;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -24,7 +25,7 @@ public class AddEmployeeOrderForm extends ActionForm {
     private String sign;
     private String validFrom;
     private String validUntil;
-    private Double debithours;
+    private String debithours;
     private Byte debithoursunit;
     private String status;
     private String order;

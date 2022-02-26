@@ -149,4 +149,28 @@ public class DurationUtilsTest {
     assertThat(format(Duration.ofMinutes(-145))).isEqualTo("-2:25");
   }
 
+  @Test
+  public void should_decimal_format_hours() {
+    assertThat(format(Duration.ofHours(2))).isEqualTo("2,00");
+    assertThat(format(Duration.ofHours(0))).isEqualTo("0,00");
+    assertThat(format(Duration.ofHours(-2))).isEqualTo("-2,00");
+  }
+
+  @Test
+  public void should_decimal_format_minutes() {
+    assertThat(format(Duration.ofMinutes(20))).isEqualTo("0,33");
+    assertThat(format(Duration.ofMinutes(2))).isEqualTo("0,03");
+    assertThat(format(Duration.ofMinutes(0))).isEqualTo("0,00");
+    assertThat(format(Duration.ofMinutes(-20))).isEqualTo("-0,33");
+    assertThat(format(Duration.ofMinutes(-2))).isEqualTo("-0,03");
+  }
+
+  @Test
+  public void should_decimal_format_hours_and_minutes() {
+    assertThat(format(Duration.ofMinutes(64))).isEqualTo("1,07");
+    assertThat(format(Duration.ofMinutes(145))).isEqualTo("2,42");
+    assertThat(format(Duration.ofMinutes(-64))).isEqualTo("-1,07");
+    assertThat(format(Duration.ofMinutes(-145))).isEqualTo("-2,42");
+  }
+
 }

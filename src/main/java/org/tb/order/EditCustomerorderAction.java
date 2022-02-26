@@ -10,6 +10,7 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.customer.Customer;
 import org.tb.customer.CustomerDAO;
 import org.tb.employee.Employee;
@@ -90,8 +91,8 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
             coForm.setValidUntil("");
         }
 
-        if (co.getDebithours() != null) {
-            coForm.setDebithours(co.getDebithours());
+        if (co.getDebithours() != null && !co.getDebithours().isZero()) {
+            coForm.setDebithours(DurationUtils.format(co.getDebithours()));
             coForm.setDebithoursunit(co.getDebithoursunit());
         } else {
             coForm.setDebithours(null);

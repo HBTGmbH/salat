@@ -31,7 +31,7 @@ public class AddCustomerorderForm extends ActionForm {
     private String responsibleCustomerContractually;
     private String orderCustomer;
 
-    private Double debithours;
+    private String debithours;
     private Byte debithoursunit;
 
     private int statusreport;

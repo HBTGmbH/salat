@@ -1,5 +1,8 @@
 package org.tb.order;
 
+import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
+
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.tb.common.GlobalConstants;
@@ -13,31 +16,19 @@ public class CustomerOrderViewDecorator extends Customerorder {
     @Delegate
     private final Customerorder customerOrder;
 
-    public Double getDifference() {
-        if ((this.customerOrder.getDebithours() != null && this.customerOrder.getDebithours() > 0.0)
-                && (this.customerOrder.getDebithoursunit() == null || this.customerOrder.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
-            double rounded, notRounded;
-            notRounded = (this.customerOrder.getDebithours() - getDuration());
-            rounded = Math.round(notRounded * 100) / 100.0;
-
-            return rounded;
+    public Duration getDifference() {
+        if (this.customerOrder.getDebithours() != null
+            && !this.customerOrder.getDebithours().isZero()
+            && (this.customerOrder.getDebithoursunit() == null || this.customerOrder.getDebithoursunit() == DEBITHOURS_UNIT_TOTALTIME)) {
+            return this.customerOrder.getDebithours().minus(getDuration());
         } else {
             return null;
         }
     }
 
-    public double getDuration() {
+    public Duration getDuration() {
         long durationMinutes = timereportDAO.getTotalDurationMinutesForCustomerOrder(customerOrder.getId());
-
-        double totalTime = (double) durationMinutes / GlobalConstants.MINUTES_PER_HOUR;
-
-        /* round totalTime */
-        totalTime *= 100.0;
-        long roundedTime = Math.round(totalTime);
-        totalTime = roundedTime / 100.0;
-
-        /* return result */
-        return totalTime;
+        return Duration.ofMinutes(durationMinutes);
     }
 
     @Override

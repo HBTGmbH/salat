@@ -5,6 +5,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -279,11 +280,11 @@
 				</td>
 				<td><c:out value="${customerorder.order_customer}" /></td>
 				<td><c:choose>
-					<c:when test="${customerorder.debithours == null}">
+					<c:when test="${customerorder.debithours == null || customerorder.debithours.zero}">
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-						<fmt:formatNumber value="${customerorder.debithours}"  minFractionDigits="2"/>
+						<java8:formatDuration value="${customerorder.debithours}" />
 						<c:choose>
 							<c:when test="${customerorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -303,22 +304,19 @@
 				
 				<c:if test="${showActualHours}">
 					<td align="right">
-						<fmt:formatNumber value="${customerorder.duration}"  minFractionDigits="2"/>
+						<java8:formatDuration value="${customerorder.duration}" />
 					</td>
 						<td align="right">
 							<c:choose>
-								<c:when test="${customerorder.difference != null && (customerorder.difference < 0.0 || customerorder.difference >= 0.0)&&(customerorder.debithoursunit != 0 && customerorder.debithoursunit != 1 && customerorder.debithoursunit != 12)}">
-										<font color="#0000FF"><fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/></font>
+								<c:when test="${customerorder.difference != null && customerorder.debithoursunit != 0 && customerorder.debithoursunit != 1 && customerorder.debithoursunit != 12}">
+										<font color="#0000FF"><java8:formatDuration value="${customerorder.difference}" /></font>
 								</c:when>						
-								<c:when test="${customerorder.difference != null && customerorder.difference < 0.0}">
-										<font color="#FF7777"><fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/></font>
+								<c:when test="${customerorder.difference != null && customerorder.difference.negative}">
+										<font color="#FF7777"><java8:formatDuration value="${customerorder.difference}" /></font>
 								</c:when>
-								<c:when test="${customerorder.difference != null && customerorder.difference >= 0.0}">
-										<fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/>
+								<c:when test="${customerorder.difference != null && !customerorder.difference.negative}">
+										<java8:formatDuration value="${customerorder.difference}" />
 								</c:when>
-								<c:otherwise>
-									&nbsp;
-								</c:otherwise>
 							</c:choose>
 						</td>						
 				</c:if>
@@ -372,11 +370,11 @@
 					value="${customerorder.order_customer}" /></td>
 				<td style="color:gray">
 					<c:choose>
-						<c:when test="${customerorder.debithours == null}">
+						<c:when test="${customerorder.debithours == null || customerorder.debithours.zero}">
 							&nbsp;
 						</c:when>
 					<c:otherwise>
-						<fmt:formatNumber value="${customerorder.debithours}"  minFractionDigits="2"/>
+						<java8:formatDuration value="${customerorder.debithours}" />
 						<c:choose>
 							<c:when test="${customerorder.debithoursunit == 0}">
 									/ <bean:message key="main.general.totaltime.text" />
@@ -396,18 +394,18 @@
 				
 				<c:if test="${showActualHours}">
 					<td  align="right" style="color:gray">
-						<fmt:formatNumber value="${customerorder.duration}"  minFractionDigits="2"/>
+						<java8:formatDuration value="${customerorder.duration}" />
 					</td>
 						<td align="right" style="color:gray">
 							<c:choose>
-								<c:when test="${customerorder.difference != null && (customerorder.difference < 0.0 || customerorder.difference >= 0.0)&&(customerorder.debithoursunit != 0 && customerorder.debithoursunit != 1 && customerorder.debithoursunit != 12)}">
-										<font color="#0000FF"><fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/></font>
+								<c:when test="${customerorder.difference != null && customerorder.debithoursunit != 0 && customerorder.debithoursunit != 1 && customerorder.debithoursunit != 12}">
+										<font color="#0000FF"><java8:formatDuration value="${customerorder.difference}" /></font>
 								</c:when>						
-								<c:when test="${customerorder.difference != null && customerorder.difference < 0.0}">
-										<font color="#FF0000"><fmt:formatNumber value="${suborder.difference}" minFractionDigits="2"/></font>
+								<c:when test="${customerorder.difference != null && customerorder.difference.negative}">
+										<font color="#FF0000"><java8:formatDuration value="${suborder.difference}" /></font>
 								</c:when>
-								<c:when test="${customerorder.difference != null && customerorder.difference >= 0.0}">
-										<fmt:formatNumber value="${customerorder.difference}" minFractionDigits="2"/>
+								<c:when test="${customerorder.difference != null && !customerorder.difference.negative}">
+										<java8:formatDuration value="${customerorder.difference}" />
 								</c:when>
 								<c:otherwise>
 									&nbsp;

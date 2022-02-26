@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.employee.Employee;
 
 /**
@@ -90,8 +91,8 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             soForm.setValidUntil("");
         }
 
-        if (so.getDebithours() != null) {
-            soForm.setDebithours(so.getDebithours());
+        if (so.getDebithours() != null && !so.getDebithours().isZero()) {
+            soForm.setDebithours(DurationUtils.format(so.getDebithours()));
             soForm.setDebithoursunit(so.getDebithoursunit());
         } else {
             soForm.setDebithours(null);

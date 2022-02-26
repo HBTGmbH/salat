@@ -4,11 +4,13 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -24,6 +26,7 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
+import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
@@ -85,7 +88,8 @@ public class Suborder extends AuditedEntity implements Serializable {
     private Boolean commentnecessary;
     private LocalDate fromDate;
     private LocalDate untilDate;
-    private int debitMinutes;
+    @Convert(converter = DurationMinutesConverter.class)
+    private Duration debitMinutes;
     private Byte debithoursunit;
     /**
      * Hide in select boxes
@@ -381,21 +385,12 @@ public class Suborder extends AuditedEntity implements Serializable {
         return copy;
     }
 
-    public Double getDebithours() {
-        return BigDecimal
-            .valueOf(debitMinutes)
-            .setScale(2)
-            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .doubleValue();
+    public Duration getDebithours() {
+        return debitMinutes; // its a Duration - hours or minutes make no difference
     }
 
-    public void setDebithours(Double value) {
-        debitMinutes = BigDecimal
-            .valueOf(value)
-            .setScale(2)
-            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .setScale(0)
-            .intValue();
+    public void setDebithours(Duration value) {
+        debitMinutes = value; // its a Duration - hours or minutes make no difference
     }
 
 }

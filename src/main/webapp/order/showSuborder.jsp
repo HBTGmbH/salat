@@ -6,6 +6,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="/WEB-INF/treeTag.tld" prefix="myjsp"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
 <html:html>
@@ -522,12 +523,11 @@
 								</td>
 
 								<td><c:choose>
-										<c:when test="${suborder.debithours == null}">
+										<c:when test="${suborder.debithours == null || suborder.debithours.zero}">
 											&nbsp;
 										</c:when>
 										<c:otherwise>
-											<fmt:formatNumber value="${suborder.debithours}"
-												minFractionDigits="2" />
+											<java8:formatDuration value="${suborder.debithours}" />
 											<c:choose>
 												<c:when test="${suborder.debithoursunit == 0}">
 													/ <bean:message key="main.general.totaltime.text" />
@@ -549,27 +549,23 @@
 									<td align="right"><fmt:formatNumber
 											value="${suborder.duration}" minFractionDigits="2" /></td>
 									<td align="right"><c:choose>
-											<c:when
-												test="${suborder.difference != null && (suborder.difference < 0.0 || suborder.difference >= 0.0)&&(suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12)}">
-												<font color="#0000FF"><fmt:formatNumber
-														value="${suborder.difference}" minFractionDigits="2" /></font>
+											<c:when test="${suborder.difference != null && suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12}">
+												<font color="#0000FF"><java8:formatDuration
+														value="${suborder.difference}" /></font>
 											</c:when>
 											<c:when
-												test="${suborder.difference != null && suborder.difference < 0.0}">
-												<font color="#FF7777"><fmt:formatNumber
-														value="${suborder.difference}" minFractionDigits="2" /></font>
+												test="${suborder.difference != null && suborder.difference.negative}">
+												<font color="#FF7777"><java8:formatDuration
+														value="${suborder.difference}" /></font>
 											</c:when>
 											<c:when
-												test="${suborder.difference != null && suborder.difference >= 0.0}">
-												<fmt:formatNumber value="${suborder.difference}"
-													minFractionDigits="2" />
+												test="${suborder.difference != null && !suborder.difference.negative}">
+												<java8:formatDuration
+														value="${suborder.difference}" />
 											</c:when>
-											<c:otherwise>
-												&nbsp;
-											</c:otherwise>
 										</c:choose></td>
-									<td align="right"><fmt:formatNumber
-											value="${suborder.durationNotInvoiceable}" minFractionDigits="2" /></td>
+									<td align="right"><java8:formatDuration
+											value="${suborder.durationNotInvoiceable}" /></td>
 								</c:if>
 							</c:when>
 							<c:otherwise>
@@ -638,12 +634,11 @@
 
 								<td style="color: gray">
 									<c:choose>
-										<c:when test="${suborder.debithours == null}">
+										<c:when test="${suborder.debithours == null || suborder.debithours.zero}">
 											&nbsp;
 										</c:when>
 										<c:otherwise>
-											<fmt:formatNumber value="${suborder.debithours}"
-												minFractionDigits="2" />
+											<java8:formatDuration value="${suborder.debithours}" />
 											<c:choose>
 												<c:when test="${suborder.debithoursunit == 0}">
 													/ <bean:message key="main.general.totaltime.text" />
@@ -663,23 +658,22 @@
 								</td>
 
 								<c:if test="${showActualHours}">
-									<td align="right" style="color: gray"><fmt:formatNumber	value="${suborder.duration}" minFractionDigits="2" /></td>
+									<td align="right" style="color: gray"><java8:formatDuration	value="${suborder.duration}" /></td>
 									<td align="right" style="color: gray">
 										<c:choose>
 											<c:when
-												test="${suborder.difference != null && (suborder.difference < 0.0 || suborder.difference >= 0.0)&&(suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12)}">
-												<font color="#0000FF"><fmt:formatNumber
-														value="${suborder.difference}" minFractionDigits="2" /></font>
+												test="${suborder.difference != null && suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12}">
+												<font color="#0000FF"><java8:formatDuration
+														value="${suborder.difference}"  /></font>
 											</c:when>
 											<c:when
-												test="${suborder.difference != null && suborder.difference < 0.0}">
-												<font color="#FF0000"><fmt:formatNumber
-														value="${suborder.difference}" minFractionDigits="2" /></font>
+												test="${suborder.difference != null && suborder.difference.negative}">
+												<font color="#FF0000"><java8:formatDuration
+														value="${suborder.difference}" /></font>
 											</c:when>
 											<c:when
-												test="${suborder.difference != null && suborder.difference >= 0.0}">
-												<fmt:formatNumber value="${suborder.difference}"
-													minFractionDigits="2" />
+												test="${suborder.difference != null && !suborder.difference.negative}">
+												<java8:formatDuration value="${suborder.difference}" />
 											</c:when>
 											<c:otherwise>
 												&nbsp;
