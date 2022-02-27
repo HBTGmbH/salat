@@ -107,7 +107,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
         eoForm.setSuborderId(eo.getSuborder().getId());
 
         if (eo.getDebithours() != null && !eo.getDebithours().isZero()) {
-            eoForm.setDebithours(DurationUtils.format(eo.getDebitMinutes()));
+            eoForm.setDebithours(DurationUtils.format(eo.getDebithours()));
             eoForm.setDebithoursunit(eo.getDebithoursunit());
         } else {
             eoForm.setDebithours(null);

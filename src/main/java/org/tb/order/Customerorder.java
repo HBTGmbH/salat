@@ -13,6 +13,7 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -87,8 +88,12 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private String sign;
     private String description;
     private String shortdescription;
+
     @Convert(converter = DurationMinutesConverter.class)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private Duration debitMinutes;
+
     private Byte debithoursunit;
     private Integer statusreport;
     /**
