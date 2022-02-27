@@ -20,7 +20,7 @@
 <script type="text/javascript" language="JavaScript">
 	
 	function setUpdate(form) {	
- 		form.action = "do/ShowWelcome?task=refresh";
+ 		form.action = "../do/ShowWelcome?task=refresh";
 		form.submit();
 	}
 
