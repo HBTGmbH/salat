@@ -24,7 +24,7 @@ public class ShowEmployeeOrderForm extends ActionForm {
     private long orderId;
     private long suborderId;
     private String filter;
-    private Boolean show;
+    private Boolean show = false;
     private Boolean showActualHours = false;
 
     @Nonnull
@@ -48,6 +48,9 @@ public class ShowEmployeeOrderForm extends ActionForm {
 
         filter = "";
         show = false;
+        showActualHours = false;
     }
+
+
 
 }
