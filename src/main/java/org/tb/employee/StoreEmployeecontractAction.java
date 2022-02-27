@@ -97,7 +97,6 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             }
 
             // new overtime
-            double overtimeDouble = 0.0;
             if (ecForm.getNewOvertime() != null) {
                 String overtimeString = ecForm.getNewOvertime();
 
@@ -277,7 +276,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             ec.setTaskDescription(ecForm.getTaskdescription());
             ec.setFreelancer(ecForm.getFreelancer());
             ec.setHide(ecForm.getHide());
-            ec.setDailyWorkingTime(ecForm.getDailyworkingtime());
+            ec.setDailyWorkingTimeMinutes(DurationUtils.parseDuration(ecForm.getDailyworkingtime()));
 
             // if necessary, add new vacation for current year
             Vacation va = null;
@@ -487,19 +486,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         }
 
         // check dailyworkingtime format		
-        if (!GenericValidator.isDouble(ecForm.getDailyworkingtime().toString()) ||
-                !GenericValidator.isInRange(ecForm.getDailyworkingtime(),
-                        0.0, GlobalConstants.MAX_DEBITHOURS)) {
+        if (!DurationUtils.validateDuration(ecForm.getDailyworkingtime())) {
             errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat"));
-        }
-        double time = ecForm.getDailyworkingtime() * 100000;
-        time += 0.5;
-        int time2 = (int) time;
-        int modulo = time2 % 5000;
-        ecForm.setDailyworkingtime(time2 / 100000.0);
-
-        if (modulo != 0) {
-            errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat2"));
         }
 
         // check initial overtime
@@ -560,7 +548,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         ecForm.setTaskdescription(ec.getTaskDescription());
         ecForm.setFreelancer(ec.getFreelancer());
         ecForm.setHide(ec.getHide());
-        ecForm.setDailyworkingtime(ec.getDailyWorkingTime());
+        ecForm.setDailyworkingtime(DurationUtils.format(ec.getDailyWorkingTimeMinutes()));
         if (!ec.getVacations().isEmpty()) {
             // actually, vacation entitlement is a constant value
             // for an employee (not year-dependent), so just take the

@@ -22,7 +22,7 @@ public class AddEmployeeContractForm extends ActionForm {
     private String validFrom;
     private String validUntil;
     private Boolean freelancer;
-    private Double dailyworkingtime;
+    private String dailyworkingtime;
     private Integer yearlyvacation;
     private long employee;
     private long supervisorid;
@@ -45,7 +45,7 @@ public class AddEmployeeContractForm extends ActionForm {
         validUntil = "";
         freelancer = Boolean.FALSE;
         hide = Boolean.FALSE;
-        dailyworkingtime = 8.0;
+        dailyworkingtime = "8:00";
         initialOvertime = "0:00";
         yearlyvacation = 30;
         newOvertime = "0:00";

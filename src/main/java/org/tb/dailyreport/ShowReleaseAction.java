@@ -1,10 +1,10 @@
 package org.tb.dailyreport;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -248,9 +248,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             // set new acceptance date in employee contract
             employeecontract.setReportAcceptanceDate(acceptanceDate);
             //compute overtimeStatic and set it in employee contract
-            double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+            long otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                     employeecontract, true);
-            employeecontract.setOvertimeStatic(otStatic / MINUTES_PER_HOUR);
+            employeecontract.setOvertimeStaticMinutes(Duration.ofMinutes(otStatic));
 
             employeecontractDAO.save(employeecontract, loginEmployee);
         }
@@ -294,9 +294,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
 
                 // recompute overtimeStatic and set it in employeecontract
-                double otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
+                long otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                         employeecontract, true);
-                employeecontract.setOvertimeStatic(otStatic / 60.0);
+                employeecontract.setOvertimeStaticMinutes(Duration.ofMinutes(otStatic));
             }
 
             request.getSession().setAttribute("reopenDays",

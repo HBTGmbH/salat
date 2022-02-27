@@ -1,6 +1,5 @@
 package org.tb.dailyreport;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
@@ -442,11 +441,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     }
                     request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
 
-                    double overtimeStatic = ec.getOvertimeStatic();
-                    int otStaticMinutes = (int) (overtimeStatic * MINUTES_PER_HOUR);
+                    long otStaticMinutes = ec.getOvertimeStaticMinutes().toMinutes();
                     LocalDate dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
-                    int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, date, ec, true);
-                    int overtime = otStaticMinutes + overtimeDynamic;
+                    long overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, date, ec, true);
+                    long overtime = otStaticMinutes + overtimeDynamic;
 
                     boolean overtimeUntilIsNeg = overtime < 0;
                     request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);

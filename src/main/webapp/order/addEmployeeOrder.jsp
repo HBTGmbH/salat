@@ -59,6 +59,7 @@
 
 </head>
 <body>
+<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 <html:form action="/StoreEmployeeorder">
 	<jsp:include flush="true" page="/menu.jsp">
 		<jsp:param name="title" value="Menu" />

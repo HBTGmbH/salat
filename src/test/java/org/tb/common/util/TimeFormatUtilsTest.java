@@ -1,10 +1,8 @@
 package org.tb.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.tb.common.util.TimeFormatUtils.decimalFormatHours;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatHoursAndMinutes;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
-import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
 import static org.tb.common.util.TimeFormatUtils.timeFormatHoursAndMinutes;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
@@ -14,15 +12,6 @@ import org.junit.jupiter.api.Test;
 
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class TimeFormatUtilsTest {
-
-  @Test
-  public void decimal_hours_should_format_with_comma() {
-    assertThat(decimalFormatHours(8.5)).isEqualTo("8,50");
-    assertThat(decimalFormatHours(2.44)).isEqualTo("2,44");
-    assertThat(decimalFormatHours(2.501)).isEqualTo("2,50");
-    assertThat(decimalFormatHours(0.44)).isEqualTo("0,44");
-    assertThat(decimalFormatHours(0.4)).isEqualTo("0,40");
-  }
 
   @Test
   public void hours_and_minutes_should_format_with_comma() {
@@ -51,14 +40,6 @@ public class TimeFormatUtilsTest {
     assertThat(decimalFormatMinutes(270)).isEqualTo("4,50");
     assertThat(decimalFormatMinutes(272)).isEqualTo("4,53");
     assertThat(decimalFormatMinutes(3)).isEqualTo("0,05");
-  }
-
-  @Test
-  public void decimal_hours_should_format_as_time() {
-    assertThat(timeFormatHours(3)).isEqualTo("3:00");
-    assertThat(timeFormatHours(3.5)).isEqualTo("3:30");
-    assertThat(timeFormatHours(3.75)).isEqualTo("3:45");
-    assertThat(timeFormatHours(2.7641)).isEqualTo("2:46");
   }
 
 }

@@ -1,5 +1,7 @@
 package org.tb.dailyreport.viewhelper;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+
 import org.tb.employee.Employeecontract;
 
 public class TrainingHelper {
@@ -17,45 +19,36 @@ public class TrainingHelper {
         return intTime;
     }
 
-    public static int getMinutesForHourDouble(Double doubleValue) {
-        int hours = doubleValue.intValue();
-        doubleValue = doubleValue - hours;
-        int minutes = doubleValue.intValue() * 60;
-        minutes += hours * 60;
-        return minutes;
-    }
-
     public static String fromDBtimeToString(Employeecontract ec, int hours, int minutes) {
 
-        int trainingDays = 0;
-        int trainingHours = 0;
-        int trainingMinutes = 0;
-        int restMinutes;
+        long trainingDays = 0;
+        long trainingHours = 0;
+        long trainingMinutes = 0;
 
-        int totalTrainingMinutes = hours * 60 + minutes;
+        long totalTrainingMinutes = hours * MINUTES_PER_HOUR + minutes;
 
-        int dailyWorkingTimeMinutes = getMinutesForHourDouble(ec.getDailyWorkingTime());
+        long dailyWorkingTimeMinutes = ec.getDailyWorkingTimeMinutes().toMinutes();
 
         if (dailyWorkingTimeMinutes != 0) {
             trainingDays = totalTrainingMinutes / dailyWorkingTimeMinutes;
-            restMinutes = totalTrainingMinutes % dailyWorkingTimeMinutes;
-            trainingHours = restMinutes / 60;
-            trainingMinutes = restMinutes % 60;
+            var restMinutes = totalTrainingMinutes % dailyWorkingTimeMinutes;
+            trainingHours = restMinutes / MINUTES_PER_HOUR;
+            trainingMinutes = restMinutes % MINUTES_PER_HOUR;
         }
 
         StringBuilder trainingString = new StringBuilder();
         if (trainingDays < 10) {
-            trainingString.append(0);
+            trainingString.append('0');
         }
         trainingString.append(trainingDays);
         trainingString.append(':');
         if (trainingHours < 10) {
-            trainingString.append(0);
+            trainingString.append('0');
         }
         trainingString.append(trainingHours);
         trainingString.append(':');
         if (trainingMinutes < 10) {
-            trainingString.append(0);
+            trainingString.append('0');
         }
         trainingString.append(trainingMinutes);
 

@@ -11,7 +11,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class DurationUtils {
 
-  public String format(Duration duration) {
+  public static String format(Duration duration) {
     if(duration == null) {
       return "";
     }
@@ -27,7 +27,7 @@ public class DurationUtils {
     return sb.toString();
   }
 
-  public Duration parseDuration(String value) {
+  public static Duration parseDuration(String value) {
     if(value == null || value.trim().isEmpty()) {
       return Duration.ZERO;
     }
@@ -54,7 +54,7 @@ public class DurationUtils {
     return Duration.ofMinutes(minutes);
   }
 
-  public boolean validateDuration(String value) {
+  public static boolean validateDuration(String value) {
     if(value == null || value.trim().isEmpty()) {
       return true;
     }

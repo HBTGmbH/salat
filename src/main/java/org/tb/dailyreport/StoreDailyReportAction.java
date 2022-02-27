@@ -6,6 +6,7 @@ import static org.tb.common.GlobalConstants.MINUTE_INCREMENT;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -100,9 +101,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustBeginTime")) {
             refreshWorkdayAvailability = true;
-            Double dailyWorkingTime = employeeContract.getDailyWorkingTime();
-            dailyWorkingTime *= 60;
-            int dailyWorkingTimeMinutes = dailyWorkingTime.intValue();
+            Duration dailyWorkingTime = employeeContract.getDailyWorkingTimeMinutes();
             Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             Boolean workingDayAvailable = (Boolean) request.getSession().getAttribute("workingDayIsAvailable");
@@ -128,7 +127,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 LocalDate today = DateUtils.today();
                 if (standardOrder) {
                     int minutes = form.getSelectedHourBegin() * MINUTES_PER_HOUR + form.getSelectedMinuteBegin();
-                    minutes += dailyWorkingTimeMinutes;
+                    minutes += dailyWorkingTime.toMinutes();
                     int hours = minutes / MINUTES_PER_HOUR;
                     minutes = minutes % MINUTES_PER_HOUR;
                     // round down to next minute increment
@@ -147,8 +146,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 // TODO wird dieser Code je durchlaufen?
                 if (standardOrder) {
 
-                    int hours = dailyWorkingTimeMinutes / MINUTES_PER_HOUR;
-                    int minutes = dailyWorkingTimeMinutes % MINUTES_PER_HOUR;
+                    int hours = dailyWorkingTime.toHoursPart();
+                    int minutes = dailyWorkingTime.toMinutesPart();
                     // round down to next minute increment
                     minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
 
@@ -190,10 +189,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             if (standardOrder) {
-                Double dailyWorkingTime = employeeContract.getDailyWorkingTime();
-                int dailyWorkingTimeMinutes = (int)(dailyWorkingTime * MINUTES_PER_HOUR);
-                int hours = dailyWorkingTimeMinutes / MINUTES_PER_HOUR;
-                int minutes = dailyWorkingTimeMinutes % MINUTES_PER_HOUR;
+                Duration dailyWorkingTime = employeeContract.getDailyWorkingTimeMinutes();
+                int hours = dailyWorkingTime.toHoursPart();
+                int minutes = dailyWorkingTime.toMinutesPart();
                 // round down to next minute increment
                 minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
 

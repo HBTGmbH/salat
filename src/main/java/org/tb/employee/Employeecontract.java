@@ -1,12 +1,12 @@
 package org.tb.employee;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -21,6 +21,7 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
+import org.tb.common.DurationMinutesConverter;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Timereport;
@@ -43,7 +44,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     private LocalDate validFrom;
     private LocalDate validUntil;
-    private int dailyWorkingTimeMinutes;
+    @Convert(converter = DurationMinutesConverter.class)
+    private Duration dailyWorkingTimeMinutes;
     private Boolean freelancer;
     private String taskDescription;
     private LocalDate fixedUntil;
@@ -52,7 +54,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     private Boolean hide;
 
     /** static overtime ranging from begin of employeecontract to reportAcceptanceDate */
-    private int overtimeStaticMinutes;
+    @Convert(converter = DurationMinutesConverter.class)
+    private Duration overtimeStaticMinutes;
 
     @OneToOne
     // FIXME check if ManyToOne?
@@ -208,41 +211,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             acceptanceWarning = true;
         }
         return acceptanceWarning;
-    }
-
-    public Double getDailyWorkingTime() {
-        return BigDecimal
-            .valueOf(dailyWorkingTimeMinutes)
-            .setScale(2)
-            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .doubleValue();
-    }
-
-    public void setDailyWorkingTime(Double value) {
-        dailyWorkingTimeMinutes = BigDecimal
-            .valueOf(value)
-            .setScale(2)
-            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .setScale(0)
-            .intValue();
-    }
-
-    public double getOvertimeStatic() {
-        return BigDecimal
-            .valueOf(overtimeStaticMinutes)
-            .setScale(2)
-            .divide(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .doubleValue();
-    }
-
-
-    public void setOvertimeStatic(double value) {
-        dailyWorkingTimeMinutes = BigDecimal
-            .valueOf(value)
-            .setScale(2)
-            .multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
-            .setScale(0)
-            .intValue();
     }
 
 }

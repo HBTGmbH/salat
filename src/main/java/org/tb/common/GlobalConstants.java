@@ -13,11 +13,7 @@ public class GlobalConstants {
 
     public static final int STARTING_YEAR = 2007;
 
-    public static final double MAX_HOURS_PER_DAY = 10.0;
-
-    public static final double MAX_DEBITHOURS = 10000.0;
-    public static final double MAX_OVERTIME = 10000.0;
-    public static final double MIN_OVERTIME = -10000.0;
+    public static final int MAX_HOURS_PER_DAY = 10;
 
     public static final int COMMENT_MAX_LENGTH = 32000;
 

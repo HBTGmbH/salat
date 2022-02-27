@@ -1,21 +1,21 @@
 package org.tb.dailyreport.viewhelper.matrix;
 
-import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
-
+import java.time.Duration;
 import java.time.LocalDate;
 import lombok.Data;
+import org.tb.common.util.DurationUtils;
 
 @Data
 public class DayAndWorkingHourCount {
     private int day;
-    private double workingHour;
+    private Duration workingHour;
     private LocalDate date;
     private boolean publicHoliday;
     private boolean satSun;
     private String weekDay;
     private String publicHolidayName;
 
-    public DayAndWorkingHourCount(int day, double workingHour, LocalDate date) {
+    public DayAndWorkingHourCount(int day, Duration workingHour, LocalDate date) {
         this.day = day;
         this.date = date;
         this.workingHour = workingHour;
@@ -25,13 +25,8 @@ public class DayAndWorkingHourCount {
         this.publicHolidayName = null;
     }
 
-    public double getRoundWorkingHour() {
-        long duration = (long) (workingHour * 100);
-        return (double) duration / 100.0;
-    }
-
     public String getWorkingHourString() {
-        return timeFormatHours(workingHour);
+        return DurationUtils.format(workingHour);
     }
 
     public String getDayString() {

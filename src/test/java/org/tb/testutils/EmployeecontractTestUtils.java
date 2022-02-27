@@ -1,5 +1,6 @@
 package org.tb.testutils;
 
+import java.time.Duration;
 import lombok.experimental.UtilityClass;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.Employee;
@@ -12,7 +13,7 @@ public class EmployeecontractTestUtils {
 		Employeecontract ec = new Employeecontract();
 		ec.setCreated(DateUtils.now());
 		ec.setCreatedby("kd");
-		ec.setDailyWorkingTime(8.0);
+		ec.setDailyWorkingTimeMinutes(Duration.ofHours(8));
 		ec.setEmployee(employee);
 		ec.setValidFrom(DateUtils.parseOrNull("2017-01-01"));
 		ec.setSupervisor(employee);
