@@ -54,4 +54,6 @@ Datei nicht erzeugt.
 (by Klaus)
 
 #### Samlung DB-Änderungen
-alter table timereport drop column sortofreport;
+Datenbankänderungen werden via Liquibase in nachfolgender Datei gepflegt.
+
+    src/main/resources/db/changelog/db.changelog-master.yaml
