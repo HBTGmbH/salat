@@ -53,9 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
@@ -177,7 +175,7 @@ public class TimereportService {
     long effectiveWorkDays = weekdays - effectivePublicHolidayCount;
 
     // calculate working time
-    long dailyWorkingTimeInMinutes = (long)(employeecontract.getDailyWorkingTime() * MINUTES_PER_HOUR);
+    long dailyWorkingTimeInMinutes = employeecontract.getDailyWorkingTimeMinutes().toMinutes();
     long expectedWorkingTimeInMinutes = dailyWorkingTimeInMinutes * effectiveWorkDays;
     long actualWorkingTimeInMinutes = timereportDAO.getTotalDurationMinutesForEmployeecontract(employeecontractId, effectiveStart, effectiveEnd);
     if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
@@ -220,12 +218,12 @@ public class TimereportService {
           reportReleaseDate,
           employeecontract.getId(),
           true);
-      double overtimeStaticNew = (double) overtimeMinutes / MINUTES_PER_HOUR;
+      Duration overtimeStaticNew = Duration.ofMinutes(overtimeMinutes);
       log.info("Overtime for employeecontract {} changed from {} to {}",
           employeecontract.getId(),
-          employeecontract.getOvertimeStatic(),
+          employeecontract.getOvertimeStaticMinutes(),
           overtimeStaticNew);
-      employeecontract.setOvertimeStatic(overtimeStaticNew); // TODO refactor to hour + minutes
+      employeecontract.setOvertimeStaticMinutes(overtimeStaticNew);
     }
   }
 

@@ -17,9 +17,7 @@ import static java.time.DayOfWeek.SUNDAY;
 import static java.time.DayOfWeek.THURSDAY;
 import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
-import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
@@ -28,6 +26,7 @@ import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -157,7 +156,7 @@ public class MatrixHelper {
         List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
 
         List<DayAndWorkingHourCount> dayHoursCount = new ArrayList<>();
-        double dayHoursTarget = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList);
+        int workdayCount = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList);
 
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
         handlePublicHolidays(dateFirst, dateLast, mergedReportList, dayHoursCount, publicHolidayList);
@@ -166,28 +165,27 @@ public class MatrixHelper {
         Collections.sort(mergedReportList);
 
         //calculate dayhourssum
-        double dayHoursSum = 0.0;
+        Duration dayHoursSum = Duration.ZERO;
         for (DayAndWorkingHourCount dayAndWorkingHourCount : dayHoursCount) {
-            dayHoursSum += dayAndWorkingHourCount.getWorkingHour();
+            dayHoursSum = dayHoursSum.plus(dayAndWorkingHourCount.getWorkingHour());
         }
-        dayHoursSum = ((double) Math.round(dayHoursSum * 100)) / 100;
+
+        Duration dayHoursTarget = Duration.ZERO;
 
         //calculate dayhourstarget
         if (employeeContractId == -1) {
             List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
-            double dailyWorkingTime = 0.0;
+            Duration dailyWorkingTime = Duration.ZERO;
             for (Employeecontract employeeContract : employeeContractList) {
-                dailyWorkingTime += employeeContract.getDailyWorkingTime();
+                dailyWorkingTime = dailyWorkingTime.plus(employeeContract.getDailyWorkingTimeMinutes());
             }
-            dayHoursTarget = dayHoursTarget * dailyWorkingTime;
+            dayHoursTarget = dailyWorkingTime.multipliedBy(workdayCount);
         } else {
-            dayHoursTarget = dayHoursTarget * Objects.requireNonNull(employeecontract).getDailyWorkingTime();
+            dayHoursTarget = employeecontract.getDailyWorkingTimeMinutes().multipliedBy(workdayCount);
         }
-        dayHoursTarget = ((double) Math.round(dayHoursTarget * 100)) / 100;
 
         //calculate dayhoursdiff
-        double dayHoursDiff = dayHoursSum - dayHoursTarget;
-        dayHoursDiff = ((double) Math.round(dayHoursDiff * 100)) / 100;
+        Duration dayHoursDiff = dayHoursSum.minus(dayHoursTarget);
 
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
@@ -209,20 +207,20 @@ public class MatrixHelper {
         return sb.toString();
     }
 
-    private double fillDayHoursCount(LocalDate dateFirst, LocalDate dateLast, LocalDate validFrom, LocalDate validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
+    private int fillDayHoursCount(LocalDate dateFirst, LocalDate dateLast, LocalDate validFrom, LocalDate validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
         LocalDate dateLoop = dateFirst;
         int day = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
-            dayHoursCount.add(new DayAndWorkingHourCount(day, 0, dateLoop));
+            dayHoursCount.add(new DayAndWorkingHourCount(day, Duration.ZERO, dateLoop));
             dateLoop = DateUtils.addDays(dateLoop, 1);
         }
 
         day = 0;
         dateLoop = dateFirst;
-        double dayHoursTarget = 0.0;
+        int workdayCount = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
@@ -241,7 +239,7 @@ public class MatrixHelper {
                     dateLoop.isBefore(validUntil) ||
                     dateLoop.equals(validFrom) ||
                     dateLoop.equals(validUntil))) {
-                    dayHoursTarget++;
+                    workdayCount++;
                 }
             }
             //setting publicholidays and weekend for dayhourscount(status and name)
@@ -261,7 +259,7 @@ public class MatrixHelper {
             }
             dateLoop = DateUtils.addDays(dateLoop, 1);
         }
-        return dayHoursTarget;
+        return workdayCount;
     }
 
     private void handlePublicHolidays(LocalDate dateFirst, LocalDate dateLast, List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
@@ -280,9 +278,16 @@ public class MatrixHelper {
                         for (int i = 0; i < dayHoursCount.size(); i++) {
                             DayAndWorkingHourCount dayAndWorkingHourCount = dayHoursCount.get(i);
                             if (dayAndWorkingHourCount.getDay() == day) {
-                                DayAndWorkingHourCount otherDayAndWorkingHourCount = new DayAndWorkingHourCount(day,
-                                        (bookingDay.getDurationHours() * MINUTES_PER_HOUR + bookingDay.getDurationMinutes() + dayAndWorkingHourCount.getWorkingHour() * MINUTES_PER_HOUR) / MINUTES_PER_HOUR, bookingDay
-                                        .getDate());
+                                Duration workingHour = Duration.ZERO;
+                                workingHour = workingHour
+                                    .plusHours(bookingDay.getDurationHours())
+                                    .plusMinutes(bookingDay.getDurationMinutes())
+                                    .plus(dayAndWorkingHourCount.getWorkingHour());
+                                DayAndWorkingHourCount otherDayAndWorkingHourCount = new DayAndWorkingHourCount(
+                                    day,
+                                    workingHour,
+                                    bookingDay.getDate()
+                                );
                                 otherDayAndWorkingHourCount.setPublicHoliday(dayAndWorkingHourCount.isPublicHoliday());
                                 otherDayAndWorkingHourCount.setPublicHolidayName(dayAndWorkingHourCount.getPublicHolidayName());
                                 otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.isSatSun());

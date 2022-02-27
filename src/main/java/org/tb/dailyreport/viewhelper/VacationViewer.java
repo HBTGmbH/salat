@@ -3,7 +3,6 @@ package org.tb.dailyreport.viewhelper;
 import static java.math.RoundingMode.DOWN;
 import static java.util.Locale.GERMAN;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.io.Serializable;
@@ -69,8 +68,7 @@ public class VacationViewer implements Serializable {
         usedVacation.append(timeFormatMinutes(this.usedVacationMinutes));
 
         BigDecimal dailyWorkingTimeMinutes = BigDecimal
-            .valueOf(employeecontract.getDailyWorkingTime())
-            .multiply(BigDecimal.valueOf(60));
+            .valueOf(employeecontract.getDailyWorkingTimeMinutes().toMinutes());
         if(dailyWorkingTimeMinutes.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal usedVacationDays = BigDecimal.valueOf(this.usedVacationMinutes)
                 .setScale(2, DOWN)
@@ -91,8 +89,7 @@ public class VacationViewer implements Serializable {
         budgetVacation.append(DurationUtils.format(this.budget));
 
         BigDecimal dailyWorkingTimeMinutes = BigDecimal
-            .valueOf(employeecontract.getDailyWorkingTime())
-            .multiply(BigDecimal.valueOf(60));
+            .valueOf(employeecontract.getDailyWorkingTimeMinutes().toMinutes());
         if(dailyWorkingTimeMinutes.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal usedVacationDays = BigDecimal.valueOf(this.budget.toMinutes())
                 .setScale(2, DOWN)

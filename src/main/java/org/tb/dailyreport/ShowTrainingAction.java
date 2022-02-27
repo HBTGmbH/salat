@@ -85,12 +85,16 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         List<TrainingOverview> trainingOverviews;
 
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
-        employeecontracts.removeIf(c -> c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null);
+        employeecontracts.removeIf(c -> c.getFreelancer()
+                                        || c.getDailyWorkingTimeMinutes().toMinutes() <= 0
+                                        || c.getEmployeeorders() == null);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         // refresh all relevant attributes
-        if (trainingForm.getEmployeeContractId() == -1 || employeecontract.getFreelancer() || employeecontract.getDailyWorkingTime() <= 0
-                || employeecontract.getEmployeeorders() == null) {
+        if (trainingForm.getEmployeeContractId() == -1
+            || employeecontract.getFreelancer()
+            || employeecontract.getDailyWorkingTimeMinutes().toMinutes() <= 0
+            || employeecontract.getEmployeeorders() == null) {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
@@ -140,7 +144,9 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             return forward;
         }
 
-        employeecontracts.removeIf(c -> c.getFreelancer() || c.getDailyWorkingTime() <= 0 || c.getEmployeeorders() == null);
+        employeecontracts.removeIf(c -> c.getFreelancer()
+                                        || c.getDailyWorkingTimeMinutes().toMinutes() <= 0
+                                        || c.getEmployeeorders() == null);
 
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
@@ -154,7 +160,9 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
         // If all Employees are to be shown, get a list of TrainingOverviews with an entry for each Employeecontract.
         // Is the case if All Employees preselected on other page or current logged-in employee has no training, e.g. as admin.
-        if (employeeContractId == -1 || ec.getFreelancer() || ec.getDailyWorkingTime() <= 0 || ec.getEmployeeorders() == null) {
+        if (employeeContractId == -1
+            || ec.getFreelancer()
+            || ec.getDailyWorkingTimeMinutes().toMinutes() <= 0 || ec.getEmployeeorders() == null) {
             trainingOverview = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);

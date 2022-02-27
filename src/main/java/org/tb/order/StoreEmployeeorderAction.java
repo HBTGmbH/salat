@@ -1,12 +1,11 @@
 package org.tb.order;
 
+import static org.apache.struts.action.ActionMessages.GLOBAL_MESSAGE;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 
-import java.math.BigDecimal;
 import java.text.ParseException;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -15,7 +14,6 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -220,7 +218,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                     GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
                     && !eo.getSuborder().getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
 
-                if ("adm".equals(loginEmployee.getSign())) {
+                if (authorizedUser.isAdmin()) {
                     if (eoForm.getDebithours() == null
                         || eoForm.getDebithours().isEmpty()
                         || DurationUtils.parseDuration(eoForm.getDebithours()).isZero()) {
@@ -228,15 +226,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                         eo.setDebithoursunit(null);
                     } else {
                         eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));
-                        eo.setDebithoursunit(eoForm.getDebithoursunit());
+                        eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
                     }
-
                 } else {
-                    // TODO: code unreachable?
-                    Employeecontract contract = eo.getEmployeecontract();
-                    long vacationBudgetMinutes = contract.getVacationEntitlement() * contract.getDailyWorkingTimeMinutes();
-                    eo.setDebithours(Duration.ofMinutes(vacationBudgetMinutes));
-                    eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
+                    ActionMessages errors = new ActionMessages();
+                    errors.add(GLOBAL_MESSAGE, new ActionMessage("common.error.admin.required"));
+                    saveErrors(request, errors);
+                    return mapping.getInputForward();
                 }
 
             } else if (eo.getSuborder().getCustomerorder().getSign().equals(

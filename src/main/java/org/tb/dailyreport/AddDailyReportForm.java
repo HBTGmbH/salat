@@ -3,6 +3,7 @@ package org.tb.dailyreport;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.today;
 
+import java.time.Duration;
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,7 +30,6 @@ public class AddDailyReportForm extends ActionForm {
     private String order;
     private String suborder;
     private String status;
-    private Double hours;
     private Boolean training;
     private int selectedHourBegin;
     private int selectedMinuteBegin;
@@ -46,13 +46,6 @@ public class AddDailyReportForm extends ActionForm {
 
     public AddDailyReportForm() {
         setReferenceday(DateUtils.format(today()));
-    }
-
-    public Double getHours() {
-        return DateUtils.calculateTime(this.selectedHourBegin,
-                this.selectedMinuteBegin,
-                this.selectedHourEnd,
-                this.selectedMinuteEnd);
     }
 
     @Override
@@ -97,9 +90,26 @@ public class AddDailyReportForm extends ActionForm {
         selectedHourEnd = 0;
         selectedMinuteEnd = 0;
         referenceday = DateUtils.format(DateUtils.today());
-        hours = 8.0;
         training = false;
         numberOfSerialDays = 0;
+    }
+
+    public void recalcDurationFromBeginAndEnd() {
+        Duration duration = Duration.ofHours(selectedHourEnd)
+            .plusMinutes(selectedMinuteEnd)
+            .minusHours(selectedHourBegin)
+            .minusMinutes(selectedMinuteBegin);
+        this.selectedHourDuration = duration.toHoursPart();
+        this.selectedMinuteDuration = duration.toMinutesPart();
+    }
+
+    public void recalcEndFromBeginAndDuration() {
+        Duration duration = Duration.ofHours(selectedHourEnd)
+            .plusMinutes(selectedMinuteEnd)
+            .plusHours(selectedHourDuration)
+            .plusMinutes(selectedMinuteDuration);
+        this.selectedHourEnd = duration.toHoursPart();
+        this.selectedMinuteEnd = duration.toMinutesPart();
     }
 
 }

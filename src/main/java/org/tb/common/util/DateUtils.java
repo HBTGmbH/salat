@@ -11,7 +11,6 @@ import static java.util.Locale.ENGLISH;
 import static org.tb.common.GlobalConstants.DEFAULT_DATE_FORMAT;
 import static org.tb.common.GlobalConstants.DEFAULT_LOCALE;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.GlobalConstants.STARTING_YEAR;
 
 import java.text.ParseException;
@@ -302,26 +301,6 @@ public class DateUtils {
      */
     public static int getLastDayOfMonth(LocalDate date) {
         return date.getMonthValue();
-    }
-
-    /**
-     * calculates worktime from begin/end times in a form
-     *
-     * @return double - decimal hours
-     */
-    public static double calculateTime(int hrbegin, int minbegin, int hrend, int minend) {
-        double worktime;
-
-        int hours = hrend - hrbegin;
-        int minutes = minend - minbegin;
-
-        if (minutes < 0) {
-            hours -= 1;
-            minutes += MINUTES_PER_HOUR;
-        }
-        worktime = hours * 1. + minutes / 60.;
-
-        return worktime;
     }
 
     /**

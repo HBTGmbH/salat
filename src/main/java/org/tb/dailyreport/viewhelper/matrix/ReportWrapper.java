@@ -1,18 +1,21 @@
 package org.tb.dailyreport.viewhelper.matrix;
 
-import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
+import static org.tb.common.util.DurationUtils.format;
 
+import java.time.Duration;
 import java.util.List;
+import lombok.Getter;
 
+@Getter
 public class ReportWrapper {
 
     private final List<MergedReport> mergedReportList;
     private final List<DayAndWorkingHourCount> dayAndWorkingHourCountList;
-    private final double dayHoursSum;
-    private final double dayHoursTarget;
-    private double dayHoursDiff;
+    private final Duration dayHoursSum;
+    private final Duration dayHoursTarget;
+    private final Duration dayHoursDiff;
 
-    public ReportWrapper(List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, double dayHoursSum, double dayHoursTarget, double dayHoursDiff) {
+    public ReportWrapper(List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, Duration dayHoursSum, Duration dayHoursTarget, Duration dayHoursDiff) {
         this.mergedReportList = mergedReportList;
         this.dayAndWorkingHourCountList = dayAndWorkingHourCountList;
         this.dayHoursSum = dayHoursSum;
@@ -20,40 +23,16 @@ public class ReportWrapper {
         this.dayHoursDiff = dayHoursDiff;
     }
 
-    public double getDayHoursDiff() {
-        return dayHoursDiff;
-    }
-
-    public void setDayHoursDiff(double dayHoursDiff) {
-        this.dayHoursDiff = dayHoursDiff;
-    }
-
-    public double getDayHoursTarget() {
-        return dayHoursTarget;
-    }
-
-    public double getDayHoursSum() {
-        return dayHoursSum;
-    }
-
     public String getDayHoursSumString() {
-        return timeFormatHours(dayHoursSum);
+        return format(dayHoursSum);
     }
 
     public String getDayHoursTargetString() {
-        return timeFormatHours(dayHoursTarget);
+        return format(dayHoursTarget);
     }
 
     public String getDayHoursDiffString() {
-        return timeFormatHours(dayHoursDiff);
-    }
-
-    public List<DayAndWorkingHourCount> getDayAndWorkingHourCountList() {
-        return dayAndWorkingHourCountList;
-    }
-
-    public List<MergedReport> getMergedReportList() {
-        return mergedReportList;
+        return format(dayHoursDiff);
     }
 
 }

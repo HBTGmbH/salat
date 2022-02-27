@@ -1,6 +1,5 @@
 package org.tb.auth;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getBeginOfMonth;
@@ -8,6 +7,7 @@ import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.common.util.UrlUtils.absoluteUrl;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,6 @@ import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
@@ -211,8 +210,8 @@ public class AfterLogin {
     }
 
     public void handleOvertime(Employeecontract employeecontract, HttpSession session) {
-        double overtimeStatic = employeecontract.getOvertimeStatic();
-        int otStaticMinutes = (int) (overtimeStatic * MINUTES_PER_HOUR);
+        Duration overtimeStatic = employeecontract.getOvertimeStaticMinutes();
+        long otStaticMinutes = overtimeStatic.toMinutes();
 
         //use new overtime computation with static + dynamic overtime
         //need the LocalDate from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
@@ -222,8 +221,8 @@ public class AfterLogin {
         } else {
             dynamicDate = addDays(employeecontract.getReportAcceptanceDate(), 1);
         }
-        int overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, today(), employeecontract, true);
-        int overtime = otStaticMinutes + overtimeDynamic;
+        long overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, today(), employeecontract, true);
+        long overtime = otStaticMinutes + overtimeDynamic;
 
         boolean overtimeIsNegative = overtime < 0;
 
@@ -244,7 +243,7 @@ public class AfterLogin {
         if (validUntil != null && validUntil.isBefore(currentDate) && !validUntil.isBefore(start)) {
             currentDate = validUntil;
         }
-        int monthlyOvertime = 0;
+        long monthlyOvertime = 0;
         if (!(validUntil != null && validUntil.isBefore(start) || validFrom.isAfter(currentDate))) {
             monthlyOvertime = timereportHelper.calculateOvertime(start, currentDate, employeecontract, false);
         }

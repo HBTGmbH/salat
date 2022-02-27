@@ -1,8 +1,6 @@
 package org.tb.invoice;
 
-import static org.tb.common.util.TimeFormatUtils.decimalFormatHours;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
-import static org.tb.common.util.TimeFormatUtils.timeFormatHours;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.time.Duration;
@@ -107,17 +105,11 @@ public class InvoiceSuborderHelper extends Suborder {
     }
 
     private long getTotalActualminutesHelper(boolean print) {
-        long actualminutes = 0;
-        for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceTimereportViewHelperList) {
-            if (!print) {
-                actualminutes += invoiceTimereportViewHelper.getDurationminutes();
-                actualminutes += invoiceTimereportViewHelper.getDurationhours() * 60;
-            } else if (invoiceTimereportViewHelper.isVisible()) {
-                actualminutes += invoiceTimereportViewHelper.getDurationminutes();
-                actualminutes += invoiceTimereportViewHelper.getDurationhours() * 60;
-            }
-        }
-        return actualminutes;
+        return invoiceTimereportViewHelperList.stream()
+            .filter(v -> !print || v.isVisible())
+            .map(v -> Duration.ofHours(v.getDurationhours()).plusMinutes(v.getDurationminutes()))
+            .reduce(Duration.ZERO, Duration::plus)
+            .toMinutes();
     }
 
     public List<InvoiceTimereportHelper> getInvoiceTimereportViewHelperList() {

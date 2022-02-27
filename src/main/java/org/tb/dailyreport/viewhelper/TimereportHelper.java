@@ -3,8 +3,8 @@ package org.tb.dailyreport.viewhelper;
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.common.util.DateUtils.today;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
@@ -49,69 +48,14 @@ public class TimereportHelper {
      * refreshes hours after change of begin/end times
      */
     public void refreshHours(AddDailyReportForm reportForm) {
-        Double hours = reportForm.getHours();
-        if (hours < 0.0) {
-            reportForm.setSelectedHourDuration(0);
-            reportForm.setSelectedMinuteDuration(0);
-            return;
-        }
-
-        reportForm.setHours(hours);
-
-        //		int hourDuration = hours.intValue();
-        //		int minuteDuration = (int) ((hours.doubleValue() - Math.floor(hours.doubleValue()) )*60.);
-
-        // in der alten rechnug gabs einen rundungsfehler, der geschied jezt nicht mehr
-        long minuteDurationlong;
-        int hourDurationInteger = hours.intValue();
-        minuteDurationlong = Math.round((hours - hours.intValue()) * MINUTES_PER_HOUR);
-        int minuteDuration = (int) minuteDurationlong;
-
-        // clean possible truncation errors	
-        if (minuteDuration % GlobalConstants.MINUTE_INCREMENT != 0) {
-            if (minuteDuration % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                minuteDuration += 5 - minuteDuration % GlobalConstants.MINUTE_INCREMENT;
-            } else if (minuteDuration % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                minuteDuration -= minuteDuration % GlobalConstants.MINUTE_INCREMENT;
-            }
-        }
-
-        reportForm.setSelectedHourDuration(hourDurationInteger);
-        reportForm.setSelectedMinuteDuration(minuteDuration);
+        reportForm.recalcDurationFromBeginAndEnd();
     }
 
     /**
      * refreshes period after change of hours
      */
     public boolean refreshPeriod(HttpServletRequest request, AddDailyReportForm reportForm) {
-        // calculate end hour/minute
-        double hours = reportForm.getSelectedHourDuration() + reportForm.getSelectedMinuteDuration() / (double)MINUTES_PER_HOUR;
-        reportForm.setHours(hours);
-        request.getSession().setAttribute("hourDuration", hours);
-
-        int hoursEnd = reportForm.getSelectedHourBegin() + reportForm.getHours().intValue();
-        double dMinutes = (reportForm.getHours() -
-                Math.floor(reportForm.getHours())) * MINUTES_PER_HOUR;
-
-        int minutesEnd = reportForm.getSelectedMinuteBegin() + Double.valueOf(dMinutes).intValue();
-
-        //		// clean possible truncation errors
-        if (minutesEnd % GlobalConstants.MINUTE_INCREMENT != 0) {
-            if (minutesEnd % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                minutesEnd += 5 - minutesEnd % GlobalConstants.MINUTE_INCREMENT;
-            } else if (minutesEnd % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                minutesEnd -= minutesEnd % GlobalConstants.MINUTE_INCREMENT;
-            }
-        }
-
-        if (minutesEnd >= MINUTES_PER_HOUR) {
-            minutesEnd -= MINUTES_PER_HOUR;
-            hoursEnd++;
-        }
-
-        reportForm.setSelectedHourEnd(hoursEnd);
-        reportForm.setSelectedMinuteEnd(minutesEnd);
-
+        reportForm.recalcEndFromBeginAndDuration();
         return true;
     }
 
@@ -314,23 +258,14 @@ public class TimereportHelper {
      *
      * @return Returns true, if the maximal labor time is extended, false otherwise
      */
-    public boolean checkLaborTimeMaximum(List<Timereport> timereports, double maximalDailyLaborTime) {
-        int laborTimeHour = 0;
-        int laborTimeMinute = 0;
+    public boolean checkLaborTimeMaximum(List<Timereport> timereports, int maxDailyLaborTimeHours) {
 
-        for (Timereport timereport : timereports) {
+        Duration actual = timereports.stream()
+            .map(t -> Duration.ofHours(t.getDurationhours()).plusMinutes(t.getDurationminutes()))
+            .reduce(Duration.ZERO, Duration::plus);
 
-            int hours = timereport.getDurationhours();
-            int minutes = timereport.getDurationminutes();
-
-            laborTimeHour += hours;
-            laborTimeMinute += minutes;
-        }
-        laborTimeHour += laborTimeMinute / MINUTES_PER_HOUR;
-        laborTimeMinute = laborTimeMinute % MINUTES_PER_HOUR;
-
-        double laborTime = laborTimeHour + (double)laborTimeMinute / MINUTES_PER_HOUR;
-        return laborTime > maximalDailyLaborTime;
+        // check actual is not greater than the max labor time
+        return !Duration.ofHours(maxDailyLaborTimeHours).minus(actual).isNegative();
     }
 
     /**
@@ -340,7 +275,7 @@ public class TimereportHelper {
         String N_A = "n/a";
         if (workingday == null) return N_A;
         try {
-            int timeHoursInt = 0;
+            long timeHoursLong = 0;
             int timeMinutesInt = 0;
 
             if (timeSwitch.equals("quittingtime")) {
@@ -348,21 +283,16 @@ public class TimereportHelper {
                 String[] laborTimeArray = labortimeString.split(":");
                 String laborTimeHoursString = laborTimeArray[0];
                 String laborTimeMinutesString = laborTimeArray[1];
-                int laborTimeHoursInt = Integer.parseInt(laborTimeHoursString);
-                int laborTimeMinutesInt = Integer.parseInt(laborTimeMinutesString);
-                timeHoursInt = laborTimeHoursInt;
-                timeMinutesInt = laborTimeMinutesInt;
+                timeHoursLong = Long.parseLong(laborTimeHoursString);
+                timeMinutesInt = Integer.parseInt(laborTimeMinutesString);
             }
             if (timeSwitch.equals("workingDayEnds")) {
                 Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-                Double dailyWorkingTime = employeecontract.getDailyWorkingTime();
-                int dailyWorkingTimeHours = dailyWorkingTime.intValue();
-                int dailyWorkingTimeMinutes = Integer.parseInt(dailyWorkingTime.toString().replace(".", ":").split(":")[1]) * 6;
-                timeHoursInt = dailyWorkingTimeHours;
-                timeMinutesInt = dailyWorkingTimeMinutes;
+                timeHoursLong = employeecontract.getDailyWorkingTimeMinutes().toHours();
+                timeMinutesInt = employeecontract.getDailyWorkingTimeMinutes().toMinutesPart();
             }
 
-            int quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursInt;
+            long quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursLong;
             int quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
             quittingtimeHours += quittingtimeMinutes / MINUTES_PER_HOUR;
             quittingtimeMinutes = quittingtimeMinutes % MINUTES_PER_HOUR;
@@ -391,7 +321,7 @@ public class TimereportHelper {
         }
     }
 
-    public int calculateOvertime(LocalDate start, LocalDate end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
+    public long calculateOvertime(LocalDate start, LocalDate end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
         // do not consider invalid(outside of the validity of the contract) days
         if (employeecontract.getValidUntil() != null && end.isAfter(employeecontract.getValidUntil())) {
@@ -416,10 +346,7 @@ public class TimereportHelper {
         diffDays -= numberOfHolidays;
 
         // calculate working time
-        double dailyWorkingTime = employeecontract.getDailyWorkingTime() * MINUTES_PER_HOUR;
-        if (dailyWorkingTime % 1 != 0) {
-            throw new RuntimeException("daily working time must be multiple of 0.05: " + employeecontract.getDailyWorkingTime());
-        }
+        long dailyWorkingTime = employeecontract.getDailyWorkingTimeMinutes().toMinutes();
         long expectedWorkingTimeInMinutes = (long) dailyWorkingTime * diffDays;
         long actualWorkingTimeInMinutes = 0;
         List<Timereport> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end);
@@ -429,7 +356,7 @@ public class TimereportHelper {
             }
         }
 
-        int overtimeMinutes;
+        long overtimeMinutes;
         if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
             long overtimeAdjustmentMinutes = 0;
             List<Overtime> overtimes = overtimeDAO
@@ -437,9 +364,9 @@ public class TimereportHelper {
             for (Overtime ot : overtimes) {
                 overtimeAdjustmentMinutes += ot.getTimeMinutes().toMinutes();
             }
-            overtimeMinutes = (int) (actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes);
+            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
         } else {
-            overtimeMinutes = (int) (actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes);
+            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
         }
 
         if (end.isAfter(start) || end.isEqual(start)) {

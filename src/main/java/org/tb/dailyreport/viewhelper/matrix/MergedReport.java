@@ -90,11 +90,6 @@ public class MergedReport implements Comparable<MergedReport> {
         return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo(o.customOrder.getSign() + o.subOrder.getSign());
     }
 
-    public Double getRoundSum() {
-        long duration = (long) (sumHours * 100);
-        return (double) duration / 100.0;
-    }
-
     public String getSumString() {
         return timeFormatMinutes(sumMinutes);
     }

@@ -36,7 +36,7 @@ public class EditEmployeeOrderContentAction extends EmployeeOrderContentAction<A
             mapping.findForward("error");
         }
         String eoIdString = request.getParameter("eoId");
-        Long eoId = new Long(eoIdString);
+        Long eoId = Long.valueOf(eoIdString);
 
         // get associated employee order and content from db, if present
         Employeeorder employeeorder = employeeorderDAO

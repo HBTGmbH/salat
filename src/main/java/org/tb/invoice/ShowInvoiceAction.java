@@ -4,6 +4,7 @@ import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import org.apache.struts.util.MessageResources;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.common.util.ExcelArchivierer;
 import org.tb.dailyreport.DailyReportAction;
 import org.tb.dailyreport.Timereport;
@@ -266,7 +268,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     }
                 }
             }
-            long actualMinutesSum = 0;
+            Duration actualMinutesSum = Duration.ZERO;
             int layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
             for (InvoiceSuborderHelper invoiceSuborderViewHelper : suborderViewhelperList) {
                 if (invoiceSuborderViewHelper.getLayer() <= layerlimit
@@ -274,15 +276,15 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     if (invoiceSuborderViewHelper.isVisible()) {
                         if (invoiceSuborderViewHelper.getLayer() < layerlimit
                                 || showInvoiceForm.getLayerlimit().equals("-1")) {
-                            actualMinutesSum += invoiceSuborderViewHelper.getTotalActualminutesPrint();
+                            actualMinutesSum = actualMinutesSum.plusMinutes(invoiceSuborderViewHelper.getTotalActualminutesPrint());
                         } else {
-                            actualMinutesSum += invoiceSuborderViewHelper.getDurationInMinutes();
+                            actualMinutesSum = actualMinutesSum.plusMinutes(invoiceSuborderViewHelper.getDurationInMinutes());
                         }
                     }
                 }
             }
-            request.getSession().setAttribute("actualminutessum", (double) actualMinutesSum);
-            request.getSession().setAttribute("printactualhourssum", timeFormatMinutes(actualMinutesSum) + " (" + decimalFormatMinutes(actualMinutesSum) + ")");
+            request.getSession().setAttribute("actualminutessum", actualMinutesSum);
+            request.getSession().setAttribute("printactualhourssum", DurationUtils.format(actualMinutesSum) + " (" + DurationUtils.decimalFormat(actualMinutesSum) + ")");
             request.getSession().setAttribute("titleactualhourstext", showInvoiceForm.getTitleactualhourstext());
             request.getSession().setAttribute("titlecustomersigntext", showInvoiceForm.getTitlecustomersigntext());
             request.getSession().setAttribute("titleinvoiceattachment", showInvoiceForm.getTitleinvoiceattachment());

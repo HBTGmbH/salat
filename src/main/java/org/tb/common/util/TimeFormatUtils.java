@@ -1,6 +1,7 @@
 package org.tb.common.util;
 
-import java.math.BigDecimal;
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.Locale;
@@ -23,18 +24,8 @@ public class TimeFormatUtils {
     return timeMinutesFormat;
   });
 
-  @Deprecated
-  public static String decimalFormatHours(double hoursDecimal) {
-    return hoursDecimalFormatHolder.get().format(hoursDecimal);
-  }
-
-  @Deprecated
-  public static String decimalFormatMinutes(double minutesDecimal) {
-    return hoursDecimalFormatHolder.get().format(minutesDecimal / 60);
-  }
-
   public static String decimalFormatHoursAndMinutes(long hours, long minutes) {
-    double hoursDecimal = ((double)minutes / 60) + hours;
+    double hoursDecimal = ((double)minutes / MINUTES_PER_HOUR) + hours;
     return hoursDecimalFormatHolder.get().format(hoursDecimal);
   }
 
@@ -42,14 +33,12 @@ public class TimeFormatUtils {
     return hours + ":" + timeMinutesFormatHolder.get().format(Math.abs(minutes));
   }
 
-  public static String timeFormatMinutes(long minutes) {
-    return timeFormatHoursAndMinutes(minutes / 60, minutes % 60);
+  public static String decimalFormatMinutes(long minutes) {
+    return decimalFormatHoursAndMinutes(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
   }
 
-  @Deprecated
-  public static String timeFormatHours(double hoursDecimal) {
-    BigDecimal minutesValue = BigDecimal.valueOf(hoursDecimal * 60).setScale(0, RoundingMode.HALF_UP);
-    return timeFormatMinutes(minutesValue.longValue());
+  public static String timeFormatMinutes(long minutes) {
+    return timeFormatHoursAndMinutes(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR);
   }
 
 }
