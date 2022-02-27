@@ -210,7 +210,7 @@ public class AfterLogin {
     }
 
     public void handleOvertime(Employeecontract employeecontract, HttpSession session) {
-        Duration overtimeStatic = employeecontract.getOvertimeStaticMinutes();
+        Duration overtimeStatic = employeecontract.getOvertimeStatic();
         long otStaticMinutes = overtimeStatic.toMinutes();
 
         //use new overtime computation with static + dynamic overtime

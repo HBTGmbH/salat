@@ -68,7 +68,7 @@ public class VacationViewer implements Serializable {
         usedVacation.append(timeFormatMinutes(this.usedVacationMinutes));
 
         BigDecimal dailyWorkingTimeMinutes = BigDecimal
-            .valueOf(employeecontract.getDailyWorkingTimeMinutes().toMinutes());
+            .valueOf(employeecontract.getDailyWorkingTime().toMinutes());
         if(dailyWorkingTimeMinutes.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal usedVacationDays = BigDecimal.valueOf(this.usedVacationMinutes)
                 .setScale(2, DOWN)
@@ -89,7 +89,7 @@ public class VacationViewer implements Serializable {
         budgetVacation.append(DurationUtils.format(this.budget));
 
         BigDecimal dailyWorkingTimeMinutes = BigDecimal
-            .valueOf(employeecontract.getDailyWorkingTimeMinutes().toMinutes());
+            .valueOf(employeecontract.getDailyWorkingTime().toMinutes());
         if(dailyWorkingTimeMinutes.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal usedVacationDays = BigDecimal.valueOf(this.budget.toMinutes())
                 .setScale(2, DOWN)

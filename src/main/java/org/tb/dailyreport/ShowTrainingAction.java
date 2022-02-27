@@ -86,14 +86,14 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
         employeecontracts.removeIf(c -> c.getFreelancer()
-                                        || c.getDailyWorkingTimeMinutes().toMinutes() <= 0
+                                        || c.getDailyWorkingTime().toMinutes() <= 0
                                         || c.getEmployeeorders() == null);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         // refresh all relevant attributes
         if (trainingForm.getEmployeeContractId() == -1
             || employeecontract.getFreelancer()
-            || employeecontract.getDailyWorkingTimeMinutes().toMinutes() <= 0
+            || employeecontract.getDailyWorkingTime().toMinutes() <= 0
             || employeecontract.getEmployeeorders() == null) {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewsForAll(startdate,
@@ -145,7 +145,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         }
 
         employeecontracts.removeIf(c -> c.getFreelancer()
-                                        || c.getDailyWorkingTimeMinutes().toMinutes() <= 0
+                                        || c.getDailyWorkingTime().toMinutes() <= 0
                                         || c.getEmployeeorders() == null);
 
         if (ec == null) {
@@ -162,7 +162,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         // Is the case if All Employees preselected on other page or current logged-in employee has no training, e.g. as admin.
         if (employeeContractId == -1
             || ec.getFreelancer()
-            || ec.getDailyWorkingTimeMinutes().toMinutes() <= 0 || ec.getEmployeeorders() == null) {
+            || ec.getDailyWorkingTime().toMinutes() <= 0 || ec.getEmployeeorders() == null) {
             trainingOverview = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);

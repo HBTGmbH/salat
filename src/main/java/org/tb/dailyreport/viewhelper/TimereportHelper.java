@@ -288,8 +288,8 @@ public class TimereportHelper {
             }
             if (timeSwitch.equals("workingDayEnds")) {
                 Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-                timeHoursLong = employeecontract.getDailyWorkingTimeMinutes().toHours();
-                timeMinutesInt = employeecontract.getDailyWorkingTimeMinutes().toMinutesPart();
+                timeHoursLong = employeecontract.getDailyWorkingTime().toHours();
+                timeMinutesInt = employeecontract.getDailyWorkingTime().toMinutesPart();
             }
 
             long quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursLong;
@@ -346,7 +346,7 @@ public class TimereportHelper {
         diffDays -= numberOfHolidays;
 
         // calculate working time
-        long dailyWorkingTime = employeecontract.getDailyWorkingTimeMinutes().toMinutes();
+        long dailyWorkingTime = employeecontract.getDailyWorkingTime().toMinutes();
         long expectedWorkingTimeInMinutes = (long) dailyWorkingTime * diffDays;
         long actualWorkingTimeInMinutes = 0;
         List<Timereport> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end);

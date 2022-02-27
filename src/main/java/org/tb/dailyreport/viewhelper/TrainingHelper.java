@@ -27,7 +27,7 @@ public class TrainingHelper {
 
         long totalTrainingMinutes = hours * MINUTES_PER_HOUR + minutes;
 
-        long dailyWorkingTimeMinutes = ec.getDailyWorkingTimeMinutes().toMinutes();
+        long dailyWorkingTimeMinutes = ec.getDailyWorkingTime().toMinutes();
 
         if (dailyWorkingTimeMinutes != 0) {
             trainingDays = totalTrainingMinutes / dailyWorkingTimeMinutes;

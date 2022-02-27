@@ -101,7 +101,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustBeginTime")) {
             refreshWorkdayAvailability = true;
-            Duration dailyWorkingTime = employeeContract.getDailyWorkingTimeMinutes();
+            Duration dailyWorkingTime = employeeContract.getDailyWorkingTime();
             Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             Boolean workingDayAvailable = (Boolean) request.getSession().getAttribute("workingDayIsAvailable");
@@ -189,7 +189,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             if (standardOrder) {
-                Duration dailyWorkingTime = employeeContract.getDailyWorkingTimeMinutes();
+                Duration dailyWorkingTime = employeeContract.getDailyWorkingTime();
                 int hours = dailyWorkingTime.toHoursPart();
                 int minutes = dailyWorkingTime.toMinutesPart();
                 // round down to next minute increment

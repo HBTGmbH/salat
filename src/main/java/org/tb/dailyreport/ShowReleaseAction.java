@@ -250,7 +250,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             //compute overtimeStatic and set it in employee contract
             long otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                     employeecontract, true);
-            employeecontract.setOvertimeStaticMinutes(Duration.ofMinutes(otStatic));
+            employeecontract.setOvertimeStatic(Duration.ofMinutes(otStatic));
 
             employeecontractDAO.save(employeecontract, loginEmployee);
         }
@@ -296,7 +296,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 // recompute overtimeStatic and set it in employeecontract
                 long otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
                         employeecontract, true);
-                employeecontract.setOvertimeStaticMinutes(Duration.ofMinutes(otStatic));
+                employeecontract.setOvertimeStatic(Duration.ofMinutes(otStatic));
             }
 
             request.getSession().setAttribute("reopenDays",
