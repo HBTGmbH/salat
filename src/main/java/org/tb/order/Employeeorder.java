@@ -12,6 +12,7 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -55,8 +56,12 @@ public class Employeeorder extends AuditedEntity implements Serializable {
      * sign of the employee order
      */
     private String sign;
+
     @Convert(converter = DurationMinutesConverter.class)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private Duration debitMinutes;
+
     private Byte debithoursunit;
     private LocalDate fromDate;
     private LocalDate untilDate;
@@ -127,4 +132,5 @@ public class Employeeorder extends AuditedEntity implements Serializable {
         // its a Duration - hours or minutes make no difference
         debitMinutes = value;
     }
+
 }

@@ -17,6 +17,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -88,8 +89,12 @@ public class Suborder extends AuditedEntity implements Serializable {
     private Boolean commentnecessary;
     private LocalDate fromDate;
     private LocalDate untilDate;
+
     @Convert(converter = DurationMinutesConverter.class)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private Duration debitMinutes;
+
     private Byte debithoursunit;
     /**
      * Hide in select boxes
@@ -358,7 +363,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         copy.setCreated(DateUtils.now());
         copy.setCreatedby(creator + "_treecopy");
         copy.setCustomerorder(customerorder);
-        copy.setDebitMinutes(debitMinutes);
+        copy.setDebithours(getDebithours()); // see #getDebithours
         copy.setDebithoursunit(debithoursunit);
         copy.setDescription(description);
         copy.setFromDate(fromDate);
