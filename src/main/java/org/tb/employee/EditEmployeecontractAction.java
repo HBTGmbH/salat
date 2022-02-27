@@ -86,7 +86,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         ecForm.setTaskdescription(ec.getTaskDescription());
         ecForm.setFreelancer(ec.getFreelancer());
         ecForm.setHide(ec.getHide());
-        ecForm.setDailyworkingtime(DurationUtils.format(ec.getDailyWorkingTimeMinutes()));
+        ecForm.setDailyworkingtime(DurationUtils.format(ec.getDailyWorkingTime()));
         if (!ec.getVacations().isEmpty()) {
             // actually, vacation entitlement is a constant value
             // for an employee (not year-dependent), so just take the

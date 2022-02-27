@@ -441,7 +441,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     }
                     request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
 
-                    long otStaticMinutes = ec.getOvertimeStaticMinutes().toMinutes();
+                    long otStaticMinutes = ec.getOvertimeStatic().toMinutes();
                     LocalDate dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
                     long overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, date, ec, true);
                     long overtime = otStaticMinutes + overtimeDynamic;

@@ -12,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -28,7 +29,12 @@ import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.Vacation;
 import org.tb.order.Employeeorder;
 
-@Getter
+/**
+ * The duration fields have their entity attribute names with minutes to indicate the value in the database.
+ * In the Java object world, their getters/setter are named without the minutes ending, because Duration
+ * objects are not minutes in reality.
+ */
+@Getter()
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -44,8 +50,12 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     private LocalDate validFrom;
     private LocalDate validUntil;
+
     @Convert(converter = DurationMinutesConverter.class)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private Duration dailyWorkingTimeMinutes;
+
     private Boolean freelancer;
     private String taskDescription;
     private LocalDate fixedUntil;
@@ -55,6 +65,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     /** static overtime ranging from begin of employeecontract to reportAcceptanceDate */
     @Convert(converter = DurationMinutesConverter.class)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private Duration overtimeStaticMinutes;
 
     @OneToOne
@@ -211,6 +223,22 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             acceptanceWarning = true;
         }
         return acceptanceWarning;
+    }
+
+    public Duration getDailyWorkingTime() {
+        return dailyWorkingTimeMinutes;
+    }
+
+    public void setDailyWorkingTime(Duration value) {
+        this.dailyWorkingTimeMinutes = value;
+    }
+
+    public Duration getOvertimeStatic() {
+        return overtimeStaticMinutes;
+    }
+
+    public void setOvertimeStatic(Duration overtimeStaticMinutes) {
+        this.overtimeStaticMinutes = overtimeStaticMinutes;
     }
 
 }

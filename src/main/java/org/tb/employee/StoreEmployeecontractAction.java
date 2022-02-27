@@ -276,7 +276,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             ec.setTaskDescription(ecForm.getTaskdescription());
             ec.setFreelancer(ecForm.getFreelancer());
             ec.setHide(ecForm.getHide());
-            ec.setDailyWorkingTimeMinutes(DurationUtils.parseDuration(ecForm.getDailyworkingtime()));
+            ec.setDailyWorkingTime(DurationUtils.parseDuration(ecForm.getDailyworkingtime()));
 
             // if necessary, add new vacation for current year
             Vacation va = null;
@@ -548,7 +548,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         ecForm.setTaskdescription(ec.getTaskDescription());
         ecForm.setFreelancer(ec.getFreelancer());
         ecForm.setHide(ec.getHide());
-        ecForm.setDailyworkingtime(DurationUtils.format(ec.getDailyWorkingTimeMinutes()));
+        ecForm.setDailyworkingtime(DurationUtils.format(ec.getDailyWorkingTime()));
         if (!ec.getVacations().isEmpty()) {
             // actually, vacation entitlement is a constant value
             // for an employee (not year-dependent), so just take the

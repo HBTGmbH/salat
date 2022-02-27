@@ -13,7 +13,7 @@ public class EmployeecontractTestUtils {
 		Employeecontract ec = new Employeecontract();
 		ec.setCreated(DateUtils.now());
 		ec.setCreatedby("kd");
-		ec.setDailyWorkingTimeMinutes(Duration.ofHours(8));
+		ec.setDailyWorkingTime(Duration.ofHours(8));
 		ec.setEmployee(employee);
 		ec.setValidFrom(DateUtils.parseOrNull("2017-01-01"));
 		ec.setSupervisor(employee);

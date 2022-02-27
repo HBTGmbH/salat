@@ -177,11 +177,11 @@ public class MatrixHelper {
             List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
             Duration dailyWorkingTime = Duration.ZERO;
             for (Employeecontract employeeContract : employeeContractList) {
-                dailyWorkingTime = dailyWorkingTime.plus(employeeContract.getDailyWorkingTimeMinutes());
+                dailyWorkingTime = dailyWorkingTime.plus(employeeContract.getDailyWorkingTime());
             }
             dayHoursTarget = dailyWorkingTime.multipliedBy(workdayCount);
         } else {
-            dayHoursTarget = employeecontract.getDailyWorkingTimeMinutes().multipliedBy(workdayCount);
+            dayHoursTarget = employeecontract.getDailyWorkingTime().multipliedBy(workdayCount);
         }
 
         //calculate dayhoursdiff

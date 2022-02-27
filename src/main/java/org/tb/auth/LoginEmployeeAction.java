@@ -259,7 +259,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
                         && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                         // TODO reduce VacationEntitlement if contract is not running the whole year
-                        var vacationBudget = employeecontract.getDailyWorkingTimeMinutes().multipliedBy(employeecontract.getVacationEntitlement());
+                        var vacationBudget = employeecontract.getDailyWorkingTime().multipliedBy(employeecontract.getVacationEntitlement());
                         employeeorder.setDebithours(vacationBudget);
                         employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
                     } else {

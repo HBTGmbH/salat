@@ -175,7 +175,7 @@ public class TimereportService {
     long effectiveWorkDays = weekdays - effectivePublicHolidayCount;
 
     // calculate working time
-    long dailyWorkingTimeInMinutes = employeecontract.getDailyWorkingTimeMinutes().toMinutes();
+    long dailyWorkingTimeInMinutes = employeecontract.getDailyWorkingTime().toMinutes();
     long expectedWorkingTimeInMinutes = dailyWorkingTimeInMinutes * effectiveWorkDays;
     long actualWorkingTimeInMinutes = timereportDAO.getTotalDurationMinutesForEmployeecontract(employeecontractId, effectiveStart, effectiveEnd);
     if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
@@ -221,9 +221,9 @@ public class TimereportService {
       Duration overtimeStaticNew = Duration.ofMinutes(overtimeMinutes);
       log.info("Overtime for employeecontract {} changed from {} to {}",
           employeecontract.getId(),
-          employeecontract.getOvertimeStaticMinutes(),
+          employeecontract.getOvertimeStatic(),
           overtimeStaticNew);
-      employeecontract.setOvertimeStaticMinutes(overtimeStaticNew);
+      employeecontract.setOvertimeStatic(overtimeStaticNew);
     }
   }
 
