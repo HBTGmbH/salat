@@ -1,21 +1,17 @@
-<?xml version="1.0" encoding="ISO-8859-1" ?>
-<!DOCTYPE taglib
-  PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.1//EN"
-  "http://java.sun.com/j2ee/dtds/web-jsptaglibrary_1_1.dtd">
+<taglib
+  xsi:schemaLocation="http://java.sun.com/xml/ns/javaee web-jsptaglibrary_2_1.xsd"
+  xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  version="2.1">
 
-<taglib>
-
-  <tlibversion>1.0</tlibversion>
-  <jspversion>1.1</jspversion>
-  <shortname>java8-date-formatting-taglib</shortname>
-  <uri></uri>
-  <info></info>
+  <tlib-version>1.1</tlib-version>
+  <short-name>java8-date-formatting-taglib</short-name>
+  <uri>http://hbt.de/jsp/taglib/java8-date-formatting</uri>
 
   <tag>
     <name>formatLocalDate</name>
-    <tagclass>org.tb.common.jsptags.FormatLocalDateTag</tagclass>
-    <bodycontent>empty</bodycontent>
-    <info>Formats a given LocalDate using DateUtils</info>
+    <tag-class>org.tb.common.jsptags.FormatLocalDateTag</tag-class>
+    <body-content>empty</body-content>
+    <description>Formats a given LocalDate using DateUtils</description>
     <attribute>
       <name>value</name>
       <required>true</required>
@@ -25,9 +21,9 @@
 
   <tag>
     <name>formatLocalDateTime</name>
-    <tagclass>org.tb.common.jsptags.FormatLocalDateTimeTag</tagclass>
-    <bodycontent>empty</bodycontent>
-    <info>Formats a given LocalDateTime using DateUtils</info>
+    <tag-class>org.tb.common.jsptags.FormatLocalDateTimeTag</tag-class>
+    <body-content>empty</body-content>
+    <description>Formats a given LocalDateTime using DateUtils</description>
     <attribute>
       <name>value</name>
       <required>true</required>
@@ -37,9 +33,9 @@
 
   <tag>
     <name>formatDuration</name>
-    <tagclass>org.tb.common.jsptags.FormatDurationTag</tagclass>
-    <bodycontent>empty</bodycontent>
-    <info>Formats a given Duration using DurationUtils</info>
+    <tag-class>org.tb.common.jsptags.FormatDurationTag</tag-class>
+    <body-content>empty</body-content>
+    <description>Formats a given Duration using DurationUtils</description>
     <attribute>
       <name>value</name>
       <required>true</required>

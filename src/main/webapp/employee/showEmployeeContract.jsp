@@ -4,6 +4,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@ taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
@@ -229,8 +230,11 @@
 					</td>
 					<td align="center"><html:checkbox name="employeecontract"
 						property="freelancer" disabled="true" /></td>
-					<td align="center" style="color:gray"><c:out
-						value="${employeecontract.dailyWorkingTime}" /></td>
+					<td align="center" style="color:gray">
+						<c:if test="${!employeecontract.dailyWorkingTime.zero}">
+							<java8:formatDuration value="${employeecontract.dailyWorkingTime}" />
+						</c:if>
+					</td>
 					<td align="center" style="color:gray"><c:out
 						value="${employeecontract.vacationEntitlement}" /></td>
 				</c:when>
@@ -250,10 +254,14 @@
 							</c:otherwise>
 						</c:choose>
 					</td>
-					<td align="center"><html:checkbox name="employeecontract"
-						property="freelancer" disabled="true" /></td>
-					<td align="center"><c:out
-						value="${employeecontract.dailyWorkingTime}" /></td>
+					<td align="center">
+						<html:checkbox name="employeecontract" property="freelancer" disabled="true" />
+					</td>
+					<td align="center">
+						<c:if test="${!employeecontract.dailyWorkingTime.zero}">
+							<java8:formatDuration value="${employeecontract.dailyWorkingTime}" />
+						</c:if>
+					</td>
 					<td align="center"><c:out
 						value="${employeecontract.vacationEntitlement}" /></td>
 				</c:otherwise>
