@@ -1,19 +1,16 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-	pageEncoding="ISO-8859-1"%>
-
+<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
-<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html>
 	<head>
 		<html:base />
 		<meta http-equiv="Content-Type"
-			content="text/html; charset=ISO-8859-1">
+			content="text/html; charset=UTF-8">
 		<title>
 			<bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.invoice.title.text" />
 		</title>
@@ -513,7 +510,7 @@
 				<c:if test="${! empty viewhelpers}">
 					<tr>
 						<td class="noBborderStyle" align="left">
-							<i>Hinweis: Bearbeiten der Anzeigeoptionen setzt die Änderung der Adresse zurück</i>
+							<i>Hinweis: Bearbeiten der Anzeigeoptionen setzt die Ã„nderung der Adresse zurÃ¼ck</i>
 						</td>
 					</tr>
 					<tr>

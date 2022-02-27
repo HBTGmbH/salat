@@ -1,18 +1,13 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-	pageEncoding="ISO-8859-1"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@ taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-
-
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 <head>
 <html:base />
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.employeecontracts.text" /></title>
 <link href="../style/select2.min.css" rel="stylesheet" />
@@ -215,7 +210,7 @@
 				<c:when test="${!employeecontract.currentlyValid}">
 					<td style="color:gray"><c:out value="${employeecontract.employee.name}" /></td>
 					<td style="color:gray"><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
-<%--	änderung				--%>
+<%--	Ã¤nderung				--%>
 					<td style="color:gray"><c:out value="${employeecontract.supervisor.name}" />&nbsp;</td>
 					<td style="color:gray"><c:out value="${employeecontract.validFrom}" /></td>
 					<td style="color:gray">
@@ -241,7 +236,7 @@
 				<c:otherwise>
 					<td><c:out value="${employeecontract.employee.name}" /></td>
 					<td><c:out value="${employeecontract.taskDescription}" />&nbsp;</td>
-	<%--	änderung				--%>
+	<%--	Ã¤nderung				--%>
 					<td><c:out value="${employeecontract.supervisor.name}" />&nbsp;</td>
 					<td><c:out value="${employeecontract.validFrom}" /></td>
 					<td>

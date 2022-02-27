@@ -1,4 +1,8 @@
 server:
+  tomcat:
+    resource:
+      allow-caching: true
+      cache-ttl: 1d
   servlet:
     session:
       persistent: false
@@ -27,6 +31,11 @@ spring:
       ddl-auto: validate
     open-in-view: true
     database: mysql
+  resources:
+    cache:
+      cachecontrol:
+        max-age: 1d
+
 management:
   endpoints:
     web:

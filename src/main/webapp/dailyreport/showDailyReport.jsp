@@ -1,19 +1,15 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-	pageEncoding="ISO-8859-1"%>
-<%@ taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-
+<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 	<head>
 		<html:base />
-		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
 		<link rel="stylesheet" type="text/css" href="../style/tb.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="../style/print.css" media="print" />
@@ -777,11 +773,11 @@
 							<td align="center">
 								<html:image	onclick="confirmSave(this.form, ${timereport.id})" src="../images/Save.gif" alt="Speichern" title="Speichern" />
 								&nbsp;
-								<html:link title="Ändern" href="../do/EditDailyReport?trId=${timereport.id}">
-									<img src="../images/Edit.gif" alt="Ändern" />
+								<html:link title="Ã„ndern" href="../do/EditDailyReport?trId=${timereport.id}">
+									<img src="../images/Edit.gif" alt="Ã„ndern" />
 								</html:link>
 								&nbsp;
-								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="../images/Delete.gif" alt="Löschen" title="Löschen" />
+								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="../images/Delete.gif" alt="LÃ¶schen" title="LÃ¶schen" />
 								&nbsp;
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
@@ -839,7 +835,7 @@
 				<td class="massedit invisible" align="center">
 					<html:form action="/ShowDailyReport" style="margin-bottom:0">
 						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
-						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="../images/Delete.gif" alt="Löschen" title="Löschen" />
+						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="../images/Delete.gif" alt="LÃ¶schen" title="LÃ¶schen" />
 						&nbsp;&nbsp;
 						<div class="massedit-time-shift-dropdown">
 							<img class="dropdown-btn" height="11" src="../images/Button/backwards.svg" title="Um Tage Verschieben" alt="Um Tage verschieben" onclick="$('.dropdown-content').focus()"/>
@@ -887,7 +883,7 @@
 			</b>
 		</span>
 	
-		<!-- Überstunden und Urlaubstage -->
+		<!-- Ãœberstunden und Urlaubstage -->
 		<c:choose>
 			<c:when test="${currentEmployee != 'ALL EMPLOYEES'}">
 				<br><br><br>
