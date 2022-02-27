@@ -4,9 +4,9 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@ taglib uri="/WEB-INF/treeTag.tld" prefix="myjsp"%>
+<%@ taglib uri="http://hbt.de/jsp/taglib/tree" prefix="tree"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-<%@ taglib uri="/WEB-INF/java8DateFormatting.tld" prefix="java8"%>
+<%@ taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
 <html:html>
@@ -238,7 +238,7 @@
 						<c:choose>
 							<c:when
 								test="${(employeeAuthorized || currentOrder.responsible_hbt.id == loginEmployee.id) && (currentOrder.currentlyValid || !currentOrder.hide)}">
-								<myjsp:tree mainProject="${currentOrder}"
+								<tree:tree mainProject="${currentOrder}"
 									subProjects="${suborders}" browser="<%=browser%>"
 									changeFunctionString="callEdit(this.form, 'default')"
 									deleteFunctionString="confirmDelete(this.form, 'default')"
@@ -246,7 +246,7 @@
 									currentSuborderID="0" endlessDate="<%=message%>" />
 							</c:when>
 							<c:otherwise>
-								<myjsp:tree mainProject="${currentOrder}"
+								<tree:tree mainProject="${currentOrder}"
 									subProjects="${suborders}" browser="<%=browser%>"
 									onlySuborders="true" defaultString="default"
 									currentSuborderID="0" endlessDate="<%=message%>" />
@@ -546,8 +546,9 @@
 									</c:choose></td>
 
 								<c:if test="${showActualHours}">
-									<td align="right"><fmt:formatNumber
-											value="${suborder.duration}" minFractionDigits="2" /></td>
+									<td align="right">
+										<java8:formatDuration value="${suborder.duration}" />
+									</td>
 									<td align="right"><c:choose>
 											<c:when test="${suborder.difference != null && suborder.debithoursunit != 0 && suborder.debithoursunit != 1 && suborder.debithoursunit != 12}">
 												<font color="#0000FF"><java8:formatDuration
@@ -564,8 +565,9 @@
 														value="${suborder.difference}" />
 											</c:when>
 										</c:choose></td>
-									<td align="right"><java8:formatDuration
-											value="${suborder.durationNotInvoiceable}" /></td>
+									<td align="right">
+										<java8:formatDuration value="${suborder.duration}" />
+									</td>
 								</c:if>
 							</c:when>
 							<c:otherwise>
@@ -680,7 +682,7 @@
 											</c:otherwise>
 										</c:choose>
 									</td>
-									<td align="right" style="color: gray"><fmt:formatNumber value="${suborder.durationNotInvoiceable}" minFractionDigits="2" /></td>
+									<td align="right" style="color: gray"><java8:formatDuration value="${suborder.durationNotInvoiceable}" /></td>
 								</c:if>
 							</c:otherwise>
 						</c:choose>
