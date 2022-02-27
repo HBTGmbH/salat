@@ -448,15 +448,15 @@
 				<table>
 					<tr class="matrix">
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.actualtime.text" /></td>
-						<td class="matrix underline" style="border-style: none; text-align: right"><c:out	value="${dayhourssumstring}"></c:out></td>
+						<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${dayhourssumstring}"></c:out></td>
 					</tr>
 					<tr class="matrix">
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
-						<td class="matrix underline" style="border-style: none; text-align: right"><c:out	value="${dayhourstargetstring}" /></td>
+						<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${dayhourstargetstring}" /></td>
 					</tr>
 					<tr class="matrix">
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
-						<td class="matrix underline" style="border-style:none;text-align: right;<c:if test="${dayhoursdiff < 0}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiffstring}" /></td>
+						<td class="matrix" style="border-style:none;text-align: right;<c:if test="${dayhoursdiff.negative}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiffstring}" /></td>
 					</tr>
 				</table>
 			</td>
