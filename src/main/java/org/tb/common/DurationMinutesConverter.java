@@ -9,11 +9,13 @@ public class DurationMinutesConverter implements AttributeConverter<Duration, In
 
   @Override
   public Integer convertToDatabaseColumn(Duration duration) {
+    if(duration == null) return null;
     return (int) duration.toMinutes();
   }
 
   @Override
   public Duration convertToEntityAttribute(Integer minutes) {
+    if(minutes == null) return null;
     return Duration.ofMinutes(minutes);
   }
 
