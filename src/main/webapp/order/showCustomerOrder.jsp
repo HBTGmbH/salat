@@ -12,7 +12,10 @@
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.customerorders.text" /></title>
 <link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link href="/style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+<script src="/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script src="/scripts/select2.full.min.js" type="text/javascript"></script>
 
 <script type="text/javascript" language="JavaScript">
  
@@ -42,6 +45,13 @@
 	function hideWMTT() {
 		wmtt.style.display = "none";
 	}
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'auto'
+		});
+	});
 </script>
 
 </head>
@@ -62,7 +72,7 @@
 			<td class="noBborderStyle" colspan="2"><b><bean:message
 				key="main.customerorder.customer.text" /></b></td>
 			<td class="noBborderStyle" colspan="9" align="left"><html:select
-				property="customerId" onchange="refresh(this.form)">
+				property="customerId" onchange="refresh(this.form)" styleClass="make-select2">
 				<html:option value="-1">
 					<bean:message key="main.general.allcustomers.text" />
 				</html:option>

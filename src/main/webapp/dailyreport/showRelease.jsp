@@ -9,9 +9,9 @@
 <head>
 
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="/style/tb.css" media="all" />
 <link href="/style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="stylesheet" type="text/css" href="/style/tb.css" media="all" />
 <link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
 <script src="/scripts/jquery-1.11.3.min.js"></script>
 <script src="/scripts/select2.full.min.js"></script>
@@ -107,7 +107,7 @@
 	$(document).ready(function() {
 		$(".make-select2").select2({
 			dropdownAutoWidth: true,
-			width: 'element'
+			width: 'auto'
 		});	
 	});		
 </script>
@@ -222,12 +222,12 @@
 							<b><bean:message key="main.release.release.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:select property="day">
+							<html:select property="day" styleClass="make-select2">
 								<html:options collection="days" property="value"
 									labelProperty="label" />
 							</html:select>
 
-							<html:select property="month" onchange="refreshMonth(this.form)">
+							<html:select property="month" onchange="refreshMonth(this.form)" styleClass="make-select2">
 								<html:option value="Jan">
 									<bean:message key="main.timereport.select.month.jan.text" />
 								</html:option>
@@ -266,7 +266,7 @@
 								</html:option>
 							</html:select>
 
-							<html:select property="year" onchange="refreshDate(this.form)">
+							<html:select property="year" onchange="refreshDate(this.form)" styleClass="make-select2">
 								<html:options collection="years" property="value"
 									labelProperty="label" />
 							</html:select>
@@ -297,12 +297,12 @@
 							<b><bean:message key="main.release.accept.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:select property="acceptanceDay">
+							<html:select property="acceptanceDay" styleClass="make-select2">
 								<html:options collection="acceptanceDays" property="value"
 									labelProperty="label" />
 							</html:select>
 
-							<html:select property="acceptanceMonth"
+							<html:select property="acceptanceMonth" styleClass="make-select2"
 								onchange="refreshAcceptanceMonth(this.form)">
 								<html:option value="Jan">
 									<bean:message key="main.timereport.select.month.jan.text" />
@@ -342,7 +342,7 @@
 								</html:option>
 							</html:select>
 
-							<html:select property="acceptanceYear"
+							<html:select property="acceptanceYear" styleClass="make-select2"
 								onchange="refreshAcceptanceDate(this.form)">
 								<html:options collection="years" property="value"
 									labelProperty="label" />
@@ -374,12 +374,12 @@
 							<b><bean:message key="main.release.reopen.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:select property="reopenDay">
+							<html:select property="reopenDay" styleClass="make-select2">
 								<html:options collection="reopenDays" property="value"
 									labelProperty="label" />
 							</html:select>
 
-							<html:select property="reopenMonth"
+							<html:select property="reopenMonth" styleClass="make-select2"
 								onchange="refreshReopenMonth(this.form)">
 								<html:option value="Jan">
 									<bean:message key="main.timereport.select.month.jan.text" />
@@ -419,7 +419,7 @@
 								</html:option>
 							</html:select>
 
-							<html:select property="reopenYear"
+							<html:select property="reopenYear" styleClass="make-select2"
 								onchange="refreshReopenDate(this.form)">
 								<html:options collection="years" property="value"
 									labelProperty="label" />

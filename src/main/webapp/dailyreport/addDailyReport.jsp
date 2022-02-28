@@ -95,7 +95,7 @@
 	$(document).ready(function() {
 		$(".ecCls").select2({
 			dropdownAutoWidth: true,
-			width: 'element'
+			width: 'auto'
 		});	
 		
 		HBT.Salat.FavouriteOrders.initializeOrderSelection();

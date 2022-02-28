@@ -145,7 +145,7 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 			var combo = $(".orderCls");
 			var elem = combo.select2({
 				dropdownAutoWidth: true,
-				width: 'element',
+				width: 'auto',
 			});
 			var defaultOrder = getOrder(combo[0]);
 			if(defaultOrder == null) return;
@@ -168,7 +168,7 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 			var comboSuborder = $(".suborderCls");
 			var elem = comboSuborder.select2({
 				dropdownAutoWidth: true,
-				width: 'element',
+				width: 'auto',
 			});
 			var selectedOrder = comboOrder[0].options[comboOrder[0].selectedIndex].value;
 			var defaultSuborder = getSuborder(comboSuborder[0], selectedOrder);

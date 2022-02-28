@@ -29,7 +29,7 @@
 		$(document).ready(function() {
 			$(".make-select2").select2({
 				dropdownAutoWidth: true,
-				width: 'element'
+				width: 'auto'
 			});	
 		});		
 	</script>
@@ -112,12 +112,12 @@
 				<td align="left" class="noBborderStyle"><c:if
 						test="${!(matrixview eq 'month')}">
 						<html:select property="fromDay" value="${currentDay}"
-							onchange="setUpdateMergedreportsAction(this.form)">
+							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
 							<html:options collection="days" property="value"
 								labelProperty="label" />
 						</html:select>
 					</c:if> <html:select property="fromMonth" value="${currentMonth}"
-						onchange="setUpdateMergedreportsAction(this.form)">
+						onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
 						<html:option value="Jan">
 							<bean:message key="main.timereport.select.month.jan.text" />
 						</html:option>
@@ -155,7 +155,7 @@
 							<bean:message key="main.timereport.select.month.dec.text" />
 						</html:option>
 					</html:select> <html:select property="fromYear" value="${currentYear}"
-						onchange="setUpdateMergedreportsAction(this.form)">
+						onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
 						<html:options collection="years" property="value"
 							labelProperty="label" />
 					</html:select></td>
@@ -168,11 +168,11 @@
 								key="main.monthlyreport.daymonthyear.text" />:</b></td>
 					<td align="left" class="noBborderStyle"><html:select
 							property="untilDay" value="${lastDay}"
-							onchange="setUpdateMergedreportsAction(this.form)">
+							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
 							<html:options collection="days" property="value"
 								labelProperty="label" />
 						</html:select> <html:select property="untilMonth" value="${lastMonth}"
-							onchange="setUpdateMergedreportsAction(this.form)">
+							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
 							<html:option value="Jan">
 								<bean:message key="main.timereport.select.month.jan.text" />
 							</html:option>
@@ -210,7 +210,7 @@
 								<bean:message key="main.timereport.select.month.dec.text" />
 							</html:option>
 						</html:select> <html:select property="untilYear" value="${lastYear}"
-							onchange="setUpdateMergedreportsAction(this.form)">
+							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
 							<html:options collection="years" property="value"
 								labelProperty="label" />
 						</html:select></td>

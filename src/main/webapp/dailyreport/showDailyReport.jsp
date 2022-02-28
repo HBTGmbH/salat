@@ -130,7 +130,7 @@
 	$(document).ready(function() {
 		$(".make-select2").select2({
 			dropdownAutoWidth: true,
-			width: 'element'
+			width: 'auto'
 		});	
 	});	
 	
@@ -235,7 +235,7 @@
 						<b><bean:message key="main.general.timereport.view.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:select property="view" onchange="setUpdateTimereportsAction(this.form)">
+						<html:select property="view" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
 							<html:option value="day">
 								<bean:message key="main.general.timereport.view.daily.text" />
 							</html:option>
@@ -304,7 +304,7 @@
 							</c:when>
 							<c:otherwise>
 								<html:select property="month" value="<%=(String) request.getSession().getAttribute(\"currentMonth\")%>" 
-									onchange="setUpdateTimereportsAction(this.form)">
+									onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
 									<html:option value="Jan">
 										<bean:message key="main.timereport.select.month.jan.text" />
 									</html:option>
@@ -342,8 +342,8 @@
 										<bean:message key="main.timereport.select.month.dec.text" />
 									</html:option>
 								</html:select>
-								<html:select property="year" value="<%=(String) request.getSession().getAttribute(\"currentYear\")%>" 
-									onchange="setUpdateTimereportsAction(this.form)">
+								<html:select property="year" value="<%=(String) request.getSession().getAttribute(\"currentYear\")%>"
+									onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
 									<html:options collection="years" property="value" labelProperty="label" />
 								</html:select>
 							</c:otherwise>
@@ -444,11 +444,11 @@
 							</td>
 							<td align="left" class="noBborderStyle">
 								<nobr>
-									<html:select property="selectedWorkHourBegin">
+									<html:select property="selectedWorkHourBegin" styleClass="make-select2">
 										<html:options collection="hours" property="value" labelProperty="label" />
 									</html:select>
 									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-									<html:select property="selectedWorkMinuteBegin">
+									<html:select property="selectedWorkMinuteBegin" styleClass="make-select2">
 										<html:options collection="minutes" property="value" labelProperty="label" />
 									</html:select>
 									&nbsp;&nbsp;
@@ -465,11 +465,11 @@
 									<b><bean:message key="main.timereport.breakduration.text" /></b> <i>(hh:mm)</i><b>:</b>
 								</td>
 								<td align="left" class="noBborderStyle">
-									<html:select property="selectedBreakHour">
+									<html:select property="selectedBreakHour" styleClass="make-select2">
 										<html:options collection="breakhours" property="value" labelProperty="label" />
 									</html:select>
 									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> 
-									<html:select property="selectedBreakMinute">
+									<html:select property="selectedBreakMinute" styleClass="make-select2">
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
 									&nbsp;&nbsp; 
@@ -761,10 +761,10 @@
 		
 							<!-- Dauer -->
 							<td align="center" nowrap="nowrap">
-								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborder.sign eq overtimeCompensation}">
+								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborder.sign eq overtimeCompensation}" styleClass="make-select2">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
-								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborder.sign eq overtimeCompensation}">
+								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborder.sign eq overtimeCompensation}" styleClass="make-select2">
 									<html:options collection="minutes" property="value"	labelProperty="label" />
 								</html:select>
 							</td>
