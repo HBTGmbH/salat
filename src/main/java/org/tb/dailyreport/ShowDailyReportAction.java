@@ -518,10 +518,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             // unreachable code
             assert false;
         }
-        Workingday duplicate = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(workingday.getRefday(), workingday.getEmployeecontract().getId());
-        if (duplicate != null) {
-            workingday.setId(duplicate.getId());
-        }
         workingdayDAO.save(workingday);
         //show break time, quitting time and working day ends on the showdailyreport.jsp
         request.getSession().setAttribute("visibleworkingday", true);

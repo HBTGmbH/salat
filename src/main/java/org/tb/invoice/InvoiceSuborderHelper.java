@@ -148,16 +148,8 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getCreated();
     }
 
-    public void setCreated(LocalDateTime created) {
-        suborder.setCreated(created);
-    }
-
     public String getCreatedby() {
         return suborder.getCreatedby();
-    }
-
-    public void setCreatedby(String createdby) {
-        suborder.setCreatedby(createdby);
     }
 
     public boolean getCurrentlyValid() {
@@ -242,10 +234,6 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getId();
     }
 
-    public void setId(long id) {
-        suborder.setId(id);
-    }
-
     public char getInvoice() {
         return suborder.getInvoice();
     }
@@ -266,16 +254,8 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getLastupdate();
     }
 
-    public void setLastupdate(LocalDateTime lastupdate) {
-        suborder.setLastupdate(lastupdate);
-    }
-
     public String getLastupdatedby() {
         return suborder.getLastupdatedby();
-    }
-
-    public void setLastupdatedby(String lastupdatedby) {
-        suborder.setLastupdatedby(lastupdatedby);
     }
 
     public Boolean getNoEmployeeOrderContent() {
@@ -354,23 +334,11 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getUpdatecounter();
     }
 
-    public void setUpdatecounter(Integer updatecounter) {
-        suborder.setUpdatecounter(updatecounter);
-    }
-
-    public int hashCode() {
-        return suborder.hashCode();
-    }
-
     public void setCustomerOrderForAllDescendants(Customerorder customerOrder,
                                                   SuborderDAO suborderDAO, Employee loginEmployee,
                                                   Suborder rootSuborder) {
         suborder.setCustomerOrderForAllDescendants(customerOrder, suborderDAO,
                 loginEmployee, rootSuborder);
-    }
-
-    public String toString() {
-        return suborder.toString();
     }
 
     public boolean validityPeriodFitsToCustomerOrder() {

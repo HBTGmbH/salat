@@ -360,8 +360,6 @@ public class Suborder extends AuditedEntity implements Serializable {
 
         // set attrib values in copy
         copy.setCommentnecessary(commentnecessary);
-        copy.setCreated(DateUtils.now());
-        copy.setCreatedby(creator + "_treecopy");
         copy.setCustomerorder(customerorder);
         copy.setDebithours(getDebithours()); // see #getDebithours
         copy.setDebithoursunit(debithoursunit);
