@@ -18,7 +18,7 @@ public class FormatLocalDateTimeTag extends TagSupport {
     if(value != null) {
       JspWriter out = pageContext.getOut();
       try {
-        out.print(DateUtils.formatDateTime(value, "yyyy.MM.dd HH:mm:ss"));
+        out.print(DateUtils.formatDateTime(value, "yyyy-MM-dd HH:mm:ss"));
         return super.doStartTag();
       } catch (IOException e) {
         throw new JspException(e);
