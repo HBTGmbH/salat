@@ -5,7 +5,7 @@ import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.springframework.stereotype.Service;
-import org.tb.configuration.SalatProperties;
+import org.tb.common.configuration.SalatProperties;
 import org.tb.employee.Employee;
 import org.tb.statusreport.Statusreport;
 

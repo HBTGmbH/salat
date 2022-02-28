@@ -1,4 +1,4 @@
-package org.tb.configuration;
+package org.tb.common.configuration;
 
 import java.io.IOException;
 import javax.servlet.FilterChain;

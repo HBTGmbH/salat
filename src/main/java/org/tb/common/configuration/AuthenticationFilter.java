@@ -1,4 +1,4 @@
-package org.tb.configuration;
+package org.tb.common.configuration;
 
 import static java.lang.Boolean.TRUE;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_ADM;

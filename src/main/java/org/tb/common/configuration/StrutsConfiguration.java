@@ -1,4 +1,4 @@
-package org.tb.configuration;
+package org.tb.common.configuration;
 
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionServlet;

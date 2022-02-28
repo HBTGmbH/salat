@@ -1,4 +1,4 @@
-package org.tb.configuration;
+package org.tb.common.configuration;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
