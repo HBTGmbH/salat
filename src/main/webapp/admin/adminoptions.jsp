@@ -7,14 +7,14 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - Admin</title>
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 <script type="text/javascript" language="JavaScript">
 	
 	function setAction(form, actionVal) {	
- 		form.action = "../do/ShowAdminOptions?task=" + actionVal;
+ 		form.action = "/do/ShowAdminOptions?task=" + actionVal;
 		form.submit();
 	}
 	

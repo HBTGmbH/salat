@@ -7,18 +7,18 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link href="../style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-<script src="../scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
-<script src="../scripts/select2.full.min.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link href="/style/select2.min.css" rel="stylesheet" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+<script src="/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script src="/scripts/select2.full.min.js" type="text/javascript"></script>
 <script>
 	var currentUser = "${currentEmployeeContract.employee.sign}";
 </script>
-<script src="../scripts/favouriteOrder.js" type="text/javascript"></script>
+<script src="/scripts/favouriteOrder.js" type="text/javascript"></script>
 <% java.text.DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");%>
 <script type="text/javascript">
 	if(typeof Storage !== "undefined") HBT.Salat.FavouriteOrders.initialize({
@@ -32,7 +32,7 @@
 	});
 
  	function setUpdateOrdersAction(form) {
- 		form.action = "../do/StoreDailyReport?task=refreshOrders";
+ 		form.action = "/do/StoreDailyReport?task=refreshOrders";
 		form.submit();
 	}	
 	
@@ -48,47 +48,47 @@
 	 		}
  		}
 		
-		form.action = "../do/StoreDailyReport?task=refreshSuborders" + paramToAdd;
+		form.action = "/do/StoreDailyReport?task=refreshSuborders" + paramToAdd;
 		form.submit();
 	}			
 	
 	function adjustBeginTimeAction(form) {
-		form.action = "../do/StoreDailyReport?task=adjustBeginTime";
+		form.action = "/do/StoreDailyReport?task=adjustBeginTime";
 		form.submit();
 	}
 	
 	function adjustSuborderSignChangedAction(form) {	
- 		form.action = "../do/StoreDailyReport?task=adjustSuborderSignChanged";
+ 		form.action = "/do/StoreDailyReport?task=adjustSuborderSignChanged";
 		form.submit();
 	}
 	
 	function afterCalenderClick() {
-		document.forms[0].action = "../do/StoreDailyReport?task=adjustBeginTime";
+		document.forms[0].action = "/do/StoreDailyReport?task=adjustBeginTime";
 		document.forms[0].submit();	
 	}			
 	
 	function setDate(howMuch) {
-		document.forms[0].action = "../do/StoreDailyReport?task=setDate&howMuch=" + howMuch;
+		document.forms[0].action = "/do/StoreDailyReport?task=setDate&howMuch=" + howMuch;
 		document.forms[0].submit();
 	}
 	
 	function setUpdateHoursAction(form) {
- 		form.action = "../do/StoreDailyReport?task=refreshHours";
+ 		form.action = "/do/StoreDailyReport?task=refreshHours";
 		form.submit();
 	}	
 	
 	function setUpdatePeriodAction(form) {	
- 		form.action = "../do/StoreDailyReport?task=refreshPeriod";
+ 		form.action = "/do/StoreDailyReport?task=refreshPeriod";
 		form.submit();
 	}	
 	
 	function setStoreAction(form, actionVal, addMore) {
-		form.action = "../do/StoreDailyReport?task=" + actionVal + "&continue=" + addMore;
+		form.action = "/do/StoreDailyReport?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 	}	
 			
 	function backToOverview(form) {	
- 		form.action = "../do/ShowDailyReport?task=refreshTimereports";
+ 		form.action = "/do/ShowDailyReport?task=refreshTimereports";
 		form.submit();
 	}
 
@@ -163,7 +163,7 @@
 			</td>
 			<td align="left" class="noBborderStyle">
 				<!-- JavaScript Stuff for popup calender -->
-				<script type="text/javascript" language="JavaScript" src="../scripts/CalendarPopup.js">
+				<script type="text/javascript" language="JavaScript" src="/scripts/CalendarPopup.js">
 				</script>
 				<script type="text/javascript" language="JavaScript">
                     document.write(getCalendarStyles());
@@ -189,7 +189,7 @@
                 	readonly="false" size="10" maxlength="10" 
                 	onkeyup="hitEnter(event, this.form);"/>
                 <a href="javascript:calenderPopup()" name="anchor1" ID="anchor1" style="text-decoration:none;">
-                	<img src="../images/popupcalendar.gif" width="22" height="22"
+                	<img src="/images/popupcalendar.gif" width="22" height="22"
 						 alt="<bean:message key="main.date.popup.alt.text" />"
 						 style="border:0;vertical-align:top">
 				</a>
@@ -197,15 +197,15 @@
 				<%-- Arrows for navigating the Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />">
-					<img src="../images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />">
-					<img src="../images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />">
-					<img src="../images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+					<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				<span style="color:red">
 					<html:errors property="referenceday" />
@@ -238,13 +238,13 @@
 				<html:select property="orderId" onchange="setUpdateSubordersAction(this)" styleClass="make-select2 orderCls">
 					<html:options collection="orders" labelProperty="signAndDescription" property="id" />
 				</html:select>
-				<img id="favOrderBtn" class="favOrderBtn" src="../images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
+				<img id="favOrderBtn" class="favOrderBtn" src="/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
 				<b> / </b>
 				<html:select property="suborderSignId" styleClass="mandatory make-select2 suborderCls" value="${currentSuborderId}"
 					onchange="adjustSuborderSignChangedAction(this.form)">
 					<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
 				</html:select>
-				<img id="favSuborderBtn" class="favOrderBtn" src="../images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
+				<img id="favSuborderBtn" class="favOrderBtn" src="/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
 				<span style="color:red">
 					<html:errors property="orderId" />
 					<html:errors property="suborderId" />

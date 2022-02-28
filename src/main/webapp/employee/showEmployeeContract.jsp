@@ -6,28 +6,28 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.employeecontracts.text" /></title>
-<link href="../style/select2.min.css" rel="stylesheet" />
-<script src="../scripts/jquery-1.11.3.min.js"></script>
-<script src="../scripts/select2.full.min.js"></script>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<link href="/style/select2.min.css" rel="stylesheet" />
+<script src="/scripts/jquery-1.11.3.min.js"></script>
+<script src="/scripts/select2.full.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
  
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "../do/DeleteEmployeecontract?ecId=" + id;
+			form.action = "/do/DeleteEmployeecontract?ecId=" + id;
 			form.submit();
 		}
 	}
 	
 	function refresh(form) {	
-		form.action = "../do/ShowEmployeecontract?task=refresh";
+		form.action = "/do/ShowEmployeecontract?task=refresh";
 		form.submit();
 	}
 						
@@ -203,7 +203,7 @@
 				</div>
 				<img onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
 					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="../images/info_button.gif" />
+					src="/images/info_button.gif" />
 			</td>
 			
 			<c:choose>
@@ -264,13 +264,13 @@
 			
 			<c:if test="${employeeAuthorized}">
 				<td align="center"><html:link
-					href="../do/EditEmployeecontract?ecId=${employeecontract.id}">
-					<img src="../images/Edit.gif" alt="Edit Employeecontract" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text"/>"/>
+					href="/do/EditEmployeecontract?ecId=${employeecontract.id}">
+					<img src="/images/Edit.gif" alt="Edit Employeecontract" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text"/>"/>
 				</html:link></td>
 				<html:form action="/DeleteEmployeecontract">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employeecontract.id})"
-						src="../images/Delete.gif" alt="Delete Employeecontract" titleKey="main.headlinedescription.employeecontracts.delete.text"/></td>
+						src="/images/Delete.gif" alt="Delete Employeecontract" titleKey="main.headlinedescription.employeecontracts.delete.text"/></td>
 				</html:form>
 			</c:if>
 			</tr>

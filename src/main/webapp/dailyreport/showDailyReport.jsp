@@ -8,48 +8,48 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 	<head>
-		<html:base />
+
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
-		<link rel="stylesheet" type="text/css" href="../style/tb.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="../style/print.css" media="print" />
-		<link href="../style/select2.min.css" rel="stylesheet" />
-		<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-		<script src="../scripts/jquery-1.11.3.min.js"></script>
-		<script src="../scripts/select2.full.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="/style/tb.css" media="all" />
+		<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
+		<link href="/style/select2.min.css" rel="stylesheet" />
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+		<script src="/scripts/jquery-1.11.3.min.js"></script>
+		<script src="/scripts/select2.full.min.js"></script>
 		<script type="text/javascript" language="JavaScript">
 			var failedMassEditIds = '${failedMassEditIds.toString()}';
 			if(failedMassEditIds != "") {
 				failedMassEditIds = JSON.parse(failedMassEditIds);
 			}
 		</script>
-		<script src="../scripts/massedit.js"></script>
+		<script src="/scripts/massedit.js"></script>
 		<script type="text/javascript" language="JavaScript">
 		
 		
 	function afterCalenderClick() {
-		document.forms[0].action = "../do/ShowDailyReport?task=refreshTimereports";
+		document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
 		document.forms[0].submit();
 	}			
 		
 	function changeDateAndUpdateTimereportsAction(form, date, change) {
-		form.action = "../do/ShowDailyReport?task=refreshTimereports&date=" + date + "&change=" + change;
+		form.action = "/do/ShowDailyReport?task=refreshTimereports&date=" + date + "&change=" + change;
 		form.submit();
 	}
 		
  	function setUpdateTimereportsAction(form) {	
- 		form.action = "../do/ShowDailyReport?task=refreshTimereports";
+ 		form.action = "/do/ShowDailyReport?task=refreshTimereports";
 		form.submit();
 	}	
  
  	function setUpdateOrdersAction(form) {	
- 		form.action = "../do/ShowDailyReport?task=refreshOrders";
+ 		form.action = "/do/ShowDailyReport?task=refreshOrders";
 		form.submit();
 	}	
 	
 	function setUpdateSubordersAction(form, id) {		
 		alert('id: ' + id);
- 		form.action = "../do/ShowDailyReport?task=refreshSuborders&trId=" + id;
+ 		form.action = "/do/ShowDailyReport?task=refreshSuborders&trId=" + id;
 		form.submit();
 	}		
 	
@@ -58,25 +58,25 @@
 	}	
 	
 	function createNewReportAction(form) {	
- 		form.action = "../do/CreateDailyReport";
+ 		form.action = "/do/CreateDailyReport";
 		form.submit();
 	}	
 	
 	function setStoreAction(form, actionVal) {	
- 		form.action = "../do/StoreDailyReport?task=" + actionVal;
+ 		form.action = "/do/StoreDailyReport?task=" + actionVal;
 		form.submit();
 	}
 	
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "../do/DeleteTimereportFromDailyDisplay?trId=" + id;
+			form.action = "/do/DeleteTimereportFromDailyDisplay?trId=" + id;
 			form.submit();
 		}
 	}
 	
 	function submitUpdateDailyReport(form, id) {
-		form.action = "../do/UpdateDailyReport?trId=" + id;
+		form.action = "/do/UpdateDailyReport?trId=" + id;
 		form.submit();
 	}
 	
@@ -93,17 +93,17 @@
 	}
 	
 	function saveBegin(form) {
-		form.action = "../do/ShowDailyReport?task=saveBegin";
+		form.action = "/do/ShowDailyReport?task=saveBegin";
 		form.submit();
 	}
 	
 	function saveBreak(form) {
-		form.action = "../do/ShowDailyReport?task=saveBreak";
+		form.action = "/do/ShowDailyReport?task=saveBreak";
 		form.submit();
 	}	
 					
   	function setUpdateTimereportsAction(form) {	
- 		form.action = "../do/ShowDailyReport?task=refreshTimereports";
+ 		form.action = "/do/ShowDailyReport?task=refreshTimereports";
 		form.submit();
 	}	
 	
@@ -269,7 +269,7 @@
 						<!-- JavaScript Stuff for popup calender -->
 						<c:choose>
 							<c:when test="${!(view eq 'month')}">
-								<script type="text/javascript" language="JavaScript" src="../scripts/CalendarPopup.js">
+								<script type="text/javascript" language="JavaScript" src="/scripts/CalendarPopup.js">
 								</script>
 								<script type="text/javascript" language="JavaScript">
 									document.write(getCalendarStyles());
@@ -286,19 +286,19 @@
 				                </script>
 								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" onkeydown="if(event.keyCode=13){setUpdateTimereportsAction(this.form);return false;}"/>
 								<a href="javascript:calenderPopupStartdate()" name="anchor1" ID="anchor1" style="text-decoration: none;">
-									<img src="../images/popupcalendar.gif" width="22" height="22" alt='<bean:message key="main.date.popup.alt.text" />' style="border: 0; vertical-align: top">
+									<img src="/images/popupcalendar.gif" width="22" height="22" alt='<bean:message key="main.date.popup.alt.text" />' style="border: 0; vertical-align: top">
 								</a>
 								<%-- Arrows for navigating the Date --%>
 								&nbsp;&nbsp;
-								<html:image src="../images/pfeil_links.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
+								<html:image src="/images/pfeil_links.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
 									onclick="changeDateAndUpdateTimereportsAction(this.form,'start','-1')" titleKey="main.date.popup.prevday">
 								</html:image>
 								&nbsp;&nbsp;
-								<html:image src="../images/pfeil_unten.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
+								<html:image src="/images/pfeil_unten.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
 									onclick="changeDateAndUpdateTimereportsAction(this.form,'start','0')" titleKey="main.date.popup.today">
 								</html:image>
 								&nbsp;&nbsp;
-								<html:image src="../images/pfeil_rechts.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
+								<html:image src="/images/pfeil_rechts.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
 									onclick="changeDateAndUpdateTimereportsAction(this.form,'start','1')" titleKey="main.date.popup.nextday">
 								</html:image>
 							</c:when>
@@ -370,19 +370,19 @@
 							</script>
 							<html:text property="enddate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" />
 							<a href="javascript:calenderPopupEnddate()" name="anchor2" ID="anchor2" style="text-decoration: none;">
-								<img src="../images/popupcalendar.gif" width="22" height="22" alt="<bean:message key="main.date.popup.alt.text" />" style="border: 0; vertical-align: top">
+								<img src="/images/popupcalendar.gif" width="22" height="22" alt="<bean:message key="main.date.popup.alt.text" />" style="border: 0; vertical-align: top">
 							</a> 
 							<%-- Arrows for navigating the Date --%>
 							&nbsp;&nbsp;
-							<html:image src="../images/pfeil_links.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
+							<html:image src="/images/pfeil_links.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
 								onclick="changeDateAndUpdateTimereportsAction(this.form,'end','-1')" titleKey="main.date.popup.prevday">
 							</html:image>
 							&nbsp;&nbsp;
-							<html:image src="../images/pfeil_unten.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
+							<html:image src="/images/pfeil_unten.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
 								onclick="changeDateAndUpdateTimereportsAction(this.form,'end','0')" titleKey="main.date.popup.today">
 							</html:image>
 							&nbsp;&nbsp;
-							<html:image src="../images/pfeil_rechts.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
+							<html:image src="/images/pfeil_rechts.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
 								onclick="changeDateAndUpdateTimereportsAction(this.form,'end','1')" titleKey="main.date.popup.nextday">
 							</html:image>
 						</td>
@@ -452,7 +452,7 @@
 										<html:options collection="minutes" property="value" labelProperty="label" />
 									</html:select>
 									&nbsp;&nbsp;
-									<html:image onclick="saveBegin(this.form)" src="../images/Save.gif" alt="save start of work" />
+									<html:image onclick="saveBegin(this.form)" src="/images/Save.gif" alt="save start of work" />
 									&nbsp;&nbsp; <i>(optional)</i>
 								</nobr>
 							</td>
@@ -473,7 +473,7 @@
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
 									&nbsp;&nbsp; 
-									<html:image onclick="saveBreak(this.form)" src="../images/Save.gif" alt="save break" />
+									<html:image onclick="saveBreak(this.form)" src="/images/Save.gif" alt="save break" />
 									&nbsp;&nbsp;<i>(optional)</i>
 								</td>
 							</tr>
@@ -556,7 +556,7 @@
 					<b>Info</b>
 				</th>
 				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.employee.text' />">
-					<html:link href="../do/ShowDailyReport?task=sort&column=employee">
+					<html:link href="/do/ShowDailyReport?task=sort&column=employee">
 						<b><bean:message key="main.timereport.monthly.employee.sign.text" /></b>
 					</html:link>
 					<c:if test="${timereportSortColumn eq 'employee'}">
@@ -564,7 +564,7 @@
 					</c:if>
 				</th>
 				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.refday.text' />">
-					<html:link href="../do/ShowDailyReport?task=sort&column=refday">
+					<html:link href="/do/ShowDailyReport?task=sort&column=refday">
 						<b><bean:message key="main.timereport.monthly.refday.text" /></b>
 					</html:link>
 					<c:if test="${timereportSortColumn eq 'refday'}">
@@ -572,7 +572,7 @@
 					</c:if>
 				</th>
 				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.customerorder.text' />">
-					<html:link href="../do/ShowDailyReport?task=sort&column=order">
+					<html:link href="/do/ShowDailyReport?task=sort&column=order">
 						<b><bean:message key="main.timereport.monthly.customerorder.text" /></b>
 					</html:link>
 					<c:if test="${timereportSortColumn eq 'order'}">
@@ -700,9 +700,9 @@
 							</table>
 						</div>
 						<img onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')" 
-							onMouseOut="hideWMTT()" width="12px" height="12px" src="../images/info_button.gif" />
+							onMouseOut="hideWMTT()" width="12px" height="12px" src="/images/info_button.gif" />
 						<c:if test="${!timereport.fitsToContract}">
-							<img width="20px" height="20px" src="../images/Pin%20rot.gif" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
+							<img width="20px" height="20px" src="/images/Pin%20rot.gif" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
 						</c:if>
 					</td>
 		
@@ -771,13 +771,13 @@
 
 							<!-- Bearbeiten -->
 							<td align="center">
-								<html:image	onclick="confirmSave(this.form, ${timereport.id})" src="../images/Save.gif" alt="Speichern" title="Speichern" />
+								<html:image	onclick="confirmSave(this.form, ${timereport.id})" src="/images/Save.gif" alt="Speichern" title="Speichern" />
 								&nbsp;
-								<html:link title="Ändern" href="../do/EditDailyReport?trId=${timereport.id}">
-									<img src="../images/Edit.gif" alt="Ändern" />
+								<html:link title="Ändern" href="/do/EditDailyReport?trId=${timereport.id}">
+									<img src="/images/Edit.gif" alt="Ändern" />
 								</html:link>
 								&nbsp;
-								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="../images/Delete.gif" alt="Löschen" title="Löschen" />
+								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="/images/Delete.gif" alt="Löschen" title="Löschen" />
 								&nbsp;
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
@@ -806,7 +806,7 @@
 							</td>
 							<!-- Bearbeiten -->
 							<td align="center">
-								<img width="12px" height="12px" src="../images/verbot.gif" alt="Delete Timereport" />
+								<img width="12px" height="12px" src="/images/verbot.gif" alt="Delete Timereport" />
 							</td>
 						</c:otherwise>
 					</c:choose>
@@ -835,10 +835,10 @@
 				<td class="massedit invisible" align="center">
 					<html:form action="/ShowDailyReport" style="margin-bottom:0">
 						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
-						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="../images/Delete.gif" alt="Löschen" title="Löschen" />
+						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="/images/Delete.gif" alt="Löschen" title="Löschen" />
 						&nbsp;&nbsp;
 						<div class="massedit-time-shift-dropdown">
-							<img class="dropdown-btn" height="11" src="../images/Button/backwards.svg" title="Um Tage Verschieben" alt="Um Tage verschieben" onclick="$('.dropdown-content').focus()"/>
+							<img class="dropdown-btn" height="11" src="/images/Button/backwards.svg" title="Um Tage Verschieben" alt="Um Tage verschieben" onclick="$('.dropdown-content').focus()"/>
 							<div class="dropdown-content" tabindex="1">
 								<table>
 									<tr><th colspan="2"><bean:message key="main.timereport.mass.edit.shift.days.text" /></th></tr>

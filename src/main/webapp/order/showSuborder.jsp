@@ -8,35 +8,35 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 	<bean:message key="main.general.mainmenu.suborders.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link href="../style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-<script src="../scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
-<script src="../scripts/select2.full.min.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link href="/style/select2.min.css" rel="stylesheet" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+<script src="/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script src="/scripts/select2.full.min.js" type="text/javascript"></script>
 
 <script type="text/javascript" language="JavaScript">
 
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "../do/DeleteSuborder?soId=" + id;
+			form.action = "/do/DeleteSuborder?soId=" + id;
 			form.submit();
 		}
 	}	
 	
 	function refresh(form) {	
-		form.action = "../do/ShowSuborder?task=refresh";
+		form.action = "/do/ShowSuborder?task=refresh";
 		form.submit();
 	}
 	
 	function setflag(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmsetflag.text" />");
 		if (agree) {
-			form.action = "../do/ShowSuborder?task=setflag";
+			form.action = "/do/ShowSuborder?task=setflag";
 			form.submit();
 		}
 	}
@@ -61,7 +61,7 @@
 			if (document.getElementById("suborderOption").selectedIndex == 1) {
 				var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 				if (agree) {
-					form.action = "../do/ShowSuborder?task=multiplechange";
+					form.action = "/do/ShowSuborder?task=multiplechange";
 					form.submit();
 				} else {
 					var element = document.getElementById("suborderOption");
@@ -73,7 +73,7 @@
 				var Eingabe = window.prompt("<bean:message key="main.general.confirmchangesubordercustomer.text" />", "");
 				if (Eingabe){
 					document.getElementById("suborderOptionValue").value = Eingabe;
-					form.action = "../do/ShowSuborder?task=multiplechange";
+					form.action = "/do/ShowSuborder?task=multiplechange";
 					form.submit();
 				} else {
 					var element = document.getElementById("suborderOption");
@@ -107,7 +107,7 @@
 	}
 	
 	function callEdit(form, soId) {
-		form.action = "../do/EditSuborder?soId=" + soId;
+		form.action = "/do/EditSuborder?soId=" + soId;
 		form.submit();
 	}
 
@@ -252,11 +252,11 @@
 					</tr>
 					<br>
 					<td class="noBborderStyle" nowrap align="left"><img id="img1"
-																		src="../images/Edit.gif" border="0"> <bean:message
+																		src="/images/Edit.gif" border="0"> <bean:message
 							key="main.general.structureInstructionEdit.text" /></td>
 					<br>
 					<td class="noBborderStyle" nowrap align="left"><img id="img1"
-																		src="../images/Delete.gif" border="0"> <bean:message
+																		src="/images/Delete.gif" border="0"> <bean:message
 							key="main.general.structureInstructionDelete.text" /></td>
 				</c:when>
 				<c:otherwise>
@@ -452,7 +452,7 @@
 							</div> <img
 							onMouseOver="showWMTT(this,'info<c:out value="${suborder.id}" />')"
 							onMouseOut="hideWMTT()" width="12px" height="12px"
-							src="../images/info_button.gif" />
+							src="/images/info_button.gif" />
 						</td>
 
 						<!-- invalid suborders should be gray -->
@@ -688,21 +688,21 @@
 							<c:when
 								test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 								<td align="center"><html:link
-										href="../do/EditSuborder?soId=${suborder.id}">
-										<img src="../images/Edit.gif" alt="Edit Suborder"
+										href="/do/EditSuborder?soId=${suborder.id}">
+										<img src="/images/Edit.gif" alt="Edit Suborder"
 											 title="<bean:message key="main.headlinedescription.suborders.edit.text"/>" />
 									</html:link></td>
 								<td align="center"><html:image
 										onclick="confirmDelete(this.form, ${suborder.id})"
-										src="../images/Delete.gif" alt="Delete Suborder"
+										src="/images/Delete.gif" alt="Delete Suborder"
 										titleKey="main.headlinedescription.suborders.delete.text" /></td>
 							</c:when>
 							<c:otherwise>
 								<td align="center"><img height="12px" width="12px"
-														src="../images/verbot.gif" alt="Edit Suborder"
+														src="/images/verbot.gif" alt="Edit Suborder"
 														title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
 								<td align="center"><img height="12px" width="12px"
-														src="../images/verbot.gif" alt="Delete Suborder"
+														src="/images/verbot.gif" alt="Delete Suborder"
 														title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
 							</c:otherwise>
 						</c:choose>

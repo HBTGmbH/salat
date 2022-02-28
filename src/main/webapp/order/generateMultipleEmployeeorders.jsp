@@ -7,23 +7,23 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.multipleEmployeeorders.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link href="../style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
-<script src="../scripts/jquery-1.11.3.min.js"></script>
-<script src="../scripts/select2.full.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link href="/style/select2.min.css" rel="stylesheet" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+<script src="/scripts/jquery-1.11.3.min.js"></script>
+<script src="/scripts/select2.full.min.js"></script>
 <script type="text/javascript" language="JavaScript">
 function refresh(form) {	
-	form.action = "../do/GenerateMultipleEmployeeorders?task=refresh";
+	form.action = "/do/GenerateMultipleEmployeeorders?task=refresh";
 	form.submit();
 }
 
 function multipleChange(form) {
-	    	form.action = "../do/GenerateMultipleEmployeeorders?task=multiplechange";
+	    	form.action = "/do/GenerateMultipleEmployeeorders?task=multiplechange";
 			form.submit();
 }
 

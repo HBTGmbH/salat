@@ -2,7 +2,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <html:html>
     <head>
-        <html:base />
+
     </head>
     <body>
         <h1 style="color: green">SUCCESS</h1>

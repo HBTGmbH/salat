@@ -9,24 +9,24 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.addemployeeordercontent.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
 	
 	function setStoreAction(form, actionVal) {	
- 		form.action = "../do/StoreEmployeeOrderContent?action=" + actionVal;
+ 		form.action = "/do/StoreEmployeeOrderContent?action=" + actionVal;
 		form.submit();
 	}
 		
 	function confirmBack(form) {	
 		var agree=confirm("<bean:message key="main.general.confirmback.text" />");
 		if (agree) {
-			form.action = "../do/StoreEmployeeOrderContent?action=back";
+			form.action = "/do/StoreEmployeeOrderContent?action=back";
 			form.submit();
 		}
 	}

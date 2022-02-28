@@ -5,24 +5,24 @@
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.employees.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
  
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "../do/DeleteEmployee?emId=" + id;
+			form.action = "/do/DeleteEmployee?emId=" + id;
 			form.submit();
 		}
 	}	
 	
 	function refresh(form) {	
-		form.action = "../do/ShowEmployee?task=refresh";
+		form.action = "/do/ShowEmployee?task=refresh";
 		form.submit();
 	}
 					
@@ -162,7 +162,7 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${employee.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="../images/info_button.gif" />
+				src="/images/info_button.gif" />
 			</td>
 			
 			
@@ -177,13 +177,13 @@
 			<td align="center"><c:out value="${employee.gender}" /></td>
 			<c:if test="${employeeAuthorized}">
 				<td align="center"><html:link
-					href="../do/EditEmployee?emId=${employee.id}">
-					<img src="../images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
+					href="/do/EditEmployee?emId=${employee.id}">
+					<img src="/images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
 				</html:link></td>
 				<html:form action="/DeleteEmployee">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employee.id})"
-						src="../images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
+						src="/images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
 				</html:form>
 			</c:if>
 			</tr>

@@ -111,12 +111,12 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 				var selected = elem.options[elem.selectedIndex].value;
 				if(img.getAttribute("data-isFav") == "true") {
 					if(!setOrder(selected, false)) return;
-					img.src = "../images/Button/whiteStar.svg"
+					img.src = "/images/Button/whiteStar.svg"
 					img.title = lang.noDefaultOrder;
 					img.removeAttribute("data-isFav");
 				} else {
 					if(!setOrder(selected, true)) return;
-					img.src = "../images/Button/goldStar.svg"
+					img.src = "/images/Button/goldStar.svg"
 					img.title = lang.thisIsTheDefaultOrder;
 					img.setAttribute("data-isFav", "true");
 				}
@@ -130,12 +130,12 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 				var selectedSuborder = elemSuborder.options[elemSuborder.selectedIndex].value;
 				if(img.getAttribute("data-isFav") == "true") {
 					if(!setSuborder(selectedOrder, selectedSuborder, false)) return;
-					img.src = "../images/Button/whiteStar.svg"
+					img.src = "/images/Button/whiteStar.svg"
 					img.title = lang.noDefaultSuborder;
 					img.removeAttribute("data-isFav");
 				} else {
 					if(!setSuborder(selectedOrder, selectedSuborder, true)) return;
-					img.src = "../images/Button/goldStar.svg"
+					img.src = "/images/Button/goldStar.svg"
 					img.title = lang.thisIsTheDefaultSuborder;
 					img.setAttribute("data-isFav", "true");
 				}
@@ -155,10 +155,10 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 				if(!isSamePage() && selected != defaultOrder) {
 					elem.val(defaultOrder).trigger("change.select2");
 				} else if(selected == defaultOrder) {
-					$("#favOrderBtn").attr("src", "../images/Button/goldStar.svg");
+					$("#favOrderBtn").attr("src", "/images/Button/goldStar.svg");
 					$("#favOrderBtn").attr("title", lang.thisIsTheDefaultOrder);
 				} else {
-					$("#favOrderBtn").attr("src", "../images/Button/bleachedStar.svg");
+					$("#favOrderBtn").attr("src", "/images/Button/bleachedStar.svg");
 					$("#favOrderBtn").attr("title", evaluatePlaceholderStr(lang.otherIsTheDefaultOrder, getOptionById(combo[0].options, defaultOrder)));
 				}
 			}
@@ -180,10 +180,10 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 				if(!isSamePage() && selectedSuborder != defaultSuborder) {
 					elem.val(defaultSuborder).trigger("change.select2");
 				} else if(selectedSuborder == defaultSuborder) {
-					$("#favSuborderBtn").attr("src", "../images/Button/goldStar.svg");
+					$("#favSuborderBtn").attr("src", "/images/Button/goldStar.svg");
 					$("#favSuborderBtn").attr("title", lang.thisIsTheDefaultSuborder);
 				} else {
-					$("#favSuborderBtn").attr("src", "../images/Button/bleachedStar.svg");
+					$("#favSuborderBtn").attr("src", "/images/Button/bleachedStar.svg");
 					$("#favSuborderBtn").attr("title", evaluatePlaceholderStr(lang.otherIsTheDefaultSuborder, getOptionById(comboSuborder[0].options, defaultSuborder)));
 				}
 			}

@@ -3,7 +3,7 @@
 <%@taglib prefix="html" uri="http://struts.apache.org/tags-html-el" %>
 <html:html>
 <head>
-    <html:base />
+
 </head>
 <body>
 <center>

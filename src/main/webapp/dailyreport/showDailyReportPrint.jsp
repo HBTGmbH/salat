@@ -7,13 +7,13 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.daily.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/matrixprint.css"
+<link rel="stylesheet" type="text/css" href="/style/matrixprint.css"
 	media="all" />
-<link rel="stylesheet" type="text/css" href="../style/print.css"
+<link rel="stylesheet" type="text/css" href="/style/print.css"
 	media="print" />
 
 </head>

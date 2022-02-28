@@ -5,25 +5,25 @@
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.customers.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
  
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 		if (agree) {
-			form.action = "../do/DeleteCustomer?cuId=" + id;
+			form.action = "/do/DeleteCustomer?cuId=" + id;
 			form.submit();
 		}
 	}
 	
 	function refresh(form) {	
-		form.action = "../do/ShowCustomer?task=refresh";
+		form.action = "/do/ShowCustomer?task=refresh";
 		form.submit();
 	}
 						
@@ -145,7 +145,7 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${customer.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="../images/info_button.gif" />
+				src="/images/info_button.gif" />
 			</td>
 		<td><c:out value="${customer.shortname}" /></td>
 		<td><c:out value="${customer.name}" /></td>
@@ -153,13 +153,13 @@
 
 		<c:if test="${employeeAuthorized}">
 			<td align="center"><html:link
-				href="../do/EditCustomer?cuId=${customer.id}">
-				<img src="../images/Edit.gif" alt="Edit Customer" title="<bean:message key="main.headlinedescription.customers.edit.text"/>"/>
+				href="/do/EditCustomer?cuId=${customer.id}">
+				<img src="/images/Edit.gif" alt="Edit Customer" title="<bean:message key="main.headlinedescription.customers.edit.text"/>"/>
 			</html:link></td>
 			<html:form action="/DeleteCustomer">
 				<td align="center"><html:image
 					onclick="confirmDelete(this.form, ${customer.id})"
-					src="../images/Delete.gif" alt="Delete Customer" titleKey="main.headlinedescription.customers.delete.text"/></td>
+					src="/images/Delete.gif" alt="Delete Customer" titleKey="main.headlinedescription.customers.delete.text"/></td>
 			</html:form>
 		</c:if>
 		</tr>

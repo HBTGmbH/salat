@@ -8,13 +8,13 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html>
 	<head>
-		<html:base />
+
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title>
 			<bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.invoice.title.text" />
 		</title>
-		<link rel="stylesheet" type="text/css" href="../style/invoiceprint.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="../style/print.css" media="print" />
+		<link rel="stylesheet" type="text/css" href="/style/invoiceprint.css" media="all" />
+		<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
 	</head>
 	<body>
 		<form onsubmit="javascript:window.print();return false;">

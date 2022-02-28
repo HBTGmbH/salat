@@ -4,7 +4,7 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <html:html>
 <head>
-	<html:base />
+
 </head>
 <body>
 <c:if test="${'34324-65634-423423-323232' == param.secret}">

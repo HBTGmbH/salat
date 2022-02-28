@@ -7,16 +7,16 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployee.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
 	
 	function setStoreAction(form, actionVal, addMore) {	
- 		form.action = "../do/StoreEmployee?task=" + actionVal + "&continue=" + addMore;
+ 		form.action = "/do/StoreEmployee?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 	}	
 			

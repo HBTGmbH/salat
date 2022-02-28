@@ -6,21 +6,21 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <html:html>
 <head>
-<html:base />
+
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addcustomerorder.text" /></title>
-<link rel="stylesheet" type="text/css" href="../style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
 <script type="text/javascript" language="JavaScript">
 
 	function setDate(which, howMuch) {
-		document.forms[0].action = "../do/StoreCustomerorder?task=setDate&which=" + which + "&howMuch=" + howMuch;
+		document.forms[0].action = "/do/StoreCustomerorder?task=setDate&which=" + which + "&howMuch=" + howMuch;
 		document.forms[0].submit();
 	}
 	
 	function setStoreAction(form, actionVal, addMore) {	
-		form.action = "../do/StoreCustomerorder?task=" + actionVal + "&continue=" + addMore;
+		form.action = "/do/StoreCustomerorder?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 	}
 		
@@ -82,7 +82,7 @@
 				key="main.customerorder.validfrom.text" /></b></td>
 			<td align="left" class="noBborderStyle"><!-- JavaScript Stuff for popup calender -->
 			<script type="text/javascript" language="JavaScript"
-				src="../scripts/CalendarPopup.js"></script> <script type="text/javascript"
+				src="/scripts/CalendarPopup.js"></script> <script type="text/javascript"
 				language="JavaScript">
                     document.write(getCalendarStyles());
                 </script> <script type="text/javascript" language="JavaScript">
@@ -108,24 +108,24 @@
 				size="12" maxlength="10" /> <a
 				href="javascript:calenderPopupFrom()" name="from" ID="from"
 				style="text-decoration:none;"> <img
-						src="../images/popupcalendar.gif" width="22" height="22"
+						src="/images/popupcalendar.gif" width="22" height="22"
 						alt="<bean:message key="main.date.popup.alt.text" />"
 						style="border:0;vertical-align:top"> </a>
 				
 				<%-- Arrows for navigating the from-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','-1')" title="<bean:message key="main.date.popup.prevday" />">
-				<img src="../images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','0')" title="<bean:message key="main.date.popup.today" />">
-				<img src="../images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','1')" title="<bean:message key="main.date.popup.nextday" />">
-				<img src="../images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				<span style="color:red"><html:errors
@@ -139,24 +139,24 @@
 				property="validUntil" readonly="false" size="12" maxlength="10" />
 			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
 				style="text-decoration:none;"> <img
-					src="../images/popupcalendar.gif" width="22" height="22"
+					src="/images/popupcalendar.gif" width="22" height="22"
 					alt="<bean:message key="main.date.popup.alt.text" />"
 					style="border:0;vertical-align:top"> </a>
 				
 				<%-- Arrows for navigating the until-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','-1')" title="<bean:message key="main.date.popup.prevday" />">
-				<img src="../images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','0')" title="<bean:message key="main.date.popup.today" />">
-				<img src="../images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','1')" title="<bean:message key="main.date.popup.nextday" />">
-				<img src="../images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				<span style="color:red"><html:errors
@@ -427,7 +427,7 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="../images/info_button.gif" />
+				src="/images/info_button.gif" />
 			</td>
 
 			<!-- Mitarbeiter -->
