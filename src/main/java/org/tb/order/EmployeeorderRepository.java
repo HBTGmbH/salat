@@ -28,10 +28,4 @@ public interface EmployeeorderRepository extends CrudRepository<Employeeorder, L
   @Query("select eo from Employeeorder eo where eo.suborder.customerorder.id = :customerorderId and eo.employeecontract.id = :employeecontractId")
   List<Employeeorder> findAllByCustomerorderIdAndEmployeecontractId(long customerorderId, long employeecontractId);
 
-  @Query("select eo from Employeeorder eo where (eo.employeeOrderContent.committed_emp <> true and eo.employeecontract.employee.id = :employeeId) "
-      + "or (eo.employeeOrderContent.committed_mgmt <> true and eo.employeeOrderContent.contactTechHbt.id = :employeeId)")
-  List<Employeeorder> findAllByEmployeeIdAndEmployeeOrderContentUncommitted(long employeeId);
-
-  Optional<Employeeorder> findByEmployeeOrderContentId(long employeeOrderContentId);
-
 }

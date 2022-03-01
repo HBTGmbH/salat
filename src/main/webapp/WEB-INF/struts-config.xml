@@ -47,7 +47,6 @@
 		<form-bean name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeForm" />
 		<form-bean name="showReleaseForm" type="org.tb.dailyreport.ShowReleaseForm" />
 		<form-bean name="showAdminOptionsForm" type="org.tb.admin.ShowAdminOptionsForm" />
-		<form-bean name="addEmployeeOrderContentForm" type="org.tb.order.AddEmployeeOrderContentForm" />
 		<form-bean name="showStatusReportForm" type="org.tb.statusreport.ShowStatusReportForm" />
 		<form-bean name="addStatusReportForm" type="org.tb.statusreport.AddStatusReportForm" />
 		<form-bean name="showTrainingForm" type="org.tb.dailyreport.ShowTrainingForm" />
@@ -314,20 +313,6 @@
 			<forward name="start" path="/order/generateMultipleEmployeeorders.jsp"/>
 			<forward name="success" path="/order/showEmployeeOrder.jsp" redirect="true"/>
 			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
-		</action>
-		
-		<!-- EmployeeOrderContent -->
-		<action path="/EditEmployeeOrderContent" name="addEmployeeOrderContentForm"
-			type="org.tb.order.EditEmployeeOrderContentAction">
-			<forward name="success" path="/order/addEmployeeOrderContent.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-		
-		<action path="/StoreEmployeeOrderContent" input="/order/addEmployeeOrderContent.jsp"
-			name="addEmployeeOrderContentForm" type="org.tb.order.StoreEmployeeOrderContentAction">
-			<forward name="success" path="/order/addEmployeeOrderContent.jsp" />
-			<forward name="error" path="/error.jsp" />
-			<forward name="back" path="/order/showEmployeeOrder.jsp" />
 		</action>
 
 		<!-- Employeecontract -->

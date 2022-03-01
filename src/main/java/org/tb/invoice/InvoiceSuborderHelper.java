@@ -258,14 +258,6 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getLastupdatedby();
     }
 
-    public Boolean getNoEmployeeOrderContent() {
-        return suborder.getNoEmployeeOrderContent();
-    }
-
-    public void setNoEmployeeOrderContent(Boolean noEmployeeOrderContent) {
-        suborder.setNoEmployeeOrderContent(noEmployeeOrderContent);
-    }
-
     public Suborder getParentorder() {
         return suborder.getParentorder();
     }

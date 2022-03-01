@@ -46,12 +46,6 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     @Cascade(CascadeType.SAVE_UPDATE)
     private Employeecontract employeecontract;
 
-    @OneToOne
-    @Fetch(FetchMode.SELECT)
-    @JoinColumn(name = "EMPLOYEEORDERCONTENT_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
-    private Employeeordercontent employeeOrderContent;
-
     /**
      * sign of the employee order
      */

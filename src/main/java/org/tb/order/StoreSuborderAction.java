@@ -318,7 +318,6 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
 
             so.setHide(addSuborderForm.getHide());
-            so.setNoEmployeeOrderContent(addSuborderForm.getNoEmployeeOrderContent());
             Suborder parentOrderCandidate = suborderDAO.getSuborderById(addSuborderForm.getParentId());
             // Falls die Suborder nicht zum Customerorder passt (Kollision der IDs), ist sie kein geeigneter Kandidat (HACK, da UI die ID manchmal auch mit CustomerOrderID besetzt)
             if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {

@@ -102,12 +102,6 @@ public class Suborder extends AuditedEntity implements Serializable {
     private Boolean hide;
 
     /**
-     * No employee order content for employee orders
-     */
-    @Column(name = "NOEMPLOYEEORDERCONTENT")
-    private Boolean noEmployeeOrderContent;
-
-    /**
      * Default-Flag for projectbased Training
      */
     private Boolean trainingFlag;
@@ -131,10 +125,6 @@ public class Suborder extends AuditedEntity implements Serializable {
             throw new IllegalArgumentException(msg);
         }
         this.parentorder = parentorder;
-    }
-
-    public Boolean getNoEmployeeOrderContent() {
-        return noEmployeeOrderContent != null && noEmployeeOrderContent;
     }
 
     public Boolean getCommentnecessary() {
@@ -367,7 +357,6 @@ public class Suborder extends AuditedEntity implements Serializable {
         copy.setFromDate(fromDate);
         copy.setHide(hide);
         copy.setInvoice(invoice);
-        copy.setNoEmployeeOrderContent(noEmployeeOrderContent);
         copy.setShortdescription(shortdescription);
         copy.setStandard(standard);
         copy.setUntilDate(untilDate);

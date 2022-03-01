@@ -425,18 +425,6 @@
 									</tr>
 									<tr>
 										<td class="info" valign="top"><bean:message
-												key="main.suborder.eocpossible.text" />:</td>
-										<td class="info"><c:choose>
-												<c:when test="${suborder.noEmployeeOrderContent == true}">
-													<bean:message key="main.general.yes" />
-												</c:when>
-												<c:otherwise>
-													<bean:message key="main.general.no" />
-												</c:otherwise>
-											</c:choose></td>
-									</tr>
-									<tr>
-										<td class="info" valign="top"><bean:message
 												key="main.general.hide" />:</td>
 										<td class="info"><c:choose>
 												<c:when test="${suborder.hide == true}">
