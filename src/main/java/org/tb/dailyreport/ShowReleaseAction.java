@@ -1,5 +1,7 @@
 package org.tb.dailyreport;
 
+import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
+import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
@@ -22,7 +24,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.common.util.OptionItem;
+import org.tb.common.OptionItem;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.Employee;
 import org.tb.employee.EmployeeDAO;
@@ -48,9 +50,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         boolean updateEmployee = false;
         long superId;
 
-        request.getSession().setAttribute("years",
-                DateUtils.getYearsToDisplay());
-        request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
+        request.getSession().setAttribute("years", getYearsToDisplay());
+        request.getSession().setAttribute("days", getDaysToDisplay());
 
         List<Employeecontract> employeeContracts = employeecontractDAO
                 .getVisibleEmployeeContractsOrderedByEmployeeSign();

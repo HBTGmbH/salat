@@ -184,21 +184,6 @@ public class TimereportHelper {
             hourEnd += minuteEnd / MINUTES_PER_HOUR;
             minuteEnd = minuteEnd % MINUTES_PER_HOUR;
 
-            //			// clean possible truncation errors
-            if (minuteBegin % GlobalConstants.MINUTE_INCREMENT != 0) {
-                if (minuteBegin % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                    minuteBegin += 5 - minuteBegin % GlobalConstants.MINUTE_INCREMENT;
-                } else if (minuteBegin % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                    minuteBegin -= minuteBegin % GlobalConstants.MINUTE_INCREMENT;
-                }
-            }
-            if (minuteEnd % GlobalConstants.MINUTE_INCREMENT != 0) {
-                if (minuteEnd % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                    minuteEnd += 5 - minuteEnd % GlobalConstants.MINUTE_INCREMENT;
-                } else if (minuteEnd % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                    minuteEnd -= minuteEnd % GlobalConstants.MINUTE_INCREMENT;
-                }
-            }
             return new int[]{hourBegin, minuteBegin, hourEnd, minuteEnd};
         } else {
             return new int[4];
@@ -297,25 +282,18 @@ public class TimereportHelper {
             quittingtimeHours += quittingtimeMinutes / MINUTES_PER_HOUR;
             quittingtimeMinutes = quittingtimeMinutes % MINUTES_PER_HOUR;
 
-            // clean possible truncation errors
-            if (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT != 0) {
-                if (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT > 2.5) {
-                    quittingtimeMinutes += 5 - quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT;
-                } else if (quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT < 2.5) {
-                    quittingtimeMinutes -= quittingtimeMinutes % GlobalConstants.MINUTE_INCREMENT;
-                }
-            }
             // format return string
-            String quittingTime = "";
+            StringBuilder quittingTime = new StringBuilder();
             if (quittingtimeHours < 10) {
-                quittingTime = quittingTime + "0";
+                quittingTime.append("0");
             }
-            quittingTime = quittingTime + quittingtimeHours + ":";
+            quittingTime.append(quittingtimeHours);
+            quittingTime.append(":");
             if (quittingtimeMinutes < 10) {
-                quittingTime = quittingTime + "0";
+                quittingTime.append("0");
             }
-
-            return quittingTime + quittingtimeMinutes;
+            quittingTime.append(quittingtimeMinutes);
+            return quittingTime.toString();
         } catch (Exception e) {
             return N_A;
         }

@@ -1,8 +1,15 @@
 package org.tb.dailyreport;
 
 import static java.lang.Boolean.TRUE;
+import static org.tb.common.DateTimeViewHelper.getBreakHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
+import static org.tb.common.DateTimeViewHelper.getMonthMMStringFromShortstring;
+import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
+import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.common.GlobalConstants.MINUTE_INCREMENT;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -114,24 +121,18 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 int[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
                 int beginHours = beginTime[0];
                 int beginMinutes = beginTime[1];
-                // round down to next minute increment
-                beginMinutes = beginMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
                 form.setSelectedHourBegin(beginHours);
                 form.setSelectedMinuteBegin(beginMinutes);
 
                 // determine end time
                 int currentHours = DateUtils.getCurrentHours();
                 int currentMinutes = DateUtils.getCurrentMinutes();
-                // round down to next minute increment
-                currentMinutes = currentMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
                 LocalDate today = DateUtils.today();
                 if (standardOrder) {
                     int minutes = form.getSelectedHourBegin() * MINUTES_PER_HOUR + form.getSelectedMinuteBegin();
                     minutes += dailyWorkingTime.toMinutes();
                     int hours = minutes / MINUTES_PER_HOUR;
                     minutes = minutes % MINUTES_PER_HOUR;
-                    // round down to next minute increment
-                    minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
                     form.setSelectedMinuteEnd(minutes);
                     form.setSelectedHourEnd(hours);
                 } else if (workStartedEarlier(beginHours, beginMinutes, currentHours, currentMinutes) && referenceDay.equals(today)) {
@@ -145,12 +146,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             } else {
                 // TODO wird dieser Code je durchlaufen?
                 if (standardOrder) {
-
                     int hours = dailyWorkingTime.toHoursPart();
                     int minutes = dailyWorkingTime.toMinutesPart();
-                    // round down to next minute increment
-                    minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
-
                     form.setSelectedHourDuration(hours);
                     form.setSelectedMinuteDuration(minutes);
                 }
@@ -192,8 +189,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 Duration dailyWorkingTime = employeeContract.getDailyWorkingTime();
                 int hours = dailyWorkingTime.toHoursPart();
                 int minutes = dailyWorkingTime.toMinutesPart();
-                // round down to next minute increment
-                minutes = minutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
 
                 form.setSelectedHourDuration(hours);
                 form.setSelectedMinuteDuration(minutes);
@@ -286,7 +281,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 continueForm.setMonth(DateUtils.getMonthShortString(referenceday));
                 continueForm.setYear(DateUtils.getYearString(referenceday));
 
-                continueForm.setStartdate(continueForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(continueForm.getMonth()) + "-" + continueForm.getDay());
+                continueForm.setStartdate(continueForm.getYear() + "-" + getMonthMMStringFromShortstring(continueForm.getMonth()) + "-" + continueForm.getDay());
                 if (request.getSession().getAttribute("lastLastMonth") != null) {
                     continueForm.setLastday((String) request.getSession().getAttribute("lastLastDay"));
                     continueForm.setLastmonth((String) request.getSession().getAttribute("lastLastMonth"));
@@ -296,7 +291,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     continueForm.setLastmonth(DateUtils.getMonthShortString(referenceday));
                     continueForm.setLastyear(DateUtils.getYearString(referenceday));
                 }
-                continueForm.setEnddate(continueForm.getLastyear() + "-" + DateUtils.getMonthMMStringFromShortstring(continueForm.getLastmonth()) + "-"
+                continueForm.setEnddate(continueForm.getLastyear() + "-" + getMonthMMStringFromShortstring(continueForm.getLastmonth()) + "-"
                         + continueForm.getLastday());
                 request.getSession().removeAttribute("lastCurrentDay");
                 request.getSession().removeAttribute("lastCurrentMonth");
@@ -346,14 +341,14 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 //calculate Working Day End
                 request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
 
-                request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
-                request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
-                request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());
-                request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
-                request.getSession().setAttribute("breakhours", DateUtils.getCompleteHoursToDisplay());
-                request.getSession().setAttribute("breakminutes", DateUtils.getMinutesToDisplay());
-                request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
-                request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
+                request.getSession().setAttribute("years", getYearsToDisplay());
+                request.getSession().setAttribute("days", getDaysToDisplay());
+                request.getSession().setAttribute("months", getMonthsToDisplay());
+                request.getSession().setAttribute("hours", getHoursToDisplay());
+                request.getSession().setAttribute("breakhours", getBreakHoursOptions());
+                request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions());
+                request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
+                request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
 
                 // save values from the data base into form-bean, when working day != null
                 if (workingday != null) {
@@ -395,8 +390,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     LocalDate today = DateUtils.today();
                     int currentHours = DateUtils.getCurrentHours();
                     int currentMinutes = DateUtils.getCurrentMinutes();
-                    // round to next minute increment
-                    currentMinutes = currentMinutes / MINUTE_INCREMENT * MINUTE_INCREMENT;
 
                     if (workStartedEarlier(beginHours, beginMinutes, currentHours, currentMinutes) && selectedDate.equals(today)) {
                         form.setSelectedMinuteEnd(currentMinutes);

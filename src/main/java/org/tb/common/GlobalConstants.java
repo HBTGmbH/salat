@@ -22,8 +22,6 @@ public class GlobalConstants {
     public static final String DEFAULT_TIMEZONE_ID = "Europe/Berlin";
     public static final Locale DEFAULT_LOCALE = Locale.GERMAN;
 
-    public static final int MINUTE_INCREMENT = 5;
-
     public static final int VACATION_PER_YEAR = 30;
     public static final int MAX_VACATION_PER_YEAR = 100;
 

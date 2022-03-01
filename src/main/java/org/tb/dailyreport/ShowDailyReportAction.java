@@ -1,5 +1,13 @@
 package org.tb.dailyreport;
 
+import static org.tb.common.DateTimeViewHelper.getBreakHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
+import static org.tb.common.DateTimeViewHelper.getMonthMMStringFromShortstring;
+import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
+import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
@@ -217,7 +225,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             //TODO: Hier bitte findForward zurückgeben.
             if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
                 // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
-                String date = request.getParameter("year") + "-" + DateUtils.getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
+                String date = request.getParameter("year") + "-" + getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
                 reportForm.setStartdate(date);
             }
             //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
@@ -290,7 +298,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         String view = reportForm.getView();
         if (GlobalConstants.VIEW_MONTHLY.equals(view)) {
             // monthly view -> create date and synchronize with end-/lastdate-fields
-            reportForm.setStartdate(reportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay());
+            reportForm.setStartdate(reportForm.getYear() + "-" + getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay());
             reportForm.setLastday(reportForm.getDay());
             reportForm.setLastmonth(reportForm.getMonth());
             reportForm.setLastyear(reportForm.getYear());
@@ -604,20 +612,20 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         reportForm.setShowOnlyValid(true);
         request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
-        request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
-        request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
-        request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());
-        request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
-        request.getSession().setAttribute("breakhours", DateUtils.getCompleteHoursToDisplay());
-        request.getSession().setAttribute("breakminutes", DateUtils.getMinutesToDisplay());
-        request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
-        request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
+        request.getSession().setAttribute("years", getYearsToDisplay());
+        request.getSession().setAttribute("days", getDaysToDisplay());
+        request.getSession().setAttribute("months", getMonthsToDisplay());
+        request.getSession().setAttribute("hours", getHoursToDisplay());
+        request.getSession().setAttribute("breakhours", getBreakHoursOptions());
+        request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions());
+        request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
         if (reportForm.getMonth() != null) {
             // call from list select change
             request.getSession().setAttribute("currentDay", reportForm.getDay());
             request.getSession().setAttribute("currentMonth", reportForm.getMonth());
             request.getSession().setAttribute("currentYear", reportForm.getYear());
-            String dateString = reportForm.getYear() + "-" + DateUtils.getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
+            String dateString = reportForm.getYear() + "-" + getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay();
             LocalDate date = DateUtils.parseOrNull(dateString);
             Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
             if (currentEmployeeId == null || currentEmployeeId == 0) {
@@ -696,7 +704,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             reportForm.setMonth(monthString);
             reportForm.setYear(yearString);
 
-            String dateString = yearString + "-" + DateUtils.getMonthMMStringFromShortstring(monthString) + "-" + dayString;
+            String dateString = yearString + "-" + getMonthMMStringFromShortstring(monthString) + "-" + dayString;
             reportForm.setStartdate(dateString);
             request.getSession().setAttribute("startdate", dateString);
             reportForm.setEnddate(dateString);
