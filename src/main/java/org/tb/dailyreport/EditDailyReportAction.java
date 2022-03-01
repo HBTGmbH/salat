@@ -1,5 +1,10 @@
 package org.tb.dailyreport;
 
+import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
+import static org.tb.common.DateTimeViewHelper.getSerialDayList;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +50,8 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         Timereport tr = timereportDAO.getTimereportById(trId);
 
         // set collections
-        request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
-        request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
+        request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
 
         // make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
         // if the current suborder is overtime compensation.
@@ -104,7 +109,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         /* set hours list in session in case of that the dialog is triggered from the welcome page */
-        request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
+        request.getSession().setAttribute("hours", getHoursToDisplay());
 
         request.getSession().setAttribute("trId", tr.getId());
         request.getSession().setAttribute("orders", orders);

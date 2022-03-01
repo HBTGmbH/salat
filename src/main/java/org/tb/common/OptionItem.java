@@ -1,4 +1,4 @@
-package org.tb.common.util;
+package org.tb.common;
 
 import java.io.Serializable;
 import lombok.Data;

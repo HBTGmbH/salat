@@ -1,17 +1,31 @@
 package org.tb.invoice;
 
+import static java.time.DayOfWeek.SUNDAY;
+import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
+import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
+import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
+import static org.tb.common.DateTimeViewHelper.getWeeksToDisplay;
+import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
+import static org.tb.common.GlobalConstants.DEFAULT_LOCALE;
+import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
+import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Year;
 import java.time.YearMonth;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
@@ -21,6 +35,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.springframework.stereotype.Component;
+import org.tb.common.DateTimeViewHelper;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -167,8 +182,8 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 YearMonth yearMonth = DateUtils.getYearMonth(dateFirst);
                 request.getSession().setAttribute("dateMonth", monthMap.get(String.valueOf(yearMonth.getMonthValue() - 1)));
                 request.getSession().setAttribute("dateYear", yearMonth.getYear());
-                request.getSession().setAttribute("dateFirst", DateUtils.format(dateFirst));
-                request.getSession().setAttribute("dateLast", DateUtils.format(dateLast));
+                request.getSession().setAttribute("dateFirst", format(dateFirst));
+                request.getSession().setAttribute("dateLast", format(dateLast));
                 request.getSession().setAttribute("currentOrderObject", customerOrder);
             } else {
                 request.setAttribute("errorMessage", "No customer order selected. Please choose.");
@@ -227,7 +242,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("currentMonth", showInvoiceForm.getFromMonth());
             request.getSession().setAttribute("currentYear", showInvoiceForm.getFromYear());
             request.getSession().setAttribute("currentWeek", showInvoiceForm.getFromWeek());
-            request.getSession().setAttribute("weeks", DateUtils.getWeeksToDisplay(showInvoiceForm.getFromYear()));
+            request.getSession().setAttribute("weeks", getWeeksToDisplay(showInvoiceForm.getFromYear()));
             request.getSession().setAttribute("lastDay", showInvoiceForm.getUntilDay());
             request.getSession().setAttribute("lastMonth", showInvoiceForm.getUntilMonth());
             request.getSession().setAttribute("lastYear", showInvoiceForm.getUntilYear());
@@ -335,9 +350,9 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
                 return mapping.findForward("error");
             }
-            request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
-            request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
-            request.getSession().setAttribute("weeks", DateUtils.getWeeksToDisplay(showInvoiceForm.getFromYear()));
+            request.getSession().setAttribute("days", getDaysToDisplay());
+            request.getSession().setAttribute("years", getYearsToDisplay());
+            request.getSession().setAttribute("weeks", getWeeksToDisplay(showInvoiceForm.getFromYear()));
             request.getSession().setAttribute("orders", customerorderDAO.getCustomerorders());
             request.getSession().setAttribute("suborders", new LinkedList<Suborder>());
             request.getSession().setAttribute("optionmwst", "19");
@@ -345,7 +360,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             // selected view and selected dates
             if (showInvoiceForm.getFromDay() == null || showInvoiceForm.getFromMonth() == null || showInvoiceForm.getFromYear() == null) {
                 // set standard dates and view
-                LocalDate today = DateUtils.today();
+                LocalDate today = today();
                 showInvoiceForm.setFromDay("01");
                 showInvoiceForm.setFromMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setFromYear(DateUtils.getYearString(today));

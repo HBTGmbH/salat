@@ -1,7 +1,12 @@
 package org.tb.dailyreport;
 
+import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
+import static org.tb.common.util.DateUtils.getCurrentYear;
+import static org.tb.common.util.DateUtils.getYear;
+
 import java.text.ParseException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,9 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.common.DateTimeViewHelper;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.common.OptionItem;
 import org.tb.dailyreport.viewhelper.TrainingHelper;
 import org.tb.employee.Employee;
 import org.tb.employee.EmployeeDAO;
@@ -99,7 +106,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             trainingOverviews = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);
-            request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
+            request.getSession().setAttribute("years", getYearsToDisplay());
 
         } else {
             // get the training times for specific year, specific employee, all orders (project Training) and order i976 (CommonTraining)
@@ -107,7 +114,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
                     enddate, employeecontract, orderID, year);
 
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
-            request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(employeecontract.getValidFrom()));
+            request.getSession().setAttribute("years", getYearsSinceContractStartToDisplay(employeecontract.getValidFrom()));
         }
         request.getSession().setAttribute("trainingOverview", trainingOverviews);
         request.getSession().setAttribute("year", year);
@@ -166,13 +173,13 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             trainingOverview = getTrainingOverviewsForAll(startdate,
                     enddate, employeecontractDAO, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);
-            request.getSession().setAttribute("years", DateUtils.getYearsToDisplay());
+            request.getSession().setAttribute("years", getYearsToDisplay());
             // get a List of TrainingOverviews with only one entry for the selected Employee
         } else {
             trainingOverview = getTrainingOverviewByEmployeecontract(startdate,
                     enddate, ec, orderID, year);
             request.getSession().setAttribute("currentEmployeeId", employeeContractId);
-            request.getSession().setAttribute("years", DateUtils.getYearsSinceContractStartToDisplay(ec.getValidFrom()));
+            request.getSession().setAttribute("years", getYearsSinceContractStartToDisplay(ec.getValidFrom()));
         }
         request.getSession().setAttribute("trainingOverview", trainingOverview);
         return forward;
@@ -248,4 +255,21 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         result.add(to);
         return result;
     }
+
+    /*
+     * builds up a list of string with current and previous years since startyear of contract
+     */
+    private static List<OptionItem> getYearsSinceContractStartToDisplay(LocalDate validFrom) {
+        List<OptionItem> theList = new ArrayList<>();
+
+        int startyear = getYear(validFrom).getValue();
+
+        for (int i = startyear; i <= getCurrentYear() + 1; i++) {
+            String yearString = "" + i;
+            theList.add(new OptionItem(yearString, yearString));
+        }
+
+        return theList;
+    }
+
 }

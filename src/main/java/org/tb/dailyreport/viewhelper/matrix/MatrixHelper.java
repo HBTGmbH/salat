@@ -17,6 +17,8 @@ import static java.time.DayOfWeek.SUNDAY;
 import static java.time.DayOfWeek.THURSDAY;
 import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
+import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
+import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
@@ -529,8 +531,8 @@ public class MatrixHelper {
             return results;
         }
         results.put("employeecontracts", employeeContracts);
-        results.put("days", DateUtils.getDaysToDisplay());
-        results.put("years", DateUtils.getYearsToDisplay());
+        results.put("days", getDaysToDisplay());
+        results.put("years", getYearsToDisplay());
 
         boolean isInvoiceable = reportForm.getInvoice();
         boolean isNonInvoiceable = reportForm.getNonInvoice();

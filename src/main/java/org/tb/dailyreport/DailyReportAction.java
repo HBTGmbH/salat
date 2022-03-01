@@ -16,7 +16,7 @@ import org.tb.auth.AfterLogin;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.common.util.OptionItem;
+import org.tb.common.OptionItem;
 import org.tb.employee.Employeecontract;
 import org.tb.employee.EmployeecontractDAO;
 import org.tb.order.Customerorder;
@@ -281,23 +281,6 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             workingday.setEmployeecontract(ec);
         }
         return workingday;
-    }
-
-    protected List<OptionItem> getSerialDayList() {
-        int maxDays = GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
-        List<OptionItem> days = new ArrayList<>();
-        days.add(new OptionItem("0", "--"));
-        for (int i = 1; i <= maxDays; i++) {
-            String dayLabel;
-            if (i < 10) {
-                dayLabel = "0" + i;
-            } else {
-                dayLabel = "" + i;
-            }
-            String dayValue = "" + i;
-            days.add(new OptionItem(dayValue, dayLabel));
-        }
-        return days;
     }
 
 }

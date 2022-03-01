@@ -1,6 +1,11 @@
 package org.tb.dailyreport;
 
-import static org.tb.common.GlobalConstants.MINUTE_INCREMENT;
+import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
+import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
+import static org.tb.common.DateTimeViewHelper.getSerialDayList;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
@@ -78,11 +83,11 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set attributes to be analyzed by target jsp
         request.getSession().setAttribute("orders", orders);
-        request.getSession().setAttribute("days", DateUtils.getDaysToDisplay());
-        request.getSession().setAttribute("months", DateUtils.getMonthsToDisplay());
-        request.getSession().setAttribute("hours", DateUtils.getHoursToDisplay());
-        request.getSession().setAttribute("hoursDuration", DateUtils.getHoursDurationToDisplay());
-        request.getSession().setAttribute("minutes", DateUtils.getMinutesToDisplay());
+        request.getSession().setAttribute("days", getDaysToDisplay());
+        request.getSession().setAttribute("months", getMonthsToDisplay());
+        request.getSession().setAttribute("hours", getHoursToDisplay());
+        request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
         request.getSession().setAttribute("serialBookings", getSerialDayList());
 
         // search for adequate workingday and set status in session
@@ -114,10 +119,6 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
             int hour = Integer.parseInt(DateUtils.formatHours(today));
             int minute = Integer.parseInt(DateUtils.formatMinutes(today));
-
-            // ensure time is of a minute increment to be compatible with available
-            // options in form (special kind of rounding)
-            minute = minute / MINUTE_INCREMENT * MINUTE_INCREMENT;
 
             if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
                 form.setSelectedMinuteEnd(minute);
