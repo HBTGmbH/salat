@@ -531,7 +531,7 @@ public class TimereportDAO {
      */
     public boolean deleteTimereportById(long trId) {
         timereportRepository.deleteById(trId);
-        return false;
+        return true;
     }
 
     public void saveOrUpdate(Timereport timereport) {
