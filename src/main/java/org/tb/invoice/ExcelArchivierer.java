@@ -1,4 +1,4 @@
-package org.tb.common.util;
+package org.tb.invoice;
 
 
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
