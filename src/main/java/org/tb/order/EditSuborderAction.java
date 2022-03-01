@@ -99,7 +99,6 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             soForm.setDebithoursunit(null);
         }
         soForm.setHide(so.isHide());
-        soForm.setNoEmployeeOrderContent(so.getNoEmployeeOrderContent());
 
         //request.getSession().setAttribute("currentSuborderID", new Long(so.getId()));
         request.getSession().setAttribute("currentOrderId", so.getCustomerorder().getId());

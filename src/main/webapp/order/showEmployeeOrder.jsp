@@ -27,11 +27,6 @@
 		}
 	}
 	
-	function editContent(form, id) {		
-		form.action = "/do/EditEmployeeOrderContent?eoId=" + id;
-		form.submit();
-	}
-	
 	function setUpdateEmployeeOrders(form) {
 		form.action = "/do/ShowEmployeeorder";
 		form.submit();
@@ -251,9 +246,6 @@
 				<b><bean:message key="main.general.difference.text"/></b>
 			</th>
 		</c:if>
-		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.content.text' />">
-			<b><bean:message key="main.employeeorder.content.text" /></b>
-		</th>
 		<th align="left" title="<bean:message key='main.headlinedescription.employeeorders.edit.text' />">
 			<b><bean:message key="main.employeeorder.edit.text" /></b>
 		</th>
@@ -556,30 +548,6 @@
 
 			</c:otherwise>
 		</c:choose>
-			<td align="center" valign="middle">
-				<c:choose>
-					<c:when test="${!loginEmployeeContract.freelancer && !employeeorder.suborder.noEmployeeOrderContent}">
-						<html:form action="/EditEmployeeOrderContent" style="margin: 0">
-							<c:choose>
-								<c:when test="${employeeorder.employeeOrderContent == null || (employeeorder.employeeOrderContent.committed_mgmt != true && employeeorder.employeeOrderContent.committed_emp != true)}">
-									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="/images/thumb_down.gif" titleKey="employeeordercontent.thumbdown.text" />
-								</c:when>
-								<c:when
-									test="${employeeorder.employeeOrderContent != null && (employeeorder.employeeOrderContent.committed_mgmt != true || employeeorder.employeeOrderContent.committed_emp != true)}">
-									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="/images/yellow.gif" titleKey="employeeordercontent.yellow.text" />
-								</c:when>
-								<c:otherwise>
-									<html:image onclick="editContent(this.form, ${employeeorder.id})"
-										src="/images/thumb_up.gif" titleKey="employeeordercontent.thumbup.text" />
-								</c:otherwise>
-							</c:choose>
-						</html:form>
-					</c:when>
-					<c:otherwise>&nbsp;</c:otherwise>
-				</c:choose>
-			</td>
 		<c:choose>
 			<c:when
 				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
@@ -628,16 +596,5 @@
 		</tbody>
 	</table>
 </c:if>
-<% request.getSession().setAttribute("addEmployeeOrderContentVisited", true); %>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
 </body>
 </html:html>

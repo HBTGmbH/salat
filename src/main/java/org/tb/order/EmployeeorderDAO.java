@@ -44,10 +44,6 @@ public class EmployeeorderDAO {
         return employeeorderRepository.findById(id).orElse(null);
     }
 
-    public List<Employeeorder> getEmployeeordersForEmployeeordercontentWarning(Employeecontract ec) {
-        return employeeorderRepository.findAllByEmployeeIdAndEmployeeOrderContentUncommitted(ec.getEmployee().getId());
-    }
-
     public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final LocalDate date) {
         LOG.debug("starting read vacation list");
         var customerOrderSigns = new ArrayList<String>();
@@ -158,14 +154,6 @@ public class EmployeeorderDAO {
                 .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
-    }
-
-    /**
-     * @param eocId The id of the associated {@link Employeeordercontent}
-     * @return Returns the {@link Employeeorder} associated to the given eocId.
-     */
-    public Employeeorder getEmployeeOrderByContentId(long eocId) {
-        return employeeorderRepository.findByEmployeeOrderContentId(eocId).orElse(null);
     }
 
     /**

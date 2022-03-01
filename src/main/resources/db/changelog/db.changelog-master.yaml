@@ -540,3 +540,30 @@ databaseChangeLog:
                 valueNumeric: 0
           tableName: suborder
           where: debitMinutes is null
+  - changeSet:
+      id: 15
+      author: kr
+      comment: Drop foreign key (test db)
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: employeeorder
+            constraintName: FKB798CD408F771E12
+  - changeSet:
+      id: 16
+      author: kr
+      comment: Remove statusreport table and foreign key
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employeeorder
+            columnName: EMPLOYEEORDERCONTENT_ID
+      changes:
+        - dropColumn:
+            tableName: employeeorder
+            columnName: EMPLOYEEORDERCONTENT_ID
+        - dropColumn:
+            tableName: suborder
+            columnName: NOEMPLOYEEORDERCONTENT
+        - dropTable:
+            tableName: EMPLOYEEORDERCONTENT
+            cascadeConstraints: true

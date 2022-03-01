@@ -7,7 +7,6 @@ import org.apache.commons.mail.SimpleEmail;
 import org.springframework.stereotype.Service;
 import org.tb.common.configuration.SalatProperties;
 import org.tb.employee.Employee;
-import org.tb.statusreport.Statusreport;
 
 /**
  * Builds the various emails
@@ -19,10 +18,6 @@ import org.tb.statusreport.Statusreport;
 public class SimpleMailService {
 
     private final SalatProperties salatProperties;
-
-    public void sendStatusReportReleasedEmail(Statusreport report) throws EmailException {
-        createStatusReportReleasedMail(report).send();
-    }
 
     public void sendSalatBuchungenToReleaseMail(Employee recipient, Employee sender) throws EmailException {
         createSalatBuchungenToReleaseMail(recipient, sender).send();
@@ -51,20 +46,6 @@ public class SimpleMailService {
         mail.setSubject(subject);
         mail.setMsg(message.toString());
         return mail;
-    }
-
-    /* Email for released report */
-    private SimpleEmail createStatusReportReleasedMail(Statusreport report) throws EmailException {
-        String subject = "Statusbericht zum Auftrag " + report.getCustomerorder().getSignAndDescription() + " freigegeben";
-        StringBuilder message = new StringBuilder("Hallo ");
-        message.append(report.getRecipient().getFirstname());
-        message.append("\n\n");
-        message.append("Der Statusbericht zum ");
-        message.append(report.getCustomerorder().getSignAndDescription());
-        message.append(" wurde freigegeben.\n\n");
-        message.append(report.getSender().getName());
-
-        return createBasicEmail(subject, message, report.getSender(), report.getRecipient());
     }
 
     /* Email for Salatbuchungen to release */

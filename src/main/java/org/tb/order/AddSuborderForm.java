@@ -37,7 +37,6 @@ public class AddSuborderForm extends ActionForm {
     private Boolean hide;
     private Long parentId;
     private String parentDescriptionAndSign;
-    private Boolean noEmployeeOrderContent;
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -56,7 +55,6 @@ public class AddSuborderForm extends ActionForm {
         debithours = null;
         debithoursunit = null;
         hide = false;
-        noEmployeeOrderContent = false;
 
     }
 
