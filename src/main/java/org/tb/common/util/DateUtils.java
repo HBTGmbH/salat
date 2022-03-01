@@ -63,11 +63,6 @@ public class DateUtils {
         .ofPattern("HH")
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
 
-    private static final String[] monthShortStrings = GlobalConstants.MONTH_SHORTFORMS;
-    private static final String[] monthLongStrings = GlobalConstants.MONTH_LONGFORMS;
-
-    private static final Map<Year, List<OptionItem>> mapCalendarWeeks = new HashMap<>();
-
     /**
      * Month is 0-based.
      */
@@ -103,30 +98,6 @@ public class DateUtils {
         return formatDayOfMonth(dt);
     }
 
-    private static int getMonthMMFromShortstring(String st) {
-        // returns MM as int from short string (e.g., '01' from 'Jan')
-        for (int i = 0; i < monthShortStrings.length; i++) {
-            if (st.equals(monthShortStrings[i])) {
-                return i + 1;
-            }
-        }
-
-        return -1;
-    }
-
-    public static String getMonthMMStringFromShortstring(String st) {
-        // returns MM as string from short string (e.g., '01' from 'Jan')
-        int index = getMonthMMFromShortstring(st);
-        if (index == -1) { // st might already be in its correct form
-            return st;
-        }
-        if (index > 0 && index < 10) {
-            return "0" + index;
-        } else {
-            return Integer.toString(index);
-        }
-    }
-
     public static int getYear(String st) {
         // returns yyyy as int from String
         return Integer.parseInt(st);
@@ -147,136 +118,6 @@ public class DateUtils {
     public static boolean isWeekday(LocalDate dt) {
         var dow = dt.getDayOfWeek();
         return dow != SATURDAY && dow != SUNDAY;
-    }
-
-    /*
-     * builds up a list of string with current and previous year
-     */
-    public static List<OptionItem> getYearsToDisplay() {
-        List<OptionItem> theList = new ArrayList<>();
-
-        for (int i = STARTING_YEAR; i <= getCurrentYear() + 1; i++) {
-            String yearString = Integer.toString(i);
-            theList.add(new OptionItem(yearString, yearString));
-        }
-
-        return theList;
-    }
-
-    /*
-     * builds up a list of string with current and previous years since startyear of contract
-     */
-    public static List<OptionItem> getYearsSinceContractStartToDisplay(LocalDate validFrom) {
-        List<OptionItem> theList = new ArrayList<>();
-
-        int startyear = getYear(validFrom).getValue();
-        for (int i = startyear; i <= getCurrentYear() + 1; i++) {
-            String yearString = "" + i;
-            theList.add(new OptionItem(yearString, yearString));
-        }
-
-        return theList;
-    }
-
-    /*
-     * builds up a list of string with months to display (Jan-Dec)
-     */
-    public static List<OptionItem> getMonthsToDisplay() {
-        List<OptionItem> theList = new ArrayList<>();
-        for (int i = 1; i <= 12; i++) {
-            String dayValue = monthShortStrings[i - 1];
-            String dayLabel = monthLongStrings[i - 1];
-            theList.add(new OptionItem(dayValue, dayLabel));
-        }
-
-        return theList;
-    }
-
-    /**
-     * builds up a list of calendar weeks for a certain year
-     */
-    public static List<OptionItem> getWeeksToDisplay(String yearString) {
-        final Year year;
-        if (yearString != null) {
-            year = Year.of(Integer.parseInt(yearString));
-        } else {
-            year = Year.of(today().getYear());
-        }
-
-        return Optional.ofNullable(mapCalendarWeeks.get(year)).orElseGet(() -> {
-            var weekItems = new ArrayList<OptionItem>();
-            var beginOfYear = year.atDay(1).with(firstDayOfYear());
-            var endOfYear = beginOfYear.with(lastDayOfYear());
-            var currentDate = beginOfYear;
-            WeekFields weekFields = WeekFields.of(DEFAULT_LOCALE);
-            while(!currentDate.isAfter(endOfYear)) {
-                int week = currentDate.get(weekFields.weekOfYear());
-                LocalDate beginOfWeek = currentDate.with(DayOfWeek.MONDAY);
-                LocalDate endOfWeek = currentDate.with(SUNDAY);
-                String label = "KW" + week + " (" + format(beginOfWeek) + "-" + format(endOfWeek) + ")";
-                weekItems.add(new OptionItem(week, label));
-                currentDate = currentDate.plusWeeks(1);
-            }
-            mapCalendarWeeks.put(year, Collections.unmodifiableList(weekItems));
-            return weekItems;
-        });
-    }
-
-    /*
-     * builds up a list of string with days to display (01-31)
-     */
-    public static List<OptionItem> getDaysToDisplay() {
-        return IntStream.rangeClosed(1, 31).mapToObj(DateUtils::intToOptionitem).collect(Collectors.toList());
-    }
-
-    /*
-     * builds up a list of string with hour to display (6-21)
-     */
-    public static List<OptionItem> getHoursToDisplay() {
-        List<OptionItem> theList = new ArrayList<>();
-        for (int i = 6; i < 22; i++) {
-            theList.add(intToOptionitem(i));
-        }
-        return theList;
-    }
-
-    /*
-     * builds up a list of string with hour to display (1-5)
-     */
-    public static List<OptionItem> getCompleteHoursToDisplay() {
-        List<OptionItem> theList = new ArrayList<>();
-        for (int i = 0; i <= 5; i++) {
-            theList.add(intToOptionitem(i));
-        }
-        return theList;
-    }
-
-    /*
-     * builds up a list of string with duration hours to display (0-15)
-     */
-    public static List<OptionItem> getHoursDurationToDisplay() {
-        List<OptionItem> theList = new ArrayList<>();
-        for (int i = 0; i <= 24; i++) {
-            theList.add(intToOptionitem(i));
-        }
-        return theList;
-    }
-
-    /*
-     * builds up a list of string with minutes to display (05-55)
-     */
-    public static List<OptionItem> getMinutesToDisplay() {
-        List<OptionItem> theList = new ArrayList<>();
-        for (int i = 0; i < 60; i += 5) {
-            theList.add(intToOptionitem(i));
-        }
-        return theList;
-    }
-
-    private static OptionItem intToOptionitem(int i) {
-        String value = Integer.toString(i);
-        String label = i < 10 ? "0" + i : Integer.toString(i);
-        return new OptionItem(value, label);
     }
 
     /**
