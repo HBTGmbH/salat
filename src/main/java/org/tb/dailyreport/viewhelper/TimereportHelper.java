@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.AddDailyReportForm;
@@ -43,6 +44,7 @@ public class TimereportHelper {
     private final EmployeeorderDAO employeeorderDAO;
     private final PublicholidayDAO publicholidayDAO;
     private final OvertimeDAO overtimeDAO;
+    private final AuthorizedUser authorizedUser;
 
     /**
      * refreshes hours after change of begin/end times
@@ -63,8 +65,7 @@ public class TimereportHelper {
             ActionMessages errors,
             LocalDate theNewDate,
             Timereport timereport,
-            Employeecontract loginEmployeeContract,
-            boolean authorized) {
+            Employeecontract loginEmployeeContract) {
 
         // check date range (must be in current or previous year)
         if (DateUtils.getCurrentYear() - DateUtils.getYear(theNewDate).getValue() >= 2) {
@@ -101,8 +102,8 @@ public class TimereportHelper {
             firstday = true;
         }
 
-        if (!loginEmployeeContract.getEmployee().getSign().equals("adm")) {
-            if (authorized && !Objects.equals(loginEmployeeContract.getId(), timereport.getEmployeecontract().getId())) {
+        if (!authorizedUser.isAdmin()) {
+            if (authorizedUser.isManager() && !Objects.equals(loginEmployeeContract.getId(), timereport.getEmployeecontract().getId())) {
                 if (releaseDate.isBefore(theNewDate) || firstday) {
                     errors.add("release", new ActionMessage("form.timereport.error.not.released"));
                 }

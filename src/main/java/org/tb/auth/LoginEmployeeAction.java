@@ -84,7 +84,6 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
             request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
             request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-            request.getSession().setAttribute("employeeAuthorized", employeeHasAuthorization(loginEmployee));
 
             // check if public holidays are available
             publicholidayDAO.checkPublicHolidaysForCurrentYear();
@@ -280,12 +279,6 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                 }
             }
         }
-    }
-
-    private boolean employeeHasAuthorization(Employee loginEmployee) {
-        return loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_BL) ||
-            loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_PV) ||
-            loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM);
     }
 
     private ActionForward loginFailed(HttpServletRequest request, String key, ActionMapping mapping) {
