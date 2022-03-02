@@ -60,6 +60,8 @@ public class GlobalConstants {
     public static final String EMPLOYEE_STATUS_RESTRICTED = "restricted";
     public static final String EMPLOYEE_STATUS_ADM = "adm";
 
+    public static final String EMPLOYEE_SIGN_ADM = "adm";
+
     // FIXME use SimpleDateFormat for this
     public static final String MONTH_SHORTFORM_JANUARY = "Jan";
     public static final String MONTH_SHORTFORM_FEBRUARY = "Feb";
