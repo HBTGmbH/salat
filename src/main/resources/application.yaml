@@ -41,6 +41,8 @@ management:
     web:
       exposure:
         include: "*"
+  server:
+    port: 8081
 salat:
   url: localhost
   mail-host: localhost
