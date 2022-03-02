@@ -39,10 +39,10 @@ public class AuthenticationFilter extends HttpFilter {
         authorizedUser.setEmployeeId(loginEmployee.getId());
         authorizedUser.setSign(loginEmployee.getSign());
         authorizedUser.setRestricted(TRUE.equals(loginEmployee.getRestricted()));
-        boolean isManager = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV);
-        authorizedUser.setManager(isManager);
         boolean isAdmin = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM);
         authorizedUser.setAdmin(isAdmin);
+        boolean isManager = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV);
+        authorizedUser.setManager(isAdmin || isManager);
     }
 
 }
