@@ -52,10 +52,8 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         Employeecontract ec;
 
-        if (request.getSession().getAttribute("currentEmployeeContract") != null &&
-                (Boolean) request.getSession().getAttribute("employeeAuthorized")) {
+        if (request.getSession().getAttribute("currentEmployeeContract") != null && authorizedUser.isManager()) {
             ec = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
-
         } else {
             ec = loginEmployeeContract;
         }

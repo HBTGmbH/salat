@@ -36,6 +36,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Publicholiday;
@@ -51,6 +55,9 @@ import org.tb.order.Customerorder;
 import org.tb.order.CustomerorderDAO;
 import org.tb.order.SuborderDAO;
 
+@Component
+@Slf4j
+@RequiredArgsConstructor
 public class MatrixHelper {
 
     private static final String HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE = "HANDLING_ERROR_MESSAGE";
@@ -91,24 +98,16 @@ public class MatrixHelper {
         WEEK_DAYS_MAP.put(SUNDAY, "main.matrixoverview.weekdays.sunday.text");
     }
 
-    private final TimereportDAO trDAO;
-    private final EmployeecontractDAO ecDAO;
-    private final PublicholidayDAO phDAO;
-    private final CustomerorderDAO coDAO;
-    private final SuborderDAO soDAO;
-    private final EmployeeDAO eDAO;
-
-    public MatrixHelper(TimereportDAO trDAO, EmployeecontractDAO ecDAO, PublicholidayDAO phDAO, CustomerorderDAO coDAO, SuborderDAO soDAO, EmployeeDAO eDAO) {
-        this.trDAO = trDAO;
-        this.ecDAO = ecDAO;
-        this.phDAO = phDAO;
-        this.coDAO = coDAO;
-        this.soDAO = soDAO;
-        this.eDAO = eDAO;
-    }
+    private final TimereportDAO timereportDAO;
+    private final EmployeecontractDAO employeecontractDAO;
+    private final PublicholidayDAO publicholidayDAO;
+    private final CustomerorderDAO customerorderDAO;
+    private final SuborderDAO suborderDAO;
+    private final EmployeeDAO employeeDAO;
+    private final AuthorizedUser authorizedUser;
 
     public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
-        Employeecontract employeecontract = employeeContractId != -1 ? ecDAO.getEmployeeContractById(employeeContractId) : null;
+        Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
         LocalDate validFrom = dateFirst;
         LocalDate validUntil = dateLast;
         if (employeecontract != null) {
@@ -155,7 +154,7 @@ public class MatrixHelper {
             Collections.sort(mergedReport.getBookingDays());
         }
 
-        List<Publicholiday> publicHolidayList = phDAO.getPublicHolidaysBetween(dateFirst, dateLast);
+        List<Publicholiday> publicHolidayList = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast);
 
         List<DayAndWorkingHourCount> dayHoursCount = new ArrayList<>();
         int workdayCount = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList);
@@ -176,7 +175,7 @@ public class MatrixHelper {
 
         //calculate dayhourstarget
         if (employeeContractId == -1) {
-            List<Employeecontract> employeeContractList = ecDAO.getEmployeeContracts();
+            List<Employeecontract> employeeContractList = employeecontractDAO.getEmployeeContracts();
             Duration dailyWorkingTime = Duration.ZERO;
             for (Employeecontract employeeContract : employeeContractList) {
                 dailyWorkingTime = dailyWorkingTime.plus(employeeContract.getDailyWorkingTime());
@@ -353,15 +352,15 @@ public class MatrixHelper {
         //choice of timereports by date, employeecontractid and/or customerorderid
         if (method == 1 || method == 3) { // FIXME magic numbers
             if (employeeContractId == -1) {
-                return trDAO.getTimereportsByDates(dateFirst, dateLast);
+                return timereportDAO.getTimereportsByDates(dateFirst, dateLast);
             } else {
-                return trDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast);
+                return timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast);
             }
         } else if (method == 2 || method == 4) { // FIXME magic numbers
             if (employeeContractId == -1) {
-                return trDAO.getTimereportsByDatesAndCustomerOrderId(dateFirst, dateLast, customerOrderId);
+                return timereportDAO.getTimereportsByDatesAndCustomerOrderId(dateFirst, dateLast, customerOrderId);
             } else {
-                return trDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeeContractId, dateFirst, dateLast, customerOrderId);
+                return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeeContractId, dateFirst, dateLast, customerOrderId);
             }
         } else {
             throw new RuntimeException("this should not happen!");
@@ -400,7 +399,7 @@ public class MatrixHelper {
         }
         results.put("matrixview", selectedView);
 
-        Customerorder order = coDAO.getCustomerorderBySign(reportForm.getOrder());
+        Customerorder order = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
         ReportWrapper reportWrapper;
         Long ecId = reportForm.getEmployeeContractId();
         boolean isAcceptanceWarning = false;
@@ -409,7 +408,7 @@ public class MatrixHelper {
         boolean isNonInvoiceable = reportForm.getNonInvoice();
         if (ecId == -1) {
             // consider timereports for all employees
-            List<Customerorder> orders = coDAO.getCustomerorders();
+            List<Customerorder> orders = customerorderDAO.getCustomerorders();
             results.put("orders", orders);
 
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
@@ -425,9 +424,9 @@ public class MatrixHelper {
             results.put("currentEmployee", "ALL EMPLOYEES");
             results.put("currentEmployeeContract", null);
             results.put("currentEmployeeId", -1L);
-            List<Employeecontract> ecList = ecDAO.getEmployeeContracts();
+            List<Employeecontract> ecList = employeecontractDAO.getEmployeeContracts();
             for (Employeecontract employeeContract : ecList) {
-                if (!employeeContract.getEmployee().getSign().equals("adm")) {
+                if (!authorizedUser.isAdmin()) {
                     isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
                     if (!isAcceptanceWarning) {
                         break;
@@ -439,7 +438,7 @@ public class MatrixHelper {
             }
         } else {
             // consider timereports for specific employee
-            Employeecontract employeeContract = ecDAO.getEmployeeContractById(ecId);
+            Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(ecId);
             if (employeeContract == null) {
                 results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employee contract found for employee - please call system administrator.");
                 return results;
@@ -447,10 +446,10 @@ public class MatrixHelper {
 
             // also refresh orders/suborders to be displayed for specific
             // employee
-            List<Customerorder> orders = coDAO.getCustomerordersByEmployeeContractId(ecId);
+            List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
             results.put("orders", orders);
             if (orders.size() > 0) {
-                results.put("suborders", soDAO.getSubordersByEmployeeContractId(employeeContract.getId()));
+                results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(employeeContract.getId()));
             }
 
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
@@ -460,7 +459,7 @@ public class MatrixHelper {
             } else {
                 // get the timereports for specific date, specific employee,
                 // specific order
-                List<Customerorder> customerOrder = coDAO.getCustomerordersByEmployeeContractId(ecId);
+                List<Customerorder> customerOrder = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
                 if (customerOrder.contains(order)) {
                     reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
                 } else {
@@ -479,9 +478,9 @@ public class MatrixHelper {
 
             isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
             if (isAcceptanceWarning) {
-                Timereport timereport = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, employeeContract.getId());
+                Timereport timereport = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, employeeContract.getId());
                 if (timereport != null) {
-                    Employee employee = eDAO.getEmployeeBySign(timereport.getAcceptedby());
+                    Employee employee = employeeDAO.getEmployeeBySign(timereport.getAcceptedby());
                     acceptedBy = employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")";
                 }
             }
@@ -524,7 +523,7 @@ public class MatrixHelper {
             return results;
         }
 
-        List<Employeecontract> employeeContracts = ecDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
+        List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
 
         if (employeeContracts == null || employeeContracts.size() <= 0) {
             results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employees with valid contracts found - please call system administrator.");
@@ -558,9 +557,9 @@ public class MatrixHelper {
                 ecId = currentEc.getId();
                 isAcceptanceWarning = checkAcceptanceWarning(currentEc, dateLast);
             } else {
-                List<Employeecontract> ecList = ecDAO.getEmployeeContracts();
+                List<Employeecontract> ecList = employeecontractDAO.getEmployeeContracts();
                 for (Employeecontract employeeContract : ecList) {
-                    if (!employeeContract.getEmployee().getSign().equals("adm")) {
+                    if (!authorizedUser.isAdmin()) {
                         isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
                         if (!isAcceptanceWarning) {
                             break;
@@ -570,8 +569,8 @@ public class MatrixHelper {
             }
             results.put("acceptance", isAcceptanceWarning);
             if (isAcceptanceWarning) {
-                Timereport tr = trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, Objects.requireNonNull(currentEc).getId());
-                Employee employee = eDAO.getEmployeeBySign(tr.getAcceptedby());
+                Timereport tr = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, Objects.requireNonNull(currentEc).getId());
+                Employee employee = employeeDAO.getEmployeeBySign(tr.getAcceptedby());
                 results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
             }
 
@@ -631,7 +630,8 @@ public class MatrixHelper {
             if (!ec.getAcceptanceWarningByDate(dateLast)) {
                 if (ec.getReportAcceptanceDate() != null && !dateLast.isAfter(ec.getReportAcceptanceDate())) {
                     newAcceptance = true;
-                    Employee employee = eDAO.getEmployeeBySign(trDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, ec.getId()).getAcceptedby());
+                    Employee employee = employeeDAO.getEmployeeBySign(
+                        timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, ec.getId()).getAcceptedby());
                     results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
                 }
             }
@@ -640,18 +640,18 @@ public class MatrixHelper {
             // orders
             List<Customerorder> orders;
             if (currentEmployeeId != null && currentEmployeeId == -1) {
-                orders = coDAO.getCustomerorders();
+                orders = customerorderDAO.getCustomerorders();
                 results.put("currentEmployee", "ALL EMPLOYEES");
             } else {
-                orders = coDAO.getCustomerordersByEmployeeContractId(ec.getId());
+                orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
                 if (currentEmployeeId != null) {
-                    results.put("currentEmployee", eDAO.getEmployeeById(currentEmployeeId).getName());
+                    results.put("currentEmployee", employeeDAO.getEmployeeById(currentEmployeeId).getName());
                 }
             }
             results.put("orders", orders);
             results.put("currentOrder", "ALL ORDERS");
             if (orders.size() > 0) {
-                results.put("suborders", soDAO.getSubordersByEmployeeContractId(ec.getId()));
+                results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
             }
 
             reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);

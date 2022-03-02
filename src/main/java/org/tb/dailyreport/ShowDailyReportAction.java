@@ -98,13 +98,13 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     /**
      * checks, if timereports may be shifted by days
      */
-    private Collection<Long> checkShiftedDays(Collection<Long> ids, int days, Employeecontract loginEmployeeContract, boolean authorized) {
+    private Collection<Long> checkShiftedDays(Collection<Long> ids, int days, Employeecontract loginEmployeeContract) {
         Collection<Long> errors = new ArrayList<>();
         ids.forEach(id -> {
             Timereport timereport = timereportDAO.getTimereportById(id);
             LocalDate shiftedDate = DateUtils.addDays(timereport.getReferenceday().getRefdate(), days);
             ActionMessages actionErrors = timereportHelper.validateNewDate(new ActionMessages(), shiftedDate,
-                timereport, loginEmployeeContract, authorized);
+                timereport, loginEmployeeContract);
             if (!actionErrors.isEmpty()) {
                 errors.add(id);
             }
@@ -118,7 +118,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
      *
      * @return null if successful, else a list of problematic timereports
      */
-    private Collection<Long> massShiftDays(String[] sIds, String byDays, Employeecontract loginEmployeeContract, boolean authorized) {
+    private Collection<Long> massShiftDays(String[] sIds, String byDays, Employeecontract loginEmployeeContract) {
         int days = Integer.parseInt(byDays);
 
         List<Long> ids = Arrays.stream(sIds)
@@ -126,7 +126,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        Collection<Long> errors = checkShiftedDays(ids, days, loginEmployeeContract, authorized);
+        Collection<Long> errors = checkShiftedDays(ids, days, loginEmployeeContract);
         if (!errors.isEmpty()) {
             return errors;
         }
@@ -173,8 +173,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             String days = request.getParameter("byDays");
 
             Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-            Boolean authorized = (Boolean) request.getSession().getAttribute("employeeAuthorized");
-            Collection<Long> errors = massShiftDays(sIds.split(","), days, loginEmployeecontract, authorized);
+            Collection<Long> errors = massShiftDays(sIds.split(","), days, loginEmployeecontract);
             if (errors != null) {
                 if (!errors.isEmpty()) {
                     request.setAttribute("failedMassEditIds", errors);

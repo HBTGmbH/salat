@@ -78,7 +78,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     .getEmployeeContractById(releaseForm
                             .getEmployeeContractId());
         }
-        if (supervisor || (Boolean) request.getSession().getAttribute("employeeAuthorized")) {
+        if (supervisor || authorizedUser.isManager()) {
             Employeecontract currentEmployeeContract;
             if (request.getParameter("task") != null
                     && request.getParameter("task").equals("updateEmployee")) {
