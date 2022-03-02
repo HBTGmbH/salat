@@ -5,11 +5,13 @@ import static org.springframework.data.domain.Sort.Direction.ASC;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.tb.common.GlobalConstants;
 
 @Component
 @RequiredArgsConstructor
@@ -46,34 +48,23 @@ public class EmployeeDAO {
      * @return Returns all {@link Employee}s with a contract.
      */
     public List<Employee> getEmployeesWithContracts() {
-        List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
-        List<Employee> employees = new ArrayList<>();
-        for (Employeecontract employeecontract : employeeContracts) {
-            if (!employees.contains(employeecontract.getEmployee())) {
-                employees.add(employeecontract.getEmployee());
-            }
-        }
-        // remove admin
-        Employee admin = getEmployeeBySign("adm");
-        employees.remove(admin);
-        return employees;
+        return employeecontractDAO.getEmployeeContracts().stream()
+            .map(Employeecontract::getEmployee)
+            .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+            .distinct()
+            .collect(Collectors.toList());
     }
 
     /**
      * @return Returns all {@link Employee}s with a contract.
      */
     public List<Employee> getEmployeesWithValidContracts() {
-        List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContracts();
-        List<Employee> employees = new ArrayList<>();
-        for (Employeecontract employeecontract : employeeContracts) {
-            if (employeecontract.getCurrentlyValid() && !employees.contains(employeecontract.getEmployee())) {
-                employees.add(employeecontract.getEmployee());
-            }
-        }
-        // remove admin
-        Employee admin = getEmployeeBySign("adm");
-        employees.remove(admin);
-        return employees;
+        return employeecontractDAO.getEmployeeContracts().stream()
+            .filter(Employeecontract::getCurrentlyValid)
+            .map(Employeecontract::getEmployee)
+            .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+            .distinct()
+            .collect(Collectors.toList());
     }
 
 
