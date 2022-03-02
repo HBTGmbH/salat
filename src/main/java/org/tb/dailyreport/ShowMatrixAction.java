@@ -28,6 +28,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
     private final SuborderDAO suborderDAO;
     private final PublicholidayDAO publicholidayDAO;
     private final EmployeeDAO employeeDAO;
+    private final MatrixHelper matrixHelper;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowMatrixForm reportForm, HttpServletRequest request, HttpServletResponse response) {
@@ -41,11 +42,10 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             return mapping.findForward("print");
         }
 
-        MatrixHelper mh = new MatrixHelper(timereportDAO, employeecontractDAO, publicholidayDAO, customerorderDAO, suborderDAO, employeeDAO);
         // call on MatrixView with parameter refreshMergedreports to update request
         if ("refreshMergedreports".equals(task)) {
-            Map<String, Object> results = mh.refreshMergedReports(reportForm);
-            return finishHandling(results, request, mh, mapping);
+            Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm);
+            return finishHandling(results, request, matrixHelper, mapping);
         }
 
         // call on MatrixView with any parameter to forward or go back
@@ -62,14 +62,14 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             EmployeeHelper eh = new EmployeeHelper();
             Employeecontract ec = eh.setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
 
-            Map<String, Object> results = mh.handleNoArgs(
+            Map<String, Object> results = matrixHelper.handleNoArgs(
                     reportForm,
                     ec,
                     (Employeecontract) request.getSession().getAttribute("currentEmployeeContract"),
                     (Long) request.getSession().getAttribute("currentEmployeeId"),
                     (String) request.getSession().getAttribute("currentMonth"),
                     loginEmployee);
-            return finishHandling(results, request, mh, mapping);
+            return finishHandling(results, request, matrixHelper, mapping);
         }
     }
 
