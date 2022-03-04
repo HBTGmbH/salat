@@ -6,6 +6,7 @@ import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
 import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
 import static org.tb.common.DateTimeViewHelper.getSerialDayList;
+import static org.tb.common.util.DateUtils.now;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
@@ -115,10 +116,10 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         if (workingDayIsAvailable) {
             // set end time in reportform
-            today = today();
+            var now = now();
 
-            int hour = Integer.parseInt(DateUtils.formatHours(today));
-            int minute = Integer.parseInt(DateUtils.formatMinutes(today));
+            int hour = Integer.parseInt(DateUtils.formatHours(now));
+            int minute = Integer.parseInt(DateUtils.formatMinutes(now));
 
             if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
                 form.setSelectedMinuteEnd(minute);

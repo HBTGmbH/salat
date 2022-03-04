@@ -279,11 +279,11 @@ public class DateUtils {
         return date.format(formatter);
     }
 
-    public static String formatMinutes(LocalDate date) {
+    public static String formatMinutes(LocalDateTime date) {
         return minuteFormatter.format(date);
     }
 
-    public static String formatHours(LocalDate date) {
+    public static String formatHours(LocalDateTime date) {
         return hourFormatter.format(date);
     }
 
