@@ -128,7 +128,7 @@
 			<td align="left" class="noBborderStyle">
 				<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateOrdersAction(this.form)" styleClass="make-select2 ecCls">				
 				<c:choose>
-					<c:when test="${employeeAuthorized}">
+					<c:when test="${authorizedUser.manager}">
 						<c:forEach var="employeecontract" items="${employeecontracts}" >
 							<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 								<html:option value="${employeecontract.id}">

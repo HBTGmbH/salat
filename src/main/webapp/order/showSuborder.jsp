@@ -188,7 +188,7 @@
 		<bean:size id="subordersSize" name="suborders" />
 		<c:if test="${subordersSize>10}">
 
-			<c:if test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
+			<c:if test="${(authorizedUser.manager && visibleOrdersPresent) || employeeIsResponsible}">
 				<tr>
 					<td colspan="11" class="noBborderStyle">
 						<table class="center backgroundcolor">
@@ -201,7 +201,7 @@
 								</html:form>
 								<html:form action="/ShowSuborder">
 									<td class="noBborderStyle"><c:if
-											test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+											test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 											<html:submit styleId="button" onclick="setflag(this.form)"
 												titleKey="main.general.button.setflag.alttext.text">
 												<bean:message key="main.general.button.setflag.text" />
@@ -234,7 +234,7 @@
 
 						<c:choose>
 							<c:when
-								test="${(employeeAuthorized || currentOrder.responsible_hbt.id == loginEmployee.id) && (currentOrder.currentlyValid || !currentOrder.hide)}">
+								test="${(authorizedUser.manager || currentOrder.responsible_hbt.id == loginEmployee.id) && (currentOrder.currentlyValid || !currentOrder.hide)}">
 								<tree:tree mainProject="${currentOrder}"
 									subProjects="${suborders}" browser="<%=browser%>"
 									changeFunctionString="callEdit(this.form, 'default')"
@@ -262,7 +262,7 @@
 				<c:otherwise>
 					<tr>
 						<c:if
-							test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+							test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 							<th align="left" title="select">&nbsp;</th>
 						</c:if>
 						<th align="left" title="Info"><b>Info</b></th>
@@ -332,7 +332,7 @@
 
 						<!-- Checkbox -->
 						<c:if
-							test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && 
+							test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) &&
 									(suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 							<td align="center"><html:multibox styleId="suborderIdArray"
 									property="suborderIdArray" value="${suborder.id}" /></td>
@@ -674,7 +674,7 @@
 
 						<c:choose>
 							<c:when
-								test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+								test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 								<td align="center"><html:link
 										href="/do/EditSuborder?soId=${suborder.id}">
 										<img src="/images/Edit.gif" alt="Edit Suborder"
@@ -699,7 +699,7 @@
 				</c:otherwise>
 			</c:choose>
 			<c:if
-				test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+				test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 				<tr>
 					<html:hidden styleId="suborderOptionValue"
 						property="suborderOptionValue" />
@@ -726,7 +726,7 @@
 			</c:if>
 		</html:form>
 		<c:if
-			test="${(employeeAuthorized && visibleOrdersPresent) || employeeIsResponsible}">
+			test="${(authorizedUser.manager && visibleOrdersPresent) || employeeIsResponsible}">
 			<tr>
 				<td colspan="11" class="noBborderStyle">
 					<table class="center backgroundcolor">
@@ -739,7 +739,7 @@
 							</html:form>
 							<html:form action="/ShowSuborder">
 								<td class="noBborderStyle"><c:if
-										test="${(employeeAuthorized || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+										test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
 										<html:submit styleId="button" onclick="setflag(this.form)"
 											titleKey="main.general.button.setflag.alttext.text">
 											<bean:message key="main.general.button.setflag.text" />
