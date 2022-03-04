@@ -66,7 +66,7 @@
 </html:form>
 	<bean:size id="customersSize" name="customers" />
 	<c:if test="${customersSize>10}">
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<tr>
 				<html:form action="/CreateCustomer">
 					<td class="noBborderStyle" colspan="2"><html:submit
@@ -92,7 +92,7 @@
 			title="<bean:message
 			key="main.headlinedescription.customers.address.text" />"><b><bean:message
 			key="main.customer.address.text" /></b></th>
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<th align="left"
 				title="<bean:message
 				key="main.headlinedescription.customers.edit.text" />"><b><bean:message
@@ -151,7 +151,7 @@
 		<td><c:out value="${customer.name}" /></td>
 		<td><c:out value="${customer.address}" /></td>
 
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<td align="center"><html:link
 				href="/do/EditCustomer?cuId=${customer.id}">
 				<img src="/images/Edit.gif" alt="Edit Customer" title="<bean:message key="main.headlinedescription.customers.edit.text"/>"/>
@@ -164,7 +164,7 @@
 		</c:if>
 		</tr>
 	</c:forEach>
-	<c:if test="${employeeAuthorized}">
+	<c:if test="${authorizedUser.manager}">
 		<tr>
 			<html:form action="/CreateCustomer">
 				<td class="noBborderStyle" colspan="2"><html:submit

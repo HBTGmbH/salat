@@ -102,7 +102,7 @@
 
 	<bean:size id="employeecontractsSize" name="employeecontracts" />
 	<c:if test="${employeecontractsSize>10}">
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<tr>
 				<html:form action="/CreateEmployeecontract">
 					<td class="noBborderStyle" colspan="4"><html:submit
@@ -142,7 +142,7 @@
 		<th align="center"
 			title="<bean:message key="main.headlinedescription.employeecontracts.vacationdaysperyear.text" />"><b><bean:message
 			key="main.employeecontract.yearlyvacation.text" /></b></th>
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<th align="left"
 				title="<bean:message key="main.headlinedescription.employeecontracts.edit.text" />"><b><bean:message
 				key="main.employeecontract.edit.text" /></b></th>
@@ -262,7 +262,7 @@
 				</c:otherwise>
 			</c:choose>
 			
-			<c:if test="${employeeAuthorized}">
+			<c:if test="${authorizedUser.manager}">
 				<td align="center"><html:link
 					href="/do/EditEmployeecontract?ecId=${employeecontract.id}">
 					<img src="/images/Edit.gif" alt="Edit Employeecontract" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text"/>"/>
@@ -276,7 +276,7 @@
 			</tr>
 		</c:if>
 	</c:forEach>
-	<c:if test="${employeeAuthorized}">
+	<c:if test="${authorizedUser.manager}">
 		<tr>
 			<html:form action="/CreateEmployeecontract">
 				<td class="noBborderStyle" colspan="4"><html:submit

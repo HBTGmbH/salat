@@ -104,7 +104,7 @@
 
 	<bean:size id="customerordersSize" name="customerorders" />
 	<c:if test="${customerordersSize>10}">
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<tr>
 				<html:form action="/CreateCustomerorder">
 					<td class="noBborderStyle" colspan="4"><html:submit
@@ -160,7 +160,7 @@
 				key="main.general.showactualhours.text" /></b></th>
 			<th align="left"><b><bean:message
 				key="main.general.difference.text"/></b></th></c:if>	
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<th align="left"
 				title="<bean:message
 				key="main.headlinedescription.orders.edit.text" />"><b><bean:message
@@ -424,7 +424,7 @@
 		</c:choose>
 
 
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<td align="center"><html:link
 				href="/do/EditCustomerorder?coId=${customerorder.id}">
 				<img src="/images/Edit.gif" alt="Edit Customerorder"
@@ -440,7 +440,7 @@
 		</tr>
 
 	</c:forEach>
-	<c:if test="${employeeAuthorized}">
+	<c:if test="${authorizedUser.manager}">
 		<tr>
 			<html:form action="/CreateCustomerorder">
 				<td class="noBborderStyle" colspan="4"><html:submit

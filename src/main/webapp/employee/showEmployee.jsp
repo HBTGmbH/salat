@@ -66,7 +66,7 @@
 </html:form>
 <bean:size id="employeesSize" name="employees" />
 <c:if test="${employeesSize>10}">
-	<c:if test="${employeeAuthorized}">
+	<c:if test="${authorizedUser.manager}">
 		<tr>
 			<html:form action="/CreateEmployee">
 				<td class="noBborderStyle" colspan="4"><html:submit
@@ -107,7 +107,7 @@
 			title="<bean:message
 			key="main.headlinedescription.employees.gender.text" />"><b><bean:message
 			key="main.employee.gender.text" /></b></th>
-		<c:if test="${employeeAuthorized}">
+		<c:if test="${authorizedUser.manager}">
 			<th align="left"
 				title="<bean:message
 				key="main.headlinedescription.employees.edit.text" />"><b><bean:message
@@ -175,7 +175,7 @@
       	-->
 			<td><c:out value="${employee.status}" /></td>
 			<td align="center"><c:out value="${employee.gender}" /></td>
-			<c:if test="${employeeAuthorized}">
+			<c:if test="${authorizedUser.manager}">
 				<td align="center"><html:link
 					href="/do/EditEmployee?emId=${employee.id}">
 					<img src="/images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
@@ -189,7 +189,7 @@
 			</tr>
 		</c:if>
 	</c:forEach>
-	<c:if test="${employeeAuthorized}">
+	<c:if test="${authorizedUser.manager}">
 		<tr>
 			<html:form action="/CreateEmployee">
 				<td class="noBborderStyle" colspan="4"><html:submit

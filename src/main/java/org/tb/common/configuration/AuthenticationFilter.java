@@ -31,7 +31,11 @@ public class AuthenticationFilter extends HttpFilter {
         if(loginEmployee != null && loginEmployee.getId() != null) {
             employeeRepository.findById(loginEmployee.getId()).ifPresent(this::initAuthorizedUser);
         }
+        Object oldValue = request.getAttribute("authorizedUser");
+        request.setAttribute("authorizedUser", authorizedUser);
         super.doFilter(request, response, chain);
+        request.setAttribute("authorizedUser", oldValue);
+
     }
 
     private void initAuthorizedUser(Employee loginEmployee) {

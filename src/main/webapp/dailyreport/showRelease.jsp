@@ -132,7 +132,7 @@
 					</td>
 				</tr>
 				
-				<c:if test="${isSupervisor or employeeAuthorized}">	
+				<c:if test="${isSupervisor or authorizedUser.manager}">
 					<tr>
 						<td align="left" class="noBborderStyle">
 							<b><bean:message key="main.release.supervisor.text" />:&nbsp;&nbsp;</b>
@@ -162,7 +162,7 @@
 						
 					<td align="left" class="noBborderStyle">
 						<c:choose>
-							<c:when test="${employeeAuthorized or isSupervisor}">
+							<c:when test="${authorizedUser.manager or isSupervisor}">
 								<html:select property="employeeContractId" styleClass="make-select2"
 									onchange="setUpdateEmployeeContract(this.form)">
 									<html:option value="${loginEmployeeContract.id}">
@@ -213,7 +213,7 @@
 				<!-- release -->
 
 				<c:if
-					test="${employeeAuthorized || employeeContractId == loginEmployeeContractId}">
+					test="${authorizedUser.manager || employeeContractId == loginEmployeeContractId}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="10"></td>
 					</tr>
@@ -287,7 +287,7 @@
 
 
 				<!-- acceptance -->
-				<c:if test="${isSupervisor || employeeAuthorized}">
+				<c:if test="${isSupervisor || authorizedUser.manager}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="30"></td>
 					</tr>

@@ -182,7 +182,7 @@
 	<tbody>
 		<tr>
 			<bean:size id="employeeordersSize" name="employeeorders" />
-			<c:if test="${employeeordersSize > 10 && (employeeAuthorized || employeeIsResponsible)}">
+			<c:if test="${employeeordersSize > 10 && (authorizedUser.manager || employeeIsResponsible)}">
 				<td class="noBborderStyle" >
 					<html:form action="/CreateEmployeeorder">
 							<html:submit styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
@@ -198,7 +198,7 @@
 					</html:form>
 				</td>
 			</c:if>
-			<c:if test="${employeeAuthorized}">
+			<c:if test="${authorizedUser.manager}">
 				<td class="noBborderStyle"> 
 					<html:form action="/ShowEmployeeorder?task=adjustDates">
 						<html:submit styleId="button" titleKey="main.general.button.adjustemployeeorder.alttext.text">
@@ -550,7 +550,7 @@
 		</c:choose>
 		<c:choose>
 			<c:when
-				test="${employeeAuthorized || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
+				test="${authorizedUser.manager || employeeorder.suborder.customerorder.responsible_hbt.id == loginEmployee.id}">
 				<td align="center"><html:link
 					href="/do/EditEmployeeorder?eoId=${employeeorder.id}">
 					<html:img src="/images/Edit.gif" alt="Edit Employeeorder"
@@ -574,7 +574,7 @@
 		</c:choose>
 	</c:forEach>
 </table>
-<c:if test="${employeeAuthorized || employeeIsResponsible}">
+<c:if test="${authorizedUser.manager || employeeIsResponsible}">
 	<table>
 		<tbody>
 			<tr>

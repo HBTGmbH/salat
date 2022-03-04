@@ -19,7 +19,7 @@ public class HttpFilterConfiguration {
     public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
         var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
         registrationBean.setFilter(new AuthenticationFilter(authorizedUser, employeeRepository));
-        registrationBean.addUrlPatterns("/do/*", "/rest/*");
+        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
         return registrationBean;
     }
 
