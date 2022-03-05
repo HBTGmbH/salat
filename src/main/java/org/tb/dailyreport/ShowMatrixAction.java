@@ -1,5 +1,9 @@
 package org.tb.dailyreport;
 
+import static org.tb.common.DateTimeViewHelper.getShortstringFromMonthMM;
+import static org.tb.common.util.DateUtils.getDateFormStrings;
+import static org.tb.common.util.DateUtils.today;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +48,24 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // call on MatrixView with parameter refreshMergedreports to update request
         if ("refreshMergedreports".equals(task)) {
+            Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm);
+            return finishHandling(results, request, matrixHelper, mapping);
+        }
+
+        if ("setMonth".equals(task)) {
+            var mode = request.getParameter("mode");
+            var date = getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
+            switch(mode) {
+                case "0":
+                    date = today();
+                    break;
+                default:
+                    date = date.plusMonths(Long.valueOf(mode));
+            }
+            String fromMonth = getShortstringFromMonthMM(date.getMonthValue());
+            String fromYear = String.valueOf(date.getYear());
+            reportForm.setFromMonth(fromMonth);
+            reportForm.setFromYear(fromYear);
             Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm);
             return finishHandling(results, request, matrixHelper, mapping);
         }
