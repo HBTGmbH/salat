@@ -43,6 +43,7 @@ public class AddDailyReportForm extends ActionForm {
     private Long employeeContractId;
     private int numberOfSerialDays;
     private String action;
+    private boolean showAllMinutes;
 
     public AddDailyReportForm() {
         setReferenceday(DateUtils.format(today()));
@@ -92,6 +93,7 @@ public class AddDailyReportForm extends ActionForm {
         referenceday = DateUtils.format(DateUtils.today());
         training = false;
         numberOfSerialDays = 0;
+        showAllMinutes = false;
     }
 
     public void recalcDurationFromBeginAndEnd() {

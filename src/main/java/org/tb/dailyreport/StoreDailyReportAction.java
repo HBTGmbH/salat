@@ -98,6 +98,11 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             refreshWorkdayAvailability = true;
         }
 
+        if (request.getParameter("task") != null && request.getParameter("task").equals("toggleShowAllMinutes")) {
+            request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(form.isShowAllMinutes()));
+            return mapping.getInputForward();
+        }
+
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshOrders")) {
             refreshOrders = true;
         }
@@ -192,6 +197,11 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 form.setSelectedHourDuration(hours);
                 form.setSelectedMinuteDuration(minutes);
+
+                if(minutes % 5 != 0) {
+                    form.setShowAllMinutes(true);
+                    request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(form.isShowAllMinutes()));
+                }
             }
         }
 
@@ -346,9 +356,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 request.getSession().setAttribute("months", getMonthsToDisplay());
                 request.getSession().setAttribute("hours", getHoursToDisplay());
                 request.getSession().setAttribute("breakhours", getBreakHoursOptions());
-                request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions());
+                request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(false));
                 request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
-                request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
+                request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(form.isShowAllMinutes()));
 
                 // save values from the data base into form-bean, when working day != null
                 if (workingday != null) {

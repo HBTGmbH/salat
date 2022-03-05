@@ -86,7 +86,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("months", getMonthsToDisplay());
         request.getSession().setAttribute("hours", getHoursToDisplay());
         request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
-        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(form.isShowAllMinutes()));
         request.getSession().setAttribute("serialBookings", getSerialDayList());
 
         // search for adequate workingday and set status in session

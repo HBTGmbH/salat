@@ -51,7 +51,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
 
         // set collections
         request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
-        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
 
         // make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
         // if the current suborder is overtime compensation.

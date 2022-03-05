@@ -108,7 +108,10 @@ public class DateTimeViewHelper {
   /*
    * builds up a list of string with minutes to display (05-55)
    */
-  public static List<OptionItem> getTimeReportMinutesOptions() {
+  public static List<OptionItem> getTimeReportMinutesOptions(boolean showAllMinutes) {
+    if(showAllMinutes) {
+      return getOptionItemListOfInts(0, 59);
+    }
     List<OptionItem> result = new ArrayList<>();
     for (int i = 0; i < 60; i+=5) {
       result.add(intToOptionitem(i));
