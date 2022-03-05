@@ -110,11 +110,9 @@ public class DateTimeViewHelper {
    */
   public static List<OptionItem> getTimeReportMinutesOptions() {
     List<OptionItem> result = new ArrayList<>();
-    result.add(intToOptionitem(0));
-    result.add(intToOptionitem(15));
-    result.add(intToOptionitem(30));
-    result.add(intToOptionitem(45));
-    result.addAll(getOptionItemListOfInts(0, 59));
+    for (int i = 0; i < 60; i+=5) {
+      result.add(intToOptionitem(i));
+    }
     return result;
   }
 
