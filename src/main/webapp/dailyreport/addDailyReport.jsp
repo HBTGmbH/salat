@@ -19,7 +19,6 @@
 	var currentUser = "${currentEmployeeContract.employee.sign}";
 </script>
 <script src="/scripts/favouriteOrder.js" type="text/javascript"></script>
-<% java.text.DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");%>
 <script type="text/javascript">
 	if(typeof Storage !== "undefined") HBT.Salat.FavouriteOrders.initialize({
 		thisIsTheDefaultOrder: '<bean:message key="add.report.this.default.order" />',
@@ -34,8 +33,13 @@
  	function setUpdateOrdersAction(form) {
  		form.action = "/do/StoreDailyReport?task=refreshOrders";
 		form.submit();
-	}	
-	
+	}
+
+	function setToggleShowAllMinutes(form) {
+		form.action = "/do/StoreDailyReport?task=toggleShowAllMinutes";
+		form.submit();
+	}
+
 	function setUpdateSubordersAction(select) {	
  		var form = select.form;
  		
@@ -307,6 +311,7 @@
 				<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
 					<html:options collection="minutes" property="value" labelProperty="label" />
 				</html:select>
+				<html:checkbox property="showAllMinutes" onchange="setToggleShowAllMinutes(this.form)" /> <bean:message key="main.timereport.showallminutes.text" />
 				<span style="color:red">
 					<html:errors property="selectedDuration" />
 				 </span>

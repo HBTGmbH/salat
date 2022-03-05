@@ -616,9 +616,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         request.getSession().setAttribute("months", getMonthsToDisplay());
         request.getSession().setAttribute("hours", getHoursToDisplay());
         request.getSession().setAttribute("breakhours", getBreakHoursOptions());
-        request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions());
+        request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(false));
         request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
-        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions());
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(false));
         if (reportForm.getMonth() != null) {
             // call from list select change
             request.getSession().setAttribute("currentDay", reportForm.getDay());
