@@ -26,6 +26,11 @@
 			form.submit();
 		}
 
+		function setMonth(mode) {
+			document.forms[0].action = "/do/ShowMatrix?task=setMonth&mode=" + mode;
+			document.forms[0].submit();
+		}
+
 		$(document).ready(function() {
 			$(".make-select2").select2({
 				dropdownAutoWidth: true,
@@ -158,7 +163,24 @@
 						onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
 						<html:options collection="years" property="value"
 							labelProperty="label" />
-					</html:select></td>
+					</html:select>
+
+					<c:if test="${matrixview != 'custom'}">
+						<%-- Arrows for navigating the month --%>
+
+						<a href="javascript:setMonth('-1')" style="margin-left: 10px">
+							<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+						</a>
+
+						<a href="javascript:setMonth('0')" style="margin-left: 10px">
+							<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+						</a>
+
+						<a href="javascript:setMonth('1')" style="margin-left: 10px">
+							<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+						</a>
+					</c:if>
+				</td>
 			</tr>
 
 			<!-- select second date -->

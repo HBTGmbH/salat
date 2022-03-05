@@ -140,6 +140,11 @@ public class DateTimeViewHelper {
     return theList;
   }
 
+  // month 1 - 12
+  public static String getShortstringFromMonthMM(int month) {
+    return GlobalConstants.MONTH_SHORTFORMS[month - 1];
+  }
+
   public static String getMonthMMStringFromShortstring(String st) {
     // returns MM as string from short string (e.g., '01' from 'Jan')
     int index = getMonthMMFromShortstring(st);
