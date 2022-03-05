@@ -36,19 +36,12 @@ public class CustomerorderHelper {
      */
     public boolean refreshOrders(HttpServletRequest request, AddDailyReportForm reportForm) {
 
-        // initialize with empty values (in case of any error we return an empty result)
-        reportForm.setOrderId(-1);
-        reportForm.setSuborderSignId(-1);
-        reportForm.setSuborderDescriptionId(-1);
-        request.getSession().setAttribute("orders", Collections.emptyList());
-        request.getSession().setAttribute("currentSuborderId", -1);
-        request.getSession().setAttribute("suborders", Collections.emptyList());
-
         String dateString = reportForm.getReferenceday();
         LocalDate date;
         try {
             date = parse(dateString);
         } catch (ParseException e) {
+            resetFormValues(reportForm, request);
             return false;
         }
 
@@ -60,6 +53,7 @@ public class CustomerorderHelper {
             }
         } else {
             // TODO request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO: MessageResources
+            resetFormValues(reportForm, request);
             return false;
         }
 
@@ -67,6 +61,7 @@ public class CustomerorderHelper {
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), date);
         if (orders.isEmpty()) {
             // TODO check error messages - request.setAttribute("errorMessage", "No orders found for employee - please call system administrator."); //TODO: MessageResources
+            resetFormValues(reportForm, request);
             return false;
         }
 
@@ -103,6 +98,15 @@ public class CustomerorderHelper {
         request.getSession().setAttribute("currentEmployeeContract", ec);
 
         return true;
+    }
+
+    private void resetFormValues(AddDailyReportForm reportForm, HttpServletRequest request) {
+        reportForm.setOrderId(-1);
+        reportForm.setSuborderSignId(-1);
+        reportForm.setSuborderDescriptionId(-1);
+        request.getSession().setAttribute("orders", Collections.emptyList());
+        request.getSession().setAttribute("currentSuborderId", -1);
+        request.getSession().setAttribute("suborders", Collections.emptyList());
     }
 
     /**
