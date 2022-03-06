@@ -88,6 +88,9 @@
 					<bean:message key="main.employee.status.pl" />
 				</html:option>
 				-->
+				<html:option value="bo">
+					<bean:message key="main.employee.status.bo" />
+				</html:option>
 				<html:option value="bl">
 					<bean:message key="main.employee.status.bl" />
 				</html:option>

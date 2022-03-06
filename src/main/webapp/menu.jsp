@@ -94,9 +94,11 @@ window.onload=startList;
 			<li><html:link styleClass="menu" action="/ShowSuborder">
 				<bean:message key="main.general.mainmenu.suborders.text" />
 			</html:link></li>
-			<li><html:link styleClass="menu" action="/ShowInvoice">
-				<bean:message key="main.general.mainmenu.invoice.title.text" />
-			</html:link></li>
+			<c:if test="${authorizedUser.backoffice}">
+				<li><html:link styleClass="menu" action="/ShowInvoice">
+					<bean:message key="main.general.mainmenu.invoice.title.text" />
+				</html:link></li>
+			</c:if>
 		</ul>
 		</li>
 	</c:when>
@@ -114,19 +116,7 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowSettings">
 			<bean:message key="main.general.mainmenu.settings.text" />
 		</html:link></li>
-		<c:choose>
-			<c:when test="${clientIntern}">
-				<li><html:link styleClass="menu" target="_blank" href="http://wiki/mediawiki/index.php/Benutzerhandbuch_SALAT">
-					<bean:message key="main.general.mainmenu.bhb.text" />
-				</html:link></li>
-			</c:when>
-			<c:otherwise>
-				<li><html:link styleClass="menu" target="_blank" href="https://wiki.hbt.de/mediawiki/index.php/Benutzerhandbuch_SALAT">
-					<bean:message key="main.general.mainmenu.bhb.text" />
-				</html:link></li>
-			</c:otherwise>
-		</c:choose>
-		<c:if test="${loginEmployee.sign == 'adm'}">
+		<c:if test="${authorizedUser.admin}">
 			<li><html:link styleClass="menu" action="/ShowAdminOptions">
 				<bean:message key="adminarea.title" />
 			</html:link></li>

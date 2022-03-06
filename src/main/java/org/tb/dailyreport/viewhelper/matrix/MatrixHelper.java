@@ -523,7 +523,7 @@ public class MatrixHelper {
             return results;
         }
 
-        List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
+        List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
 
         if (employeeContracts == null || employeeContracts.size() <= 0) {
             results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employees with valid contracts found - please call system administrator.");

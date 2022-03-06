@@ -497,7 +497,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
         String dateString = reportForm.getReferenceday();
         LocalDate date = DateUtils.parseOrDefault(dateString, DateUtils.today());
 

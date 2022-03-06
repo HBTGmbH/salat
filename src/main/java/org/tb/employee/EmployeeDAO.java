@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 
 @Component
@@ -19,6 +20,7 @@ public class EmployeeDAO {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
+    private final AuthorizedUser authorizedUser;
 
     /**
      * Retrieves the employee with the given loginname.
@@ -73,7 +75,9 @@ public class EmployeeDAO {
      */
     public List<Employee> getEmployees() {
         var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
-        return Lists.newArrayList(employeeRepository.findAll(Sort.by(order)));
+        return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
+            .filter(e -> authorizedUser.isManager() || e.getId().equals(authorizedUser.getEmployeeId()))
+            .collect(Collectors.toList());
     }
 
     /**
@@ -82,7 +86,10 @@ public class EmployeeDAO {
     public List<Employee> getEmployeesByFilter(String filter) {
         var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
         if (filter == null || filter.trim().equals("")) {
-            return Lists.newArrayList(employeeRepository.findAll(Sort.by(order)));
+            return Lists.newArrayList(employeeRepository
+                .findAll(Sort.by(order))).stream()
+                .filter(e -> authorizedUser.isManager() || e.getId().equals(authorizedUser.getEmployeeId()))
+                .collect(Collectors.toList());
         } else {
             var filterValue = "%" + filter.toUpperCase() + "%";
             return employeeRepository.findAll((root, query, builder) -> builder.or(
@@ -91,7 +98,9 @@ public class EmployeeDAO {
                 builder.like(builder.upper(root.get(Employee_.lastname)), filterValue),
                 builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
                 builder.like(builder.upper(root.get(Employee_.status)), filterValue)
-            ));
+            )).stream()
+                .filter(e -> authorizedUser.isManager() || e.getId().equals(authorizedUser.getEmployeeId()))
+                .collect(Collectors.toList());
         }
     }
 

@@ -120,74 +120,72 @@
 	</tr>
 
 	<c:forEach var="employee" items="${employees}" varStatus="statusID">
-		<c:if test="${employee.lastname!='admin' || loginEmployee.status eq 'adm'}">
-			<c:choose>
-				<c:when test="${statusID.count%2==0}">
-					<tr class="primarycolor">
-				</c:when>
-				<c:otherwise>
-					<tr class="secondarycolor">
-				</c:otherwise>
-			</c:choose>
-						<!-- Info -->
-			<td align="center">
-			<div class="tooltip" id="info<c:out value='${employee.id}' />">
-			<table>
-				<tr>
-					<td class="info">id:</td>
-					<td class="info" colspan="3"><c:out
-						value="${employee.id}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.created" />:</td>
-					<td class="info"><c:out value="${employee.created}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${employee.createdby}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.edited" />:</td>
-					<td class="info"><c:out value="${employee.lastupdate}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${employee.lastupdatedby}" /></td>
-				</tr>
-			</table>
-
-			</div>
-			<img
-				onMouseOver="showWMTT(this,'info<c:out value="${employee.id}" />')"
-				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/images/info_button.gif" />
-			</td>
-			
-			
-			<td><c:out value="${employee.firstname}" /></td>
-			<td><c:out value="${employee.lastname}" /></td>
-			<td><c:out value="${employee.sign}" /></td>
-			<td><c:out value="${employee.loginname}" /></td>
-			<!--  
-      	<td><bean:write name="employee" property="password"/></td>
-      	-->
-			<td><c:out value="${employee.status}" /></td>
-			<td align="center"><c:out value="${employee.gender}" /></td>
-			<c:if test="${authorizedUser.manager}">
-				<td align="center"><html:link
-					href="/do/EditEmployee?emId=${employee.id}">
-					<img src="/images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
-				</html:link></td>
-				<html:form action="/DeleteEmployee">
-					<td align="center"><html:image
-						onclick="confirmDelete(this.form, ${employee.id})"
-						src="/images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
-				</html:form>
-			</c:if>
+		<c:choose>
+			<c:when test="${statusID.count%2==0}">
+				<tr class="primarycolor">
+			</c:when>
+			<c:otherwise>
+				<tr class="secondarycolor">
+			</c:otherwise>
+		</c:choose>
+					<!-- Info -->
+		<td align="center">
+		<div class="tooltip" id="info<c:out value='${employee.id}' />">
+		<table>
+			<tr>
+				<td class="info">id:</td>
+				<td class="info" colspan="3"><c:out
+					value="${employee.id}" /></td>
 			</tr>
+			<tr>
+				<td class="info" valign="top"><bean:message
+					key="main.timereport.tooltip.created" />:</td>
+				<td class="info"><c:out value="${employee.created}" /></td>
+				<td class="info" valign="top"><bean:message
+					key="main.timereport.tooltip.by" /></td>
+				<td class="info" valign="top"><c:out
+					value="${employee.createdby}" /></td>
+			</tr>
+			<tr>
+				<td class="info" valign="top"><bean:message
+					key="main.timereport.tooltip.edited" />:</td>
+				<td class="info"><c:out value="${employee.lastupdate}" /></td>
+				<td class="info" valign="top"><bean:message
+					key="main.timereport.tooltip.by" /></td>
+				<td class="info" valign="top"><c:out
+					value="${employee.lastupdatedby}" /></td>
+			</tr>
+		</table>
+
+		</div>
+		<img
+			onMouseOver="showWMTT(this,'info<c:out value="${employee.id}" />')"
+			onMouseOut="hideWMTT()" width="12px" height="12px"
+			src="/images/info_button.gif" />
+		</td>
+
+
+		<td><c:out value="${employee.firstname}" /></td>
+		<td><c:out value="${employee.lastname}" /></td>
+		<td><c:out value="${employee.sign}" /></td>
+		<td><c:out value="${employee.loginname}" /></td>
+		<!--
+	<td><bean:write name="employee" property="password"/></td>
+	-->
+		<td><c:out value="${employee.status}" /></td>
+		<td align="center"><c:out value="${employee.gender}" /></td>
+		<c:if test="${authorizedUser.manager}">
+			<td align="center"><html:link
+				href="/do/EditEmployee?emId=${employee.id}">
+				<img src="/images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
+			</html:link></td>
+			<html:form action="/DeleteEmployee">
+				<td align="center"><html:image
+					onclick="confirmDelete(this.form, ${employee.id})"
+					src="/images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
+			</html:form>
 		</c:if>
+		</tr>
 	</c:forEach>
 	<c:if test="${authorizedUser.manager}">
 		<tr>

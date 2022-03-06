@@ -27,4 +27,10 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   """)
   List<Customerorder> findAllValidAtAndNotHidden(LocalDate date);
 
+  @Query("""
+      select distinct c from Customerorder c inner join fetch c.suborders s where s.invoice = 'Y'
+      order by c.sign
+  """)
+  List<Customerorder> findAllInvoiceable();
+
 }

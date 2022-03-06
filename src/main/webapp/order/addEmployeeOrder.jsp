@@ -89,12 +89,10 @@
 			<td align="left" class="noBborderStyle">
 				<html:select property="employeeContractId" onchange="setStoreAction(this.form, 'refreshEmployee')" styleClass="make-select2">
 					<c:forEach var="employeecontract" items="${employeecontracts}" >
-						<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 							<html:option value="${employeecontract.id}">
 								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />
 								<c:if test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)
 							</html:option>
-						</c:if>							
 					</c:forEach>
 				</html:select>
 			</td>
@@ -286,7 +284,7 @@
 			</td>
 		</tr>
 		<!-- Sollstunden -->
-		<c:if test="${loginEmployee.status == 'adm' || (!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK'))}">
+		<c:if test="${authorizedUser.admin || (!(selectedcustomerorder.sign eq 'URLAUB' || selectedcustomerorder.sign eq 'KRANK'))}">
 			<tr>
 				<td align="left" class="noBborderStyle">
 					<b><bean:message key="main.general.debithours.text" />:</b>

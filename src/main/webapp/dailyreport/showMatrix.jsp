@@ -58,23 +58,20 @@
 						value="${currentEmployeeContract.id}"
 						onchange="setUpdateMergedreportsAction(this.form)"
 						styleClass="make-select2">
-						<c:if test="${not loginEmployee.restricted}">
+						<c:if test="${authorizedUser.manager}">
 							<html:option value="-1">
 								<bean:message key="main.general.allemployees.text" />
 							</html:option>
 						</c:if>
 
 						<c:forEach var="employeecontract" items="${employeecontracts}">
-							<c:if
-								test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
-								<html:option value="${employeecontract.id}">
-									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
-										value="${employeecontract.timeString}" />
-									<c:if test="${employeecontract.openEnd}">
-										<bean:message key="main.general.open.text" />
-									</c:if>)
-						</html:option>
-							</c:if>
+							<html:option value="${employeecontract.id}">
+								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+									value="${employeecontract.timeString}" />
+								<c:if test="${employeecontract.openEnd}">
+									<bean:message key="main.general.open.text" />
+								</c:if>)
+							</html:option>
 						</c:forEach>
 					</html:select> 
 				</td>
@@ -256,7 +253,7 @@
 		<table>
 			<tr>
 				<c:if
-					test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv'|| loginEmployee.status eq 'adm'}">
+					test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
 					<html:form action="/CreateDailyReport?task=matrix">
 						<td class="noBborderStyle" align="left"><html:submit
 								styleId="button"
@@ -485,7 +482,7 @@
 	<table>
 		<tr>
 			<c:if
-				test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv'|| loginEmployee.status eq 'adm'}">
+				test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
 				<html:form action="/CreateDailyReport?task=matrix">
 					<td class="noBborderStyle" align="left"><html:submit
 							styleId="button"

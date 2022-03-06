@@ -44,12 +44,10 @@
 &nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)"
 			 value="${currentEmployeeContract.id}" styleClass="make-select2">
 	<c:forEach var="employeecontract" items="${employeecontracts}" >
-		<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
 			<html:option value="${employeecontract.id}">
 				<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if 
 				test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)
 			</html:option>
-		</c:if>							
 	</c:forEach>
 </html:select>
 </html:form>

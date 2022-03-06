@@ -55,6 +55,7 @@ public class GlobalConstants {
     public static final int EMPLOYEE_SIGN_MAX_LENGTH = 5;
     public static final int EMPLOYEE_STATUS_MAX_LENGTH = 16;
 
+    public static final String EMPLOYEE_STATUS_BO = "bo";
     public static final String EMPLOYEE_STATUS_BL = "bl";
     public static final String EMPLOYEE_STATUS_PV = "pv";
     public static final String EMPLOYEE_STATUS_RESTRICTED = "restricted";

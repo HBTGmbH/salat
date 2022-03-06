@@ -71,16 +71,16 @@
 			key="main.employeecontract.employee.text" /></b></td>
 		<td class="noBborderStyle" colspan="9" align="left">
 			<html:select property="employeeId" onchange="refresh(this.form)" styleClass="make-select2">
-				<html:option value="-1">
-					<bean:message key="main.general.allemployees.text" />
-				</html:option>
+				<c:if test="${authorizedUser.manager}">
+					<html:option value="-1">
+						<bean:message key="main.general.allemployees.text" />
+					</html:option>
+				</c:if>
 				<c:forEach var="employee" items="${employees}">
-					<c:if test="${employee.sign != 'adm'}">
-						<html:option value="${employee.id}">
-							<c:out value="${employee.name}" />
-						</html:option>
-					</c:if>
-				</c:forEach>				
+					<html:option value="${employee.id}">
+						<c:out value="${employee.name}" />
+					</html:option>
+				</c:forEach>
 			</html:select>
 		</td>
 	</tr>
@@ -154,8 +154,6 @@
 
 	<c:forEach var="employeecontract" items="${employeecontracts}"
 		varStatus="statusID">
-		<c:if
-			test="${employeecontract.employee.lastname!='admin' || loginEmployee.status eq 'adm'}">
 			<c:choose>
 				<c:when test="${statusID.count%2==0}">
 					<tr class="primarycolor">
@@ -274,7 +272,6 @@
 				</html:form>
 			</c:if>
 			</tr>
-		</c:if>
 	</c:forEach>
 	<c:if test="${authorizedUser.manager}">
 		<tr>

@@ -60,6 +60,13 @@ public class CustomerorderDAO {
     }
 
     /**
+     * Get a list of all Customerorders ordered by their sign.
+     */
+    public List<Customerorder> getInvoiceableCustomerorders() {
+        return Lists.newArrayList(customerorderRepository.findAllInvoiceable());
+    }
+
+    /**
      * Get a list of all vivible Customerorders ordered by their sign.
      */
     public List<Customerorder> getVisibleCustomerorders() {

@@ -45,6 +45,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
     private final SuborderDAO suborderDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final AfterLogin afterLogin;
+    private final AuthorizedUser authorizedUser;
 
     @Override
     public ActionForward executeWithForm(ActionMapping mapping, LoginEmployeeForm loginEmployeeForm, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -84,6 +85,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
             request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
             request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+            authorizedUser.init(loginEmployee);
 
             // check if public holidays are available
             publicholidayDAO.checkPublicHolidaysForCurrentYear();
@@ -103,7 +105,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             }
 
             // create collection of employeecontracts
-            List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
+            List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
             request.getSession().setAttribute("employeecontracts", employeecontracts);
 
             return mapping.findForward("success");

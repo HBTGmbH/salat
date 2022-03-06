@@ -59,20 +59,19 @@
 						value="${currentEmployeeContract.id}"
 						onchange="setUpdate(this.form)"
 						styleClass="make-select2">
-						<html:option value="-1">
-							<bean:message key="main.general.allemployees.text" />
-						</html:option>
+						<c:if test="${authorizedUser.manager}">
+							<html:option value="-1">
+								<bean:message key="main.general.allemployees.text" />
+							</html:option>
+						</c:if>
 						<c:forEach var="employeecontracts" items="${employeecontracts}">
-							<c:if
-								test="${employeecontracts.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
-								<html:option value="${employeecontracts.id}">
-									<c:out value="${employeecontracts.employee.sign}" /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
-										value="${employeecontracts.timeString}" />
-									<c:if test="${employeecontracts.openEnd}">
-										<bean:message key="main.general.open.text" />
-									</c:if>)
-									</html:option>
-							</c:if>
+							<html:option value="${employeecontracts.id}">
+								<c:out value="${employeecontracts.employee.sign}" /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+									value="${employeecontracts.timeString}" />
+								<c:if test="${employeecontracts.openEnd}">
+									<bean:message key="main.general.open.text" />
+								</c:if>)
+							</html:option>
 						</c:forEach>
 					</html:select></td>
 			</tr>

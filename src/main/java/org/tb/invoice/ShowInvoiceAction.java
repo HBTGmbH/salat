@@ -353,7 +353,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("days", getDaysToDisplay());
             request.getSession().setAttribute("years", getYearsToDisplay());
             request.getSession().setAttribute("weeks", getWeeksToDisplay(showInvoiceForm.getFromYear()));
-            request.getSession().setAttribute("orders", customerorderDAO.getCustomerorders());
+            request.getSession().setAttribute("orders", customerorderDAO.getInvoiceableCustomerorders());
             request.getSession().setAttribute("suborders", new LinkedList<Suborder>());
             request.getSession().setAttribute("optionmwst", "19");
             request.getSession().setAttribute("layerlimit", "-1");

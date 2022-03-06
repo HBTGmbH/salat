@@ -600,7 +600,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             forward = "error";
             return forward;
         }
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForEmployee(loginEmployee);
+        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             forward = "error";

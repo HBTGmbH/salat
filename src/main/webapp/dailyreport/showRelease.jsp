@@ -173,16 +173,13 @@
 										</c:if>)
 									</html:option>
 									<c:forEach var="employeecontract" items="${employeecontracts}">
-										<c:if
-											test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
-											<html:option value="${employeecontract.id}">
-												<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
-													value="${employeecontract.timeString}" />
-												<c:if test="${employeecontract.openEnd}">
-													<bean:message key="main.general.open.text" />
-												</c:if>)
-									</html:option>
-										</c:if>
+										<html:option value="${employeecontract.id}">
+											<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+												value="${employeecontract.timeString}" />
+											<c:if test="${employeecontract.openEnd}">
+												<bean:message key="main.general.open.text" />
+											</c:if>)
+										</html:option>
 									</c:forEach>
 								</html:select>
 								<html:hidden property="employeeContractId" />
@@ -364,7 +361,7 @@
 
 
 				<!-- reopen -->
-				<c:if test="${loginEmployee.status == 'adm'}">
+				<c:if test="${authorizedUser.admin}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="30"></td>
 					</tr>
@@ -487,75 +484,72 @@
 				</tr>
 				<c:forEach var="employeecontract" items="${employeecontracts}"
 					varStatus="statusID">
-					<c:if
-						test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
+					<c:choose>
+						<c:when test="${statusID.count%2==0}">
+							<tr class="primarycolor">
+						</c:when>
+						<c:otherwise>
+							<tr class="secondarycolor">
+						</c:otherwise>
+					</c:choose>
+					<td>
+						<c:out value="${employeecontract.employee.sign}" />
+					</td>
+					<td>
+						<c:out value="${employeecontract.employee.name}" />
+					</td>
+					<td align="left">
+						<c:out value="${employeecontract.timeString}" />
+						<c:if test="${employeecontract.openEnd}">
+							<bean:message key="main.general.open.text" />
+						</c:if>
+					</td>
+					<td align="center">
 						<c:choose>
-							<c:when test="${statusID.count%2==0}">
-								<tr class="primarycolor">
+							<c:when test="${employeecontract.releaseWarning}">
+								<font color="red"><c:out
+										value="${employeecontract.reportReleaseDateString}" />
+								</font>
+
+								<c:if test="${authorizedUser.manager}">
+									<html:image title="Erinnerungsmail senden"
+										onclick="confirmSendReleaseMail(this.form, '${employeecontract.employee.sign}');return false"
+										src="/images/mail_icon_01.gif">
+										<font color="red"><c:out
+												value="${employeecontract.reportReleaseDateString}" />
+										</font>
+									</html:image>
+								</c:if>
 							</c:when>
 							<c:otherwise>
-								<tr class="secondarycolor">
+								<c:out value="${employeecontract.reportReleaseDateString}" />
 							</c:otherwise>
 						</c:choose>
-						<td>
-							<c:out value="${employeecontract.employee.sign}" />
-						</td>
-						<td>
-							<c:out value="${employeecontract.employee.name}" />
-						</td>
-						<td align="left">
-							<c:out value="${employeecontract.timeString}" />
-							<c:if test="${employeecontract.openEnd}">
-								<bean:message key="main.general.open.text" />
-							</c:if>
-						</td>
-						<td align="center">
-							<c:choose>
-								<c:when test="${employeecontract.releaseWarning}">
-									<font color="red"><c:out
-											value="${employeecontract.reportReleaseDateString}" />
-									</font>
-
-									<c:if test="${loginEmployee.status == 'pv' || loginEmployee.status == 'adm'}">
-										<html:image title="Erinnerungsmail senden"
-											onclick="confirmSendReleaseMail(this.form, '${employeecontract.employee.sign}');return false"
-											src="/images/mail_icon_01.gif">
-											<font color="red"><c:out
-													value="${employeecontract.reportReleaseDateString}" />
-											</font>
-										</html:image>
-									</c:if>
-								</c:when>
-								<c:otherwise>
-									<c:out value="${employeecontract.reportReleaseDateString}" />
-								</c:otherwise>
-							</c:choose>
-						</td>
-						<td align="center">
-						  <c:out value="${employeecontract.supervisor.sign}" />&nbsp;
-						</td>
-						<td align="center">
-							<c:choose>
-								<c:when test="${employeecontract.acceptanceWarning}">
-									<font color="red"><c:out value="${employeecontract.reportAcceptanceDateString}" />
-									</font>
-									<c:if test="${(loginEmployee.status == 'pv' || loginEmployee.status == 'adm') && !employeecontract.releaseWarning}">
-										<html:image title="Erinnerungsmail senden"
-											onclick="confirmSendAcceptanceMail(this.form, '${employeecontract.employee.sign}');return false"
-											src="/images/mail_icon_01.gif">
-											<font color="red"><c:out
-													value="${employeecontract.reportReleaseDateString}" />
-											</font>
-										</html:image>
-									</c:if>
-								</c:when>
-								<c:otherwise>
-									<c:out value="${employeecontract.reportAcceptanceDateString}" />
-								</c:otherwise>
-							</c:choose>
-						</td>
-						</tr>
-					</c:if>
+					</td>
+					<td align="center">
+					  <c:out value="${employeecontract.supervisor.sign}" />&nbsp;
+					</td>
+					<td align="center">
+						<c:choose>
+							<c:when test="${employeecontract.acceptanceWarning}">
+								<font color="red"><c:out value="${employeecontract.reportAcceptanceDateString}" />
+								</font>
+								<c:if test="${authorizedUser.manager && !employeecontract.releaseWarning}">
+									<html:image title="Erinnerungsmail senden"
+										onclick="confirmSendAcceptanceMail(this.form, '${employeecontract.employee.sign}');return false"
+										src="/images/mail_icon_01.gif">
+										<font color="red"><c:out
+												value="${employeecontract.reportReleaseDateString}" />
+										</font>
+									</html:image>
+								</c:if>
+							</c:when>
+							<c:otherwise>
+								<c:out value="${employeecontract.reportAcceptanceDateString}" />
+							</c:otherwise>
+						</c:choose>
+					</td>
+					</tr>
 				</c:forEach>
 			</table>
 			</c:if>

@@ -131,32 +131,14 @@
 			</td>
 			<td align="left" class="noBborderStyle">
 				<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateOrdersAction(this.form)" styleClass="make-select2 ecCls">				
-				<c:choose>
-					<c:when test="${authorizedUser.manager}">
-						<c:forEach var="employeecontract" items="${employeecontracts}" >
-							<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
-								<html:option value="${employeecontract.id}">
-									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if 
-										test="${employeecontract.openEnd}"><bean:message 
-										key="main.general.open.text" /></c:if>)
-								</html:option>
-							</c:if>							
-						</c:forEach>
-					</c:when>
-					<c:otherwise>
-						<c:forEach var="employeecontract" items="${employeecontracts}" >
-							<c:if test="${employeecontract.employee.id == loginEmployee.id}">
-								<html:option value="${employeecontract.id}">
-									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if 
-										test="${employeecontract.openEnd}"><bean:message 
-										key="main.general.open.text" /></c:if>)
-								</html:option>
-							</c:if>							
-						</c:forEach>
-					</c:otherwise>
-				</c:choose>	
+					<c:forEach var="employeecontract" items="${employeecontracts}" >
+						<html:option value="${employeecontract.id}">
+							<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" /><c:if
+								test="${employeecontract.openEnd}"><bean:message
+								key="main.general.open.text" /></c:if>)
+						</html:option>
+					</c:forEach>
 				</html:select> 
-				
 			</td>
 		</tr>
 

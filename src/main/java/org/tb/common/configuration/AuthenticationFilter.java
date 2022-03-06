@@ -29,24 +29,13 @@ public class AuthenticationFilter extends HttpFilter {
         throws IOException, ServletException {
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         if(loginEmployee != null && loginEmployee.getId() != null) {
-            employeeRepository.findById(loginEmployee.getId()).ifPresent(this::initAuthorizedUser);
+            employeeRepository.findById(loginEmployee.getId()).ifPresent(authorizedUser::init);
         }
         Object oldValue = request.getAttribute("authorizedUser");
         request.setAttribute("authorizedUser", authorizedUser);
         super.doFilter(request, response, chain);
         request.setAttribute("authorizedUser", oldValue);
 
-    }
-
-    private void initAuthorizedUser(Employee loginEmployee) {
-        authorizedUser.setAuthenticated(true);
-        authorizedUser.setEmployeeId(loginEmployee.getId());
-        authorizedUser.setSign(loginEmployee.getSign());
-        authorizedUser.setRestricted(TRUE.equals(loginEmployee.getRestricted()));
-        boolean isAdmin = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM);
-        authorizedUser.setAdmin(isAdmin);
-        boolean isManager = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV);
-        authorizedUser.setManager(isAdmin || isManager);
     }
 
 }

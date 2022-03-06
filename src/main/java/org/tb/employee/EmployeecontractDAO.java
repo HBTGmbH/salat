@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.Vacation;
@@ -28,6 +29,7 @@ public class EmployeecontractDAO {
     private final VacationDAO vacationDAO;
     private final OvertimeDAO overtimeDAO;
     private final EmployeecontractRepository employeecontractRepository;
+    private final AuthorizedUser authorizedUser;
 
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
@@ -136,8 +138,9 @@ public class EmployeecontractDAO {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
+            .filter(c -> authorizedUser.isManager() || c.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
-            .collect(Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     /**
@@ -152,11 +155,11 @@ public class EmployeecontractDAO {
             .collect(Collectors.toList());
     }
 
-    public List<Employeecontract> getVisibleEmployeeContractsForEmployee(Employee loginEmployee) {
-        if (loginEmployee != null && loginEmployee.isRestricted()) {
+    public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
+        if (!authorizedUser.isManager()) {
             // may only see his own contracts
             return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
-                .filter(e -> e.getEmployee().equals(loginEmployee))
+                .filter(e -> e.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
                 .collect(Collectors.toList());
         } else {
             return getVisibleEmployeeContractsOrderedByEmployeeSign();

@@ -164,20 +164,18 @@
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
 						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
-							<c:if test="${not loginEmployee.restricted}">
+							<c:if test="${authorizedUser.manager}">
 								<html:option value="-1">
 									<bean:message key="main.general.allemployees.text" />
 								</html:option>
 							</c:if>
 							<c:forEach var="employeecontract" items="${employeecontracts}">
-								<c:if test="${employeecontract.employee.sign != 'adm' || loginEmployee.sign == 'adm'}">
-									<html:option value="${employeecontract.id}">
-										<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />
-										<c:if test="${employeecontract.openEnd}">
-											<bean:message key="main.general.open.text" />
-										</c:if>)
-									</html:option>
-								</c:if>
+								<html:option value="${employeecontract.id}">
+									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />
+									<c:if test="${employeecontract.openEnd}">
+										<bean:message key="main.general.open.text" />
+									</c:if>)
+								</html:option>
 							</c:forEach>
 						</html:select>
 					</td>
@@ -745,7 +743,7 @@
 		
 					<!-- visibility dependent on user and status -->
 					<c:choose>
-						<c:when	test="${((loginEmployee.id == timereport.employeecontract.employee.id) && (timereport.status eq 'open')) || ((loginEmployee.status eq 'bl' || loginEmployee.status eq 'pv') && (timereport.status eq 'commited') && (loginEmployee != timereport.employeecontract.employee)) || loginEmployee.status eq 'adm'}">
+						<c:when	test="${((loginEmployee.id == timereport.employeecontract.employee.id) && (timereport.status eq 'open')) || (authorizedUser.manager && timereport.status eq 'commited' && loginEmployee != timereport.employeecontract.employee) || authorizedUser.admin}">
 							<!-- Kommentar -->
 							<td>
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}" 
