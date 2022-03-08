@@ -21,8 +21,11 @@ public class UserAccessToken extends AuditedEntity {
   @ForeignKey(name = "employee_id")
   private Employee employee;
 
-  @Column(name = "token_encrypted")
-  private String tokenEncrypted;
+  @Column(name = "token_id")
+  private String tokenId;
+
+  @Column(name = "token_secret_encrypted")
+  private String tokenSecretEncrypted;
 
   @Column(name = "valid_until")
   private LocalDateTime validUntil;

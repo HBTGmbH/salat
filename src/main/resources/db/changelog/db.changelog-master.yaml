@@ -606,7 +606,10 @@ databaseChangeLog:
                   name: employee_id
                   type: bigint
               - column:
-                  name: token_encrypted
+                  name: token_id
+                  type: varchar(255)
+              - column:
+                  name: token_secret_encrypted
                   type: varchar(255)
               - column:
                   name: valid_until
