@@ -567,3 +567,51 @@ databaseChangeLog:
         - dropTable:
             tableName: EMPLOYEEORDERCONTENT
             cascadeConstraints: true
+  - changeSet:
+      id: 17
+      author: kr
+      comment: Add table for user access tokens
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+          - tableExists:
+              tableName: user_access_token
+              columnName: EMPLOYEEORDERCONTENT_ID
+      changes:
+        - createTable:
+            tableName: user_access_token
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+              - column:
+                  name: employee_id
+                  type: bigint
+              - column:
+                  name: token_encrypted
+                  type: varchar(255)
+              - column:
+                  name: valid_until
+                  type: datetime
+              - column:
+                  name: comment
+                  type: varchar(255)
+
