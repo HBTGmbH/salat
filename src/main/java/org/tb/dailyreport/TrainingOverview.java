@@ -4,7 +4,7 @@ import java.io.Serializable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 @Getter
 @Setter

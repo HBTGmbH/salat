@@ -1,11 +1,7 @@
-package org.tb.employee;
-
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+package org.tb.employee.domain;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.Duration;
-import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;

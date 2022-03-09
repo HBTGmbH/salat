@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.SecureHashUtils;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
 
 @Component
 @RequiredArgsConstructor

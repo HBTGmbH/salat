@@ -12,7 +12,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 /**
  * Form for adding a timereport

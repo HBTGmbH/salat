@@ -46,11 +46,11 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
-import org.tb.employee.EmployeeHelper;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.Customerorder;
 import org.tb.order.CustomerorderDAO;
 import org.tb.order.CustomerorderHelper;
@@ -594,7 +594,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
         String forward = "success";
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        Employeecontract ec = new EmployeeHelper().setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
+        Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
             forward = "error";

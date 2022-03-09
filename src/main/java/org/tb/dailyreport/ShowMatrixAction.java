@@ -14,11 +14,11 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
-import org.tb.employee.EmployeeHelper;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.CustomerorderDAO;
 import org.tb.order.SuborderDAO;
 
@@ -81,8 +81,8 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
             // no special task - prepare everything to show reports
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-            EmployeeHelper eh = new EmployeeHelper();
-            Employeecontract ec = eh.setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
+            EmployeeViewHelper eh = new EmployeeViewHelper();
+            Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
 
             Map<String, Object> results = matrixHelper.handleNoArgs(
                     reportForm,

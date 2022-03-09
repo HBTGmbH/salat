@@ -13,7 +13,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 @Getter
 @Setter

@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.action;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -7,6 +7,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.employee.persistence.EmployeeDAO;
 
 /**
  * action class for showing all employees

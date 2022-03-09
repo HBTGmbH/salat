@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.persistence;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
+import org.tb.employee.domain.Employeecontract;
 
 @Repository
 public interface EmployeecontractRepository extends PagingAndSortingRepository<Employeecontract, Long>,

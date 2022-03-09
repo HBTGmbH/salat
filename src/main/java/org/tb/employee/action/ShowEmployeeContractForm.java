@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.action;
 
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;

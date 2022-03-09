@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
@@ -20,6 +20,11 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.Vacation;
 import org.tb.dailyreport.VacationDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.Employee_;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.Employeecontract_;
+import org.tb.employee.domain.Overtime;
 import org.tb.order.Employeeorder;
 
 @Component

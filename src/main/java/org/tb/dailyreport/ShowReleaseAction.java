@@ -26,10 +26,10 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.OptionItem;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 @Slf4j
 @Component

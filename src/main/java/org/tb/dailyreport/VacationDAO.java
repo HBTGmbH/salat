@@ -5,7 +5,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 @Component
 @RequiredArgsConstructor

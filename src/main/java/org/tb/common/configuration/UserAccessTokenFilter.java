@@ -3,7 +3,6 @@ package org.tb.common.configuration;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Optional;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpFilter;
@@ -12,8 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.tb.auth.AuthorizedUser;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeRepository;
 import org.tb.user.UserAccessTokenService;
 
 @Slf4j

@@ -1,31 +1,22 @@
 package org.tb.invoice;
 
-import static java.time.DayOfWeek.SUNDAY;
-import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
-import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getWeeksToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
-import static org.tb.common.GlobalConstants.DEFAULT_LOCALE;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
-import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.Year;
 import java.time.YearMonth;
-import java.time.temporal.WeekFields;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
@@ -35,19 +26,17 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.springframework.stereotype.Component;
-import org.tb.common.DateTimeViewHelper;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.common.OptionItem;
 import org.tb.dailyreport.DailyReportAction;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
-import org.tb.employee.EmployeeHelper;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.Customerorder;
 import org.tb.order.CustomerorderDAO;
 import org.tb.order.SubOrderComparator;
@@ -344,8 +333,8 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             // call on invoiceView without a parameter
             // no special task - prepare everything to show invoice
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-            EmployeeHelper eh = new EmployeeHelper();
-            Employeecontract ec = eh.setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
+            EmployeeViewHelper eh = new EmployeeViewHelper();
+            Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
             if (ec == null) {
                 request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
                 return mapping.findForward("error");

@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.customer.Customer;
 import org.tb.customer.CustomerDAO;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
 
 /**
  * action class for creating a new customer order

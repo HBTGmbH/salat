@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.tb.dailyreport.Referenceday;
 import org.tb.dailyreport.Timereport;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.order.Employeeorder;
 import org.tb.order.Suborder;
 

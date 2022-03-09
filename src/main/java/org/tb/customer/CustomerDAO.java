@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 @Component
 @RequiredArgsConstructor

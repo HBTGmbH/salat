@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 /**
  * Form for showing all employee orders.

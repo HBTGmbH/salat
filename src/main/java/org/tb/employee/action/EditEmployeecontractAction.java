@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.action;
 
 import static org.tb.common.util.DateUtils.today;
 
@@ -16,6 +16,12 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.Vacation;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.domain.Overtime;
+import org.tb.employee.persistence.OvertimeDAO;
 
 /**
  * action class for editing an employee contract

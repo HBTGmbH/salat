@@ -1,9 +1,8 @@
-package org.tb.employee;
+package org.tb.employee.persistence;
 
 import static org.springframework.data.domain.Sort.Direction.ASC;
 
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.Employee_;
+import org.tb.employee.domain.Employeecontract;
 
 @Component
 @RequiredArgsConstructor

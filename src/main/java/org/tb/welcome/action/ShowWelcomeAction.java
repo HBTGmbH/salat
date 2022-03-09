@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AfterLogin;
 import org.tb.common.Warning;
 import org.tb.dailyreport.DailyReportAction;
-import org.tb.employee.Employee;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 @Component
 @RequiredArgsConstructor

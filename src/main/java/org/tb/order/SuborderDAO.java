@@ -21,7 +21,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 @Component
 @RequiredArgsConstructor

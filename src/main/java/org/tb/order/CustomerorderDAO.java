@@ -21,9 +21,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.customer.Customer_;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.Employee_;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.Employeecontract_;
 
 /**

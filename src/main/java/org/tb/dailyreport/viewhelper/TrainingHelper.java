@@ -2,7 +2,7 @@ package org.tb.dailyreport.viewhelper;
 
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 public class TrainingHelper {
 

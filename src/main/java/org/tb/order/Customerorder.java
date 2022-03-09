@@ -1,10 +1,8 @@
 package org.tb.order;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
@@ -26,7 +24,7 @@ import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
 import org.tb.customer.Customer;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 /**
  * Bean for table 'customerorder'.

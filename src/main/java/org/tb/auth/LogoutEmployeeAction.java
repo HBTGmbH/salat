@@ -8,8 +8,8 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
 
 /**
  * Action class for the logout of an employee

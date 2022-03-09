@@ -1,17 +1,14 @@
 package org.tb.order;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +21,7 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 @Getter
 @Setter

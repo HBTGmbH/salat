@@ -14,9 +14,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.AuthorizedUserAuditorAware;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.testutils.EmployeeTestUtils;
 
 @DataJpaTest

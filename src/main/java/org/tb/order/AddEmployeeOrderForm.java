@@ -1,6 +1,5 @@
 package org.tb.order;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -9,7 +8,7 @@ import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 /**
  * Form for adding an employee order

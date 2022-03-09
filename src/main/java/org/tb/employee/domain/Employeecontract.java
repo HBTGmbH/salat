@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.domain;
 
 import static org.tb.common.util.DateUtils.format;
 

@@ -15,7 +15,7 @@ import java.util.List;
 import javax.servlet.http.HttpSession;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.order.Employeeorder;
 import org.tb.order.EmployeeorderDAO;
 

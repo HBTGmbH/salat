@@ -14,11 +14,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthorizedUser;
 import org.tb.dailyreport.VacationDAO;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
-import org.tb.employee.OvertimeDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.testutils.EmployeeTestUtils;
 import org.tb.testutils.EmployeecontractTestUtils;
 

@@ -1,7 +1,7 @@
 package org.tb.testutils;
 
 import lombok.experimental.UtilityClass;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 /**
  * Helper methods for test cases concerning Employee-objects
