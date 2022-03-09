@@ -14,8 +14,8 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
-import org.tb.order.Employeeorder;
-import org.tb.order.EmployeeorderDAO;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.EmployeeorderDAO;
 
 @Component
 @RequiredArgsConstructor

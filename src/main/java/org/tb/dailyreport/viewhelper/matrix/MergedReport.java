@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import org.tb.common.util.DateUtils;
-import org.tb.order.Customerorder;
-import org.tb.order.Suborder;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Suborder;
 
 public class MergedReport implements Comparable<MergedReport> {
     private Customerorder customOrder;

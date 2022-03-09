@@ -51,9 +51,9 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.Customerorder;
-import org.tb.order.CustomerorderDAO;
-import org.tb.order.SuborderDAO;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.SuborderDAO;
 
 @Component
 @Slf4j

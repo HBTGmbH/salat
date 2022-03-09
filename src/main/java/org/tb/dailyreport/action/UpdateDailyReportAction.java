@@ -22,9 +22,9 @@ import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.CustomerorderDAO;
-import org.tb.order.EmployeeorderDAO;
-import org.tb.order.SuborderDAO;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.persistence.SuborderDAO;
 
 /**
  * action class for updating a timereport directly from daily display

@@ -73,9 +73,9 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.persistence.OvertimeDAO;
-import org.tb.order.Employeeorder;
-import org.tb.order.EmployeeorderDAO;
-import org.tb.order.Suborder;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.domain.Suborder;
 
 @Slf4j
 @Component

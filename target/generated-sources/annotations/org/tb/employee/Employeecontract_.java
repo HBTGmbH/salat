@@ -10,7 +10,7 @@ import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.Vacation;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.order.Employeeorder;
+import org.tb.order.domain.Employeeorder;
 
 @Generated(value = "org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor")
 @StaticMetamodel(Employeecontract.class)

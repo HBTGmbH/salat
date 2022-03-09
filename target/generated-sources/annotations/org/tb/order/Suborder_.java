@@ -7,6 +7,9 @@ import javax.persistence.metamodel.ListAttribute;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import org.tb.dailyreport.domain.Timereport;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.Suborder;
 
 @Generated(value = "org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor")
 @StaticMetamodel(Suborder.class)
