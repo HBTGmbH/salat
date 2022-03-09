@@ -12,8 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.AddDailyReportForm;
-import org.tb.dailyreport.ShowDailyReportForm;
+import org.tb.dailyreport.action.AddDailyReportForm;
+import org.tb.dailyreport.action.ShowDailyReportForm;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 

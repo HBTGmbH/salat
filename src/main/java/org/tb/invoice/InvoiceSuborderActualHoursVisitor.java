@@ -5,7 +5,7 @@ import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.tb.common.GlobalConstants;
-import org.tb.dailyreport.TimereportDAO;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.Suborder;
 import org.tb.order.SuborderVisitor;
 

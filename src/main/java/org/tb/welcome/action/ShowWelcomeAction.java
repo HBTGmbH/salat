@@ -9,7 +9,7 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AfterLogin;
 import org.tb.common.Warning;
-import org.tb.dailyreport.DailyReportAction;
+import org.tb.dailyreport.action.DailyReportAction;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;

@@ -19,7 +19,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
 import org.tb.common.struts.TypedAction;
 import org.tb.common.util.SecureHashUtils;
-import org.tb.dailyreport.PublicholidayDAO;
+import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;

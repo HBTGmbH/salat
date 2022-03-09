@@ -24,8 +24,8 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.Timereport;
-import org.tb.dailyreport.TimereportDAO;
+import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 
 /**

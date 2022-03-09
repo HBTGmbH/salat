@@ -25,11 +25,11 @@
 	<form-beans>
 		<form-bean name="loginEmployeeForm" type="org.tb.auth.LoginEmployeeForm" />
 		<form-bean name="logoutEmployeeForm" type="org.tb.auth.LogoutEmployeeForm" />
-		<form-bean name="addDailyReportForm" type="org.tb.dailyreport.AddDailyReportForm" />
-		<form-bean name="showMatrixForm" type="org.tb.dailyreport.ShowMatrixForm" />
+		<form-bean name="addDailyReportForm" type="org.tb.dailyreport.action.AddDailyReportForm" />
+		<form-bean name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixForm" />
 		<form-bean name="showInvoiceForm" type="org.tb.invoice.ShowInvoiceForm" />
-		<form-bean name="showDailyReportForm" type="org.tb.dailyreport.ShowDailyReportForm" />
-		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.UpdateDailyReportForm" />
+		<form-bean name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportForm" />
+		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportForm" />
 		<form-bean name="addCustomerForm" type="org.tb.customer.AddCustomerForm" />
 		<form-bean name="showCustomerForm" type="org.tb.customer.ShowCustomerForm" />
 		<form-bean name="addCustomerOrderForm" type="org.tb.order.AddCustomerorderForm" />
@@ -45,11 +45,11 @@
 		<form-bean name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeForm" />
 		<form-bean name="showSettingsForm" type="org.tb.user.ShowSettingsForm" />
 		<form-bean name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeForm" />
-		<form-bean name="showReleaseForm" type="org.tb.dailyreport.ShowReleaseForm" />
+		<form-bean name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseForm" />
 		<form-bean name="showAdminOptionsForm" type="org.tb.admin.ShowAdminOptionsForm" />
 		<form-bean name="showStatusReportForm" type="org.tb.statusreport.ShowStatusReportForm" />
 		<form-bean name="addStatusReportForm" type="org.tb.statusreport.AddStatusReportForm" />
-		<form-bean name="showTrainingForm" type="org.tb.dailyreport.ShowTrainingForm" />
+		<form-bean name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingForm" />
 		<form-bean name="userAccessTokenForm" type="org.tb.user.UserAccessTokenForm" />
 	</form-beans>
 
@@ -88,13 +88,13 @@
 		</action>
 
 		<action path="/CreateDailyReport" name="addDailyReportForm"
-			type="org.tb.dailyreport.CreateDailyReportAction">
+			type="org.tb.dailyreport.action.CreateDailyReportAction">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreDailyReport" input="/dailyreport/addDailyReport.jsp" validate="true"
-			name="addDailyReportForm" type="org.tb.dailyreport.StoreDailyReportAction">
+			name="addDailyReportForm" type="org.tb.dailyreport.action.StoreDailyReportAction">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" redirect="true" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="showDaily" path="/dailyreport/showDailyReport.jsp" />
@@ -104,7 +104,7 @@
 		</action>
 
 		<action path="/UpdateDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true"
-			name="updateDailyReportForm" type="org.tb.dailyreport.UpdateDailyReportAction">
+			name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportAction">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
@@ -113,19 +113,19 @@
 		</action>
 
 		<action path="/EditDailyReport" name="addDailyReportForm"
-			type="org.tb.dailyreport.EditDailyReportAction">
+			type="org.tb.dailyreport.action.EditDailyReportAction">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/DeleteTimereportFromDailyDisplay" input="/dailyreport/showDailyReport.jsp"
-			name="showDailyReportForm" type="org.tb.dailyreport.DeleteTimereportFromDailyDisplayAction">
+			name="showDailyReportForm" type="org.tb.dailyreport.action.DeleteTimereportFromDailyDisplayAction">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/ShowDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true"
-			name="showDailyReportForm" type="org.tb.dailyreport.ShowDailyReportAction">
+			name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportAction">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="newreport" path="/dailyreport/addDailyReport.jsp" />
@@ -164,13 +164,13 @@
 		</action>
 
 		<action path="/ShowRelease" input="/dailyreport/showRelease.jsp" validate="true"
-			name="showReleaseForm" type="org.tb.dailyreport.ShowReleaseAction">
+			name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseAction">
 			<forward name="success" path="/dailyreport/showRelease.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/ShowMatrix" input="/dailyreport/showMatrix.jsp" validate="true"
-			name="showMatrixForm" type="org.tb.dailyreport.ShowMatrixAction">
+			name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixAction">
 			<forward name="success" path="/dailyreport/showMatrix.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
@@ -186,7 +186,7 @@
 		</action>
 		
 		<action path="/ShowTraining" input="/dailyreport/showTraining.jsp" validate="true"
-			name="showTrainingForm" type="org.tb.dailyreport.ShowTrainingAction">
+			name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingAction">
 			<forward name="success" path="/dailyreport/showTraining.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />

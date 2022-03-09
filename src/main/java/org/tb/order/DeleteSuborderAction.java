@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.dailyreport.TimereportDAO;
+import org.tb.dailyreport.persistence.TimereportDAO;
 
 /**
  * action class for deleting a suborder
