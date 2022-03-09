@@ -105,8 +105,6 @@ public class BookingsService {
                 booking.getMinutes(),
                 1
             );
-        } catch (ParseException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not parse provided date. Please ensure format is DD.MM.YYYY");
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could create timereport. " + e.getErrorCode());
         } catch (InvalidDataException e) {

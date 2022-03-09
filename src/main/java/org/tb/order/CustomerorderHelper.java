@@ -1,6 +1,7 @@
 package org.tb.order;
 
 import static org.tb.common.util.DateUtils.parse;
+import static org.tb.common.util.DateUtils.validateDate;
 
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -9,9 +10,11 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.struts.action.ActionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.AddDailyReportForm;
 import org.tb.dailyreport.ShowDailyReportForm;
 import org.tb.employee.Employeecontract;
@@ -38,9 +41,9 @@ public class CustomerorderHelper {
 
         String dateString = reportForm.getReferenceday();
         LocalDate date;
-        try {
-            date = parse(dateString);
-        } catch (ParseException e) {
+        if(validateDate(dateString)) {
+            date = DateUtils.parse(dateString);
+        } else {
             resetFormValues(reportForm, request);
             return false;
         }

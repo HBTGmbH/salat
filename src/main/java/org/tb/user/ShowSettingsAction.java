@@ -19,47 +19,38 @@ import org.tb.employee.EmployeeDAO;
 public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
 
     private final EmployeeDAO employeeDAO;
+    private final UserAccessTokenService userAccessTokenService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
         ShowSettingsForm settingsForm, HttpServletRequest request,
         HttpServletResponse response) throws Exception {
 
-        request.getSession().setAttribute("passwordchanged", false);
+        request.setAttribute("passwordchanged", false);
+        request.setAttribute("userAccessTokens", userAccessTokenService.getTokens(authorizedUser.getEmployeeId()));
 
-        if (request.getParameter("task") != null) {
-            if (request.getParameter("task").equalsIgnoreCase("changePassword")) {
-
-                ActionMessages errorMessages = validatePassword(request, settingsForm);
-                if (errorMessages.size() > 0) {
-                    return mapping.getInputForward();
-                }
-
-                // get employee
-                Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
-                // set new password and save
-                Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
-                em.changePassword(settingsForm.getNewpassword());
-                loginEmployee.changePassword(settingsForm.getNewpassword());
-                employeeDAO.save(em, loginEmployee);
-
-
-                request.getSession().setAttribute("passwordchanged", true);
-                return mapping.findForward("success");
-
-            } else {
-                // unknown task -> standard procedure
-                return mapping.findForward("success");
+        if ("changePassword".equalsIgnoreCase(request.getParameter("task"))) {
+            ActionMessages errorMessages = validatePassword(request, settingsForm);
+            if (!errorMessages.isEmpty()) {
+                return mapping.getInputForward();
             }
 
-        } else {
+            // get employee
+            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
+            // set new password and save
+            Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
+            em.changePassword(settingsForm.getNewpassword());
+            loginEmployee.changePassword(settingsForm.getNewpassword());
+            employeeDAO.save(em, loginEmployee);
+
+
+            request.setAttribute("passwordchanged", true);
+            return mapping.findForward("success");
+        } else {
             // task == null -> standard procedure
             return mapping.findForward("success");
         }
-
-
     }
 
     private ActionMessages validatePassword(HttpServletRequest request,
@@ -106,4 +97,5 @@ public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
     protected boolean isAllowedForRestrictedUsers() {
         return true;
     }
+
 }

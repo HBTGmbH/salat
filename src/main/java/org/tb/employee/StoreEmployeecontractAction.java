@@ -415,16 +415,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         "form.timereport.error.date.wrongformat"));
             }
         }
-        java.time.LocalDate newContractValidFrom;
-        java.time.LocalDate newContractValidUntil = null;
-        try {
-            newContractValidFrom = DateUtils.parse(dateFromString);
-            if (!dateUntilString.equals("")) {
-                newContractValidUntil = DateUtils.parse(dateUntilString);
-            }
-        } catch (ParseException e) {
-            // this is not expected...
-            throw new RuntimeException("LocalDate cannot be parsed - fatal error!");
+        LocalDate newContractValidFrom = DateUtils.parse(dateFromString);
+        LocalDate newContractValidUntil = null;
+        if (!dateUntilString.equals("")) {
+            newContractValidUntil = DateUtils.parse(dateUntilString);
         }
 
         if (newContractValidUntil != null && newContractValidFrom.isAfter(newContractValidUntil)) {
@@ -439,8 +433,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 Employeecontract ec = (Employeecontract) element;
                 if (Objects.equals(ec.getEmployee().getId(), theEmployee.getId()) && !Objects.equals(ec.getId(), employeecontract.getId())) {
                     // contract for the same employee found but not the same contract - check overleap
-                    java.time.LocalDate existingContractValidFrom = ec.getValidFrom();
-                    java.time.LocalDate existingContractValidUntil = ec.getValidUntil();
+                    LocalDate existingContractValidFrom = ec.getValidFrom();
+                    LocalDate existingContractValidUntil = ec.getValidUntil();
 
                     if (newContractValidUntil != null && existingContractValidUntil != null) {
                         if (!newContractValidFrom.isBefore(existingContractValidFrom)

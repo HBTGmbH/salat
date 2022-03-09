@@ -48,12 +48,7 @@ public class SuborderHelper {
         }
 
         String dateString = reportForm.getReferenceday();
-        LocalDate date;
-        try {
-            date = parse(dateString);
-        } catch (ParseException e) {
-            throw new RuntimeException("error while parsing date");
-        }
+        LocalDate date = parse(dateString);
 
         // get suborders related to employee AND selected customer order
         long customerorderId = reportForm.getOrderId();
