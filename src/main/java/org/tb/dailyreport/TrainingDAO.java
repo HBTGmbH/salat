@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 @Component
 @RequiredArgsConstructor

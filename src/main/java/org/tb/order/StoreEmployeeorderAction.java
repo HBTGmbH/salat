@@ -6,7 +6,6 @@ import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 
-import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -25,9 +24,9 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 /**
  * action class for storing an employee order permanently

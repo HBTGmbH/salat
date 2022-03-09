@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.action;
 
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -8,6 +8,10 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 /**
  * action class for creating a new employee contract

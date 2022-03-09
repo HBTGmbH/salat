@@ -12,8 +12,8 @@ import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
 import org.springframework.stereotype.Service;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeRepository;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeRepository;
 
 @Service
 @RequiredArgsConstructor

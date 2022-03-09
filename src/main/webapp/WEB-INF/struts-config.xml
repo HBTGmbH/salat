@@ -39,10 +39,10 @@
 		<form-bean name="addEmployeeOrderForm" type="org.tb.order.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm" type="org.tb.order.ShowEmployeeOrderForm" />
 		<form-bean name="generateMultipleEmployeeordersForm" type="org.tb.order.GenerateMultipleEmployeeordersForm"/>
-		<form-bean name="addEmployeeContractForm" type="org.tb.employee.AddEmployeeContractForm" />
-		<form-bean name="showEmployeeContractForm" type="org.tb.employee.ShowEmployeeContractForm" />
-		<form-bean name="addEmployeeForm" type="org.tb.employee.AddEmployeeForm" />
-		<form-bean name="showEmployeeForm" type="org.tb.employee.ShowEmployeeForm" />
+		<form-bean name="addEmployeeContractForm" type="org.tb.employee.action.AddEmployeeContractForm" />
+		<form-bean name="showEmployeeContractForm" type="org.tb.employee.action.ShowEmployeeContractForm" />
+		<form-bean name="addEmployeeForm" type="org.tb.employee.action.AddEmployeeForm" />
+		<form-bean name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeForm" />
 		<form-bean name="showSettingsForm" type="org.tb.user.ShowSettingsForm" />
 		<form-bean name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeForm" />
 		<form-bean name="showReleaseForm" type="org.tb.dailyreport.ShowReleaseForm" />
@@ -335,32 +335,32 @@
 
 		<!-- Employeecontract -->
 		<action path="/CreateEmployeecontract" name="addEmployeeContractForm"
-			type="org.tb.employee.CreateEmployeecontractAction">
+			type="org.tb.employee.action.CreateEmployeecontractAction">
 			<forward name="success" path="/employee/addEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/EditEmployeecontract" name="addEmployeeContractForm"
-			type="org.tb.employee.EditEmployeecontractAction">
+			type="org.tb.employee.action.EditEmployeecontractAction">
 			<forward name="success" path="/employee/addEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/DeleteEmployeecontract" input="/employee/showEmployeeContract.jsp"
-			name="addEmployeeContractForm" type="org.tb.employee.DeleteEmployeecontractAction">
+			name="addEmployeeContractForm" type="org.tb.employee.action.DeleteEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/ShowEmployeecontract" name="showEmployeeContractForm"
-			type="org.tb.employee.ShowEmployeecontractAction">
+			type="org.tb.employee.action.ShowEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreEmployeecontract" input="/employee/addEmployeeContract.jsp" validate="true"
-			name="addEmployeeContractForm" type="org.tb.employee.StoreEmployeecontractAction">
+			name="addEmployeeContractForm" type="org.tb.employee.action.StoreEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployeeContract.jsp" />
@@ -369,31 +369,31 @@
 
 		<!-- Employee -->
 		<action path="/CreateEmployee" validate="true" name="addEmployeeForm"
-			type="org.tb.employee.CreateEmployeeAction">
+			type="org.tb.employee.action.CreateEmployeeAction">
 			<forward name="success" path="/employee/addEmployee.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/EditEmployee" name="addEmployeeForm"
-			type="org.tb.employee.EditEmployeeAction">
+			type="org.tb.employee.action.EditEmployeeAction">
 			<forward name="success" path="/employee/addEmployee.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/DeleteEmployee" input="/employee/showEmployee.jsp" name="addEmployeeForm"
-			type="org.tb.employee.DeleteEmployeeAction">
+			type="org.tb.employee.action.DeleteEmployeeAction">
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowEmployee" name="showEmployeeForm" type="org.tb.employee.ShowEmployeeAction">
+		<action path="/ShowEmployee" name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeAction">
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreEmployee" input="/employee/addEmployee.jsp" validate="true"
-			type="org.tb.employee.StoreEmployeeAction" name="addEmployeeForm">
+			type="org.tb.employee.action.StoreEmployeeAction" name="addEmployeeForm">
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployee.jsp" />

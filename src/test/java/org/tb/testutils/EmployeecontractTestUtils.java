@@ -3,8 +3,8 @@ package org.tb.testutils;
 import java.time.Duration;
 import lombok.experimental.UtilityClass;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.Employee;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
 
 @UtilityClass
 public class EmployeecontractTestUtils {

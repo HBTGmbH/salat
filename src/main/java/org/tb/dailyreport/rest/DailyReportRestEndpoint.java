@@ -32,8 +32,8 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
 import org.tb.dailyreport.TimereportService;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.Employeeorder;
 import org.tb.order.EmployeeorderDAO;
 

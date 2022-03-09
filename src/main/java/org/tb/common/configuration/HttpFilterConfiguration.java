@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
 import org.tb.auth.AuthorizedUser;
-import org.tb.employee.EmployeeRepository;
+import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.user.UserAccessTokenService;
 
 @Configuration

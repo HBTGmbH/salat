@@ -9,9 +9,9 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 /**
  * action class for showing all employee orders

@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ForeignKey;
 import org.tb.common.AuditedEntity;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 @Entity
 @Table(name = "user_access_token")

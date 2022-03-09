@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.action;
 
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -11,6 +11,8 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
 
 /**
  * action class for storing an employee permanently

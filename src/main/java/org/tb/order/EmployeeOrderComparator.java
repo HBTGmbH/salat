@@ -4,7 +4,7 @@ import static lombok.AccessLevel.PRIVATE;
 
 import java.util.Comparator;
 import lombok.NoArgsConstructor;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 @NoArgsConstructor(access = PRIVATE)
 public class EmployeeOrderComparator implements Comparator<Employeeorder> {

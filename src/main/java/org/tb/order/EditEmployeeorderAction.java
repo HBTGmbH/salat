@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.employee.Employee;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 /**
  * action class for editing an employee order

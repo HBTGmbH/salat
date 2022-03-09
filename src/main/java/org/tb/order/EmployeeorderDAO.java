@@ -23,9 +23,8 @@ import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.Employee_;
-import org.tb.employee.Employeecontract;
 import org.tb.employee.Employeecontract_;
 
 @Component

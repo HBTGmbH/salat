@@ -13,7 +13,7 @@ import org.springframework.util.StopWatch;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 import org.tb.order.Employeeorder;
 import org.tb.order.EmployeeorderDAO;
 

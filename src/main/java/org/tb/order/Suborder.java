@@ -1,9 +1,6 @@
 package org.tb.order;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
-
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -31,7 +28,7 @@ import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 @Getter
 @Setter

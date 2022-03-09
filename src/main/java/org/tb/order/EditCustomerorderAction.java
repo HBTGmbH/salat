@@ -13,8 +13,8 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.customer.Customer;
 import org.tb.customer.CustomerDAO;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
 
 /**
  * action class for editing a customer order

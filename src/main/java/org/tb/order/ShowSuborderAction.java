@@ -6,7 +6,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 /**
  * action class for showing all suborders

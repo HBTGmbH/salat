@@ -25,10 +25,8 @@ import org.tb.dailyreport.Timereport;
 import org.tb.dailyreport.TimereportDAO;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.dailyreport.viewhelper.VacationViewer;
-import org.tb.employee.Employeecontract;
-import org.tb.order.Customerorder;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.order.CustomerorderDAO;
-import org.tb.order.Employeeorder;
 import org.tb.order.EmployeeorderDAO;
 
 @Component

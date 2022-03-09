@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.TimereportDAO;
-import org.tb.employee.Employee;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 
 /**
  * Class for generating multiple Employeeorders for one suborder at once

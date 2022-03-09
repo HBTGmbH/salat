@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.action;
 
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.common.util.DateUtils;
+import org.tb.employee.domain.Employee;
 
 /**
  * Form for adding an employee contract

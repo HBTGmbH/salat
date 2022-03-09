@@ -7,9 +7,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 /**
  * Form for adding a customer order

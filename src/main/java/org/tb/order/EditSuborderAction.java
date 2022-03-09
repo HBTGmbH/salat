@@ -12,7 +12,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 /**
  * action class for editing a suborder

@@ -17,17 +17,16 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.common.DateTimeViewHelper;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.OptionItem;
 import org.tb.dailyreport.viewhelper.TrainingHelper;
-import org.tb.employee.Employee;
-import org.tb.employee.EmployeeDAO;
-import org.tb.employee.EmployeeHelper;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.Customerorder;
 import org.tb.order.CustomerorderDAO;
 
@@ -132,7 +131,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        Employeecontract ec = new EmployeeHelper().setCurrentEmployee(loginEmployee, request, employeeDAO, employeecontractDAO);
+        Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
         Customerorder trainingOrder = customerorderDAO.getCustomerorderBySign(TRAINING_ID);
         if (trainingOrder == null) {
             request.setAttribute("errorMessage", "No training customer order has been found matching " + TRAINING_ID + " - please call system administrator.");

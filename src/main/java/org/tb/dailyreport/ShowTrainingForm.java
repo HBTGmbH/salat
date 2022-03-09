@@ -6,7 +6,7 @@ import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.Employeecontract;
+import org.tb.employee.domain.Employeecontract;
 
 /**
  * Form for showing training in years

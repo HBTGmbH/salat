@@ -7,7 +7,6 @@ import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
 import static org.tb.common.DateTimeViewHelper.getSerialDayList;
 import static org.tb.common.util.DateUtils.now;
-import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -23,8 +22,8 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
-import org.tb.employee.Employeecontract;
-import org.tb.employee.EmployeecontractDAO;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.Customerorder;
 import org.tb.order.CustomerorderDAO;
 import org.tb.order.SubOrderByDescriptionComparator;

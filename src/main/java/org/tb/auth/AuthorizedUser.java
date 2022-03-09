@@ -12,7 +12,7 @@ import lombok.Data;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
-import org.tb.employee.Employee;
+import org.tb.employee.domain.Employee;
 
 @Component
 @Scope(value = SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)

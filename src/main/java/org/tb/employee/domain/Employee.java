@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.domain;
 
 import java.io.Serializable;
 import javax.persistence.Entity;
