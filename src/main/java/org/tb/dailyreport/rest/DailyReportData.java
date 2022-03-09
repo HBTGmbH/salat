@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class Booking {
+public class DailyReportData {
 
     private long employeeorderId;
     private String orderLabel;

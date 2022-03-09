@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
-import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +44,7 @@ import org.tb.order.EmployeeorderDAO;
     scheme = "basic"
 )
 @RequestMapping(path = "/rest/daily-reports")
-public class BookingsService {
+public class DailyReportRestEndpoint {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final TimereportDAO timereportDAO;
@@ -56,7 +55,7 @@ public class BookingsService {
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     @Operation(security = @SecurityRequirement(name = "basicAuth"))
-    public List<Booking> getBookings(
+    public List<DailyReportData> getBookings(
         @RequestParam("refDate")
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate refDate
@@ -80,7 +79,7 @@ public class BookingsService {
         );
         return timeReports.stream()
             .map(tr ->
-                Booking.builder()
+                DailyReportData.builder()
                     .employeeorderId(tr.getEmployeeorder().getId())
                     .date(DateUtils.format(tr.getReferenceday().getRefdate()))
                     .orderLabel(tr.getSuborder().getCustomerorder().getShortdescription())
@@ -99,7 +98,7 @@ public class BookingsService {
     @PostMapping(path = "/", consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
     @Operation(security = @SecurityRequirement(name = "basicAuth"))
-    public void createBooking(@RequestBody Booking booking) {
+    public void createBooking(@RequestBody DailyReportData booking) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
