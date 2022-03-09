@@ -22,11 +22,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee;
-import org.tb.order.Customerorder_;
+import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.comparator.SubOrderComparator;
 import org.tb.order.domain.Suborder;
-import org.tb.order.Suborder_;
+import org.tb.order.domain.Suborder_;
 
 @Component
 @RequiredArgsConstructor

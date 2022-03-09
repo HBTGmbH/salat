@@ -22,15 +22,15 @@ import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.customer.Customer_;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.Employee_;
+import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.Employeecontract_;
+import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.Customerorder_;
+import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.Employeeorder_;
+import org.tb.order.domain.Employeeorder_;
 import org.tb.order.domain.Suborder;
-import org.tb.order.Suborder_;
+import org.tb.order.domain.Suborder_;
 
 /**
  * DAO class for 'Customerorder'
