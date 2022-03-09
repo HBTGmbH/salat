@@ -4,7 +4,7 @@ import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.tb.common.GlobalConstants;
-import org.tb.dailyreport.TimereportDAO;
+import org.tb.dailyreport.persistence.TimereportDAO;
 
 @RequiredArgsConstructor
 public class EmployeeOrderViewDecorator extends Employeeorder {

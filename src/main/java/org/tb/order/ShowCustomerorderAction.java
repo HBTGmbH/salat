@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.customer.Customer;
 import org.tb.customer.CustomerDAO;
-import org.tb.dailyreport.TimereportDAO;
+import org.tb.dailyreport.persistence.TimereportDAO;
 
 /**
  * action class for showing all customer orders

@@ -7,8 +7,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Scanner;
 import lombok.extern.slf4j.Slf4j;
-import org.tb.dailyreport.Publicholiday;
-import org.tb.dailyreport.PublicholidayDAO;
+import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.persistence.PublicholidayDAO;
 
 /**
  * Tool class for easier handling of new holidays

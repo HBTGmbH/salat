@@ -25,8 +25,8 @@ import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.Timereport;
-import org.tb.dailyreport.Vacation;
+import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.Vacation;
 import org.tb.order.Employeeorder;
 
 /**

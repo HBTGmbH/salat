@@ -26,8 +26,8 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.Timereport;
-import org.tb.dailyreport.TimereportDAO;
+import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 
 @Getter
