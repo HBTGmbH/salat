@@ -6,7 +6,6 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
@@ -36,15 +35,15 @@ import org.tb.order.SuborderDAO;
     type = SecuritySchemeType.HTTP,
     scheme = "basic"
 )
-@RequestMapping(path = "/rest/employeeorders")
-public class EmployeeOrdersService {
+@RequestMapping(path = "/rest/employee-orders")
+public class EmployeeOrderRestEndpoint {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final SuborderDAO suborderDAO;
     private final AuthorizedUser authorizedUser;
 
-    @GetMapping(path = "/validOrders", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     @Operation(security = @SecurityRequirement(name = "basicAuth"))
     public List<EmployeeOrderData> getValidEmployeeOrders(
