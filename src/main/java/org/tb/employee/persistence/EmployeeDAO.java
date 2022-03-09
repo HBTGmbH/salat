@@ -13,7 +13,7 @@ import org.springframework.util.Assert;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.Employee_;
+import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
 
 @Component

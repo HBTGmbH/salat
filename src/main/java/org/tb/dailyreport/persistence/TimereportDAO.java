@@ -16,18 +16,18 @@ import javax.persistence.criteria.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.dailyreport.Referenceday_;
-import org.tb.dailyreport.Timereport_;
+import org.tb.dailyreport.domain.Referenceday_;
+import org.tb.dailyreport.domain.Timereport_;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.Employee_;
+import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.Employeecontract_;
+import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.Customerorder_;
-import org.tb.order.Employeeorder_;
+import org.tb.order.domain.Customerorder_;
+import org.tb.order.domain.Employeeorder_;
 import org.tb.order.domain.Suborder;
-import org.tb.order.Suborder_;
+import org.tb.order.domain.Suborder_;
 
 @Component
 @RequiredArgsConstructor
