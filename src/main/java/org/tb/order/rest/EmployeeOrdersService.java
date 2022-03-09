@@ -5,11 +5,18 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,8 +30,13 @@ import org.tb.order.EmployeeorderDAO;
 import org.tb.order.Suborder;
 import org.tb.order.SuborderDAO;
 
-@RestController("/rest/employeeorders")
+@RestController
 @RequiredArgsConstructor
+@SecurityScheme(name = "basicAuth",
+    type = SecuritySchemeType.HTTP,
+    scheme = "basic"
+)
+@RequestMapping(path = "/rest/employeeorders")
 public class EmployeeOrdersService {
 
     private final EmployeecontractDAO employeecontractDAO;
@@ -34,8 +46,9 @@ public class EmployeeOrdersService {
 
     @GetMapping(path = "/validOrders", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
+    @Operation(security = @SecurityRequirement(name = "basicAuth"))
     public List<EmployeeOrderData> getValidEmployeeOrders(
-        @RequestParam("refDate") LocalDate refDate
+        @RequestParam("refDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate
     ) {
         if(!authorizedUser.isAuthenticated()) {
           throw new ResponseStatusException(UNAUTHORIZED);
