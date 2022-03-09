@@ -24,10 +24,10 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.Employeeorder;
-import org.tb.order.EmployeeorderDAO;
-import org.tb.order.Suborder;
-import org.tb.order.SuborderDAO;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.SuborderDAO;
 
 @RestController
 @RequiredArgsConstructor

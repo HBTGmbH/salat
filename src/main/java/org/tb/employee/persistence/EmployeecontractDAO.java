@@ -25,7 +25,7 @@ import org.tb.employee.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.Employeecontract_;
 import org.tb.employee.domain.Overtime;
-import org.tb.order.Employeeorder;
+import org.tb.order.domain.Employeeorder;
 
 @Component
 @RequiredArgsConstructor

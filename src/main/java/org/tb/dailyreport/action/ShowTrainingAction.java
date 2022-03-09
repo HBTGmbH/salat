@@ -29,8 +29,8 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.Customerorder;
-import org.tb.order.CustomerorderDAO;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.persistence.CustomerorderDAO;
 
 /**
  * Action class for trainings to be shown on separate page

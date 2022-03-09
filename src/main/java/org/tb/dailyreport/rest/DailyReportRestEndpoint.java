@@ -34,8 +34,8 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.Employeeorder;
-import org.tb.order.EmployeeorderDAO;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.EmployeeorderDAO;
 
 @RestController
 @RequiredArgsConstructor

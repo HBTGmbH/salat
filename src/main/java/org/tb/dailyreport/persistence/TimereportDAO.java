@@ -23,10 +23,10 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.Employeecontract_;
-import org.tb.order.Customerorder;
+import org.tb.order.domain.Customerorder;
 import org.tb.order.Customerorder_;
 import org.tb.order.Employeeorder_;
-import org.tb.order.Suborder;
+import org.tb.order.domain.Suborder;
 import org.tb.order.Suborder_;
 
 @Component

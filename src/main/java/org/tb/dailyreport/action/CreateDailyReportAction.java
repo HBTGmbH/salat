@@ -26,11 +26,11 @@ import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.Customerorder;
-import org.tb.order.CustomerorderDAO;
-import org.tb.order.SubOrderByDescriptionComparator;
-import org.tb.order.Suborder;
-import org.tb.order.SuborderDAO;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.domain.comparator.SubOrderByDescriptionComparator;
+import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.SuborderDAO;
 
 /**
  * Action class for creation of a timereport

@@ -14,8 +14,8 @@ import javax.servlet.jsp.tagext.TagSupport;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.tb.common.GlobalConstants;
-import org.tb.order.Customerorder;
-import org.tb.order.Suborder;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Suborder;
 
 /**
  * This class generates a tree view for jsp-Pages.

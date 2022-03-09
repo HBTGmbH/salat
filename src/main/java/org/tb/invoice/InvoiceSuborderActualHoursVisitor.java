@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.order.Suborder;
-import org.tb.order.SuborderVisitor;
+import org.tb.order.domain.Suborder;
+import org.tb.order.domain.SuborderVisitor;
 
 @RequiredArgsConstructor
 public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {

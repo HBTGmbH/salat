@@ -16,8 +16,8 @@ import javax.servlet.http.HttpSession;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.order.Employeeorder;
-import org.tb.order.EmployeeorderDAO;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.EmployeeorderDAO;
 
 public class VacationViewer implements Serializable {
 

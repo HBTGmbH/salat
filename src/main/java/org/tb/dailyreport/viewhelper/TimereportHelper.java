@@ -26,8 +26,8 @@ import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.persistence.OvertimeDAO;
-import org.tb.order.Employeeorder;
-import org.tb.order.EmployeeorderDAO;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.EmployeeorderDAO;
 
 /**
  * Helper class for timereport handling which does not directly deal with persistence

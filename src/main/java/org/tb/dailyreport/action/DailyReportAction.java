@@ -21,12 +21,12 @@ import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.Customerorder;
-import org.tb.order.CustomerorderDAO;
-import org.tb.order.Employeeorder;
-import org.tb.order.EmployeeorderDAO;
-import org.tb.order.Suborder;
-import org.tb.order.SuborderDAO;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.SuborderDAO;
 
 public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
 

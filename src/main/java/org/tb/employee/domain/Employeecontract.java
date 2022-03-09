@@ -27,7 +27,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.Vacation;
-import org.tb.order.Employeeorder;
+import org.tb.order.domain.Employeeorder;
 
 /**
  * The duration fields have their entity attribute names with minutes to indicate the value in the database.

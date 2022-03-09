@@ -26,8 +26,8 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.dailyreport.viewhelper.VacationViewer;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.order.CustomerorderDAO;
-import org.tb.order.EmployeeorderDAO;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 
 @Component
 @Slf4j

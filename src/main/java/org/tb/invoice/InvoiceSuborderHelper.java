@@ -11,11 +11,11 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
-import org.tb.order.Customerorder;
-import org.tb.order.Employeeorder;
-import org.tb.order.Suborder;
-import org.tb.order.SuborderDAO;
-import org.tb.order.SuborderVisitor;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.domain.SuborderVisitor;
 
 public class InvoiceSuborderHelper extends Suborder {
 
