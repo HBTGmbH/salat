@@ -50,6 +50,7 @@
 		<form-bean name="showStatusReportForm" type="org.tb.statusreport.ShowStatusReportForm" />
 		<form-bean name="addStatusReportForm" type="org.tb.statusreport.AddStatusReportForm" />
 		<form-bean name="showTrainingForm" type="org.tb.dailyreport.ShowTrainingForm" />
+		<form-bean name="userAccessTokenForm" type="org.tb.user.UserAccessTokenForm" />
 	</form-beans>
 
 	<!-- ========================================= Global Exception Definitions -->
@@ -136,6 +137,23 @@
 			name="showSettingsForm" type="org.tb.user.ShowSettingsAction">
 			<forward name="success" path="/user/showSettings.jsp" />
 			<forward name="error" path="/error.jsp" />
+		</action>
+
+		<action path="/DeleteUserAccessToken" validate="false"
+		  type="org.tb.user.DeleteUserAccessTokenAction">
+			<forward name="success" path="/user/showSettings.jsp" />
+		</action>
+
+		<action path="/CreateUserAccessToken" validate="false"
+			type="org.tb.user.CreateUserAccessTokenAction">
+			<forward name="success" path="/user/addUserAccessToken.jsp" />
+		</action>
+
+		<action path="/StoreUserAccessToken" validate="true"
+			input="/user/addUserAccessToken.jsp"
+			name="userAccessTokenForm"
+			type="org.tb.user.StoreUserAccessTokenAction">
+			<forward name="success" path="/user/addUserAccessToken.jsp" />
 		</action>
 
 		<action path="/ShowWelcome" input="/welcome/showWelcome.jsp" validate="true"

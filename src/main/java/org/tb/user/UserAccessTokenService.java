@@ -59,39 +59,39 @@ public class UserAccessTokenService {
         .orElse(false);
   }
 
-  public String generateTokenSecret() {
+  private String generateTokenSecret() {
     PasswordGenerator gen = new PasswordGenerator();
     CharacterData lowerCaseChars = EnglishCharacterData.LowerCase;
     CharacterRule lowerCaseRule = new CharacterRule(lowerCaseChars);
-    lowerCaseRule.setNumberOfCharacters(2);
+    lowerCaseRule.setNumberOfCharacters(15);
 
     CharacterData upperCaseChars = EnglishCharacterData.UpperCase;
     CharacterRule upperCaseRule = new CharacterRule(upperCaseChars);
-    upperCaseRule.setNumberOfCharacters(2);
+    upperCaseRule.setNumberOfCharacters(15);
 
     CharacterData digitChars = EnglishCharacterData.Digit;
     CharacterRule digitRule = new CharacterRule(digitChars);
-    digitRule.setNumberOfCharacters(2);
+    digitRule.setNumberOfCharacters(8);
 
     CharacterData specialChars = EnglishCharacterData.Special;
     CharacterRule spacialRule = new CharacterRule(digitChars);
     spacialRule.setNumberOfCharacters(2);
 
-    String password = gen.generatePassword(20, lowerCaseRule, upperCaseRule, digitRule, spacialRule);
+    String password = gen.generatePassword(40, lowerCaseRule, upperCaseRule, digitRule, spacialRule);
     return password;
   }
 
-  public String generateTokenId(String employeeSign) {
+  private String generateTokenId(String employeeSign) {
     PasswordGenerator gen = new PasswordGenerator();
     CharacterData lowerCaseChars = EnglishCharacterData.LowerCase;
     CharacterRule lowerCaseRule = new CharacterRule(lowerCaseChars);
-    lowerCaseRule.setNumberOfCharacters(2);
+    lowerCaseRule.setNumberOfCharacters(10);
 
     CharacterData upperCaseChars = EnglishCharacterData.UpperCase;
     CharacterRule upperCaseRule = new CharacterRule(upperCaseChars);
-    upperCaseRule.setNumberOfCharacters(2);
+    upperCaseRule.setNumberOfCharacters(10);
 
-    String password = gen.generatePassword(10, lowerCaseRule, upperCaseRule);
+    String password = gen.generatePassword(20, lowerCaseRule, upperCaseRule);
     return employeeSign + "." + password;
   }
 

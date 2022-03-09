@@ -217,12 +217,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 request.getParameter("task").equals("save") ||
                 request.getParameter("trId") != null) {
 
-            LocalDate referencedayRefDate;
-            try {
-                referencedayRefDate = DateUtils.parse(form.getReferenceday());
-            } catch (ParseException e) {
-                throw new RuntimeException("Klaus has no idea why this code is so ugly", e);
-            }
+            LocalDate referencedayRefDate = DateUtils.parse(form.getReferenceday());
 
             List<Employeeorder> employeeorders = employeeorderDAO
                 .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(

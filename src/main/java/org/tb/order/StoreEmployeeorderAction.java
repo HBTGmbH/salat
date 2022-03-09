@@ -4,6 +4,7 @@ import static org.apache.struts.action.ActionMessages.GLOBAL_MESSAGE;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.DateUtils.validateDate;
 
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -373,16 +374,16 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
         }
 
         LocalDate validFromDate = null;
-        LocalDate validUntilDate = null;
-        try {
+        if(validateDate(eoForm.getValidFrom())) {
             validFromDate = parse(eoForm.getValidFrom());
-        } catch (ParseException e) {
+        } else {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
+        LocalDate validUntilDate = null;
         if (eoForm.getValidUntil() != null && !eoForm.getValidUntil().equals("".trim())) {
-            try {
-                validUntilDate = parse(eoForm.getValidUntil());
-            } catch (ParseException e) {
+            if(validateDate(eoForm.getValidFrom())) {
+                validUntilDate = parse(eoForm.getValidFrom());
+            } else {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }

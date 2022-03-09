@@ -115,6 +115,18 @@ public class DateUtils {
         }
     }
 
+    public static boolean validateDateTime(String dateTimeString, String pattern) {
+        var formatter = DateTimeFormatter
+            .ofPattern(pattern)
+            .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
+        try {
+            formatter.parse(dateTimeString);
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
     public static boolean isWeekday(LocalDate dt) {
         var dow = dt.getDayOfWeek();
         return dow != SATURDAY && dow != SUNDAY;
@@ -299,22 +311,29 @@ public class DateUtils {
         return yearFormatter.format(date);
     }
 
-    public static LocalDate parse(String date, Function<ParseException, LocalDate> exceptionHandler) {
+    public static LocalDate parse(String date, Function<DateTimeParseException, LocalDate> exceptionHandler) {
         try {
             return parse(date);
-        } catch (ParseException e) {
+        } catch (DateTimeParseException e) {
             return exceptionHandler.apply(e);
         }
     }
 
-    public static LocalDate parse(String date) throws ParseException {
+    public static LocalDate parse(String date) {
         return LocalDate.parse(date, dateFormatter);
+    }
+
+    public static LocalDateTime parseDateTime(String dateTime, String pattern) {
+        var formatter = DateTimeFormatter
+            .ofPattern(pattern)
+            .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
+        return LocalDateTime.parse(dateTime, formatter);
     }
 
     public static LocalDate parseOrDefault(String date, LocalDate parseExceptionValue) {
         try {
             return parse(date);
-        } catch (ParseException e) {
+        } catch (DateTimeParseException e) {
             return parseExceptionValue;
         }
     }

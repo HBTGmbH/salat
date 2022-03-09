@@ -3,6 +3,7 @@ package org.tb.order;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.DateUtils.validateDate;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -470,17 +471,17 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
         // check date formats
         LocalDate suborderFromDate = null;
-        try {
+        if(validateDate(addSuborderForm.getValidFrom())) {
             suborderFromDate = DateUtils.parse(addSuborderForm.getValidFrom());
-        } catch (ParseException e) {
+        } else {
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
 
         LocalDate suborderUntilDate = null;
         if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
-            try {
+            if(validateDate(addSuborderForm.getValidUntil())) {
                 suborderUntilDate = DateUtils.parse(addSuborderForm.getValidUntil());
-            } catch (ParseException e) {
+            } else {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }

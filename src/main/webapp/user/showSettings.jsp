@@ -104,5 +104,47 @@
 		</tr>
 	</table>
 </html:form>
+
+<c:if test="${generatedToken != null}">
+	<table class="center backgroundcolor">
+		<tr class="primarycolor">
+			<td><bean:message key="form.useraccesstoken.header.tokenid" /></td>
+			<td>${generatedToken.tokenId}</td>
+		</tr>
+		<tr class="secondarycolor">
+			<td><bean:message key="form.useraccesstoken.header.tokensecret" /></td>
+			<td>${generatedToken.tokenSecret}</td>
+		</tr>
+		<tr class="primarycolor">
+			<td><bean:message key="form.useraccesstoken.header.validuntil" /></td>
+			<td>${generatedToken.validUntil}</td>
+		</tr>
+		<tr class="secondarycolor">
+			<td><bean:message key="form.useraccesstoken.header.comment" /></td>
+			<td>${generatedToken.comment}</td>
+		</tr>
+	</table>
+</c:if>
+
+<table class="center backgroundcolor">
+	<tr>
+		<th><bean:message key="form.useraccesstoken.header.tokenid" /></th>
+		<th><bean:message key="form.useraccesstoken.header.validuntil" /></th>
+		<th><bean:message key="form.useraccesstoken.header.comment" /></th>
+		<th></th>
+	</tr>
+<c:forEach var="userAccessToken" items="${userAccessTokens}" varStatus="status">
+	<tr class="${status.count%2==0 ? 'primarycolor': 'secondaryColor'}">
+		<td>${userAccessToken.tokenId}</td>
+		<td>${userAccessToken.validUntil}</td>
+		<td>${userAccessToken.comment}</td>
+		<td><a href="/do/DeleteUserAccessToken?id=${userAccessToken.id}"><bean:message key="form.useraccesstoken.action.delete" /></a></td>
+	</tr>
+</c:forEach>
+	<tr>
+		<th colspan="4"><a href="/do/CreateUserAccessToken"><bean:message key="form.useraccesstoken.action.create" /></a></th>
+	</tr>
+</table>
+
 </body>
 </html>
