@@ -66,6 +66,11 @@
  		form.action = "/do/StoreDailyReport?task=" + actionVal;
 		form.submit();
 	}
+
+	function setToggleShowAllMinutes(form) {
+		form.action = "/do/ShowDailyReport?task=toggleShowAllMinutes";
+		form.submit();
+	}
 	
 	function confirmDelete(form, id) {	
 		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
@@ -424,6 +429,16 @@
 							</td>
 						</c:otherwise>
 					</c:choose>
+				</tr>
+
+				<!-- toggle full minutes -->
+				<tr>
+					<td align="left" valign="top" class="noBborderStyle">
+						<b><bean:message key="main.timereport.showallminutes.text" /></b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<html:checkbox property="showAllMinutes" onchange="setToggleShowAllMinutes(this.form)" />
+					</td>
 				</tr>
 				
 				<!-- seperator line -->

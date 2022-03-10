@@ -15,6 +15,7 @@ import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -94,6 +95,113 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
 
+    @Override
+    public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
+        String task = request.getParameter("task");
+        if ("massdelete".equalsIgnoreCase(task)) {
+            // delete the selected ids from the database and continue as if this was a refreshTimereports task
+            String sIds = request.getParameter("ids");
+            List<Long> timereportIds = Arrays.stream(sIds.split(","))
+                .map(this::safeParse)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+            try {
+                timereportService.deleteTimereports(timereportIds, authorizedUser);
+            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                addToErrors(request, e.getErrorCode());
+                return mapping.getInputForward();
+            }
+
+            task = "refreshTimereports";
+        } else if ("toggleShowAllMinutes".equalsIgnoreCase(task)) {
+            request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
+            request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
+            return mapping.getInputForward();
+        } else if ("massshiftdays".equalsIgnoreCase(task)) {
+            // shift the selected ids by "byDays" and continue as if this was a refreshTimereports task
+            String sIds = request.getParameter("ids");
+            String days = request.getParameter("byDays");
+
+            Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+            Collection<Long> errors = massShiftDays(sIds.split(","), days, loginEmployeecontract);
+            if (errors != null) {
+                if (!errors.isEmpty()) {
+                    request.setAttribute("failedMassEditIds", errors);
+                }
+                return mapping.findForward("success");
+            }
+            task = "refreshTimereports";
+        }
+
+        request.getSession().setAttribute("vacationBudgetOverrun", false);
+        Employeecontract ec = getEmployeeContractFromRequest(request);
+
+        // check if special tasks initiated from the daily display need to be carried out...
+        String sortModus = (String) request.getSession().getAttribute("timereportSortModus");
+        if (sortModus == null || !(sortModus.equals("+") || sortModus.equals("-"))) {
+            sortModus = "+";
+            request.getSession().setAttribute("timereportSortModus", sortModus);
+        }
+        String sortColumn = (String) request.getSession().getAttribute("timereportSortColumn");
+        if (sortColumn == null || sortColumn.trim().equals("")) {
+            sortColumn = "employee";
+            request.getSession().setAttribute("timereportSortColumn", sortColumn);
+        }
+
+        final ActionForward actionResult;
+        if ("sort".equals(task)) {
+            actionResult = doSort(mapping, request, sortModus, sortColumn);
+        } else if ("saveBegin".equals(task) || "saveBreak".equals(task)) {
+            actionResult = doSaveBeginOrBreak(mapping, request, reportForm, ec, task);
+        } else if ("refreshTimereports".equals(task)) {
+            actionResult = doRefreshTimereports(mapping, request, reportForm, ec);
+        } else if ("refreshOrders".equals(task)) {
+            actionResult = doRefreshOrders(mapping, request, reportForm);
+        } else if ("refreshSuborders".equals(task)) {
+            actionResult = doRefreshSuborders(mapping, request, reportForm);
+        } else if ("print".equals(task)) {
+            actionResult = doPrint(mapping, request.getSession(), reportForm);
+        } else if ("back".equalsIgnoreCase(task)) {
+            // just go back to main menu
+            actionResult = mapping.findForward("backtomenu");
+        } else if(task != null) {
+            actionResult = mapping.findForward("success");
+        } else {
+            //*** initialisation ***
+            init(request, reportForm);
+            //TODO: Hier bitte findForward zurückgeben.
+            if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
+                // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
+                String date = request.getParameter("year") + "-" + getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
+                reportForm.setStartdate(date);
+            }
+            //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
+            if (request.getSession().getAttribute("overtimeCompensation") == null
+                    || !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+                request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
+            }
+            request.getSession().setAttribute("reportForm", reportForm);
+            request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());
+            actionResult = mapping.findForward("success");
+        }
+
+        // check if full minutes is required - when we have minutes durations that do not match the 5 minute schema
+        var timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+        var anyTimereportNotMatches5MinuteSchema = timereports.stream()
+            .map(Timereport::getDuration)
+            .map(Duration::toMinutes)
+            .map(minutes -> minutes % 5)
+            .filter(minutes -> minutes > 0)
+            .findAny()
+            .isPresent();
+        reportForm.setShowAllMinutes(anyTimereportNotMatches5MinuteSchema);
+        request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
+
+        return actionResult;
+    }
+
     /**
      * parses a string to a long value and returns its value
      * returns null if there is an error
@@ -133,9 +241,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         int days = Integer.parseInt(byDays);
 
         List<Long> ids = Arrays.stream(sIds)
-                .map(this::safeParse)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            .map(this::safeParse)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
 
         Collection<Long> errors = checkShiftedDays(ids, days, loginEmployeeContract);
         if (!errors.isEmpty()) {
@@ -157,96 +265,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             return null;
         }
         return problematicTimereportIds;
-    }
-
-    @Override
-    public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
-        String task = request.getParameter("task");
-        if ("massdelete".equalsIgnoreCase(task)) {
-            // delete the selected ids from the database and continue as if this was a refreshTimereports task
-            String sIds = request.getParameter("ids");
-            List<Long> timereportIds = Arrays.stream(sIds.split(","))
-                .map(this::safeParse)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-            try {
-                timereportService.deleteTimereports(timereportIds, authorizedUser);
-            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
-                addToErrors(request, e.getErrorCode());
-                return mapping.getInputForward();
-            }
-
-            task = "refreshTimereports";
-        } else if ("massshiftdays".equalsIgnoreCase(task)) {
-            // shift the selected ids by "byDays" and continue as if this was a refreshTimereports task
-            String sIds = request.getParameter("ids");
-            String days = request.getParameter("byDays");
-
-            Employeecontract loginEmployeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-            Collection<Long> errors = massShiftDays(sIds.split(","), days, loginEmployeecontract);
-            if (errors != null) {
-                if (!errors.isEmpty()) {
-                    request.setAttribute("failedMassEditIds", errors);
-                }
-                return mapping.findForward("success");
-            }
-            task = "refreshTimereports";
-        }
-
-        request.getSession().setAttribute("vacationBudgetOverrun", false);
-        Employeecontract ec = getEmployeeContractFromRequest(request);
-
-        // check if special tasks initiated from the daily display need to be carried out...
-        String sortModus = (String) request.getSession().getAttribute("timereportSortModus");
-        if (sortModus == null || !(sortModus.equals("+") || sortModus.equals("-"))) {
-            sortModus = "+";
-            request.getSession().setAttribute("timereportSortModus", sortModus);
-        }
-        String sortColumn = (String) request.getSession().getAttribute("timereportSortColumn");
-        if (sortColumn == null || sortColumn.trim().equals("")) {
-            sortColumn = "employee";
-            request.getSession().setAttribute("timereportSortColumn", sortColumn);
-        }
-        if (task != null) {
-            if ("sort".equals(task)) {
-                return doSort(mapping, request, sortModus, sortColumn);
-            } else if ("saveBegin".equals(task) || "saveBreak".equals(task)) {
-                return doSaveBeginOrBreak(mapping, request, reportForm, ec, task);
-
-            } else if ("refreshTimereports".equals(task)) {
-                return doRefreshTimereports(mapping, request, reportForm, ec);
-
-            } else if ("refreshOrders".equals(task)) {
-                return doRefreshOrders(mapping, request, reportForm);
-            } else if ("refreshSuborders".equals(task)) {
-                return doRefreshSuborders(mapping, request, reportForm);
-            } else if ("print".equals(task)) {
-                return doPrint(mapping, request.getSession(), reportForm);
-            } else if ("back".equalsIgnoreCase(task)) {
-                // just go back to main menu
-                return mapping.findForward("backtomenu");
-            } else {
-                return mapping.findForward("success");
-            }
-        } else {
-            //*** initialisation ***
-            init(request, reportForm);
-            //TODO: Hier bitte findForward zurückgeben.
-            if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
-                // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
-                String date = request.getParameter("year") + "-" + getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
-                reportForm.setStartdate(date);
-            }
-            //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
-            if (request.getSession().getAttribute("overtimeCompensation") == null
-                    || !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-            }
-        }
-        request.getSession().setAttribute("reportForm", reportForm);
-        request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());
-        return mapping.findForward("success");
     }
 
     private ActionForward doPrint(ActionMapping mapping, HttpSession session, ShowDailyReportForm reportForm) {
@@ -627,9 +645,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         request.getSession().setAttribute("months", getMonthsToDisplay());
         request.getSession().setAttribute("hours", getHoursToDisplay());
         request.getSession().setAttribute("breakhours", getBreakHoursOptions());
-        request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(false));
+        request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
         request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
-        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(false));
+        request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
         if (reportForm.getMonth() != null) {
             // call from list select change
             request.getSession().setAttribute("currentDay", reportForm.getDay());
@@ -758,6 +776,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         // set current order = all orders
         request.getSession().setAttribute("currentOrder", "ALL ORDERS");
         request.getSession().setAttribute("currentOrderId", -1L);
+
         return forward;
     }
 

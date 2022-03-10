@@ -59,6 +59,8 @@ public class ShowDailyReportForm extends ActionForm {
     private Boolean showTraining;
     private Boolean showOnlyValid;
 
+    private boolean showAllMinutes;
+
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         Employeecontract employeecontract;
@@ -74,6 +76,7 @@ public class ShowDailyReportForm extends ActionForm {
         training = false;
         showOvertimeUntil = false;
         showOnlyValid = false;
+        showAllMinutes = false;
     }
 
     @Nonnull
