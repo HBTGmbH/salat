@@ -319,13 +319,13 @@ public class TimereportHelper {
             }
         }
 
-        var diffDays = DateUtils.getWeekdaysDistance(start, end);
+        var diffDays = DateUtils.getWorkingDayDistance(start, end);
         // substract holidays
         diffDays -= numberOfHolidays;
 
         // calculate working time
         long dailyWorkingTime = employeecontract.getDailyWorkingTime().toMinutes();
-        long expectedWorkingTimeInMinutes = (long) dailyWorkingTime * diffDays;
+        long expectedWorkingTimeInMinutes = dailyWorkingTime * diffDays;
         long actualWorkingTimeInMinutes = 0;
         List<Timereport> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end);
         if (reports != null) {
@@ -335,12 +335,13 @@ public class TimereportHelper {
         }
 
         long overtimeMinutes;
-        if (useOverTimeAdjustment && start.equals(employeecontract.getValidFrom())) {
+        if (useOverTimeAdjustment) {
             long overtimeAdjustmentMinutes = 0;
-            List<Overtime> overtimes = overtimeDAO
-                    .getOvertimesByEmployeeContractId(employeecontract.getId());
-            for (Overtime ot : overtimes) {
-                overtimeAdjustmentMinutes += ot.getTimeMinutes().toMinutes();
+            List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
+            for (Overtime overtime : overtimes) {
+                if(isOvertimeEffectiveBetween(start, end, overtime)) {
+                    overtimeAdjustmentMinutes += overtime.getTimeMinutes().toMinutes();
+                }
             }
             overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
         } else {
@@ -353,6 +354,11 @@ public class TimereportHelper {
             //startdate > enddate, should only happen when reopened on day of contractbegin (because then, enddate is set to (contractbegin - 1))
             return 0;
         }
+    }
+
+    private boolean isOvertimeEffectiveBetween(LocalDate start, LocalDate end, Overtime overtime) {
+        return !overtime.getCreated().isAfter(end.plusDays(1).atStartOfDay()) &&
+               !overtime.getCreated().isBefore(start.atStartOfDay());
     }
 
 }
