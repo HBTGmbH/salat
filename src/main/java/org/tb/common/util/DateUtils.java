@@ -9,11 +9,8 @@ import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
 import static java.util.Locale.ENGLISH;
 import static org.tb.common.GlobalConstants.DEFAULT_DATE_FORMAT;
-import static org.tb.common.GlobalConstants.DEFAULT_LOCALE;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
-import static org.tb.common.GlobalConstants.STARTING_YEAR;
 
-import java.text.ParseException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,16 +20,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
-import java.time.temporal.WeekFields;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.tb.common.GlobalConstants;
 
@@ -392,15 +380,19 @@ public class DateUtils {
         return date2;
     }
 
-    public static int getWeekdaysDistance(LocalDate begin, LocalDate end) {
+    /**
+     * Gets the distance of working days between the two dates. Same dates will return 1 if the dates are
+     * working days.
+     */
+    public static long getWorkingDayDistance(LocalDate begin, LocalDate end) {
         var currentDate = begin;
-        int distance = 0;
-        while(currentDate.isBefore(end)) {
+        long distance = 0;
+        do {
             if(currentDate.getDayOfWeek() != SUNDAY && currentDate.getDayOfWeek() != SATURDAY) {
                 distance++;
             }
             currentDate = currentDate.plusDays(1);
-        }
+        } while(!currentDate.isAfter(end));
         return distance;
     }
 

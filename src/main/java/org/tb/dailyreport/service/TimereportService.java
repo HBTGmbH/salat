@@ -177,7 +177,7 @@ public class TimereportService {
         .map(LocalDate::getDayOfWeek)
         .filter(dow -> dow != SATURDAY && dow != SUNDAY)
         .count();
-    long weekdays = DateUtils.getWeekdaysDistance(effectiveStart, effectiveEnd);
+    long weekdays = DateUtils.getWorkingDayDistance(effectiveStart, effectiveEnd);
     long effectiveWorkDays = weekdays - effectivePublicHolidayCount;
 
     // calculate working time

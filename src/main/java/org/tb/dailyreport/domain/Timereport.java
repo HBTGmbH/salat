@@ -1,6 +1,7 @@
 package org.tb.dailyreport.domain;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -99,6 +100,10 @@ public class Timereport extends AuditedEntity implements Serializable {
                 + getSuborder().getSign() + " | " + getDurationhours() + ":"
                 + getDurationminutes() + " | " + getTaskdescription() + " | "
                 + getStatus() + "]";
+    }
+
+    public Duration getDuration() {
+        return Duration.ofHours(durationhours).plusMinutes(durationminutes);
     }
 
 }
