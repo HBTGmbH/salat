@@ -142,6 +142,17 @@ public class TimereportService {
         timereport.getDurationminutes());
   }
 
+  public boolean deleteTimereport(long timereportId, AuthorizedUser authorizedUser)
+      throws AuthorizationException, InvalidDataException, BusinessRuleException {
+    Timereport timereport = timereportDAO.getTimereportById(timereportId);
+    if(timereport != null) {
+      checkAuthorization(Collections.singletonList(timereport), authorizedUser);
+      timereportDAO.deleteTimereportById(timereportId);
+      return true;
+    }
+    return false;
+  }
+
   /**
    * deletes many timereports at once
    *
@@ -157,6 +168,7 @@ public class TimereportService {
         .forEach(timereportDAO::deleteTimereportById);
   }
 
+  // FIXME use OvertimeService
   public long calculateOvertimeMinutes(LocalDate start, LocalDate end, long employeecontractId, boolean useOverTimeAdjustment) {
 
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
