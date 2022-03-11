@@ -3,6 +3,12 @@
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
+<%
+    Object loginEmployee = session.getAttribute("loginEmployee");
+    if(loginEmployee == null) {
+        response.sendRedirect("/chicoree/login.jsp");
+    }
+%>
 <html:html>
 <head>
     <title>SALAT - chicoree edition - by kr@2022</title>

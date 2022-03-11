@@ -5,16 +5,23 @@ import static java.util.Locale.GERMAN;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.tb.common.OptionItem;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.OvertimeStatus;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.Suborder;
+import org.tb.order.domain.comparator.CustomerOrderComparator;
+import org.tb.order.domain.comparator.SubOrderComparator;
 
 @Component
 @RequiredArgsConstructor
@@ -66,6 +73,36 @@ public class ChicoreeSessionStore {
     httpSession.setAttribute("overtimeStatus", overtimeStatus);
   }
 
+  public void setEmployeeorders(List<Employeeorder> orders) {
+    var orderOptions = orders.stream()
+        .map(Employeeorder::getSuborder)
+        .map(Suborder::getCustomerorder)
+        .distinct()
+        .sorted(CustomerOrderComparator.INSTANCE)
+        .map(o -> new OptionItem(o.getId().toString(), o.getSignAndDescription()))
+        .collect(Collectors.toList());
+    httpSession.setAttribute("orderOptions", orderOptions);
+    httpSession.setAttribute("suborderOptions", Collections.emptyList());
+  }
+
+  public List<OptionItem> getOrderOptions() {
+    return (List<OptionItem>) httpSession.getAttribute("orderOptions");
+  }
+
+  public List<OptionItem> getSuborderOptions() {
+    return (List<OptionItem>) httpSession.getAttribute("suborderOptions");
+  }
+
+  public void setCustomerorder(long customerorderId, List<Employeeorder> orders) {
+    var suborderOptions = orders.stream()
+        .map(Employeeorder::getSuborder)
+        .filter(suborder -> suborder.getCustomerorder().getId().equals(customerorderId))
+        .sorted(SubOrderComparator.INSTANCE)
+        .map(s -> new OptionItem(s.getId().toString(), s.getSignAndDescription()))
+        .collect(Collectors.toList());
+    httpSession.setAttribute("suborderOptions", suborderOptions);
+  }
+
   public void invalidate() {
     httpSession.removeAttribute("loginEmployee");
     httpSession.removeAttribute("loginEmployeeFirstname");
@@ -79,6 +116,8 @@ public class ChicoreeSessionStore {
     httpSession.removeAttribute("timereportsDuration");
     httpSession.removeAttribute("dashboardTimereports");
     httpSession.removeAttribute("overtimeStatus");
+    httpSession.removeAttribute("orderOptions");
+    httpSession.removeAttribute("suborderOptions");
   }
 
 }

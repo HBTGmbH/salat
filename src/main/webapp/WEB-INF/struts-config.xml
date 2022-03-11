@@ -52,6 +52,7 @@
 		<form-bean name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingForm" />
 		<form-bean name="userAccessTokenForm" type="org.tb.user.UserAccessTokenForm" />
 		<form-bean name="chicoree/LoginForm" type="org.tb.chicoree.LoginForm" />
+		<form-bean name="chicoree/TimereportForm" type="org.tb.chicoree.TimereportForm" />
 	</form-beans>
 
 	<!-- ========================================= Global Exception Definitions -->
@@ -98,6 +99,30 @@
 
 		<action path="/chicoree/DeleteTimereport" type="org.tb.chicoree.DeleteTimereportAction"
 			input="/chicoree/dashboard.jsp">
+			<forward name="success" path="/chicoree/dashboard.jsp" redirect="true" />
+			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+		</action>
+
+		<action path="/chicoree/AddTimereport" type="org.tb.chicoree.EditTimereportAction"
+			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
+			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
+			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+		</action>
+
+		<action path="/chicoree/EditTimereport" type="org.tb.chicoree.EditTimereportAction"
+			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
+			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
+			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+		</action>
+
+		<action path="/chicoree/RefreshTimereportFormFields" type="org.tb.chicoree.RefreshTimereportFormFieldsAction"
+			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
+			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
+			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+		</action>
+
+		<action path="/chicoree/StoreTimereport" type="org.tb.chicoree.StoreTimereportAction"
+			input="/chicoree/timereport.jsp" name="chicoree/TimereportForm">
 			<forward name="success" path="/chicoree/dashboard.jsp" redirect="true" />
 			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
 		</action>
