@@ -51,6 +51,7 @@
 		<form-bean name="addStatusReportForm" type="org.tb.statusreport.AddStatusReportForm" />
 		<form-bean name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingForm" />
 		<form-bean name="userAccessTokenForm" type="org.tb.user.UserAccessTokenForm" />
+		<form-bean name="chicoree/LoginForm" type="org.tb.chicoree.LoginForm" />
 	</form-beans>
 
 	<!-- ========================================= Global Exception Definitions -->
@@ -74,6 +75,21 @@
 	<!-- =========================================== Action Mapping Definitions -->
 
 	<action-mappings>
+
+		<action path="/chicoree/Login" input="/chicoree/login.jsp" validate="true"
+			name="chicoree/LoginForm" type="org.tb.chicoree.LoginAction">
+			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
+		</action>
+
+		<action path="/chicoree/Logout" type="org.tb.chicoree.LogoutAction">
+			<forward name="success" path="/chicoree/login.jsp" redirect="true" />
+			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+		</action>
+
+		<action path="/chicoree/ShowDashboard" type="org.tb.chicoree.ShowDashboardAction">
+			<forward name="success" path="/chicoree/dashboard.jsp" redirect="true" />
+			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+		</action>
 
 		<action path="/LoginEmployee" input="/auth/login.jsp" validate="true" name="loginEmployeeForm"
 			type="org.tb.auth.LoginEmployeeAction">

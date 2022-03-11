@@ -42,4 +42,14 @@ public class AuthorizedUser implements Serializable {
     this.setBackoffice(isBackoffice || isManager || isAdmin);
   }
 
+  public void invalidate() {
+    authenticated = false;
+    employeeId = null;
+    sign = null;
+    restricted = false;
+    backoffice = false;
+    admin = false;
+    manager = false;
+  }
+
 }

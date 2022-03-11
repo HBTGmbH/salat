@@ -31,10 +31,10 @@ spring:
       ddl-auto: validate
     open-in-view: true
     database: mysql
-  resources:
-    cache:
-      cachecontrol:
-        max-age: 1d
+  web:
+    resources:
+      cache:
+        period: 1d
 
 management:
   endpoints:
