@@ -37,4 +37,14 @@ public abstract class TypedAction<F extends ActionForm> extends Action {
     addErrors(request, messages);
   }
 
+  public void addToMessages(HttpServletRequest request, ErrorCode errorCode) {
+    ActionMessages messages = new ActionMessages();
+    messages.add(
+        GLOBAL_MESSAGE,
+        // TR-0015 -> errorcode.tr.0015
+        new ActionMessage("errorcode." + errorCode.getCode().replace('-', '.').toLowerCase())
+    );
+    addMessages(request, messages);
+  }
+
 }

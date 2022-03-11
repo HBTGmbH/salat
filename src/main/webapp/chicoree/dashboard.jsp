@@ -13,6 +13,9 @@
 </head>
 <body>
 <div class="container">
+    <html:messages id="msg" message="true">
+        <div class="alert alert-danger" role="alert"><bean:write name="msg" /></div>
+    </html:messages>
     <div class="container text-center h3">
         Welcome, ${loginEmployeeFirstname}!
     </div>

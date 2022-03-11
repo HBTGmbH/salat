@@ -96,6 +96,12 @@
 			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
 		</action>
 
+		<action path="/chicoree/DeleteTimereport" type="org.tb.chicoree.DeleteTimereportAction"
+			input="/chicoree/dashboard.jsp">
+			<forward name="success" path="/chicoree/dashboard.jsp" redirect="true" />
+			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+		</action>
+
 		<action path="/LoginEmployee" input="/auth/login.jsp" validate="true" name="loginEmployeeForm"
 			type="org.tb.auth.LoginEmployeeAction">
 			<forward name="success" path="/welcome/showWelcome.jsp" redirect="true" />
