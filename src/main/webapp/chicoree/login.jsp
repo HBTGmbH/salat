@@ -5,7 +5,7 @@
 <html:html>
 <head>
     <title>SALAT - chicoree edition - by kr@2022</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"
           id="bootstrap-css"></link>
     <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">

@@ -6,7 +6,7 @@
 <html:html>
 <head>
     <title>SALAT - chicoree edition - by kr@2022</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"
           id="bootstrap-css"></link>
     <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
@@ -19,7 +19,7 @@
     <div class="card text-center">
         <div class="card-header">
             <div class="row justify-content-center text-center">
-                <div class="col-2 h2"><a href="#"><i class="bi bi-arrow-left-circle"></i></a></div>
+                <div class="col-2 display-2"><a href="/do/chicoree/ChangeDay?value=-1"><i class="bi bi-arrow-left-circle"></i></a></div>
                 <div class="col-8">
                     <svg style="height: 100px; width: auto"
                          xmlns="http://www.w3.org/2000/svg"
@@ -58,7 +58,7 @@
                               style="text-anchor: middle">${dashboardDateWeekday}</text>
                     </svg>
                 </div>
-                <div class="col-2 h2"><a href="#"><i class="bi bi-arrow-right-circle"></i></a></div>
+                <div class="col-2 display-2"><a href="/do/chicoree/ChangeDay?value=1"><i class="bi bi-arrow-right-circle"></i></a></div>
             </div>
         </div>
         <div class="card-body">
@@ -71,8 +71,13 @@
                         <div class="card-body">
                             <h5 class="card-title">${timereport.duration}</h5>
                             <p class="card-text">${timereport.comment}</p>
-                            <a href="/do/chicoree/EditTimereport?id=${timereport.id}" class="btn btn-primary mr2"><i class="bi bi-pencil-square"></i></a>
-                            <a href="/do/chicoree/DeleteTimereport?id=${timereport.id}" class="btn btn-danger"><i class="bi bi-trash"></i></a>
+                            <a href="/do/chicoree/EditTimereport?id=${timereport.id}" class="btn btn-primary me-5">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a href="/do/chicoree/DeleteTimereport?id=${timereport.id}" class="btn btn-danger"
+                               onclick="return confirm('Do you really want to delete?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
                         </div>
                     </div>
                 </c:forEach>
