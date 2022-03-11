@@ -2,6 +2,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 <head>
     <title>SALAT - chicoree edition - by kr@2022</title>
@@ -85,9 +86,22 @@
     <div class="card text-center mt-2 mb-4">
         <div class="card-header">Your time bank</div>
         <div class="card-body">
-            <h1>1 day(s)</h1>
-            <h3>6 hour(s)</h3>
-            <h3>5 minute(s)</h3>
+            <c:if test="${overtimeStatus.total.days != 0}">
+                <h1>${overtimeStatus.total.days} day(s)</h1>
+            </c:if>
+            <c:if test="${overtimeStatus.total.hours != 0}">
+                <h3>${overtimeStatus.total.hours} hour(s)</h3>
+            </c:if>
+            <c:if test="${overtimeStatus.total.minutes != 0}">
+                <h3>${overtimeStatus.total.minutes} minute(s)</h3>
+            </c:if>
+            <p class="card-text text-secondary small">
+                Based on time reports between
+                <span class="text-nowrap">
+                    <java8:formatLocalDate value="${overtimeStatus.total.begin}"/>
+                    and <java8:formatLocalDate value="${overtimeStatus.total.end}"/>
+                </span>
+            </p>
         </div>
     </div>
     <div class="container text-center">
