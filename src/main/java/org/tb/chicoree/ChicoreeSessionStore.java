@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.OvertimeStatus;
 
 @Component
 @RequiredArgsConstructor
@@ -34,7 +35,7 @@ public class ChicoreeSessionStore {
     return Optional.ofNullable((Long) httpSession.getAttribute("loginEmployeecontractId"));
   }
 
-  public void setDashboardDate(LocalDate date) {
+  private void setDashboardDate(LocalDate date) {
     httpSession.setAttribute("dashboardDate", date);
     httpSession.setAttribute("dashboardDateMonth", date.format(ofPattern("LLL").withLocale(GERMAN)));
     httpSession.setAttribute("dashboardDateDay", date.format(ofPattern("d").withLocale(GERMAN)));
@@ -45,7 +46,8 @@ public class ChicoreeSessionStore {
     return Optional.ofNullable((LocalDate) httpSession.getAttribute("dashboardDate"));
   }
 
-  public void setTimereports(List<Timereport> timereports) {
+  public void setTimereports(LocalDate date, List<Timereport> timereports) {
+    setDashboardDate(date);
     var durationSum = timereports
         .stream()
         .map(Timereport::getDuration)
@@ -60,6 +62,10 @@ public class ChicoreeSessionStore {
     httpSession.setAttribute("dashboardTimereports", dashboardTimereports);
   }
 
+  public void setOvertimeStatus(OvertimeStatus overtimeStatus) {
+    httpSession.setAttribute("overtimeStatus", overtimeStatus);
+  }
+
   public void invalidate() {
     httpSession.removeAttribute("loginEmployee");
     httpSession.removeAttribute("loginEmployeeFirstname");
@@ -70,6 +76,9 @@ public class ChicoreeSessionStore {
     httpSession.removeAttribute("dashboardDateWeekday");
     httpSession.removeAttribute("timereports");
     httpSession.removeAttribute("timereportsExist");
+    httpSession.removeAttribute("timereportsDuration");
+    httpSession.removeAttribute("dashboardTimereports");
+    httpSession.removeAttribute("overtimeStatus");
   }
 
 }
