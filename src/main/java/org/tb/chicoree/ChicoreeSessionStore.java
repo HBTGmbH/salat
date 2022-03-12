@@ -19,7 +19,6 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.OvertimeStatus;
-import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.domain.comparator.CustomerOrderComparator;
@@ -30,6 +29,10 @@ import org.tb.order.domain.comparator.SubOrderComparator;
 public class ChicoreeSessionStore {
 
   private final HttpSession httpSession;
+
+  public void setGreeting(String greeting) {
+    httpSession.setAttribute("greeting", greeting);
+  }
 
   public void setLoginEmployee(Employee employee) {
     httpSession.setAttribute("loginEmployee", employee);
@@ -108,6 +111,7 @@ public class ChicoreeSessionStore {
   }
 
   public void invalidate() {
+    httpSession.removeAttribute("greeting");
     httpSession.removeAttribute("loginEmployee");
     httpSession.removeAttribute("loginEmployeeFirstname");
     httpSession.removeAttribute("loginEmployeecontractId");

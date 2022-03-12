@@ -3,10 +3,10 @@ package org.tb.chicoree;
 import static org.apache.struts.action.ActionMessages.GLOBAL_MESSAGE;
 import static org.tb.common.util.DateUtils.today;
 
+import java.util.Random;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -34,6 +34,7 @@ public class LoginAction extends TypedAction<LoginForm> {
           return employeecontractService.getCurrentContract(employee.getId())
               .map(employeecontract -> {
                 authorizedUser.init(employee);
+                chicoreeSessionStore.setGreeting(getRandomGreeting());
                 chicoreeSessionStore.setLoginEmployee(employee);
                 chicoreeSessionStore.setLoginEmployeecontractId(employeecontract.getId());
                 chicoreeSessionStore.setDashboardDate(today());
@@ -51,4 +52,32 @@ public class LoginAction extends TypedAction<LoginForm> {
           return mapping.getInputForward();
         });
   }
+
+  public static String getRandomGreeting() {
+    int rnd = new Random().nextInt(greetings.length);
+    return greetings[rnd];
+  }
+
+  private static final String[] greetings = new String[] {
+      "Bonjour ", "Salut ",
+      "Hola ", "¿Qué tal? ",
+      "Salve ", "Ciao ",
+      "Guten Tag, ", "Hallo ",
+      "Olá ", "Oi ",
+      "Konnichiwa ", "Yā, Yō ",
+      "Asalaam alaikum ", "Ahlan ",
+      "Goddag ", "Hej ", "Halløj ",
+      "Goedendag ", "Hoi ",
+      "Yassas ",
+      "Dzień dobry ", "Cześć ",
+      "Namaste ",
+      "Merhaba ", "Selam ",
+      "Shalom ",
+      "God dag ",
+      "Dobriy den ",
+      "Grüezi ",
+      "Moin ",
+      "Grüß Gott, ", "Servus "
+  };
+
 }

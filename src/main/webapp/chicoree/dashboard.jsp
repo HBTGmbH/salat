@@ -24,7 +24,7 @@
         <div class="alert alert-danger" role="alert"><bean:write name="msg" /></div>
     </html:messages>
     <div class="container text-center h3">
-        Welcome, ${loginEmployeeFirstname}!
+        ${greeting} ${loginEmployeeFirstname}
     </div>
     <div class="card text-center">
         <div class="card-header">
