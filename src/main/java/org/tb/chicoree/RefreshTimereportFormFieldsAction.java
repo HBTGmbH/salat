@@ -1,6 +1,6 @@
 package org.tb.chicoree;
 
-import static org.tb.common.util.DateUtils.parse;
+import static org.tb.common.util.DateUtils.validateDate;
 
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -10,7 +10,6 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.persistence.EmployeeorderDAO;
 
 @Component
@@ -18,7 +17,6 @@ import org.tb.order.persistence.EmployeeorderDAO;
 public class RefreshTimereportFormFieldsAction extends LoginRequiredAction<TimereportForm> {
 
   private final ChicoreeSessionStore chicoreeSessionStore;
-  private final TimereportDAO timereportDAO;
   private final EmployeeorderDAO employeeorderDAO;
 
   @Override
@@ -28,15 +26,18 @@ public class RefreshTimereportFormFieldsAction extends LoginRequiredAction<Timer
     switch(event) {
       case "order-selected":
       case "date-selected":
+        if(!validateDate(form.getDate())) {
+          return mapping.getInputForward();
+        }
         var employeecontractId = chicoreeSessionStore.getLoginEmployeecontractId().orElseThrow();
-        var date = parse(form.getDate());
+        var date = form.getDateTyped();
         var employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeecontractId)
             .stream()
             .filter(employeeorder -> employeeorder.isValidAt(date))
             .collect(Collectors.toList());
         chicoreeSessionStore.setEmployeeorders(employeeorders);
         if(form.getOrderId() != null && !form.getOrderId().isBlank()) {
-          chicoreeSessionStore.setCustomerorder(Long.parseLong(form.getOrderId()), employeeorders);
+          chicoreeSessionStore.setCustomerorder(form.getOrderIdTyped(), employeeorders);
         }
         // check if selected orderId and suborderId still viable options, if not set them to null
         var matched = chicoreeSessionStore.getOrderOptions()
