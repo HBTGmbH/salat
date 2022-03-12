@@ -7,6 +7,7 @@ import static org.tb.common.util.DateUtils.format;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -66,6 +67,7 @@ public class ChicoreeSessionStore {
     httpSession.setAttribute("timereportsDuration", DurationUtils.format(durationSum));
     var dashboardTimereports = timereports
         .stream()
+        .sorted(Comparator.comparing(Timereport::getSequencenumber).reversed())
         .map(DashboardTimereport::valueOf)
         .collect(Collectors.toList());
     httpSession.setAttribute("dashboardTimereports", dashboardTimereports);
