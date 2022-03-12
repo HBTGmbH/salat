@@ -106,5 +106,8 @@ while(names.hasMoreElements()) {
 		-->
 	</table>
 </html:form>
+<div style="text-align: center">
+	<h3>Try the new mobile friendly salad. Go to <a href="/chicoree/login.jsp" style="color: black">chicoree!</a></h3>
+</div>
 </body>
 </html:html>
