@@ -11,8 +11,8 @@
     <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 </head>
 <body>
-<div class="container">
-    <div class="card">
+<div class="container" style="max-width: 500px">
+    <div class="card mt-4 mb-4">
         <img src="/chicoree/images/chicoree-salat.jpeg" class="card-img-top" alt="lovely">
         <div class="card-body bg-light">
             <html:form action="/chicoree/Login">
