@@ -2,6 +2,7 @@ package org.tb.chicoree;
 
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Locale.GERMAN;
+import static org.tb.common.util.DateUtils.format;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -42,8 +43,9 @@ public class ChicoreeSessionStore {
     return Optional.ofNullable((Long) httpSession.getAttribute("loginEmployeecontractId"));
   }
 
-  private void setDashboardDate(LocalDate date) {
+  public void setDashboardDate(LocalDate date) {
     httpSession.setAttribute("dashboardDate", date);
+    httpSession.setAttribute("dashboardDateString", format(date));
     httpSession.setAttribute("dashboardDateMonth", date.format(ofPattern("LLL").withLocale(GERMAN)));
     httpSession.setAttribute("dashboardDateDay", date.format(ofPattern("d").withLocale(GERMAN)));
     httpSession.setAttribute("dashboardDateWeekday", date.format(ofPattern("EEEE").withLocale(GERMAN)));

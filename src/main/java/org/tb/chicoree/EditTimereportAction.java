@@ -52,9 +52,9 @@ public class EditTimereportAction extends LoginRequiredAction<TimereportForm> {
         .filter(employeeorder -> employeeorder.isValidAt(date))
         .collect(Collectors.toList());
     chicoreeSessionStore.setEmployeeorders(employeeorders);
-    if(form.getOrderId() != null) {
+    if(form.getOrderId() != null && !form.getOrderId().isBlank()) {
       // select order and prefill suborder options
-      chicoreeSessionStore.setCustomerorder(Long.parseLong(form.getOrderId()), employeeorders);
+      chicoreeSessionStore.setCustomerorder(form.getOrderIdTyped(), employeeorders);
     }
     return mapping.findForward("success");
   }

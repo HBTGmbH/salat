@@ -1,6 +1,7 @@
 package org.tb.chicoree;
 
 import static org.apache.struts.action.ActionMessages.GLOBAL_MESSAGE;
+import static org.tb.common.util.DateUtils.today;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,7 +14,6 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.struts.TypedAction;
 import org.tb.employee.service.EmployeecontractService;
 
@@ -36,6 +36,7 @@ public class LoginAction extends TypedAction<LoginForm> {
                 authorizedUser.init(employee);
                 chicoreeSessionStore.setLoginEmployee(employee);
                 chicoreeSessionStore.setLoginEmployeecontractId(employeecontract.getId());
+                chicoreeSessionStore.setDashboardDate(today());
                 return mapping.findForward("success");
               }).orElseGet(() -> {
                 ActionMessages messages = new ActionMessages();

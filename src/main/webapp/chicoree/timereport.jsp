@@ -6,6 +6,7 @@
     Object loginEmployee = session.getAttribute("loginEmployee");
     if(loginEmployee == null) {
         response.sendRedirect("/chicoree/login.jsp");
+        return;
     }
 %>
 <html:html>

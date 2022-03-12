@@ -7,6 +7,7 @@
     Object loginEmployee = session.getAttribute("loginEmployee");
     if(loginEmployee == null) {
         response.sendRedirect("/chicoree/login.jsp");
+        return;
     }
 %>
 <html:html>
@@ -73,7 +74,9 @@
         <div class="card-body">
             <c:if test="${timereportsExist}">
                 <p class="card-text">You already reported ${timereportsDuration} today. Great!</p>
-                <a href="timereport.jsp" class="btn btn-primary mb-4"><i class="bi bi-alarm"></i> Add more</a>
+                <a href="/do/chicoree/AddTimereport?date=${dashboardDateString}" class="btn btn-primary mb-4">
+                    <i class="bi bi-alarm"></i> Add more
+                </a>
                 <c:forEach var="timereport" items="${dashboardTimereports}">
                     <div class="card mb-4">
                         <div class="card-header">${timereport.title}</div>
@@ -93,7 +96,9 @@
             </c:if>
             <c:if test="${!timereportsExist}">
                 <p class="card-text">You haven't reported any time today!</p>
-                <a href="timereport.jsp" class="btn btn-primary"><i class="bi bi-alarm"></i> Start now</a>
+                <a href="/do/chicoree/AddTimereport?date=${dashboardDateString}" class="btn btn-primary">
+                    <i class="bi bi-alarm"></i> Start now
+                </a>
             </c:if>
         </div>
     </div>
