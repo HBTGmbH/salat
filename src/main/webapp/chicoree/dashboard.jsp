@@ -12,7 +12,7 @@
 %>
 <html:html>
 <head>
-    <title>SALAT - chicoree edition - by kr@2022</title>
+    <title><bean:message key="chicoree.product.title" /></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"
           id="bootstrap-css"></link>
@@ -73,9 +73,9 @@
         </div>
         <div class="card-body">
             <c:if test="${timereportsExist}">
-                <p class="card-text">You already reported ${timereportsDuration} today. Great!</p>
+                <p class="card-text"><bean:message key="chicoree.sentence.already.reported" arg0="${timereportsDuration}" /></p>
                 <a href="/do/chicoree/AddTimereport?date=${dashboardDateString}" class="btn btn-primary mb-4">
-                    <i class="bi bi-alarm"></i> Add more
+                    <i class="bi bi-alarm"></i> <bean:message key="chicoree.btn.addmore" />
                 </a>
                 <c:forEach var="timereport" items="${dashboardTimereports}">
                     <div class="card mb-4">
@@ -87,7 +87,7 @@
                                 <i class="bi bi-pencil-square"></i>
                             </a>
                             <a href="/do/chicoree/DeleteTimereport?id=${timereport.id}" class="btn btn-danger"
-                               onclick="return confirm('Do you really want to delete?')">
+                               onclick="return confirm('<bean:message key="chicoree.sentence.delete.really" />')">
                                 <i class="bi bi-trash"></i>
                             </a>
                         </div>
@@ -95,36 +95,39 @@
                 </c:forEach>
             </c:if>
             <c:if test="${!timereportsExist}">
-                <p class="card-text">You haven't reported any time today!</p>
+                <p class="card-text"><bean:message key="chicoree.sentence.nothing.reported" /></p>
                 <a href="/do/chicoree/AddTimereport?date=${dashboardDateString}" class="btn btn-primary">
-                    <i class="bi bi-alarm"></i> Start now
+                    <i class="bi bi-alarm"></i> <bean:message key="chicoree.btn.startnow" />
                 </a>
             </c:if>
         </div>
     </div>
     <div class="card text-center mt-2 mb-4">
-        <div class="card-header">Your time bank</div>
+        <div class="card-header"><bean:message key="chicoree.title.timebank" /></div>
         <div class="card-body">
             <c:if test="${overtimeStatus.total.days != 0}">
-                <h1>${overtimeStatus.total.days} day(s)</h1>
+                <h1>${overtimeStatus.total.days} <bean:message key="chicoree.dashboard.days" /></h1>
             </c:if>
             <c:if test="${overtimeStatus.total.hours != 0}">
-                <h3>${overtimeStatus.total.hours} hour(s)</h3>
+                <h3>${overtimeStatus.total.hours} <bean:message key="chicoree.dashboard.hours" /></h3>
             </c:if>
             <c:if test="${overtimeStatus.total.minutes != 0}">
-                <h3>${overtimeStatus.total.minutes} minute(s)</h3>
+                <h3>${overtimeStatus.total.minutes} <bean:message key="chicoree.dashboard.minutes" /></h3>
             </c:if>
             <p class="card-text text-secondary small">
-                Based on time reports between
+                <bean:message key="chicoree.sentence.based.on.timereports" />
                 <span class="text-nowrap">
                     <java8:formatLocalDate value="${overtimeStatus.total.begin}"/>
-                    and <java8:formatLocalDate value="${overtimeStatus.total.end}"/>
+                    <bean:message key="chicoree.sentence.based.on.timereports.and" />
+                    <java8:formatLocalDate value="${overtimeStatus.total.end}"/>
                 </span>
             </p>
         </div>
     </div>
     <div class="container text-center">
-        <a href="/do/chicoree/Logout" class="btn btn-secondary mb-4"><i class="bi bi-power"></i> Logout</a>
+        <a href="/do/chicoree/Logout" class="btn btn-secondary mb-4">
+            <i class="bi bi-power"></i> <bean:message key="chicoree.btn.logout" />
+        </a>
     </div>
 </div>
 <script src="/webjars/jquery/jquery.min.js"></script>

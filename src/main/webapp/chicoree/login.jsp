@@ -4,7 +4,7 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <html:html>
 <head>
-    <title>SALAT - chicoree edition - by kr@2022</title>
+    <title><bean:message key="chicoree.product.title" /></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"
           id="bootstrap-css"></link>
@@ -23,11 +23,8 @@
 
                 <!-- Email input -->
                 <div class="form-outline mb-4">
-                    <label class="form-label" for="form2Example1">Loginname</label>
-                    <input type="text" id="form2Example1" name="loginname"
-                           value="<bean:write name="chicoree/LoginForm" property="loginname" />"
-                           class="form-control <html:messages id="errmsg" property="loginname">is-invalid</html:messages>"
-                           placeholder="your sign, e.g. kr"/>
+                    <label class="form-label" for="loginname"><bean:message key="main.general.employeesign.text" /></label>
+                    <html:text styleId="loginname" property="loginname" styleClass="form-control" />
                     <html:messages id="errmsg" property="loginname">
                         <div class="invalid-feedback"><bean:write name="errmsg" /></div>
                     </html:messages>
@@ -35,8 +32,8 @@
 
                 <!-- Password input -->
                 <div class="form-outline mb-4">
-                    <label class="form-label" for="form2Example1">Password</label>
-                    <input type="password" id="form2Example2" name="password" class="form-control" />
+                    <label class="form-label" for="password"><bean:message key="main.general.password.text" /></label>
+                    <html:password styleId="password" property="password" styleClass="form-control" />
                     <html:messages id="errmsg" property="password">
                         <div class="invalid-feedback">
                             <bean:write name="errmsg" />
@@ -53,5 +50,18 @@
 </div>
 <script src="/webjars/jquery/jquery.min.js"></script>
 <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+<script>
+  function refreshTimereportFormFields(form, event) {
+    form.action = "/do/chicoree/RefreshTimereportFormFields?event=" + event;
+    form.submit();
+  }
+  $('#loginname').attr('placeholder', '<bean:message key="chicoree.placeholder.loginname" />');
+  <html:messages id="errmsg" property="loginname">
+    $('#loginname').addClass('is-invalid');
+  </html:messages>
+  <html:messages id="errmsg" property="password">
+    $('#password').addClass('is-invalid');
+  </html:messages>
+</script>
 </body>
 </html:html>

@@ -11,7 +11,7 @@
 %>
 <html:html>
 <head>
-    <title>SALAT - chicoree edition - by kr@2022</title>
+    <title><bean:message key="chicoree.product.title" /></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css"
           id="bootstrap-css"></link>
@@ -25,18 +25,17 @@
     <div class="card">
         <div class="card-header text-center h5">
             <i class="bi bi-alarm"></i>
-            <span>Report Time</span>
+            <span><bean:message key="chicoree.title.timereport" /></span>
         </div>
         <div class="card-body bg-light">
             <html:form action="/chicoree/StoreTimereport">
 
                 <!-- Date input -->
                 <div class="form-outline mb-4">
-                    <label class="form-label" for="date">Date</label>
-                    <input type="date" id="date" name="date"
+                    <label class="form-label" for="date"><bean:message key="main.timereport.referenceday.text" /></label>
+                    <html:text property="date" styleId="date"
                            onchange="refreshTimereportFormFields(this.form, 'date-selected')"
-                           value="<bean:write name="chicoree/TimereportForm" property="date" />"
-                           class="form-control <html:messages id="errmsg" property="date">is-invalid</html:messages>" />
+                           styleClass="form-control" />
                     <html:messages id="errmsg" property="date">
                         <div class="invalid-feedback"><bean:write name="errmsg" /></div>
                     </html:messages>
@@ -44,12 +43,12 @@
 
                 <!-- Order input -->
                 <div class="form-outline mb-4">
-                    <label class="form-label" for="order">Order</label>
+                    <label class="form-label" for="orderId"><bean:message key="main.timereport.customerorder.text" /></label>
                     <html:select property="orderId"
                                  styleClass="form-select"
-                                 styleId="order"
+                                 styleId="orderId"
                                  onchange="refreshTimereportFormFields(this.form, 'date-selected')">
-                        <html:option value="" disabled="true">--- select ---</html:option>
+                        <html:option value="" disabled="true"><bean:message key="chicoree.placeholder.order" /></html:option>
                         <html:options collection="orderOptions" labelProperty="label" property="value" />
                     </html:select>
                     <html:messages id="errmsg" property="orderId">
@@ -59,10 +58,10 @@
 
                 <!-- Suborder input -->
                 <div class="form-outline mb-4">
-                    <label class="form-label" for="suborder">Suborder</label>
+                    <label class="form-label" for="suborderId"><bean:message key="main.timereport.suborder.text" /></label>
                     <html:select property="suborderId"
                                  styleClass="form-select"
-                                 styleId="suborder">
+                                 styleId="suborderId">
                         <html:options collection="suborderOptions" labelProperty="label" property="value" />
                     </html:select>
                     <html:messages id="errmsg" property="suborderId">
@@ -73,19 +72,15 @@
                 <!-- Duration input -->
                 <div class="row g-3 mb-4">
                     <div class="col">
-                        <label class="form-label" for="hours">Hours</label>
-                        <input type="number" id="hours" name="hours"
-                               value="<bean:write name="chicoree/TimereportForm" property="hours" />"
-                               class="text-center form-control <html:messages id="errmsg" property="hours">is-invalid</html:messages>" />
+                        <label class="form-label" for="hours"><bean:message key="main.timereport.hours.text" /></label>
+                        <html:text styleId="hours" property="hours" styleClass="text-center form-control" />
                         <html:messages id="errmsg" property="hours">
                             <div class="invalid-feedback"><bean:write name="errmsg" /></div>
                         </html:messages>
                     </div>
                     <div class="col">
-                        <label class="form-label" for="minutes">Minutes</label>
-                        <input type="number" id="minutes" name="minutes"
-                               value="<bean:write name="chicoree/TimereportForm" property="minutes" />"
-                               class="text-center form-control <html:messages id="errmsg" property="minutes">is-invalid</html:messages>" />
+                        <label class="form-label" for="minutes"><bean:message key="main.timereport.minutes.text" /></label>
+                        <html:text styleId="minutes" property="minutes" styleClass="text-center form-control" />
                         <html:messages id="errmsg" property="minutes">
                             <div class="invalid-feedback"><bean:write name="errmsg" /></div>
                         </html:messages>
@@ -94,7 +89,7 @@
 
                 <!-- Comment input -->
                 <div class="form-outline mb-4">
-                    <label class="form-label" for="comment">Comment</label>
+                    <label class="form-label" for="comment"><bean:message key="main.timereport.monthly.taskdescription.text" /></label>
                     <html:textarea styleClass="form-control" styleId="comment" rows="3" property="comment" />
                     <html:messages id="errmsg" property="comment">
                         <div class="invalid-feedback"><bean:write name="errmsg" /></div>
@@ -102,8 +97,10 @@
                 </div>
 
                 <!-- Submit button -->
-                <button type="submit" class="btn btn-primary btn-block"><i class="bi bi-alarm"></i> Save</button>
-                <a href="dashboard.jsp" class="btn btn-light">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="bi bi-alarm"></i> <bean:message key="chicoree.btn.save" />
+                </button>
+                <a href="/do/chicoree/ShowDashboard" class="btn btn-light"><bean:message key="chicoree.btn.cancel" /></a>
 
             </html:form>
         </div>
@@ -116,6 +113,27 @@
     form.action = "/do/chicoree/RefreshTimereportFormFields?event=" + event;
     form.submit();
   }
+  $('#date').attr('type', 'date');
+  <html:messages id="errmsg" property="date">
+    $('#date').addClass('is-invalid');
+  </html:messages>
+  <html:messages id="errmsg" property="orderId">
+    $('#orderId').addClass('is-invalid');
+  </html:messages>
+  <html:messages id="errmsg" property="suborderId">
+    $('#suborderId').addClass('is-invalid');
+  </html:messages>
+  $('#hours').attr('type', 'number');
+  <html:messages id="errmsg" property="hours">
+    $('#hours').addClass('is-invalid');
+  </html:messages>
+  $('#minutes').attr('type', 'number');
+  <html:messages id="errmsg" property="minutes">
+    $('#minutes').addClass('is-invalid');
+  </html:messages>
+  <html:messages id="errmsg" property="comment">
+    $('#comment').addClass('is-invalid');
+  </html:messages>
 </script>
 </body>
 </html:html>
