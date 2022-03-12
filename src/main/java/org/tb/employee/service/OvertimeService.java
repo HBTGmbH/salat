@@ -8,6 +8,7 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.common.util.DateUtils;
@@ -31,8 +32,11 @@ public class OvertimeService {
   private final TimereportDAO timereportDAO;
   private final OvertimeDAO overtimeDAO;
 
-  public OvertimeStatus calculateOvertime(long employeecontractId, boolean includeToday) {
+  public Optional<OvertimeStatus> calculateOvertime(long employeecontractId, boolean includeToday) {
     var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    if(employeecontract.getDailyWorkingTime().isZero()) {
+      return Optional.empty();
+    }
     var status = new OvertimeStatus();
 
     LocalDate totalBeginDate;
@@ -74,7 +78,7 @@ public class OvertimeService {
       status.setCurrentMonth(toStatusInfo(monthBeginDate, monthEndDate, monthOvertime, employeecontract.getDailyWorkingTime()));
     }
 
-    return status;
+    return Optional.of(status);
   }
 
   private OvertimeStatusInfo toStatusInfo(LocalDate beginDate, LocalDate endDate, Duration overtime, Duration dailyWorkingTime) {

@@ -76,8 +76,9 @@ public class ChicoreeSessionStore {
     httpSession.setAttribute("dashboardTimereports", dashboardTimereports);
   }
 
-  public void setOvertimeStatus(OvertimeStatus overtimeStatus) {
-    httpSession.setAttribute("overtimeStatus", overtimeStatus);
+  public void setOvertimeStatus(Optional<OvertimeStatus> overtimeStatus) {
+    httpSession.setAttribute("overtimeStatusAvailable", overtimeStatus.isPresent());
+    httpSession.setAttribute("overtimeStatus", overtimeStatus.orElse(null));
   }
 
   public void setEmployeeorders(List<Employeeorder> orders) {
@@ -123,6 +124,7 @@ public class ChicoreeSessionStore {
     httpSession.removeAttribute("timereportsExist");
     httpSession.removeAttribute("timereportsDuration");
     httpSession.removeAttribute("dashboardTimereports");
+    httpSession.removeAttribute("overtimeStatusAvailable");
     httpSession.removeAttribute("overtimeStatus");
     httpSession.removeAttribute("orderOptions");
     httpSession.removeAttribute("suborderOptions");

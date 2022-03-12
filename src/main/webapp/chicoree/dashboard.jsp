@@ -102,28 +102,30 @@
             </c:if>
         </div>
     </div>
-    <div class="card text-center mt-2 mb-4">
-        <div class="card-header"><bean:message key="chicoree.title.timebank" /></div>
-        <div class="card-body">
-            <c:if test="${overtimeStatus.total.days != 0}">
-                <h1>${overtimeStatus.total.days} <bean:message key="chicoree.dashboard.days" /></h1>
-            </c:if>
-            <c:if test="${overtimeStatus.total.hours != 0}">
-                <h3>${overtimeStatus.total.hours} <bean:message key="chicoree.dashboard.hours" /></h3>
-            </c:if>
-            <c:if test="${overtimeStatus.total.minutes != 0}">
-                <h3>${overtimeStatus.total.minutes} <bean:message key="chicoree.dashboard.minutes" /></h3>
-            </c:if>
-            <p class="card-text text-secondary small">
-                <bean:message key="chicoree.sentence.based.on.timereports" />
-                <span class="text-nowrap">
-                    <java8:formatLocalDate value="${overtimeStatus.total.begin}"/>
-                    <bean:message key="chicoree.sentence.based.on.timereports.and" />
-                    <java8:formatLocalDate value="${overtimeStatus.total.end}"/>
-                </span>
-            </p>
+    <c:if test="${overtimeStatusAvailable}">
+        <div class="card text-center mt-2 mb-4">
+            <div class="card-header"><bean:message key="chicoree.title.timebank" /></div>
+            <div class="card-body">
+                <c:if test="${overtimeStatus.total.days != 0}">
+                    <h1>${overtimeStatus.total.days} <bean:message key="chicoree.dashboard.days" /></h1>
+                </c:if>
+                <c:if test="${overtimeStatus.total.hours != 0}">
+                    <h3>${overtimeStatus.total.hours} <bean:message key="chicoree.dashboard.hours" /></h3>
+                </c:if>
+                <c:if test="${overtimeStatus.total.minutes != 0}">
+                    <h3>${overtimeStatus.total.minutes} <bean:message key="chicoree.dashboard.minutes" /></h3>
+                </c:if>
+                <p class="card-text text-secondary small">
+                    <bean:message key="chicoree.sentence.based.on.timereports" />
+                    <span class="text-nowrap">
+                        <java8:formatLocalDate value="${overtimeStatus.total.begin}"/>
+                        <bean:message key="chicoree.sentence.based.on.timereports.and" />
+                        <java8:formatLocalDate value="${overtimeStatus.total.end}"/>
+                    </span>
+                </p>
+            </div>
         </div>
-    </div>
+    </c:if>
     <div class="container text-center">
         <a href="/do/chicoree/Logout" class="btn btn-secondary mb-4">
             <i class="bi bi-power"></i> <bean:message key="chicoree.btn.logout" />

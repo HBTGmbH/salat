@@ -52,7 +52,7 @@ public class OvertimeRestEndpoint {
       throw new ResponseStatusException(NOT_FOUND);
     }
 
-    return overtimeService.calculateOvertime(employeecontract.getId(), includeToday);
+    return overtimeService.calculateOvertime(employeecontract.getId(), includeToday).orElseThrow();
   }
 
 }
