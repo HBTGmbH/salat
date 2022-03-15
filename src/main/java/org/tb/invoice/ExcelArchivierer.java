@@ -1,6 +1,12 @@
 package org.tb.invoice;
 
 
+import static org.apache.poi.ss.usermodel.CellType.BLANK;
+import static org.apache.poi.ss.usermodel.CellType.BOOLEAN;
+import static org.apache.poi.ss.usermodel.CellType.ERROR;
+import static org.apache.poi.ss.usermodel.CellType.FORMULA;
+import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
+import static org.apache.poi.ss.usermodel.CellType.STRING;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
 
 import java.io.IOException;
@@ -22,6 +28,7 @@ import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Font;
@@ -232,11 +239,11 @@ public class ExcelArchivierer {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 0;
-        Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+        Cell cell = row.createCell(colIndex, STRING);
         cell.setCellValue(createRTS(invoiceSuborderViewHelper.getSign(), factory));
         colIndex++;
         if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(invoiceSuborderViewHelper.getSuborder_customer(), factory));
             colIndex++;
         }
@@ -246,7 +253,7 @@ public class ExcelArchivierer {
         if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))) {
             colIndex++;
         }
-        cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+        cell = row.createCell(colIndex, STRING);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
         if ("longdescription".equals(showInvoiceForm.getSuborderdescription())) {
             cell.setCellValue(createRTS(invoiceSuborderViewHelper.getDescription(), factory));
@@ -258,7 +265,7 @@ public class ExcelArchivierer {
         }
         colIndex++;
         if (request.getSession().getAttribute("targethoursbox") != null && ((Boolean) request.getSession().getAttribute("targethoursbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
+            cell = row.createCell(colIndex, NUMERIC);
             if (invoiceSuborderViewHelper.getDebithours() != null) {
                 cell.setCellValue((double) invoiceSuborderViewHelper.getDebithours().toMinutes() / 24);
             } else {
@@ -268,7 +275,7 @@ public class ExcelArchivierer {
             colIndex++;
         }
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
+            cell = row.createCell(colIndex, NUMERIC);
             int layerlimit;
             try {
                 layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
@@ -297,7 +304,7 @@ public class ExcelArchivierer {
         if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
             colIndex++;
         }
-        Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
+        Cell cell = row.createCell(colIndex, NUMERIC);
         if (invoiceTimereportViewHelper.getReferenceday().getRefdate() != null) {
             Date date = Date.from(
                 invoiceTimereportViewHelper
@@ -314,12 +321,12 @@ public class ExcelArchivierer {
         colIndex++;
         if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))
                 && request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(invoiceTimereportViewHelper.getEmployeecontract().getEmployee().getSign(), factory));
             colIndex++;
         }
         if (request.getSession().getAttribute("timereportdescriptionbox") != null && ((Boolean) request.getSession().getAttribute("timereportdescriptionbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(invoiceTimereportViewHelper.getTaskdescription(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
             colIndex++;
@@ -330,7 +337,7 @@ public class ExcelArchivierer {
             colIndex++;
         }
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
+            cell = row.createCell(colIndex, NUMERIC);
             if (invoiceTimereportViewHelper.getDurationhours() != null) {
                 double duration = (invoiceTimereportViewHelper.getDurationhours() * 60) + invoiceTimereportViewHelper.getDurationminutes();
                 cell.setCellValue(duration / 1440);
@@ -345,40 +352,40 @@ public class ExcelArchivierer {
     private static void addTitleRow(Workbook workbook, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
         int colIndex = 0;
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(0);
-        Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+        Cell cell = row.createCell(colIndex, STRING);
         cell.setCellValue(createRTS(showInvoiceForm.getTitlesubordertext(), factory));
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
         colIndex++;
         if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(showInvoiceForm.getTitlecustomersigntext(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
             colIndex++;
         }
         if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(showInvoiceForm.getTitledatetext(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
             colIndex++;
         }
         if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(showInvoiceForm.getTitleemployeesigntext(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
             colIndex++;
         }
-        cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+        cell = row.createCell(colIndex, STRING);
         cell.setCellValue(createRTS(showInvoiceForm.getTitledescriptiontext(), factory));
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
         colIndex++;
         if (request.getSession().getAttribute("targethoursbox") != null && ((Boolean) request.getSession().getAttribute("targethoursbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(showInvoiceForm.getTitletargethourstext(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
             colIndex++;
         }
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-            cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(showInvoiceForm.getTitleactualhourstext(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
         }
@@ -396,7 +403,7 @@ public class ExcelArchivierer {
         if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))) {
             colIndex++;
         }
-        Cell cell = row.createCell(colIndex, Cell.CELL_TYPE_STRING);
+        Cell cell = row.createCell(colIndex, STRING);
         RichTextString overall;
         if (request.getSession().getAttribute("overall") != null) {
             overall = createRTS(request.getSession().getAttribute("overall") + ":", factory);
@@ -406,7 +413,7 @@ public class ExcelArchivierer {
         cell.setCellValue(overall);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("italic")));
         colIndex++;
-        cell = row.createCell(colIndex, Cell.CELL_TYPE_NUMERIC);
+        cell = row.createCell(colIndex, NUMERIC);
         cell.setCellValue((Double) request.getSession().getAttribute("actualminutessum") / 1440);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
     }
@@ -421,19 +428,19 @@ public class ExcelArchivierer {
                 Integer widthFromMap = widthMap.get(cell.getColumnIndex());
                 int width;
                 switch (cell.getCellType()) {
-                    case Cell.CELL_TYPE_NUMERIC:
+                    case NUMERIC:
                         width = (factory.getDataFormatter().formatCellValue(cell).length() + 3) * 256;
                         break;
-                    case Cell.CELL_TYPE_STRING:
+                    case STRING:
                         width = (cell.getRichStringCellValue().length() + 3) * 256;
                         break;
-                    case Cell.CELL_TYPE_FORMULA:
+                    case FORMULA:
                         // nothing -> fall through
-                    case Cell.CELL_TYPE_BLANK:
+                    case BLANK:
                         // nothing -> fall through
-                    case Cell.CELL_TYPE_BOOLEAN:
+                    case BOOLEAN:
                         // nothing -> fall through
-                    case Cell.CELL_TYPE_ERROR:
+                    case ERROR:
                         // nothing -> fall through
                     default:
                         width = sheet.getColumnWidth(cell.getColumnIndex());
