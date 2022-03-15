@@ -1,17 +1,12 @@
 package org.tb.invoice;
 
 
-import static org.apache.poi.ss.usermodel.CellType.BLANK;
-import static org.apache.poi.ss.usermodel.CellType.BOOLEAN;
-import static org.apache.poi.ss.usermodel.CellType.ERROR;
-import static org.apache.poi.ss.usermodel.CellType.FORMULA;
 import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
 import static org.apache.poi.ss.usermodel.CellType.STRING;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,7 +23,6 @@ import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Font;
@@ -41,9 +35,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.tb.common.GlobalConstants;
-import org.tb.invoice.InvoiceSuborderHelper;
-import org.tb.invoice.InvoiceTimereportHelper;
-import org.tb.invoice.ShowInvoiceForm;
 
 /**
  * This Class saves the created excel workbook
@@ -414,7 +405,7 @@ public class ExcelArchivierer {
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("italic")));
         colIndex++;
         cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue((Double) request.getSession().getAttribute("actualminutessum") / 1440);
+        cell.setCellValue(((double)((Duration) request.getSession().getAttribute("actualminutessum")).toMinutes()) / 1440);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
     }
 
