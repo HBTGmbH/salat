@@ -295,6 +295,7 @@ public class TimereportHelper {
             quittingTime.append(quittingtimeMinutes);
             return quittingTime.toString();
         } catch (Exception e) {
+            log.error("Could not calculate quitting time.", e);
             return N_A;
         }
     }

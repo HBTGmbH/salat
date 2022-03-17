@@ -10,6 +10,7 @@ import static org.tb.common.DateTimeViewHelper.getMonthMMStringFromShortstring;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.common.util.DateUtils.parse;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -221,7 +222,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 request.getParameter("task").equals("save") ||
                 request.getParameter("trId") != null) {
 
-            LocalDate referencedayRefDate = DateUtils.parse(form.getReferenceday());
+            LocalDate referencedayRefDate = parse(form.getReferenceday());
 
             List<Employeeorder> employeeorders = employeeorderDAO
                 .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(
@@ -343,9 +344,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 request.getSession().setAttribute("suborderFilerId", continueForm.getSuborderId());
 
-                request.getSession().setAttribute("labortime", ""); // TODO ? timereportHelper.calculateLaborTime(reports));
-                request.getSession().setAttribute("maxlabortime", false); // TODO ? timereportHelper.checkLaborTimeMaximum(existingTimereports, GlobalConstants.MAX_HOURS_PER_DAY));
-                request.getSession().setAttribute("quittingtime", ""); // TODO ? timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+                var reports = timereportDAO.getTimereportsByDateAndEmployeeContractId(form.getEmployeeContractId(), parse(form.getReferenceday()));
+                request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(reports));
+                //request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(existingTimereports, GlobalConstants.MAX_HOURS_PER_DAY));
+                request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
 
                 //calculate Working Day End
                 request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
