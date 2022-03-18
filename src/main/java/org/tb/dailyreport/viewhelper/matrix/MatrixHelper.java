@@ -281,8 +281,7 @@ public class MatrixHelper {
                             if (dayAndWorkingHourCount.getDay() == day) {
                                 Duration workingHour = Duration.ZERO;
                                 workingHour = workingHour
-                                    .plusHours(bookingDay.getDurationHours())
-                                    .plusMinutes(bookingDay.getDurationMinutes())
+                                    .plus(bookingDay.getDuration())
                                     .plus(dayAndWorkingHourCount.getWorkingHour());
                                 DayAndWorkingHourCount otherDayAndWorkingHourCount = new DayAndWorkingHourCount(
                                     day,
@@ -317,9 +316,9 @@ public class MatrixHelper {
                 MergedReport mergedReport = mergedReportList.get(mergedReportIndex);
                 if ((mergedReport.getCustomOrder().getSign() + mergedReport.getSubOrder().getSign()).equals(timeReport.getSuborder().getCustomerorder().getSign()
                         + timeReport.getSuborder().getSign())) {
-                    for (BookingDay tempBookingDay : mergedReport.getBookingDays()) {
-                        if (tempBookingDay.getDate().equals(date)) {
-                            mergedReport.mergeBookingDay(tempBookingDay, date, durationHours, durationMinutes, taskdescription);
+                    for (BookingDay bookingDay : mergedReport.getBookingDays()) {
+                        if (bookingDay.getDate().equals(date)) {
+                            bookingDay.addBooking(durationHours, durationMinutes, taskdescription);
                             return;
                         }
                     }

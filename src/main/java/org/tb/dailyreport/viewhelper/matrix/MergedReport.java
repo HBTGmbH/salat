@@ -1,7 +1,9 @@
 package org.tb.dailyreport.viewhelper.matrix;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,21 +28,21 @@ public class MergedReport implements Comparable<MergedReport> {
         return bookingDays.size();
     }
 
-    public void mergeBookingDay(BookingDay tempBookingDay, LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
-        bookingDays.set(
-            bookingDays.indexOf(tempBookingDay), new BookingDay(date, tempBookingDay.getDurationHours() + durationHours, tempBookingDay.getDurationMinutes() + durationMinutes, tempBookingDay.getTaskdescription() + taskdescription));
-    }
-
     public void addBookingDay(LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
         bookingDays.add(new BookingDay(date, durationHours, durationMinutes, taskdescription));
     }
 
+    public void addEmptyBookingDay(LocalDate date) {
+        bookingDays.add(new BookingDay(date));
+    }
+
     public void setSum() {
-        sumMinutes = 0;
-        for (BookingDay tempBookingDay : bookingDays) {
-            sumMinutes += tempBookingDay.getDurationHours() * 60 + tempBookingDay.getDurationMinutes();
+        var sum = Duration.ZERO;
+        for (BookingDay bookingDay : bookingDays) {
+            sum = sum.plus(bookingDay.getDuration());
         }
-        sumHours = (double)sumMinutes / 60;
+        sumMinutes = sum.toMinutes();
+        sumHours = (double)sumMinutes / MINUTES_PER_HOUR;
     }
 
     public double getSumHours() {
@@ -51,14 +53,14 @@ public class MergedReport implements Comparable<MergedReport> {
         LocalDate loopDate = dateFirst;
         while ((loopDate.isAfter(dateFirst) && loopDate.isBefore(dateLast)) || loopDate.equals(dateFirst) || loopDate.equals(dateLast)) {
             boolean dateAvailable = false;
-            for (BookingDay tempBookingDay : bookingDays) {
-                if (tempBookingDay.getDate().equals(loopDate)) {
+            for (BookingDay bookingDay : bookingDays) {
+                if (bookingDay.getDate().equals(loopDate)) {
                     dateAvailable = true;
                     break;
                 }
             }
             if (!dateAvailable) {
-                addBookingDay(loopDate, 0, 0, null);
+                addEmptyBookingDay(loopDate);
             }
             loopDate = DateUtils.addDays(loopDate, 1);
         }
@@ -78,9 +80,7 @@ public class MergedReport implements Comparable<MergedReport> {
         for (BookingDay temp : bookingDays) {
             sb.append(temp.getDate())
                     .append("-")
-                    .append(temp.getDurationHours())
-                    .append("/")
-                    .append(temp.getDurationMinutes())
+                    .append(temp.getDurationString())
                     .append(" // ");
         }
         return sb.toString();

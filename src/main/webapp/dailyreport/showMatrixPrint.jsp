@@ -138,9 +138,9 @@
 
 				</c:if>
 				<c:if
-					test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
+					test="${bookingday.bookingCount eq 0}">&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
 				<c:if
-					test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+					test="${bookingday.bookingCount gt 0}">
 					<c:out value="${bookingday.durationString}"></c:out>
 				</c:if>
 				</td>

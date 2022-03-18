@@ -391,20 +391,12 @@
 						</c:if>
 					</c:if>
 
-					<c:choose>
-						<c:when test="${(mergedreport.subOrder.sign eq overtimeCompensation and (not empty bookingday.taskdescription)
-						and bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
-							<c:out value="${bookingday.durationString}" />
-						</c:when>
-						<c:otherwise>
-							<c:if test="${(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+							<c:if test="${bookingday.bookingCount eq 0}">
 								&nbsp;
 							</c:if>
-							<c:if test="${!(bookingday.durationHours eq '0' and bookingday.durationMinutes eq '0')}">
+							<c:if test="${bookingday.bookingCount gt 0}">
 								<c:out value="${bookingday.durationString}" />
 							</c:if>
-						</c:otherwise>
-					</c:choose>
 					</td>
 				</c:forEach>
 				<td class="matrix" align="right"><c:out	value="${mergedreport.sumString}"></c:out></td>
