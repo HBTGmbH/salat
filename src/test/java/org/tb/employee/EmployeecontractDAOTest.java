@@ -47,7 +47,7 @@ public class EmployeecontractDAOTest {
 		employeeDAO.save(employee, employee);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee);
-		employeecontractDAO.save(ec, employee);
+		employeecontractDAO.save(ec);
 
 		assertThat(ec.getId()).isNotNull();
 	}
@@ -58,7 +58,7 @@ public class EmployeecontractDAOTest {
 		employeeDAO.save(employee, employee);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee);
-		employeecontractDAO.save(ec, employee);
+		employeecontractDAO.save(ec);
 	
 		assertThat(employeecontractDAO.deleteEmployeeContractById(ec.getId())).isTrue();
 		assertThat(employeecontractDAO.getEmployeeContractById(ec.getId())).isNull();

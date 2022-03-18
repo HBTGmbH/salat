@@ -27,4 +27,6 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   """)
   List<Employeecontract> findAllSupervisedValidAt(long supervisorId, LocalDate date);
 
+  List<Employeecontract> findAllByEmployeeId(Long employeeId);
+
 }

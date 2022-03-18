@@ -41,5 +41,9 @@ public class Overtime extends AuditedEntity implements Serializable {
         return DateUtils.formatDateTime(getCreated(), "yyyy-MM-dd HH:mm");
     }
 
+    public void setTime(Duration duration) {
+        this.timeMinutes = duration;
+    }
+
 }
 

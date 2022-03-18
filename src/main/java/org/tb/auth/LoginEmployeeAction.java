@@ -20,6 +20,7 @@ import org.tb.common.Warning;
 import org.tb.common.struts.TypedAction;
 import org.tb.common.util.SecureHashUtils;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
+import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
@@ -45,6 +46,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
     private final SuborderDAO suborderDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final AfterLogin afterLogin;
+    private final VacationDAO vacationDAO;
     private final AuthorizedUser authorizedUser;
 
     @Override
@@ -128,7 +130,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             // create tmp employee
             Employee tmp = new Employee();
             tmp.setSign(SYSTEM_SIGN);
-            employeecontractDAO.save(employeecontract, tmp);
+            employeecontractDAO.save(employeecontract);
         }
         if (employeecontract.getReportReleaseDate() == null) {
             LocalDate validFromDate = employeecontract.getValidFrom();
@@ -136,7 +138,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             // create tmp employee
             Employee tmp = new Employee();
             tmp.setSign(SYSTEM_SIGN);
-            employeecontractDAO.save(employeecontract, tmp);
+            employeecontractDAO.save(employeecontract);
         }
         // set used employee contract of login employee
         request.getSession().setAttribute("loginEmployeeContract", employeecontract);
@@ -259,8 +261,11 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     }
                     if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
                         && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                        // TODO reduce VacationEntitlement if contract is not running the whole year
-                        var vacationBudget = employeecontract.getDailyWorkingTime().multipliedBy(employeecontract.getVacationEntitlement());
+                        var vacation = employeecontract.getVacation(today().getYear());
+                        if(vacation.isEmpty()) {
+                            vacationDAO.addNewVacation(employeecontract, today().getYear(), employeecontract.getVacationEntitlement());
+                        }
+                        var vacationBudget = employeecontract.getEffectiveVacationEntitlement(today().getYear()); // create vacation employee order for current year
                         employeeorder.setDebithours(vacationBudget);
                         employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
                     } else {
@@ -270,12 +275,8 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     employeeorder.setSign(" ");
                     employeeorder.setSuborder(suborder);
 
-                    // create tmp employee
-                    Employee tmp = new Employee();
-                    tmp.setSign(SYSTEM_SIGN);
-
                     if (untilDate == null || !fromDate.isAfter(untilDate)) {
-                        employeeorderDAO.save(employeeorder, tmp);
+                        employeeorderDAO.save(employeeorder);
                     }
 
                 }

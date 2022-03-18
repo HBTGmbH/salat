@@ -7,6 +7,11 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ErrorCode {
 
+  EC_TIME_REPORTS_OUTSIDE_VALIDITY("EC-0001", "employee contract has time reports outside it's new validity"),
+  EC_INVALID_DATE_RANGE("EC-0002", "employee contract has invalid date range"),
+  EC_EFFECTIVE_EMPLOYEE_ORDER_OUTSIDE_VALIDITY("EC-0003", "effective employee order exists outside employee contract validity"),
+  EC_SUPERVISOR_INVALID("EC-0004", "supervisor for employee contract is invalid"),
+  EC_OVERLAPS("EC-0005", "employee contract validity overlaps another employee contract of the same employee"),
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
   TR_EMPLOYEE_ORDER_NOT_FOUND("TR-0003","employeeOrderId must match an employee order"),
@@ -27,7 +32,6 @@ public enum ErrorCode {
   TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE("TR-0021","employee contract must be valid for the reference day of the time report"),
   TR_YEAR_OUT_OF_RANGE("TR-0022","Time reports must be modified only in the current, the previous or the next year"),
   TR_DURATION_OVERTIME_COMPENSATION_INVALID("TR-0023","Overtime compensations must always be booked with 0 time"),
-
   ;
 
   private final String code;

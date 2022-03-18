@@ -1,5 +1,6 @@
 package org.tb.employee.action;
 
+import static org.tb.common.GlobalConstants.VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
@@ -72,23 +73,17 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
      * fills employee contract form with properties of given employee contract
      */
     private void setFormEntries(HttpServletRequest request, AddEmployeeContractForm ecForm, Employeecontract ec) {
+
         Employee theEmployee = ec.getEmployee();
         ecForm.setEmployee(theEmployee.getId());
-//only when the supervisor exists		
-        if (ec.getSupervisor() != null) ecForm.setSupervisorid(ec.getSupervisor().getId());
-        else ecForm.setSupervisorid(-1);
 
-        request.getSession().setAttribute("currentEmployee", theEmployee.getName());
-        request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
+        // only when the supervisor exists
+        if (ec.getSupervisor() != null) {
+            ecForm.setSupervisorid(ec.getSupervisor().getId());
+        } else {
+            ecForm.setSupervisorid(-1);
+        }
 
-        List<Employee> employees = employeeDAO.getEmployees();
-        request.getSession().setAttribute("employees", employees);
-
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
-        request.getSession().setAttribute("empWithCont", employeesWithContracts);
-
-
-//		ecForm.setEmployeeId(theEmployee.getId());
         ecForm.setTaskdescription(ec.getTaskDescription());
         ecForm.setFreelancer(ec.getFreelancer());
         ecForm.setHide(ec.getHide());
@@ -98,9 +93,9 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
             // for an employee (not year-dependent), so just take the
             // first vacation entry to set the form value
             Vacation va = ec.getVacations().get(0);
-            ecForm.setYearlyvacation(va.getEntitlement());
+            ecForm.setYearlyvacation(va.getEntitlement().toString());
         } else {
-            ecForm.setYearlyvacation(GlobalConstants.VACATION_PER_YEAR);
+            ecForm.setYearlyvacation(String.valueOf(VACATION_PER_YEAR));
         }
 
         LocalDate fromDate = ec.getValidFrom();
@@ -109,6 +104,15 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
             LocalDate untilDate = ec.getValidUntil();
             ecForm.setValidUntil(DateUtils.format(untilDate));
         }
+
+        request.getSession().setAttribute("currentEmployee", theEmployee.getName());
+        request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
+
+        List<Employee> employees = employeeDAO.getEmployees();
+        request.getSession().setAttribute("employees", employees);
+
+        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+        request.getSession().setAttribute("empWithCont", employeesWithContracts);
     }
 
 }

@@ -386,19 +386,19 @@
 		</action>
 
 		<!-- Employeecontract -->
-		<action path="/CreateEmployeecontract" name="addEmployeeContractForm"
+		<action path="/CreateEmployeecontract" name="addEmployeeContractForm" validate="false"
 			type="org.tb.employee.action.CreateEmployeecontractAction">
 			<forward name="success" path="/employee/addEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditEmployeecontract" name="addEmployeeContractForm"
+		<action path="/EditEmployeecontract" name="addEmployeeContractForm" validate="false"
 			type="org.tb.employee.action.EditEmployeecontractAction">
 			<forward name="success" path="/employee/addEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/DeleteEmployeecontract" input="/employee/showEmployeeContract.jsp"
+		<action path="/DeleteEmployeecontract" input="/employee/showEmployeeContract.jsp" validate="false"
 			name="addEmployeeContractForm" type="org.tb.employee.action.DeleteEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />

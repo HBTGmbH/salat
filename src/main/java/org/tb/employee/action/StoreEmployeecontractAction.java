@@ -1,5 +1,6 @@
 package org.tb.employee.action;
 
+import static org.tb.common.GlobalConstants.VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.today;
 
@@ -20,7 +21,11 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.common.ErrorCode;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -34,6 +39,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.persistence.OvertimeDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
 
@@ -48,14 +54,13 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
     private final EmployeeDAO employeeDAO;
     private final EmployeecontractDAO employeecontractDAO;
-    private final VacationDAO vacationDAO;
     private final OvertimeDAO overtimeDAO;
     private final TimereportDAO timereportDAO;
-    private final EmployeeorderDAO employeeorderDAO;
+    private final EmployeecontractService employeecontractService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeContractForm ecForm, HttpServletRequest request, HttpServletResponse response) {
-        //			 remove list with timereports out of range
+        // remove list with timereports out of range
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         // Task for setting the date, previous, next and to-day for both, until and from date
@@ -95,49 +100,16 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 request.getParameter("task").equals("storeOvertime") ||
                 request.getParameter("ecId") != null) {
 
-            // check form entries
-            ActionMessages errors = getErrors(request);
-            if (errors == null) {
-                errors = new ActionMessages();
-            }
-
-            // new overtime
-            if (ecForm.getNewOvertime() != null) {
-                String overtimeString = ecForm.getNewOvertime();
-
-                // validate comment
-                if (ecForm.getNewOvertimeComment().length() > GlobalConstants.EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH) {
-                    errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.toolong"));
-                } else if (ecForm.getNewOvertimeComment().trim().isEmpty()) {
-                    errors.add("newOvertimeComment", new ActionMessage("form.employeecontract.error.overtimecomment.missing"));
-                }
-                if(!DurationUtils.validateDuration(overtimeString)) {
-                    errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
-                } else {
-                    Duration overtimeMinutes = DurationUtils.parseDuration(overtimeString);
-                    if(overtimeMinutes.isZero()) {
-                        errors.add("newOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
-                    }
-                }
-                if (!errors.isEmpty()) {
-                    saveErrors(request, errors);
-                    //setFormEntries(request, ecForm, ec); // warum????
-                    return mapping.getInputForward();
-                }
-            }
-
-            // validation completed -> create overtime entity and store it
-            long ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
+            // create overtime entity and store it
+            Long ecId = (Long) request.getSession().getAttribute("ecId");
             Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
 
             Overtime overtime = new Overtime();
             overtime.setComment(ecForm.getNewOvertimeComment());
             overtime.setEmployeecontract(ec);
-            overtime.setTimeMinutes(DurationUtils.parseDuration(ecForm.getNewOvertime()));
+            overtime.setTimeMinutes(ecForm.getNewOvertimeTyped());
 
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
-            overtimeDAO.save(overtime, loginEmployee);
+            overtimeDAO.save(overtime);
 
             // refresh list of overtime adjustments
             List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
@@ -150,9 +122,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             request.getSession().setAttribute("totalovertime", DurationUtils.format(totalOvertime));
 
             // reset form
-            ecForm.setNewOvertime("0:00");
-            ecForm.setNewOvertimeComment("");
-
+            ecForm.reset(mapping, request);
             setFormEntries(request, ecForm, ec);
 
             return mapping.findForward("reset");
@@ -162,155 +132,54 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 request.getParameter("task").equals("save") ||
                 request.getParameter("ecId") != null) {
 
-            //	'main' task - prepare everything to store the employee contract.
-            // I.e., copy properties from the form into the employee contract before saving.
-            long ecId;
-            Employeecontract ec = null;
-            long employeeId = ecForm.getEmployee();
-            if (request.getSession().getAttribute("ecId") != null) {
-                // edited employeecontract
-                ecId = Long.parseLong(request.getSession().getAttribute("ecId").toString());
-                ec = employeecontractDAO.getEmployeeContractById(ecId);
-                if (ec != null) {
-                    employeeId = ec.getEmployee().getId();
+            LocalDate validFrom = ecForm.getValidFromTyped();
+            LocalDate validUntil = ecForm.getValidUntilTyped();
+            Duration dailyworkingtime = ecForm.getDailyworkingtimeTyped();
+            Duration initialOvertime = ecForm.getInitialOvertimeTyped();
+            int yearlyvacation = ecForm.getYearlyvacationTyped();
+
+            Long existingEmployeecontractId = (Long) request.getSession().getAttribute("ecId");
+            try {
+                if(existingEmployeecontractId != null) {
+                    employeecontractService.updateEmployeecontract(
+                        existingEmployeecontractId,
+                        validFrom,
+                        validUntil,
+                        ecForm.getSupervisorid(),
+                        ecForm.getTaskdescription(),
+                        ecForm.getFreelancer(),
+                        ecForm.getHide(),
+                        dailyworkingtime,
+                        yearlyvacation
+                    );
+                } else {
+                    employeecontractService.createEmployeecontract(
+                        ecForm.getEmployee(),
+                        validFrom,
+                        validUntil,
+                        ecForm.getSupervisorid(),
+                        ecForm.getTaskdescription(),
+                        ecForm.getFreelancer(),
+                        ecForm.getHide(),
+                        dailyworkingtime,
+                        yearlyvacation,
+                        initialOvertime
+                    );
                 }
-            }
-            boolean newContract = false;
-            if (ec == null) {
-                // new employee contract
-                ec = new Employeecontract();
-                newContract = true;
-            }
-
-            Employee theEmployee = employeeDAO.getEmployeeById(employeeId);
-            ec.setEmployee(theEmployee);
-
-            ActionMessages errorMessages = validateFormData(request, ecForm, theEmployee, ec);
-            if (!errorMessages.isEmpty()) {
+            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                addToMessages(request, e.getErrorCode());
+                if(e.getErrorCode() == ErrorCode.EC_TIME_REPORTS_OUTSIDE_VALIDITY) {
+                    // in case of a specific error, print out timereports
+                    var timereportsInvalidForDates = timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(
+                        validFrom,
+                        validUntil,
+                        existingEmployeecontractId
+                    );
+                    if (!timereportsInvalidForDates.isEmpty()) {
+                        request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
+                    }
+                }
                 return mapping.getInputForward();
-            }
-
-            if (ecForm.getValidUntil() != null && !ecForm.getValidUntil().trim().equals("")) {
-                LocalDate untilDate = DateUtils.parseOrNull(ecForm.getValidUntil());
-                ec.setValidUntil(untilDate);
-            } else {
-                ec.setValidUntil(null);
-            }
-
-            LocalDate fromDate = DateUtils.parseOrNull(ecForm.getValidFrom());
-            ec.setValidFrom(fromDate);
-
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
-            // adjust employeeorders
-            List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(ec.getId());
-            if (employeeorders != null && !employeeorders.isEmpty()) {
-                for (Employeeorder employeeorder : employeeorders) {
-                    boolean changed = false;
-                    if (employeeorder.getFromDate().isBefore(fromDate)) {
-                        employeeorder.setFromDate(fromDate);
-                        changed = true;
-                    }
-                    if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(fromDate)) {
-                        employeeorder.setUntilDate(fromDate);
-                        changed = true;
-                    }
-                    // if enddate of employeecontract is set, check dates of corresponding employeeorders and adjust as needed
-                    if (ec.getValidUntil() != null) {
-                        if (employeeorder.getFromDate().isAfter(ec.getValidUntil())) {
-                            employeeorder.setFromDate(ec.getValidUntil());
-                            changed = true;
-                        }
-                        if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(ec.getValidUntil())) {
-                            employeeorder.setUntilDate(ec.getValidUntil());
-                            changed = true;
-                        }
-                        if (changed) {
-                            employeeorderDAO.save(employeeorder, loginEmployee);
-                        }
-                    }
-                }
-
-                // remove all employeeorders with duplicate suborders 
-                // (needed due to previous bug that contract duration extensions produced new automatic entries of standard employeeorders 
-                // instead of extending the existing ones)
-                Set<Long> suborderIDs = new HashSet<>();
-                Iterator<Employeeorder> iterator = employeeorders.iterator();
-                while (iterator.hasNext()) {
-                    Employeeorder eo = iterator.next();
-                    if (!suborderIDs.contains(eo.getSuborder().getId())) {
-                        suborderIDs.add(eo.getSuborder().getId());
-                    } else {
-                        iterator.remove();
-                    }
-                }
-                for (Employeeorder employeeorder : employeeorders) {
-                    // cases where enddate employeeorder < enddate employeecontract (or employeeorder has enddate, employeecontract does not have enddate).
-                    // if enddate of suborder is earlier than enddate of employeecontract 
-                    // set enddate of employeeorder to enddate of suborder, else to enddate of employeecontract.
-                    if (employeeorder.getSuborder().getUntilDate() != null && ec.getValidUntil() != null
-                            && employeeorder.getSuborder().getUntilDate().isBefore(ec.getValidUntil())
-                            || employeeorder.getSuborder().getUntilDate() != null && ec.getValidUntil() == null) {
-                        if (!employeeorder.getSuborder().getUntilDate().equals(employeeorder.getUntilDate())) {
-                            employeeorder.setUntilDate(employeeorder.getSuborder().getUntilDate());
-                            employeeorderDAO.save(employeeorder, loginEmployee);
-                        }
-                    } else if (employeeorder.getUntilDate() != null && ec.getValidUntil() != null && employeeorder.getUntilDate().isBefore(ec.getValidUntil())) {
-                        employeeorder.setUntilDate(ec.getValidUntil());
-                        employeeorderDAO.save(employeeorder, loginEmployee);
-                    } else if (employeeorder.getUntilDate() != null && ec.getValidUntil() == null) {
-                        employeeorder.setUntilDate(null);
-                        employeeorderDAO.save(employeeorder, loginEmployee);
-                    }
-                }
-            }
-
-            /*  Supervisor validation */
-            if (ecForm.getSupervisorid() == employeeId) {
-                ActionMessages errors = getErrors(request);
-                if (errors == null) {
-                    errors = new ActionMessages();
-                }
-                errors.add("invalidSupervisor", new ActionMessage("form.timereport.error.employeecontract.invalidsupervisor"));
-                saveErrors(request, errors);
-                return mapping.getInputForward();
-            } else {
-                ec.setSupervisor(employeeDAO.getEmployeeById(ecForm.getSupervisorid()));
-            }
-
-            ec.setTaskDescription(ecForm.getTaskdescription());
-            ec.setFreelancer(ecForm.getFreelancer());
-            ec.setHide(ecForm.getHide());
-            ec.setDailyWorkingTime(DurationUtils.parseDuration(ecForm.getDailyworkingtime()));
-
-            // if necessary, add new vacation for current year
-            Vacation va = null;
-            if (ec.getVacations() == null || ec.getVacations().size() <= 0) {
-                List<Vacation> vaList = new ArrayList<>();
-                va = vacationDAO.setNewVacation(ec, DateUtils.getCurrentYear());
-                va.setEntitlement(ecForm.getYearlyvacation());
-                vaList.add(va);
-                ec.setVacations(vaList);
-            } else {
-                for (Object element : ec.getVacations()) {
-                    va = (Vacation) element;
-                    va.setEntitlement(ecForm.getYearlyvacation());
-                }
-            }
-
-            employeecontractDAO.save(ec, loginEmployee);
-
-            if (newContract) {
-                Overtime overtime = new Overtime();
-                overtime.setComment("initial overtime");
-                overtime.setEmployeecontract(ec);
-                // if no value is selected, set 0.0
-                if (ecForm.getInitialOvertime() == null) {
-                    ecForm.setInitialOvertime("0:00");
-                }
-                // the ecForm entry is checked before
-                overtime.setTimeMinutes(DurationUtils.parseDuration(ecForm.getInitialOvertime()));
-                overtimeDAO.save(overtime, loginEmployee);
             }
 
             request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(ecForm.getEmployee()).getName());
@@ -395,155 +264,19 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
     }
 
     /**
-     * validates the form data (syntax and logic)
-     */
-    private ActionMessages validateFormData(HttpServletRequest request, AddEmployeeContractForm ecForm,
-                                            Employee theEmployee, Employeecontract employeecontract) {
-
-        ActionMessages errors = getErrors(request);
-        if (errors == null) {
-            errors = new ActionMessages();
-        }
-
-        // check date formats (must now be 'yyyy-MM-dd')
-        String dateFromString = ecForm.getValidFrom().trim();
-        boolean dateValid = DateUtils.validateDate(dateFromString);
-        if (!dateValid) {
-            errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
-        }
-
-        String dateUntilString = ecForm.getValidUntil().trim();
-        if (!dateUntilString.equals("")) {
-            dateValid = DateUtils.validateDate(dateUntilString);
-            if (!dateValid) {
-                errors.add("validUntil", new ActionMessage(
-                        "form.timereport.error.date.wrongformat"));
-            }
-        }
-        LocalDate newContractValidFrom = DateUtils.parse(dateFromString);
-        LocalDate newContractValidUntil = null;
-        if (!dateUntilString.equals("")) {
-            newContractValidUntil = DateUtils.parse(dateUntilString);
-        }
-
-        if (newContractValidUntil != null && newContractValidFrom.isAfter(newContractValidUntil)) {
-            errors.add("validFrom", new ActionMessage("form.employeecontract.error.endbeforebegin"));
-        }
-
-        // for a new employeecontract, check if other contract for this employee already exists
-        Long ecId = (Long) request.getSession().getAttribute("ecId");
-        if (ecId == null) {
-            List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContracts();
-            for (Object element : allEmployeecontracts) {
-                Employeecontract ec = (Employeecontract) element;
-                if (Objects.equals(ec.getEmployee().getId(), theEmployee.getId()) && !Objects.equals(ec.getId(), employeecontract.getId())) {
-                    // contract for the same employee found but not the same contract - check overleap
-                    LocalDate existingContractValidFrom = ec.getValidFrom();
-                    LocalDate existingContractValidUntil = ec.getValidUntil();
-
-                    if (newContractValidUntil != null && existingContractValidUntil != null) {
-                        if (!newContractValidFrom.isBefore(existingContractValidFrom)
-                                && !newContractValidFrom.isAfter(existingContractValidUntil)) {
-                            // validFrom overleaps!
-                            errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
-                            break;
-                        }
-                        if (!newContractValidUntil.isBefore(existingContractValidFrom)
-                                && !newContractValidUntil.isAfter(existingContractValidUntil)) {
-                            // validUntil overleaps!
-                            errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
-                            break;
-                        }
-                        if (newContractValidFrom.isBefore(existingContractValidFrom)
-                                && newContractValidUntil.isAfter(existingContractValidUntil)) {
-                            // new Employee contract enclosures an existing one
-                            errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
-                            break;
-                        }
-                    } else if (newContractValidUntil == null && existingContractValidUntil != null) {
-                        if (!newContractValidFrom.isAfter(existingContractValidUntil)) {
-                            errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
-                            break;
-                        }
-                    } else if (newContractValidUntil != null) {
-                        if (!newContractValidUntil.isBefore(existingContractValidFrom)) {
-                            errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
-                            break;
-                        }
-                    } else {
-                        // two employee contracts with open end MUST overleap
-                        errors.add("validFrom", new ActionMessage("form.employeecontract.error.overleap"));
-                        break;
-                    }
-                }
-            }
-        }
-
-        // check length of text fields
-        if (ecForm.getTaskdescription().length() > GlobalConstants.EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH) {
-            errors.add("taskdescription", new ActionMessage("form.employeecontract.error.taskdescription.toolong"));
-        }
-
-        // check dailyworkingtime format		
-        if (!DurationUtils.validateDuration(ecForm.getDailyworkingtime())) {
-            errors.add("dailyworkingtime", new ActionMessage("form.employeecontract.error.dailyworkingtime.wrongformat"));
-        }
-
-        // check initial overtime
-        if (ecForm.getInitialOvertime() != null) {
-            if (!DurationUtils.validateDuration(ecForm.getInitialOvertime())) {
-                errors.add("initialOvertime", new ActionMessage("form.employeecontract.error.initialovertime.wrongformat"));
-            }
-        }
-
-        // check yearlyvacation format	
-        if (!GenericValidator.isInt(ecForm.getYearlyvacation().toString()) ||
-                !GenericValidator.isInRange(ecForm.getYearlyvacation(),
-                        0.0, GlobalConstants.MAX_VACATION_PER_YEAR)) {
-            errors.add("yearlyvacation", new ActionMessage("form.employeecontract.error.yearlyvacation.wrongformat"));
-        }
-
-        // check, if dates fit to existing timereports
-        LocalDate untilDate = null;
-        if (newContractValidUntil != null) {
-            untilDate = newContractValidUntil;
-        }
-        if (ecId == null) {
-            ecId = 0L;
-        }
-        List<Timereport> timereportsInvalidForDates = timereportDAO.
-                getTimereportsByEmployeeContractIdInvalidForDates(newContractValidFrom, untilDate, ecId);
-        if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
-            request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
-            errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
-
-        }
-
-        saveErrors(request, errors);
-
-        return errors;
-    }
-
-    /**
      * fills employee contract form with properties of given employee contract
      */
     private void setFormEntries(HttpServletRequest request, AddEmployeeContractForm ecForm, Employeecontract ec) {
         Employee theEmployee = ec.getEmployee();
         ecForm.setEmployee(theEmployee.getId());
-        //only when the supervisor exists		
+
+        // only when the supervisor exists
         if (ec.getSupervisor() != null) {
             ecForm.setSupervisorid(ec.getSupervisor().getId());
         } else {
             ecForm.setSupervisorid(-1);
         }
 
-        request.getSession().setAttribute("currentEmployee", theEmployee.getName());
-        request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
-
-        List<Employee> employees = employeeDAO.getEmployees();
-        request.getSession().setAttribute("employees", employees);
-
-        //		ecForm.setEmployeeId(theEmployee.getId());
         ecForm.setTaskdescription(ec.getTaskDescription());
         ecForm.setFreelancer(ec.getFreelancer());
         ecForm.setHide(ec.getHide());
@@ -553,14 +286,25 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             // for an employee (not year-dependent), so just take the
             // first vacation entry to set the form value
             Vacation va = ec.getVacations().get(0);
-            ecForm.setYearlyvacation(va.getEntitlement());
+            ecForm.setYearlyvacation(va.getEntitlement().toString());
         } else {
-            ecForm.setYearlyvacation(GlobalConstants.VACATION_PER_YEAR);
+            ecForm.setYearlyvacation(String.valueOf(VACATION_PER_YEAR));
         }
 
-        ecForm.setValidFrom(DateUtils.format(ec.getValidFrom()));
+        LocalDate fromDate = ec.getValidFrom();
+        ecForm.setValidFrom(DateUtils.format(fromDate));
         if (ec.getValidUntil() != null) {
-            ecForm.setValidUntil(DateUtils.format(ec.getValidUntil()));
+            LocalDate untilDate = ec.getValidUntil();
+            ecForm.setValidUntil(DateUtils.format(untilDate));
         }
+
+        request.getSession().setAttribute("currentEmployee", theEmployee.getName());
+        request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
+
+        List<Employee> employees = employeeDAO.getEmployees();
+        request.getSession().setAttribute("employees", employees);
+
+        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+        request.getSession().setAttribute("empWithCont", employeesWithContracts);
     }
 }

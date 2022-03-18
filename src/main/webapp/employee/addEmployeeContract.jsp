@@ -12,8 +12,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployeecontract.text" /></title>
 <link rel="stylesheet" type="text/css" href="/style/tb.css" />
+<link href="/style/select2.min.css" rel="stylesheet" />
 <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-
+<script src="/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script src="/scripts/select2.full.min.js" type="text/javascript"></script>
 <script type="text/javascript" language="JavaScript">
 	
 	function setDate(which, howMuch) {
@@ -28,21 +30,28 @@
 		
 	function afterCalenderClick() {
 	}
-		
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'auto'
+		});
+	});
+
 </script>
 
 </head>
 <body>
 
+<jsp:include flush="true" page="/menu.jsp">
+	<jsp:param name="title" value="Menu" />
+</jsp:include>
+<br>
+<span style="font-size:14pt;font-weight:bold;"><br><bean:message
+	key="main.general.enteremployeecontractproperties.text" />:<br></span>
+<br>
+<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 <html:form action="/StoreEmployeecontract">
-
-	<jsp:include flush="true" page="/menu.jsp">
-		<jsp:param name="title" value="Menu" />
-	</jsp:include>
-	<br>
-	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
-		key="main.general.enteremployeecontractproperties.text" />:<br></span>
-	<br>
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
 		<tr>
@@ -51,12 +60,10 @@
 			<td align="left" class="noBborderStyle">
 				<c:choose>
 					<c:when test="${employeeContractContext eq 'create'}">
-						<html:select
-							property="employee">
-						<html:options collection="employees" labelProperty="name"
-							property="id" />
-						</html:select>  <span style="color:red"><html:errors
-							property="employeename" /></span>
+						<html:select property="employee" styleClass="make-select2">
+							<html:options collection="employees" labelProperty="name" property="id" />
+						</html:select>
+						<span style="color:red"><html:errors property="employee" /></span>
 					</c:when>
 					<c:otherwise>
 						<b><c:out value="${currentEmployee}" /></b>
@@ -70,25 +77,11 @@
 	  <td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.supervisor.text" /></b></td>
 	  <td align="left" class="noBborderStyle">
-	 
-		<html:select property="supervisorid" onchange="refresh(this.form)">
-				<html:options collection="empWithCont" labelProperty="name"
-							property="id" />
-				<%--
-				<c:forEach var="employee" items="${empWithCont}">
-					 <c:if test="${employee.status == 'bl' || employee.status == 'pv'}"> 
-						<html:option value="${employee.id}">
-							<c:out value="${employee.name}" />
-						</html:option>
-					</c:if> 
-				</c:forEach>
-				--%>				
-			</html:select>
-<%--			warning for supervisor --%>
-			<span style="color:red"><html:errors
-				property="invalidSupervisor" /></span>
-	</td> 
-	
+		<html:select property="supervisorid" onchange="refresh(this.form)" styleClass="make-select2">
+		  <html:options collection="empWithCont" labelProperty="name" property="id" />
+		</html:select>
+		<span style="color:red"><html:errors property="supervisorid" /></span>
+	  </td>
 	</tr>
 		
 		
@@ -254,13 +247,8 @@
 			</html:submit></td>
 		</tr>
 	</table>
-	<html:hidden property="id" />
 	
 	<c:if test="${timereportsOutOfRange != null}">
-	<br>
-	<br>
-	<span style="color:red"><html:errors property="timereportOutOfRange" /></span>
-	<br>
 	<table class="center backgroundcolor" width="100%">
 		
 		<tr>

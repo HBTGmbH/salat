@@ -180,7 +180,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             // store new release date in employee contract
             employeecontract.setReportReleaseDate(releaseDate);
-            employeecontractDAO.save(employeecontract, loginEmployee);
+            employeecontractDAO.save(employeecontract);
             // contract was saved after RELEASE
             // build recipient for releasemail for BL
 
@@ -255,7 +255,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     employeecontract, true);
             employeecontract.setOvertimeStatic(Duration.ofMinutes(otStatic));
 
-            employeecontractDAO.save(employeecontract, loginEmployee);
+            employeecontractDAO.save(employeecontract);
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
@@ -306,7 +306,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     getDayList(reopenDate));
 
             // store changed employee contract
-            employeecontractDAO.save(employeecontract, loginEmployee);
+            employeecontractDAO.save(employeecontract);
         }
 
         if (request.getParameter("task") != null

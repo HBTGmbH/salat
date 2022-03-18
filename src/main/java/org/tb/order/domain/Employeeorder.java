@@ -51,7 +51,7 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private Duration debitMinutes;
+    private Duration debitMinutes = Duration.ZERO;
 
     private Byte debithoursunit;
     private LocalDate fromDate;

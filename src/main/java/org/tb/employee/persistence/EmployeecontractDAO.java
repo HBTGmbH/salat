@@ -64,13 +64,6 @@ public class EmployeecontractDAO {
      * Calls {@link EmployeecontractDAO#save(Employeecontract, Employee)} with {@link Employee} = null.
      */
     public void save(Employeecontract ec) {
-        save(ec, null);
-    }
-
-    /**
-     * Saves the given Employeecontract and sets creation-/update-user and creation-/update-date.
-     */
-    public void save(Employeecontract ec, Employee loginEmployee) {
         employeecontractRepository.save(ec);
     }
 
@@ -223,4 +216,9 @@ public class EmployeecontractDAO {
         }
         return false;
     }
+
+    public List<Employeecontract> getEmployeeContractsByEmployeeId(Long employeeId) {
+        return employeecontractRepository.findAllByEmployeeId(employeeId);
+    }
+
 }

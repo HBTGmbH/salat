@@ -270,6 +270,7 @@ public class EmployeeorderDAO {
     /**
      * Saves the given Employeeorder and sets creation-/update-user and creation-/update-date.
      */
+    @Deprecated
     public void save(Employeeorder eo, Employee loginEmployee) {
         employeeorderRepository.save(eo);
     }

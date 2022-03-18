@@ -5,7 +5,9 @@ import static org.tb.common.util.DateUtils.format;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -23,7 +25,6 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
-import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.Vacation;
@@ -54,7 +55,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private Duration dailyWorkingTimeMinutes;
+    private Duration dailyWorkingTimeMinutes = Duration.ZERO;
 
     private Boolean freelancer;
     private String taskDescription;
@@ -67,7 +68,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private Duration overtimeStaticMinutes;
+    private Duration overtimeStaticMinutes = Duration.ZERO;
 
     @OneToOne
     // FIXME check if ManyToOne?
@@ -82,15 +83,14 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @OneToMany(mappedBy = "employeecontract")
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Timereport> timereports;
+    private List<Timereport> timereports = new ArrayList<>();
 
     /**
      * list of employeeorders, associated to this employeecontract
      */
     @OneToMany(mappedBy = "employeecontract")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Employeeorder> employeeorders;
+    private List<Employeeorder> employeeorders = new ArrayList<>();
 
     /**
      * list of vacations, associated to this employeecontract
@@ -98,7 +98,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @OneToMany(mappedBy = "employeecontract")
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Vacation> vacations;
+    private List<Vacation> vacations = new ArrayList<>();
 
 
 
@@ -140,15 +140,25 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         return !date.isBefore(validFrom) && (validUntil == null || !date.isAfter(validUntil));
     }
 
-    public Integer getVacationEntitlement() {
-        if (vacations != null && !vacations.isEmpty()) {
-            // actually, vacation entitlement is a constant value
-            // for an employee (not year-dependent), so just take the
-            // first vacation entry to get the value
-            return vacations.get(0).getEntitlement();
-        } else {
-            return GlobalConstants.VACATION_PER_YEAR;
-        }
+    public int getVacationEntitlement() {
+        if(vacations == null) return 0;
+        return vacations.stream().findAny().map(Vacation::getEntitlement).orElse(0);
+    }
+
+    public Duration getEffectiveVacationEntitlement(int year) {
+        if(vacations == null) return Duration.ZERO;
+        return vacations.stream()
+            .filter(v -> v.getYear() == year)
+            .map(Vacation::getEffectiveEntitlement)
+            .findAny()
+            .orElse(Duration.ZERO);
+    }
+
+    public Optional<Vacation> getVacation(int year) {
+        if(vacations == null) return Optional.empty();
+        return vacations.stream()
+            .filter(v -> v.getYear() == year)
+            .findAny();
     }
 
     /**
@@ -239,6 +249,27 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     public void setOvertimeStatic(Duration overtimeStaticMinutes) {
         this.overtimeStaticMinutes = overtimeStaticMinutes;
+    }
+
+    public boolean overlaps(Employeecontract other) {
+        if(this.validUntil == null && other.validUntil == null) {
+            return true;
+        }
+        if(this.validUntil == null && other.validUntil != null) {
+            return !other.validUntil.isBefore(validFrom);
+        }
+        if(this.validUntil != null && other.validUntil == null) {
+            return !validUntil.isBefore(other.validFrom);
+        }
+        // validUntil != null && other.validUntil != null
+        if(validFrom.isBefore(other.validFrom)) {
+            return !validUntil.isBefore(other.validFrom);
+        }
+        if(other.validFrom.isBefore(validFrom)) {
+            return !other.validUntil.isBefore(validFrom);
+        }
+        // validFrom == other.validFrom
+        return true;
     }
 
 }

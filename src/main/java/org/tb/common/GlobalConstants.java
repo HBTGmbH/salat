@@ -25,12 +25,12 @@ public class GlobalConstants {
     public static final int VACATION_PER_YEAR = 30;
     public static final int MAX_VACATION_PER_YEAR = 100;
 
-    public static final int CUSTOMERNAME_MAX_LENGTH = 256;
+    public static final int CUSTOMERNAME_MAX_LENGTH = 255;
     public static final int CUSTOMERSHORTNAME_MAX_LENGTH = 12;
-    public static final int CUSTOMERADDRESS_MAX_LENGTH = 256;
+    public static final int CUSTOMERADDRESS_MAX_LENGTH = 255;
 
     public static final int CUSTOMERORDER_SIGN_MAX_LENGTH = 16;
-    public static final int CUSTOMERORDER_DESCRIPTION_MAX_LENGTH = 256;
+    public static final int CUSTOMERORDER_DESCRIPTION_MAX_LENGTH = 255;
     public static final int CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH = 20;
     public static final int CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH = 64;
     public static final int CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH = 64;
@@ -44,13 +44,13 @@ public class GlobalConstants {
     public static final char SUBORDER_INVOICE_NO = 'N';
     public static final char SUBORDER_INVOICE_UNDEFINED = 'U';
 
-    public static final int EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH = 256;
-    public static final int EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH = 256;
+    public static final int EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH = 255;
+    public static final int EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH = 255;
 
-    public static final int EMPLOYEE_FIRSTNAME_MAX_LENGTH = 256;
-    public static final int EMPLOYEE_LASTNAME_MAX_LENGTH = 256;
+    public static final int EMPLOYEE_FIRSTNAME_MAX_LENGTH = 255;
+    public static final int EMPLOYEE_LASTNAME_MAX_LENGTH = 255;
     public static final int EMPLOYEE_LOGINNAME_MAX_LENGTH = 5;
-    public static final int EMPLOYEE_PASSWORD_MAX_LENGTH = 256;
+    public static final int EMPLOYEE_PASSWORD_MAX_LENGTH = 255;
     public static final int EMPLOYEE_PASSWORD_MIN_LENGTH = 6;
     public static final int EMPLOYEE_SIGN_MAX_LENGTH = 5;
     public static final int EMPLOYEE_STATUS_MAX_LENGTH = 16;
@@ -178,7 +178,7 @@ public class GlobalConstants {
     public static final int QM_PROCESS_ID_PA09C_AUFTRAGSDURCHFUEHRUNG_1_MANN_GEWERK = 6;
 
     public static final int FORM_MAX_CHAR_BIG_TEXTAREA = 2048;
-    public static final int FORM_MAX_CHAR_TEXTAREA = 256;
+    public static final int FORM_MAX_CHAR_TEXTAREA = 255;
     public static final int FORM_MAX_CHAR_NAME_TEXTFIELD = 64;
     public static final int FORM_MAX_CHAR_TEXTFIELD = 64;
 

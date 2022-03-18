@@ -196,12 +196,12 @@ public class TimereportDAO {
             builder.equal(root.join(Timereport_.referenceday).get(Referenceday_.refdate), date);
     }
 
-    private Specification<Timereport> reportedAfter(LocalDate date) {
+    private Specification<Timereport> reportedNotBefore(LocalDate date) {
         return (root, query, builder) ->
             builder.greaterThanOrEqualTo(root.join(Timereport_.referenceday).get(Referenceday_.refdate), date);
     }
 
-    private Specification<Timereport> reportedNotAfter(LocalDate date) {
+    private Specification<Timereport> reportedBefore(LocalDate date) {
         return (root, query, builder) ->
             builder.lessThan(root.join(Timereport_.referenceday).get(Referenceday_.refdate), date);
     }
@@ -292,7 +292,7 @@ public class TimereportDAO {
         if (end == null) {
             allTimereports = timereportRepository.findAll(
                 where(matchesEmployeecontractId(contractId))
-                    .and(reportedAfter(begin))
+                    .and(reportedNotBefore(begin))
                     .and(matchesEmployeecontractId(contractId))
                     .and(matchesSuborderId(suborderId))
                     .and(orderedByCustomerorder())
@@ -447,7 +447,7 @@ public class TimereportDAO {
         if (end == null) {
             return timereportRepository.findAll(
                 where(matchesEmployeeorderId(employeeOrderId))
-                    .and(reportedNotAfter(begin))
+                    .and(reportedBefore(begin))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())
             );
@@ -465,7 +465,7 @@ public class TimereportDAO {
         if (end == null) {
             return timereportRepository.findAll(
                 where(matchesSuborderId(suborderId))
-                    .and(reportedNotAfter(begin))
+                    .and(reportedBefore(begin))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())
             );
@@ -483,7 +483,7 @@ public class TimereportDAO {
         if (end == null) {
             return timereportRepository.findAll(
                 where(matchesCustomerorderId(customerOrderId))
-                    .and(reportedNotAfter(begin))
+                    .and(reportedBefore(begin))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())
             );
@@ -501,7 +501,7 @@ public class TimereportDAO {
         if (end == null) {
             return timereportRepository.findAll(
                 where(matchesEmployeecontractId(employeeContractId))
-                    .and(reportedNotAfter(begin))
+                    .and(reportedBefore(begin))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())
             );
