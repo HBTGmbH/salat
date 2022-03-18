@@ -343,10 +343,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 );
 
                 request.getSession().setAttribute("suborderFilerId", continueForm.getSuborderId());
+                List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
 
-                var reports = timereportDAO.getTimereportsByDateAndEmployeeContractId(form.getEmployeeContractId(), parse(form.getReferenceday()));
-                request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(reports));
-                //request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(existingTimereports, GlobalConstants.MAX_HOURS_PER_DAY));
+                request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
+                request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
                 request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
 
                 //calculate Working Day End

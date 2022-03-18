@@ -180,7 +180,7 @@
 			class="noBborderStyle Matrix" align="right"><b><bean:message
 			key="main.timereport.total.text" />:</b></td>
 		<c:choose>
-			<c:when test="${maxlabortime}">
+			<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
 				<th class="matrix" align="center" style="color:red;"><b><c:out value="${labortime}"></c:out></b></th>
 			</c:when>
 			<c:otherwise>

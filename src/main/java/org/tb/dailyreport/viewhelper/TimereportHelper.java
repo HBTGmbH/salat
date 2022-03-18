@@ -250,7 +250,7 @@ public class TimereportHelper {
             .reduce(Duration.ZERO, Duration::plus);
 
         // check actual is not greater than the max labor time
-        return !Duration.ofHours(maxDailyLaborTimeHours).minus(actual).isNegative();
+        return Duration.ofHours(maxDailyLaborTimeHours).minus(actual).isNegative();
     }
 
     /**
