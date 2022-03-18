@@ -272,17 +272,29 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         //conversion and localization of day values
         Map<String, String> monthMap = new HashMap<>();
         monthMap.put("Jan", "main.timereport.select.month.jan.text");
+        monthMap.put("01", "main.timereport.select.month.jan.text");
         monthMap.put("Feb", "main.timereport.select.month.feb.text");
+        monthMap.put("02", "main.timereport.select.month.feb.text");
         monthMap.put("Mar", "main.timereport.select.month.mar.text");
+        monthMap.put("03", "main.timereport.select.month.mar.text");
         monthMap.put("Apr", "main.timereport.select.month.apr.text");
+        monthMap.put("04", "main.timereport.select.month.apr.text");
         monthMap.put("May", "main.timereport.select.month.may.text");
+        monthMap.put("05", "main.timereport.select.month.may.text");
         monthMap.put("Jun", "main.timereport.select.month.jun.text");
+        monthMap.put("06", "main.timereport.select.month.jun.text");
         monthMap.put("Jul", "main.timereport.select.month.jul.text");
+        monthMap.put("07", "main.timereport.select.month.jul.text");
         monthMap.put("Aug", "main.timereport.select.month.aug.text");
+        monthMap.put("08", "main.timereport.select.month.aug.text");
         monthMap.put("Sep", "main.timereport.select.month.sep.text");
+        monthMap.put("09", "main.timereport.select.month.sep.text");
         monthMap.put("Oct", "main.timereport.select.month.oct.text");
+        monthMap.put("10", "main.timereport.select.month.oct.text");
         monthMap.put("Nov", "main.timereport.select.month.nov.text");
+        monthMap.put("11", "main.timereport.select.month.nov.text");
         monthMap.put("Dec", "main.timereport.select.month.dec.text");
+        monthMap.put("12", "main.timereport.select.month.dec.text");
         session.setAttribute("MonthKey", monthMap.get(reportForm.getMonth()));
         if (reportForm.getLastmonth() != null) {
             session.setAttribute("LastMonthKey", monthMap.get(reportForm.getLastmonth()));
