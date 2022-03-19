@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -198,7 +199,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 eo = new Employeeorder();
             }
 
-            ActionMessages errorMessages = validateFormData(request, eoForm, employeeorderDAO, employeecontractDAO, suborderDAO, eo.getId());
+            ActionMessages errorMessages = validateFormData(request, eoForm, employeeorderDAO, employeecontractDAO, suborderDAO, eo);
             if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
@@ -372,7 +373,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
     private ActionMessages validateFormData(HttpServletRequest request,
                                             AddEmployeeOrderForm eoForm, EmployeeorderDAO employeeorderDAO,
                                             EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
-                                            long eoId) {
+                                            Employeeorder employeeorder) {
 
         ActionMessages errors = getErrors(request);
         if (errors == null) {
@@ -438,40 +439,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
         if (employeeOrders != null && !employeeOrders.isEmpty()) {
             if (validFromDate != null) {
-                for (Employeeorder employeeorder : employeeOrders) {
-                    if (eoId != employeeorder.getId()) {
-                        if (validUntilDate != null
-                                && employeeorder.getUntilDate() != null) {
-                            if (!validFromDate.isBefore(employeeorder.getFromDate())
-                                    && !validFromDate.isAfter(employeeorder.getUntilDate())) {
-                                // validFrom overleaps!
-                                errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
-                                break;
-                            }
-                            if (!validUntilDate.isBefore(employeeorder.getFromDate())
-                                    && !validUntilDate.isAfter(employeeorder.getUntilDate())) {
-                                // validUntil overleaps!
-                                errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
-                                break;
-                            }
-                            if (validFromDate.isBefore(employeeorder.getFromDate())
-                                    && validUntilDate.isAfter(employeeorder.getUntilDate())) {
-                                // new Employee order enclosures an existing one
-                                errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
-                                break;
-                            }
-                        } else if (validUntilDate == null && employeeorder.getUntilDate() != null) {
-                            if (!validFromDate.isAfter(employeeorder.getUntilDate())) {
-                                errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
-                                break;
-                            }
-                        } else if (validUntilDate != null) {
-                            if (!validUntilDate.isBefore(employeeorder.getFromDate())) {
-                                errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
-                                break;
-                            }
-                        } else {
-                            // two employee orders with open end MUST overleap
+                for (Employeeorder compareEmployeeorder : employeeOrders) {
+                    if (!Objects.equals(employeeorder.getId(), compareEmployeeorder.getId())) {
+                        if(employeeorder.overlaps(compareEmployeeorder)) {
                             errors.add("overleap", new ActionMessage("form.employeeorder.error.overleap"));
                             break;
                         }
@@ -500,10 +470,10 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             }
         }
 
-        if (validFromDate != null) {
+        if (!employeeorder.isNew() && validFromDate != null) {
             // check, if dates fit to existing timereports
             List<Timereport> timereportsInvalidForDates = timereportDAO
-                    .getTimereportsByEmployeeorderIdInvalidForDates(validFromDate, validUntilDate, eoId);
+                    .getTimereportsByEmployeeorderIdInvalidForDates(validFromDate, validUntilDate, employeeorder.getId());
             if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
                 request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
                 errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));

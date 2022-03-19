@@ -124,4 +124,25 @@ public class Employeeorder extends AuditedEntity implements Serializable {
         debitMinutes = value;
     }
 
+    public boolean overlaps(Employeeorder other) {
+        if(this.untilDate == null && other.untilDate == null) {
+            return true;
+        }
+        if(this.untilDate == null && other.untilDate != null) {
+            return !other.untilDate.isBefore(fromDate);
+        }
+        if(this.untilDate != null && other.untilDate == null) {
+            return !untilDate.isBefore(other.fromDate);
+        }
+        // untilDate != null && other.untilDate != null
+        if(fromDate.isBefore(other.fromDate)) {
+            return !untilDate.isBefore(other.fromDate);
+        }
+        if(other.fromDate.isBefore(fromDate)) {
+            return !other.untilDate.isBefore(fromDate);
+        }
+        // fromDate == other.fromDate
+        return true;
+    }
+
 }
