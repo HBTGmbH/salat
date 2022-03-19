@@ -1,9 +1,11 @@
 body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	background-color: #f1f7ff;
-	background-image: url("/images/poller.jpg");
+	/*
+  background-image: url("/images/poller.jpg");
 	background-repeat: no-repeat;
 	background-position: center center;
 	background-attachment: fixed;
+	 */
 	font-family: verdana, arial, sans-serif;
 	font-size: 10pt;
 	color: black;
@@ -19,8 +21,6 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	border-collapse: collapse;
 	border-spacing: 0px;
 }
-
-
 
 .info {
 	border: 0px;
