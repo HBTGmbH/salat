@@ -17,7 +17,7 @@
 		<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
 	</head>
 	<body>
-		<form onsubmit="javascript:window.print();return false;">
+		<form onsubmit="javascript:window.print();return false;" class="hiddencontent">
 			<div align="right">
 				<input class="hiddencontent" type="submit" value="Drucken">
 			</div>
@@ -76,18 +76,6 @@
 						</td>
 					</c:otherwise>
 				</c:choose>
-				<%--
-				<c:if test="${invoiceview eq 'month'}">
-					<td align="left" class="matrix" style="border: 0px;">
-						<bean:message key="${dateMonth}" />&nbsp;<c:out value="${dateYear}" />
-					</td>
-				</c:if>
-				<c:if test="${invoiceview eq 'custom'}">
-					<td align="left" class="matrix" style="border: 0px;">
-						<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
-					</td>
-				</c:if>
-				--%>
 			</tr>
 		</table>
 		<br />
@@ -133,11 +121,11 @@
 						<c:if test="${suborderviewhelper.visible}">
 							<tr class="matrix" style="background-color:c1c1c1;">
 								<!-- Subordersign and Customersign -->
-								<td class="matrix">
+								<td class="matrix" style="white-space: nowrap">
 									<c:out value="${suborderviewhelper.sign}" />
 								</td>
 								<c:if test="${customeridbox eq 'true'}">
-									<td class="matrix">
+									<td class="matrix" style="white-space: nowrap">
 										<c:out value="${suborderviewhelper.suborder_customer}" />
 									</td>
 								</c:if>
@@ -162,12 +150,12 @@
 									</td>
 								</c:if>
 								<c:if test="${targethoursbox eq 'true'}">
-									<td class="matrix" style="text-align: right;">
+									<td class="matrix" style="text-align: right; white-space: nowrap">
 										<c:out value="${suborderviewhelper.debithoursString}" />
 									</td>
 								</c:if>
 								<c:if test="${actualhoursbox eq 'true'}">
-									<td class="matrix" style="text-align: right;">
+									<td class="matrix" style="text-align: right; white-space: nowrap">
 										<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}">
 											<c:out value="${suborderviewhelper.actualhoursPrint}" />
 										</c:if>
@@ -193,11 +181,11 @@
 													&nbsp;
 												</td>
 											</c:if>
-											<td class="matrix">
+											<td class="matrix" style="white-space: nowrap">
 												<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}"/>
 											</td>
 											<c:if test="${employeesignbox eq 'true' && timereportsbox eq 'true'}">
-												<td class="matrix">
+												<td class="matrix" style="white-space: nowrap">
 													<c:out value="${timereportviewhelper.employeecontract.employee.sign}" />
 												</td>
 											</c:if>
@@ -217,7 +205,7 @@
 												</td>
 											</c:if>
 											<c:if test="${actualhoursbox eq 'true'}">
-												<td class="matrix" style="text-align: right">
+												<td class="matrix" style="text-align: right; white-space: nowrap">
 													<c:out value="${timereportviewhelper.durationString}"/>
 												</td>
 											</c:if>
@@ -261,7 +249,7 @@
 								<b><bean:message key="main.invoice.overall.text" />:</b>
 							</td>
 						</c:if>
-						<th class="matrix" style="text-align: right;">
+						<th class="matrix" style="text-align: right; white-space: nowrap">
 							<c:out value="${printactualhourssum}" />
 						</th>
 					</tr>
