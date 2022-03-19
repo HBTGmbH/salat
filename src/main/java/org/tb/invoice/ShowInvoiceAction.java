@@ -7,7 +7,6 @@ import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
-import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -32,15 +31,14 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.action.DailyReportAction;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.domain.comparator.SubOrderComparator;
 import org.tb.order.domain.Suborder;
+import org.tb.order.domain.comparator.SubOrderComparator;
+import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
 @Component
@@ -80,7 +78,6 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             List<InvoiceSuborderHelper> invoiceSuborderViewHelperList = new LinkedList<>();
             List<Suborder> suborderList;
             Customerorder customerOrder;
-            List<Suborder> suborderListTemp = new LinkedList<>();
             LocalDate dateFirst;
             LocalDate dateLast;
             if (!showInvoiceForm.getOrder().equals("CHOOSE ORDER")) {
@@ -140,31 +137,41 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 } else {
                     throw new RuntimeException("no view type selected");
                 }
+
+                List<Suborder> suborderListTemp = new LinkedList<>();
                 // include suborders according to selection (nicht fakturierbar oder Festpreis mit einbeziehen oder nicht) for calculating targethoursum
                 if (showInvoiceForm.isInvoicebox() && showInvoiceForm.isFixedpricebox()) {
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderList, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
+                    suborderListTemp.addAll(suborderList);
                 } else if (showInvoiceForm.isFixedpricebox()) {
                     for (Suborder suborder : suborderList) {
                         if (suborder.getInvoice() == GlobalConstants.SUBORDER_INVOICE_YES || suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 } else if (showInvoiceForm.isInvoicebox()) {
                     for (Suborder suborder : suborderList) {
                         if (!suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
                 } else {
                     for (Suborder suborder : suborderList) {
                         if (suborder.getInvoice() == GlobalConstants.SUBORDER_INVOICE_YES && !suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
-                    request.getSession().setAttribute("targethourssum", fillViewHelper(suborderListTemp, invoiceSuborderViewHelperList, dateFirst, dateLast, showInvoiceForm));
+
                 }
+                var totaldurationsum = fillViewHelper(
+                    suborderListTemp,
+                    invoiceSuborderViewHelperList,
+                    dateFirst,
+                    dateLast,
+                    showInvoiceForm
+                );
+                request.getSession().setAttribute("totaldurationsum", DurationUtils.format(totaldurationsum));
+                request.getSession().setAttribute("totalhourssum", decimalFormatMinutes(totaldurationsum.toMinutes()));
+
                 request.getSession().setAttribute("viewhelpers", invoiceSuborderViewHelperList);
                 request.getSession().setAttribute("customername", customerOrder.getCustomer().getName());
                 request.getSession().setAttribute("customeraddress", customerOrder.getCustomer().getAddress());
@@ -340,7 +347,6 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         } else if (request.getParameter("task") == null) {
             // call on invoiceView without a parameter
             // no special task - prepare everything to show invoice
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
             EmployeeViewHelper eh = new EmployeeViewHelper();
             Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
             if (ec == null) {
@@ -390,7 +396,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         return mapping.findForward("success");
     }
 
-    private String fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderHelper> invoiceSuborderViewHelperList, LocalDate dateFirst, LocalDate dateLast,
+    private Duration fillViewHelper(List<Suborder> suborderList, List<InvoiceSuborderHelper> invoiceSuborderViewHelperList, LocalDate dateFirst, LocalDate dateLast,
                                   ShowInvoiceForm invoiceForm) {
         List<String> suborderIdList = new ArrayList<>(suborderList.size());
         List<String> timereportIdList = new ArrayList<>();
@@ -421,7 +427,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             totalActualminutes += invoiceSuborderViewHelper.getTotalActualminutes();
         }
 
-        return timeFormatMinutes(totalActualminutes) + " (" + decimalFormatMinutes(totalActualminutes) + ")";
+        return Duration.ofMinutes(totalActualminutes);
     }
 
 }

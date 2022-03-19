@@ -37,6 +37,8 @@ import org.tb.order.persistence.SuborderDAO;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Suborder extends AuditedEntity implements Serializable {
 
+    public static enum VisitorDirection { PARENT, SUBORDERS }
+
     private static final long serialVersionUID = 1L;
 
     @ManyToOne
@@ -332,9 +334,18 @@ public class Suborder extends AuditedEntity implements Serializable {
     }
 
     public void acceptVisitor(SuborderVisitor visitor) {
+        acceptVisitor(visitor, VisitorDirection.SUBORDERS);
+    }
+
+    public void acceptVisitor(SuborderVisitor visitor, VisitorDirection direction) {
+        if(direction == VisitorDirection.PARENT && parentorder != null) {
+            parentorder.acceptVisitor(visitor, direction);
+        }
         visitor.visitSuborder(this);
-        for (Suborder suborder : suborders) {
-            suborder.acceptVisitor(visitor);
+        if(direction == VisitorDirection.SUBORDERS && suborders != null) {
+            for (Suborder suborder : suborders) {
+                suborder.acceptVisitor(visitor, direction);
+            }
         }
     }
 

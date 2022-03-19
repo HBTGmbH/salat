@@ -58,12 +58,7 @@
 		</span>
 		<br>
 		<html:form action="/ShowInvoice?task=generateMaximumView">
-			<table class="center backgroundcolor">
-				<tr>
-					<td colspan="2" align="left" class="noBborderStyle">
-						<hr/>
-					</td>
-				</tr>
+			<table class="center backgroundcolor" style="float: left; margin-right: 20px">
 				<!-- dataset options title -->
 				<tr>
 					<td align="left" class="noBborderStyle">
@@ -341,12 +336,6 @@
 								onchange="setUpdateInvoiceAction(this.form)" />
 					</td>
 				</tr>
-				
-				<tr>
-					<td colspan="2" align="left" class="noBborderStyle">
-						<hr>
-					</td>
-				</tr>
 				<tr>
 					<td class="noBborderStyle" align="left">
 						<html:submit styleId="button"
@@ -358,11 +347,8 @@
 						&nbsp;
 					</td>
 				</tr>
-				<tr>
-					<td colspan="2" align="left" class="noBborderStyle">
-						<hr>
-					</td>
-				</tr>
+			</table>
+			<table class="center backgroundcolor">
 				<!-- show/hide options title -->
 				<tr>
 					<td align="left" class="noBborderStyle">
@@ -385,8 +371,8 @@
 					</td>
 					<td align="left" class="noBborderStyle">
 						<html:select property="layerlimit"
-							value="${layerlimit}"
-							onchange="setUpdateInvoiceAction(this.form)">
+									 value="${layerlimit}"
+									 onchange="setUpdateInvoiceAction(this.form)">
 							<html:option value="-1">
 								<bean:message key="main.invoice.layerlimit.nolimit.text" />
 							</html:option>
@@ -418,7 +404,7 @@
 					</td>
 					<td align="left" class="noBborderStyle">
 						<html:checkbox property="timereportsbox"
-							onchange="setUpdateInvoiceAction(this.form)" />
+									   onchange="setUpdateInvoiceAction(this.form)" />
 					</td>
 				</tr>
 				<c:if test="${showInvoiceForm.timereportsbox}">
@@ -430,7 +416,7 @@
 						</td>
 						<td align="left" class="noBborderStyle">
 							<html:checkbox property="timereportdescriptionbox"
-								onchange="setUpdateInvoiceAction(this.form)" />
+										   onchange="setUpdateInvoiceAction(this.form)" />
 						</td>
 					</tr>
 
@@ -442,7 +428,7 @@
 						</td>
 						<td align="left" class="noBborderStyle">
 							<html:checkbox property="employeesignbox"
-								onchange="setUpdateInvoiceAction(this.form)" />
+										   onchange="setUpdateInvoiceAction(this.form)" />
 						</td>
 					</tr>
 				</c:if>
@@ -453,7 +439,7 @@
 					</td>
 					<td align="left" class="noBborderStyle">
 						<html:checkbox property="customeridbox"
-							onchange="setUpdateInvoiceAction(this.form)" />
+									   onchange="setUpdateInvoiceAction(this.form)" />
 					</td>
 				</tr>
 
@@ -464,7 +450,7 @@
 					</td>
 					<td align="left" class="noBborderStyle">
 						<html:checkbox property="targethoursbox"
-							onchange="setUpdateInvoiceAction(this.form)" />
+									   onchange="setUpdateInvoiceAction(this.form)" />
 					</td>
 				</tr>
 
@@ -479,11 +465,6 @@
 					</td>
 				</tr>
 				<tr>
-					<td colspan="2" align="left" class="noBborderStyle">
-						<hr>
-					</td>
-				</tr>
-				<tr>
 					<td align="left" class="noBborderStyle">
 						&nbsp;
 					</td>
@@ -492,22 +473,21 @@
 					</td>
 				</tr>
 				<!-- select value added tax -->
-				<%-- 
-				<tr>
-					<td align="left" class="noBborderStyle"><b><bean:message
-						key="main.invoice.mwst.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><html:text
-						property="mwst" value="${optionmwst}" size="2" maxlength="2"
-						onchange="setUpdateInvoiceAction(this.form)" /></td>
-				</tr>
-				 --%>
-				 
+					<%--
+                    <tr>
+                        <td align="left" class="noBborderStyle"><b><bean:message
+                            key="main.invoice.mwst.text" />:</b></td>
+                        <td align="left" class="noBborderStyle"><html:text
+                            property="mwst" value="${optionmwst}" size="2" maxlength="2"
+                            onchange="setUpdateInvoiceAction(this.form)" /></td>
+                    </tr>
+                     --%>
+
 			</table>
 		</html:form>
-
-		<html:form target="_blank" action="/ShowInvoice?task=print">
-			<table>
-				<c:if test="${! empty viewhelpers}">
+		<c:if test="${! empty viewhelpers}">
+			<html:form target="_blank" action="/ShowInvoice?task=print" style="clear: left">
+				<table>
 					<tr>
 						<td class="noBborderStyle" align="left">
 							<i>Hinweis: Bearbeiten der Anzeigeoptionen setzt die Änderung der Adresse zurück</i>
@@ -527,7 +507,7 @@
 					<tr>
 						<td class="noBborderStyle" align="left">
 							<html:textarea style="width:100%" property="customeraddress"
-								value="${customeraddress}" />
+										   rows="4" value="${customeraddress}" />
 						</td>
 					</tr>
 					<tr>
@@ -552,7 +532,8 @@
 						</td>
 						<td class="noBborderStyle"></td>
 					</tr>
-					<!-- 			<tr><td align="left" class="noBborderStyle"><html:text size="30" property="titleinvoiceattachment" /></td></tr> -->
+				</table>
+				<table>
 					<tr>
 						<td class="noBborderStyle">
 							&nbsp;
@@ -563,14 +544,9 @@
 							<bean:message key="main.invoice.title.print.text" />
 						</th>
 						<th>
-							<html:text property="titlesubordertext" />
+							<bean:message key="main.invoice.title.suborder.text" />
+							<html:hidden property="titlesubordertext" />
 						</th>
-						<!-- Subordersign and Customersign -->
-						<c:if test="${showInvoiceForm.customeridbox}">
-							<th>
-								<html:text property="titlecustomersigntext" />
-							</th>
-						</c:if>
 						<c:if test="${showInvoiceForm.timereportsbox}">
 							<th>
 								<html:text property="titledatetext" />
@@ -582,19 +558,19 @@
 								<html:text property="titleemployeesigntext" />
 							</th>
 						</c:if>
-						<th width="400px">
+						<th>
 							<html:text property="titledescriptiontext" />
 						</th>
 						<c:if test="${showInvoiceForm.targethoursbox}">
-							<th width="22px">
+							<th>
 								<html:text property="titletargethourstext" />
 							</th>
 						</c:if>
 						<c:if test="${showInvoiceForm.actualhoursbox}">
-							<th width="22px">
+							<th>
 								<html:text property="titleactualdurationtext" />
 							</th>
-							<th width="22px">
+							<th>
 								<html:text property="titleactualhourstext" />
 							</th>
 						</c:if>
@@ -608,14 +584,8 @@
 							</td>
 							<!-- Subordersign -->
 							<td>
-								<c:out value="${suborderviewhelper.sign}"/>
+								<c:out value="${suborderviewhelper.getCompleteOrderSign()}"/>
 							</td>
-							<!-- Employeesign -->
-							<c:if test="${showInvoiceForm.customeridbox}">
-								<td>
-									<c:out value="${suborderviewhelper.suborder_customer}" />
-								</td>
-							</c:if>
 							<!-- Empty cell for timreport dates -->
 							<c:if test="${showInvoiceForm.timereportsbox}">
 								<td></td>
@@ -626,16 +596,17 @@
 								<td></td>
 							</c:if>
 							<!-- Long or short suborderdescription -->
-							<c:if test="${showInvoiceForm.suborderdescription eq 'longdescription'}">
-								<td>
-									<c:out value="${suborderviewhelper.description}"></c:out>
-								</td>
-							</c:if>
-							<c:if test="${showInvoiceForm.suborderdescription eq 'shortdescription'}">
-								<td>
-									<c:out value="${suborderviewhelper.shortdescription}"></c:out>
-								</td>
-							</c:if>
+							<td style="white-space: nowrap">
+								<c:if test="${showInvoiceForm.suborderdescription eq 'longdescription'}">
+									<c:out value="${suborderviewhelper.getCompleteOrderDescription(false)}"></c:out>
+								</c:if>
+								<c:if test="${showInvoiceForm.suborderdescription eq 'shortdescription'}">
+									<c:out value="${suborderviewhelper.getCompleteOrderDescription(true)}"></c:out>
+								</c:if>
+								<c:if test="${showInvoiceForm.customeridbox and not empty suborderviewhelper.suborder_customer}">
+									/ <c:out value="${suborderviewhelper.suborder_customer}" />
+								</c:if>
+							</td>
 							<!-- Show targethours if active-->
 							<c:if test="${showInvoiceForm.targethoursbox}">
 								<td style="text-align: right;">
@@ -662,30 +633,20 @@
 								<tr>
 									<!-- Empty cell for suborderprintcheckbox -->
 									<td class="noBborderStyle"></td>
-									<!-- Checkbox and empty cell if employeesign is active-->
-									<c:if test="${showInvoiceForm.customeridbox}">
-										<td class="noBborderStyle"></td>
-										<td>
-											<html:multibox property="timereportIdArray"
-												value="${timereportviewhelper.id}" />
-										</td>
-									</c:if>
-									<c:if test="${not showInvoiceForm.customeridbox}">
-										<td>
-											<html:multibox property="timereportIdArray"
-												value="${timereportviewhelper.id}" />
-										</td>
-									</c:if>
+									<td>
+										<html:multibox property="timereportIdArray"
+											value="${timereportviewhelper.id}" />
+									</td>
 									<!-- timereportdate -->
 									<td>
-										<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}"/>
+										<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}" pattern="dd.MM.yyyy" />
 									</td>
 
 									<c:if
 										test="${showInvoiceForm.employeesignbox && showInvoiceForm.timereportsbox}">
 										<td>
 											<c:out
-												value="${timereportviewhelper.employeecontract.employee.sign}"></c:out>
+												value="${timereportviewhelper.employeecontract.employee.name}"></c:out>
 										</td>
 									</c:if>
 									<c:if test="${showInvoiceForm.timereportdescriptionbox}">
@@ -719,11 +680,6 @@
 							<td class="noBborderStyle">
 								&nbsp;
 							</td>
-							<c:if test="${showInvoiceForm.customeridbox}">
-								<td class="noBborderStyle">
-									&nbsp;
-								</td>
-							</c:if>
 							<c:if test="${showInvoiceForm.timereportsbox}">
 								<td class="noBborderStyle">
 									&nbsp;
@@ -739,16 +695,18 @@
 								<td class="noBborderStyle"></td>
 								<td class="noBborderStyle" style="text-align: right;">
 									<bean:message key="main.invoice.overall.text" />
-									:
 								</td>
 							</c:if>
 							<c:if test="${not showInvoiceForm.targethoursbox}">
 								<td class="noBborderStyle" style="text-align:right;">
-									<b><bean:message key="main.invoice.overall.text" />:</b>
+									<b><bean:message key="main.invoice.overall.text" /></b>
 								</td>
 							</c:if>
 							<th style="text-align: right;">
-								<c:out value="${targethourssum}" />
+								<c:out value="${totaldurationsum}" />
+							</th>
+							<th style="text-align: right;">
+								<c:out value="${totalhourssum}" />
 							</th>
 						</tr>
 					</c:if>
@@ -761,8 +719,8 @@
 						</td>
 						<td class="noBborderStyle"></td>
 					</tr>
-				</c:if>
-			</table>
-		</html:form>
+				</table>
+			</html:form>
+		</c:if>
 	</body>
 </html>

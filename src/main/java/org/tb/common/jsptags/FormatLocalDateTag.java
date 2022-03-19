@@ -12,13 +12,18 @@ import org.tb.common.util.DateUtils;
 public class FormatLocalDateTag extends TagSupport {
 
   private LocalDate value;
+  private String pattern;
 
   @Override
   public int doStartTag() throws JspException {
     if(value != null) {
       JspWriter out = pageContext.getOut();
       try {
-        out.print(DateUtils.format(value));
+        if(pattern != null) {
+          out.print(DateUtils.format(value, pattern));
+        } else {
+          out.print(DateUtils.format(value));
+        }
         return super.doStartTag();
       } catch (IOException e) {
         throw new JspException(e);
