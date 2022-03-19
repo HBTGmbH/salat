@@ -379,8 +379,11 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     continueForm.setSelectedBreakHour(0);
                     continueForm.setSelectedBreakMinute(0);
                 }
+
                 // refresh overtime and vacation
-                // TODO really needed? refreshVacationAndOvertime(request, employeecontract);
+                var employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
+                refreshVacationAndOvertime(request, employeecontract);
+
                 return mapping.findForward("showDaily");
 
             } else { // Continue = true
