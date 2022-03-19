@@ -16,7 +16,7 @@
 			<c:out value="${order}" /> /
 			<c:choose>
 				<c:when test="${invoiceview eq 'month'}">
-					<bean:message key="${dateMonth}" />&nbsp;<c:out value="${dateYear}" />
+					<bean:message key="${dateMonth}" /> <c:out value="${dateYear}" />
 				</c:when>
 				<c:when test="${invoiceview eq 'custom'}">
 					<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
@@ -71,7 +71,7 @@
 					<c:choose>
 						<c:when test="${invoiceview eq 'month'}">
 							<td class="invoice_time_reference">
-								<bean:message key="${dateMonth}" />&nbsp;<c:out value="${dateYear}" />
+								<bean:message key="${dateMonth}" /> <c:out value="${dateYear}" />
 							</td>
 						</c:when>
 						<c:when test="${invoiceview eq 'custom'}">
@@ -175,15 +175,7 @@
 										<c:out value="${suborderviewhelper.actualDurationPrint}" />
 									</td>
 									<td class="invoice_suborder_row right">
-										<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}">
-											<c:out value="${suborderviewhelper.actualhoursPrint}" />
-										</c:if>
-										<c:if test="${suborderviewhelper.layer eq layerlimit && !(layerlimit eq -1)}">
-											<c:if test="${!(suborderviewhelper.duration eq '00:00') && !(suborderviewhelper.duration eq suborderviewhelper.actualhoursPrint)}">
-												<c:out value="*" />
-											</c:if>
-											<c:out value="${suborderviewhelper.duration}" />
-										</c:if>
+										<c:out value="${suborderviewhelper.actualHoursPrint}" />
 									</td>
 								</c:if>
 							</tr>
@@ -220,7 +212,7 @@
 											</c:if>
 											<c:if test="${targethoursbox eq 'true'}">
 												<td class="invoice_booking_row right">
-													&nbsp;
+
 												</td>
 											</c:if>
 											<c:if test="${actualhoursbox eq 'true'}">
@@ -228,7 +220,7 @@
 													<c:out value="${timereportviewhelper.durationString}"/>
 												</td>
 												<td class="invoice_booking_row right">
-
+													<c:out value="${timereportviewhelper.hoursString}"/>
 												</td>
 											</c:if>
 										</tr>

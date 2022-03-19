@@ -41,27 +41,32 @@ public class ShowInvoiceForm extends ActionForm {
     private String titleemployeesigntext;
     private String titledescriptiontext;
     private String titletargethourstext;
+    private String titleactualdurationtext;
     private String titleactualhourstext;
     private String titleinvoiceattachment;
     private String customername;
     private String customeraddress;
     private Boolean showOnlyValid;
 
-    @Override
-    public void reset(ActionMapping mapping, HttpServletRequest request) {
+    public void init() {
         timereportsbox = true;
-        customeridbox = false;
-        targethoursbox = false;
         timereportdescriptionbox = true;
         employeesignbox = true;
-        invoicebox = false;
-        fixedpricebox = false;
         actualhoursbox = true;
         showOnlyValid = true;
     }
 
-    public Boolean getShowOnlyValid() {
-        return showOnlyValid != null && showOnlyValid;
+    @Override
+    public void reset(ActionMapping mapping, HttpServletRequest request) {
+        timereportsbox = false;
+        customeridbox = false;
+        targethoursbox = false;
+        timereportdescriptionbox = false;
+        employeesignbox = false;
+        invoicebox = false;
+        fixedpricebox = false;
+        actualhoursbox = true; // workaround to stay always true - not a real oprion anymore
+        showOnlyValid = false;
     }
 
 }

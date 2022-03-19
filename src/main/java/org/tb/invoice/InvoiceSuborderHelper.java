@@ -1,7 +1,6 @@
 package org.tb.invoice;
 
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
-import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -67,10 +66,14 @@ public class InvoiceSuborderHelper extends Suborder {
     }
 
     public String getActualDurationPrint() {
-        return getActualDuration(true);
+        return getActualDurationHelper(true);
     }
 
-    public String getActualDuration(boolean print) {
+    public String getActualDuration() {
+        return getActualDurationHelper(false);
+    }
+
+    public String getActualDurationHelper(boolean print) {
         long totalActualminutesHelper = getTotalActualminutesHelper(print);
         return DurationUtils.format(Duration.ofMinutes(totalActualminutesHelper));
     }
@@ -83,11 +86,11 @@ public class InvoiceSuborderHelper extends Suborder {
         return visitor.getTotalMinutes();
     }
 
-    public String getActualhours() {
+    public String getActualHours() {
         return getActualhoursHelper(false);
     }
 
-    public String getActualhoursPrint() {
+    public String getActualHoursPrint() {
         return getActualhoursHelper(true);
     }
 

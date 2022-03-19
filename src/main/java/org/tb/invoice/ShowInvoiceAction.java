@@ -174,6 +174,12 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 request.getSession().setAttribute("dateFirst", format(dateFirst));
                 request.getSession().setAttribute("dateLast", format(dateLast));
                 request.getSession().setAttribute("currentOrderObject", customerOrder);
+                request.getSession().setAttribute("customeridbox", showInvoiceForm.isCustomeridbox());
+                request.getSession().setAttribute("targethoursbox", showInvoiceForm.isTargethoursbox());
+                request.getSession().setAttribute("actualhoursbox", showInvoiceForm.isActualhoursbox());
+                request.getSession().setAttribute("employeesignbox", showInvoiceForm.isEmployeesignbox());
+                request.getSession().setAttribute("timereportdescriptionbox", showInvoiceForm.isTimereportdescriptionbox());
+                request.getSession().setAttribute("timereportsbox", showInvoiceForm.isTimereportsbox());
             } else {
                 request.setAttribute("errorMessage", "No customer order selected. Please choose.");
             }
@@ -291,6 +297,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("actualminutessum", actualMinutesSum);
             request.getSession().setAttribute("printactualhourssum", DurationUtils.decimalFormat(actualMinutesSum));
             request.getSession().setAttribute("titleactualhourstext", showInvoiceForm.getTitleactualhourstext());
+            request.getSession().setAttribute("titleactualdurationtext", showInvoiceForm.getTitleactualdurationtext());
             request.getSession().setAttribute("titlecustomersigntext", showInvoiceForm.getTitlecustomersigntext());
             request.getSession().setAttribute("titleinvoiceattachment", showInvoiceForm.getTitleinvoiceattachment());
             request.getSession().setAttribute("titledatetext", showInvoiceForm.getTitledatetext());
@@ -362,6 +369,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             }
             MessageResources messageResources = getResources(request);
             showInvoiceForm.setTitleactualhourstext(messageResources.getMessage("main.invoice.title.actualhours.text"));
+            showInvoiceForm.setTitleactualdurationtext(messageResources.getMessage("main.invoice.title.actualduration.text"));
             showInvoiceForm.setTitlecustomersigntext(messageResources.getMessage("main.invoice.title.customersign.text"));
             showInvoiceForm.setTitledatetext(messageResources.getMessage("main.invoice.title.date.text"));
             showInvoiceForm.setTitledescriptiontext(messageResources.getMessage("main.invoice.title.description.text"));
@@ -377,6 +385,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("lastMonth", showInvoiceForm.getUntilMonth());
             request.getSession().setAttribute("lastYear", showInvoiceForm.getUntilYear());
             request.getSession().removeAttribute("viewhelpers");
+            showInvoiceForm.init();
         }
         return mapping.findForward("success");
     }

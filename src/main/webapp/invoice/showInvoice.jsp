@@ -421,7 +421,7 @@
 							onchange="setUpdateInvoiceAction(this.form)" />
 					</td>
 				</tr>
-				<c:if test="${timereportsubboxes}">
+				<c:if test="${showInvoiceForm.timereportsbox}">
 					<!-- show timereport description -->
 					<tr>
 						<td align="left" class="noBborderStyle">
@@ -474,8 +474,8 @@
 						<b><bean:message key="main.invoice.actualhours.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:checkbox property="actualhoursbox"
-							onchange="setUpdateInvoiceAction(this.form)" />
+						<input type="checkbox" checked="checked" disabled="disabled" />
+						<html:hidden property="actualhoursbox" />
 					</td>
 				</tr>
 				<tr>
@@ -566,18 +566,18 @@
 							<html:text property="titlesubordertext" />
 						</th>
 						<!-- Subordersign and Customersign -->
-						<c:if test="${param.customeridbox eq 'on'}">
+						<c:if test="${showInvoiceForm.customeridbox}">
 							<th>
 								<html:text property="titlecustomersigntext" />
 							</th>
 						</c:if>
-						<c:if test="${param.timereportsbox eq 'on'}">
+						<c:if test="${showInvoiceForm.timereportsbox}">
 							<th>
 								<html:text property="titledatetext" />
 							</th>
 						</c:if>
 						<c:if
-							test="${param.employeesignbox eq 'on' && param.timereportsbox eq 'on'}">
+							test="${showInvoiceForm.employeesignbox && showInvoiceForm.timereportsbox}">
 							<th>
 								<html:text property="titleemployeesigntext" />
 							</th>
@@ -585,12 +585,15 @@
 						<th width="400px">
 							<html:text property="titledescriptiontext" />
 						</th>
-						<c:if test="${param.targethoursbox eq 'on'}">
+						<c:if test="${showInvoiceForm.targethoursbox}">
 							<th width="22px">
 								<html:text property="titletargethourstext" />
 							</th>
 						</c:if>
-						<c:if test="${param.actualhoursbox eq 'on'}">
+						<c:if test="${showInvoiceForm.actualhoursbox}">
+							<th width="22px">
+								<html:text property="titleactualdurationtext" />
+							</th>
 							<th width="22px">
 								<html:text property="titleactualhourstext" />
 							</th>
@@ -608,42 +611,44 @@
 								<c:out value="${suborderviewhelper.sign}"/>
 							</td>
 							<!-- Employeesign -->
-							<c:if test="${param.customeridbox eq 'on'}">
+							<c:if test="${showInvoiceForm.customeridbox}">
 								<td>
 									<c:out value="${suborderviewhelper.suborder_customer}" />
 								</td>
 							</c:if>
 							<!-- Empty cell for timreport dates -->
-							<c:if test="${param.timereportsbox eq 'on'}">
+							<c:if test="${showInvoiceForm.timereportsbox}">
 								<td></td>
 							</c:if>
 							<!-- Empty cell if timereports createdby is active -->
 							<c:if
-								test="${param.employeesignbox eq 'on' && param.timereportsbox eq 'on'}">
+								test="${showInvoiceForm.employeesignbox && showInvoiceForm.timereportsbox}">
 								<td></td>
 							</c:if>
 							<!-- Long or short suborderdescription -->
-							<c:if test="${param.suborderdescription eq 'longdescription'}">
+							<c:if test="${showInvoiceForm.suborderdescription eq 'longdescription'}">
 								<td>
 									<c:out value="${suborderviewhelper.description}"></c:out>
 								</td>
 							</c:if>
-							<c:if test="${param.suborderdescription eq 'shortdescription'}">
+							<c:if test="${showInvoiceForm.suborderdescription eq 'shortdescription'}">
 								<td>
 									<c:out value="${suborderviewhelper.shortdescription}"></c:out>
 								</td>
 							</c:if>
 							<!-- Show targethours if active-->
-							<c:if test="${param.targethoursbox eq 'on'}">
+							<c:if test="${showInvoiceForm.targethoursbox}">
 								<td style="text-align: right;">
 									<c:out value="${suborderviewhelper.debithoursString}"></c:out>
 								</td>
 							</c:if>
-							<!-- targethours -->
-							<c:if test="${param.actualhoursbox eq 'on'}">
+							<!-- actualhoursbox -->
+							<c:if test="${showInvoiceForm.actualhoursbox}">
 								<td style="text-align: right;">
-									<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}"><c:out value="${suborderviewhelper.actualhours}"></c:out></c:if>
-									<c:if test="${suborderviewhelper.layer eq layerlimit && !(layerlimit eq -1)}"><c:if test="${!(suborderviewhelper.duration eq '00:00') && !(suborderviewhelper.duration eq suborderviewhelper.actualhours)}">*</c:if> <c:out value="${suborderviewhelper.duration}"></c:out></c:if>
+									<c:out value="${suborderviewhelper.actualDuration}" />
+								</td>
+								<td style="text-align: right;">
+									<c:out value="${suborderviewhelper.actualHours}" />
 								</td>
 							</c:if>
 						</tr>
@@ -651,21 +656,21 @@
 							name="suborderviewhelper"
 							property="invoiceTimereportViewHelperList" />
 						<c:if
-							test="${invoiceTimereportViewHelperListSize>0 && param.timereportsbox eq 'on'}">
+							test="${invoiceTimereportViewHelperListSize>0 && showInvoiceForm.timereportsbox}">
 							<c:forEach var="timereportviewhelper"
 								items="${suborderviewhelper.invoiceTimereportViewHelperList}">
 								<tr>
 									<!-- Empty cell for suborderprintcheckbox -->
 									<td class="noBborderStyle"></td>
 									<!-- Checkbox and empty cell if employeesign is active-->
-									<c:if test="${param.customeridbox eq 'on'}">
+									<c:if test="${showInvoiceForm.customeridbox}">
 										<td class="noBborderStyle"></td>
 										<td>
 											<html:multibox property="timereportIdArray"
 												value="${timereportviewhelper.id}" />
 										</td>
 									</c:if>
-									<c:if test="${empty param.customeridbox}">
+									<c:if test="${not showInvoiceForm.customeridbox}">
 										<td>
 											<html:multibox property="timereportIdArray"
 												value="${timereportviewhelper.id}" />
@@ -677,33 +682,36 @@
 									</td>
 
 									<c:if
-										test="${param.employeesignbox eq 'on' && param.timereportsbox eq 'on'}">
+										test="${showInvoiceForm.employeesignbox && showInvoiceForm.timereportsbox}">
 										<td>
 											<c:out
 												value="${timereportviewhelper.employeecontract.employee.sign}"></c:out>
 										</td>
 									</c:if>
-									<c:if test="${param.timereportdescriptionbox eq 'on'}">
+									<c:if test="${showInvoiceForm.timereportdescriptionbox}">
 										<td>
 											<c:out value="${timereportviewhelper.taskdescription}"></c:out>
 										</td>
 									</c:if>
-									<c:if test="${empty param.timereportdescriptionbox}">
+									<c:if test="${not showInvoiceForm.timereportdescriptionbox}">
 										<td></td>
 									</c:if>
-									<c:if test="${param.targethoursbox eq 'on'}">
+									<c:if test="${showInvoiceForm.targethoursbox}">
 										<td></td>
 									</c:if>
-									<c:if test="${param.actualhoursbox eq 'on'}">
+									<c:if test="${showInvoiceForm.actualhoursbox}">
 										<td style="text-align: right">
 											<c:out value="${timereportviewhelper.durationString}" />
+										</td>
+										<td style="text-align: right">
+											<c:out value="${timereportviewhelper.hoursString}" />
 										</td>
 									</c:if>
 								</tr>
 							</c:forEach>
 						</c:if></c:if>
 					</c:forEach>
-					<c:if test="${param.actualhoursbox eq 'on'}">
+					<c:if test="${showInvoiceForm.actualhoursbox}">
 						<tr>
 							<td class="noBborderStyle">
 								&nbsp;
@@ -711,30 +719,30 @@
 							<td class="noBborderStyle">
 								&nbsp;
 							</td>
-							<c:if test="${param.customeridbox eq 'on'}">
+							<c:if test="${showInvoiceForm.customeridbox}">
 								<td class="noBborderStyle">
 									&nbsp;
 								</td>
 							</c:if>
-							<c:if test="${param.timereportsbox eq 'on'}">
+							<c:if test="${showInvoiceForm.timereportsbox}">
 								<td class="noBborderStyle">
 									&nbsp;
 								</td>
 							</c:if>
 							<c:if
-								test="${param.employeesignbox eq 'on' && param.timereportsbox eq 'on'}">
+								test="${showInvoiceForm.employeesignbox && showInvoiceForm.timereportsbox}">
 								<td class="noBborderStyle">
 									&nbsp;
 								</td>
 							</c:if>
-							<c:if test="${param.targethoursbox eq 'on'}">
+							<c:if test="${showInvoiceForm.targethoursbox}">
 								<td class="noBborderStyle"></td>
 								<td class="noBborderStyle" style="text-align: right;">
 									<bean:message key="main.invoice.overall.text" />
 									:
 								</td>
 							</c:if>
-							<c:if test="${empty param.targethoursbox}">
+							<c:if test="${not showInvoiceForm.targethoursbox}">
 								<td class="noBborderStyle" style="text-align:right;">
 									<b><bean:message key="main.invoice.overall.text" />:</b>
 								</td>

@@ -1,5 +1,6 @@
 package org.tb.invoice;
 
+import static org.tb.common.util.TimeFormatUtils.decimalFormatHoursAndMinutes;
 import static org.tb.common.util.TimeFormatUtils.timeFormatHoursAndMinutes;
 
 import java.time.LocalDateTime;
@@ -50,6 +51,10 @@ public class InvoiceTimereportHelper {
 
     public String getDurationString() {
         return timeFormatHoursAndMinutes(timereport.getDurationhours(), timereport.getDurationminutes());
+    }
+
+    public String getHoursString() {
+        return decimalFormatHoursAndMinutes(timereport.getDurationhours(), timereport.getDurationminutes());
     }
 
     public Integer getDurationhours() {
