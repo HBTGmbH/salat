@@ -125,6 +125,9 @@
 					</c:if>
 					<c:if test="${actualhoursbox eq 'true'}">
 						<th class="invoice_header right">
+							<c:out value="${titleactualdurationtext}" />
+						</th>
+						<th class="invoice_header right">
 							<c:out value="${titleactualhourstext}" />
 						</th>
 					</c:if>
@@ -168,6 +171,9 @@
 									</td>
 								</c:if>
 								<c:if test="${actualhoursbox eq 'true'}">
+									<td class="invoice_suborder_row right">
+										<c:out value="${suborderviewhelper.actualDurationPrint}" />
+									</td>
 									<td class="invoice_suborder_row right">
 										<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}">
 											<c:out value="${suborderviewhelper.actualhoursPrint}" />
@@ -221,6 +227,9 @@
 												<td class="invoice_booking_row right">
 													<c:out value="${timereportviewhelper.durationString}"/>
 												</td>
+												<td class="invoice_booking_row right">
+
+												</td>
 											</c:if>
 										</tr>
 									</c:if>
@@ -262,6 +271,9 @@
 								<b><bean:message key="main.invoice.overall.text" />:</b>
 							</td>
 						</c:if>
+						<td class="invoice_totalsum_row right">
+							<java8:formatDuration value="${actualminutessum}" />
+						</td>
 						<td class="invoice_totalsum_row right">
 							<c:out value="${printactualhourssum}" />
 						</td>

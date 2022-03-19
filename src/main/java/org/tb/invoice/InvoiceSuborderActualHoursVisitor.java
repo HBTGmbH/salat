@@ -16,7 +16,7 @@ public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
     private final LocalDate fromDate;
     private final LocalDate untilDate;
     private final boolean invoicebox;
-    private Long durationMinutes;
+    private Long durationMinutes = 0L;
 
     public void visitSuborder(Suborder suborder) {
         if (invoicebox && GlobalConstants.SUBORDER_INVOICE_YES == suborder.getInvoice()) {

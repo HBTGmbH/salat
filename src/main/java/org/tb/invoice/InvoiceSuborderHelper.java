@@ -66,12 +66,13 @@ public class InvoiceSuborderHelper extends Suborder {
         this.visible = visible;
     }
 
-    public String getDuration() {
-        if (this.visitor == null) {
-            visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
-            acceptVisitor(visitor);
-        }
-        return visitor.getTotalTime();
+    public String getActualDurationPrint() {
+        return getActualDuration(true);
+    }
+
+    public String getActualDuration(boolean print) {
+        long totalActualminutesHelper = getTotalActualminutesHelper(print);
+        return DurationUtils.format(Duration.ofMinutes(totalActualminutesHelper));
     }
 
     public long getDurationInMinutes() {
@@ -92,7 +93,7 @@ public class InvoiceSuborderHelper extends Suborder {
 
     private String getActualhoursHelper(boolean print) {
         long actualminutes = getTotalActualminutesHelper(print);
-        return timeFormatMinutes(actualminutes) + " (" + decimalFormatMinutes(actualminutes) + ")";
+        return decimalFormatMinutes(actualminutes);
     }
 
     public long getTotalActualminutes() {

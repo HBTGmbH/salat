@@ -278,11 +278,7 @@ public class ExcelArchivierer {
                 cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             } else if (invoiceSuborderViewHelper.getLayer() == layerlimit) {
                 cell.setCellValue((double) invoiceSuborderViewHelper.getDurationInMinutes() / 1440);
-                if (!invoiceSuborderViewHelper.getDuration().equals("00:00") && !invoiceSuborderViewHelper.getDuration().equals(invoiceSuborderViewHelper.getActualhoursPrint())) {
-                    cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
-                } else {
-                    cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteItalic")));
-                }
+                cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             }
         }
         return rowIndex;

@@ -289,7 +289,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 }
             }
             request.getSession().setAttribute("actualminutessum", actualMinutesSum);
-            request.getSession().setAttribute("printactualhourssum", DurationUtils.format(actualMinutesSum) + " (" + DurationUtils.decimalFormat(actualMinutesSum) + ")");
+            request.getSession().setAttribute("printactualhourssum", DurationUtils.decimalFormat(actualMinutesSum));
             request.getSession().setAttribute("titleactualhourstext", showInvoiceForm.getTitleactualhourstext());
             request.getSession().setAttribute("titlecustomersigntext", showInvoiceForm.getTitlecustomersigntext());
             request.getSession().setAttribute("titleinvoiceattachment", showInvoiceForm.getTitleinvoiceattachment());
@@ -411,6 +411,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         for (InvoiceSuborderHelper invoiceSuborderViewHelper : invoiceSuborderViewHelperList) {
             totalActualminutes += invoiceSuborderViewHelper.getTotalActualminutes();
         }
+
         return timeFormatMinutes(totalActualminutes) + " (" + decimalFormatMinutes(totalActualminutes) + ")";
     }
 
