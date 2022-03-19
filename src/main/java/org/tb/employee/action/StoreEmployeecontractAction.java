@@ -138,10 +138,11 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             Duration initialOvertime = ecForm.getInitialOvertimeTyped();
             int yearlyvacation = ecForm.getYearlyvacationTyped();
 
+            final Employeecontract employeecontract;
             Long existingEmployeecontractId = (Long) request.getSession().getAttribute("ecId");
             try {
                 if(existingEmployeecontractId != null) {
-                    employeecontractService.updateEmployeecontract(
+                    employeecontract = employeecontractService.updateEmployeecontract(
                         existingEmployeecontractId,
                         validFrom,
                         validUntil,
@@ -153,7 +154,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         yearlyvacation
                     );
                 } else {
-                    employeecontractService.createEmployeecontract(
+                    employeecontract = employeecontractService.createEmployeecontract(
                         ecForm.getEmployee(),
                         validFrom,
                         validUntil,
@@ -182,8 +183,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 return mapping.getInputForward();
             }
 
-            request.getSession().setAttribute("currentEmployee", employeeDAO.getEmployeeById(ecForm.getEmployee()).getName());
-            request.getSession().setAttribute("currentEmployeeId", ecForm.getEmployee());
+            request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
+            request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
 
             List<Employee> employeeOptionList = employeeDAO.getEmployees();
             request.getSession().setAttribute("employees", employeeOptionList);
