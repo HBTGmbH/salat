@@ -48,16 +48,16 @@ public class ShowInvoiceForm extends ActionForm {
     private Boolean showOnlyValid;
 
     @Override
-    public void reset(ActionMapping arg0, HttpServletRequest arg1) {
-        timereportsbox = false;
+    public void reset(ActionMapping mapping, HttpServletRequest request) {
+        timereportsbox = true;
         customeridbox = false;
         targethoursbox = false;
-        timereportdescriptionbox = false;
-        employeesignbox = false;
+        timereportdescriptionbox = true;
+        employeesignbox = true;
         invoicebox = false;
         fixedpricebox = false;
-        actualhoursbox = false;
-        showOnlyValid = false;
+        actualhoursbox = true;
+        showOnlyValid = true;
     }
 
     public Boolean getShowOnlyValid() {

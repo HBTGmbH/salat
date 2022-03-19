@@ -239,6 +239,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("optionsuborderdescription", showInvoiceForm.getSuborderdescription());
             request.getSession().setAttribute("layerlimit", showInvoiceForm.getLayerlimit());
             request.getSession().setAttribute("customername", showInvoiceForm.getCustomername());
+            request.getSession().setAttribute("order", showInvoiceForm.getOrder());
             String customeraddress = showInvoiceForm.getCustomeraddress();
             request.getSession().setAttribute("customeraddress", customeraddress);
             return mapping.findForward("success");
@@ -376,7 +377,6 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("lastMonth", showInvoiceForm.getUntilMonth());
             request.getSession().setAttribute("lastYear", showInvoiceForm.getUntilYear());
             request.getSession().removeAttribute("viewhelpers");
-            showInvoiceForm.setShowOnlyValid(true);
         }
         return mapping.findForward("success");
     }

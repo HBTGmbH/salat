@@ -1,49 +1,98 @@
-.bold {
+@font-face {
+	font-family: "SimplonNorm";
+	font-style: normal;
+	font-weight: 300;
+	src: url("SimplonNorm-Light-WebS.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "SimplonNorm";
+	font-style: normal;
+	font-weight: 400;
+	src: url("SimplonNorm-Regular-WebS.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "SimplonNorm";
+	font-style: normal;
+	font-weight: 700;
+	src: url("SimplonNorm-Bold-WebS.woff2") format("woff2");
+}
+
+.invoice_header {
+	font-family: SimplonNorm;
+	border: none;
+	text-align: left;
 	font-weight: bold;
-}
-tr.primarycolor {
-	background-color: transparent;
-}
-
-tr.secondarycolor {
-	background-color: #c1d5eb;
+	white-space: nowrap;
+	padding: 4px;
 }
 
-.underline {
-	text-decoration: underline;
-}
-table.matrix {
+.invoice_suborder_row {
+	font-family: SimplonNorm;
+	background-color: #c1c1c1;
+	border: 1px solid black;
 	border-collapse: collapse;
-	border-spacing: 0px;
-	empty-cells: show;
-	font-family: verdana, arial, sans-serif;
-	font-size: 8pt;
-	color: black;
+	white-space: nowrap;
+	padding: 4px;
 }
 
-tr.matrix,td.matrix,th.matrix {
-	font-family: verdana, arial, sans-serif;
-	font-size: 8pt;
-	padding-top: 1px;
-	padding-bottom: 1px;
-	padding-left: 1px;
-	padding-right: 1px;
-}
-
-tr.matrix,td.matrix {
-	border: 1px black solid;
-}
-
-th.matrix #borderdouble {
-	border-style: double;
-	border-color: black;
-}
-.borderStyle {
-	border-spacing: 2px;
-	border-collapse: separate;
-}
-.noBborderStyle {
-	border: 0px;
+.invoice_booking_row {
+	font-family: SimplonNorm;
+	border: 1px solid black;
 	border-collapse: collapse;
-	border-spacing: 0px;
+	white-space: nowrap;
+	padding: 4px;
+}
+
+.invoice_totalsum_row {
+	font-family: SimplonNorm;
+	border: none;
+	font-weight: bold;
+	white-space: nowrap;
+	padding: 4px;
+}
+
+.invoice_hint {
+	font-family: SimplonNorm;
+}
+
+.invoice_title {
+	font-family: SimplonNorm;
+	font-weight: bold;
+	border: none;
+	white-space: nowrap;
+}
+
+.invoice_address_line {
+	font-family: SimplonNorm;
+	border: none;
+	white-space: nowrap;
+}
+
+.invoice_time_reference {
+	font-family: SimplonNorm;
+	font-weight: bold;
+	border: none;
+	white-space: nowrap;
+}
+
+.hbt_logo {
+	height: 1.5cm;
+	margin-bottom: 1cm;
+	float: left;
+}
+
+.hbt_claim {
+	height: 0.75cm;
+	float: right;
+	margin-top: 0.75cm;
+}
+
+.right {
+	text-align: right;
+}
+
+.wrap {
+	white-space: unset;
 }

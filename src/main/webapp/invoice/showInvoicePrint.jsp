@@ -11,107 +11,120 @@
 
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title>
-			<bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.invoice.title.text" />
+			<bean:message key="main.general.mainmenu.invoice.title.text" /> /
+			<c:out value="${customername}" /> /
+			<c:out value="${order}" /> /
+			<c:choose>
+				<c:when test="${invoiceview eq 'month'}">
+					<bean:message key="${dateMonth}" />&nbsp;<c:out value="${dateYear}" />
+				</c:when>
+				<c:when test="${invoiceview eq 'custom'}">
+					<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
+				</c:when>
+				<c:when test="${invoiceview eq 'week'}">
+					<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" /> (KW<c:out value="${currentWeek}" />)
+				</c:when>
+			</c:choose>
 		</title>
 		<link rel="stylesheet" type="text/css" href="/style/invoiceprint.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
 	</head>
 	<body>
-		<form onsubmit="javascript:window.print();return false;" class="hiddencontent">
-			<div align="right">
-				<input class="hiddencontent" type="submit" value="Drucken">
+		<div style="width: 95%; margin: 0 auto">
+			<form onsubmit="javascript:window.print();return false;" class="hiddencontent">
+				<div align="right">
+					<input class="hiddencontent" type="submit" value="Drucken">
+				</div>
+				<div class="invoice_hint">
+					<bean:message key="main.invoice.scroll.text" />
+				</div>
+			</form>
+			<div>
+				<img src="/images/HBT_Logo_RGB_positiv.svg" class="hbt_logo" />
+				<img src="/images/HBT_Claim_RGB_positiv.svg" class="hbt_claim" />
 			</div>
-			<table>
+			<table style="clear: both">
 				<tr>
-					<td align="left" class="matrix hiddencontent" style="border: 0px;">
-						<bean:message key="main.invoice.scroll.text" />
+					<td class="invoice_title">
+						<b><c:out value="${titleinvoiceattachment}"/></b>
 					</td>
 				</tr>
+				<tr>
+					<td class="invoice_address_line">
+					</td>
+				</tr>
+				<tr>
+					<td class="invoice_address_line">
+						<c:out value="${customername}" />
+					</td>
+				</tr>
+				<tr>
+					<td class="invoice_address_line">
+						<c:out escapeXml="false" value="${customeraddress}" />
+					</td>
+				</tr>
+				<tr>
+					<td class="invoice_address_line">
+					</td>
+				</tr>
+				<tr>
+					<c:choose>
+						<c:when test="${invoiceview eq 'month'}">
+							<td class="invoice_time_reference">
+								<bean:message key="${dateMonth}" />&nbsp;<c:out value="${dateYear}" />
+							</td>
+						</c:when>
+						<c:when test="${invoiceview eq 'custom'}">
+							<td class="invoice_time_reference">
+								<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
+							</td>
+						</c:when>
+						<c:when test="${invoiceview eq 'week'}">
+							<td class="invoice_time_reference">
+								<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" /> (KW<c:out value="${currentWeek}" />)
+							</td>
+						</c:when>
+						<c:otherwise>
+							<td class="invoice_time_reference">
+								&nbsp;
+							</td>
+						</c:otherwise>
+					</c:choose>
+				</tr>
 			</table>
-		</form>
-		<table>
-			<tr>
-				<td align="left" class="matrix" style="border: 0px;">
-					<b><c:out value="${titleinvoiceattachment}"/></b>
-				</td>
-			</tr>
-			<tr>
-				<td align="left" class="matrix" style="border: 0px;">
-				</td>
-			</tr>
-			<tr>
-				<td align="left" class="matrix" style="border: 0px;">
-					<c:out value="${customername}" />
-				</td>
-			</tr>
-			<tr>
-				<td align="left" class="matrix" style="border: 0px;">
-					<c:out escapeXml="false" value="${customeraddress}" />
-				</td>
-			</tr>
-			<tr>
-				<td align="left" class="matrix" style="border: 0px;">
-				</td>
-			</tr>
-			<tr>
-				<c:choose>
-					<c:when test="${invoiceview eq 'month'}">
-						<td align="left" class="matrix" style="border: 0px;">
-							<bean:message key="${dateMonth}" />&nbsp;<c:out value="${dateYear}" />
-						</td>
-					</c:when>
-					<c:when test="${invoiceview eq 'custom'}">
-						<td align="left" class="matrix" style="border: 0px;">
-							<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
-						</td>
-					</c:when>
-					<c:when test="${invoiceview eq 'week'}">
-						<td align="left" class="matrix" style="border: 0px;">
-							<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" /> (KW<c:out value="${currentWeek}" />)
-						</td>
-					</c:when>
-					<c:otherwise>
-						<td align="left" class="matrix" style="border: 0px;">
-							&nbsp;
-						</td>
-					</c:otherwise>
-				</c:choose>
-			</tr>
-		</table>
-		<br />
-		<table style="border:1px black solid;" class="matrix" width="100%">
-			<c:if test="${! empty viewhelpers}">
-				<tr class="matrix">
+			<br />
+			<table width="100%" style="border-collapse: collapse">
+				<tr class="invoice_header">
 					<!-- Subordersign and Customersign -->
-					<th class="matrix">
+					<th class="invoice_header">
 						<c:out value="${titlesubordertext}  " />
 					</th>
 					<c:if test="${customeridbox eq 'true'}">
-						<th class="matrix">
+						<th class="invoice_header">
 							<c:out value="${titlecustomersigntext}" />
 						</th>
 					</c:if>
 					<c:if test="${timereportsbox eq 'true'}">
-						<th class="matrix">
+						<th class="invoice_header">
 							<c:out value="${titledatetext}" />
 						</th>
 					</c:if>
 					<c:if test="${employeesignbox eq 'true'}">
-						<th class="matrix">
+						<th class="invoice_header">
 							<c:out value="${titleemployeesigntext}" />
 						</th>
 					</c:if>
 					<!-- Suborderdescription and targethours -->
-					<th class="matrix" width="70%">
+					<th class="invoice_header" width="100%">
 						<c:out value="${titledescriptiontext}" />
 					</th>
 					<c:if test="${targethoursbox eq 'true'}">
-						<th class="matrix">
+						<th class="invoice_header right">
 							<c:out value="${titletargethourstext}" />
 						</th>
 					</c:if>
 					<c:if test="${actualhoursbox eq 'true'}">
-						<th class="matrix">
+						<th class="invoice_header right">
 							<c:out value="${titleactualhourstext}" />
 						</th>
 					</c:if>
@@ -119,43 +132,43 @@
 				<c:forEach var="suborderviewhelper" items="${viewhelpers}">
 					<c:if test="${(suborderviewhelper.layer <= layerlimit) || (layerlimit eq -1)}">
 						<c:if test="${suborderviewhelper.visible}">
-							<tr class="matrix" style="background-color:c1c1c1;">
+							<tr class="invoice_suborder_row">
 								<!-- Subordersign and Customersign -->
-								<td class="matrix" style="white-space: nowrap">
+								<td class="invoice_suborder_row">
 									<c:out value="${suborderviewhelper.sign}" />
 								</td>
 								<c:if test="${customeridbox eq 'true'}">
-									<td class="matrix" style="white-space: nowrap">
+									<td class="invoice_suborder_row">
 										<c:out value="${suborderviewhelper.suborder_customer}" />
 									</td>
 								</c:if>
 								<c:if test="${timereportsbox eq 'true'}">
-									<td class="matrix">
+									<td class="invoice_suborder_row">
 										&nbsp;
 									</td>
 								</c:if>
 								<c:if test="${employeesignbox eq 'true'}">
-									<td class="matrix">
+									<td class="invoice_suborder_row">
 										&nbsp;
 									</td>
 								</c:if>
 								<c:if test="${suborderdescription eq 'longdescription'}">
-									<td class="matrix">
+									<td class="invoice_suborder_row wrap">
 										<c:out value="${suborderviewhelper.description}" />
 									</td>
 								</c:if>
 								<c:if test="${suborderdescription eq 'shortdescription'}">
-									<td class="matrix">
+									<td class="invoice_suborder_row wrap">
 										<c:out value="${suborderviewhelper.shortdescription}" />
 									</td>
 								</c:if>
 								<c:if test="${targethoursbox eq 'true'}">
-									<td class="matrix" style="text-align: right; white-space: nowrap">
+									<td class="invoice_suborder_row right">
 										<c:out value="${suborderviewhelper.debithoursString}" />
 									</td>
 								</c:if>
 								<c:if test="${actualhoursbox eq 'true'}">
-									<td class="matrix" style="text-align: right; white-space: nowrap">
+									<td class="invoice_suborder_row right">
 										<c:if test="${suborderviewhelper.layer < layerlimit || layerlimit eq -1}">
 											<c:out value="${suborderviewhelper.actualhoursPrint}" />
 										</c:if>
@@ -172,40 +185,40 @@
 							<c:if test="${timereportsbox eq 'true' && invoiceTimereportViewHelperListSize > 0}">
 								<c:forEach var="timereportviewhelper" items="${suborderviewhelper.invoiceTimereportViewHelperList}">
 									<c:if test="${timereportviewhelper.visible}">
-										<tr class="matrix">
-											<td class="matrix">
+										<tr class="invoice_booking_row">
+											<td class="invoice_booking_row">
 												&nbsp;
 											</td>
 											<c:if test="${customeridbox eq 'true'}">
-												<td class="matrix">
+												<td class="invoice_booking_row">
 													&nbsp;
 												</td>
 											</c:if>
-											<td class="matrix" style="white-space: nowrap">
+											<td class="invoice_booking_row">
 												<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}"/>
 											</td>
 											<c:if test="${employeesignbox eq 'true' && timereportsbox eq 'true'}">
-												<td class="matrix" style="white-space: nowrap">
-													<c:out value="${timereportviewhelper.employeecontract.employee.sign}" />
+												<td class="invoice_booking_row">
+													<c:out value="${timereportviewhelper.employeecontract.employee.name}" />
 												</td>
 											</c:if>
 											<c:if test="${timereportdescriptionbox eq 'true'}">
-												<td class="matrix">
+												<td class="invoice_booking_row wrap">
 													<c:out escapeXml="false" value="${timereportviewhelper.taskdescriptionHtml}" />
 												</td>
 											</c:if>
 											<c:if test="${timereportdescriptionbox eq 'false'}">
-												<td class="matrix">
+												<td class="invoice_booking_row">
 													&nbsp;
 												</td>
 											</c:if>
 											<c:if test="${targethoursbox eq 'true'}">
-												<td class="matrix">
+												<td class="invoice_booking_row right">
 													&nbsp;
 												</td>
 											</c:if>
 											<c:if test="${actualhoursbox eq 'true'}">
-												<td class="matrix" style="text-align: right; white-space: nowrap">
+												<td class="invoice_booking_row right">
 													<c:out value="${timereportviewhelper.durationString}"/>
 												</td>
 											</c:if>
@@ -217,44 +230,44 @@
 					</c:if>
 				</c:forEach>
 				<c:if test="${actualhoursbox eq 'true'}">
-					<tr class="matrix">
-						<td class="matrix" class="noBborderStyle">
+					<tr class="invoice_totalsum_row">
+						<td class="invoice_totalsum_row">
 							&nbsp;
 						</td>
 						<c:if test="${customeridbox eq 'true'}">
-							<td class="matrix" class="noBborderStyle">
+							<td class="invoice_totalsum_row">
 								&nbsp;
 							</td>
 						</c:if>
 						<c:if test="${timereportsbox eq 'true'}">
-							<td class="matrix" class="noBborderStyle">
+							<td class="invoice_totalsum_row">
 								&nbsp;
 							</td>
 						</c:if>
 						<c:if test="${employeesignbox eq 'true' && timereportsbox eq 'true'}">
-							<td class="matrix" class="noBborderStyle">
+							<td class="invoice_totalsum_row">
 								&nbsp;
 							</td>
 						</c:if>
 						<c:if test="${targethoursbox eq 'true'}">
-							<td class="matrix" class="noBborderStyle">
+							<td class="invoice_totalsum_row">
 								&nbsp;
 							</td>
-							<td class="matrix" class="noBborderStyle" style="text-align: right;">
+							<td class="invoice_totalsum_row right">
 								<b><bean:message key="main.invoice.overall.text" />:</b>
 							</td>
 						</c:if>
 						<c:if test="${targethoursbox eq 'false'}">
-							<td class="matrix" class="noBborderStyle" style="text-align: right;">
+							<td class="invoice_totalsum_row right">
 								<b><bean:message key="main.invoice.overall.text" />:</b>
 							</td>
 						</c:if>
-						<th class="matrix" style="text-align: right; white-space: nowrap">
+						<td class="invoice_totalsum_row right">
 							<c:out value="${printactualhourssum}" />
-						</th>
+						</td>
 					</tr>
 				</c:if>
-			</c:if>
-		</table>
+			</table>
+		</div>
 	</body>
 </html>
