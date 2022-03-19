@@ -505,7 +505,7 @@
 			</table>
 		</html:form>
 
-		<html:form target="fenster" action="/ShowInvoice?task=print">
+		<html:form target="_blank" action="/ShowInvoice?task=print">
 			<table>
 				<c:if test="${! empty viewhelpers}">
 					<tr>
@@ -538,7 +538,7 @@
 					<tr>
 						<td class="noBborderStyle" align="left" colspan="3">
 							<html:submit
-								onclick="window.open('','fenster','width=800,height=400,resizable=yes'); showPrint(this.form)"
+								onclick="showPrint(this.form)"
 								styleId="button"
 								titleKey="main.invoice.button.createmaximumview.alttext.text">
 								<bean:message key="main.general.button.printpreview.text" />

@@ -523,7 +523,7 @@
 							</html:submit>
 						</td>
 					</html:form>
-					<html:form target="fenster"	onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')" action="/ShowDailyReport?task=print">
+					<html:form target="_blank" action="/ShowDailyReport?task=print">
 						<td class="noBborderStyle" colspan="6" align="left">
 							<html:submit styleId="button" titleKey="main.general.button.printpreview.alttext.text">
 								<bean:message key="main.general.button.printpreview.text" />
@@ -875,7 +875,7 @@
 						</html:submit>
 					</td>
 				</html:form>
-				<html:form target="fenster"	onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')" action="/ShowDailyReport?task=print">
+				<html:form target="_blank" action="/ShowDailyReport?task=print">
 					<td class="noBborderStyle" colspan="6" align="left">
 						<html:submit styleId="button" titleKey="main.general.button.printpreview.alttext.text">
 							<bean:message key="main.general.button.printpreview.text" />

@@ -262,8 +262,7 @@
 							</html:submit></td>
 					</html:form>
 				</c:if>
-				<html:form target="fenster"
-					onsubmit="window.open('','fenster','width=800,height=400,resizable=yes')"
+				<html:form target="_blank"
 					action="/ShowMatrix?task=print">
 					<td class="noBborderStyle" align="left"><html:submit
 							styleId="button"
