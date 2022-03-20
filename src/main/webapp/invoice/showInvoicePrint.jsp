@@ -88,7 +88,7 @@
 			<br style="clear: both" />
 			<c:forEach var="suborderviewhelper" items="${viewhelpers}">
 				<table width="100%" style="border-collapse: collapse">
-					<c:if test="${suborderviewhelper.visible and (suborderviewhelper.layer <= layerlimit) || (layerlimit eq -1)}">
+					<c:if test="${suborderviewhelper.visible and (suborderviewhelper.layer <= layerlimit or layerlimit eq -1)}">
 						<thead>
 							<tr class="invoice_suborder_row">
 								<td class="invoice_suborder_row wrap" colspan="${dynamicColumnCount + 1}">

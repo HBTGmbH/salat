@@ -42,7 +42,7 @@ public class InvoiceTimereportHelper {
         }
     }
 
-    public long getId() {
+    public Long getId() {
         return timereport.getId();
     }
 

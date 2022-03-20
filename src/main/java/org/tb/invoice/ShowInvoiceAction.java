@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -277,21 +278,15 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 }
             }
             // set visibility to true if found in arrays
-            String[] suborderIds = showInvoiceForm.getSuborderIdArray();
-            String[] timereportIds = showInvoiceForm.getTimereportIdArray();
+            var suborderIds = Arrays.asList(showInvoiceForm.getSuborderIdArray());
+            var timereportIds = Arrays.asList(showInvoiceForm.getTimereportIdArray());
             for (InvoiceSuborderHelper invoiceSuborderViewHelper : suborderViewhelperList) {
-                for (String suborderId : suborderIds) {
-                    if (Long.parseLong(suborderId) == invoiceSuborderViewHelper.getId()) {
-                        invoiceSuborderViewHelper.setVisible(true);
-                        break;
-                    }
+                if(suborderIds.contains(invoiceSuborderViewHelper.getId().toString())) {
+                    invoiceSuborderViewHelper.setVisible(true);
                 }
                 for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList()) {
-                    for (String timereportId : timereportIds) {
-                        if (Long.parseLong(timereportId) == invoiceTimereportViewHelper.getId()) {
-                            invoiceTimereportViewHelper.setVisible(true);
-                            break;
-                        }
+                    if(timereportIds.contains(invoiceTimereportViewHelper.getId().toString())) {
+                        invoiceTimereportViewHelper.setVisible(true);
                     }
                 }
             }
