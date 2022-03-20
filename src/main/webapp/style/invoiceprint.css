@@ -19,38 +19,51 @@
 	src: url("SimplonNorm-Bold-WebS.woff2") format("woff2");
 }
 
-.invoice_header {
-	font-family: SimplonNorm;
-	border: none;
-	text-align: left;
-	font-weight: bold;
-	white-space: nowrap;
-	padding: 4px;
-}
-
 .invoice_suborder_row {
 	font-family: SimplonNorm;
-	background-color: #c1c1c1;
-	border: 1px solid black;
+	font-weight: bold;
+	border: none;
 	border-collapse: collapse;
 	white-space: nowrap;
-	padding: 4px;
+	padding: 4px 8px;
+	border-bottom: 1px solid black;
+}
+
+.invoice_header {
+	font-family: SimplonNorm;
+	font-weight: normal;
+	border: none;
+	text-align: left;
+	white-space: nowrap;
+	padding: 4px 8px;
+	padding-bottom: 1em;
 }
 
 .invoice_booking_row {
-	font-family: SimplonNorm;
-	border: 1px solid black;
+	font-family: Monospaced, SimplonNorm;
+	border: none;
 	border-collapse: collapse;
 	white-space: nowrap;
-	padding: 4px;
+	padding: 4px 8px;
+}
+
+.invoice_subordersum_row {
+	font-family: Monospaced, SimplonNorm;
+	font-weight: normal;
+	border: none;
+	border-collapse: collapse;
+	white-space: nowrap;
+	padding: 4px 8px;
+	border-top: 1px solid black;
+	padding-bottom: 2em;
 }
 
 .invoice_totalsum_row {
-	font-family: SimplonNorm;
+	font-family: Monospaced, SimplonNorm;
 	border: none;
 	font-weight: bold;
 	white-space: nowrap;
-	padding: 4px;
+	padding: 4px 8px;
 }
 
 .invoice_hint {
@@ -95,4 +108,8 @@
 
 .wrap {
 	white-space: unset;
+}
+
+.last_timereport {
+	padding-bottom: 1em;
 }

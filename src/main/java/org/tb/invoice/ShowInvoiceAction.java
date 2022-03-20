@@ -178,8 +178,8 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 YearMonth yearMonth = DateUtils.getYearMonth(dateFirst);
                 request.getSession().setAttribute("dateMonth", monthMap.get(String.valueOf(yearMonth.getMonthValue() - 1)));
                 request.getSession().setAttribute("dateYear", yearMonth.getYear());
-                request.getSession().setAttribute("dateFirst", format(dateFirst));
-                request.getSession().setAttribute("dateLast", format(dateLast));
+                request.getSession().setAttribute("dateFirst", format(dateFirst, "dd.MM.yyyy"));
+                request.getSession().setAttribute("dateLast", format(dateLast, "dd.MM.yyyy"));
                 request.getSession().setAttribute("currentOrderObject", customerOrder);
                 request.getSession().setAttribute("customeridbox", showInvoiceForm.isCustomeridbox());
                 request.getSession().setAttribute("targethoursbox", showInvoiceForm.isTargethoursbox());
@@ -255,6 +255,14 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("order", showInvoiceForm.getOrder());
             String customeraddress = showInvoiceForm.getCustomeraddress();
             request.getSession().setAttribute("customeraddress", customeraddress);
+
+            // calc dynamic column count - required by the jsp
+            int dynamicColumnCount = 0;
+            if(showInvoiceForm.isActualhoursbox()) dynamicColumnCount += 2;
+            if(showInvoiceForm.isTimereportsbox()) dynamicColumnCount++;
+            if(showInvoiceForm.isEmployeesignbox()) dynamicColumnCount++;
+            request.getSession().setAttribute("dynamicColumnCount", dynamicColumnCount);
+
             return mapping.findForward("success");
         } else if (request.getParameter("task") != null
                 && (request.getParameter("task").equals("print") || request.getParameter("task").equals("export") || request.getParameter("task").equals("exportNew"))) {
