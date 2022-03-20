@@ -26,8 +26,8 @@
 				</c:when>
 			</c:choose>
 		</title>
-		<link rel="stylesheet" type="text/css" href="/style/invoiceprint.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
+		<link rel="stylesheet" type="text/css" href="/style/invoiceprint.css" media="all" />
 	</head>
 	<body>
 		<div style="width: 95%; margin: 0 auto">
@@ -43,7 +43,7 @@
 				<img src="/images/HBT_Logo_RGB_positiv.svg" class="hbt_logo" />
 				<img src="/images/HBT_Claim_RGB_positiv.svg" class="hbt_claim" />
 			</div>
-			<table style="clear: both">
+			<table style="clear: both; float: left">
 				<tr>
 					<td class="invoice_title">
 						<c:out value="${titleinvoiceattachment}"/>
@@ -68,35 +68,28 @@
 					</td>
 				</tr>
 				<tr>
-					<c:choose>
-						<c:when test="${invoiceview eq 'month'}">
-							<td class="invoice_time_reference">
+					<td class="invoice_time_reference">
+						Zeitraum:
+						<c:choose>
+							<c:when test="${invoiceview eq 'month'}">
 								<bean:message key="${dateMonth}" /> <c:out value="${dateYear}" />
-							</td>
-						</c:when>
-						<c:when test="${invoiceview eq 'custom'}">
-							<td class="invoice_time_reference">
+							</c:when>
+							<c:when test="${invoiceview eq 'custom'}">
 								<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
-							</td>
-						</c:when>
-						<c:when test="${invoiceview eq 'week'}">
-							<td class="invoice_time_reference">
+							</c:when>
+							<c:when test="${invoiceview eq 'week'}">
 								<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" /> (KW<c:out value="${currentWeek}" />)
-							</td>
-						</c:when>
-						<c:otherwise>
-							<td class="invoice_time_reference">
-								&nbsp;
-							</td>
-						</c:otherwise>
-					</c:choose>
+							</c:when>
+						</c:choose>
+					</td>
 				</tr>
 			</table>
-			<br />
-			<table width="100%" style="border-collapse: collapse">
-				<c:forEach var="suborderviewhelper" items="${viewhelpers}">
-					<c:if test="${(suborderviewhelper.layer <= layerlimit) || (layerlimit eq -1)}">
-						<c:if test="${suborderviewhelper.visible}">
+			<span style="float: right" class="invoice_date">Stand: <java8:formatLocalDate value="${today}" pattern="dd.MM.yyyy" /></span>
+			<br style="clear: both" />
+			<c:forEach var="suborderviewhelper" items="${viewhelpers}">
+				<table width="100%" style="border-collapse: collapse">
+					<c:if test="${suborderviewhelper.visible and (suborderviewhelper.layer <= layerlimit) || (layerlimit eq -1)}">
+						<thead>
 							<tr class="invoice_suborder_row">
 								<td class="invoice_suborder_row wrap" colspan="${dynamicColumnCount + 1}">
 									<c:if test="${optionsuborderdescription eq 'longdescription'}">
@@ -114,14 +107,14 @@
 								</td>
 							</tr>
 							<bean:size id="invoiceTimereportViewHelperListSize" name="suborderviewhelper" property="invoiceTimereportViewHelperList" />
-							<c:if test="${timereportsbox eq 'true' && invoiceTimereportViewHelperListSize > 0}">
+							<c:if test="${timereportsbox && invoiceTimereportViewHelperListSize > 0}">
 								<tr class="invoice_header">
-									<c:if test="${timereportsbox eq 'true'}">
+									<c:if test="${timereportsbox}">
 										<th class="invoice_header">
 											<c:out value="${titledatetext}" />
 										</th>
 									</c:if>
-									<c:if test="${employeesignbox eq 'true'}">
+									<c:if test="${employeesignbox}">
 										<th class="invoice_header">
 											<c:out value="${titleemployeesigntext}" />
 										</th>
@@ -130,7 +123,7 @@
 									<th class="invoice_header" width="100%">
 										<c:out value="${titledescriptiontext}" />
 									</th>
-									<c:if test="${actualhoursbox eq 'true'}">
+									<c:if test="${actualhoursbox}">
 										<th class="invoice_header right">
 											<c:out value="${titleactualdurationtext}" />
 										</th>
@@ -139,79 +132,84 @@
 										</th>
 									</c:if>
 								</tr>
+							    </thead>
+							    <tbody>
 								<c:forEach var="timereportviewhelper" items="${suborderviewhelper.invoiceTimereportViewHelperList}" varStatus="iterstatus">
 									<c:if test="${timereportviewhelper.visible}">
 										<tr class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
-											<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
+											<td class="invoice_booking_row nonproportional ${iterstatus.last?'last_timereport':''}">
 												<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}" pattern="dd.MM.yyyy" />
 											</td>
-											<c:if test="${employeesignbox eq 'true' && timereportsbox eq 'true'}">
+											<c:if test="${employeesignbox && timereportsbox}">
 												<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
 													<c:out value="${timereportviewhelper.employeecontract.employee.name}" />
 												</td>
 											</c:if>
-											<c:if test="${timereportdescriptionbox eq 'true'}">
-												<td class="invoice_booking_row wrap ${iterstatus.last?'last_timereport':''}">
+											<c:if test="${timereportdescriptionbox}">
+												<td class="invoice_booking_row wrap ${iterstatus.last?'last_timereport':''}"
+													style="width: 100%">
 													<c:out escapeXml="false" value="${timereportviewhelper.taskdescriptionHtml}" />
 												</td>
 											</c:if>
 											<c:if test="${timereportdescriptionbox eq 'false'}">
-												<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
+												<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}"
+													style="width: 100%">
 													&nbsp;
 												</td>
 											</c:if>
-											<c:if test="${actualhoursbox eq 'true'}">
-												<td class="invoice_booking_row right ${iterstatus.last?'last_timereport':''}">
+											<c:if test="${actualhoursbox}">
+												<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}"
+													style="min-width: 2cm">
 													<c:out value="${timereportviewhelper.durationString}"/>
 												</td>
-												<td class="invoice_booking_row right ${iterstatus.last?'last_timereport':''}">
+												<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}"
+													style="min-width: 2cm">
 													<c:out value="${timereportviewhelper.hoursString}"/>
 												</td>
 											</c:if>
 										</tr>
 									</c:if>
 								</c:forEach>
-								<c:if test="${actualhoursbox eq 'true'}">
+								</tbody>
+							</c:if>
+						    <c:if test="${not (timereportsbox && invoiceTimereportViewHelperListSize > 0)}">
+							    </thead>
+							</c:if>
+							<c:if test="${actualhoursbox}">
+								<tbody>
 								<tr class="invoice_subordersum_row">
-									<td class="invoice_subordersum_row right" colspan="${dynamicColumnCount + 1 - 2}">
+									<td class="invoice_subordersum_row right" colspan="${dynamicColumnCount + 1 - 2}" style="width: 100%">
 										Summe
 									</td>
-									<td class="invoice_subordersum_row right">
+									<td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm">
 										<c:out value="${suborderviewhelper.actualDurationPrint}" />
 									</td>
-									<td class="invoice_subordersum_row right">
+									<td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm">
 										<c:out value="${suborderviewhelper.actualHoursPrint}" />
 									</td>
 								</tr>
-								</c:if>
+								</tbody>
 							</c:if>
-						</c:if>
 					</c:if>
-				</c:forEach>
-				<c:if test="${actualhoursbox eq 'true'}">
+				</table>
+			</c:forEach>
+			<c:if test="${actualhoursbox}">
+				<table width="100%" style="border-collapse: collapse">
+					<tbody>
 					<tr class="invoice_totalsum_row">
-						<c:if test="${timereportsbox eq 'true'}">
-							<td class="invoice_totalsum_row">
-								&nbsp;
-							</td>
-						</c:if>
-						<c:if test="${employeesignbox eq 'true' && timereportsbox eq 'true'}">
-							<td class="invoice_totalsum_row">
-								&nbsp;
-							</td>
-						</c:if>
-						<td class="invoice_totalsum_row right">
+						<td class="invoice_totalsum_row right" style="width: 100%" colspan="${timereportsbox?'3':'1'}">
 							<bean:message key="main.invoice.overall.text" />
 						</td>
-						<td class="invoice_totalsum_row right">
+						<td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm">
 							<java8:formatDuration value="${actualminutessum}" />
 						</td>
-						<td class="invoice_totalsum_row right">
+						<td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm">
 							<c:out value="${printactualhourssum}" />
 						</td>
 					</tr>
-				</c:if>
-			</table>
+					</tbody>
+				</table>
+			</c:if>
 		</div>
 	</body>
 </html>

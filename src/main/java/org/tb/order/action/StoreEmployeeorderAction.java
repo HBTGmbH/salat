@@ -6,6 +6,7 @@ import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -230,7 +231,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                     if (eoForm.getDebithours() == null
                         || eoForm.getDebithours().isEmpty()
                         || DurationUtils.parseDuration(eoForm.getDebithours()).isZero()) {
-                        eo.setDebithours(null);
+                        eo.setDebithours(Duration.ZERO);
                         eo.setDebithoursunit(null);
                     } else {
                         eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));
@@ -245,13 +246,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
             } else if (eo.getSuborder().getCustomerorder().getSign().equals(
                     GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
-                eo.setDebithours(null);
+                eo.setDebithours(Duration.ZERO);
                 eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
             } else {
                 if (eoForm.getDebithours() == null
                     || eoForm.getDebithours().isEmpty()
                     || DurationUtils.parseDuration(eoForm.getDebithours()).isZero()) {
-                    eo.setDebithours(null);
+                    eo.setDebithours(Duration.ZERO);
                     eo.setDebithoursunit(null);
                 } else {
                     eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));

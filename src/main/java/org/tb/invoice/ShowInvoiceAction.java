@@ -255,6 +255,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("order", showInvoiceForm.getOrder());
             String customeraddress = showInvoiceForm.getCustomeraddress();
             request.getSession().setAttribute("customeraddress", customeraddress);
+            request.getSession().setAttribute("today", today());
 
             // calc dynamic column count - required by the jsp
             int dynamicColumnCount = 0;

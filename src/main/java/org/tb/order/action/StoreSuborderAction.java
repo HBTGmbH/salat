@@ -6,6 +6,7 @@ import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
@@ -316,7 +317,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             if (addSuborderForm.getDebithours() == null
                 || addSuborderForm.getDebithours().isEmpty()
                 || DurationUtils.parseDuration(addSuborderForm.getDebithours()).isZero()) {
-                so.setDebithours(null);
+                so.setDebithours(Duration.ZERO);
                 so.setDebithoursunit(null);
             } else {
                 so.setDebithours(DurationUtils.parseDuration(addSuborderForm.getDebithours()));

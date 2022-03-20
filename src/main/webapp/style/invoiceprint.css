@@ -1,3 +1,9 @@
+@media print{
+	@page {
+		size: portrait;
+	}
+}
+
 @font-face {
 	font-family: "SimplonNorm";
 	font-style: normal;
@@ -40,15 +46,16 @@
 }
 
 .invoice_booking_row {
-	font-family: Monospaced, SimplonNorm;
+	font-family: SimplonNorm;
 	border: none;
 	border-collapse: collapse;
 	white-space: nowrap;
 	padding: 4px 8px;
+	vertical-align: top;
 }
 
 .invoice_subordersum_row {
-	font-family: Monospaced, SimplonNorm;
+	font-family: SimplonNorm;
 	font-weight: normal;
 	border: none;
 	border-collapse: collapse;
@@ -59,7 +66,7 @@
 }
 
 .invoice_totalsum_row {
-	font-family: Monospaced, SimplonNorm;
+	font-family: SimplonNorm;
 	border: none;
 	font-weight: bold;
 	white-space: nowrap;
@@ -90,6 +97,12 @@
 	white-space: nowrap;
 }
 
+.invoice_date {
+	font-family: SimplonNorm;
+	border: none;
+	white-space: nowrap;
+}
+
 .hbt_logo {
 	height: 1.5cm;
 	margin-bottom: 1cm;
@@ -107,9 +120,15 @@
 }
 
 .wrap {
-	white-space: unset;
+	white-space: normal;
 }
 
 .last_timereport {
 	padding-bottom: 1em;
+}
+
+.nonproportional {
+	/*
+	font-family: "Courier New";
+	 */
 }
