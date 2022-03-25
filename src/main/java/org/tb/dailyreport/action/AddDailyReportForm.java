@@ -114,4 +114,12 @@ public class AddDailyReportForm extends ActionForm {
         this.selectedMinuteEnd = duration.toMinutesPart();
     }
 
+    public boolean isNewTimeReport() {
+        return id == 0;
+    }
+
+    public void setAsNewTimereport() {
+        id = 0;
+    }
+
 }

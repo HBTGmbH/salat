@@ -166,8 +166,9 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         Suborder so = theSuborders.get(0);
         request.getSession().setAttribute("currentSuborderId", so.getId());
 
-        // make sure, no cuId still exists in session
+        // make sure, no cuId still exists in session, remove from form, too
         request.getSession().removeAttribute("trId");
+        form.setAsNewTimereport();
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("matrix")) {
             form.setReferenceday(DateUtils.format(today));

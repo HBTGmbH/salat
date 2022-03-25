@@ -235,26 +235,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 employeeorderId = employeeorders.get(0).getId();
             }
 
-            long timeReportId = form.getId();
-            // TODO maybe find a better way to identify timereports in edit
-            if(timeReportId > 0) {
-                try {
-                    timereportService.updateTimereport(
-                        authorizedUser,
-                        timeReportId,
-                        form.getEmployeeContractId(),
-                        employeeorderId,
-                        referencedayRefDate,
-                        form.getComment(),
-                        Boolean.TRUE.equals(form.getTraining()),
-                        form.getSelectedHourDuration(),
-                        form.getSelectedMinuteDuration()
-                    );
-                } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
-                    addToErrors(request, e.getErrorCode());
-                    return mapping.getInputForward();
-                }
-            } else {
+            if(form.isNewTimeReport()) {
                 try {
                     timereportService.createTimereports(
                         authorizedUser,
@@ -266,6 +247,24 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         form.getSelectedHourDuration(),
                         form.getSelectedMinuteDuration(),
                         Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
+                    );
+                } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+                    addToErrors(request, e.getErrorCode());
+                    return mapping.getInputForward();
+                }
+            } else {
+                long timeReportId = form.getId();
+                try {
+                    timereportService.updateTimereport(
+                        authorizedUser,
+                        timeReportId,
+                        form.getEmployeeContractId(),
+                        employeeorderId,
+                        referencedayRefDate,
+                        form.getComment(),
+                        Boolean.TRUE.equals(form.getTraining()),
+                        form.getSelectedHourDuration(),
+                        form.getSelectedMinuteDuration()
                     );
                 } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                     addToErrors(request, e.getErrorCode());
