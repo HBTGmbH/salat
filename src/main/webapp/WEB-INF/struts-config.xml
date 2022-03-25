@@ -149,7 +149,7 @@
 			name="addDailyReportForm" type="org.tb.dailyreport.action.StoreDailyReportAction">
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" redirect="true" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="showDaily" path="/dailyreport/showDailyReport.jsp" />
+			<forward name="showDaily" path="/do/ShowDailyReport?task=refreshTimereports" redirect="true" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
 			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
