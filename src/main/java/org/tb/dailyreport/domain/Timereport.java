@@ -106,4 +106,8 @@ public class Timereport extends AuditedEntity implements Serializable {
         return Duration.ofHours(durationhours).plusMinutes(durationminutes);
     }
 
+    public boolean matches5MinuteSchema() {
+        return durationminutes % 5 == 0;
+    }
+
 }

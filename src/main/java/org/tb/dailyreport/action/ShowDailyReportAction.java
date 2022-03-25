@@ -2,11 +2,11 @@ package org.tb.dailyreport.action;
 
 import static org.tb.common.DateTimeViewHelper.getBreakHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getMonthMMStringFromShortstring;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
+import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
@@ -15,7 +15,6 @@ import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -47,6 +46,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.comparator.TimereportByEmployeeAscComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByEmployeeDescComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByOrderAscComparator;
@@ -54,21 +54,20 @@ import org.tb.dailyreport.domain.comparator.TimereportByOrderDescComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByRefdayAscComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByRefdayDescComparator;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.service.TimereportService;
-import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.viewhelper.CustomerorderHelper;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.viewhelper.CustomerorderHelper;
 import org.tb.order.viewhelper.SuborderHelper;
 
 /**
@@ -189,10 +188,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         // check if full minutes is required - when we have minutes durations that do not match the 5 minute schema
         var timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
         var anyTimereportNotMatches5MinuteSchema = timereports.stream()
-            .map(Timereport::getDuration)
-            .map(Duration::toMinutes)
-            .map(minutes -> minutes % 5)
-            .filter(minutes -> minutes > 0)
+            .map(Timereport::matches5MinuteSchema)
+            .filter(matches5MinuteSchema -> matches5MinuteSchema == false)
             .findAny()
             .isPresent();
         reportForm.setShowAllMinutes(anyTimereportNotMatches5MinuteSchema);
