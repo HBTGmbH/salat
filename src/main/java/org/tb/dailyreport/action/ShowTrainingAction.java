@@ -104,15 +104,13 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             || employeecontract.getDailyWorkingTime().toMinutes() <= 0
             || employeecontract.getEmployeeorders() == null) {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
-            trainingOverviews = getTrainingOverviewsForAll(startdate,
-                    enddate, employeecontractDAO, orderID, employeecontracts, year);
+            trainingOverviews = getTrainingOverviewsForAll(startdate, enddate, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);
             request.getSession().setAttribute("years", getYearsToDisplay());
 
         } else {
             // get the training times for specific year, specific employee, all orders (project Training) and order i976 (CommonTraining)
-            trainingOverviews = getTrainingOverviewByEmployeecontract(startdate,
-                    enddate, employeecontract, orderID, year);
+            trainingOverviews = getTrainingOverviewByEmployeecontract(startdate, enddate, employeecontract, orderID, year);
 
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
             request.getSession().setAttribute("years", getYearsSinceContractStartToDisplay(employeecontract.getValidFrom()));
@@ -132,7 +130,6 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         String forward = "success";
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
         Customerorder trainingOrder = customerorderDAO.getCustomerorderBySign(TRAINING_ID);
         if (trainingOrder == null) {
@@ -171,8 +168,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         if (employeeContractId == -1
             || ec.getFreelancer()
             || ec.getDailyWorkingTime().toMinutes() <= 0 || ec.getEmployeeorders() == null) {
-            trainingOverview = getTrainingOverviewsForAll(startdate,
-                    enddate, employeecontractDAO, orderID, employeecontracts, year);
+            trainingOverview = getTrainingOverviewsForAll(startdate, enddate, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);
             request.getSession().setAttribute("years", getYearsToDisplay());
             // get a List of TrainingOverviews with only one entry for the selected Employee
@@ -186,11 +182,16 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         return forward;
     }
 
-    private List<TrainingOverview> getTrainingOverviewsForAll(LocalDate startdate,
-                                                              LocalDate enddate, EmployeecontractDAO employeecontractDAO, Long orderID, List<Employeecontract> employeecontracts, String year) {
+    private List<TrainingOverview> getTrainingOverviewsForAll(
+        LocalDate startdate,
+        LocalDate enddate,
+        Long orderID,
+        List<Employeecontract> employeecontracts,
+        String year
+    ) {
         List<TrainingOverview> trainingOverviews = new LinkedList<>();
-        List<Object[]> cTrain = trainingDAO.getCommonTrainingTimesByDates(employeecontractDAO, startdate, enddate, orderID);
-        List<Object[]> pTrain = trainingDAO.getProjectTrainingTimesByDates(employeecontractDAO, startdate, enddate);
+        List<Object[]> cTrain = trainingDAO.getCommonTrainingTimesByDates(startdate, enddate, orderID);
+        List<Object[]> pTrain = trainingDAO.getProjectTrainingTimesByDates(startdate, enddate);
         Map<Long, Object[]> projTrain = createMap(pTrain);
         Map<Long, Object[]> comTrain = createMap(cTrain);
 

@@ -13,11 +13,11 @@ public class TrainingDAO {
 
     private final TrainingRepository trainingRepository;
 
-    public List<Object[]> getProjectTrainingTimesByDates(EmployeecontractDAO employeecontractDAO, LocalDate begin, LocalDate end) {
+    public List<Object[]> getProjectTrainingTimesByDates(LocalDate begin, LocalDate end) {
         return trainingRepository.getProjectTrainingTimesByDates(begin, end);
     }
 
-    public List<Object[]> getCommonTrainingTimesByDates(EmployeecontractDAO employeecontractDAO, LocalDate begin, LocalDate end, long customerorderId) {
+    public List<Object[]> getCommonTrainingTimesByDates(LocalDate begin, LocalDate end, long customerorderId) {
         return trainingRepository.getCommonTrainingTimesByDates(begin, end, customerorderId);
     }
 
