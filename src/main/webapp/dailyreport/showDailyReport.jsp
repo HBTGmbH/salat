@@ -779,6 +779,9 @@
 								</html:select>
 								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborder.sign eq overtimeCompensation}" styleClass="make-select2">
 									<html:options collection="minutes" property="value"	labelProperty="label" />
+									<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, timereport.durationminutes)}">
+										<html:option value="${timereport.durationminutes}">${timereport.durationminutes}</html:option>
+									</c:if>
 								</html:select>
 							</td>
 

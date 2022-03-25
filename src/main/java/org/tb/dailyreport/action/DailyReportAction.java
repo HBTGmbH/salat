@@ -7,7 +7,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.viewhelper.DailyReportViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
@@ -32,6 +36,13 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
 
     @Autowired
     private AfterLogin afterLogin;
+
+    @Override
+    public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
+        request.getSession().setAttribute("dailyReportViewHelper", new DailyReportViewHelper());
+        return super.execute(mapping, form, request, response);
+    }
 
     protected void addErrorAtTheBottom(HttpServletRequest request, ActionMessages errors, ActionMessage message) {
         errors.add("status", message);

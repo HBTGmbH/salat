@@ -250,6 +250,9 @@
 					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
 					<html:select property="selectedMinuteBegin"	onchange="setUpdateHoursAction(this.form)">
 						<html:options collection="minutes" property="value"	labelProperty="label" />
+						<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteBegin)}">
+							<html:option value="${addDailyReportForm.selectedMinuteBegin}">${addDailyReportForm.selectedMinuteBegin}</html:option>
+						</c:if>
 					</html:select>
 					<i><bean:message key="main.timereport.optional.help.text" /></i>
 					<span style="color:red">
@@ -268,6 +271,9 @@
 					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
 					<html:select property="selectedMinuteEnd" onchange="setUpdateHoursAction(this.form)">
 						<html:options collection="minutes" property="value"	labelProperty="label" />
+						<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteEnd)}">
+							<html:option value="${addDailyReportForm.selectedMinuteEnd}">${addDailyReportForm.selectedMinuteEnd}</html:option>
+						</c:if>
 					</html:select>
 					<i><bean:message key="main.timereport.optional.help.text" /></i>
 					<span style="color:red">
@@ -292,6 +298,9 @@
 				<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
 				<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
 					<html:options collection="minutes" property="value" labelProperty="label" />
+					<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteDuration)}">
+						<html:option value="${addDailyReportForm.selectedMinuteDuration}">${addDailyReportForm.selectedMinuteDuration}</html:option>
+					</c:if>
 				</html:select>
 				<html:checkbox property="showAllMinutes" onchange="setToggleShowAllMinutes(this.form)" /> <bean:message key="main.timereport.showallminutes.text" />
 				<span style="color:red">
