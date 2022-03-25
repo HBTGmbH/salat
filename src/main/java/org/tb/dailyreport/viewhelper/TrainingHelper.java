@@ -2,21 +2,14 @@ package org.tb.dailyreport.viewhelper;
 
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
+import org.tb.dailyreport.domain.TrainingInformation;
 import org.tb.employee.domain.Employeecontract;
 
 public class TrainingHelper {
 
-    public static int[] getHoursMin(Object[] time) {
-        int[] intTime = {0, 0};
-        if (time != null && time.length == 2) {
-            for (int i = 0; i <= 1; i++) {
-                if (time[i] != null && time[i] instanceof Long) {
-                    Long t = (Long) time[i];
-                    intTime[i] = t.intValue();
-                }
-            }
-        }
-        return intTime;
+    public static int[] getHoursMin(TrainingInformation trainingInformation) {
+        if(trainingInformation == null) return new int[] {0, 0};
+        return new int[] {(int) trainingInformation.getDurationHours(), (int) trainingInformation.getDurationMinutes()};
     }
 
     public static String fromDBtimeToString(Employeecontract ec, int hours, int minutes) {
