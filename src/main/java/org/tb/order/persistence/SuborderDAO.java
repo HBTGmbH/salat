@@ -203,17 +203,7 @@ public class SuborderDAO {
         return suborderRepository.findAllStandardSubordersByUntilDateGreaterThanEqual(DateUtils.today());
     }
 
-    /**
-     * Calls {@link SuborderDAO#save(Suborder, Employee)} with {@link Employee} = null.
-     */
     public void save(Suborder so) {
-        save(so, null);
-    }
-
-    /**
-     * Saves the given suborderand sets creation-/update-user and creation-/update-date.
-     */
-    public void save(Suborder so, Employee loginEmployee) {
         suborderRepository.save(so);
     }
 

@@ -124,7 +124,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                 for (Suborder so : co.getSuborders()) {
                     if (!so.getCurrentlyValid()) {
                         so.setHide(true);
-                        suborderDAO.save(so, loginEmployee);
+                        suborderDAO.save(so);
                     }
                 }
             } else {
@@ -132,7 +132,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                     for (Suborder so : co.getSuborders()) {
                         if (!so.getCurrentlyValid()) {
                             so.setHide(true);
-                            suborderDAO.save(so, loginEmployee);
+                            suborderDAO.save(so);
                         }
                     }
                 }
@@ -161,7 +161,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                         for (String soID : suborderIdArray) {
                             Suborder so = suborderDAO.getSuborderById(Long.parseLong(soID));
                             so.setSuborder_customer(suborderForm.getSuborderOptionValue());
-                            suborderDAO.save(so, loginEmployee);
+                            suborderDAO.save(so);
                         }
                     }
                 }

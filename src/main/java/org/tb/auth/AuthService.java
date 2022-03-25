@@ -27,7 +27,7 @@ public class AuthService {
           // employee still has old password form
           // store password again with new hashing algorithm
           employee.changePassword(password);
-          employeeDAO.save(employee, null);
+          employeeDAO.save(employee);
           passwordMatches = true;
         }
       }

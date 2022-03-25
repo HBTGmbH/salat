@@ -298,11 +298,10 @@ public class Suborder extends AuditedEntity implements Serializable {
     /**
      * Set the {@link Customerorder} for all descendants
      */
-    public void setCustomerOrderForAllDescendants(Customerorder customerOrder, SuborderDAO suborderDAO, Employee loginEmployee, Suborder rootSuborder) {
+    public void setCustomerOrderForAllDescendants(Customerorder customerOrder, SuborderDAO suborderDAO, Suborder rootSuborder) {
 
         final Customerorder customerorderToSet = customerOrder;
         final SuborderDAO visitorSuborderDAO = suborderDAO;
-        final Employee visitorLoginEmployee = loginEmployee;
         final Suborder visitorRootSuborder = rootSuborder;
 
         /* create visitor to collect suborders */
@@ -314,8 +313,7 @@ public class Suborder extends AuditedEntity implements Serializable {
                 if (suborderToModify != null) {
                     suborderToModify.setCustomerorder(customerorderToSet);
                     // save suborder
-                    visitorSuborderDAO.save(suborderToModify,
-                            visitorLoginEmployee);
+                    visitorSuborderDAO.save(suborderToModify);
                 }
             }
         };

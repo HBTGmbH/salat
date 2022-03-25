@@ -65,9 +65,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
                 em.resetPassword();
             }
 
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
-            employeeDAO.save(em, loginEmployee);
+            employeeDAO.save(em);
 
             request.getSession().setAttribute("employees", employeeDAO.getEmployees());
 
@@ -102,8 +100,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             }
             if (em != null) {
                 em.resetPassword();
-                Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-                employeeDAO.save(em, loginEmployee);
+                employeeDAO.save(em);
             }
 
             return mapping.findForward("reset");

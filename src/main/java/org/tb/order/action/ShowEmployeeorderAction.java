@@ -77,8 +77,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                         List<TimereportDTO> timereportsInvalidForDates = timereportDAO.
                                 getTimereportsByEmployeeorderIdInvalidForDates(employeeorder.getFromDate(), employeeorder.getUntilDate(), employeeorder.getId());
                         if (timereportsInvalidForDates == null || timereportsInvalidForDates.isEmpty()) {
-                            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-                            employeeorderDAO.save(employeeorder, loginEmployee);
+                            employeeorderDAO.save(employeeorder);
                         }
                     }
                 }

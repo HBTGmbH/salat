@@ -260,18 +260,7 @@ public class EmployeeorderDAO {
         return getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, null);
     }
 
-    /**
-     * Calls {@link EmployeeorderDAO#save(Employeeorder, Employee)} with {@link Employee} = null.
-     */
     public void save(Employeeorder eo) {
-        save(eo, null);
-    }
-
-    /**
-     * Saves the given Employeeorder and sets creation-/update-user and creation-/update-date.
-     */
-    @Deprecated
-    public void save(Employeeorder eo, Employee loginEmployee) {
         employeeorderRepository.save(eo);
     }
 

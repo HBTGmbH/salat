@@ -101,7 +101,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
                 Suborder copy = so.copy(true, loginEmployee.getSign());
 
-                suborderDAO.save(copy, loginEmployee);
+                suborderDAO.save(copy);
 
                 request.getSession().removeAttribute("soId");
 
@@ -122,14 +122,11 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 Suborder suborder = suborderDAO.getSuborderById(soId);
 
                 if (suborder != null) {
-
-                    Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
                     for (Suborder tempSuborder : suborder.getAllChildren()) {
                         tempSuborder.setFromDate(suborder.getFromDate());
                         tempSuborder.setUntilDate(suborder.getUntilDate());
                     }
-                    suborderDAO.save(suborder, loginEmployee);
+                    suborderDAO.save(suborder);
                 }
             }
             return mapping.findForward("success");
@@ -234,8 +231,6 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 return mapping.getInputForward();
             }
 
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
             // 'main' task - prepare everything to store the suborder.
             // I.e., copy properties from the form into the suborder before
             // saving.
@@ -252,7 +247,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                     && !so.getSuborders().isEmpty()
                     && !Objects.equals(so.getCustomerorder().getId(), customerorder.getId())) {
                     // set customerorder in all descendants					
-                    so.setCustomerOrderForAllDescendants(customerorder, suborderDAO, loginEmployee, so);
+                    so.setCustomerOrderForAllDescendants(customerorder, suborderDAO, so);
                 }
                 so = suborderDAO.getSuborderById(soId);
             } else {
@@ -308,7 +303,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                             }
                         }
                         if (changed) {
-                            employeeorderDAO.save(employeeorder, loginEmployee);
+                            employeeorderDAO.save(employeeorder);
                         }
                     }
                 }
@@ -335,7 +330,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
             so.setParentorder(parentOrderCandidate);
 
-            suborderDAO.save(so, loginEmployee);
+            suborderDAO.save(so);
 
             request.getSession().removeAttribute("soId");
 
@@ -532,7 +527,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         // check time period for hierarchical higher suborders
-        Suborder parentSuborder = null;
+        Suborder parentSuborder;
         if (addSuborderForm.getParentId() != null && addSuborderForm.getParentId() != 0 && addSuborderForm.getParentId() != -1) {
             parentSuborder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
             if (parentSuborder != null && Objects.equals(parentSuborder.getCustomerorder().getId(), addSuborderForm.getCustomerorderId())) {

@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthorizedUser;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -24,7 +25,7 @@ import org.tb.testutils.EmployeecontractTestUtils;
 
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
-@Import({ EmployeeDAO.class, EmployeecontractDAO.class, VacationDAO.class, OvertimeDAO.class })
+@Import({ EmployeeDAO.class, EmployeecontractDAO.class, VacationDAO.class, OvertimeDAO.class, TimereportDAO.class})
 public class EmployeecontractDAOTest {
 
 	@Autowired
@@ -44,7 +45,7 @@ public class EmployeecontractDAOTest {
 	@Test
 	public void employee_contract_can_be_saved_and_gets_id() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
-		employeeDAO.save(employee, employee);
+		employeeDAO.save(employee);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee);
 		employeecontractDAO.save(ec);
@@ -55,7 +56,7 @@ public class EmployeecontractDAOTest {
 	@Test
 	public void employee_contract_can_be_deleted() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
-		employeeDAO.save(employee, employee);
+		employeeDAO.save(employee);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee);
 		employeecontractDAO.save(ec);

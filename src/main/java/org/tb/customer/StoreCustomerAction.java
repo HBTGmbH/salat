@@ -11,7 +11,6 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.employee.domain.Employee;
 
 /**
  * action class for storing a customer permanently
@@ -52,9 +51,7 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
             cu.setShortname(cuForm.getShortname());
             cu.setAddress(cuForm.getAddress());
 
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
-            customerDAO.save(cu, loginEmployee);
+            customerDAO.save(cu);
 
 //				request.getSession().setAttribute("customers", customerDAO.getCustomers());
             request.getSession().removeAttribute("cuId");

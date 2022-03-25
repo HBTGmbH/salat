@@ -26,7 +26,6 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
@@ -221,8 +220,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             eo.setFromDate(fromDate);
             eo.setSign(eoForm.getSign());
 
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
             if (eo.getSuborder().getCustomerorder().getSign().equals(
                     GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
                     && !eo.getSuborder().getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
@@ -260,7 +257,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 }
             }
 
-            employeeorderDAO.save(eo, loginEmployee);
+            employeeorderDAO.save(eo);
 
             employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
             long orderId = (Long) request.getSession().getAttribute("currentOrderId");
@@ -343,7 +340,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             errors = new ActionMessages();
         }
 
-        String dateString = "";
+        String dateString;
         if (which.equals("from")) {
             dateString = eoForm.getValidFrom().trim();
         } else {

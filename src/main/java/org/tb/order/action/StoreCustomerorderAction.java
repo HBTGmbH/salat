@@ -23,17 +23,14 @@ import org.tb.common.util.DurationUtils;
 import org.tb.customer.CustomerDAO;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 
 /**
  * action class for storing a customer order permanently
@@ -50,7 +47,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
     private final CustomerorderDAO customerorderDAO;
     private final EmployeeDAO employeeDAO;
     private final EmployeeorderDAO employeeorderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -116,8 +112,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             }
             LocalDate fromDate = DateUtils.parseOrNull(coForm.getValidFrom());
 
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-
             /* adjust suborders */
             List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(coId, false);
             if (suborders != null && !suborders.isEmpty()) {
@@ -144,7 +138,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
                     if (suborderchanged) {
 
-                        suborderDAO.save(so, loginEmployee);
+                        suborderDAO.save(so);
 
                         // adjust employeeorders
                         List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
@@ -170,7 +164,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                                     }
                                 }
                                 if (changed) {
-                                    employeeorderDAO.save(employeeorder, loginEmployee);
+                                    employeeorderDAO.save(employeeorder);
                                 }
                             }
                         }
@@ -215,7 +209,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             co.setStatusreport(coForm.getStatusreport());
             co.setHide(coForm.getHide());
 
-            customerorderDAO.save(co, loginEmployee);
+            customerorderDAO.save(co);
 
             request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
             request.getSession().removeAttribute("coId");
@@ -305,7 +299,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
     /**
      * validates the form data (syntax and logic)
      */
-    private ActionMessages validateFormData(HttpServletRequest request, AddCustomerorderForm coForm) throws IOException {
+    private ActionMessages validateFormData(HttpServletRequest request, AddCustomerorderForm coForm) {
 
         ActionMessages errors = getErrors(request);
         if (errors == null) {
@@ -411,21 +405,4 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
         return errors;
     }
 
-    private void initializeMultipleEmployeeOrders(Employee loginEmployee, HttpServletRequest request, long cId, long sId) {
-        List<Customerorder> customerOrders;
-        if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
-                || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-            customerOrders = customerorderDAO.getCustomerorders();
-        } else {
-            customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
-        }
-        request.getSession().setAttribute("visibleCustomerOrders", customerOrders);
-        List<Employeecontract> employeecontracts = employeecontractDAO.getValidEmployeeContractsOrderedByFirstname();
-        request.getSession().setAttribute("employeecontracts", employeecontracts);
-        List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(cId, false);
-        request.getSession().setAttribute("suborders", suborders);
-        request.getSession().setAttribute("currentCustomer", cId);
-        request.getSession().setAttribute("currentSuborder", sId);
-        request.getSession().setAttribute("showAllSuborders", false);
-    }
 }

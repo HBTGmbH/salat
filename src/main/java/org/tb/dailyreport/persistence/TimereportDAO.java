@@ -524,13 +524,6 @@ public class TimereportDAO {
      * Calls {@link TimereportDAO#save(Timereport, Employee, boolean)} with {@link Employee} = null.
      */
     public void save(Timereport tr) {
-        save(tr, null, true);
-    }
-
-    /**
-     * Saves the given timereport and sets creation-/update-user and creation-/update-date.
-     */
-    public void save(Timereport tr, Employee loginEmployee, boolean changeUpdateDate) {
         timereportRepository.save(tr);
     }
 

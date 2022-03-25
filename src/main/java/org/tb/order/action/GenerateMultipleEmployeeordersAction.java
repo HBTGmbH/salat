@@ -112,7 +112,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                         eo.setSign("");
                         eo.setDebithours(so.getDebithours());
                         eo.setDebithoursunit(so.getDebithoursunit());
-                        employeeorderDAO.save(eo, loginEmployee);
+                        employeeorderDAO.save(eo);
 
                         Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
 

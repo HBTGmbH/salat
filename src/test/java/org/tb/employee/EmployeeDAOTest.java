@@ -14,21 +14,29 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.AuthorizedUserAuditorAware;
+import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.testutils.EmployeeTestUtils;
 
 @DataJpaTest
-@Import({ AuthorizedUserAuditorAware.class, AuthorizedUser.class, EmployeeDAO.class })
+@Import({
+		AuthorizedUserAuditorAware.class,
+		AuthorizedUser.class,
+		EmployeeDAO.class,
+		EmployeecontractDAO.class,
+		VacationDAO.class,
+		OvertimeDAO.class,
+		TimereportDAO.class
+})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class EmployeeDAOTest {
 
 	@Autowired
 	private EmployeeDAO employeeDAO;
-
-	@MockBean
-	private EmployeecontractDAO employeecontractDAO;
 
 	@MockBean
 	private AuthorizedUser authorizedUser;
@@ -53,7 +61,7 @@ public class EmployeeDAOTest {
 	@Test
 	public void new_employee_has_id_set() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
-		employeeDAO.save(employee, employee);
+		employeeDAO.save(employee);
 		assertThat(employee.getId()).isNotNull();
 	}
 
@@ -64,7 +72,7 @@ public class EmployeeDAOTest {
 	public void employee_gets_loaded_by_id() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		
-		employeeDAO.save(employee, employee);
+		employeeDAO.save(employee);
 		Long employeeId = employee.getId();
 
 		employee = employeeDAO.getEmployeeById(employeeId);
@@ -78,7 +86,7 @@ public class EmployeeDAOTest {
 	public void employee_gets_loaded_by_sign() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		
-		employeeDAO.save(employee, employee);
+		employeeDAO.save(employee);
 		employee.getId();
 
 		employee = employeeDAO.getEmployeeBySign(TESTY_SIGN);
@@ -92,7 +100,7 @@ public class EmployeeDAOTest {
 	public void employee_is_deleted_in_test_db() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		
-		employeeDAO.save(employee, employee);
+		employeeDAO.save(employee);
 		Long employeeId = employee.getId();
 		
 		assertThat(employeeDAO.deleteEmployeeById(employeeId)).isTrue();

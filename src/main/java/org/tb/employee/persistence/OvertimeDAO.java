@@ -19,17 +19,7 @@ public class OvertimeDAO {
         return overtimeRepository.findAllByEmployeecontractId(employeeContractId);
     }
 
-    /**
-     * Calls {@link OvertimeDAO#save(Overtime, Employee)} with the given {@link Overtime} and null for the {@link Employee}.
-     */
     public void save(Overtime overtime) {
-        save(overtime, null);
-    }
-
-    /**
-     * Saves the given overtime and sets creation-user and creation-date.
-     */
-    public void save(Overtime overtime, Employee loginEmployee) {
         overtimeRepository.save(overtime);
     }
 

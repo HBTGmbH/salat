@@ -42,7 +42,7 @@ public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
             Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
             em.changePassword(settingsForm.getNewpassword());
             loginEmployee.changePassword(settingsForm.getNewpassword());
-            employeeDAO.save(em, loginEmployee);
+            employeeDAO.save(em);
 
 
             request.setAttribute("passwordchanged", true);

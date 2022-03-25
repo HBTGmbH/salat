@@ -54,14 +54,6 @@ public class CustomerDAO {
      * Calls {@link CustomerDAO#save(Customer, Employee)} with {@link Employee} = null.
      */
     public void save(Customer cu) {
-        save(cu, null);
-    }
-
-
-    /**
-     * Saves the given customer and sets creation-/update-user and creation-/update-date.
-     */
-    public void save(Customer cu, Employee loginEmployee) {
         customerRepository.save(cu);
     }
 

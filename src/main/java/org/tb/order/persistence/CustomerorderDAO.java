@@ -191,17 +191,7 @@ public class CustomerorderDAO {
         }, Sort.by(Customerorder_.SIGN, Customerorder_.DESCRIPTION));
     }
 
-    /**
-     * Calls {@link CustomerorderDAO#save(Customerorder, Employee)} with {@link Employee} = null.
-     */
     public void save(Customerorder co) {
-        save(co, null);
-    }
-
-    /**
-     * Saves the given order and sets creation-/update-user and creation-/update-date.
-     */
-    public void save(Customerorder co, Employee loginEmployee) {
         customerorderRepository.save(co);
     }
 

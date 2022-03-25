@@ -106,11 +106,7 @@ public class EmployeeDAO {
         }
     }
 
-
-    /**
-     * Saves the given employee and sets creation-/update-user and creation-/update-date.
-     */
-    public void save(Employee employee, Employee loginEmployee) {
+    public void save(Employee employee) {
         employeeRepository.save(employee);
     }
 

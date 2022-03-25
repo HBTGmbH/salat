@@ -50,7 +50,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
     private final AuthorizedUser authorizedUser;
 
     @Override
-    public ActionForward executeWithForm(ActionMapping mapping, LoginEmployeeForm loginEmployeeForm, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ActionForward executeWithForm(ActionMapping mapping, LoginEmployeeForm loginEmployeeForm, HttpServletRequest request, HttpServletResponse response) {
         log.trace("entering {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
         try {
             Employee loginEmployee = employeeDAO.getLoginEmployee(loginEmployeeForm.getLoginname());
@@ -68,7 +68,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
                     em.changePassword(loginEmployeeForm.getPassword());
                     loginEmployee.changePassword(loginEmployeeForm.getPassword());
-                    employeeDAO.save(em, loginEmployee);
+                    employeeDAO.save(em);
                 } else {
                     return loginFailed(request, "form.login.error.unknownuser", mapping);
                 }
