@@ -565,6 +565,7 @@ public class TimereportDAO {
             .status(timereport.getStatus())
             .billable(timereport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES)
             .employeeorderId(timereport.getEmployeeorder().getId())
+            .employeecontractId(timereport.getEmployeecontract().getId())
             .employeeId(timereport.getEmployeecontract().getEmployee().getId())
             .employeeName(timereport.getEmployeecontract().getEmployee().getName())
             .employeeSign(timereport.getEmployeecontract().getEmployee().getSign())
