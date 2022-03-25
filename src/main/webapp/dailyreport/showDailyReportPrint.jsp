@@ -157,7 +157,14 @@
 				
 				<!-- Fortbildung -->
 				<td align="center">
-					<input type="checkbox" checked="${timereport.training ? 'checked' : ''}" disabled />
+					<c:choose>
+						<c:when test="${timereport.training}">
+							<input type="checkbox" checked disabled />
+						</c:when>
+						<c:otherwise>
+							<input type="checkbox" disabled />
+						</c:otherwise>
+					</c:choose>
 				</td>
 
 
