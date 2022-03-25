@@ -108,7 +108,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set the begin time as the end time of the latest existing timereport of current employee
         // for current day. If no other reports exist so far, set standard begin time (0800).
-        int[] beginTime = timereportHelper.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
+        long[] beginTime = timereportHelper.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
         form.setSelectedHourBegin(beginTime[0]);
         form.setSelectedMinuteBegin(beginTime[1]);
         //		TimereportHelper.refreshHours(reportForm);

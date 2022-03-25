@@ -292,11 +292,10 @@ public class ExcelArchivierer {
             colIndex++;
         }
         Cell cell = row.createCell(colIndex, NUMERIC);
-        if (invoiceTimereportViewHelper.getReferenceday().getRefdate() != null) {
+        if (invoiceTimereportViewHelper.getReferenceday() != null) {
             Date date = Date.from(
                 invoiceTimereportViewHelper
                     .getReferenceday()
-                    .getRefdate()
                     .atStartOfDay(ZoneId.of(DEFAULT_TIMEZONE_ID))
                     .toInstant()
             );
@@ -309,7 +308,7 @@ public class ExcelArchivierer {
         if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))
                 && request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
             cell = row.createCell(colIndex, STRING);
-            cell.setCellValue(createRTS(invoiceTimereportViewHelper.getEmployeecontract().getEmployee().getSign(), factory));
+            cell.setCellValue(createRTS(invoiceTimereportViewHelper.getEmployeeSign(), factory));
             colIndex++;
         }
         if (request.getSession().getAttribute("timereportdescriptionbox") != null && ((Boolean) request.getSession().getAttribute("timereportdescriptionbox"))) {

@@ -12,8 +12,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
@@ -33,25 +31,21 @@ public class Timereport extends AuditedEntity implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "REFERENCEDAY_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
     private Referenceday referenceday;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
     private Employeecontract employeecontract;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "SUBORDER_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
     private Suborder suborder;
 
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEEORDER_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
     private Employeeorder employeeorder;
 
     private Integer durationhours;
@@ -104,10 +98,6 @@ public class Timereport extends AuditedEntity implements Serializable {
 
     public Duration getDuration() {
         return Duration.ofHours(durationhours).plusMinutes(durationminutes);
-    }
-
-    public boolean matches5MinuteSchema() {
-        return durationminutes % 5 == 0;
     }
 
 }

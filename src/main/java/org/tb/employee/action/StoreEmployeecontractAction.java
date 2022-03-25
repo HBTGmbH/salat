@@ -6,42 +6,31 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.ErrorCode;
-import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.Timereport;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Vacation;
-import org.tb.dailyreport.persistence.VacationDAO;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.domain.Overtime;
+import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 
 /**
  * action class for storing an employee contractpermanently

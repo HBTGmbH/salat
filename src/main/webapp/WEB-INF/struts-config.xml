@@ -46,7 +46,6 @@
 		<form-bean name="showSettingsForm" type="org.tb.user.ShowSettingsForm" />
 		<form-bean name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeForm" />
 		<form-bean name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseForm" />
-		<form-bean name="showAdminOptionsForm" type="org.tb.admin.ShowAdminOptionsForm" />
 		<form-bean name="showStatusReportForm" type="org.tb.statusreport.ShowStatusReportForm" />
 		<form-bean name="addStatusReportForm" type="org.tb.statusreport.AddStatusReportForm" />
 		<form-bean name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingForm" />
@@ -449,13 +448,6 @@
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployee.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<!-- Admin -->
-		<action path="/ShowAdminOptions" input="/admin/adminoptions.jsp"
-			type="org.tb.admin.ShowAdminOptionsAction" validate="false" name="showAdminOptionsForm">
-			<forward name="success" path="/admin/adminoptions.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 

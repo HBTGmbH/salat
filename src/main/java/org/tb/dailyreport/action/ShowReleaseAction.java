@@ -20,13 +20,13 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.common.GlobalConstants;
 import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.OptionItem;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -43,6 +43,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     private final EmployeeDAO employeeDAO;
     private final TimereportHelper timereportHelper;
     private final SimpleMailService simpleMailService;
+    private final TimereportService timereportService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
@@ -163,15 +164,11 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     .getAttribute("releaseDate");
 
             // set status in timereports
-            List<Timereport> timereports = timereportDAO
+            List<TimereportDTO> timereports = timereportDAO
                     .getOpenTimereportsByEmployeeContractIdBeforeDate(
                             employeecontract.getId(), releaseDate);
-            for (Timereport timereport : timereports) {
-                timereport
-                        .setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
-                timereport.setReleasedby(loginEmployee.getSign());
-                timereport.setReleased(DateUtils.now());
-                timereportDAO.save(timereport, loginEmployee, false);
+            for (TimereportDTO timereport : timereports) {
+                timereportService.releaseTimereport(timereport.getId(), loginEmployee.getSign());
             }
             releaseDateFromContract = releaseDate;
 
@@ -237,12 +234,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             LocalDate acceptanceDate = (LocalDate) request.getSession().getAttribute("acceptanceDate");
 
             // set status in timereports
-            List<Timereport> timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontract.getId(), acceptanceDate);
-            for (Timereport timereport : timereports) {
-                timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
-                timereport.setAcceptedby(loginEmployee.getSign());
-                timereport.setAccepted(DateUtils.now());
-                timereportDAO.save(timereport, loginEmployee, false);
+            List<TimereportDTO> timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontract.getId(), acceptanceDate);
+            for (TimereportDTO timereport : timereports) {
+                timereportService.acceptTimereport(timereport.getId(), loginEmployee.getSign());
             }
             acceptanceDateFromContract = acceptanceDate;
 
@@ -270,10 +264,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
 
             // set status in timereports
-            List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontract.getId(), reopenDate);
-            for (Timereport timereport : timereports) {
-                timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
-                timereportDAO.save(timereport, loginEmployee, false);
+            List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontract.getId(), reopenDate);
+            for (TimereportDTO timereport : timereports) {
+                timereportService.reopenTimereport(timereport.getId());
             }
 
             // TODO what happends here?

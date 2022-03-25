@@ -26,7 +26,6 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.Vacation;
 import org.tb.order.domain.Employeeorder;
 
@@ -76,14 +75,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @JoinColumn(name = "EMPLOYEE_ID")
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     private Employee employee;
-
-    /**
-     * list of timereports, associated to this employeecontract
-     */
-    @OneToMany(mappedBy = "employeecontract")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Timereport> timereports = new ArrayList<>();
 
     /**
      * list of employeeorders, associated to this employeecontract

@@ -1,19 +1,16 @@
 package org.tb.invoice;
 
-import static org.tb.common.util.TimeFormatUtils.decimalFormatHoursAndMinutes;
-import static org.tb.common.util.TimeFormatUtils.timeFormatHoursAndMinutes;
-
+import java.time.LocalDate;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.tb.dailyreport.domain.Referenceday;
-import org.tb.dailyreport.domain.Timereport;
-import org.tb.employee.domain.Employeecontract;
+import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.TimereportDTO;
 
 public class InvoiceTimereportHelper {
 
-    private Timereport timereport;
+    private TimereportDTO timereport;
     private boolean visible;
 
-    public InvoiceTimereportHelper(Timereport timereport) {
+    public InvoiceTimereportHelper(TimereportDTO timereport) {
         this.timereport = timereport;
         this.visible = true;
     }
@@ -27,11 +24,11 @@ public class InvoiceTimereportHelper {
     }
 
     public String getDurationString() {
-        return timeFormatHoursAndMinutes(timereport.getDurationhours(), timereport.getDurationminutes());
+        return DurationUtils.format(timereport.getDuration());
     }
 
     public String getHoursString() {
-        return decimalFormatHoursAndMinutes(timereport.getDurationhours(), timereport.getDurationminutes());
+        return DurationUtils.decimalFormat(timereport.getDuration());
     }
 
     public String getTaskdescriptionHtml() {
@@ -46,24 +43,28 @@ public class InvoiceTimereportHelper {
         return timereport.getId();
     }
 
-    public Integer getDurationhours() {
-        return timereport.getDurationhours();
+    public Long getDurationhours() {
+        return timereport.getDuration().toHours();
     }
 
     public Integer getDurationminutes() {
-        return timereport.getDurationminutes();
+        return timereport.getDuration().toMinutesPart();
     }
 
-    public Referenceday getReferenceday() {
+    public LocalDate getReferenceday() {
         return timereport.getReferenceday();
     }
 
-    public Employeecontract getEmployeecontract() {
-        return timereport.getEmployeecontract();
+    public Long getEmployeecontract() {
+        return timereport.getEmployeecontractId();
     }
 
     public String getTaskdescription() {
         return timereport.getTaskdescription();
+    }
+
+    public String getEmployeeSign() {
+        return timereport.getEmployeeSign();
     }
 
 }

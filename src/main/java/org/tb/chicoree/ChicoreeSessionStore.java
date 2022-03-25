@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.common.OptionItem;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.OvertimeStatus;
 import org.tb.order.domain.Employeeorder;
@@ -59,18 +59,18 @@ public class ChicoreeSessionStore {
     return Optional.ofNullable((LocalDate) httpSession.getAttribute("dashboardDate"));
   }
 
-  public void setTimereports(LocalDate date, List<Timereport> timereports) {
+  public void setTimereports(LocalDate date, List<TimereportDTO> timereports) {
     setDashboardDate(date);
     var durationSum = timereports
         .stream()
-        .map(Timereport::getDuration)
+        .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
     httpSession.setAttribute("timereports", timereports);
     httpSession.setAttribute("timereportsExist", !timereports.isEmpty());
     httpSession.setAttribute("timereportsDuration", DurationUtils.format(durationSum));
     var dashboardTimereports = timereports
         .stream()
-        .sorted(Comparator.comparing(Timereport::getSequencenumber).reversed())
+        .sorted(Comparator.comparing(TimereportDTO::getSequencenumber).reversed())
         .map(DashboardTimereport::valueOf)
         .collect(Collectors.toList());
     httpSession.setAttribute("dashboardTimereports", dashboardTimereports);

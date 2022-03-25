@@ -31,12 +31,12 @@ public class AddDailyReportForm extends ActionForm {
     private String suborder;
     private String status;
     private Boolean training;
-    private int selectedHourBegin;
-    private int selectedMinuteBegin;
-    private int selectedHourEnd;
-    private int selectedMinuteEnd;
-    private int selectedHourDuration;
-    private int selectedMinuteDuration;
+    private long selectedHourBegin;
+    private long selectedMinuteBegin;
+    private long selectedHourEnd;
+    private long selectedMinuteEnd;
+    private long selectedHourDuration;
+    private long selectedMinuteDuration;
     private long orderId;
     private long suborderSignId;
     private long suborderDescriptionId;
@@ -58,8 +58,8 @@ public class AddDailyReportForm extends ActionForm {
         }
 
         // end time must be later than begin time when entering hours:minute
-        int begin = selectedHourBegin * MINUTES_PER_HOUR + selectedMinuteBegin;
-        int end = selectedHourEnd * MINUTES_PER_HOUR + selectedMinuteEnd;
+        long begin = selectedHourBegin * MINUTES_PER_HOUR + selectedMinuteBegin;
+        long end = selectedHourEnd * MINUTES_PER_HOUR + selectedMinuteEnd;
         if (end < begin) {
             errors.add("selectedHourBegin", new ActionMessage("form.timereport.error.endbeforebegin"));
         }

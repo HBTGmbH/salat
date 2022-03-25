@@ -10,8 +10,8 @@ public class DailyReportData {
     private long employeeorderId;
     private String orderLabel;
     private String suborderLabel;
-    private int hours;
-    private int minutes;
+    private long hours;
+    private long minutes;
     private String comment;
     private boolean isTraining;
     private String suborderSign;

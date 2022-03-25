@@ -19,7 +19,6 @@ import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
-import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
@@ -42,11 +41,13 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.action.ShowMatrixForm;
-import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.viewhelper.matrix.MergedReport.OrderSummaryData;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
@@ -117,7 +118,7 @@ public class MatrixHelper {
                 validUntil = employeecontract.getValidUntil();
         }
 
-        List<Timereport> timeReportList;
+        List<TimereportDTO> timeReportList;
         if (invoiceable || nonInvoiceable) {
             timeReportList = queryTimereports(dateFirst, dateLast, employeeContractId, method, customerOrderId);
 
@@ -129,15 +130,15 @@ public class MatrixHelper {
 
         List<MergedReport> mergedReportList = new ArrayList<>();
         //filling a list with new or merged 'mergedreports'
-        for (Timereport timeReport : timeReportList) {
+        for (TimereportDTO timeReport : timeReportList) {
             String taskdescription = extendedTaskDescription(timeReport, employeecontract == null);
-            LocalDate date = timeReport.getReferenceday().getRefdate();
-            long durationHours = timeReport.getDurationhours();
-            long durationMinutes = timeReport.getDurationminutes();
+            LocalDate date = timeReport.getReferenceday();
+            long durationHours = timeReport.getDuration().toHours();
+            long durationMinutes = timeReport.getDuration().toMinutesPart();
 
             // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Überstundenausgleich" into it
             // -> needed because overtime compensation should be shown in matrix overview! (taskdescription as if-clause in jsp!)
-            if (timeReport.getSuborder().getSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
+            if (timeReport.getSuborderSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
                 if (taskdescription.length() == 0) {
                     taskdescription = GlobalConstants.OVERTIME_COMPENSATION_TEXT;
                 }
@@ -191,18 +192,15 @@ public class MatrixHelper {
         return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
     }
 
-    private String extendedTaskDescription(Timereport tr, boolean withSign) {
+    private String extendedTaskDescription(TimereportDTO tr, boolean withSign) {
         StringBuilder sb = new StringBuilder();
         if (withSign) {
-            sb.append(tr.getEmployeecontract().getEmployee().getSign());
+            sb.append(tr.getEmployeeSign());
             sb.append(": ");
         }
         sb.append(tr.getTaskdescription());
         sb.append(" (");
-        sb.append(tr.getDurationhours());
-        sb.append(":");
-        if (tr.getDurationminutes() < 10) sb.append("0");
-        sb.append(tr.getDurationminutes());
+        sb.append(DurationUtils.format(tr.getDuration()));
         sb.append(")");
         sb.append(LINE_SEPARATOR);
         return sb.toString();
@@ -308,14 +306,14 @@ public class MatrixHelper {
         }
     }
 
-    private void mergeTimereport(List<MergedReport> mergedReportList, Timereport timeReport, String taskdescription,
+    private void mergeTimereport(List<MergedReport> mergedReportList, TimereportDTO timeReport, String taskdescription,
                                  LocalDate date, long durationHours, long durationMinutes) {
         if (!mergedReportList.isEmpty()) {
             //search until timereport matching mergedreport; merge bookingdays in case of match
             for (int mergedReportIndex = 0; mergedReportIndex < mergedReportList.size(); mergedReportIndex++) {
                 MergedReport mergedReport = mergedReportList.get(mergedReportIndex);
-                if ((mergedReport.getCustomOrder().getSign() + mergedReport.getSubOrder().getSign()).equals(timeReport.getSuborder().getCustomerorder().getSign()
-                        + timeReport.getSuborder().getSign())) {
+                if ((mergedReport.getCustomOrder().getSign() + mergedReport.getSubOrder().getSign()).equals(timeReport.getCustomerorderSign()
+                        + timeReport.getSuborderSign())) {
                     for (BookingDay bookingDay : mergedReport.getBookingDays()) {
                         if (bookingDay.getDate().equals(date)) {
                             bookingDay.addBooking(durationHours, durationMinutes, taskdescription);
@@ -330,16 +328,17 @@ public class MatrixHelper {
             }
         }
         //if bookingday is not available, add new or merge report by adding a new bookingday and substitute the mergedreportlist entrys
-        mergedReportList.add(new MergedReport(timeReport.getSuborder().getCustomerorder(), timeReport.getSuborder(), taskdescription, date, durationHours, durationMinutes));
+        OrderSummaryData customerorderData = new OrderSummaryData(timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
+        OrderSummaryData suborderData = new OrderSummaryData(timeReport.getSuborderSign(), timeReport.getSuborderDescription());
+        mergedReportList.add(new MergedReport(customerorderData, suborderData, taskdescription, date, durationHours, durationMinutes));
     }
 
-    private void filterInvoiceable(List<Timereport> timeReportList, boolean invoiceable, boolean nonInvoiceable) {
+    private void filterInvoiceable(List<TimereportDTO> timeReportList, boolean invoiceable, boolean nonInvoiceable) {
         if (invoiceable && nonInvoiceable) return;
 
-        ArrayList<Timereport> tempTimeReportList = new ArrayList<>();
-        for (Timereport timeReport : timeReportList) {
-            boolean invoice = timeReport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES;
-            if ((invoiceable && invoice) || (nonInvoiceable && !invoice)) {
+        ArrayList<TimereportDTO> tempTimeReportList = new ArrayList<>();
+        for (TimereportDTO timeReport : timeReportList) {
+            if ((invoiceable && timeReport.isBillable()) || (nonInvoiceable && !timeReport.isBillable())) {
                 tempTimeReportList.add(timeReport);
             }
         }
@@ -347,7 +346,7 @@ public class MatrixHelper {
         timeReportList.addAll(tempTimeReportList);
     }
 
-    private List<Timereport> queryTimereports(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId) {
+    private List<TimereportDTO> queryTimereports(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId) {
         //choice of timereports by date, employeecontractid and/or customerorderid
         if (method == 1 || method == 3) { // FIXME magic numbers
             if (employeeContractId == -1) {
@@ -477,7 +476,7 @@ public class MatrixHelper {
 
             isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
             if (isAcceptanceWarning) {
-                Timereport timereport = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, employeeContract.getId());
+                TimereportDTO timereport = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, employeeContract.getId());
                 if (timereport != null) {
                     Employee employee = employeeDAO.getEmployeeBySign(timereport.getAcceptedby());
                     acceptedBy = employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")";
@@ -568,7 +567,7 @@ public class MatrixHelper {
             }
             results.put("acceptance", isAcceptanceWarning);
             if (isAcceptanceWarning) {
-                Timereport tr = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, Objects.requireNonNull(currentEc).getId());
+                TimereportDTO tr = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, Objects.requireNonNull(currentEc).getId());
                 Employee employee = employeeDAO.getEmployeeBySign(tr.getAcceptedby());
                 results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
             }

@@ -303,33 +303,31 @@
 				<tr>
 					<td class="info"><bean:message
 						key="main.timereport.tooltip.employee" />:</td>
-					<td class="info" colspan="3"><c:out
-						value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out
-						value="${timereport.employeecontract.timeString}" /><c:if 
-						test="${timereport.employeecontract.openEnd}"><bean:message 
-						key="main.general.open.text" /></c:if>)</td>
+					<td class="info" colspan="3">
+						<c:out value="${timereport.employeeName}" />
+					</td>
 				</tr>
 				<tr>
 					<td class="info"><bean:message
 						key="main.timereport.tooltip.order" />:</td>
 					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.customerorder.sign}" /></td>
+						value="${timereport.customerorderSign}" /></td>
 				</tr>
 				<tr>
 					<td class="info">&nbsp;</td>
 					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.customerorder.description}" /></td>
+						value="${timereport.customerorderDescription}" /></td>
 				</tr>
 				<tr>
 					<td class="info"><bean:message
 						key="main.timereport.tooltip.suborder" />:</td>
 					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.sign}" /></td>
+						value="${timereport.suborderSign}" /></td>
 				</tr>
 				<tr>
 					<td class="info">&nbsp;</td>
 					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.description}" /></td>
+						value="${timereport.suborderDescription}" /></td>
 				</tr>
 				<tr>
 					<td class="info"><bean:message
@@ -382,52 +380,48 @@
 			</td>
 
 			<!-- Mitarbeiter -->
-			<td title="<c:out value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out 
-				value="${timereport.employeecontract.timeString}" /><c:if 
-				test="${timereport.employeecontract.openEnd}"><bean:message 
-				key="main.general.open.text" /></c:if>)"><c:out 
-				value="${timereport.employeecontract.employee.sign}" /></td>
+			<td>
+				<c:out value="${timereport.employeeSign}" />
+			</td>
 
 			<!-- Datum -->
-			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal
-				name="timereport" property="referenceday.holiday" value="true">
-				<span style="color:red"> <bean:message
-					key="${timereport.referenceday.dow}" /><br>
-				<c:out value="${timereport.referenceday.refdate}" /></span>
-			</logic:equal> <logic:equal name="timereport" property="referenceday.holiday"
-				value="false">
-				<bean:message key="${timereport.referenceday.dow}" />
-				<br>
-				<c:out value="${timereport.referenceday.refdate}" />
-			</logic:equal></td>
+			<td>
+				<logic:equal name="timereport" property="holiday" value="true">
+					<span style="color:red"><java8:formatLocalDate value="${timereport.referenceday}" /></span>
+				</logic:equal>
+				<logic:equal name="timereport" property="holiday" value="false">
+					<java8:formatLocalDate value="${timereport.referenceday}" />
+				</logic:equal>
+			</td>
 
 			<!-- Auftrag -->
-			<td
-				title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
-			<c:out value="${timereport.suborder.customerorder.sign}" /><br>
-			<c:out value="${timereport.suborder.sign}" /></td>
+			<td>
+				<c:out value="${timereport.customerorderSign}" /><br>
+				<c:out value="${timereport.suborderSign}" />
+			</td>
 
 			<!-- Bezeichnung -->
-			<td><c:out
-				value="${timereport.suborder.customerorder.shortdescription}" /><br>
-			<c:out value="${timereport.suborder.shortdescription}" /></td>
+			<td>
+				<c:out value="${timereport.customerorderDescription}" /><br>
+				<c:out value="${timereport.suborderDescription}" />
+			</td>
 			
 			<!-- Kommentar -->
-			<td><c:choose>
+			<td>
+				<c:choose>
 				<c:when test="${timereport.taskdescription eq ''}">
 					&nbsp;
 				</c:when>
 				<c:otherwise>
 					<c:out value="${timereport.taskdescription}" />
 				</c:otherwise>
-			</c:choose></td>
+				</c:choose>
+			</td>
 
 			<!-- Dauer -->
-			<td align="center" nowrap><c:if
-				test="${timereport.durationhours < 10}">0</c:if><c:out
-				value="${timereport.durationhours}" />:<c:if
-				test="${timereport.durationminutes < 10}">0</c:if><c:out
-				value="${timereport.durationminutes}" /></td>
+			<td align="center" nowrap>
+				<java8:formatLocalDate value="${timereport.duration}" />
+			</td>
 
 			</tr>
 		</c:forEach>

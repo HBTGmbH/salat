@@ -4,37 +4,37 @@ import static lombok.AccessLevel.PRIVATE;
 
 import java.util.Comparator;
 import lombok.NoArgsConstructor;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 
 @NoArgsConstructor(access = PRIVATE)
-public class TimereportByOrderAscComparator implements Comparator<Timereport> {
+public class TimereportByOrderAscComparator implements Comparator<TimereportDTO> {
 
-    public static final Comparator<Timereport> INSTANCE = new TimereportByOrderAscComparator();
+    public static final Comparator<TimereportDTO> INSTANCE = new TimereportByOrderAscComparator();
 
     /**
-     * @param tr1 first {@link Timereport}
-     * @param tr2 second {@link Timereport}
-     * @return Returns -1, 0, 1 if the first {@link Timereport} is less, equal, greater than the second one.
+     * @param tr1 first {@link TimereportDTO}
+     * @param tr2 second {@link TimereportDTO}
+     * @return Returns -1, 0, 1 if the first {@link TimereportDTO} is less, equal, greater than the second one.
      */
-    public int compare(Timereport tr1, Timereport tr2) {
-        if (tr1.getSuborder().getCustomerorder().getSign().compareTo(tr2.getSuborder().getCustomerorder().getSign()) < 0) {
+    public int compare(TimereportDTO tr1, TimereportDTO tr2) {
+        if (tr1.getCustomerorderSign().compareTo(tr2.getCustomerorderSign()) < 0) {
             return -1;
-        } else if (tr1.getSuborder().getCustomerorder().getSign().compareTo(tr2.getSuborder().getCustomerorder().getSign()) > 0) {
+        } else if (tr1.getCustomerorderSign().compareTo(tr2.getCustomerorderSign()) > 0) {
             return 1;
         } else {
-            if (tr1.getSuborder().getSign().compareTo(tr2.getSuborder().getSign()) < 0) {
+            if (tr1.getSuborderSign().compareTo(tr2.getSuborderSign()) < 0) {
                 return -1;
-            } else if (tr1.getSuborder().getSign().compareTo(tr2.getSuborder().getSign()) > 0) {
+            } else if (tr1.getSuborderSign().compareTo(tr2.getSuborderSign()) > 0) {
                 return 1;
             } else {
-                if (tr1.getReferenceday().getRefdate().compareTo(tr2.getReferenceday().getRefdate()) < 0) {
+                if (tr1.getReferenceday().compareTo(tr2.getReferenceday()) < 0) {
                     return -1;
-                } else if (tr1.getReferenceday().getRefdate().compareTo(tr2.getReferenceday().getRefdate()) > 0) {
+                } else if (tr1.getReferenceday().compareTo(tr2.getReferenceday()) > 0) {
                     return 1;
                 } else {
-                    if (tr1.getEmployeecontract().getEmployee().getSign().compareTo(tr2.getEmployeecontract().getEmployee().getSign()) < 0) {
+                    if (tr1.getEmployeeSign().compareTo(tr2.getEmployeeSign()) < 0) {
                         return -1;
-                    } else if (tr1.getEmployeecontract().getEmployee().getSign().compareTo(tr2.getEmployeecontract().getEmployee().getSign()) > 0) {
+                    } else if (tr1.getEmployeeSign().compareTo(tr2.getEmployeeSign()) > 0) {
                         return 1;
                     }
                 }

@@ -7,18 +7,19 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
 import org.tb.common.util.DateUtils;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 
 public class MergedReport implements Comparable<MergedReport> {
-    private Customerorder customOrder;
-    private Suborder subOrder;
+    private OrderSummaryData customOrder;
+    private OrderSummaryData subOrder;
     private double sumHours;
     private long sumMinutes;
     private final List<BookingDay> bookingDays = new ArrayList<>();
 
-    public MergedReport(Customerorder customOrder, Suborder subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
+    public MergedReport(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
         this.subOrder = subOrder;
         this.customOrder = customOrder;
         addBookingDay(date, durationHours, durationMinutes, taskdescription);
@@ -94,20 +95,21 @@ public class MergedReport implements Comparable<MergedReport> {
         return timeFormatMinutes(sumMinutes);
     }
 
-    public Customerorder getCustomOrder() {
+    public OrderSummaryData getCustomOrder() {
         return customOrder;
     }
 
-    public void setCustomOrder(Customerorder customOrder) {
-        this.customOrder = customOrder;
-    }
-
-    public Suborder getSubOrder() {
+    public OrderSummaryData getSubOrder() {
         return subOrder;
     }
 
-    public void setSubOrder(Suborder subOrder) {
-        this.subOrder = subOrder;
+
+    @Data
+    public static class OrderSummaryData {
+
+        private final String sign;
+        private final String shortdescription;
+
     }
 
 }

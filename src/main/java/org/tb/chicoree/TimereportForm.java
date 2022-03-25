@@ -11,7 +11,7 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 
 @Data
 public class TimereportForm extends ActionForm {
@@ -96,13 +96,13 @@ public class TimereportForm extends ActionForm {
     return errors;
   }
 
-  public void init(Timereport timereport) {
-    id = timereport.getId().toString();
-    date = format(timereport.getReferenceday().getRefdate());
-    orderId = timereport.getSuborder().getCustomerorder().getId().toString();
-    suborderId = timereport.getSuborder().getId().toString();
-    hours = timereport.getDurationhours().toString();
-    minutes = timereport.getDurationminutes().toString();
+  public void init(TimereportDTO timereport) {
+    id = String.valueOf(timereport.getId());
+    date = format(timereport.getReferenceday());
+    orderId = String.valueOf(timereport.getCustomerorderId());
+    suborderId = String.valueOf(timereport.getSuborderId());
+    hours = String.valueOf(timereport.getDuration().toHours());
+    minutes = String.valueOf(timereport.getDuration().toMinutesPart());
     comment = timereport.getTaskdescription();
   }
 

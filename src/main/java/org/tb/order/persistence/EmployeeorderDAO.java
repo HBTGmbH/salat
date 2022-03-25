@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
@@ -281,7 +281,7 @@ public class EmployeeorderDAO {
     public boolean deleteEmployeeorderById(long eoId) {
         boolean deleteOk = true;
 
-        List<Timereport> timereports = timereportDAO.getTimereportsByEmployeeOrderId(eoId);
+        List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeeOrderId(eoId);
         if (timereports != null && !timereports.isEmpty()) {
             deleteOk = false;
         }

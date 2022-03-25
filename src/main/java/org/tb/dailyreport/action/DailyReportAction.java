@@ -18,7 +18,7 @@ import org.tb.auth.AfterLogin;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -154,7 +154,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         }
 
 
-        List<Timereport> timereports;
+        List<TimereportDTO> timereports;
         List<Customerorder> orders = ec == null ? customerorderDAO.getCustomerorders() : customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
         request.getSession().setAttribute("orders", orders);
 
@@ -191,7 +191,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         // set timereports in session
         if (request.getSession().getAttribute("timereportComparator") != null) {
             @SuppressWarnings("unchecked")
-            Comparator<Timereport> comparator = (Comparator<Timereport>) request.getSession().getAttribute("timereportComparator");
+            Comparator<TimereportDTO> comparator = (Comparator<TimereportDTO>) request.getSession().getAttribute("timereportComparator");
             timereports.sort(comparator);
         }
         request.getSession().setAttribute("timereports", timereports);

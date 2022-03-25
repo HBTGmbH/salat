@@ -3,7 +3,7 @@ package org.tb.chicoree;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 
 @Data
 @RequiredArgsConstructor
@@ -14,13 +14,13 @@ public class DashboardTimereport {
   private final String comment;
   private final String id;
 
-  public static DashboardTimereport valueOf(Timereport timereport) {
-    var title = timereport.getSuborder().getCustomerorder().getSign()
-        + "/" + timereport.getSuborder().getCustomerorder().getShortdescription()
-        + " - " + timereport.getSuborder().getSign()
-        + "/" + timereport.getSuborder().getShortdescription();
+  public static DashboardTimereport valueOf(TimereportDTO timereport) {
+    var title = timereport.getCustomerorderSign()
+        + "/" + timereport.getCustomerorderDescription()
+        + " - " + timereport.getSuborderSign()
+        + "/" + timereport.getSuborderDescription();
     var duration = DurationUtils.format(timereport.getDuration());
-    return new DashboardTimereport(title, duration, timereport.getTaskdescription(), timereport.getId().toString());
+    return new DashboardTimereport(title, duration, timereport.getTaskdescription(), String.valueOf(timereport.getId()));
   }
 
 }

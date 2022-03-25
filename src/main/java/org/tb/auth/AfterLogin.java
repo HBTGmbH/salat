@@ -1,7 +1,6 @@
 package org.tb.auth;
 
 import static org.tb.common.util.DateUtils.addDays;
-import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getBeginOfMonth;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
@@ -21,7 +20,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.dailyreport.viewhelper.VacationViewer;
@@ -46,8 +45,8 @@ public class AfterLogin {
         List<Warning> warnings = new ArrayList<>();
 
         // timereport warning
-        List<Timereport> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
-        for (Timereport timereport : timereports) {
+        List<TimereportDTO> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
+        for (TimereportDTO timereport : timereports) {
             Warning warning = new Warning();
             warning.setSort(resources.getMessage(locale, "main.info.warning.timereportnotinrange"));
             warning.setText(timereport.getTimeReportAsString());
@@ -56,16 +55,16 @@ public class AfterLogin {
 
         // timereport warning 2
         timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontract);
-        for (Timereport timereport : timereports) {
+        for (TimereportDTO timereport : timereports) {
             Warning warning = new Warning();
             warning.setSort(resources.getMessage(locale, "main.info.warning.timereportnotinrangeforeo"));
-            warning.setText(timereport.getTimeReportAsString() + " " + timereport.getEmployeeorder().getEmployeeOrderAsString());
+            warning.setText(timereport.getTimeReportAsString() + " " + timereport.getEmployeeOrderAsString());
             warnings.add(warning);
         }
 
         // timereport warning 3: no duration
         timereports = timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
-        for (Timereport timereport : timereports) {
+        for (TimereportDTO timereport : timereports) {
             Warning warning = new Warning();
             warning.setSort(resources.getMessage(locale, "main.info.warning.timereport.noduration"));
             warning.setText(timereport.getTimeReportAsString());

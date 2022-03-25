@@ -30,7 +30,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.action.DailyReportAction;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -406,8 +406,8 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         List<String> timereportIdList = new ArrayList<>();
         for (Suborder suborder : suborderList) {
             List<InvoiceTimereportHelper> invoiceTimereportViewHelperList = new LinkedList<>();
-            List<Timereport> timereportList = timereportDAO.getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(dateFirst, dateLast, suborder.getId());
-            for (Timereport timereport : timereportList) {
+            List<TimereportDTO> timereportList = timereportDAO.getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(dateFirst, dateLast, suborder.getId());
+            for (TimereportDTO timereport : timereportList) {
                 InvoiceTimereportHelper invoiceTimereportViewHelper = new InvoiceTimereportHelper(timereport);
                 invoiceTimereportViewHelperList.add(invoiceTimereportViewHelper);
                 timereportIdList.add(String.valueOf(invoiceTimereportViewHelper.getId()));

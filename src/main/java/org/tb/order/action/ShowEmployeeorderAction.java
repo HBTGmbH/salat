@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -74,7 +74,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                     // 3) begin after end now?
                     if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
                         // 4) timereports out of range?
-                        List<Timereport> timereportsInvalidForDates = timereportDAO.
+                        List<TimereportDTO> timereportsInvalidForDates = timereportDAO.
                                 getTimereportsByEmployeeorderIdInvalidForDates(employeeorder.getFromDate(), employeeorder.getUntilDate(), employeeorder.getId());
                         if (timereportsInvalidForDates == null || timereportsInvalidForDates.isEmpty()) {
                             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

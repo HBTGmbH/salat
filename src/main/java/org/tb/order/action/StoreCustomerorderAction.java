@@ -21,7 +21,7 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.customer.CustomerDAO;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -400,7 +400,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             });
         }
 
-        List<Timereport> timereportsInvalidForDates = timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(fromDate, untilDate, coId);
+        List<TimereportDTO> timereportsInvalidForDates = timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(fromDate, untilDate, coId);
         if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
             request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
             errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));

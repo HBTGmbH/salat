@@ -32,7 +32,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.domain.Workingday;
@@ -128,20 +128,20 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 // set the begin time as the end time of the latest existing timereport of current employee
                 // for current day. If no other reports exist so far, set standard begin time (0800).
-                int[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
-                int beginHours = beginTime[0];
-                int beginMinutes = beginTime[1];
+                long[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
+                long beginHours = beginTime[0];
+                long beginMinutes = beginTime[1];
                 form.setSelectedHourBegin(beginHours);
                 form.setSelectedMinuteBegin(beginMinutes);
 
                 // determine end time
-                int currentHours = DateUtils.getCurrentHours();
-                int currentMinutes = DateUtils.getCurrentMinutes();
+                long currentHours = DateUtils.getCurrentHours();
+                long currentMinutes = DateUtils.getCurrentMinutes();
                 LocalDate today = DateUtils.today();
                 if (standardOrder) {
-                    int minutes = form.getSelectedHourBegin() * MINUTES_PER_HOUR + form.getSelectedMinuteBegin();
+                    long minutes = form.getSelectedHourBegin() * MINUTES_PER_HOUR + form.getSelectedMinuteBegin();
                     minutes += dailyWorkingTime.toMinutes();
-                    int hours = minutes / MINUTES_PER_HOUR;
+                    long hours = minutes / MINUTES_PER_HOUR;
                     minutes = minutes % MINUTES_PER_HOUR;
                     form.setSelectedMinuteEnd(minutes);
                     form.setSelectedHourEnd(hours);
@@ -342,7 +342,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 );
 
                 request.getSession().setAttribute("suborderFilerId", continueForm.getSuborderId());
-                List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+                List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
 
                 request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
                 request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
@@ -394,15 +394,15 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 form.setNumberOfSerialDays(0);
 
                 if (workingday != null) {
-                    int[] beginTime = timereportHelper.determineBeginTimeToDisplay(form.getEmployeeContractId(), selectedDate, workingday);
-                    int beginHours = beginTime[0];
-                    int beginMinutes = beginTime[1];
+                    long[] beginTime = timereportHelper.determineBeginTimeToDisplay(form.getEmployeeContractId(), selectedDate, workingday);
+                    long beginHours = beginTime[0];
+                    long beginMinutes = beginTime[1];
                     form.setSelectedHourBegin(beginHours);
                     form.setSelectedMinuteBegin(beginMinutes);
                     form.setNumberOfSerialDays(0);
                     LocalDate today = DateUtils.today();
-                    int currentHours = DateUtils.getCurrentHours();
-                    int currentMinutes = DateUtils.getCurrentMinutes();
+                    long currentHours = DateUtils.getCurrentHours();
+                    long currentMinutes = DateUtils.getCurrentMinutes();
 
                     if (workStartedEarlier(beginHours, beginMinutes, currentHours, currentMinutes) && selectedDate.equals(today)) {
                         form.setSelectedMinuteEnd(currentMinutes);
@@ -522,14 +522,14 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         if (request.getSession().getAttribute("trId") != null) {
             //get the Timereport object
             long trId = Long.parseLong(request.getSession().getAttribute("trId").toString());
-            Timereport timereport = timereportDAO.getTimereportById(trId);
+            TimereportDTO timereport = timereportDAO.getTimereportById(trId);
 
             //reset the rest
-            reportForm.setReferenceday(timereport.getReferenceday().getRefdate().toString());
+            reportForm.setReferenceday(DateUtils.format(timereport.getReferenceday()));
             request.getSession().setAttribute("isEdit", false);
-            reportForm.setSelectedHourDuration(timereport.getDurationhours());
-            reportForm.setSelectedMinuteDuration(timereport.getDurationminutes());
-            reportForm.setTraining(timereport.getTraining());
+            reportForm.setSelectedHourDuration(timereport.getDuration().toHours());
+            reportForm.setSelectedMinuteDuration(timereport.getDuration().toMinutesPart());
+            reportForm.setTraining(timereport.isTraining());
             reportForm.setComment(timereport.getTaskdescription());
         } else {
             reportForm.reset();
@@ -544,7 +544,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         request.getSession().setAttribute("suborders", suborders);
     }
 
-    private boolean workStartedEarlier(int beginHours, int beginMinutes, int currentHours, int currentMinutes) {
+    private boolean workStartedEarlier(long beginHours, long beginMinutes, long currentHours, long currentMinutes) {
         return beginHours < currentHours || (beginHours == currentHours && beginMinutes < currentMinutes);
     }
 

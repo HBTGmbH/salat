@@ -9,15 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -45,22 +43,15 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        ActionMessages errors = getErrors(request);
-        if (errors == null) {
-            errors = new ActionMessages();
-        }
-
         if (GenericValidator.isBlankOrNull(request.getParameter("trId")) || !GenericValidator.isLong(request.getParameter("trId"))) {
             return mapping.getInputForward();
         }
 
         long trId = Long.parseLong(request.getParameter("trId"));
-        Timereport tr = timereportDAO.getTimereportById(trId);
+        TimereportDTO tr = timereportDAO.getTimereportById(trId);
         if (tr == null) {
             return mapping.getInputForward();
         }
-
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
         if (!timereportDAO.deleteTimereportById(trId)) {
             return mapping.findForward("error");
@@ -72,7 +63,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
         } else {
 
             @SuppressWarnings("unchecked")
-            List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+            List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
             //refresh workingday

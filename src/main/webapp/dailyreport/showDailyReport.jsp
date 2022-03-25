@@ -633,35 +633,31 @@
 								<tr>
 									<td class="info"><bean:message key="main.timereport.tooltip.employee" />:</td>
 									<td class="info" colspan="3">
-										<c:out value="${timereport.employeecontract.employee.name}" />
-										&nbsp;&nbsp;(<c:out	value="${timereport.employeecontract.timeString}" />
-										<c:if test="${employeecontract.openEnd}">
-											<bean:message key="main.general.open.text" />
-										</c:if>)
+										<c:out value="${timereport.employeeName}" />
 									</td>
 								</tr>
 								<tr>
 									<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
 									<td class="info" colspan="3">
-										<c:out	value="${timereport.suborder.customerorder.sign}" />
+										<c:out	value="${timereport.customerorderSign}" />
 									</td>
 								</tr>
 								<tr>
 									<td class="info">&nbsp;</td>
 									<td class="info" colspan="3">
-										<c:out	value="${timereport.suborder.customerorder.description}" />
+										<c:out	value="${timereport.customerorderDescription}" />
 									</td>
 								</tr>
 								<tr>
 									<td class="info"><bean:message key="main.timereport.tooltip.suborder" />:</td>
 									<td class="info" colspan="3">
-										<c:out value="${timereport.suborder.sign}" />
+										<c:out value="${timereport.suborderSign}" />
 									</td>
 								</tr>
 								<tr>
 									<td class="info">&nbsp;</td>
 									<td class="info" colspan="3">
-										<c:out value="${timereport.suborder.description}" />
+										<c:out value="${timereport.suborderDescription}" />
 									</td>
 								</tr>
 								<tr>
@@ -720,45 +716,38 @@
 					</td>
 		
 					<!-- Mitarbeiter -->
-					<td title="<c:out value='${timereport.employeecontract.employee.name}' />&nbsp;&nbsp;(<c:out value='${timereport.employeecontract.timeString}' />
-						<c:if test="${employeecontract.openEnd}">
-							<bean:message key="main.general.open.text" />
-						</c:if>)">
-						<c:out value="${timereport.employeecontract.employee.sign}" />
+					<td>
+						<c:out value="${timereport.employeeSign}" />
 					</td>
 		
 					<!-- Datum -->
-					<td title='<c:out value="${timereport.referenceday.name}" />'>
-						<logic:equal name="timereport" property="referenceday.holiday" value="true">
+					<td>
+						<logic:equal name="timereport" property="holiday" value="true">
 							<span style="color: red">
-								<bean:message key="${timereport.referenceday.dow}" />
-								<br>
-								<c:out value="${timereport.referenceday.refdate}" />
+								<java8:formatLocalDate value="${timereport.referenceday}" />
 							</span>
 						</logic:equal>
-						<logic:equal name="timereport" property="referenceday.holiday" value="false">
-							<bean:message key="${timereport.referenceday.dow}" />
-							<br>
-							<c:out value="${timereport.referenceday.refdate}" />
+						<logic:equal name="timereport" property="holiday" value="false">
+							<java8:formatLocalDate value="${timereport.referenceday}" />
 						</logic:equal>
 					</td>
 					<!-- Auftrag -->
-					<td	title="<c:out value='${timereport.suborder.customerorder.description}' />">
-						<c:out value="${timereport.suborder.customerorder.sign}" />
+					<td>
+						<c:out value="${timereport.customerorderSign}" />
 						<br>
-						<c:out value="${timereport.suborder.sign}" />
+						<c:out value="${timereport.suborderSign}" />
 					</td>
 		
 					<!-- Bezeichnung -->
 					<td>
-						<c:out value="${timereport.suborder.customerorder.shortdescription}" />
+						<c:out value="${timereport.customerorderDescription}" />
 						<br>
-						<c:out value="${timereport.suborder.shortdescription}" />
+						<c:out value="${timereport.suborderDescription}" />
 					</td>
 		
 					<!-- visibility dependent on user and status -->
 					<c:choose>
-						<c:when	test="${((loginEmployee.id == timereport.employeecontract.employee.id) && (timereport.status eq 'open')) || (authorizedUser.manager && timereport.status eq 'commited' && loginEmployee != timereport.employeecontract.employee) || authorizedUser.admin}">
+						<c:when	test="${((loginEmployee.id == timereport.employeeId) && (timereport.status eq 'open')) || (authorizedUser.manager && timereport.status eq 'commited' && loginEmployee.id != timereport.employeeId) || authorizedUser.admin}">
 							<!-- Kommentar -->
 							<td>
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}" 
@@ -774,10 +763,10 @@
 		
 							<!-- Dauer -->
 							<td align="center" nowrap="nowrap">
-								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborder.sign eq overtimeCompensation}" styleClass="make-select2">
+								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
-								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborder.sign eq overtimeCompensation}" styleClass="make-select2">
+								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
 									<html:options collection="minutes" property="value"	labelProperty="label" />
 									<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, timereport.durationminutes)}">
 										<html:option value="${timereport.durationminutes}">${timereport.durationminutes}</html:option>
@@ -818,7 +807,7 @@
 							</td>
 							<!-- Dauer -->
 							<td align="center" nowrap>
-								<c:if test='${timereport.durationhours < 10}'>0</c:if><c:out value="${timereport.durationhours}" />:<c:if test='${timereport.durationminutes < 10}'>0</c:if><c:out value="${timereport.durationminutes}" />
+								<java8:formatDuration value="${timereport.duration}"/>
 							</td>
 							<!-- Bearbeiten -->
 							<td align="center">

@@ -26,7 +26,7 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.order.persistence.SuborderDAO;
@@ -45,14 +45,6 @@ public class Suborder extends AuditedEntity implements Serializable {
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "CUSTOMERORDER_ID")
     private Customerorder customerorder;
-
-    /**
-     * list of timereports, associated to this suborder
-     */
-    @OneToMany(mappedBy = "suborder")
-    @Cascade(CascadeType.SAVE_UPDATE)
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Timereport> timereports;
 
     /**
      * list of employeeorders, associated to this suborder
@@ -280,9 +272,9 @@ public class Suborder extends AuditedEntity implements Serializable {
     /**
      * Gets all {@link Timereport}s associated to the {@link Suborder} or his children, that are invalid for the given dates.
      */
-    public List<Timereport> getAllTimeReportsInvalidForDates(LocalDate begin, LocalDate end, TimereportDAO timereportDAO) {
+    public List<TimereportDTO> getAllTimeReportsInvalidForDates(LocalDate begin, LocalDate end, TimereportDAO timereportDAO) {
         /* build up result list */
-        final List<Timereport> allInvalidTimeReports = new LinkedList<Timereport>();
+        final List<TimereportDTO> allInvalidTimeReports = new LinkedList<>();
         final LocalDate visitorBeginDate = begin;
         final LocalDate visitorEndDate = end;
         final TimereportDAO visitorTimereportDAO = timereportDAO;

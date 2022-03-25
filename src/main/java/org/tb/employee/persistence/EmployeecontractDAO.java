@@ -17,8 +17,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Vacation;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
@@ -35,6 +36,7 @@ public class EmployeecontractDAO {
     private final OvertimeDAO overtimeDAO;
     private final EmployeecontractRepository employeecontractRepository;
     private final AuthorizedUser authorizedUser;
+    private final TimereportDAO timereportDAO;
 
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
@@ -189,7 +191,7 @@ public class EmployeecontractDAO {
                 return false;
             }
 
-            List<Timereport> timereports = ec.getTimereports();
+            List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeecontractId(ecId);
             if (timereports != null && !timereports.isEmpty()) {
                 return false;
             }

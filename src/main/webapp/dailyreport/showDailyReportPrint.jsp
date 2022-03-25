@@ -5,6 +5,7 @@
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html>
 <head>
 
@@ -119,32 +120,27 @@
 		<html:form action="/UpdateDailyReport?trId=${timereport.id}">
 			<tr class="matrix">
 				<c:if test="${(currentEmployee eq 'ALL EMPLOYEES')}">
-					<td class="matrix"><c:out
-						value="${timereport.employeecontract.employee.lastname}" />,<br>
-					<c:out value="${timereport.employeecontract.employee.firstname}" /></td>
+					<td class="matrix">
+						<c:out value="${timereport.employeeName}" />
+					</td>
 				</c:if>
-				<td class="matrix"
-					title='<c:out value="${timereport.referenceday.name}" />'><logic:equal
-					name="timereport" property="referenceday.holiday" value="true">
-					<span style="color:red"> <bean:message
-						key="${timereport.referenceday.dow}" /><br>
-					<c:out value="${timereport.referenceday.refdate}" /> </span>
-				</logic:equal> <logic:equal name="timereport" property="referenceday.holiday"
-					value="false">
-					<bean:message key="${timereport.referenceday.dow}" />
-					<br>
-					<c:out value="${timereport.referenceday.refdate}" />
-				</logic:equal></td>
+				<td class="matrix">
+					<logic:equal name="timereport" property="holiday" value="true">
+						<span style="color:red"><java8:formatLocalDate value="${timereport.referenceday}" /></span>
+					</logic:equal>
+					<logic:equal name="timereport" property="holiday" value="false">
+						<java8:formatLocalDate value="${timereport.referenceday}" />
+					</logic:equal>
+				</td>
 		
-				<td class="matrix"
-					title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
-				<c:out value="${timereport.suborder.customerorder.sign}"></c:out><br>
-				<c:out value="${timereport.suborder.sign}"></c:out><br>
+				<td class="matrix">
+					<c:out value="${timereport.customerorderSign}"></c:out><br>
+					<c:out value="${timereport.suborderSign}"></c:out><br>
 				</td>
 				
 				<td class="matrix" nowrap="nowrap">
-					<c:out value="${timereport.suborder.customerorder.shortdescription}"></c:out><br>
-					<c:out value="${timereport.suborder.shortdescription}"></c:out>
+					<c:out value="${timereport.customerorderDescription}"></c:out><br>
+					<c:out value="${timereport.suborderDescription}"></c:out>
 				</td>
 				
 
@@ -161,14 +157,14 @@
 				
 				<!-- Fortbildung -->
 				<td align="center">
-					<html:checkbox property="training" />   
+					<input type="checkbox" checked="${timereport.training ? 'checked' : ''}" disabled />
 				</td>
 
 
 				<!-- Dauer -->
-				<td class="matrix" align="center" nowrap="nowrap"><c:out
-					value="${timereport.durationhours}" />:<c:if test="${!(timereport.durationminutes eq '0')}"><c:out
-					value="${timereport.durationminutes}" /></c:if><c:if test="${timereport.durationminutes eq '0'}">00</c:if></td>
+				<td class="matrix" align="center" nowrap="nowrap">
+					<java8:formatDuration value="${timereport.duration}"/>
+				</td>
 
 			</tr>
 

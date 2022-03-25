@@ -18,7 +18,7 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -51,7 +51,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
         long trId = Long.parseLong(request.getParameter("trId"));
-        Timereport tr = timereportDAO.getTimereportById(trId);
+        TimereportDTO tr = timereportDAO.getTimereportById(trId);
 
         // set collections
         request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
@@ -68,7 +68,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         setFormEntries(mapping, request, reportForm, tr);
 
         request.getSession().setAttribute("timereport", tr);
-        request.getSession().setAttribute("currentEmployeeContract", tr.getEmployeecontract());
+        request.getSession().setAttribute("currentEmployeeContract", employeecontractDAO.getEmployeeContractById(tr.getEmployeecontractId()));
 
         // save the filter settings
         request.getSession().setAttribute("lastCurrentDay", request.getSession().getAttribute("currentDay"));
@@ -88,17 +88,17 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
      * fills the AddDailyReportForm with properties of the timereport to be edited
      */
     private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
-                                AddDailyReportForm reportForm, Timereport tr) {
+                                AddDailyReportForm reportForm, TimereportDTO tr) {
 
-        Employeecontract ec = tr.getEmployeecontract();
-        LocalDate utilDate = tr.getReferenceday().getRefdate();
+        Employeecontract ec = employeecontractDAO.getEmployeeContractById(tr.getEmployeecontractId());
+        LocalDate utilDate = tr.getReferenceday();
 
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
         List<Suborder> theSuborders = new ArrayList<>();
         if (orders != null && !orders.isEmpty()) {
             reportForm.setOrder(orders.get(0).getSign());
             reportForm.setOrderId(orders.get(0).getId());
-            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getEmployeeorder().getSuborder().getCustomerorder().getId(), utilDate);
+            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getCustomerorderId(), utilDate);
             if (theSuborders == null || theSuborders.isEmpty()) {
                 request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator.");
                 mapping.findForward("error");
@@ -118,14 +118,14 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         request.getSession().setAttribute("trId", tr.getId());
         request.getSession().setAttribute("orders", orders);
         request.getSession().setAttribute("suborders", theSuborders);
-        request.getSession().setAttribute("currentSuborderId", tr.getEmployeeorder().getSuborder().getId());
+        request.getSession().setAttribute("currentSuborderId", tr.getSuborderId());
         request.getSession().setAttribute("serialBookings", getSerialDayList());
 
         reportForm.reset(mapping, request);
         reportForm.setEmployeeContractId(ec.getId());
 
         reportForm.setReferenceday(DateUtils.format(utilDate));
-        LocalDate reportDate = tr.getReferenceday().getRefdate();
+        LocalDate reportDate = tr.getReferenceday();
         Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(reportDate, ec.getId());
 
         boolean workingDayIsAvailable = false;
@@ -140,7 +140,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         }
 
         request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
-        int[] displayTime = timereportHelper.determineTimesToDisplay(ec.getId(), reportDate, workingday, tr);
+        long[] displayTime = timereportHelper.determineTimesToDisplay(ec.getId(), reportDate, workingday, tr);
 
         if (workingDayIsAvailable) {
             reportForm.setSelectedHourBegin(displayTime[0]);
@@ -150,20 +150,18 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
 
             timereportHelper.refreshHours(reportForm);
         } else {
-            reportForm.setSelectedHourDuration(tr.getDurationhours());
-            reportForm.setSelectedMinuteDuration(tr.getDurationminutes());
+            reportForm.setSelectedHourDuration(tr.getDuration().toHours());
+            reportForm.setSelectedMinuteDuration(tr.getDuration().toMinutesPart());
         }
 
-        if (tr.getSuborder() != null && tr.getSuborder().getCustomerorder() != null) {
-            reportForm.setSuborder(tr.getSuborder().getSign());
-            reportForm.setSuborderSignId(tr.getSuborder().getId());
-            reportForm.setSuborderDescriptionId(tr.getSuborder().getId());
-            reportForm.setOrder(tr.getSuborder().getCustomerorder().getSign());
-            reportForm.setOrderId(tr.getSuborder().getCustomerorder().getId());
-        }
+        reportForm.setSuborder(tr.getSuborderSign());
+        reportForm.setSuborderSignId(tr.getSuborderId());
+        reportForm.setSuborderDescriptionId(tr.getSuborderId());
+        reportForm.setOrder(tr.getCustomerorderSign());
+        reportForm.setOrderId(tr.getCustomerorderId());
         reportForm.setStatus(tr.getStatus());
         reportForm.setComment(tr.getTaskdescription());
-        reportForm.setTraining(tr.getTraining());
+        reportForm.setTraining(tr.isTraining());
         reportForm.setId(tr.getId());
     }
 

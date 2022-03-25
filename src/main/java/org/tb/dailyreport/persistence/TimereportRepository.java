@@ -91,4 +91,8 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   """)
   Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
 
+  List<Timereport> findAllByEmployeecontractId(long employeecontractId);
+
+  List<Timereport> findAllBySuborderId(long suborderId);
+
 }

@@ -300,189 +300,187 @@
 		</tr>
 	</table>
 	<html:hidden property="id" />
-	
-<c:if test="${timereportsOutOfRange != null}">
-	<br>
-	<br>
-	<span style="color:red"><html:errors property="timereportOutOfRange" /></span>
-	<br>
-	<table class="center backgroundcolor" width="100%">
-		
-		<tr>
-			<th align="left"><b>Info</b></th>
-			<th align="left"
-				title="<bean:message
-				key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message 
-				key="main.timereport.monthly.employee.sign.text" /></b></th>
-			<th align="left"
-				title="<bean:message
-				key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message 
-				key="main.timereport.monthly.refday.text" /></b></th>
-			<th align="left"
-				title="<bean:message
-				key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message 
-				key="main.timereport.monthly.customerorder.text" /></b></th>
-			<th align="left"
-				title="<bean:message
+
+	<c:if test="${timereportsOutOfRange != null}">
+		<table class="center backgroundcolor" width="100%">
+
+			<tr>
+				<th align="left"><b>Info</b></th>
+				<th align="left"
+					title="<bean:message
+				key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message
+						key="main.timereport.monthly.employee.sign.text" /></b></th>
+				<th align="left"
+					title="<bean:message
+				key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
+						key="main.timereport.monthly.refday.text" /></b></th>
+				<th align="left"
+					title="<bean:message
+				key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
+						key="main.timereport.monthly.customerorder.text" /></b></th>
+				<th align="left"
+					title="<bean:message
 				key="main.headlinedescription.dailyoverview.description.text" />"><b><bean:message
-				key="main.customerorder.shortdescription.text" /></b></th>
-			<th align="left"
-				title="<bean:message
+						key="main.customerorder.shortdescription.text" /></b></th>
+				<th align="left"
+					title="<bean:message
 				key="main.headlinedescription.dailyoverview.taskdescription.text" />"
-				width="25%"><b><bean:message
-				key="main.timereport.monthly.taskdescription.text" /></b></th>
-			<th align="center"
-				title="<bean:message
+					width="25%"><b><bean:message
+						key="main.timereport.monthly.taskdescription.text" /></b></th>
+				<th align="center"
+					title="<bean:message
 				key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
-				key="main.timereport.monthly.hours.text" /></b></th>
-		</tr>
-		
-		<c:forEach var="timereport" items="${timereportsOutOfRange}" varStatus="rowID">
-			<tr class="${rowID.count % 2 == 0 ? 'primarycolor' : 'secondarycolor'}">
-			
-			<!-- Info -->
-			<td align="center">
-			<div class="tooltip" id="info<c:out value='${timereport.id}' />">
-			<table>
-				<tr>
-					<td class="info">id:</td>
-					<td class="info" colspan="3"><c:out
-						value="${timereport.id}" /></td>
-				</tr>
-				<tr>
-					<td class="info"><bean:message
-						key="main.timereport.tooltip.employee" />:</td>
-					<td class="info" colspan="3"><c:out
-						value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out
-						value="${timereport.employeecontract.timeString}" /><c:if 
-						test="${timereport.employeecontract.openEnd}"><bean:message 
-						key="main.general.open.text" /></c:if>)</td>
-				</tr>
-				<tr>
-					<td class="info"><bean:message
-						key="main.timereport.tooltip.order" />:</td>
-					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.customerorder.sign}" /></td>
-				</tr>
-				<tr>
-					<td class="info">&nbsp;</td>
-					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.customerorder.description}" /></td>
-				</tr>
-				<tr>
-					<td class="info"><bean:message
-						key="main.timereport.tooltip.suborder" />:</td>
-					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.sign}" /></td>
-				</tr>
-				<tr>
-					<td class="info">&nbsp;</td>
-					<td class="info" colspan="3"><c:out
-						value="${timereport.suborder.description}" /></td>
-				</tr>
-				<tr>
-					<td class="info"><bean:message
-						key="main.timereport.tooltip.status" />:</td>
-					<td class="info"><c:out value="${timereport.status}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.created" />:</td>
-					<td class="info"><c:out value="${timereport.created}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${timereport.createdby}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.edited" />:</td>
-					<td class="info"><c:out value="${timereport.lastupdate}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${timereport.lastupdatedby}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.released" />:</td>
-					<td class="info"><c:out value="${timereport.released}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${timereport.releasedby}" /></td>
-				</tr>
-				<tr>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.accepted" />:</td>
-					<td class="info"><c:out value="${timereport.accepted}" /></td>
-					<td class="info" valign="top"><bean:message
-						key="main.timereport.tooltip.by" /></td>
-					<td class="info" valign="top"><c:out
-						value="${timereport.acceptedby}" /></td>
-				</tr>
-			</table>
-
-			</div>
-			<img
-				onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
-				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/images/info_button.gif" />
-			</td>
-
-			<!-- Mitarbeiter -->
-			<td title="<c:out value="${timereport.employeecontract.employee.name}" />&nbsp;&nbsp;(<c:out 
-				value="${timereport.employeecontract.timeString}" /><c:if 
-				test="${timereport.employeecontract.openEnd}"><bean:message 
-				key="main.general.open.text" /></c:if>)"><c:out 
-				value="${timereport.employeecontract.employee.sign}" /></td>
-
-			<!-- Datum -->
-			<td title='<c:out value="${timereport.referenceday.name}" />'><logic:equal
-				name="timereport" property="referenceday.holiday" value="true">
-				<span style="color:red"> <bean:message
-					key="${timereport.referenceday.dow}" /><br>
-				<c:out value="${timereport.referenceday.refdate}" /></span>
-			</logic:equal> <logic:equal name="timereport" property="referenceday.holiday"
-				value="false">
-				<bean:message key="${timereport.referenceday.dow}" />
-				<br>
-				<c:out value="${timereport.referenceday.refdate}" />
-			</logic:equal></td>
-
-			<!-- Auftrag -->
-			<td
-				title="<c:out value="${timereport.suborder.customerorder.description}"></c:out>">
-			<c:out value="${timereport.suborder.customerorder.sign}" /><br>
-			<c:out value="${timereport.suborder.sign}" /></td>
-
-			<!-- Bezeichnung -->
-			<td><c:out
-				value="${timereport.suborder.customerorder.shortdescription}" /><br>
-			<c:out value="${timereport.suborder.shortdescription}" /></td>
-			
-			<!-- Kommentar -->
-			<td><c:choose>
-				<c:when test="${timereport.taskdescription eq ''}">
-					&nbsp;
-				</c:when>
-				<c:otherwise>
-					<c:out value="${timereport.taskdescription}" />
-				</c:otherwise>
-			</c:choose></td>
-
-			<!-- Dauer -->
-			<td align="center" nowrap><c:if
-				test="${timereport.durationhours < 10}">0</c:if><c:out
-				value="${timereport.durationhours}" />:<c:if
-				test="${timereport.durationminutes < 10}">0</c:if><c:out
-				value="${timereport.durationminutes}" /></td>
-
+						key="main.timereport.monthly.hours.text" /></b></th>
 			</tr>
-		</c:forEach>
-	</table>
-<br><br><br><br><br><br><br><br><br><br><br><br>
-</c:if>
+
+			<c:forEach var="timereport" items="${timereportsOutOfRange}"
+					   varStatus="rowID">
+				<c:choose>
+					<c:when test="${rowID.count%2==0}">
+						<tr class="primarycolor">
+					</c:when>
+					<c:otherwise>
+						<tr class="secondarycolor">
+					</c:otherwise>
+				</c:choose>
+
+				<!-- Info -->
+				<td align="center">
+					<div class="tooltip" id="info<c:out value='${timereport.id}' />">
+						<table>
+							<tr>
+								<td class="info">id:</td>
+								<td class="info" colspan="3"><c:out
+										value="${timereport.id}" /></td>
+							</tr>
+							<tr>
+								<td class="info"><bean:message
+										key="main.timereport.tooltip.employee" />:</td>
+								<td class="info" colspan="3">
+									<c:out value="${timereport.employeeName}" />
+								</td>
+							</tr>
+							<tr>
+								<td class="info"><bean:message
+										key="main.timereport.tooltip.order" />:</td>
+								<td class="info" colspan="3"><c:out
+										value="${timereport.customerorderSign}" /></td>
+							</tr>
+							<tr>
+								<td class="info">&nbsp;</td>
+								<td class="info" colspan="3"><c:out
+										value="${timereport.customerorderDescription}" /></td>
+							</tr>
+							<tr>
+								<td class="info"><bean:message
+										key="main.timereport.tooltip.suborder" />:</td>
+								<td class="info" colspan="3"><c:out
+										value="${timereport.suborderSign}" /></td>
+							</tr>
+							<tr>
+								<td class="info">&nbsp;</td>
+								<td class="info" colspan="3"><c:out
+										value="${timereport.suborderDescription}" /></td>
+							</tr>
+							<tr>
+								<td class="info"><bean:message
+										key="main.timereport.tooltip.status" />:</td>
+								<td class="info"><c:out value="${timereport.status}" /></td>
+							</tr>
+							<tr>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.created" />:</td>
+								<td class="info"><c:out value="${timereport.created}" /></td>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.by" /></td>
+								<td class="info" valign="top"><c:out
+										value="${timereport.createdby}" /></td>
+							</tr>
+							<tr>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.edited" />:</td>
+								<td class="info"><c:out value="${timereport.lastupdate}" /></td>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.by" /></td>
+								<td class="info" valign="top"><c:out
+										value="${timereport.lastupdatedby}" /></td>
+							</tr>
+							<tr>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.released" />:</td>
+								<td class="info"><c:out value="${timereport.released}" /></td>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.by" /></td>
+								<td class="info" valign="top"><c:out
+										value="${timereport.releasedby}" /></td>
+							</tr>
+							<tr>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.accepted" />:</td>
+								<td class="info"><c:out value="${timereport.accepted}" /></td>
+								<td class="info" valign="top"><bean:message
+										key="main.timereport.tooltip.by" /></td>
+								<td class="info" valign="top"><c:out
+										value="${timereport.acceptedby}" /></td>
+							</tr>
+						</table>
+
+					</div>
+					<img
+							onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
+							onMouseOut="hideWMTT()" width="12px" height="12px"
+							src="/images/info_button.gif" />
+				</td>
+
+				<!-- Mitarbeiter -->
+				<td>
+					<c:out value="${timereport.employeeSign}" />
+				</td>
+
+				<!-- Datum -->
+				<td>
+					<logic:equal name="timereport" property="holiday" value="true">
+						<span style="color:red"><java8:formatLocalDate value="${timereport.referenceday}" /></span>
+					</logic:equal>
+					<logic:equal name="timereport" property="holiday" value="false">
+						<java8:formatLocalDate value="${timereport.referenceday}" />
+					</logic:equal>
+				</td>
+
+				<!-- Auftrag -->
+				<td>
+					<c:out value="${timereport.customerorderSign}" /><br>
+					<c:out value="${timereport.suborderSign}" />
+				</td>
+
+				<!-- Bezeichnung -->
+				<td>
+					<c:out value="${timereport.customerorderDescription}" /><br>
+					<c:out value="${timereport.suborderDescription}" />
+				</td>
+
+				<!-- Kommentar -->
+				<td>
+					<c:choose>
+						<c:when test="${timereport.taskdescription eq ''}">
+							&nbsp;
+						</c:when>
+						<c:otherwise>
+							<c:out value="${timereport.taskdescription}" />
+						</c:otherwise>
+					</c:choose>
+				</td>
+
+				<!-- Dauer -->
+				<td align="center" nowrap>
+					<java8:formatLocalDate value="${timereport.duration}" />
+				</td>
+
+				</tr>
+			</c:forEach>
+		</table>
+		<br><br>
+	</c:if>
 	
 </html:form>
 </body>

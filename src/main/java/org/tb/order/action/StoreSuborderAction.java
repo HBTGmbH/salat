@@ -25,7 +25,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
@@ -551,7 +551,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         // check, if dates fit to existing timereports
-        List<Timereport> timereportsInvalidForDates;
+        List<TimereportDTO> timereportsInvalidForDates;
         if (suborderId != 0l) {
             Suborder suborder = suborderDAO.getSuborderById(suborderId);
             timereportsInvalidForDates = suborder.getAllTimeReportsInvalidForDates(suborderFromDate, suborderUntilDate, timereportDAO);

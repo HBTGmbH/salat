@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employeecontract;
@@ -136,7 +136,7 @@ public class OvertimeService {
     var actualWorkingTime = timereportDAO
         .getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end)
         .stream()
-        .map(Timereport::getDuration)
+        .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
 
     Duration overtime = actualWorkingTime.minus(expectedWorkingTime);

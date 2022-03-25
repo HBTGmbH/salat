@@ -19,12 +19,13 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
-import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
@@ -44,6 +45,7 @@ public class TimereportHelper {
     private final PublicholidayDAO publicholidayDAO;
     private final OvertimeDAO overtimeDAO;
     private final AuthorizedUser authorizedUser;
+    private final EmployeecontractDAO employeecontractDAO;
 
     /**
      * refreshes hours after change of begin/end times
@@ -63,7 +65,7 @@ public class TimereportHelper {
     public ActionMessages validateNewDate(
             ActionMessages errors,
             LocalDate theNewDate,
-            Timereport timereport,
+            TimereportDTO timereport,
             Employeecontract loginEmployeeContract) {
 
         // check date range (must be in current or previous year)
@@ -84,7 +86,7 @@ public class TimereportHelper {
         }
 
         // check date vs release status
-        Employeecontract employeecontract = timereport.getEmployeecontract();
+        Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(timereport.getEmployeecontractId());
         LocalDate releaseDate = employeecontract.getReportReleaseDate();
         if (releaseDate == null) {
             releaseDate = employeecontract.getValidFrom();
@@ -102,7 +104,7 @@ public class TimereportHelper {
         }
 
         if (!authorizedUser.isAdmin()) {
-            if (authorizedUser.isManager() && !Objects.equals(loginEmployeeContract.getId(), timereport.getEmployeecontract().getId())) {
+            if (authorizedUser.isManager() && !Objects.equals(loginEmployeeContract.getId(), timereport.getEmployeecontractId())) {
                 if (releaseDate.isBefore(theNewDate) || firstday) {
                     errors.add("release", new ActionMessage("form.timereport.error.not.released"));
                 }
@@ -117,7 +119,7 @@ public class TimereportHelper {
         }
 
         // check for adequate employee order
-        List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(timereport.getEmployeecontract().getId(), timereport.getSuborder().getId(), theNewDate);
+        List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(timereport.getEmployeecontractId(), timereport.getSuborderId(), theNewDate);
         if (employeeorders == null || employeeorders.isEmpty()) {
             errors.add("employeeorder", new ActionMessage("form.timereport.error.employeeorder.notfound"));
         } else if (employeeorders.size() > 1) {
@@ -130,14 +132,14 @@ public class TimereportHelper {
     /**
      * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes at index[1].
      */
-    private int[] getWorkingTimeForDateAndEmployeeContract(LocalDate date, long employeeContractId) {
-        int[] workingTime = new int[2];
-        List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
-        int hours = 0;
-        int minutes = 0;
-        for (Timereport timereport : timereports) {
-            hours += timereport.getDurationhours();
-            minutes += timereport.getDurationminutes();
+    private long[] getWorkingTimeForDateAndEmployeeContract(LocalDate date, long employeeContractId) {
+        long[] workingTime = new long[2];
+        List<TimereportDTO> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
+        long hours = 0;
+        long minutes = 0;
+        for (TimereportDTO timereport : timereports) {
+            hours += timereport.getDuration().toHours();
+            minutes += timereport.getDuration().toMinutesPart();
         }
         hours += minutes / MINUTES_PER_HOUR;
         minutes = minutes % MINUTES_PER_HOUR;
@@ -150,8 +152,8 @@ public class TimereportHelper {
     /**
      * @return Returns int[]  0=hours 1=minutes
      */
-    public int[] determineBeginTimeToDisplay(long ecId, LocalDate date, Workingday workingday) {
-        int[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId);
+    public long[] determineBeginTimeToDisplay(long ecId, LocalDate date, Workingday workingday) {
+        long[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId);
         if (workingday != null) {
             beginTime[0] += workingday.getStarttimehour();
             beginTime[1] += workingday.getStarttimeminute();
@@ -163,30 +165,30 @@ public class TimereportHelper {
         return beginTime;
     }
 
-    public int[] determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, Timereport tr) {
-        List<Timereport> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
+    public long[] determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, TimereportDTO tr) {
+        List<TimereportDTO> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
             int hourBegin = workingday.getStarttimehour();
             int minuteBegin = workingday.getStarttimeminute();
             hourBegin += workingday.getBreakhours();
             minuteBegin += workingday.getBreakminutes();
-            for (Timereport timereport : timereports) {
+            for (TimereportDTO timereport : timereports) {
                 if (Objects.equals(timereport.getId(), tr.getId())) {
                     break;
                 }
-                hourBegin += timereport.getDurationhours();
-                minuteBegin += timereport.getDurationminutes();
+                hourBegin += timereport.getDuration().toHours();
+                minuteBegin += timereport.getDuration().toMinutesPart();
             }
-            int hourEnd = hourBegin + tr.getDurationhours();
-            int minuteEnd = minuteBegin + tr.getDurationminutes();
+            long hourEnd = hourBegin + tr.getDuration().toHours();
+            long minuteEnd = minuteBegin + tr.getDuration().toMinutesPart();
             hourBegin += minuteBegin / MINUTES_PER_HOUR;
             minuteBegin = minuteBegin % MINUTES_PER_HOUR;
             hourEnd += minuteEnd / MINUTES_PER_HOUR;
             minuteEnd = minuteEnd % MINUTES_PER_HOUR;
 
-            return new int[]{hourBegin, minuteBegin, hourEnd, minuteEnd};
+            return new long[]{hourBegin, minuteBegin, hourEnd, minuteEnd};
         } else {
-            return new int[4];
+            return new long[4];
         }
     }
 
@@ -195,10 +197,10 @@ public class TimereportHelper {
      *
      * @return Returns the calculated time as String (hh:mm)
      */
-    public String calculateLaborTime(List<Timereport> timereports) {
-        int[] labortime = calculateLaborTimeAsArray(timereports);
-        int laborTimeHour = labortime[0];
-        int laborTimeMinute = labortime[1];
+    public String calculateLaborTime(List<TimereportDTO> timereports) {
+        long[] labortime = calculateLaborTimeAsArray(timereports);
+        long laborTimeHour = labortime[0];
+        long laborTimeMinute = labortime[1];
 
         String laborTimeString;
         if (laborTimeHour < 10) {
@@ -218,15 +220,15 @@ public class TimereportHelper {
      *
      * @return Returns the calculated time as int[] (index 0: hours, index 1: minutes)
      */
-    public int[] calculateLaborTimeAsArray(List<Timereport> timereports) {
-        int[] labortime = new int[2];
-        int laborTimeHour = 0;
-        int laborTimeMinute = 0;
+    public long[] calculateLaborTimeAsArray(List<TimereportDTO> timereports) {
+        long[] labortime = new long[2];
+        long laborTimeHour = 0;
+        long laborTimeMinute = 0;
 
-        for (Timereport timereport : timereports) {
+        for (TimereportDTO timereport : timereports) {
 
-            int hours = timereport.getDurationhours();
-            int minutes = timereport.getDurationminutes();
+            long hours = timereport.getDuration().toHours();
+            long minutes = timereport.getDuration().toMinutesPart();
 
             laborTimeHour += hours;
             laborTimeMinute += minutes;
@@ -243,10 +245,10 @@ public class TimereportHelper {
      *
      * @return Returns true, if the maximal labor time is extended, false otherwise
      */
-    public boolean checkLaborTimeMaximum(List<Timereport> timereports, int maxDailyLaborTimeHours) {
+    public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports, int maxDailyLaborTimeHours) {
 
         Duration actual = timereports.stream()
-            .map(t -> Duration.ofHours(t.getDurationhours()).plusMinutes(t.getDurationminutes()))
+            .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus);
 
         // check actual is not greater than the max labor time
@@ -328,10 +330,10 @@ public class TimereportHelper {
         long dailyWorkingTime = employeecontract.getDailyWorkingTime().toMinutes();
         long expectedWorkingTimeInMinutes = dailyWorkingTime * diffDays;
         long actualWorkingTimeInMinutes = 0;
-        List<Timereport> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end);
+        List<TimereportDTO> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end);
         if (reports != null) {
-            for (Timereport timereport : reports) {
-                actualWorkingTimeInMinutes += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
+            for (TimereportDTO timereport : reports) {
+                actualWorkingTimeInMinutes += timereport.getDuration().toMinutes();
             }
         }
 

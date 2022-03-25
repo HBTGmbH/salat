@@ -29,7 +29,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
@@ -73,23 +73,23 @@ public class DailyReportRestEndpoint {
             throw new ResponseStatusException(NOT_FOUND);
         }
 
-        List<Timereport> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
+        List<TimereportDTO> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
             employeecontract.getId(),
             refDate
         );
         return timeReports.stream()
             .map(tr ->
                 DailyReportData.builder()
-                    .employeeorderId(tr.getEmployeeorder().getId())
-                    .date(DateUtils.format(tr.getReferenceday().getRefdate()))
-                    .orderLabel(tr.getSuborder().getCustomerorder().getShortdescription())
-                    .suborderLabel(tr.getSuborder().getDescription())
+                    .employeeorderId(tr.getEmployeeorderId())
+                    .date(DateUtils.format(tr.getReferenceday()))
+                    .orderLabel(tr.getCustomerorderDescription())
+                    .suborderLabel(tr.getSuborderDescription())
                     .comment(tr.getTaskdescription())
-                    .isTraining(tr.getSuborder().getCommentnecessary())
-                    .hours(tr.getDurationhours())
-                    .minutes(tr.getDurationminutes())
-                    .suborderSign(tr.getSuborder().getSign())
-                    .orderSign(tr.getSuborder().getCustomerorder().getSign())
+                    .isTraining(tr.isTraining())
+                    .hours(tr.getDuration().toHours())
+                    .minutes(tr.getDuration().toMinutesPart())
+                    .suborderSign(tr.getSuborderSign())
+                    .orderSign(tr.getCustomerorderSign())
                     .build()
             )
             .collect(Collectors.toList());

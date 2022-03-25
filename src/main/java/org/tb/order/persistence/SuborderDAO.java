@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
@@ -34,6 +35,7 @@ public class SuborderDAO {
     private static final Logger LOG = LoggerFactory.getLogger(SuborderDAO.class);
 
     private final SuborderRepository suborderRepository;
+    private final TimereportDAO timereportDAO;
 
     /**
      * Gets the suborder for the given id.
@@ -222,7 +224,7 @@ public class SuborderDAO {
         return suborderRepository.findById(soId).map(suborder -> {
             // check if related timereports, employee orders, suborders exist - if so, no deletion possible
             if (suborder.getEmployeeorders() != null && !suborder.getEmployeeorders().isEmpty()) return false;
-            if (suborder.getTimereports() != null && !suborder.getTimereports().isEmpty()) return false;
+            if (!timereportDAO.getTimereportsBySuborderId(soId).isEmpty()) return false;
             if (suborder.getSuborders() != null && !suborder.getSuborders().isEmpty()) return false;
             suborderRepository.delete(suborder);
             LOG.debug("SuborderDAO.deleteSuborderById - deleted object {}", suborder);

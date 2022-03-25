@@ -45,7 +45,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.comparator.TimereportByEmployeeAscComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByEmployeeDescComparator;
@@ -186,9 +186,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         }
 
         // check if full minutes is required - when we have minutes durations that do not match the 5 minute schema
-        var timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+        var timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
         var anyTimereportNotMatches5MinuteSchema = timereports.stream()
-            .map(Timereport::matches5MinuteSchema)
+            .map(TimereportDTO::matches5MinuteSchema)
             .filter(matches5MinuteSchema -> matches5MinuteSchema == false)
             .findAny()
             .isPresent();
@@ -217,8 +217,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private Collection<Long> checkShiftedDays(Collection<Long> ids, int days, Employeecontract loginEmployeeContract) {
         Collection<Long> errors = new ArrayList<>();
         ids.forEach(id -> {
-            Timereport timereport = timereportDAO.getTimereportById(id);
-            LocalDate shiftedDate = DateUtils.addDays(timereport.getReferenceday().getRefdate(), days);
+            TimereportDTO timereport = timereportDAO.getTimereportById(id);
+            LocalDate shiftedDate = DateUtils.addDays(timereport.getReferenceday(), days);
             ActionMessages actionErrors = timereportHelper.validateNewDate(new ActionMessages(), shiftedDate,
                 timereport, loginEmployeeContract);
             if (!actionErrors.isEmpty()) {
@@ -306,7 +306,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             return mapping.findForward("error");
         } else {
             @SuppressWarnings("unchecked")
-            List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+            List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
             request.getSession().setAttribute("reportForm", reportForm);
@@ -321,7 +321,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             return mapping.findForward("error");
         } else {
             @SuppressWarnings("unchecked")
-            List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+            List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
             request.getSession().setAttribute("reportForm", reportForm);
@@ -447,7 +447,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("lastDay", reportForm.getLastday());
             request.getSession().setAttribute("lastMonth", reportForm.getLastmonth());
             request.getSession().setAttribute("lastYear", reportForm.getLastyear());
-            request.getSession().setAttribute("timereports", new LinkedList<Timereport>());
+            request.getSession().setAttribute("timereports", new LinkedList<TimereportDTO>());
             return mapping.findForward("success");
         } else {
             // refresh list of timereports to be displayed
@@ -462,13 +462,13 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             );
             if (refreshSuccessful) {
                 @SuppressWarnings("unchecked")
-                List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+                List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
 
                 //check if only project based training should be shown
                 if (reportForm.getShowTraining()) {
-                    for (Iterator<Timereport> iterator = timereports.iterator(); iterator.hasNext(); ) {
-                        Timereport c = iterator.next();
-                        if (!c.getTraining()) {
+                    for (Iterator<TimereportDTO> iterator = timereports.iterator(); iterator.hasNext(); ) {
+                        TimereportDTO c = iterator.next();
+                        if (!c.isTraining()) {
                             iterator.remove();
                         }
                     }
@@ -579,9 +579,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         HttpSession session = request.getSession();
 
         @SuppressWarnings("unchecked")
-        List<Timereport> timereports = (List<Timereport>) request.getSession().getAttribute("timereports");
+        List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
         String column = request.getParameter("column");
-        Comparator<Timereport> comparator = TimereportByEmployeeAscComparator.INSTANCE;
+        Comparator<TimereportDTO> comparator = TimereportByEmployeeAscComparator.INSTANCE;
         if ("employee".equals(column)) {
             if (sortColumn.equalsIgnoreCase(column) && sortModus.equals("+")) {
                 comparator = TimereportByEmployeeDescComparator.INSTANCE;
@@ -669,7 +669,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 currentEmployeeId = loginEmployee.getId();
                 request.getSession().setAttribute("currentEmployeeId", currentEmployeeId);
             }
-            List<Timereport> timereports;
+            List<TimereportDTO> timereports;
             if (currentEmployeeId == -1) {
                 // all employees
                 timereports = timereportDAO.getTimereportsByDate(date);
@@ -695,7 +695,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             }
             if (request.getSession().getAttribute("timereportComparator") != null) {
                 @SuppressWarnings("unchecked")
-                Comparator<Timereport> comparator = (Comparator<Timereport>) request.getSession().getAttribute("timereportComparator");
+                Comparator<TimereportDTO> comparator = (Comparator<TimereportDTO>) request.getSession().getAttribute("timereportComparator");
                 Collections.sort(timereports, comparator);
             }
             request.getSession().setAttribute("timereports", timereports);
@@ -749,7 +749,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             LocalDate date = DateUtils.parseOrNull(dateString);
 
             Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-            List<Timereport> timereports;
+            List<TimereportDTO> timereports;
             if (employeeId != null && employeeId == -1) {
                 timereports = timereportDAO.getTimereportsByDate(date);
             } else {
@@ -760,7 +760,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
             if (request.getSession().getAttribute("timereportComparator") != null) {
                 @SuppressWarnings("unchecked")
-                Comparator<Timereport> comparator = (Comparator<Timereport>) request.getSession().getAttribute("timereportComparator");
+                Comparator<TimereportDTO> comparator = (Comparator<TimereportDTO>) request.getSession().getAttribute("timereportComparator");
                 timereports.sort(comparator);
             }
             request.getSession().setAttribute("timereports", timereports);

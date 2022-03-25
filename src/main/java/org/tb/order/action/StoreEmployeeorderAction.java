@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.Timereport;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -473,7 +473,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
         if (!employeeorder.isNew() && validFromDate != null) {
             // check, if dates fit to existing timereports
-            List<Timereport> timereportsInvalidForDates = timereportDAO
+            List<TimereportDTO> timereportsInvalidForDates = timereportDAO
                     .getTimereportsByEmployeeorderIdInvalidForDates(validFromDate, validUntilDate, employeeorder.getId());
             if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
                 request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
