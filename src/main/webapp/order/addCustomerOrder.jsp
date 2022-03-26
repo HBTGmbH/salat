@@ -4,6 +4,7 @@
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib prefix="java8" uri="http://hbt.de/jsp/taglib/java8-date-formatting" %>
 <html:html>
 <head>
 
@@ -473,7 +474,7 @@
 
 				<!-- Dauer -->
 				<td align="center" nowrap>
-					<java8:formatLocalDate value="${timereport.duration}" />
+					<java8:formatDuration value="${timereport.duration}" />
 				</td>
 
 				</tr>

@@ -585,7 +585,7 @@
 
 				<!-- Dauer -->
 				<td align="center" nowrap>
-					<java8:formatLocalDate value="${timereport.duration}" />
+					<java8:formatDuration value="${timereport.duration}" />
 				</td>
 
 				</tr>
