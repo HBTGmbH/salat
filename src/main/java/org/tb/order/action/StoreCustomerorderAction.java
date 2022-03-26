@@ -68,7 +68,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                 }
 
                 newValue = DateUtils.parseOrDefault(datum, today());
-                newValue = addDays(newValue, 1);
+                newValue = addDays(newValue, howMuch);
             } else {
                 newValue = today();
             }

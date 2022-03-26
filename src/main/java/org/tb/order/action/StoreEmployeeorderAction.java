@@ -86,7 +86,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 }
 
                 newValue = DateUtils.parseOrDefault(datum, today());
-                newValue = addDays(newValue, 1);
+                newValue = addDays(newValue, howMuch);
             } else {
                 newValue = today();
             }

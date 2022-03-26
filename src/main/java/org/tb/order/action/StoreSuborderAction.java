@@ -78,7 +78,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 }
 
                 newValue = DateUtils.parseOrDefault(datum, today());
-                newValue = addDays(newValue, 1);
+                newValue = addDays(newValue, howMuch);
             } else {
                 newValue = today();
             }
