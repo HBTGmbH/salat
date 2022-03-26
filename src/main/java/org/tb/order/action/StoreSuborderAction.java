@@ -176,6 +176,27 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             return mapping.getInputForward();
         }
 
+        if ("changeCustomerorder".equals(request.getParameter("task"))) {
+            Customerorder parentOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
+
+            addSuborderForm.setParentDescriptionAndSign(parentOrder.getSignAndDescription());
+            addSuborderForm.setParentId(addSuborderForm.getCustomerorderId());
+            addSuborderForm.setValidFrom(format(parentOrder.getFromDate()));
+            if(parentOrder.getUntilDate() != null) {
+                addSuborderForm.setValidUntil(format(parentOrder.getUntilDate()));
+            } else {
+                addSuborderForm.setValidUntil(null);
+            }
+
+            request.getSession().setAttribute("currentOrder", parentOrder);
+            request.getSession().setAttribute("currentOrderId", parentOrder.getId());
+            request.getSession().setAttribute("parentDescriptionAndSign", addSuborderForm.getParentDescriptionAndSign());
+            request.getSession().setAttribute("suborderParent", parentOrder);
+            request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(),true));
+
+            return mapping.getInputForward();
+        }
+
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshParentProject")) {
 
             Customerorder parentOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
@@ -187,38 +208,34 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             request.getSession().setAttribute("suborderParent", parentOrder);
 
             if (request.getParameter("continue") != null) {
-                try {
-                    addSuborderForm.setParentId(Long.parseLong(request.getParameter("continue")));
-                    Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
-                    if (tempSubOrder != null && tempSubOrder.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {
-                        LOG.info("Suborder does not match customerorder. Reset to null");
-                        tempSubOrder = null;
-                    }
-
-                    if (tempSubOrder != null) {
-                        addSuborderForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
-
-                        String parentOrderFromDate = "";
-                        String parentOrderUntilDate = "";
-                        if (tempSubOrder.getFromDate() != null) {
-                            parentOrderFromDate = tempSubOrder.getFromDate().toString();
-                        }
-                        if (tempSubOrder.getUntilDate() != null) {
-                            parentOrderUntilDate = tempSubOrder.getUntilDate().toString();
-                        }
-                        addSuborderForm.setValidFrom(parentOrderFromDate);
-                        addSuborderForm.setValidUntil(parentOrderUntilDate);
-
-                        request.getSession().setAttribute("suborderParent", tempSubOrder);
-                    } else {
-                        Customerorder tempOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getParentId());
-                        addSuborderForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
-                        request.getSession().setAttribute("suborderParent", tempOrder);
-                    }
-                    request.getSession().setAttribute("parentDescriptionAndSign", addSuborderForm.getParentDescriptionAndSign());
-                } catch (Throwable th) {
-                    return mapping.findForward("error");
+                addSuborderForm.setParentId(Long.parseLong(request.getParameter("continue")));
+                Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
+                if (tempSubOrder != null && tempSubOrder.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {
+                    LOG.info("Suborder does not match customerorder. Reset to null");
+                    tempSubOrder = null;
                 }
+
+                if (tempSubOrder != null) {
+                    addSuborderForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+
+                    String parentOrderFromDate = "";
+                    String parentOrderUntilDate = "";
+                    if (tempSubOrder.getFromDate() != null) {
+                        parentOrderFromDate = tempSubOrder.getFromDate().toString();
+                    }
+                    if (tempSubOrder.getUntilDate() != null) {
+                        parentOrderUntilDate = tempSubOrder.getUntilDate().toString();
+                    }
+                    addSuborderForm.setValidFrom(parentOrderFromDate);
+                    addSuborderForm.setValidUntil(parentOrderUntilDate);
+
+                    request.getSession().setAttribute("suborderParent", tempSubOrder);
+                } else {
+                    Customerorder tempOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getParentId());
+                    addSuborderForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
+                    request.getSession().setAttribute("suborderParent", tempOrder);
+                }
+                request.getSession().setAttribute("parentDescriptionAndSign", addSuborderForm.getParentDescriptionAndSign());
             }
 
             return mapping.getInputForward();

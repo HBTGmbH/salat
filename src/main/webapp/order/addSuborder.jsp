@@ -88,7 +88,7 @@
 				<b><bean:message key="main.suborder.customerorder.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="customerorderId" value="${currentOrderId}">
+				<html:select property="customerorderId" value="${currentOrderId}" onchange="setStoreAction(this.form,'changeCustomerorder')">
 					<html:options collection="customerorders" labelProperty="signAndDescription" property="id" />
 				</html:select>
 				<span style="color:red">
