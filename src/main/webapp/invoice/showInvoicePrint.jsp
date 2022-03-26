@@ -138,11 +138,11 @@
 									<c:if test="${timereportviewhelper.visible}">
 										<tr class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
 											<td class="invoice_booking_row nonproportional ${iterstatus.last?'last_timereport':''}">
-												<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}" pattern="dd.MM.yyyy" />
+												<java8:formatLocalDate value="${timereportviewhelper.referenceday}" pattern="dd.MM.yyyy" />
 											</td>
 											<c:if test="${employeesignbox && timereportsbox}">
 												<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
-													<c:out value="${timereportviewhelper.employeecontract.employee.name}" />
+													<c:out value="${timereportviewhelper.employeeName}" />
 												</td>
 											</c:if>
 											<c:if test="${timereportdescriptionbox}">

@@ -67,4 +67,8 @@ public class InvoiceTimereportHelper {
         return timereport.getEmployeeSign();
     }
 
+    public String getEmployeeName() {
+        return timereport.getEmployeeName();
+    }
+
 }

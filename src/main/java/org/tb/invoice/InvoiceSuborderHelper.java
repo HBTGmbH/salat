@@ -153,11 +153,98 @@ public class InvoiceSuborderHelper extends Suborder {
         return result.toString();
     }
 
+    @Override
     public Long getId() {
         return suborder.getId();
     }
 
+    @Override
     public String getSuborder_customer() {
         return suborder.getSuborder_customer();
+    }
+
+    @Override
+    public char getInvoice() {
+        return suborder.getInvoice();
+    }
+
+    @Override
+    public String getSign() {
+        return suborder.getSign();
+    }
+
+    @Override
+    public String getDescription() {
+        return suborder.getDescription();
+    }
+
+    @Override
+    public Boolean getStandard() {
+        return suborder.getStandard();
+    }
+
+    @Override
+    public Byte getDebithoursunit() {
+        return suborder.getDebithoursunit();
+    }
+
+    @Override
+    public Boolean getHide() {
+        return suborder.getHide();
+    }
+
+    @Override
+    public Boolean getTrainingFlag() {
+        return suborder.getTrainingFlag();
+    }
+
+    @Override
+    public Boolean getFixedPrice() {
+        return suborder.getFixedPrice();
+    }
+
+    @Override
+    public String getShortdescription() {
+        return suborder.getShortdescription();
+    }
+
+    @Override
+    public LocalDate getFromDate() {
+        return suborder.getFromDate();
+    }
+
+    @Override
+    public String getTimeString() {
+        return suborder.getTimeString();
+    }
+
+    @Override
+    public boolean getOpenEnd() {
+        return suborder.getOpenEnd();
+    }
+
+    @Override
+    public LocalDate getUntilDate() {
+        return suborder.getUntilDate();
+    }
+
+    @Override
+    public String getFormattedUntilDate() {
+        return suborder.getFormattedUntilDate();
+    }
+
+    @Override
+    public String getSignAndDescription() {
+        return suborder.getSignAndDescription();
+    }
+
+    @Override
+    public String getSignAndDescriptionWithExpirationDate() {
+        return suborder.getSignAndDescriptionWithExpirationDate();
+    }
+
+    @Override
+    public Duration getDebithours() {
+        return suborder.getDebithours();
     }
 }

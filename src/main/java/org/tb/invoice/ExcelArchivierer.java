@@ -4,6 +4,7 @@ package org.tb.invoice;
 import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
 import static org.apache.poi.ss.usermodel.CellType.STRING;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -266,19 +267,26 @@ public class ExcelArchivierer {
             colIndex++;
         }
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-            cell = row.createCell(colIndex, NUMERIC);
             int layerlimit;
             try {
                 layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
             } catch (NumberFormatException e) {
                 layerlimit = -1;
             }
+            cell = row.createCell(colIndex, NUMERIC);
             if (invoiceSuborderViewHelper.getLayer() < layerlimit || layerlimit == -1) {
                 cell.setCellValue((double) invoiceSuborderViewHelper.getTotalActualminutesPrint() / 1440);
                 cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             } else if (invoiceSuborderViewHelper.getLayer() == layerlimit) {
                 cell.setCellValue((double) invoiceSuborderViewHelper.getDurationInMinutes() / 1440);
                 cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
+            }
+            colIndex++;
+            cell = row.createCell(colIndex, NUMERIC);
+            if (invoiceSuborderViewHelper.getLayer() < layerlimit || layerlimit == -1) {
+                cell.setCellValue((double) invoiceSuborderViewHelper.getTotalActualminutesPrint() / MINUTES_PER_HOUR);
+            } else if (invoiceSuborderViewHelper.getLayer() == layerlimit) {
+                cell.setCellValue((double) invoiceSuborderViewHelper.getDurationInMinutes() / MINUTES_PER_HOUR);
             }
         }
         return rowIndex;
@@ -308,7 +316,7 @@ public class ExcelArchivierer {
         if (request.getSession().getAttribute("employeesignbox") != null && ((Boolean) request.getSession().getAttribute("employeesignbox"))
                 && request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
             cell = row.createCell(colIndex, STRING);
-            cell.setCellValue(createRTS(invoiceTimereportViewHelper.getEmployeeSign(), factory));
+            cell.setCellValue(createRTS(invoiceTimereportViewHelper.getEmployeeName(), factory));
             colIndex++;
         }
         if (request.getSession().getAttribute("timereportdescriptionbox") != null && ((Boolean) request.getSession().getAttribute("timereportdescriptionbox"))) {
@@ -325,12 +333,20 @@ public class ExcelArchivierer {
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
             cell = row.createCell(colIndex, NUMERIC);
             if (invoiceTimereportViewHelper.getDurationhours() != null) {
-                double duration = (invoiceTimereportViewHelper.getDurationhours() * 60) + invoiceTimereportViewHelper.getDurationminutes();
+                double duration = (invoiceTimereportViewHelper.getDurationhours() * MINUTES_PER_HOUR) + invoiceTimereportViewHelper.getDurationminutes();
                 cell.setCellValue(duration / 1440);
             } else {
                 cell.setCellValue(0L);
             }
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
+            colIndex++;
+            cell = row.createCell(colIndex, NUMERIC);
+            if (invoiceTimereportViewHelper.getDurationhours() != null) {
+                double duration = (invoiceTimereportViewHelper.getDurationhours() * MINUTES_PER_HOUR) + invoiceTimereportViewHelper.getDurationminutes();
+                cell.setCellValue(duration / MINUTES_PER_HOUR);
+            } else {
+                cell.setCellValue(0L);
+            }
         }
         return rowIndex;
     }
@@ -372,6 +388,10 @@ public class ExcelArchivierer {
         }
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
             cell = row.createCell(colIndex, STRING);
+            cell.setCellValue(createRTS(showInvoiceForm.getTitleactualdurationtext(), factory));
+            cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
+            colIndex++;
+            cell = row.createCell(colIndex, STRING);
             cell.setCellValue(createRTS(showInvoiceForm.getTitleactualhourstext(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
         }
@@ -379,7 +399,7 @@ public class ExcelArchivierer {
 
     private static void addSumRow(Workbook workbook, int rowIndex, HttpServletRequest request, InstanceFactory factory) {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
-        int colIndex = 2;
+        int colIndex = 1;
         if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
             colIndex++;
         }
@@ -402,6 +422,9 @@ public class ExcelArchivierer {
         cell = row.createCell(colIndex, NUMERIC);
         cell.setCellValue(((double)((Duration) request.getSession().getAttribute("actualminutessum")).toMinutes()) / 1440);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
+        colIndex++;
+        cell = row.createCell(colIndex, NUMERIC);
+        cell.setCellValue((double)request.getSession().getAttribute("actualhourssum"));
     }
 
     private static void setColumnWidths(Sheet sheet, InstanceFactory factory) {

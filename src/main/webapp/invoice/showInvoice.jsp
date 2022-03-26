@@ -639,14 +639,14 @@
 									</td>
 									<!-- timereportdate -->
 									<td>
-										<java8:formatLocalDate value="${timereportviewhelper.referenceday.refdate}" pattern="dd.MM.yyyy" />
+										<java8:formatLocalDate value="${timereportviewhelper.referenceday}" pattern="dd.MM.yyyy" />
 									</td>
 
 									<c:if
 										test="${showInvoiceForm.employeesignbox && showInvoiceForm.timereportsbox}">
 										<td>
 											<c:out
-												value="${timereportviewhelper.employeecontract.employee.name}"></c:out>
+												value="${timereportviewhelper.employeeName}"></c:out>
 										</td>
 									</c:if>
 									<c:if test="${showInvoiceForm.timereportdescriptionbox}">

@@ -3,6 +3,7 @@ package org.tb.invoice;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getWeeksToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
@@ -306,6 +307,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 }
             }
             request.getSession().setAttribute("actualminutessum", actualMinutesSum);
+            request.getSession().setAttribute("actualhourssum", (double)actualMinutesSum.toMinutes() / MINUTES_PER_HOUR);
             request.getSession().setAttribute("printactualhourssum", DurationUtils.decimalFormat(actualMinutesSum));
             request.getSession().setAttribute("titleactualhourstext", showInvoiceForm.getTitleactualhourstext());
             request.getSession().setAttribute("titleactualdurationtext", showInvoiceForm.getTitleactualdurationtext());
