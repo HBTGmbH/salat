@@ -3,6 +3,7 @@ package org.tb.common.configuration;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -29,13 +30,13 @@ public class OpenApiConfiguration {
     StringBuilder openApiDescription = new StringBuilder();
     openApiDescription.append("This is the API of the SALAT microservice (").append(formattedBuildTime);
     gitProperties.ifPresent(entries -> openApiDescription.append(" / ").append(entries.getCommitId()));
-    openApiDescription.append(")\n").append("Use SALAT user access tokens. Token ID = username, Token secret = password.");
+    openApiDescription.append(")\n").append("Use SALAT user access tokens. Header value must be in the form TokenID:TokenSecret");
 
-    SecurityScheme basicAuth = new SecurityScheme();
-    basicAuth.setType(Type.HTTP);
-    basicAuth.setName("basicAuth");
-    basicAuth.setScheme("basic");
-    basicAuth.setDescription("Use SALAT user access tokens. Token ID = username, Token secret = password.");
+    SecurityScheme apikey = new SecurityScheme();
+    apikey.setType(Type.APIKEY);
+    apikey.setName("apikey");
+    apikey.setIn(In.HEADER);
+    apikey.setDescription("Use SALAT user access tokens. Header value must be in the form TokenID:TokenSecret");
 
     // see https://springdoc.org/faq.html
     return new OpenAPI()
@@ -43,7 +44,7 @@ public class OpenApiConfiguration {
             .title("SALAT API")
             .version(buildProperties.isPresent() ? buildProperties.get().getVersion() : "")
             .description(openApiDescription.toString()))
-            .schemaRequirement("basicAuth", basicAuth);
+            .schemaRequirement("apikey", apikey);
   }
 
 }

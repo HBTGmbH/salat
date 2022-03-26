@@ -8,6 +8,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
@@ -39,9 +40,10 @@ import org.tb.order.persistence.EmployeeorderDAO;
 
 @RestController
 @RequiredArgsConstructor
-@SecurityScheme(name = "basicAuth",
-    type = SecuritySchemeType.HTTP,
-    scheme = "basic"
+@SecurityScheme(name = "apikey",
+    type = SecuritySchemeType.APIKEY,
+    in = SecuritySchemeIn.HEADER,
+    paramName = "x-api-key"
 )
 @RequestMapping(path = "/rest/daily-reports")
 public class DailyReportRestEndpoint {
@@ -54,7 +56,7 @@ public class DailyReportRestEndpoint {
 
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
-    @Operation(security = @SecurityRequirement(name = "basicAuth"))
+    @Operation(security = @SecurityRequirement(name = "apikey"))
     public List<DailyReportData> getBookings(
         @RequestParam("refDate")
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -97,7 +99,7 @@ public class DailyReportRestEndpoint {
 
     @PostMapping(path = "/", consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
-    @Operation(security = @SecurityRequirement(name = "basicAuth"))
+    @Operation(security = @SecurityRequirement(name = "apikey"))
     public void createBooking(@RequestBody DailyReportData booking) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);

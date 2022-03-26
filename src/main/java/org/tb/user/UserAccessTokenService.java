@@ -44,8 +44,7 @@ public class UserAccessTokenService {
     return userAccessTokenRepository
         .findByTokenId(tokenId)
         .filter(t -> passwordMatches(tokenSecret, t.getTokenSecretEncrypted()))
-        .map(UserAccessToken::getEmployee)
-        .stream().findAny();
+        .map(UserAccessToken::getEmployee);
   }
 
   public boolean delete(long employeeId, long userAccessTokenId) {

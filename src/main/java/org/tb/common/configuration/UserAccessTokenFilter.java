@@ -24,14 +24,10 @@ public class UserAccessTokenFilter extends HttpFilter {
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
         throws IOException, ServletException {
 
-        final var authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.toLowerCase().startsWith("basic")) {
-            // Authorization: Basic base64credentials
-            var base64Credentials = authorization.substring("Basic".length()).trim();
-            var credDecoded = Base64.getDecoder().decode(base64Credentials);
-            var credentials = new String(credDecoded, StandardCharsets.UTF_8);
-            // credentials = username:password
-            final var tokenIdAndSecret = credentials.split(":", 2);
+        final var apiKeyValue = request.getHeader("x-api-key");
+        if (apiKeyValue != null && !apiKeyValue.isBlank()) {
+            // apiKeyValue = username:password
+            final var tokenIdAndSecret = apiKeyValue.split(":", 2);
             userAccessTokenService.authenticate(tokenIdAndSecret[0], tokenIdAndSecret[1]).ifPresent(authorizedUser::init);
         }
 
