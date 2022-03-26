@@ -12,6 +12,7 @@ public enum ErrorCode {
   EC_EFFECTIVE_EMPLOYEE_ORDER_OUTSIDE_VALIDITY("EC-0003", "effective employee order exists outside employee contract validity"),
   EC_SUPERVISOR_INVALID("EC-0004", "supervisor for employee contract is invalid"),
   EC_OVERLAPS("EC-0005", "employee contract validity overlaps another employee contract of the same employee"),
+  SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY("SO-0001", "suborder validity does not include all existing time reports"),
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
   TR_EMPLOYEE_ORDER_NOT_FOUND("TR-0003","employeeOrderId must match an employee order"),

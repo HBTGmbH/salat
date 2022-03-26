@@ -543,10 +543,6 @@ public class TimereportDAO {
         return toDaoList(timereportRepository.findAllByEmployeecontractId(suborderId));
     }
 
-    public void saveOrUpdate(Timereport timereport) {
-        timereportRepository.save(timereport);
-    }
-
     private Optional<TimereportDTO> toDao(Optional<Timereport> timereport) {
         return timereport.filter(this::accessible).map(this::toDao);
     }

@@ -28,7 +28,6 @@ import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.employee.domain.Employee;
 import org.tb.order.persistence.SuborderDAO;
 
 @Getter
@@ -166,18 +165,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         return getUntilDate() == null;
     }
 
-    public LocalDate getUntilDate() {
-        if (untilDate == null) {
-            if (parentorder != null) {
-                return parentorder.getUntilDate();
-            }
-            return customerorder.getUntilDate();
-        }
-        return untilDate;
-    }
-
     public String getFormattedUntilDate() {
-        LocalDate untilDate = getUntilDate();
         if (untilDate != null) {
             return DateUtils.format(untilDate);
         }

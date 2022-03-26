@@ -337,7 +337,7 @@
 
 		<action path="/StoreSuborder" input="/order/addSuborder.jsp" validate="true"
 			name="addSuborderForm" type="org.tb.order.action.StoreSuborderAction">
-			<forward name="success" path="/order/showSuborder.jsp" />
+			<forward name="success" path="/do/ShowSuborder" redirect="true" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
 			<forward name="reset" path="/order/addSuborder.jsp" />
 			<forward name="error" path="/error.jsp" />

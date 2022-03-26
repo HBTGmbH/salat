@@ -254,7 +254,7 @@ public class TimereportService {
 
     timereports.forEach(t -> {
       log.debug("Saving Timereport {}", t.getTimeReportAsString());
-      timereportDAO.saveOrUpdate(t);
+      timereportDAO.save(t);
     });
 
     // recompute overtimeStatic and store it in employeecontract if change made before release date
@@ -276,6 +276,7 @@ public class TimereportService {
           employeecontract.getOvertimeStatic(),
           overtimeStaticNew);
       employeecontract.setOvertimeStatic(overtimeStaticNew);
+      employeecontractDAO.save(employeecontract);
     }
   }
 

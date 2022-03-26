@@ -21,7 +21,9 @@ import org.apache.struts.action.ActionMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.tb.common.BusinessRuleChecks;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -34,6 +36,7 @@ import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.SuborderViewDecorator;
 
 /**
@@ -50,6 +53,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
     private final SuborderDAO suborderDAO;
     private final TimereportDAO timereportDAO;
     private final EmployeeorderDAO employeeorderDAO;
+    private final SuborderService suborderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -117,17 +121,14 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         if (request.getParameter("task") != null && request.getParameter("task").equals("fitDates")) {
 
             if (request.getSession().getAttribute("soId") != null) {
-
-                long soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
-                Suborder suborder = suborderDAO.getSuborderById(soId);
-
-                if (suborder != null) {
-                    for (Suborder tempSuborder : suborder.getAllChildren()) {
-                        tempSuborder.setFromDate(suborder.getFromDate());
-                        tempSuborder.setUntilDate(suborder.getUntilDate());
-                    }
-                    suborderDAO.save(suborder);
+                long suborderId = Long.parseLong(request.getSession().getAttribute("soId").toString());
+                try {
+                    suborderService.fitValidityOfChildren(suborderId);
+                } catch (BusinessRuleException e) {
+                    addToErrors(request, e.getErrorCode());
+                    return mapping.getInputForward();
                 }
+
             }
             return mapping.findForward("success");
         }
