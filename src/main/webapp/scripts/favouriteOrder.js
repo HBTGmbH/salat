@@ -87,6 +87,7 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 				|| document.referrer.indexOf("task=reset") > -1
 				|| document.URL.indexOf("EditDailyReport") > -1
 				|| document.referrer.indexOf("EditDailyReport") > -1
+				|| document.referrer.indexOf("StoreDailyReport") > -1
 				|| document.referrer.indexOf("CreateDailyReport") > -1;
 		}
 	}
