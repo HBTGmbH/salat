@@ -6,6 +6,7 @@ import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BO;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
 
 import java.io.Serializable;
 import lombok.Data;
@@ -24,22 +25,24 @@ public class AuthorizedUser implements Serializable {
   private boolean authenticated;
   private Long employeeId;
   private String sign;
+  private String name;
   private boolean restricted;
   private boolean backoffice;
   private boolean admin;
   private boolean manager;
 
   public void init(Employee loginEmployee) {
-    this.setAuthenticated(true);
-    this.setEmployeeId(loginEmployee.getId());
-    this.setSign(loginEmployee.getSign());
-    this.setRestricted(TRUE.equals(loginEmployee.getRestricted()));
+    authenticated = true;
+    employeeId = loginEmployee.getId();
+    sign = loginEmployee.getSign();
+    name = loginEmployee.getName();
+    restricted = TRUE.equals(loginEmployee.getRestricted()) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_RESTRICTED);
     boolean isAdmin = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_ADM);
-    this.setAdmin(isAdmin);
+    admin = isAdmin;
     boolean isManager = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(EMPLOYEE_STATUS_PV);
-    this.setManager(isAdmin || isManager);
+    manager = isAdmin || isManager;
     boolean isBackoffice = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BO);
-    this.setBackoffice(isBackoffice || isManager || isAdmin);
+    backoffice = isBackoffice || isManager || isAdmin;
   }
 
   public void invalidate() {

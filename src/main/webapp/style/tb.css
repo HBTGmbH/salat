@@ -315,3 +315,62 @@ textarea.showDailyReport {
 .dropdown-content th {
 	white-space: nowrap;
 }
+
+
+/* new menu / navigation */
+div.navigation {
+	position: fixed;
+	z-index: 999;
+	background-color: #191e55;
+	color: white;
+}
+
+div.navigation a {
+	color: white;
+}
+
+.navigation p {
+	margin-bottom: 0;
+	font-weight: bold;
+	color: #46e6e6;
+}
+
+.main-content {
+	color: #191e55;
+	background-color: white;
+	min-height: 100vh
+}
+
+@media (min-width: 992px) {
+	.navigation {
+		min-height: 100vh;
+	}
+	.navigation button {
+		display: none;
+	}
+}
+
+@media (max-width: 991.98px) {
+	.navigation {
+		max-height: 100vh;
+		overflow-y: scroll;
+	}
+	.navigation.active {
+		min-height: 100vh;
+	}
+	.navigation .navigation-content {
+		max-height: 0;
+	}
+	.navigation.active .navigation-content {
+		max-height: auto;
+	}
+	.navigation ul, .user-login {
+		font-size: 5vw;
+	}
+}
+
+/* color overrides to match new ci */
+th {
+	background-color: #191e55;
+	color: white;
+}

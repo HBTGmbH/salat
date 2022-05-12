@@ -1,0 +1,146 @@
+<html>
+<meta charset="UTF-8"><meta>
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" id="bootstrap-css"></link>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" id="bootstrap-icons"></link>
+  <style>
+    div.navigation {
+      position: fixed;
+      z-index: 999;
+      background-color: #191e55;
+      color: white;
+    }
+
+    div.navigation a {
+      color: white;
+    }
+
+    .navigation p {
+      margin-bottom: 0;
+      font-weight: bold;
+      color: #46e6e6;
+    }
+
+    .main-content {
+      color: #191e55;
+      background-color: white;
+      min-height: 100vh
+    }
+
+    @media (min-width: 992px) {
+      .navigation {
+        min-height: 100vh;
+      }
+      .navigation button {
+        display: none;
+      }
+    }
+
+    @media (max-width: 991.98px) {
+      .navigation {
+        max-height: 100vh;
+        overflow-y: scroll;
+      }
+      .navigation.active {
+        min-height: 100vh;
+      }
+      .navigation .navigation-content {
+        max-height: 0;
+      }
+      .navigation.active .navigation-content {
+        max-height: auto;
+      }
+      .navigation ul {
+        font-size: 5vw;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-xxl-2 col-lg-3 navigation">
+      <h1>
+        <button class="btn btn-outline my-auto"><i class="bi bi-list"></i></button>
+        <span>SALAT</span>
+      </h1>
+      <div class="navigation-content">
+        <ul class="list-unstyled float-none">
+          <p>Zeitbuchungen</p>
+          <li><a href="#">Neue Buchung</a></li>
+          <li>Einzelübersicht</li>
+          <li>Matrixübersicht</li>
+        </ul>
+        <ul class="list-unstyled">
+          <p>Mitarbeiter</p>
+          <li>Mitarbeiter</li>
+          <li>Mitarbeiterverträge</li>
+          <li>Mitarbeiteraufträge</li>
+        </ul>
+        <ul class="list-unstyled">
+          <p>Aufträge</p>
+          <li>Kunden</li>
+          <li>Aufträge</li>
+          <li>Unteraufträge</li>
+          <li>Rechnungsanlagen</li>
+        </ul>
+        <div style="width: 50%; margin-top: 100px">
+          <img src="/images/HBT_Logo_RGB_negativ.svg" class="img-fluid" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xxl-2 col-lg-3">
+      <h1>Spacer</h1>
+    </div>
+    <div class="col-xxl-10 col-lg-9 main-content">
+      <h1>Main Content</h1>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+      <p>test</p>
+    </div>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+<script>
+  $(document).ready(function () {
+
+    $('.navigation > h1').on('click', function () {
+      $('.navigation').toggleClass('active');
+    });
+
+  });
+</script>
+</body>
+</html>
