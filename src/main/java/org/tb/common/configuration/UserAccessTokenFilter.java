@@ -28,7 +28,11 @@ public class UserAccessTokenFilter extends HttpFilter {
         if (apiKeyValue != null && !apiKeyValue.isBlank()) {
             // apiKeyValue = username:password
             final var tokenIdAndSecret = apiKeyValue.split(":", 2);
-            userAccessTokenService.authenticate(tokenIdAndSecret[0], tokenIdAndSecret[1]).ifPresent(authorizedUser::init);
+            if(tokenIdAndSecret != null && tokenIdAndSecret.length == 2) {
+                userAccessTokenService.authenticate(tokenIdAndSecret[0], tokenIdAndSecret[1]).ifPresent(authorizedUser::init);
+            } else {
+                log.warn("Could not interpret value of http header x-api-key.");
+            }
         }
 
         Object oldValue = request.getAttribute("authorizedUser");
