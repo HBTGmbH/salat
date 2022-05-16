@@ -364,6 +364,12 @@ public class DateUtils {
     }
 
     public static LocalDate max(LocalDate date1, LocalDate date2) {
+        if(date1 == null) {
+            return date2;
+        }
+        if(date2 == null) {
+            return date1;
+        }
         if(date1.isAfter(date2)) {
             return date1;
         }
@@ -371,6 +377,12 @@ public class DateUtils {
     }
 
     public static LocalDate min(LocalDate date1, LocalDate date2) {
+        if(date1 == null) {
+            return date2;
+        }
+        if(date2 == null) {
+            return date1;
+        }
         if(date1.isBefore(date2)) {
             return date1;
         }

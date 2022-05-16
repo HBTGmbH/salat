@@ -32,4 +32,44 @@ class DateUtilsTest {
     assertThat(DateUtils.getWorkingDayDistance(a, b)).isEqualTo(9);
   }
 
+  @Test
+  void min_with_null_value_should_return_other_value() {
+    LocalDate a = LocalDate.of(2022, 3, 1);
+    assertThat(DateUtils.min(a, null)).isEqualTo(a);
+    assertThat(DateUtils.min(null, a)).isEqualTo(a);
+  }
+
+  @Test
+  void min_with_only_null_values_should_return_null() {
+    assertThat(DateUtils.min(null, null)).isNull();
+  }
+
+  @Test
+  void min_should_return_min_value() {
+    LocalDate a = LocalDate.of(2022, 3, 1);
+    LocalDate b = LocalDate.of(2022, 3, 2);
+    assertThat(DateUtils.min(a, b)).isEqualTo(a);
+    assertThat(DateUtils.min(b, a)).isEqualTo(a);
+  }
+
+  @Test
+  void max_with_null_value_should_return_other_value() {
+    LocalDate a = LocalDate.of(2022, 3, 1);
+    assertThat(DateUtils.max(a, null)).isEqualTo(a);
+    assertThat(DateUtils.max(null, a)).isEqualTo(a);
+  }
+
+  @Test
+  void max_with_only_null_values_should_return_null() {
+    assertThat(DateUtils.max(null, null)).isNull();
+  }
+
+  @Test
+  void max_should_return_max_value() {
+    LocalDate a = LocalDate.of(2022, 3, 1);
+    LocalDate b = LocalDate.of(2022, 3, 2);
+    assertThat(DateUtils.max(a, b)).isEqualTo(b);
+    assertThat(DateUtils.max(b, a)).isEqualTo(b);
+  }
+
 }
