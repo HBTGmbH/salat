@@ -315,3 +315,7 @@ textarea.showDailyReport {
 .dropdown-content th {
 	white-space: nowrap;
 }
+
+.select2-results__option {
+	white-space: nowrap;
+}
