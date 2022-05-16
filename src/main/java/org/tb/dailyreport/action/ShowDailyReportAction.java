@@ -12,6 +12,7 @@ import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
+import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
@@ -171,8 +172,11 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             actionResult = mapping.findForward("success");
         } else {
             //*** initialisation ***
-            init(request, reportForm);
-            //TODO: Hier bitte findForward zurückgeben.
+            var initForward = init(request, reportForm);
+            if(initForward != null) {
+                return mapping.findForward(initForward);
+            }
+
             if (request.getParameter("day") != null && request.getParameter("month") != null && request.getParameter("year") != null) {
                 // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
                 String date = request.getParameter("year") + "-" + getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
@@ -651,23 +655,21 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
      * logged-in user.
      */
     private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
-        String forward = "success";
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
-            forward = "error";
-            return forward;
+            return "error";
         }
         List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
-            forward = "error";
-            return forward;
+            return "error";
         }
 
         reportForm.setView(GlobalConstants.VIEW_DAILY);
         reportForm.setShowOnlyValid(true);
+
         request.getSession().setAttribute("view", GlobalConstants.VIEW_DAILY);
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         request.getSession().setAttribute("years", getYearsToDisplay());
@@ -705,8 +707,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             try {
                 workingday = refreshWorkingday(reportForm, request, workingdayDAO);
             } catch (Exception e) {
-                forward = "error";
-                return forward;
+                log.error("Could not refreshWorkingday.", e);
+                return "error";
             }
 
             if (workingday != null) {
@@ -743,13 +745,13 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
             // call from main menu: set current month, year, timereports,
             // orders, suborders...
-            LocalDate dt = today();
+            var dateStringArray = getDateAsStringArray(today());
             // get day string (e.g., '31') from java.time.LocalDate
-            String dayString = formatDayOfMonth(dt);
+            String dayString = dateStringArray[0];
             // get month string (e.g., 'Jan') from java.time.LocalDate
-            String monthString = formatMonth(dt);
+            String monthString = dateStringArray[1];
             // get year string (e.g., '2006') from java.time.LocalDate
-            String yearString = formatYear(dt);
+            String yearString = dateStringArray[2];
             request.getSession().setAttribute("currentDay", dayString);
             request.getSession().setAttribute("currentMonth", monthString);
             request.getSession().setAttribute("currentYear", yearString);
@@ -807,7 +809,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         request.getSession().setAttribute("currentOrder", "ALL ORDERS");
         request.getSession().setAttribute("currentOrderId", -1L);
 
-        return forward;
+        return null; // nothing to forward to
     }
 
     @Override

@@ -306,8 +306,7 @@
 								</html:image>
 							</c:when>
 							<c:otherwise>
-								<html:select property="month" value="<%=(String) request.getSession().getAttribute(\"currentMonth\")%>" 
-									onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
+								<html:select property="month" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
 									<html:option value="Jan">
 										<bean:message key="main.timereport.select.month.jan.text" />
 									</html:option>
