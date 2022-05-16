@@ -201,7 +201,7 @@
 								</html:form>
 								<html:form action="/ShowSuborder">
 									<td class="noBborderStyle"><c:if
-											test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+											test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
 											<html:submit styleId="button" onclick="setflag(this.form)"
 												titleKey="main.general.button.setflag.alttext.text">
 												<bean:message key="main.general.button.setflag.text" />
@@ -234,7 +234,7 @@
 
 						<c:choose>
 							<c:when
-								test="${(authorizedUser.manager || currentOrder.responsible_hbt.id == loginEmployee.id) && (currentOrder.currentlyValid || !currentOrder.hide)}">
+								test="${(authorizedUser.manager || currentOrder.responsible_hbt.id == loginEmployee.id)}">
 								<tree:tree mainProject="${currentOrder}"
 									subProjects="${suborders}" browser="<%=browser%>"
 									changeFunctionString="callEdit(this.form, 'default')"
@@ -261,8 +261,7 @@
 				</c:when>
 				<c:otherwise>
 					<tr>
-						<c:if
-							test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+						<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
 							<th align="left" title="select">&nbsp;</th>
 						</c:if>
 						<th align="left" title="Info"><b>Info</b></th>
@@ -331,12 +330,16 @@
 						</c:choose>
 
 						<!-- Checkbox -->
-						<c:if
-							test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) &&
-									(suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
-							<td align="center"><html:multibox styleId="suborderIdArray"
-									property="suborderIdArray" value="${suborder.id}" /></td>
-						</c:if>
+						<c:choose>
+							<c:when test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
+								<td align="center"><html:multibox styleId="suborderIdArray"
+																  property="suborderIdArray" value="${suborder.id}" /></td>
+							</c:when>
+							<c:otherwise>
+								<td align="center">&nbsp;</td>
+							</c:otherwise>
+						</c:choose>
+
 
 						<!-- Info -->
 						<td align="center">
@@ -673,8 +676,7 @@
 						</c:choose>
 
 						<c:choose>
-							<c:when
-								test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+							<c:when	test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
 								<td align="center"><html:link
 										href="/do/EditSuborder?soId=${suborder.id}">
 										<img src="/images/Edit.gif" alt="Edit Suborder"
@@ -698,8 +700,7 @@
 					</c:forEach>
 				</c:otherwise>
 			</c:choose>
-			<c:if
-				test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+			<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
 				<tr>
 					<html:hidden styleId="suborderOptionValue"
 						property="suborderOptionValue" />
@@ -739,7 +740,7 @@
 							</html:form>
 							<html:form action="/ShowSuborder">
 								<td class="noBborderStyle"><c:if
-										test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id) && (suborder.customerorder.currentlyValid || !suborder.customerorder.hide)}">
+										test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
 										<html:submit styleId="button" onclick="setflag(this.form)"
 											titleKey="main.general.button.setflag.alttext.text">
 											<bean:message key="main.general.button.setflag.text" />
