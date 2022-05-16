@@ -35,10 +35,6 @@ public class DateUtils {
         .ofPattern("yyyy")
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
 
-    private static final DateTimeFormatter monthFormatter = DateTimeFormatter
-        .ofPattern("MM")
-        .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
-
     private static final DateTimeFormatter dayOfMonthFormatter = DateTimeFormatter
         .ofPattern("dd")
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
@@ -165,32 +161,6 @@ public class DateUtils {
         String day = formatDayOfMonth(date);
         String year = formatYear(date);
         String month = formatMonth(date);
-        int monthValue = Integer.parseInt(month);
-        if (monthValue == GlobalConstants.MONTH_INTVALUE_JANUARY) {
-            month = GlobalConstants.MONTH_SHORTFORM_JANUARY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_FEBRURAY) {
-            month = GlobalConstants.MONTH_SHORTFORM_FEBRUARY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MARCH) {
-            month = GlobalConstants.MONTH_SHORTFORM_MARCH;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_APRIL) {
-            month = GlobalConstants.MONTH_SHORTFORM_APRIL;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MAY) {
-            month = GlobalConstants.MONTH_SHORTFORM_MAY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JUNE) {
-            month = GlobalConstants.MONTH_SHORTFORM_JUNE;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JULY) {
-            month = GlobalConstants.MONTH_SHORTFORM_JULY;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_AUGUST) {
-            month = GlobalConstants.MONTH_SHORTFORM_AUGUST;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_SEPTEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_SEPTEMBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_OCTOBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_OCTOBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_NOVEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_NOVEMBER;
-        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_DECEMBER) {
-            month = GlobalConstants.MONTH_SHORTFORM_DECEMBER;
-        }
 
         String[] dateArray = new String[3];
         dateArray[0] = day;
@@ -292,7 +262,34 @@ public class DateUtils {
     }
 
     public static String formatMonth(LocalDate date) {
-        return monthFormatter.format(date);
+        String month = null;
+        int monthValue = date.getMonthValue();
+        if (monthValue == GlobalConstants.MONTH_INTVALUE_JANUARY) {
+            month = GlobalConstants.MONTH_SHORTFORM_JANUARY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_FEBRURAY) {
+            month = GlobalConstants.MONTH_SHORTFORM_FEBRUARY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MARCH) {
+            month = GlobalConstants.MONTH_SHORTFORM_MARCH;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_APRIL) {
+            month = GlobalConstants.MONTH_SHORTFORM_APRIL;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_MAY) {
+            month = GlobalConstants.MONTH_SHORTFORM_MAY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JUNE) {
+            month = GlobalConstants.MONTH_SHORTFORM_JUNE;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_JULY) {
+            month = GlobalConstants.MONTH_SHORTFORM_JULY;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_AUGUST) {
+            month = GlobalConstants.MONTH_SHORTFORM_AUGUST;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_SEPTEMBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_SEPTEMBER;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_OCTOBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_OCTOBER;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_NOVEMBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_NOVEMBER;
+        } else if (monthValue == GlobalConstants.MONTH_INTVALUE_DECEMBER) {
+            month = GlobalConstants.MONTH_SHORTFORM_DECEMBER;
+        }
+        return month;
     }
 
     public static String formatYear(LocalDate date) {
