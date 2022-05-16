@@ -4,6 +4,7 @@ import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Locale.GERMAN;
 import static org.tb.common.util.DateUtils.format;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpSession;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.common.OptionItem;
@@ -111,6 +113,14 @@ public class ChicoreeSessionStore {
     httpSession.setAttribute("suborderOptions", suborderOptions);
   }
 
+  public void setLastStoredTimereport(TimereportData timereportData) {
+    httpSession.setAttribute("timereportData", timereportData);
+  }
+
+  public Optional<TimereportData> getLastStoredTimereport() {
+    return Optional.ofNullable((TimereportData) httpSession.getAttribute("timereportData"));
+  }
+
   public void invalidate() {
     httpSession.removeAttribute("greeting");
     httpSession.removeAttribute("loginEmployee");
@@ -128,6 +138,13 @@ public class ChicoreeSessionStore {
     httpSession.removeAttribute("overtimeStatus");
     httpSession.removeAttribute("orderOptions");
     httpSession.removeAttribute("suborderOptions");
+    httpSession.removeAttribute("timereportData");
+  }
+
+  @Getter
+  @RequiredArgsConstructor
+  public static class TimereportData implements Serializable {
+    private final String orderId, suborderId;
   }
 
 }

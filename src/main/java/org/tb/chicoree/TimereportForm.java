@@ -106,7 +106,7 @@ public class TimereportForm extends ActionForm {
     comment = timereport.getTaskdescription();
   }
 
-  public void initNew(LocalDate date) {
+  public void initNew(LocalDate date, ChicoreeSessionStore chicoreeSessionStore) {
     id = null;
     this.date = format(date);
     orderId = "";
@@ -114,6 +114,10 @@ public class TimereportForm extends ActionForm {
     hours = null;
     minutes = null;
     comment = null;
+    chicoreeSessionStore.getLastStoredTimereport().ifPresent(lastTimereportForm -> {
+      orderId = lastTimereportForm.getOrderId();
+      suborderId = lastTimereportForm.getSuborderId();
+    });
   }
 
 }

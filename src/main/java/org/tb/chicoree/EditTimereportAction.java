@@ -39,9 +39,9 @@ public class EditTimereportAction extends LoginRequiredAction<TimereportForm> {
       // add new
       String date = request.getParameter("date");
       if(date != null && !date.isBlank() && validateDate(date)) {
-        form.initNew(parse(date));
+        form.initNew(parse(date), chicoreeSessionStore);
       } else {
-        form.initNew(today());
+        form.initNew(today(), chicoreeSessionStore);
       }
     }
 

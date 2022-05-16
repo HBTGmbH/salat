@@ -1,18 +1,16 @@
 package org.tb.chicoree;
 
-import static org.tb.common.util.DateUtils.parse;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.chicoree.ChicoreeSessionStore.TimereportData;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.persistence.EmployeeorderDAO;
 
@@ -63,6 +61,7 @@ public class StoreTimereportAction extends LoginRequiredAction<TimereportForm> {
       addToMessages(request, e.getErrorCode());
       return mapping.getInputForward();
     }
+    chicoreeSessionStore.setLastStoredTimereport(new TimereportData(form.getOrderId(), form.getSuborderId()));
     chicoreeSessionStore.setDashboardDate(form.getDateTyped());
     return mapping.findForward("success");
   }
