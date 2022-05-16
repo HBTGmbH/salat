@@ -1,5 +1,6 @@
 package org.tb.employee.domain;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ public class OvertimeStatus {
   public static class OvertimeStatusInfo {
     private LocalDate begin, end;
     private long days, hours, minutes;
+    private Duration duration;
+    private boolean negative;
   }
 
 }
