@@ -386,8 +386,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
         }
         LocalDate validUntilDate = null;
         if (eoForm.getValidUntil() != null && !eoForm.getValidUntil().equals("".trim())) {
-            if(validateDate(eoForm.getValidFrom())) {
-                validUntilDate = parse(eoForm.getValidFrom());
+            if(validateDate(eoForm.getValidUntil())) {
+                validUntilDate = parse(eoForm.getValidUntil());
             } else {
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
