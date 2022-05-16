@@ -45,6 +45,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.comparator.TimereportByEmployeeAscComparator;
@@ -61,6 +62,7 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.OvertimeService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
@@ -93,6 +95,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
+    private final OvertimeService overtimeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
@@ -463,6 +466,24 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             if (refreshSuccessful) {
                 @SuppressWarnings("unchecked")
                 List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
+
+                // calculate overtime
+                overtimeService.calculateOvertime(reportForm.getEmployeeContractId(), true).ifPresent(status -> {
+
+                    var overtimeIsNegative = status.getTotal().isNegative();
+                    request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
+
+                    String overtimeString = DurationUtils.format(status.getTotal().getDuration());
+                    request.getSession().setAttribute("overtime", overtimeString);
+
+                    var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
+                    request.getSession().setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
+
+                    String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
+                    request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
+
+                    request.getSession().setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
+                });
 
                 //check if only project based training should be shown
                 if (reportForm.getShowTraining()) {
