@@ -5,6 +5,7 @@ import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
@@ -199,7 +200,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             if (coForm.getDebithours() == null
                 || coForm.getDebithours().isEmpty()
                 || DurationUtils.parseDuration(coForm.getDebithours()).isZero()) {
-                co.setDebithours(null);
+                co.setDebithours(Duration.ZERO);
                 co.setDebithoursunit(null);
             } else {
                 co.setDebithours(DurationUtils.parseDuration(coForm.getDebithours()));
