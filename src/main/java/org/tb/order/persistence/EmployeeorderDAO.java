@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder_;
@@ -260,15 +258,12 @@ public class EmployeeorderDAO {
         return getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, null);
     }
 
-    public List<Employeeorder> getEmployeeordersByEmployeeContractIdAndCustomerorderIdValidAt(long employeeContractId,
-        LocalDate date, Optional<Long> customerOrderId) {
+    public List<Employeeorder> getEmployeeordersByEmployeeContractIdAndValidAt(long employeeContractId,
+        LocalDate date) {
         return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
                 Set<Predicate> predicates = new HashSet<>();
                 predicates.add(showOnlyValid(date).toPredicate(root, query, builder));
                 predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
-                customerOrderId.ifPresent(id -> {
-                  predicates.add(matchingCustomerorderId(id).toPredicate(root, query, builder));
-                });
                 return builder.and(predicates.toArray(new Predicate[0]));
             }).stream()
             .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())

@@ -31,10 +31,10 @@ public class RefreshTimereportFormFieldsAction extends LoginRequiredAction<Timer
         }
         var employeecontractId = chicoreeSessionStore.getLoginEmployeecontractId().orElseThrow();
         var date = form.getDateTyped();
-        var employeeorders = employeeorderDAO.getEmployeeordersByEmployeeContractIdAndCustomerorderIdValidAt(
+        var employeeorders = employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(
             employeecontractId,
-            date,
-            form.getOrderId() != null ? Optional.of(form.getOrderIdTyped()) : Optional.empty());
+            date
+        );
         chicoreeSessionStore.setEmployeeorders(employeeorders);
         if(form.getOrderId() != null && !form.getOrderId().isBlank()) {
           chicoreeSessionStore.setCustomerorder(form.getOrderIdTyped(), employeeorders);
