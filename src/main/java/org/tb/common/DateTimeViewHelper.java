@@ -132,9 +132,9 @@ public class DateTimeViewHelper {
   public static List<OptionItem> getMonthsToDisplay() {
     List<OptionItem> theList = new ArrayList<>();
     for (int i = 1; i <= 12; i++) {
-      String dayValue = GlobalConstants.MONTH_SHORTFORMS[i - 1];
-      String dayLabel = GlobalConstants.MONTH_LONGFORMS[i - 1];
-      theList.add(new OptionItem(dayValue, dayLabel));
+      String monthValue = GlobalConstants.MONTH_SHORTFORMS[i - 1];
+      String monthLabel = GlobalConstants.MONTH_LONGFORMS[i - 1];
+      theList.add(new OptionItem(monthValue, monthLabel));
     }
 
     return theList;
