@@ -92,6 +92,8 @@ public class OvertimeService {
     info.setDays(days);
     info.setHours(hours);
     info.setMinutes(minutes);
+    info.setNegative(overtime.isNegative());
+    info.setDuration(overtime);
     return info;
   }
 
