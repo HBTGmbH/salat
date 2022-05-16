@@ -2,7 +2,7 @@ package org.tb.chicoree;
 
 import static org.tb.common.util.DateUtils.validateDate;
 
-import java.util.stream.Collectors;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +31,10 @@ public class RefreshTimereportFormFieldsAction extends LoginRequiredAction<Timer
         }
         var employeecontractId = chicoreeSessionStore.getLoginEmployeecontractId().orElseThrow();
         var date = form.getDateTyped();
-        var employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeecontractId)
-            .stream()
-            .filter(employeeorder -> employeeorder.isValidAt(date))
-            .collect(Collectors.toList());
+        var employeeorders = employeeorderDAO.getEmployeeordersByEmployeeContractIdAndCustomerorderIdValidAt(
+            employeecontractId,
+            date,
+            form.getOrderId() != null ? Optional.of(form.getOrderIdTyped()) : Optional.empty());
         chicoreeSessionStore.setEmployeeorders(employeeorders);
         if(form.getOrderId() != null && !form.getOrderId().isBlank()) {
           chicoreeSessionStore.setCustomerorder(form.getOrderIdTyped(), employeeorders);
