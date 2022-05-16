@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -170,13 +171,12 @@ public class EmployeeorderDAO {
             .collect(Collectors.toList());
     }
 
-    private Specification<Employeeorder> showOnlyValid() {
-        LocalDate now = DateUtils.today();
+    private Specification<Employeeorder> showOnlyValid(LocalDate date) {
         return (root, query, builder) -> {
-            var fromDateLess = builder.lessThanOrEqualTo(root.get(Employeeorder_.fromDate), now);
+            var fromDateLess = builder.lessThanOrEqualTo(root.get(Employeeorder_.fromDate), date);
             var untilDateNullOrGreater = builder.or(
                 builder.isNull(root.get(Employeeorder_.untilDate)),
-                builder.greaterThanOrEqualTo(root.get(Employeeorder_.untilDate), now)
+                builder.greaterThanOrEqualTo(root.get(Employeeorder_.untilDate), date)
             );
             return builder.and(fromDateLess, untilDateNullOrGreater);
         };
@@ -227,7 +227,7 @@ public class EmployeeorderDAO {
         return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
                 Set<Predicate> predicates = new HashSet<>();
                 if(!TRUE.equals(showInvalid)) {
-                    predicates.add(showOnlyValid().toPredicate(root, query, builder));
+                    predicates.add(showOnlyValid(DateUtils.today()).toPredicate(root, query, builder));
                 }
                 if(employeeContractId != null && employeeContractId > 0) {
                     predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
@@ -260,6 +260,24 @@ public class EmployeeorderDAO {
         return getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, null);
     }
 
+    public List<Employeeorder> getEmployeeordersByEmployeeContractIdAndCustomerorderIdValidAt(long employeeContractId,
+        LocalDate date, Optional<Long> customerOrderId) {
+        return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
+                Set<Predicate> predicates = new HashSet<>();
+                predicates.add(showOnlyValid(date).toPredicate(root, query, builder));
+                predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
+                customerOrderId.ifPresent(id -> {
+                  predicates.add(matchingCustomerorderId(id).toPredicate(root, query, builder));
+                });
+                return builder.and(predicates.toArray(new Predicate[0]));
+            }).stream()
+            .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
     public void save(Employeeorder eo) {
         employeeorderRepository.save(eo);
     }
@@ -280,4 +298,5 @@ public class EmployeeorderDAO {
         }
         return deleteOk;
     }
+
 }
