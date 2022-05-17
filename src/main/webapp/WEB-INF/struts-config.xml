@@ -171,7 +171,7 @@
 
 		<action path="/DeleteTimereportFromDailyDisplay" input="/dailyreport/showDailyReport.jsp"
 			name="showDailyReportForm" type="org.tb.dailyreport.action.DeleteTimereportFromDailyDisplayAction">
-			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
+			<forward name="success" path="/do/ShowDailyReport" redirect="true" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
