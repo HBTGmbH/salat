@@ -1,7 +1,5 @@
 package org.tb.dailyreport.viewhelper;
 
-import static java.time.DayOfWeek.SATURDAY;
-import static java.time.DayOfWeek.SUNDAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import java.time.Duration;
@@ -20,13 +18,11 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.domain.Overtime;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
 
@@ -43,7 +39,6 @@ public class TimereportHelper {
     private final TimereportDAO timereportDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final PublicholidayDAO publicholidayDAO;
-    private final OvertimeDAO overtimeDAO;
     private final AuthorizedUser authorizedUser;
     private final EmployeecontractDAO employeecontractDAO;
 
@@ -300,68 +295,6 @@ public class TimereportHelper {
             log.error("Could not calculate quitting time.", e);
             return N_A;
         }
-    }
-
-    public long calculateOvertime(LocalDate start, LocalDate end, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
-
-        // do not consider invalid(outside of the validity of the contract) days
-        if (employeecontract.getValidUntil() != null && end.isAfter(employeecontract.getValidUntil())) {
-            end = employeecontract.getValidUntil();
-        }
-
-        if (employeecontract.getValidFrom() != null && start.isBefore(employeecontract.getValidFrom())) {
-            start = employeecontract.getValidFrom();
-        }
-
-        int numberOfHolidays = 0;
-        var holidays = publicholidayDAO.getPublicHolidaysBetween(start, end);
-        for (var publicholiday : holidays) {
-            var dayOfWeek = publicholiday.getRefdate().getDayOfWeek();
-            if (dayOfWeek != SATURDAY && dayOfWeek != SUNDAY) {
-                numberOfHolidays += 1;
-            }
-        }
-
-        var diffDays = DateUtils.getWorkingDayDistance(start, end);
-        // substract holidays
-        diffDays -= numberOfHolidays;
-
-        // calculate working time
-        long dailyWorkingTime = employeecontract.getDailyWorkingTime().toMinutes();
-        long expectedWorkingTimeInMinutes = dailyWorkingTime * diffDays;
-        long actualWorkingTimeInMinutes = 0;
-        List<TimereportDTO> reports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end);
-        if (reports != null) {
-            for (TimereportDTO timereport : reports) {
-                actualWorkingTimeInMinutes += timereport.getDuration().toMinutes();
-            }
-        }
-
-        long overtimeMinutes;
-        if (useOverTimeAdjustment) {
-            long overtimeAdjustmentMinutes = 0;
-            List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
-            for (Overtime overtime : overtimes) {
-                if(isOvertimeEffectiveBetween(start, end, overtime)) {
-                    overtimeAdjustmentMinutes += overtime.getTimeMinutes().toMinutes();
-                }
-            }
-            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes + overtimeAdjustmentMinutes;
-        } else {
-            overtimeMinutes = actualWorkingTimeInMinutes - expectedWorkingTimeInMinutes;
-        }
-
-        if (end.isAfter(start) || end.isEqual(start)) {
-            return overtimeMinutes;
-        } else {
-            //startdate > enddate, should only happen when reopened on day of contractbegin (because then, enddate is set to (contractbegin - 1))
-            return 0;
-        }
-    }
-
-    private boolean isOvertimeEffectiveBetween(LocalDate start, LocalDate end, Overtime overtime) {
-        return !overtime.getCreated().isAfter(end.plusDays(1).atStartOfDay()) &&
-               !overtime.getCreated().isBefore(start.atStartOfDay());
     }
 
 }

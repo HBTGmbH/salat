@@ -503,24 +503,29 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     if (!Objects.equals(ec.getId(), reportForm.getEmployeeContractId())) {
                         ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
                     }
-                    LocalDate date = DateUtils.parse(reportForm.getEnddate(), e -> {
-                        throw new RuntimeException(e);
-                    });
+                    final LocalDate date;
                     if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
-                        date = DateUtils.getEndOfMonth(date);
+                        date = DateUtils.getEndOfMonth(DateUtils.parse(reportForm.getEnddate()));
+                    } else {
+                        date = DateUtils.parse(reportForm.getEnddate());
                     }
                     request.setAttribute("showOvertimeUntil", reportForm.getShowOvertimeUntil());
 
                     long otStaticMinutes = ec.getOvertimeStatic().toMinutes();
                     LocalDate dynamicDate = DateUtils.addDays(ec.getReportAcceptanceDate(), 1);
-                    long overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, date, ec, true);
-                    long overtime = otStaticMinutes + overtimeDynamic;
-
-                    boolean overtimeUntilIsNeg = overtime < 0;
-                    request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);
-                    request.getSession().setAttribute("enddate", DateUtils.format(date));
-                    String overtimeString = timeFormatMinutes(overtime);
-                    request.getSession().setAttribute("overtimeUntil", overtimeString);
+                    var overtimeDynamic = overtimeService.calculateOvertime(ec.getId(), dynamicDate, date);
+                    overtimeDynamic.ifPresentOrElse(value -> {
+                        var overtime = otStaticMinutes + value.toMinutes();
+                        boolean overtimeUntilIsNeg = overtime < 0;
+                        request.getSession().setAttribute("overtimeUntilIsNeg", overtimeUntilIsNeg);
+                        request.getSession().setAttribute("enddate", DateUtils.format(date));
+                        String overtimeString = timeFormatMinutes(overtime);
+                        request.getSession().setAttribute("overtimeUntil", overtimeString);
+                    }, () -> {
+                        request.getSession().setAttribute("overtimeUntilIsNeg", false);
+                        request.getSession().setAttribute("enddate", DateUtils.format(date));
+                        request.getSession().setAttribute("overtimeUntil", "");
+                    });
                 }
 
                 request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));

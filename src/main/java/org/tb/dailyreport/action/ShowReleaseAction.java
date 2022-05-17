@@ -20,18 +20,18 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.common.OptionItem;
 import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.common.OptionItem;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.OvertimeService;
 
 @Slf4j
 @Component
@@ -41,9 +41,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     private final EmployeecontractDAO employeecontractDAO;
     private final TimereportDAO timereportDAO;
     private final EmployeeDAO employeeDAO;
-    private final TimereportHelper timereportHelper;
     private final SimpleMailService simpleMailService;
     private final TimereportService timereportService;
+    private final OvertimeService overtimeService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
@@ -245,11 +245,14 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             // set new acceptance date in employee contract
             employeecontract.setReportAcceptanceDate(acceptanceDate);
             //compute overtimeStatic and set it in employee contract
-            long otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
-                    employeecontract, true);
-            employeecontract.setOvertimeStatic(Duration.ofMinutes(otStatic));
-
-            employeecontractDAO.save(employeecontract);
+            var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
+            if(otStatic.isPresent()) {
+                employeecontract.setOvertimeStatic(otStatic.get());
+                employeecontractDAO.save(employeecontract);
+            } else {
+                employeecontract.setOvertimeStatic(Duration.ZERO);
+                employeecontractDAO.save(employeecontract);
+            }
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
@@ -290,9 +293,12 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
 
                 // recompute overtimeStatic and set it in employeecontract
-                long otStatic = timereportHelper.calculateOvertime(employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate(),
-                        employeecontract, true);
-                employeecontract.setOvertimeStatic(Duration.ofMinutes(otStatic));
+                var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
+                if(otStatic.isPresent()) {
+                    employeecontract.setOvertimeStatic(otStatic.get());
+                } else {
+                    employeecontract.setOvertimeStatic(Duration.ZERO);
+                }
             }
 
             request.getSession().setAttribute("reopenDays",
