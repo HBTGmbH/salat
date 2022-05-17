@@ -13,26 +13,18 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
-import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
 
 @Component
 @RequiredArgsConstructor
 public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
     private final EmployeecontractDAO employeecontractDAO;
-    private final SuborderDAO suborderDAO;
-    private final PublicholidayDAO publicholidayDAO;
     private final EmployeeDAO employeeDAO;
     private final MatrixHelper matrixHelper;
 
