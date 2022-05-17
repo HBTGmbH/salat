@@ -1,13 +1,7 @@
 package org.tb.auth;
 
-import static org.tb.common.util.DateUtils.addDays;
-import static org.tb.common.util.DateUtils.getBeginOfMonth;
-import static org.tb.common.util.DateUtils.today;
-import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.common.util.UrlUtils.absoluteUrl;
 
-import java.time.Duration;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -20,12 +14,12 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.dailyreport.viewhelper.VacationViewer;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.employee.service.OvertimeService;
 import org.tb.order.persistence.EmployeeorderDAO;
 
 @Component
@@ -33,10 +27,9 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @RequiredArgsConstructor
 public class AfterLogin {
 
-    private final TimereportHelper timereportHelper;
     private final EmployeeorderDAO employeeorderDAO;
     private final TimereportDAO timereportDAO;
-    private final CustomerorderDAO customerorderDAO;
+    private final OvertimeService overtimeService;
     private final ServletContext servletContext;
 
     public List<Warning> createWarnings(Employeecontract employeecontract, Employeecontract loginEmployeeContract,
@@ -81,49 +74,31 @@ public class AfterLogin {
     }
 
     public void handleOvertime(Employeecontract employeecontract, HttpSession session) {
-        Duration overtimeStatic = employeecontract.getOvertimeStatic();
-        long otStaticMinutes = overtimeStatic.toMinutes();
+        var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
+        overtimeStatus.ifPresentOrElse(
+            status -> {
+                var overtimeIsNegative = status.getTotal().isNegative();
+                session.setAttribute("overtimeIsNegative", overtimeIsNegative);
 
-        //use new overtime computation with static + dynamic overtime
-        //need the LocalDate from the day after reportAcceptanceDate, so the latter is not used twice in overtime computation:
-        LocalDate dynamicDate;
-        if (employeecontract.getReportAcceptanceDate() == null || employeecontract.getReportAcceptanceDate().equals(employeecontract.getValidFrom())) {
-            dynamicDate = employeecontract.getValidFrom();
-        } else {
-            dynamicDate = addDays(employeecontract.getReportAcceptanceDate(), 1);
-        }
-        long overtimeDynamic = timereportHelper.calculateOvertime(dynamicDate, today(), employeecontract, true);
-        long overtime = otStaticMinutes + overtimeDynamic;
+                String overtimeString = DurationUtils.format(status.getTotal().getDuration());
+                session.setAttribute("overtime", overtimeString);
 
-        boolean overtimeIsNegative = overtime < 0;
+                var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
+                session.setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
 
-        session.setAttribute("overtimeIsNegative", overtimeIsNegative);
+                String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
+                session.setAttribute("monthlyOvertime", monthlyOvertimeString);
 
-        String overtimeString = timeFormatMinutes(overtime);
-        session.setAttribute("overtime", overtimeString);
-
-        //overtime this month
-        LocalDate start = getBeginOfMonth(today());
-        LocalDate currentDate = today();
-
-        LocalDate validFrom = employeecontract.getValidFrom();
-        if (validFrom.isAfter(start) && !validFrom.isAfter(currentDate)) {
-            start = validFrom;
-        }
-        LocalDate validUntil = employeecontract.getValidUntil();
-        if (validUntil != null && validUntil.isBefore(currentDate) && !validUntil.isBefore(start)) {
-            currentDate = validUntil;
-        }
-        long monthlyOvertime = 0;
-        if (!(validUntil != null && validUntil.isBefore(start) || validFrom.isAfter(currentDate))) {
-            monthlyOvertime = timereportHelper.calculateOvertime(start, currentDate, employeecontract, false);
-        }
-        boolean monthlyOvertimeIsNegative = monthlyOvertime < 0;
-        session.setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
-        String monthlyOvertimeString = timeFormatMinutes(monthlyOvertime);
-        session.setAttribute("monthlyOvertime", monthlyOvertimeString);
-
-        session.setAttribute("overtimeMonth", DateUtils.format(start, "yyyy-MM"));
+                session.setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
+            },
+            () -> {
+                session.setAttribute("overtimeIsNegative", false);
+                session.setAttribute("overtime", "");
+                session.setAttribute("monthlyOvertimeIsNegative", false);
+                session.setAttribute("monthlyOvertime", "");
+                session.setAttribute("overtimeMonth", "");
+            }
+        );
 
         //vacation v2 extracted to VacationViewer:
         VacationViewer vw = new VacationViewer(employeecontract);

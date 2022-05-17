@@ -10,14 +10,11 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.common.ErrorCode;
-import org.tb.common.GlobalConstants;
-import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
@@ -39,6 +36,15 @@ public class OvertimeService {
   private final PublicholidayDAO publicholidayDAO;
   private final TimereportDAO timereportDAO;
   private final OvertimeDAO overtimeDAO;
+
+  public Optional<Duration> calculateOvertime(long employeecontractId, LocalDate begin, LocalDate end) {
+    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    if(employeecontract.getDailyWorkingTime().isZero()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(calculateOvertime(begin, end, employeecontract, true));
+  }
 
   public Optional<OvertimeStatus> calculateOvertime(long employeecontractId, boolean includeToday) {
     var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
