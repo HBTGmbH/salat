@@ -182,7 +182,7 @@ public class MatrixHelper {
         Duration dayHoursDiff = null;
         Duration overtimeCompensation = null;
 
-        if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES) {
+        if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES && employeecontract != null) {
             //calculate dayhourstarget
             dayHoursTarget = employeecontract.getDailyWorkingTime().multipliedBy(workdayCount);
 
