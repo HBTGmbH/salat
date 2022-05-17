@@ -457,14 +457,22 @@
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.actualtime.text" /></td>
 						<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${dayhourssumstring}"></c:out></td>
 					</tr>
-					<tr class="matrix">
-						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
-						<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${dayhourstargetstring}" /></td>
-					</tr>
-					<tr class="matrix">
-						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
-						<td class="matrix" style="border-style:none;text-align: right;<c:if test="${dayhoursdiff.negative}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiffstring}" /></td>
-					</tr>
+					<c:if test="${dayhourstarget != null}">
+						<tr class="matrix">
+							<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
+							<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${dayhourstargetstring}" /></td>
+						</tr>
+						<c:if test="${not overtimecompensation.zero}">
+							<tr class="matrix">
+								<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.overtimecompensation.text" /></td>
+								<td class="matrix" style="border-style:none;text-align: right"><c:out value="${overtimecompensationstring}" /></td>
+							</tr>
+						</c:if>
+						<tr class="matrix">
+							<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
+							<td class="matrix" style="border-style:none;text-align: right;<c:if test="${dayhoursdiff.negative}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiffstring}" /></td>
+						</tr>
+					</c:if>
 				</table>
 			</td>
 		</tr>

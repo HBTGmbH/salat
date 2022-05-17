@@ -63,12 +63,6 @@
 		</th>
 	</tr>
 
-	<!-- <tr>
-		<td colspan="2" class="matrix bold">Kalenderwoche / Stunden</td>
-		<td colspan="${daysofmonth}" class="matrix bold">n/a</td>
-		<td rowspan="2" class="matrix bold">Summe</td>
-	</tr> -->
-
 	<tr>
 		<td class="matrix bold"><bean:message
 			key="main.matrixoverview.table.order" /></td>

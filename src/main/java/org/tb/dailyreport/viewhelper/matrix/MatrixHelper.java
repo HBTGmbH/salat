@@ -19,6 +19,10 @@ import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
+import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES;
+import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES;
+import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES;
+import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
@@ -52,6 +56,7 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.OvertimeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
@@ -106,6 +111,7 @@ public class MatrixHelper {
     private final SuborderDAO suborderDAO;
     private final EmployeeDAO employeeDAO;
     private final AuthorizedUser authorizedUser;
+    private final OvertimeService overtimeService;
 
     public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
         Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
@@ -172,24 +178,22 @@ public class MatrixHelper {
             dayHoursSum = dayHoursSum.plus(dayAndWorkingHourCount.getWorkingHour());
         }
 
-        Duration dayHoursTarget = Duration.ZERO;
+        Duration dayHoursTarget = null;
+        Duration dayHoursDiff = null;
+        Duration overtimeCompensation = null;
 
-        //calculate dayhourstarget
-        if (employeeContractId == -1) {
-            List<Employeecontract> employeeContractList = employeecontractDAO.getEmployeeContracts();
-            Duration dailyWorkingTime = Duration.ZERO;
-            for (Employeecontract employeeContract : employeeContractList) {
-                dailyWorkingTime = dailyWorkingTime.plus(employeeContract.getDailyWorkingTime());
-            }
-            dayHoursTarget = dailyWorkingTime.multipliedBy(workdayCount);
-        } else {
+        if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES) {
+            //calculate dayhourstarget
             dayHoursTarget = employeecontract.getDailyWorkingTime().multipliedBy(workdayCount);
+
+            // calculate overtime compensation
+            overtimeCompensation = overtimeService.calculateOvertimeCompensation(employeecontract.getId(), dateFirst, dateLast);
+
+            //calculate dayhoursdiff
+            dayHoursDiff = dayHoursSum.minus(dayHoursTarget).plus(overtimeCompensation);
         }
 
-        //calculate dayhoursdiff
-        Duration dayHoursDiff = dayHoursSum.minus(dayHoursTarget);
-
-        return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff);
+        return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
     }
 
     private String extendedTaskDescription(TimereportDTO tr, boolean withSign) {
@@ -348,13 +352,13 @@ public class MatrixHelper {
 
     private List<TimereportDTO> queryTimereports(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId) {
         //choice of timereports by date, employeecontractid and/or customerorderid
-        if (method == 1 || method == 3) { // FIXME magic numbers
+        if (method == MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES || method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES) {
             if (employeeContractId == -1) {
                 return timereportDAO.getTimereportsByDates(dateFirst, dateLast);
             } else {
                 return timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast);
             }
-        } else if (method == 2 || method == 4) { // FIXME magic numbers
+        } else if (method == MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES || method == MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES) {
             if (employeeContractId == -1) {
                 return timereportDAO.getTimereportsByDatesAndCustomerOrderId(dateFirst, dateLast, customerOrderId);
             } else {
@@ -412,11 +416,11 @@ public class MatrixHelper {
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
                 // get the timereports for specific date, all employees, all
                 // orders
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
             } else {
                 // get the timereports for specific date, all employees,
                 // specific order
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
+                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
             }
 
             results.put("currentEmployee", "ALL EMPLOYEES");
@@ -453,15 +457,15 @@ public class MatrixHelper {
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
                 // get the timereports for specific date, specific employee,
                 // all orders
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
             } else {
                 // get the timereports for specific date, specific employee,
                 // specific order
                 List<Customerorder> customerOrder = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
                 if (customerOrder.contains(order)) {
-                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
+                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
                 } else {
-                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
                 }
             }
 
@@ -493,7 +497,10 @@ public class MatrixHelper {
         results.put("mergedreports", reportWrapper.getMergedReportList());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
         results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
+        results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
         results.put("dayhourstargetstring", reportWrapper.getDayHoursTargetString());
+        results.put("overtimecompensation", reportWrapper.getOvertimeCompensation());
+        results.put("overtimecompensationstring", reportWrapper.getOvertimeCompensationString());
         results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
         results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
         results.put("currentOrder", sOrder == null ? "ALL ORDERS" : sOrder);
@@ -572,7 +579,7 @@ public class MatrixHelper {
                 results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
             }
 
-            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable);
+            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable);
         } else {
 
             // call from main menu: set current month, year,
@@ -652,12 +659,15 @@ public class MatrixHelper {
                 results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
             }
 
-            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
         }
         results.put("mergedreports", reportWrapper.getMergedReportList());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
         results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
+        results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
         results.put("dayhourstargetstring", reportWrapper.getDayHoursTargetString());
+        results.put("overtimecompensation", reportWrapper.getOvertimeCompensation());
+        results.put("overtimecompensationstring", reportWrapper.getOvertimeCompensationString());
         results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
         results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
         results.put("daysofmonth", maxDays);
