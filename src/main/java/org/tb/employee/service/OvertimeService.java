@@ -2,15 +2,23 @@ package org.tb.employee.service;
 
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
+import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
+import static org.tb.common.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.getBeginOfMonth;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.tb.common.ErrorCode;
+import org.tb.common.GlobalConstants;
+import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -75,10 +83,56 @@ public class OvertimeService {
     }
     if (!monthEndDate.isBefore(monthBeginDate)) {
       var monthOvertime = calculateOvertime(monthBeginDate, monthEndDate, employeecontract, false);
+      var compensatedOvertime = calculateOvertimeCompensation(employeecontractId, monthBeginDate, monthEndDate);
+      monthOvertime = monthOvertime.plus(compensatedOvertime);
       status.setCurrentMonth(toStatusInfo(monthBeginDate, monthEndDate, monthOvertime, employeecontract.getDailyWorkingTime()));
     }
 
     return Optional.of(status);
+  }
+
+  /**
+   * Calculates the (fictive) amount of time that results from reported overtime compensations in the given time period.
+   *
+   * @param begin begin of time period
+   * @param end end of time period (inclusive)
+   */
+  public Duration calculateOvertimeCompensation(long employeecontractId, LocalDate begin, LocalDate end) {
+
+    Employeecontract contract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    if(contract == null) {
+      throw new InvalidDataException(ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND);
+    }
+
+    var timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, begin, end);
+
+    // get dates with overtime compensations
+    var dates = timereports
+        .stream()
+        .filter(
+            timereport -> timereport.getCustomerorderSign().equals(CUSTOMERORDER_SIGN_VACATION) &&
+                          timereport.getSuborderSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION)
+        )
+        .map(TimereportDTO::getReferenceday)
+        .distinct()
+        .collect(Collectors.toSet());
+
+    // sum reported time for every date with an overtime compensation
+    var reportedMinutesPerDate = timereports
+        .stream()
+        .filter(timereport -> dates.contains(timereport.getReferenceday()))
+        .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.summingLong(timereport -> timereport.getDuration().toMinutes())));
+
+    var dailyWorkingTime = contract.getDailyWorkingTime();
+
+    var compensatedOvertime= reportedMinutesPerDate.values()
+        .stream()
+        .map(Duration::ofMinutes)
+        .map(duration -> dailyWorkingTime.minus(duration))
+        .filter(duration -> !duration.isNegative())
+        .collect(Collectors.summingLong(Duration::toMinutes));
+
+    return Duration.ofMinutes(compensatedOvertime);
   }
 
   private OvertimeStatusInfo toStatusInfo(LocalDate beginDate, LocalDate endDate, Duration overtime, Duration dailyWorkingTime) {
@@ -151,6 +205,7 @@ public class OvertimeService {
           .reduce(Duration.ZERO, Duration::plus);
       overtime = overtime.plus(overtimeAdjustment);
     }
+
     return overtime;
   }
 
