@@ -134,7 +134,7 @@ public class TimereportDAO {
             releaseDate
         );
         return toDaoList(timereports.stream()
-            .filter(t -> t.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
+            .filter(t -> !t.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
             .collect(Collectors.toList()));
     }
 
