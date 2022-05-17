@@ -472,22 +472,25 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
 
                 // calculate overtime
-                overtimeService.calculateOvertime(reportForm.getEmployeeContractId(), true).ifPresent(status -> {
+                var  employeeContractId = reportForm.getEmployeeContractId();
+                if (employeeContractId != 0 && employeeContractId != -1) {
+                    overtimeService.calculateOvertime(employeeContractId, true).ifPresent(status -> {
 
-                    var overtimeIsNegative = status.getTotal().isNegative();
-                    request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
+                        var overtimeIsNegative = status.getTotal().isNegative();
+                        request.getSession().setAttribute("overtimeIsNegative", overtimeIsNegative);
 
-                    String overtimeString = DurationUtils.format(status.getTotal().getDuration());
-                    request.getSession().setAttribute("overtime", overtimeString);
+                        String overtimeString = DurationUtils.format(status.getTotal().getDuration());
+                        request.getSession().setAttribute("overtime", overtimeString);
 
-                    var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
-                    request.getSession().setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
+                        var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
+                        request.getSession().setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
 
-                    String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
-                    request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
+                        String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
+                        request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
 
-                    request.getSession().setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
-                });
+                        request.getSession().setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
+                    });
+                }
 
                 //check if only project based training should be shown
                 if (reportForm.getShowTraining()) {
