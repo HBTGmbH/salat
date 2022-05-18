@@ -359,6 +359,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(false));
                 request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
                 request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(form.isShowAllMinutes()));
+                request.getSession().setAttribute("currentEmployeeId", employeeContract.getEmployee().getId());
+                request.getSession().setAttribute("currentEmployeeContract", employeeContract);
 
                 // save values from the data base into form-bean, when working day != null
                 if (workingday != null) {
