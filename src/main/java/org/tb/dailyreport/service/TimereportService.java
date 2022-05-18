@@ -319,7 +319,8 @@ public class TimereportService {
         throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
       }
       if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
-              !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
+          !authorizedUser.isAdmin() &&
+          !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
         throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
       }
     });
