@@ -42,7 +42,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // call on MatrixView with parameter refreshMergedreports to update request
         if ("refreshMergedreports".equals(task)) {
-            Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm);
+            Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm, request);
             return finishHandling(results, request, matrixHelper, mapping);
         }
 
@@ -60,7 +60,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             String fromYear = String.valueOf(date.getYear());
             reportForm.setFromMonth(fromMonth);
             reportForm.setFromYear(fromYear);
-            Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm);
+            Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm, request);
             return finishHandling(results, request, matrixHelper, mapping);
         }
 
