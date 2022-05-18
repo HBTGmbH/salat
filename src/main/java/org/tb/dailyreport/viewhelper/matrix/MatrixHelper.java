@@ -39,9 +39,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AfterLogin;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
@@ -112,6 +114,7 @@ public class MatrixHelper {
     private final EmployeeDAO employeeDAO;
     private final AuthorizedUser authorizedUser;
     private final OvertimeService overtimeService;
+    private final AfterLogin afterLogin;
 
     public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
         Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
@@ -369,7 +372,7 @@ public class MatrixHelper {
         }
     }
 
-    public Map<String, Object> refreshMergedReports(ShowMatrixForm reportForm) {
+    public Map<String, Object> refreshMergedReports(ShowMatrixForm reportForm, HttpServletRequest request) {
         // selected view and selected dates
         Map<String, Object> results = new HashMap<>();
         String selectedView = reportForm.getMatrixview();
@@ -486,6 +489,9 @@ public class MatrixHelper {
                     acceptedBy = employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")";
                 }
             }
+
+            // calculate overtime and holiday
+            afterLogin.handleOvertime(employeeContract, request.getSession());
         }
 
         // refresh all relevant attributes
