@@ -22,6 +22,7 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters.LocalDateConverter;
 import org.tb.common.GlobalConstants;
 
 @Slf4j
@@ -352,11 +353,11 @@ public class DateUtils {
     }
 
     public static LocalDate getFirstDay(Year year) {
-        return LocalDate.from(year).with(firstDayOfYear());
+        return LocalDate.now().withYear(year.getValue()).with(firstDayOfYear());
     }
 
     public static LocalDate getLastDay(Year year) {
-        return LocalDate.from(year).with(lastDayOfYear());
+        return LocalDate.now().withYear(year.getValue()).with(lastDayOfYear());
     }
 
     public static LocalDateTime now() {

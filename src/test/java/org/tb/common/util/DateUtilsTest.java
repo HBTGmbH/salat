@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.time.Year;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -70,6 +71,16 @@ class DateUtilsTest {
     LocalDate b = LocalDate.of(2022, 3, 2);
     assertThat(DateUtils.max(a, b)).isEqualTo(b);
     assertThat(DateUtils.max(b, a)).isEqualTo(b);
+  }
+
+  @Test
+  void get_first_day_of_year() {
+    assertThat(DateUtils.getFirstDay(Year.of(2022))).isEqualTo(LocalDate.of(2022, 1, 1));
+  }
+
+  @Test
+  void get_last_day_of_year() {
+    assertThat(DateUtils.getLastDay(Year.of(2022))).isEqualTo(LocalDate.of(2022, 12, 31));
   }
 
 }
