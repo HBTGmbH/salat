@@ -45,7 +45,7 @@ public class DateUtils {
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
 
     private static final DateTimeFormatter minuteFormatter = DateTimeFormatter
-        .ofPattern("HH")
+        .ofPattern("mm")
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
 
     /**
