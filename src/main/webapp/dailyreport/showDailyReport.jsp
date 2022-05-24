@@ -277,17 +277,26 @@
 								<script type="text/javascript" language="JavaScript">
 									document.write(getCalendarStyles());
 								</script>
+								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" styleId="calinput1" readonly="false" size="10" maxlength="10" />
 								<script type="text/javascript" language="JavaScript">
-				                    function calenderPopupStartdate() {
-				                        var cal = new CalendarPopup();
-				                        cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
-				                        cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
-				                        cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-				                        cal.setTodayText("<bean:message key="main.date.popup.today" />");
-				                        cal.select(document.forms[0].startdate,'anchor1','yyyy-MM-dd');
-				                    }
-				                </script>
-								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" onkeydown="if(event.keyCode=13){setUpdateTimereportsAction(this.form);return false;}"/>
+									function calenderPopupStartdate() {
+										var cal = new CalendarPopup();
+										cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
+										cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
+										cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
+										cal.setTodayText("<bean:message key="main.date.popup.today" />");
+										cal.select(document.forms[0].startdate,'anchor1','yyyy-MM-dd');
+									}
+
+									var calinput1 = document.getElementById("calinput1");
+									calinput1.addEventListener("keypress", function(event) {
+										if (event.key === "Enter") {
+											event.preventDefault();
+											setUpdateTimereportsAction(event.target.form);
+										}
+									});
+
+								</script>
 								<a href="javascript:calenderPopupStartdate()" name="anchor1" ID="anchor1" style="text-decoration: none;">
 									<img src="/images/popupcalendar.gif" width="22" height="22" alt='<bean:message key="main.date.popup.alt.text" />' style="border: 0; vertical-align: top">
 								</a>
@@ -360,17 +369,26 @@
 							<b><bean:message key="main.monthlyreport.daymonthyear.text" /></b>&nbsp;<i>(<bean:message key="main.general.to.text" />)</i><b>:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
+							<html:text property="enddate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" styleId="calinput2" />
 							<script type="text/javascript" language="JavaScript">
-					                    function calenderPopupEnddate() {
-					                        var cal = new CalendarPopup();
-					                        cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
-					                        cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
-					                        cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-					                        cal.setTodayText("<bean:message key="main.date.popup.today" />");
-					                        cal.select(document.forms[0].enddate,'anchor2','yyyy-MM-dd');
-					                    }
+								function calenderPopupEnddate() {
+									var cal = new CalendarPopup();
+									cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
+									cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
+									cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
+									cal.setTodayText("<bean:message key="main.date.popup.today" />");
+									cal.select(document.forms[0].enddate,'anchor2','yyyy-MM-dd');
+								}
+
+								var calinput2 = document.getElementById("calinput2");
+								calinput2.addEventListener("keypress", function(event) {
+									if (event.key === "Enter") {
+										event.preventDefault();
+										setUpdateTimereportsAction(event.target.form);
+									}
+								});
+
 							</script>
-							<html:text property="enddate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" />
 							<a href="javascript:calenderPopupEnddate()" name="anchor2" ID="anchor2" style="text-decoration: none;">
 								<img src="/images/popupcalendar.gif" width="22" height="22" alt="<bean:message key="main.date.popup.alt.text" />" style="border: 0; vertical-align: top">
 							</a> 
