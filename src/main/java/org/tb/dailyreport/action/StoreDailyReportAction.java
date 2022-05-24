@@ -162,6 +162,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     form.setSelectedMinuteDuration(minutes);
                 }
             }
+            refreshOrders = true;
+            refreshSuborders = true;
+            refreshWorkdayAvailability = true;
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustSuborderSignChanged")) {
