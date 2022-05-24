@@ -212,4 +212,5 @@ public class GlobalConstants {
     public static final String ZERO_DHM = "00:00:00";
     public static final String ZERO_HM = "00:00";
 
+    public static final int QUARTER_HOUR_IN_MINUTES = 15;
 }

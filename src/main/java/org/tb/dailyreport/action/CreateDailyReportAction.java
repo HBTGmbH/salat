@@ -120,6 +120,9 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
             int hour = Integer.parseInt(DateUtils.formatHours(now));
             int minute = Integer.parseInt(DateUtils.formatMinutes(now));
 
+            // propose minutes with quarter hour precision
+            minute = minute - minute % GlobalConstants.QUARTER_HOUR_IN_MINUTES;
+
             if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
                 form.setSelectedMinuteEnd(minute);
                 form.setSelectedHourEnd(hour);
