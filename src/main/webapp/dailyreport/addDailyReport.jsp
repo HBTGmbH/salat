@@ -154,26 +154,29 @@
 				<script type="text/javascript" language="JavaScript">
                     document.write(getCalendarStyles());
                 </script>
-                <script type="text/javascript" language="JavaScript">
-                    function calenderPopup() {
-                        var cal = new CalendarPopup();
-                        
-                        cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
-                        cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
-                        cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-                        cal.setTodayText("<bean:message key="main.date.popup.today" />");
-                        // cal.select(document.forms[0].referenceday,'anchor1','E yyyy-MM-dd');
-                        cal.select(document.forms[0].referenceday,'anchor1','yyyy-MM-dd');
-                    }
-                    function hitEnter(e, form) {
-                    	if(e.keyCode == 13 || e.which == 13) {
-                    		adjustBeginTimeAction(form);
-                    	}
-                    }
-                </script>
                 <html:text property="referenceday" onchange="adjustBeginTimeAction(this.form)" 
                 	readonly="false" size="10" maxlength="10" 
-                	onkeyup="hitEnter(event, this.form);"/>
+                	styleId="calinput"/>
+				<script type="text/javascript" language="JavaScript">
+					function calenderPopup() {
+						var cal = new CalendarPopup();
+
+						cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
+						cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
+						cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
+						cal.setTodayText("<bean:message key="main.date.popup.today" />");
+						// cal.select(document.forms[0].referenceday,'anchor1','E yyyy-MM-dd');
+						cal.select(document.forms[0].referenceday,'anchor1','yyyy-MM-dd');
+					}
+
+					var calinput = document.getElementById("calinput");
+					calinput.addEventListener("keypress", function(event) {
+						if (event.key === "Enter") {
+							event.preventDefault();
+							adjustBeginTimeAction(event.target.form);
+						}
+					});
+				</script>
                 <a href="javascript:calenderPopup()" name="anchor1" ID="anchor1" style="text-decoration:none;">
                 	<img src="/images/popupcalendar.gif" width="22" height="22"
 						 alt="<bean:message key="main.date.popup.alt.text" />"
