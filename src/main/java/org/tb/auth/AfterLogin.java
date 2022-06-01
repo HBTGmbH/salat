@@ -83,13 +83,19 @@ public class AfterLogin {
                 String overtimeString = DurationUtils.format(status.getTotal().getDuration());
                 session.setAttribute("overtime", overtimeString);
 
-                var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
-                session.setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
+                if(status.getCurrentMonth() != null) {
+                    var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
+                    session.setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
 
-                String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
-                session.setAttribute("monthlyOvertime", monthlyOvertimeString);
+                    String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
+                    session.setAttribute("monthlyOvertime", monthlyOvertimeString);
 
-                session.setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
+                    session.setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
+                } else {
+                    session.setAttribute("monthlyOvertimeIsNegative", false);
+                    session.setAttribute("monthlyOvertime", "");
+                    session.setAttribute("overtimeMonth", "");
+                }
             },
             () -> {
                 session.setAttribute("overtimeIsNegative", false);
