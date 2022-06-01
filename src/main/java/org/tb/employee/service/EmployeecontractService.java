@@ -152,6 +152,7 @@ public class EmployeecontractService {
   private void validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
       LocalDate validUntil, long supervisorId) {
     DataValidation.validDateRange(validFrom, validUntil, ErrorCode.EC_INVALID_DATE_RANGE);
+
     if(employeecontract.getEmployee().getId().equals(supervisorId)) {
       throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
     }
@@ -160,6 +161,8 @@ public class EmployeecontractService {
     }
 
     // ensure no overlapping employee contracts
+    employeecontract.setValidFrom(validFrom);
+    employeecontract.setValidUntil(validUntil);
     List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContractsByEmployeeId(employeecontract.getEmployee().getId());
     for (Employeecontract compareEmployeeecontract : allEmployeecontracts) {
       if (!Objects.equals(compareEmployeeecontract.getId(), employeecontract.getId())) {
