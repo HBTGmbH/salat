@@ -330,13 +330,13 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 return mapping.findForward("print");
             } else if (task.equals("export")) {
                 MessageResources messageResources = getResources(request);
-                request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
+                request.getSession().setAttribute("overall", messageResources.getMessage(getLocale(request), "main.invoice.overall.text"));
                 ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getHSSFFactory());
                 request.getSession().removeAttribute("overall");
                 return null;
             } else if (task.equals("exportNew")) {
                 MessageResources messageResources = getResources(request);
-                request.getSession().setAttribute("overall", messageResources.getMessage("main.invoice.overall.text"));
+                request.getSession().setAttribute("overall", messageResources.getMessage(getLocale(request),"main.invoice.overall.text"));
                 ExcelArchivierer.exportInvoice(showInvoiceForm, request, response, ExcelArchivierer.getXSSFFactory());
                 request.getSession().removeAttribute("overall");
                 return null;
@@ -380,15 +380,15 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 showInvoiceForm.setInvoiceview(GlobalConstants.VIEW_MONTHLY);
             }
             MessageResources messageResources = getResources(request);
-            showInvoiceForm.setTitleactualhourstext(messageResources.getMessage("main.invoice.title.actualhours.text"));
-            showInvoiceForm.setTitleactualdurationtext(messageResources.getMessage("main.invoice.title.actualduration.text"));
-            showInvoiceForm.setTitlecustomersigntext(messageResources.getMessage("main.invoice.title.customersign.text"));
-            showInvoiceForm.setTitledatetext(messageResources.getMessage("main.invoice.title.date.text"));
-            showInvoiceForm.setTitledescriptiontext(messageResources.getMessage("main.invoice.title.description.text"));
-            showInvoiceForm.setTitleemployeesigntext(messageResources.getMessage("main.invoice.title.employeesign.text"));
-            showInvoiceForm.setTitlesubordertext(messageResources.getMessage("main.invoice.title.suborder.text"));
-            showInvoiceForm.setTitletargethourstext(messageResources.getMessage("main.invoice.title.targethours.text"));
-            showInvoiceForm.setTitleinvoiceattachment(messageResources.getMessage("main.invoice.addresshead.text"));
+            showInvoiceForm.setTitleactualhourstext(messageResources.getMessage(getLocale(request),"main.invoice.title.actualhours.text"));
+            showInvoiceForm.setTitleactualdurationtext(messageResources.getMessage(getLocale(request),"main.invoice.title.actualduration.text"));
+            showInvoiceForm.setTitlecustomersigntext(messageResources.getMessage(getLocale(request),"main.invoice.title.customersign.text"));
+            showInvoiceForm.setTitledatetext(messageResources.getMessage(getLocale(request),"main.invoice.title.date.text"));
+            showInvoiceForm.setTitledescriptiontext(messageResources.getMessage(getLocale(request),"main.invoice.title.description.text"));
+            showInvoiceForm.setTitleemployeesigntext(messageResources.getMessage(getLocale(request),"main.invoice.title.employeesign.text"));
+            showInvoiceForm.setTitlesubordertext(messageResources.getMessage(getLocale(request),"main.invoice.title.suborder.text"));
+            showInvoiceForm.setTitletargethourstext(messageResources.getMessage(getLocale(request),"main.invoice.title.targethours.text"));
+            showInvoiceForm.setTitleinvoiceattachment(messageResources.getMessage(getLocale(request),"main.invoice.addresshead.text"));
             request.getSession().setAttribute("currentDay", showInvoiceForm.getFromDay());
             request.getSession().setAttribute("currentMonth", showInvoiceForm.getFromMonth());
             request.getSession().setAttribute("currentYear", showInvoiceForm.getFromYear());
