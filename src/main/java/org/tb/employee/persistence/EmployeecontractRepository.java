@@ -17,7 +17,7 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   Optional<Employeecontract> findByEmployeeIdAndValidAt(long employeeId, LocalDate validAt);
 
   @Query("select e from Employeecontract e where (e.hide is false or e.hide is null) "
-      + "and (e.validFrom <= :date and (e.validUntil >= :date or e.validUntil is null))")
+      + "or (e.validFrom <= :date and (e.validUntil >= :date or e.validUntil is null))")
   List<Employeecontract> findAllValidAtAndNotHidden(LocalDate date);
 
   @Query("""
