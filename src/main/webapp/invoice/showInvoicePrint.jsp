@@ -127,9 +127,7 @@
 										<th class="invoice_header right">
 											<c:out value="${titleactualdurationtext}" />
 										</th>
-										<th class="invoice_header right">
-											<c:out value="${titleactualhourstext}" />
-										</th>
+										<th class="invoice_header right"></th>
 									</c:if>
 								</tr>
 							    </thead>
@@ -164,7 +162,6 @@
 												</td>
 												<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}"
 													style="min-width: 2cm">
-													<c:out value="${timereportviewhelper.hoursString}"/>
 												</td>
 											</c:if>
 										</tr>

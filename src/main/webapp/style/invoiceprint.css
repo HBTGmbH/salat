@@ -4,6 +4,10 @@
 	}
 }
 
+* {
+	font-size: 12px;
+}
+
 @font-face {
 	font-family: "SimplonNorm";
 	font-style: normal;
@@ -95,6 +99,8 @@
 	font-weight: bold;
 	border: none;
 	white-space: nowrap;
+	padding-top: 1cm;
+	padding-bottom: 2cm;
 }
 
 .invoice_date {
@@ -105,7 +111,7 @@
 
 .hbt_logo {
 	height: 1.5cm;
-	margin-bottom: 1cm;
+	margin-bottom: 3cm;
 	float: left;
 }
 
