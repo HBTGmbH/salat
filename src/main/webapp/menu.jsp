@@ -80,6 +80,9 @@ window.onload=startList;
 			<li><html:link styleClass="menu" action="/ShowEmployeeorder">
 				<bean:message key="main.general.mainmenu.employeeorders.text" />
 			</html:link></li>
+			<li class="first"><html:link styleClass="menu" action="/ShowOvertime">
+				<bean:message key="main.general.mainmenu.overtime.text" />
+			</html:link></li>
 		</ul>
 		</li>
 		<li><bean:message key="main.general.mainmenu.orders.text" />
