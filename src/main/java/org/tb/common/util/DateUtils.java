@@ -32,6 +32,10 @@ public class DateUtils {
         .ofPattern(DEFAULT_DATE_FORMAT)
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
 
+    private static final DateTimeFormatter yearMonthFormatter = DateTimeFormatter
+        .ofPattern("yyyy/MM")
+        .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
+
     private static final DateTimeFormatter yearFormatter = DateTimeFormatter
         .ofPattern("yyyy")
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
@@ -229,6 +233,10 @@ public class DateUtils {
         return dateFormatter.format(date);
     }
 
+    public static String format(YearMonth date) {
+        return yearMonthFormatter.format(date);
+    }
+
     public static LocalDate parse(String value, String pattern) {
         var formatter = DateTimeFormatter
             .ofPattern(pattern)
@@ -241,6 +249,13 @@ public class DateUtils {
             .ofPattern(pattern)
             .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
         return date.format(formatter);
+    }
+
+    public static String format(YearMonth yearMonth, String pattern) {
+        var formatter = DateTimeFormatter
+            .ofPattern(pattern)
+            .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
+        return yearMonth.format(formatter);
     }
 
     public static String formatDateTime(LocalDateTime date, String pattern) {

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OvertimeReport {
 
+  private final OvertimeReportTotal total;
   private final List<OvertimeReportMonth> months;
 
 }

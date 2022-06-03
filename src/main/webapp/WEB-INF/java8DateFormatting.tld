@@ -48,4 +48,16 @@
     </attribute>
   </tag>
 
+  <tag>
+    <name>formatYearMonth</name>
+    <tag-class>org.tb.common.jsptags.FormatYearMonthTag</tag-class>
+    <body-content>empty</body-content>
+    <description>Formats a given YearMonth using DateUtils</description>
+    <attribute>
+      <name>value</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+  </tag>
+
 </taglib>

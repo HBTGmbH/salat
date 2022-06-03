@@ -29,6 +29,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.domain.OvertimeReport;
 import org.tb.employee.domain.OvertimeReportMonth;
+import org.tb.employee.domain.OvertimeReportTotal;
 import org.tb.employee.domain.OvertimeStatus;
 import org.tb.employee.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -272,7 +273,20 @@ public class OvertimeService {
     } while(true);
 
     Collections.sort(months);
-    return new OvertimeReport(months);
+    var actual = months.stream().map(OvertimeReportMonth::getActual).reduce(Duration.ZERO, Duration::plus);
+    var adjustment = months.stream().map(OvertimeReportMonth::getAdjustment).reduce(Duration.ZERO, Duration::plus);
+    var sum = months.stream().map(OvertimeReportMonth::getSum).reduce(Duration.ZERO, Duration::plus);
+    var target = months.stream().map(OvertimeReportMonth::getTarget).reduce(Duration.ZERO, Duration::plus);
+    var diff = months.stream().map(OvertimeReportMonth::getDiff).reduce(Duration.ZERO, Duration::plus);
+    var total = OvertimeReportTotal.builder()
+        .actual(actual)
+        .adjustment(adjustment)
+        .sum(sum)
+        .target(target)
+        .diff(diff)
+        .build();
+
+    return new OvertimeReport(total, months);
   }
 
   @Getter

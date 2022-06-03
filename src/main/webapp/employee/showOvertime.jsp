@@ -3,6 +3,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 	<head>
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.employees.text" /></title>
@@ -44,7 +45,7 @@
 						</c:if>
 						<c:forEach var="employeecontract" items="${employeecontracts}">
 							<html:option value="${employeecontract.id}">
-								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+								<c:out value="${month.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
 									value="${employeecontract.timeString}" />
 								<c:if test="${employeecontract.openEnd}">
 									<bean:message key="main.general.open.text" />
@@ -56,6 +57,43 @@
 			</tr>
 		</html:form>
 	</table>
+
+	<table class="center backgroundcolor">
+		<tr>
+			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.yearmonth.text" /></b></th>
+			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.actual.text" /></b></th>
+			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.adjustment.text" /></b></th>
+			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.sum.text" /></b></th>
+			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.target.text" /></b></th>
+			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.diff.text" /></b></th>
+		</tr>
+		<c:forEach var="month" items="${overtimereport.months}" varStatus="statusID">
+			<c:choose>
+				<c:when test="${statusID.count%2==0}">
+					<tr class="primarycolor">
+				</c:when>
+				<c:otherwise>
+					<tr class="secondarycolor">
+				</c:otherwise>
+			</c:choose>
+				<td style="text-align: center"><java8:formatYearMonth value="${month.yearMonth}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.actual}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.adjustment}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.sum}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.target}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.diff}" /></td>
+			</tr>
+		</c:forEach>
+		<tr>
+			<td style="text-align: center"><b><bean:message key="main.headlinedescription.overtime.report.total.text" /></b></td>
+			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.actual}" /></b></td>
+			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.adjustment}" /></b></td>
+			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.sum}" /></b></td>
+			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.target}" /></b></td>
+			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.diff}" /></b></td>
+		</tr>
+	</table>
+
 	<br><br><br>
 	</body>
 </html:html>
