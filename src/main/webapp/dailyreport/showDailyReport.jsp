@@ -8,141 +8,131 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 	<head>
-
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
-		<link rel="stylesheet" type="text/css" href="/style/tb.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
-		<link href="/style/select2.min.css" rel="stylesheet" />
-		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-		<script src="/scripts/jquery-1.11.3.min.js"></script>
-		<script src="/scripts/select2.full.min.js"></script>
+		<jsp:include flush="true" page="/head-includes.jsp" />
 		<script type="text/javascript" language="JavaScript">
 			var failedMassEditIds = '${failedMassEditIds.toString()}';
 			if(failedMassEditIds != "") {
 				failedMassEditIds = JSON.parse(failedMassEditIds);
 			}
 		</script>
-		<script src="/scripts/massedit.js"></script>
 		<script type="text/javascript" language="JavaScript">
 		
-		
-	function afterCalenderClick() {
-		document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
-		document.forms[0].submit();
-	}			
-		
-	function changeDateAndUpdateTimereportsAction(form, date, change) {
-		form.action = "/do/ShowDailyReport?task=refreshTimereports&date=" + date + "&change=" + change;
-		form.submit();
-	}
-		
- 	function setUpdateTimereportsAction(form) {	
- 		form.action = "/do/ShowDailyReport?task=refreshTimereports";
-		form.submit();
-	}	
- 
- 	function setUpdateOrdersAction(form) {	
- 		form.action = "/do/ShowDailyReport?task=refreshOrders";
-		form.submit();
-	}	
-	
-	function setUpdateSubordersAction(form, id) {		
-		alert('id: ' + id);
- 		form.action = "/do/ShowDailyReport?task=refreshSuborders&trId=" + id;
-		form.submit();
-	}		
-	
-	function printMyFormElement(form) {		
-		alert('element: ' + form.elements['comment'].value);
-	}	
-	
-	function createNewReportAction(form) {	
- 		form.action = "/do/CreateDailyReport";
-		form.submit();
-	}	
-	
-	function setStoreAction(form, actionVal) {	
- 		form.action = "/do/StoreDailyReport?task=" + actionVal;
-		form.submit();
-	}
-
-	function setToggleShowAllMinutes(form) {
-		form.action = "/do/ShowDailyReport?task=toggleShowAllMinutes";
-		form.submit();
-	}
-	
-	function confirmDelete(form, id) {	
-		var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
-		if (agree) {
-			form.action = "/do/DeleteTimereportFromDailyDisplay?trId=" + id;
-			form.submit();
-		}
-	}
-	
-	function submitUpdateDailyReport(form, id) {
-		form.action = "/do/UpdateDailyReport?trId=" + id;
-		form.submit();
-	}
-	
-	function confirmSave(form, id) {
-		
-		if (form.elements['status'] != null && form.elements['status'].value == 'closed') {
-			var agree=confirm("<bean:message key="main.timereport.confirmclose.text" />");
-			if (agree) {
-				submitUpdateDailyReport(form, id);
+			function afterCalenderClick() {
+				document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
+				document.forms[0].submit();
 			}
-		} else {
-			submitUpdateDailyReport(form, id);
-		}
-	}
-	
-	function saveBegin(form) {
-		form.action = "/do/ShowDailyReport?task=saveBegin";
-		form.submit();
-	}
-	
-	function saveBreak(form) {
-		form.action = "/do/ShowDailyReport?task=saveBreak";
-		form.submit();
-	}	
-					
-  	function setUpdateTimereportsAction(form) {	
- 		form.action = "/do/ShowDailyReport?task=refreshTimereports";
-		form.submit();
-	}	
-	
-	function showWMTT(Trigger,id) {
-		wmtt = document.getElementById(id);
-    	var hint;
-		hint = Trigger.getAttribute("hint");
-    	wmtt.style.display = "block";
-	}
 
-	function hideWMTT() {
-		wmtt.style.display = "none";
-	}
-	
-	// textarea limitation
-	function limitText(limitField, limitCount, limitNum) {
-		if (limitField.value.length > limitNum) {
-			limitField.value = limitField.value.substring(0, limitNum);
-		} else {
-			limitCount.value = limitNum - limitField.value.length;
-		}
-	}
+			function changeDateAndUpdateTimereportsAction(form, date, change) {
+				form.action = "/do/ShowDailyReport?task=refreshTimereports&date=" + date + "&change=" + change;
+				form.submit();
+			}
 
-	$(document).ready(function() {
-		$(".make-select2").select2({
-			dropdownAutoWidth: true,
-			width: 'auto'
-		});	
-	});	
-	
-	var confirmMassDelete = '<bean:message key="main.general.confirmMassDelete.text" />';
-	var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
-	</script>
+			function setUpdateTimereportsAction(form) {
+				form.action = "/do/ShowDailyReport?task=refreshTimereports";
+				form.submit();
+			}
 
+			function setUpdateOrdersAction(form) {
+				form.action = "/do/ShowDailyReport?task=refreshOrders";
+				form.submit();
+			}
+
+			function setUpdateSubordersAction(form, id) {
+				alert('id: ' + id);
+				form.action = "/do/ShowDailyReport?task=refreshSuborders&trId=" + id;
+				form.submit();
+			}
+
+			function printMyFormElement(form) {
+				alert('element: ' + form.elements['comment'].value);
+			}
+
+			function createNewReportAction(form) {
+				form.action = "/do/CreateDailyReport";
+				form.submit();
+			}
+
+			function setStoreAction(form, actionVal) {
+				form.action = "/do/StoreDailyReport?task=" + actionVal;
+				form.submit();
+			}
+
+			function setToggleShowAllMinutes(form) {
+				form.action = "/do/ShowDailyReport?task=toggleShowAllMinutes";
+				form.submit();
+			}
+
+			function confirmDelete(form, id) {
+				var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
+				if (agree) {
+					form.action = "/do/DeleteTimereportFromDailyDisplay?trId=" + id;
+					form.submit();
+				}
+			}
+
+			function submitUpdateDailyReport(form, id) {
+				form.action = "/do/UpdateDailyReport?trId=" + id;
+				form.submit();
+			}
+
+			function confirmSave(form, id) {
+
+				if (form.elements['status'] != null && form.elements['status'].value == 'closed') {
+					var agree=confirm("<bean:message key="main.timereport.confirmclose.text" />");
+					if (agree) {
+						submitUpdateDailyReport(form, id);
+					}
+				} else {
+					submitUpdateDailyReport(form, id);
+				}
+			}
+
+			function saveBegin(form) {
+				form.action = "/do/ShowDailyReport?task=saveBegin";
+				form.submit();
+			}
+
+			function saveBreak(form) {
+				form.action = "/do/ShowDailyReport?task=saveBreak";
+				form.submit();
+			}
+
+			function setUpdateTimereportsAction(form) {
+				form.action = "/do/ShowDailyReport?task=refreshTimereports";
+				form.submit();
+			}
+
+			function showWMTT(Trigger,id) {
+				wmtt = document.getElementById(id);
+				var hint;
+				hint = Trigger.getAttribute("hint");
+				wmtt.style.display = "block";
+			}
+
+			function hideWMTT() {
+				wmtt.style.display = "none";
+			}
+
+			// textarea limitation
+			function limitText(limitField, limitCount, limitNum) {
+				if (limitField.value.length > limitNum) {
+					limitField.value = limitField.value.substring(0, limitNum);
+				} else {
+					limitCount.value = limitNum - limitField.value.length;
+				}
+			}
+
+			$(document).ready(function() {
+				$(".make-select2").select2({
+					dropdownAutoWidth: true,
+					width: 'auto'
+				});
+			});
+
+			var confirmMassDelete = '<bean:message key="main.general.confirmMassDelete.text" />';
+			var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
+		</script>
 	</head>
 	
 	<body>

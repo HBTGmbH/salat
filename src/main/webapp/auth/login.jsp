@@ -11,16 +11,8 @@ while(names.hasMoreElements()) {
 %>
 <html:html>
 <head>
-
-<meta
-	http-equiv="Content-Type"
-	content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.title.text" /></title>
-<link
-	rel="stylesheet"
-	type="text/css"
-	href="/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+<jsp:include flush="true" page="/head-includes.jsp" />
 </head>
 <body>
 <div align="right">

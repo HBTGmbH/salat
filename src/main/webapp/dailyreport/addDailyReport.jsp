@@ -7,18 +7,11 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <html:html>
 <head>
-
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addtimereport.text" /></title>
-<link rel="stylesheet" type="text/css" href="/style/tb.css" />
-<link href="/style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-<script src="/scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
-<script src="/scripts/select2.full.min.js" type="text/javascript"></script>
+<jsp:include flush="true" page="/head-includes.jsp" />
 <script>
 	var currentUser = "${currentEmployeeContract.employee.sign}";
 </script>
-<script src="/scripts/favouriteOrder.js" type="text/javascript"></script>
 <script type="text/javascript">
 	if(typeof Storage !== "undefined") HBT.Salat.FavouriteOrders.initialize({
 		thisIsTheDefaultOrder: '<bean:message key="add.report.this.default.order" />',
@@ -106,7 +99,6 @@
 		HBT.Salat.FavouriteOrders.initializeSuborderSelection();
 	});		
 </script>
-
 </head>
 <body>
 <jsp:include flush="true" page="/menu.jsp">

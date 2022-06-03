@@ -6,14 +6,10 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <html>
 <head>
-
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title><bean:message key="main.general.application.title" /> -
-<bean:message key="main.general.mainmenu.matrix.title.text" /></title>
-<link rel="stylesheet" type="text/css" href="/style/matrixprint.css"
-	media="all" />
-<link rel="stylesheet" type="text/css" href="/style/print.css"
-	media="print" />
+<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.matrix.title.text" /></title>
+<jsp:include flush="true" page="/head-includes.jsp" />
+<link rel="stylesheet" type="text/css" href="<c:url value="/style/matrixprint.css" />" media="all" />
+<link rel="stylesheet" type="text/css" href="<c:url value="/style/print.css" />" media="print" />
 <script type="text/javascript" language="JavaScript">	
  	function setUpdateMergedreportsAction(form) {	
  		form.action = "/do/ShowMatrix?task=refreshMergedreports";
@@ -22,7 +18,7 @@
 </script>
 </head>
 <body>
-<FORM ONSUBMIT="javascript:window.print();return false;">
+<form onsubmit="javascript:window.print();return false;">
 <div align="right"><input class="hiddencontent" type="submit"
 	value="Drucken"></div>
 </form>

@@ -8,8 +8,6 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html>
 	<head>
-
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title>
 			<bean:message key="main.general.mainmenu.invoice.title.text" /> /
 			<c:out value="${customername}" /> /
@@ -26,8 +24,8 @@
 				</c:when>
 			</c:choose>
 		</title>
-		<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
-		<link rel="stylesheet" type="text/css" href="/style/invoiceprint.css" media="all" />
+		<link rel="stylesheet" type="text/css" href="<c:url value="/style/print.css" />" media="print" />
+		<link rel="stylesheet" type="text/css" href="<c:url value="/style/invoiceprint.css" />" media="all" />
 	</head>
 	<body>
 		<div style="width: 95%; margin: 0 auto">

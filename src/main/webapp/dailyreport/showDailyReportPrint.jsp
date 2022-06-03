@@ -8,15 +8,10 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html>
 <head>
-
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title><bean:message key="main.general.application.title" /> -
-<bean:message key="main.general.mainmenu.daily.text" /></title>
-<link rel="stylesheet" type="text/css" href="/style/matrixprint.css"
-	media="all" />
-<link rel="stylesheet" type="text/css" href="/style/print.css"
-	media="print" />
-
+<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
+<jsp:include flush="true" page="/head-includes.jsp" />
+<link rel="stylesheet" type="text/css" href="<c:url value="/style/matrixprint.css" />" media="all" />
+<link rel="stylesheet" type="text/css" href="<c:url value="/style/print.css" />" media="print" />
 </head>
 <body>
 <FORM ONSUBMIT="javascript:window.print();return false;">
