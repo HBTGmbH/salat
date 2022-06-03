@@ -10,8 +10,12 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.common.ErrorCode;
@@ -23,6 +27,8 @@ import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
+import org.tb.employee.domain.OvertimeReport;
+import org.tb.employee.domain.OvertimeReportMonth;
 import org.tb.employee.domain.OvertimeStatus;
 import org.tb.employee.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -43,7 +49,7 @@ public class OvertimeService {
       return Optional.empty();
     }
 
-    return Optional.of(calculateOvertime(begin, end, employeecontract, true));
+    return Optional.of(calculateOvertime(begin, end, employeecontract, true).getDiff());
   }
 
   public Optional<OvertimeStatus> calculateOvertime(long employeecontractId, boolean includeToday) {
@@ -72,7 +78,7 @@ public class OvertimeService {
     }
 
     var overtimeDynamic = calculateOvertime(dynamicBeginDate, dynamicEndDate, employeecontract, true);
-    overtimeTotal = overtimeTotal.plus(overtimeDynamic);
+    overtimeTotal = overtimeTotal.plus(overtimeDynamic.getDiff());
     status.setTotal(toStatusInfo(totalBeginDate, totalEndDate, overtimeTotal, employeecontract.getDailyWorkingTime()));
 
     //overtime this month to date
@@ -88,9 +94,9 @@ public class OvertimeService {
       monthEndDate = validUntil;
     }
     if (!monthEndDate.isBefore(monthBeginDate)) {
-      var monthOvertime = calculateOvertime(monthBeginDate, monthEndDate, employeecontract, false);
+      var monthOvertimeInfo = calculateOvertime(monthBeginDate, monthEndDate, employeecontract, false);
       var compensatedOvertime = calculateOvertimeCompensation(employeecontractId, monthBeginDate, monthEndDate);
-      monthOvertime = monthOvertime.plus(compensatedOvertime);
+      var monthOvertime = monthOvertimeInfo.getDiff().plus(compensatedOvertime);
       status.setCurrentMonth(toStatusInfo(monthBeginDate, monthEndDate, monthOvertime, employeecontract.getDailyWorkingTime()));
     }
 
@@ -163,7 +169,7 @@ public class OvertimeService {
            employeecontract.getReportAcceptanceDate().isAfter(employeecontract.getValidFrom());
   }
 
-  private Duration calculateOvertime(LocalDate requestedStart, LocalDate requestedEnd, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
+  private OvertimeInfo calculateOvertime(LocalDate requestedStart, LocalDate requestedEnd, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
     final LocalDate start, end;
     // do not consider invalid(outside of the validity of the contract) days
@@ -178,7 +184,7 @@ public class OvertimeService {
       end = requestedEnd;
     }
     if (end.isBefore(start)) {
-      return Duration.ZERO;
+      return new OvertimeInfo(Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO);
     }
 
     long numberOfWorkingDayHolidays = publicholidayDAO.getPublicHolidaysBetween(start, end)
@@ -200,11 +206,11 @@ public class OvertimeService {
         .stream()
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
+    var overtimeAdjustment = Duration.ZERO;
 
     Duration overtime = actualWorkingTime.minus(expectedWorkingTime);
     if (useOverTimeAdjustment) {
-      long overtimeAdjustmentMinutes = 0;
-      var overtimeAdjustment = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId())
+      overtimeAdjustment = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId())
           .stream()
           .filter(o -> isOvertimeEffectiveBetween(start, end, o))
           .map(Overtime::getTimeMinutes)
@@ -212,13 +218,71 @@ public class OvertimeService {
       overtime = overtime.plus(overtimeAdjustment);
     }
 
-    return overtime;
+    return new OvertimeInfo(actualWorkingTime, overtimeAdjustment, actualWorkingTime.plus(overtimeAdjustment), expectedWorkingTime, overtime);
   }
 
   // TODO introduce effective date in Overtime?
   private boolean isOvertimeEffectiveBetween(LocalDate start, LocalDate end, Overtime overtime) {
     return !overtime.getCreated().isAfter(end.plusDays(1).atStartOfDay()) &&
            !overtime.getCreated().isBefore(start.atStartOfDay());
+  }
+
+  public OvertimeReport createDetailedReportForEmployee(long employeecontractId) {
+    var contract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+
+    // iterate over the months of the contract until today - calc overtime for every month seperately
+    var today = DateUtils.today();
+    var months = new ArrayList<OvertimeReportMonth>();
+    var begin = contract.getValidFrom();
+    do {
+      // if the month begin date is in the future, the related month should not be part of the report
+      if(today.isBefore(begin)) {
+        break;
+      }
+      // if the month begin date is outside the contract validation, the related month should not be part of the report
+      if(contract.getValidUntil() != null && begin.isAfter(contract.getValidUntil())) {
+        break;
+      }
+      YearMonth month = YearMonth.from(begin);
+      LocalDate end   = month.atEndOfMonth();
+
+      // check and correct end date if it would be in the future
+      if(end.isAfter(today)) {
+        end = today;
+      }
+
+      // check and correct end date if outside the contract validity
+      if(contract.getValidUntil() != null && end.isAfter(contract.getValidUntil())) {
+        end = contract.getValidUntil();
+      }
+
+      var overtimeInfo = calculateOvertime(begin, end, contract, false);
+      months.add(
+          OvertimeReportMonth.builder()
+            .actual(overtimeInfo.getActual())
+            .adjustment(overtimeInfo.getAdjustment())
+            .sum(overtimeInfo.getSum())
+            .target(overtimeInfo.getTarget())
+            .diff(overtimeInfo.getDiff())
+            .yearMonth(month)
+            .build()
+      );
+
+      begin = month.atDay(1).plusMonths(1);
+    } while(true);
+
+    Collections.sort(months);
+    return new OvertimeReport(months);
+  }
+
+  @Getter
+  @RequiredArgsConstructor
+  private class OvertimeInfo {
+    private final Duration actual;
+    private final Duration adjustment;
+    private final Duration sum;
+    private final Duration target;
+    private final Duration diff;
   }
 
 }
