@@ -211,7 +211,8 @@ public class OvertimeService {
 
     Duration overtime = actualWorkingTime.minus(expectedWorkingTime);
     if (useOverTimeAdjustment) {
-      overtimeAdjustment = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId())
+      var overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
+      overtimeAdjustment = overtimes
           .stream()
           .filter(o -> isOvertimeEffectiveBetween(start, end, o))
           .map(Overtime::getTimeMinutes)
@@ -257,7 +258,7 @@ public class OvertimeService {
         end = contract.getValidUntil();
       }
 
-      var overtimeInfo = calculateOvertime(begin, end, contract, false);
+      var overtimeInfo = calculateOvertime(begin, end, contract, true);
       months.add(
           OvertimeReportMonth.builder()
             .actual(overtimeInfo.getActual())
