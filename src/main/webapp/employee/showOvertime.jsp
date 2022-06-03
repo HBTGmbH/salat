@@ -45,7 +45,7 @@
 						</c:if>
 						<c:forEach var="employeecontract" items="${employeecontracts}">
 							<html:option value="${employeecontract.id}">
-								<c:out value="${month.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
 									value="${employeecontract.timeString}" />
 								<c:if test="${employeecontract.openEnd}">
 									<bean:message key="main.general.open.text" />
