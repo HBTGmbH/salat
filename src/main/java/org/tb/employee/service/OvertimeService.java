@@ -236,6 +236,7 @@ public class OvertimeService {
     var today = DateUtils.today();
     var months = new ArrayList<OvertimeReportMonth>();
     var begin = contract.getValidFrom();
+    var diffCumulative = Duration.ZERO;
     do {
       // if the month begin date is in the future, the related month should not be part of the report
       if(today.isBefore(begin)) {
@@ -259,6 +260,7 @@ public class OvertimeService {
       }
 
       var overtimeInfo = calculateOvertime(begin, end, contract, true);
+      diffCumulative = diffCumulative.plus(overtimeInfo.getDiff());
       months.add(
           OvertimeReportMonth.builder()
             .actual(overtimeInfo.getActual())
@@ -266,6 +268,7 @@ public class OvertimeService {
             .sum(overtimeInfo.getSum())
             .target(overtimeInfo.getTarget())
             .diff(overtimeInfo.getDiff())
+            .diffCumulative(diffCumulative)
             .yearMonth(month)
             .build()
       );
@@ -285,6 +288,7 @@ public class OvertimeService {
         .sum(sum)
         .target(target)
         .diff(diff)
+        .diffCumulative(diffCumulative)
         .build();
 
     return new OvertimeReport(total, months);

@@ -15,6 +15,7 @@ public class OvertimeReportMonth implements Comparable<OvertimeReportMonth> {
   private final Duration sum;
   private final Duration target;
   private final Duration diff;
+  private final Duration diffCumulative;
 
   @Override
   public int compareTo(OvertimeReportMonth o) {

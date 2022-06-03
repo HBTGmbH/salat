@@ -66,6 +66,7 @@
 			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.sum.text" /></b></th>
 			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.target.text" /></b></th>
 			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.diff.text" /></b></th>
+			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.diffcumulative.text" /></b></th>
 		</tr>
 		<c:forEach var="month" items="${overtimereport.months}" varStatus="statusID">
 			<c:choose>
@@ -81,7 +82,22 @@
 				<td style="text-align: right"><java8:formatDuration value="${month.adjustment}" /></td>
 				<td style="text-align: right"><java8:formatDuration value="${month.sum}" /></td>
 				<td style="text-align: right"><java8:formatDuration value="${month.target}" /></td>
-				<td style="text-align: right"><java8:formatDuration value="${month.diff}" /></td>
+				<c:choose>
+					<c:when test="${month.diff.negative}">
+						<td style="text-align: right; color: red"><b><java8:formatDuration value="${month.diff}" /></b></td>
+					</c:when>
+					<c:otherwise>
+						<td style="text-align: right"><b><java8:formatDuration value="${month.diff}" /></b></td>
+					</c:otherwise>
+				</c:choose>
+				<c:choose>
+					<c:when test="${month.diffCumulative.negative}">
+						<td style="text-align: right; color: red"><b><java8:formatDuration value="${month.diffCumulative}" /></b></td>
+					</c:when>
+					<c:otherwise>
+						<td style="text-align: right"><b><java8:formatDuration value="${month.diffCumulative}" /></b></td>
+					</c:otherwise>
+				</c:choose>
 			</tr>
 		</c:forEach>
 		<tr>
@@ -90,7 +106,22 @@
 			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.adjustment}" /></b></td>
 			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.sum}" /></b></td>
 			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.target}" /></b></td>
-			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.diff}" /></b></td>
+			<c:choose>
+				<c:when test="${overtimereport.total.diff.negative}">
+					<td style="text-align: right; color: red"><b><java8:formatDuration value="${overtimereport.total.diff}" /></b></td>
+				</c:when>
+				<c:otherwise>
+					<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.diff}" /></b></td>
+				</c:otherwise>
+			</c:choose>
+			<c:choose>
+				<c:when test="${overtimereport.total.diffCumulative.negative}">
+					<td style="text-align: right; color: red"><b><java8:formatDuration value="${overtimereport.total.diffCumulative}" /></b></td>
+				</c:when>
+				<c:otherwise>
+					<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.diffCumulative}" /></b></td>
+				</c:otherwise>
+			</c:choose>
 		</tr>
 	</table>
 
