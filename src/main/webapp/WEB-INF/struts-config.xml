@@ -43,6 +43,7 @@
 		<form-bean name="showEmployeeContractForm" type="org.tb.employee.action.ShowEmployeeContractForm" />
 		<form-bean name="addEmployeeForm" type="org.tb.employee.action.AddEmployeeForm" />
 		<form-bean name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeForm" />
+		<form-bean name="showOvertimeForm" type="org.tb.employee.action.ShowOvertimeForm" />
 		<form-bean name="showSettingsForm" type="org.tb.user.ShowSettingsForm" />
 		<form-bean name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeForm" />
 		<form-bean name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseForm" />
@@ -448,6 +449,12 @@
 			<forward name="success" path="/employee/showEmployee.jsp" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployee.jsp" />
+			<forward name="error" path="/error.jsp" />
+		</action>
+
+		<action path="/ShowOvertime" input="/employee/showOvertime.jsp" validate="false"
+			type="org.tb.employee.action.ShowOvertimeAction" name="showOvertimeForm" scope="request">
+			<forward name="success" path="/employee/showOvertime.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
