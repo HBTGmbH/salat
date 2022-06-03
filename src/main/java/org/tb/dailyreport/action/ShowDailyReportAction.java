@@ -482,13 +482,20 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                         String overtimeString = DurationUtils.format(status.getTotal().getDuration());
                         request.getSession().setAttribute("overtime", overtimeString);
 
-                        var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
-                        request.getSession().setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
+                        if(status.getCurrentMonth() != null) {
+                            var monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
+                            request.getSession().setAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
 
-                        String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
-                        request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
+                            String monthlyOvertimeString = DurationUtils.format(status.getCurrentMonth().getDuration());
+                            request.getSession().setAttribute("monthlyOvertime", monthlyOvertimeString);
 
-                        request.getSession().setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
+                            request.getSession().setAttribute("overtimeMonth", DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM"));
+                        } else {
+                            request.getSession().setAttribute("monthlyOvertimeIsNegative", false);
+                            request.getSession().setAttribute("monthlyOvertime", "");
+                            request.getSession().setAttribute("overtimeMonth", "");
+                        }
+
                     });
                 }
 
