@@ -106,8 +106,8 @@ public class AddDailyReportForm extends ActionForm {
     }
 
     public void recalcEndFromBeginAndDuration() {
-        Duration duration = Duration.ofHours(selectedHourEnd)
-            .plusMinutes(selectedMinuteEnd)
+        Duration duration = Duration.ofHours(selectedHourBegin)
+            .plusMinutes(selectedMinuteBegin)
             .plusHours(selectedHourDuration)
             .plusMinutes(selectedMinuteDuration);
         this.selectedHourEnd = duration.toHoursPart();
