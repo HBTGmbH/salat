@@ -217,6 +217,17 @@ public class OvertimeService {
           .filter(o -> isOvertimeEffectiveBetween(start, end, o))
           .map(Overtime::getTimeMinutes)
           .reduce(Duration.ZERO, Duration::plus);
+
+      // check if any adjustments have been made before the contract started if calculating including the contract validation start
+      if(!start.isAfter(employeecontract.getValidFrom()) && !end.isBefore(employeecontract.getValidFrom())) {
+        var overtimeAdjustmentBeforeContractStart = overtimes
+            .stream()
+            .filter(o -> isOvertimeEffectiveBefore(start, o))
+            .map(Overtime::getTimeMinutes)
+            .reduce(Duration.ZERO, Duration::plus);
+        overtimeAdjustment = overtimeAdjustment.plus(overtimeAdjustmentBeforeContractStart);
+      }
+
       overtime = overtime.plus(overtimeAdjustment);
     }
 
@@ -225,8 +236,12 @@ public class OvertimeService {
 
   // TODO introduce effective date in Overtime?
   private boolean isOvertimeEffectiveBetween(LocalDate start, LocalDate end, Overtime overtime) {
-    return !overtime.getCreated().isAfter(end.plusDays(1).atStartOfDay()) &&
+    return overtime.getCreated().isBefore(end.plusDays(1).atStartOfDay()) &&
            !overtime.getCreated().isBefore(start.atStartOfDay());
+  }
+
+  private boolean isOvertimeEffectiveBefore(LocalDate start, Overtime overtime) {
+    return overtime.getCreated().isBefore(start.atStartOfDay());
   }
 
   public OvertimeReport createDetailedReportForEmployee(long employeecontractId) {
