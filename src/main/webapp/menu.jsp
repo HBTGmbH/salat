@@ -46,7 +46,7 @@ window.onload=startList;
 <ul id="nav">
 	<li id="first"><bean:message
 		key="main.general.mainmenu.timereports.text" />
-	<ul>
+	<ul style="width: 100%">
 		<li class="first"><html:link styleClass="menu"
 			action="/CreateDailyReport">
 			<bean:message key="main.general.mainmenu.newreport.text" />
@@ -69,7 +69,7 @@ window.onload=startList;
 	<c:choose>
 	<c:when test="${not loginEmployee.restricted}">
 		<li><bean:message key="main.general.mainmenu.employees.text" />
-		<ul>
+		<ul style="width: 100%">
 			<li class="first"><html:link styleClass="menu"
 				action="/ShowEmployee">
 				<bean:message key="main.general.mainmenu.employees.text" />
@@ -83,7 +83,7 @@ window.onload=startList;
 		</ul>
 		</li>
 		<li><bean:message key="main.general.mainmenu.orders.text" />
-		<ul>
+		<ul style="width: 100%">
 			<li class="first"><html:link styleClass="menu"
 				action="/ShowCustomer">
 				<bean:message key="main.general.mainmenu.customers.text" />
@@ -108,9 +108,8 @@ window.onload=startList;
 	</c:otherwise>
 	</c:choose>
 	<li><bean:message key="main.general.mainmenu.management.text" />
-	<ul>
-		<li class="first"><html:link styleClass="menu"
-			action="/ShowWelcome">
+	<ul style="width: 100%">
+		<li class="first"><html:link styleClass="menu" action="/ShowWelcome">
 			<bean:message key="main.general.mainmenu.overview.text" />
 		</html:link></li>
 		<li><html:link styleClass="menu" action="/ShowSettings">
