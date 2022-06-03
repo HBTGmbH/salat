@@ -492,7 +492,7 @@
 
 	<controller
 		processorClass="org.tb.common.struts.DelegatingRequestProcessor"
-		nocache="true" />
+		nocache="false" />
 
 	<!-- ======================================== Message Resources Definitions -->
 
