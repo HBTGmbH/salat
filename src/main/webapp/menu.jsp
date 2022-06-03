@@ -116,11 +116,6 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowSettings">
 			<bean:message key="main.general.mainmenu.settings.text" />
 		</html:link></li>
-		<c:if test="${authorizedUser.admin}">
-			<li><html:link styleClass="menu" action="/ShowAdminOptions">
-				<bean:message key="adminarea.title" />
-			</html:link></li>
-		</c:if>
 	</ul>
 	</li>
 	<li id="last"><html:link action="/LogoutEmployee">
