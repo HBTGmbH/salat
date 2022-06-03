@@ -5,13 +5,9 @@
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <html:html>
 <head>
-
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> -
 <bean:message key="main.general.mainmenu.customers.text" /></title>
-<link rel="stylesheet" type="text/css" href="/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-
+<jsp:include flush="true" page="/head-includes.jsp" />
 <script type="text/javascript" language="JavaScript">
  
 	function confirmDelete(form, id) {	
@@ -41,7 +37,6 @@
 		wmtt.style.display = "none";
 	}
 </script>
-
 </head>
 <body>
 <jsp:include flush="true" page="/menu.jsp">

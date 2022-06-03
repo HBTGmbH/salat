@@ -4,13 +4,9 @@
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <html>
 <head>
-
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title><bean:message key="main.general.application.title" /> -
 	<bean:message key="main.general.mainmenu.settings.title.text" /></title>
-	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-	<link rel="stylesheet" type="text/css" href="/style/tb.css" media="all" />
-	<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
+	<jsp:include flush="true" page="/head-includes.jsp" />
 </head>
 <body>
 <jsp:include flush="true" page="/menu.jsp">

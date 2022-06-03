@@ -6,111 +6,99 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <html>
-<head>
-
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" type="text/css" href="/style/tb.css" media="all" />
-<link href="/style/select2.min.css" rel="stylesheet" />
-<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="stylesheet" type="text/css" href="/style/print.css" media="print" />
-<script src="/scripts/jquery-1.11.3.min.js"></script>
-<script src="/scripts/select2.full.min.js"></script>
-
-<title><bean:message key="main.general.application.title" /> - <bean:message
-	 key="main.general.mainmenu.release.title.text" /></title>
-
+	<head>
+		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.release.title.text" /></title>
+		<jsp:include flush="true" page="/head-includes.jsp" />
 		<script type="text/javascript" language="JavaScript">
-	
-			
-	function confirmSendReleaseMail(form, sign) {	
-		var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
-		if (agree) {
-			form.action = "/do/ShowRelease?task=sendreleasemail&sign="+sign;
-			form.submit();
-		}
-	}
-	
-	function confirmSendAcceptanceMail(form, sign) {	
-		var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
-		if (agree) {
-			form.action = "/do/ShowRelease?task=sendacceptancemail&sign="+sign;
-			form.submit();
-		}
-	}
-	
-	
-	
-	function confirmRelease(form) {	
-		var agree=confirm("<bean:message key="main.general.confirmrelease.text" />");
-		if (agree) {
-			form.action = "/do/ShowRelease?task=release";
-			form.submit();
-		}
-	}
-	
-	function confirmAcceptance(form) {	
-		var agree=confirm("<bean:message key="main.general.confirmacceptance.text" />");
-		if (agree) {
-			form.action = "/do/ShowRelease?task=accept";
-			form.submit();
-		}
-	}
-	
-	function confirmReopen(form) {	
-		var agree=confirm("<bean:message key="main.general.confirmreopen.text" />");
-		if (agree) {
-			form.action = "/do/ShowRelease?task=reopen";
-			form.submit();
-		}
-	}
-	
-	function refreshDate(form) {
-		form.action = "/do/ShowRelease?task=refreshDate";
-		form.submit();
-	}
-	
-	function refreshAcceptanceDate(form) {
-		form.action = "/do/ShowRelease?task=refreshAcceptanceDate";
-		form.submit();
-	}
-	
-	function refreshReopenDate(form) {
-		form.action = "/do/ShowRelease?task=refreshReopenDate";
-		form.submit();
-	}
-	
-	function refreshMonth(form) {
-		form.action = "/do/ShowRelease?task=refreshDate&refreshMonth=true";
-		form.submit();
-	}
-	
-	function refreshAcceptanceMonth(form) {
-		form.action = "/do/ShowRelease?task=refreshAcceptanceDate&refreshMonth=true";
-		form.submit();
-	}
-	
-	function refreshReopenMonth(form) {
-		form.action = "/do/ShowRelease?task=refreshReopenDate&refreshMonth=true";
-		form.submit();
-	}	
-	
-	function setUpdateEmployeeContract(form) {
-		form.action = "/do/ShowRelease?task=updateEmployee";
-		form.submit();
-	}
-	
-	function setUpdateSupervisor(form) {
-		form.action = "/do/ShowRelease?task=updateSupervisor";
-		form.submit();
-	}
+			function confirmSendReleaseMail(form, sign) {
+				var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
+				if (agree) {
+					form.action = "/do/ShowRelease?task=sendreleasemail&sign="+sign;
+					form.submit();
+				}
+			}
 
-	$(document).ready(function() {
-		$(".make-select2").select2({
-			dropdownAutoWidth: true,
-			width: 'auto'
-		});	
-	});		
-</script>
+			function confirmSendAcceptanceMail(form, sign) {
+				var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
+				if (agree) {
+					form.action = "/do/ShowRelease?task=sendacceptancemail&sign="+sign;
+					form.submit();
+				}
+			}
+
+
+
+			function confirmRelease(form) {
+				var agree=confirm("<bean:message key="main.general.confirmrelease.text" />");
+				if (agree) {
+					form.action = "/do/ShowRelease?task=release";
+					form.submit();
+				}
+			}
+
+			function confirmAcceptance(form) {
+				var agree=confirm("<bean:message key="main.general.confirmacceptance.text" />");
+				if (agree) {
+					form.action = "/do/ShowRelease?task=accept";
+					form.submit();
+				}
+			}
+
+			function confirmReopen(form) {
+				var agree=confirm("<bean:message key="main.general.confirmreopen.text" />");
+				if (agree) {
+					form.action = "/do/ShowRelease?task=reopen";
+					form.submit();
+				}
+			}
+
+			function refreshDate(form) {
+				form.action = "/do/ShowRelease?task=refreshDate";
+				form.submit();
+			}
+
+			function refreshAcceptanceDate(form) {
+				form.action = "/do/ShowRelease?task=refreshAcceptanceDate";
+				form.submit();
+			}
+
+			function refreshReopenDate(form) {
+				form.action = "/do/ShowRelease?task=refreshReopenDate";
+				form.submit();
+			}
+
+			function refreshMonth(form) {
+				form.action = "/do/ShowRelease?task=refreshDate&refreshMonth=true";
+				form.submit();
+			}
+
+			function refreshAcceptanceMonth(form) {
+				form.action = "/do/ShowRelease?task=refreshAcceptanceDate&refreshMonth=true";
+				form.submit();
+			}
+
+			function refreshReopenMonth(form) {
+				form.action = "/do/ShowRelease?task=refreshReopenDate&refreshMonth=true";
+				form.submit();
+			}
+
+			function setUpdateEmployeeContract(form) {
+				form.action = "/do/ShowRelease?task=updateEmployee";
+				form.submit();
+			}
+
+			function setUpdateSupervisor(form) {
+				form.action = "/do/ShowRelease?task=updateSupervisor";
+				form.submit();
+			}
+
+			$(document).ready(function() {
+				$(".make-select2").select2({
+					dropdownAutoWidth: true,
+					width: 'auto'
+				});
+			});
+		</script>
 
 	</head>
 	<body>

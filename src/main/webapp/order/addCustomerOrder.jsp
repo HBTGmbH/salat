@@ -8,10 +8,8 @@
 <html:html>
 <head>
 
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addcustomerorder.text" /></title>
-<link rel="stylesheet" type="text/css" href="/style/tb.css" />
-<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+	<jsp:include flush="true" page="/head-includes.jsp" />
 
 <script type="text/javascript" language="JavaScript">
 
