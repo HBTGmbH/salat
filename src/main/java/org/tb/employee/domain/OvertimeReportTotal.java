@@ -13,5 +13,6 @@ public class OvertimeReportTotal {
   private final Duration sum;
   private final Duration target;
   private final Duration diff;
+  private final Duration diffCumulative;
 
 }
