@@ -10,12 +10,14 @@ import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.OvertimeService;
 
 @Component
 @RequiredArgsConstructor
 public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
 
   private final EmployeecontractDAO employeecontractDAO;
+  private final OvertimeService overtimeService;
 
   @Override
   protected ActionForward executeAuthenticated(ActionMapping mapping, ShowOvertimeForm form, HttpServletRequest request,
@@ -43,6 +45,9 @@ public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
     // get valid employeecontracts
     List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
     request.setAttribute("employeecontracts", employeeContracts);
+
+    var report = overtimeService.createDetailedReportForEmployee(form.getEmployeecontractId());
+    request.setAttribute("overtimereport", report);
 
     return mapping.findForward("success");
   }
