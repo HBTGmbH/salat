@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -291,7 +292,8 @@ public class OvertimeService {
       begin = month.atDay(1).plusMonths(1);
     } while(true);
 
-    Collections.sort(months);
+    Collections.sort(months, Comparator.comparing(OvertimeReportMonth::getYearMonth).reversed());
+
     var actual = months.stream().map(OvertimeReportMonth::getActual).reduce(Duration.ZERO, Duration::plus);
     var adjustment = months.stream().map(OvertimeReportMonth::getAdjustment).reduce(Duration.ZERO, Duration::plus);
     var sum = months.stream().map(OvertimeReportMonth::getSum).reduce(Duration.ZERO, Duration::plus);

@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class OvertimeReportMonth implements Comparable<OvertimeReportMonth> {
+public class OvertimeReportMonth {
 
   private final YearMonth yearMonth;
   private final Duration actual;
@@ -17,8 +17,4 @@ public class OvertimeReportMonth implements Comparable<OvertimeReportMonth> {
   private final Duration diff;
   private final Duration diffCumulative;
 
-  @Override
-  public int compareTo(OvertimeReportMonth o) {
-    return yearMonth.compareTo(o.yearMonth);
-  }
 }

@@ -68,38 +68,6 @@
 			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.diff.text" /></b></th>
 			<th align="left"><b><bean:message key="main.headlinedescription.overtime.report.diffcumulative.text" /></b></th>
 		</tr>
-		<c:forEach var="month" items="${overtimereport.months}" varStatus="statusID">
-			<c:choose>
-				<c:when test="${statusID.count%2==0}">
-					<tr class="primarycolor">
-				</c:when>
-				<c:otherwise>
-					<tr class="secondarycolor">
-				</c:otherwise>
-			</c:choose>
-				<td style="text-align: center"><java8:formatYearMonth value="${month.yearMonth}" /></td>
-				<td style="text-align: right"><java8:formatDuration value="${month.actual}" /></td>
-				<td style="text-align: right"><java8:formatDuration value="${month.adjustment}" /></td>
-				<td style="text-align: right"><java8:formatDuration value="${month.sum}" /></td>
-				<td style="text-align: right"><java8:formatDuration value="${month.target}" /></td>
-				<c:choose>
-					<c:when test="${month.diff.negative}">
-						<td style="text-align: right; color: red"><b><java8:formatDuration value="${month.diff}" /></b></td>
-					</c:when>
-					<c:otherwise>
-						<td style="text-align: right"><b><java8:formatDuration value="${month.diff}" /></b></td>
-					</c:otherwise>
-				</c:choose>
-				<c:choose>
-					<c:when test="${month.diffCumulative.negative}">
-						<td style="text-align: right; color: red"><b><java8:formatDuration value="${month.diffCumulative}" /></b></td>
-					</c:when>
-					<c:otherwise>
-						<td style="text-align: right"><b><java8:formatDuration value="${month.diffCumulative}" /></b></td>
-					</c:otherwise>
-				</c:choose>
-			</tr>
-		</c:forEach>
 		<tr>
 			<td style="text-align: center"><b><bean:message key="main.headlinedescription.overtime.report.total.text" /></b></td>
 			<td style="text-align: right"><b><java8:formatDuration value="${overtimereport.total.actual}" /></b></td>
@@ -123,6 +91,38 @@
 				</c:otherwise>
 			</c:choose>
 		</tr>
+		<c:forEach var="month" items="${overtimereport.months}" varStatus="statusID">
+			<c:choose>
+				<c:when test="${statusID.count%2==0}">
+					<tr class="primarycolor">
+				</c:when>
+				<c:otherwise>
+					<tr class="secondarycolor">
+				</c:otherwise>
+			</c:choose>
+				<td style="text-align: center"><java8:formatYearMonth value="${month.yearMonth}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.actual}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.adjustment}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.sum}" /></td>
+				<td style="text-align: right"><java8:formatDuration value="${month.target}" /></td>
+				<c:choose>
+					<c:when test="${month.diff.negative}">
+						<td style="text-align: right; color: red"><java8:formatDuration value="${month.diff}" /></td>
+					</c:when>
+					<c:otherwise>
+						<td style="text-align: right"><java8:formatDuration value="${month.diff}" /></td>
+					</c:otherwise>
+				</c:choose>
+				<c:choose>
+					<c:when test="${month.diffCumulative.negative}">
+						<td style="text-align: right; color: red"><java8:formatDuration value="${month.diffCumulative}" /></td>
+					</c:when>
+					<c:otherwise>
+						<td style="text-align: right"><java8:formatDuration value="${month.diffCumulative}" /></td>
+					</c:otherwise>
+				</c:choose>
+			</tr>
+		</c:forEach>
 	</table>
 
 	<br><br><br>
