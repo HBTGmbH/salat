@@ -127,17 +127,11 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
         if (employeecontract.getReportAcceptanceDate() == null) {
             LocalDate validFromDate = employeecontract.getValidFrom();
             employeecontract.setReportAcceptanceDate(validFromDate);
-            // create tmp employee
-            Employee tmp = new Employee();
-            tmp.setSign(SYSTEM_SIGN);
             employeecontractDAO.save(employeecontract);
         }
         if (employeecontract.getReportReleaseDate() == null) {
             LocalDate validFromDate = employeecontract.getValidFrom();
             employeecontract.setReportReleaseDate(validFromDate);
-            // create tmp employee
-            Employee tmp = new Employee();
-            tmp.setSign(SYSTEM_SIGN);
             employeecontractDAO.save(employeecontract);
         }
         // set used employee contract of login employee
