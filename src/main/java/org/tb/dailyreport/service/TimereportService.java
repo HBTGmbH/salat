@@ -32,6 +32,7 @@ import static org.tb.common.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getFirstDay;
 import static org.tb.common.util.DateUtils.getLastDay;
 import static org.tb.common.util.DateUtils.getYear;
@@ -204,6 +205,34 @@ public class TimereportService {
       employeecontract.setOvertimeStatic(Duration.ZERO);
       employeecontractDAO.save(employeecontract);
     }
+  }
+
+  public void reopenTimereports(long employeecontractId, LocalDate reopenDate) {
+
+    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+
+    // set status in timereports
+    var timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontractId, reopenDate);
+    for (var timereport : timereports) {
+      reopenTimereport(timereport.getId());
+    }
+
+    if (!reopenDate.isAfter(employeecontract.getReportReleaseDate())) {
+      employeecontract.setReportReleaseDate(reopenDate.minusDays(1));
+    }
+    if (!reopenDate.isAfter(employeecontract.getReportAcceptanceDate())) {
+      employeecontract.setReportAcceptanceDate(reopenDate.minusDays(1));
+
+      // recompute overtimeStatic and set it in employeecontract
+      var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
+      if(otStatic.isPresent()) {
+        employeecontract.setOvertimeStatic(otStatic.get());
+      } else {
+        employeecontract.setOvertimeStatic(Duration.ZERO);
+      }
+    }
+
+    employeecontractDAO.save(employeecontract);
   }
 
   private void releaseTimereport(long timereportId, String releasedBy) {

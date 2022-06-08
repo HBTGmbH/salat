@@ -240,46 +240,23 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 reopenDate = DateUtils.today();
             }
 
-            // set status in timereports
-            List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontract.getId(), reopenDate);
-            for (TimereportDTO timereport : timereports) {
-                timereportService.reopenTimereport(timereport.getId());
-            }
+            timereportService.reopenTimereports(employeecontract.getId(), reopenDate);
 
-            // TODO what happends here?
-            reopenDate = reopenDate.minusDays(1);
-            // String newReopenDateString = format.format(sqlReopenDate);
-
-            if (reopenDate.isBefore(releaseDateFromContract)) {
-                employeecontract.setReportReleaseDate(reopenDate);
-                releaseDateFromContract = reopenDate;
-                String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
-                releaseForm.setDay(releaseDateArray[0]);
-                releaseForm.setMonth(releaseDateArray[1]);
-                releaseForm.setYear(releaseDateArray[2]);
-            }
-            if (reopenDate.isBefore(acceptanceDateFromContract)) {
-                employeecontract.setReportAcceptanceDate(reopenDate);
-                acceptanceDateFromContract = reopenDate;
-                String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
-                releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
-                releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);
-                releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
-
-                // recompute overtimeStatic and set it in employeecontract
-                var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
-                if(otStatic.isPresent()) {
-                    employeecontract.setOvertimeStatic(otStatic.get());
-                } else {
-                    employeecontract.setOvertimeStatic(Duration.ZERO);
-                }
-            }
+            // reload potenial updated data to feed the session and form
+            employeecontract = employeecontractDAO.getEmployeeContractById(employeecontract.getId());
+            releaseDateFromContract = employeecontract.getReportReleaseDate();
+            String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
+            releaseForm.setDay(releaseDateArray[0]);
+            releaseForm.setMonth(releaseDateArray[1]);
+            releaseForm.setYear(releaseDateArray[2]);
+            acceptanceDateFromContract = employeecontract.getReportAcceptanceDate();
+            String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
+            releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
+            releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);
+            releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
 
             request.getSession().setAttribute("reopenDays",
-                    getDayList(reopenDate));
-
-            // store changed employee contract
-            employeecontractDAO.save(employeecontract);
+                    getDayList(reopenDate.minusDays(1)));
         }
 
         if (request.getParameter("task") != null
