@@ -18,14 +18,13 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.domain.Vacation;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
+import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Employeecontract_;
-import org.tb.employee.domain.Overtime;
 import org.tb.order.domain.Employeeorder;
 
 @Component
@@ -37,6 +36,7 @@ public class EmployeecontractDAO {
     private final EmployeecontractRepository employeecontractRepository;
     private final AuthorizedUser authorizedUser;
     private final TimereportDAO timereportDAO;
+    private final WorkingdayDAO workingdayDAO;
 
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
@@ -199,17 +199,22 @@ public class EmployeecontractDAO {
             // if ok for deletion, check for overtime and vacation entries and
             // delete them successively (cannot yet be done via web application)
 
-            List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
-            for (Overtime overtime : overtimes) {
+            var overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
+            for (var overtime : overtimes) {
                 overtimeDAO.deleteOvertimeById(overtime.getId());
             }
 
-            List<Vacation> allVacations = ec.getVacations();
+            var allVacations = ec.getVacations();
             if (allVacations != null) {
                 ec.setVacations(Collections.emptyList());
-                for (Vacation va : allVacations) {
+                for (var va : allVacations) {
                     vacationDAO.deleteVacationById(va.getId());
                 }
+            }
+
+            var workingdays = workingdayDAO.getWorkingdaysByEmployeeContractId(ecId);
+            for (var workingday : workingdays) {
+                workingdayDAO.deleteWorkingdayById(workingday.getId());
             }
 
             // finally, go for deletion of employeecontract

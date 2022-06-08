@@ -1,6 +1,7 @@
 package org.tb.dailyreport.persistence;
 
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.dailyreport.domain.Workingday;
@@ -15,8 +16,15 @@ public class WorkingdayDAO {
         return workingdayRepository.findByRefdayAndEmployeecontractId(refdate, employeeContractId).orElse(null);
     }
 
+    public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId) {
+        return workingdayRepository.findAllByEmployeecontractId(employeeContractId);
+    }
+
     public void save(Workingday wd) {
         workingdayRepository.save(wd);
     }
 
+    public void deleteWorkingdayById(long id) {
+        workingdayRepository.deleteById(id);
+    }
 }
