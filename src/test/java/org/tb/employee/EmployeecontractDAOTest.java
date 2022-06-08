@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthorizedUser;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
+import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -25,7 +26,8 @@ import org.tb.testutils.EmployeecontractTestUtils;
 
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
-@Import({ EmployeeDAO.class, EmployeecontractDAO.class, VacationDAO.class, OvertimeDAO.class, TimereportDAO.class})
+@Import({ EmployeeDAO.class, EmployeecontractDAO.class, VacationDAO.class, OvertimeDAO.class, TimereportDAO.class,
+		WorkingdayDAO.class})
 public class EmployeecontractDAOTest {
 
 	@Autowired

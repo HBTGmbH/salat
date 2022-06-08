@@ -16,6 +16,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.AuthorizedUserAuditorAware;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
+import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -30,7 +31,8 @@ import org.tb.testutils.EmployeeTestUtils;
 		EmployeecontractDAO.class,
 		VacationDAO.class,
 		OvertimeDAO.class,
-		TimereportDAO.class
+		TimereportDAO.class,
+		WorkingdayDAO.class
 })
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class EmployeeDAOTest {
