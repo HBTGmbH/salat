@@ -163,22 +163,12 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             LocalDate releaseDate = (LocalDate) request.getSession()
                     .getAttribute("releaseDate");
 
-            // set status in timereports
-            List<TimereportDTO> timereports = timereportDAO
-                    .getOpenTimereportsByEmployeeContractIdBeforeDate(
-                            employeecontract.getId(), releaseDate);
-            for (TimereportDTO timereport : timereports) {
-                timereportService.releaseTimereport(timereport.getId(), loginEmployee.getSign());
-            }
-            releaseDateFromContract = releaseDate;
+            timereportService.releaseTimereports(employeecontract.getId(), releaseDate);
 
+            releaseDateFromContract = releaseDate;
             request.getSession().setAttribute("days",
                     getDayList(releaseDateFromContract));
 
-            // store new release date in employee contract
-            employeecontract.setReportReleaseDate(releaseDate);
-            employeecontractDAO.save(employeecontract);
-            // contract was saved after RELEASE
             // build recipient for releasemail for BL
 
             if (employeecontract.getSupervisor() != null) {
@@ -233,26 +223,10 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
             LocalDate acceptanceDate = (LocalDate) request.getSession().getAttribute("acceptanceDate");
 
-            // set status in timereports
-            List<TimereportDTO> timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontract.getId(), acceptanceDate);
-            for (TimereportDTO timereport : timereports) {
-                timereportService.acceptTimereport(timereport.getId(), loginEmployee.getSign());
-            }
+            timereportService.acceptTimereports(employeecontract.getId(), acceptanceDate);
+
             acceptanceDateFromContract = acceptanceDate;
-
             request.getSession().setAttribute("acceptanceDays", getDayList(acceptanceDateFromContract));
-
-            // set new acceptance date in employee contract
-            employeecontract.setReportAcceptanceDate(acceptanceDate);
-            //compute overtimeStatic and set it in employee contract
-            var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
-            if(otStatic.isPresent()) {
-                employeecontract.setOvertimeStatic(otStatic.get());
-                employeecontractDAO.save(employeecontract);
-            } else {
-                employeecontract.setOvertimeStatic(Duration.ZERO);
-                employeecontractDAO.save(employeecontract);
-            }
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {

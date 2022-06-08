@@ -37,6 +37,7 @@ import static org.tb.common.util.DateUtils.getLastDay;
 import static org.tb.common.util.DateUtils.getYear;
 import static org.tb.common.util.DateUtils.getYearMonth;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -87,6 +88,7 @@ public class TimereportService {
   private final TimereportRepository timereportRepository;
   private final PublicholidayDAO publicholidayDAO;
   private final OvertimeService overtimeService;
+  private final AuthorizedUser authorizedUser;
 
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
@@ -167,7 +169,44 @@ public class TimereportService {
         .forEach(timereportDAO::deleteTimereportById);
   }
 
-  public void releaseTimereport(long timereportId, String releasedBy) {
+  public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
+    // set status in timereports
+    var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(
+        employeecontractId,
+        releaseDate
+    );
+    for (var timereport : timereports) {
+      releaseTimereport(timereport.getId(), authorizedUser.getSign());
+    }
+
+    // store new release date in employee contract
+    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    employeecontract.setReportReleaseDate(releaseDate);
+    employeecontractDAO.save(employeecontract);
+  }
+
+  public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
+    // set status in timereports
+    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
+    for (var timereport : timereports) {
+      acceptTimereport(timereport.getId(), authorizedUser.getSign());
+    }
+
+    // set new acceptance date in employee contract
+    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    employeecontract.setReportAcceptanceDate(acceptanceDate);
+    //compute overtimeStatic and set it in employee contract
+    var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
+    if(otStatic.isPresent()) {
+      employeecontract.setOvertimeStatic(otStatic.get());
+      employeecontractDAO.save(employeecontract);
+    } else {
+      employeecontract.setOvertimeStatic(Duration.ZERO);
+      employeecontractDAO.save(employeecontract);
+    }
+  }
+
+  private void releaseTimereport(long timereportId, String releasedBy) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
@@ -176,7 +215,7 @@ public class TimereportService {
     timereportDAO.save(timereport);
   }
 
-  public void acceptTimereport(long timereportId, String acceptedBy) {
+  private void acceptTimereport(long timereportId, String acceptedBy) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
