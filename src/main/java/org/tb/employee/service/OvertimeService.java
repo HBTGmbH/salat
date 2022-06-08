@@ -311,6 +311,19 @@ public class OvertimeService {
     return new OvertimeReport(total, months);
   }
 
+  public void updateOvertimeStatic(Long employeecontractId) {
+    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var otStatic = calculateOvertime(employeecontractId, employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
+    if(otStatic.isPresent()) {
+      employeecontract.setOvertimeStatic(otStatic.get());
+      employeecontractDAO.save(employeecontract);
+    } else {
+      employeecontract.setOvertimeStatic(Duration.ZERO);
+      employeecontractDAO.save(employeecontract);
+    }
+    employeecontractDAO.save(employeecontract);
+  }
+
   @Getter
   @RequiredArgsConstructor
   private class OvertimeInfo {

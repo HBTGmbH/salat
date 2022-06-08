@@ -25,13 +25,15 @@ public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
 
     if ("refresh".equalsIgnoreCase(request.getParameter("task"))) {
       var currentEmployeeContract = employeecontractDAO.getEmployeeContractById(form.getEmployeecontractId());
-      if(currentEmployeeContract != null) {
+      if (currentEmployeeContract != null) {
         request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
       } else {
         request.getSession().removeAttribute("currentEmployeeId");
         request.getSession().removeAttribute("currentEmployeeContract");
       }
+    } else if("correct-overtime".equalsIgnoreCase(request.getParameter("task"))) {
+      overtimeService.updateOvertimeStatic(form.getEmployeecontractId());
     } else {
       // init employeecontractId if not already set
       if(form.getEmployeecontractId() == -1) {

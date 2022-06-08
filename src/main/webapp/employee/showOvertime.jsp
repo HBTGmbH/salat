@@ -13,6 +13,10 @@
 				form.action = "/do/ShowOvertime?task=refresh";
 				form.submit();
 			}
+			function correct_overtime(form) {
+				form.action = "/do/ShowOvertime?task=correct-overtime";
+				form.submit();
+			}
 			$(document).ready(function() {
 				$(".make-select2").select2({
 					dropdownAutoWidth: true,
@@ -36,7 +40,7 @@
 				<td class="noBborderStyle" colspan="2">
 					<b><bean:message key="main.overtime.employeecontract.text" /></b>
 				</td>
-				<td class="noBborderStyle" colspan="9" align="left">
+				<td class="noBborderStyle" align="left">
 					<html:select property="employeecontractId" onchange="refresh(this.form)" styleClass="make-select2">
 						<c:if test="${authorizedUser.manager}">
 							<html:option value="-1">
@@ -54,6 +58,7 @@
 						</c:forEach>
 					</html:select>
 				</td>
+				<td class="noBborderStyle"><html:submit onclick="correct_overtime(this.form)"><bean:message key="main.overtime.employeecontract.correct.label" /></html:submit></td>
 			</tr>
 		</html:form>
 	</table>

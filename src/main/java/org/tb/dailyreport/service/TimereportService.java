@@ -196,15 +196,10 @@ public class TimereportService {
     // set new acceptance date in employee contract
     var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
     employeecontract.setReportAcceptanceDate(acceptanceDate);
+    employeecontractDAO.save(employeecontract);
+
     //compute overtimeStatic and set it in employee contract
-    var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
-    if(otStatic.isPresent()) {
-      employeecontract.setOvertimeStatic(otStatic.get());
-      employeecontractDAO.save(employeecontract);
-    } else {
-      employeecontract.setOvertimeStatic(Duration.ZERO);
-      employeecontractDAO.save(employeecontract);
-    }
+    overtimeService.updateOvertimeStatic(employeecontract.getId());
   }
 
   public void reopenTimereports(long employeecontractId, LocalDate reopenDate) {
