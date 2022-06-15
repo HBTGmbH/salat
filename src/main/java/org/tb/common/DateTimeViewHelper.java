@@ -27,6 +27,10 @@ import lombok.experimental.UtilityClass;
 public class DateTimeViewHelper {
 
   private static final Map<Year, List<OptionItem>> calendarWeeksCache = new HashMap<>();
+  public static final int MAX_TIME_REPORT_HOUR = 24;
+  public static final int MIN_TIME_REPORT_HOUR = 0;
+  public static final int MIN_TIME_REPORT_MINUTE = 0;
+  public static final int MAX_TIME_REPORT_MINUTE = 59;
 
   /*
    * builds up a list of string with current and previous year
@@ -102,7 +106,7 @@ public class DateTimeViewHelper {
    * builds up a list of string with duration hours to display (0-23)
    */
   public static List<OptionItem> getTimeReportHoursOptions() {
-    return getOptionItemListOfInts(0, 23);
+    return getOptionItemListOfInts(MIN_TIME_REPORT_HOUR, MAX_TIME_REPORT_HOUR);
   }
 
   /*
@@ -110,7 +114,7 @@ public class DateTimeViewHelper {
    */
   public static List<OptionItem> getTimeReportMinutesOptions(boolean showAllMinutes) {
     if(showAllMinutes) {
-      return getOptionItemListOfInts(0, 59);
+      return getOptionItemListOfInts(MIN_TIME_REPORT_MINUTE, MAX_TIME_REPORT_MINUTE);
     }
     List<OptionItem> result = new ArrayList<>();
     for (int i = 0; i < 60; i+=5) {
