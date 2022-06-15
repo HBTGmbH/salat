@@ -392,6 +392,9 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 errors.add("validUntil", new ActionMessage("form.timereport.error.date.wrongformat"));
             }
         }
+        if(!errors.isEmpty()) {
+            return errors; // further validation not possible
+        }
 
         // check if begin is before end
         if (validFromDate != null && validUntilDate != null) {
@@ -428,6 +431,10 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.nounit"));
             }
         }
+
+        // set dates to given empoyee contract to allow validation
+        employeeorder.setFromDate(validFromDate);
+        employeeorder.setUntilDate(validUntilDate);
 
         // check for overleap with another employee order for the same employee
         // contract and suborder
