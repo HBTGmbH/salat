@@ -45,7 +45,7 @@ public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
     }
 
     // get valid employeecontracts
-    List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+    List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
     request.setAttribute("employeecontracts", employeeContracts);
 
     var report = overtimeService.createDetailedReportForEmployee(form.getEmployeecontractId());

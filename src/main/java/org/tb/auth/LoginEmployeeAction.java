@@ -1,6 +1,5 @@
 package org.tb.auth;
 
-import static org.tb.common.GlobalConstants.SYSTEM_SIGN;
 import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.today;
 
@@ -107,7 +106,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             }
 
             // create collection of employeecontracts
-            List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+            List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
             request.getSession().setAttribute("employeecontracts", employeecontracts);
 
             return mapping.findForward("success");

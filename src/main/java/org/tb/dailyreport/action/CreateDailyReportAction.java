@@ -76,7 +76,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", ec);
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);

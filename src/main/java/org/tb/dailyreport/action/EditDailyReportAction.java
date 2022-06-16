@@ -109,7 +109,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         }
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         /* set hours list in session in case of that the dialog is triggered from the welcome page */

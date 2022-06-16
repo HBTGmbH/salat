@@ -30,7 +30,7 @@ public class EmployeeViewHelper {
 
         var employeeOptionList = employeeDAO.getEmployees();
         var employeeWithContractList = employeeDAO.getEmployeesWithContracts();
-        var employeeContracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+        var employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
 
         request.getSession().setAttribute("employeeswithcontract", employeeWithContractList);
         request.getSession().setAttribute("employees", employeeOptionList);

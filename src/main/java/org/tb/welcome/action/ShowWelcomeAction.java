@@ -30,7 +30,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
         // create collection of employeecontracts
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
 
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
