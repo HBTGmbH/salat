@@ -85,7 +85,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
         }
 
         // get valid employeecontracts
-        List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
         request.getSession().setAttribute("employeecontracts", employeeContracts);
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

@@ -155,8 +155,19 @@ public class EmployeecontractDAO {
             .collect(Collectors.toList());
     }
 
-    public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
+    public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
         if (!authorizedUser.isManager()) {
+            // may only see his own contracts
+            return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
+                .filter(e -> e.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
+                .collect(Collectors.toList());
+        } else {
+            return getVisibleEmployeeContractsOrderedByEmployeeSign();
+        }
+    }
+
+    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser() {
+        if (!authorizedUser.isBackoffice()) {
             // may only see his own contracts
             return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
                 .filter(e -> e.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
