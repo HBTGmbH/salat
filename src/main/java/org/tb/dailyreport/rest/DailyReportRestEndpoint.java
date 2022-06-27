@@ -43,7 +43,8 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @SecurityScheme(name = "apikey",
     type = SecuritySchemeType.APIKEY,
     in = SecuritySchemeIn.HEADER,
-    paramName = "x-api-key"
+    paramName = "x-api-key",
+    description = "tokenId:secret"
 )
 @RequestMapping(path = "/rest/daily-reports")
 public class DailyReportRestEndpoint {
