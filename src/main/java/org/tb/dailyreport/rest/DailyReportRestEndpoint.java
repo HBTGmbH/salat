@@ -88,7 +88,7 @@ public class DailyReportRestEndpoint {
                     .orderLabel(tr.getCustomerorderDescription())
                     .suborderLabel(tr.getSuborderDescription())
                     .comment(tr.getTaskdescription())
-                    .isTraining(tr.isTraining())
+                    .training(tr.isTraining())
                     .hours(tr.getDuration().toHours())
                     .minutes(tr.getDuration().toMinutesPart())
                     .suborderSign(tr.getSuborderSign())

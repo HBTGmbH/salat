@@ -13,7 +13,7 @@ public class DailyReportData {
     private long hours;
     private long minutes;
     private String comment;
-    private boolean isTraining;
+    private boolean training;
     private String suborderSign;
     private String orderSign;
     private String date;
