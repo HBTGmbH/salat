@@ -1,6 +1,7 @@
 package org.tb.testutils;
 
 import lombok.experimental.UtilityClass;
+import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
 
 /**
@@ -28,7 +29,7 @@ public class EmployeeTestUtils {
 		employee.setLoginname(sign);
 		employee.setStatus("ma");
 		employee.setSign(sign);
-		employee.setGender('m');
+		employee.setGender(GlobalConstants.GENDER_MALE);
 		
 		employee.resetPassword();
 		
