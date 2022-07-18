@@ -77,16 +77,12 @@
             </html:form>
             </tr>
         </c:forEach>
-        <tr>
-            <html:form action="/CreateReport">
-                <td class="noBborderStyle" colspan="4">
-                    <html:submit styleId="button">
-                        <bean:message key="main.reporting.button.create.text" />
-                    </html:submit>
-                </td>
-            </html:form>
-        </tr>
     </table>
+    <html:form action="/CreateReport">
+        <html:submit styleId="button">
+            <bean:message key="main.reporting.button.create.text" />
+        </html:submit>
+    </html:form>
     <br><br><br>
     </body>
 </html:html>
