@@ -28,9 +28,8 @@ public class ReportingService {
 
   private final ReportDefinitionRepository reportDefinitionRepository;
   private final DataSource dataSource;
-  private final AuthorizedUser authorizedUser;
 
-  public List<ReportDefinition> getReportDefinitions() {
+  public List<ReportDefinition> getReportDefinitions(AuthorizedUser authorizedUser) {
     if(!authorizedUser.isManager()) {
       return Collections.emptyList();
     }
@@ -39,21 +38,39 @@ public class ReportingService {
     );
   }
 
-  public ReportDefinition getReportDefinition(long reportDefinitionId) {
+  public void deleteReportDefinition(AuthorizedUser authorizedUser, long reportDefinitionId) {
+    reportDefinitionRepository.deleteById(reportDefinitionId);
+  }
+
+  public ReportDefinition getReportDefinition(AuthorizedUser authorizedUser, long reportDefinitionId) {
     if(!authorizedUser.isManager()) {
       return new ReportDefinition();
     }
     return reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
   }
 
-  public void save(ReportDefinition reportDefinition) {
+  public ReportDefinition create(AuthorizedUser authorizedUser, String name, String sql) {
+    if(!authorizedUser.isManager()) {
+      return null;
+    }
+    var reportDefinition = new ReportDefinition();
+    reportDefinition.setName(name);
+    reportDefinition.setSql(sql);
+    reportDefinitionRepository.save(reportDefinition);
+    return reportDefinition;
+  }
+
+  public void update(AuthorizedUser authorizedUser, long reportDefinitionId, String name, String sql) {
     if(!authorizedUser.isManager()) {
       return;
     }
+    var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
+    reportDefinition.setName(name);
+    reportDefinition.setSql(sql);
     reportDefinitionRepository.save(reportDefinition);
   }
 
-  public ReportResult execute(Long reportDefinitionId, Map<String, Object> parameters) {
+  public ReportResult execute(AuthorizedUser authorizedUser, Long reportDefinitionId, Map<String, Object> parameters) {
     if(!authorizedUser.isManager()) {
       return new ReportResult();
     }

@@ -9,6 +9,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
@@ -35,13 +36,14 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
     public static final String CELL_STYLE_DATE_KEY = "Date";
     public static final String CELL_STYLE_DATETIME_KEY = "DateTime";
     private final ReportingService reportingService;
+    private final AuthorizedUser authorizedUser;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, ExecuteReportForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        var reportDefinition = reportingService.getReportDefinition(form.getReportId());
+        var reportDefinition = reportingService.getReportDefinition(authorizedUser, form.getReportId());
 
         if("setParameters".equals(request.getParameter("task"))) {
-            var reportResult = reportingService.execute(form.getReportId(), getParameterMap(form));
+            var reportResult = reportingService.execute(authorizedUser, form.getReportId(), getParameterMap(form));
             request.getSession().setAttribute("report", reportDefinition);
             request.getSession().setAttribute("reportParameters", nonEmpty(form.getParameters()));
             request.getSession().setAttribute("reportResult", reportResult);
@@ -56,7 +58,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
                 request.getSession().setAttribute("report", reportDefinition);
                 return mapping.findForward("showReportParameters");
             } else {
-                var reportResult = reportingService.execute(form.getReportId(), new HashMap<>());
+                var reportResult = reportingService.execute(authorizedUser, form.getReportId(), new HashMap<>());
                 request.getSession().setAttribute("report", reportDefinition);
                 request.getSession().setAttribute("reportResult", reportResult);
                 return mapping.findForward("showReportResult");

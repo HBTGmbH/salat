@@ -5,6 +5,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.reporting.service.ReportingService;
 
@@ -16,10 +17,11 @@ import javax.servlet.http.HttpServletResponse;
 public class ShowReportsAction extends LoginRequiredAction<ActionForm> {
 
     private final ReportingService reportingService;
+    private final AuthorizedUser authorizedUser;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        request.getSession().setAttribute("reportDescriptions", reportingService.getReportDefinitions());
+        request.getSession().setAttribute("reportDescriptions", reportingService.getReportDefinitions(authorizedUser));
         return mapping.findForward("success");
     }
 

@@ -8,6 +8,9 @@ import org.apache.struts.action.ActionForm;
 @Setter
 public class CreateEditDeleteReportForm extends ActionForm {
 
+    private String mode; // create, edit
     private long reportId;
+    private String name;
+    private String sql;
 
 }
