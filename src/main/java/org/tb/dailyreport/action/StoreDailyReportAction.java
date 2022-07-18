@@ -198,7 +198,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             // check if we can prefill the form with daily working time - this helps for standard orders like URLAUB
             Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
-            if (standardOrder) {
+            if (standardOrder && noWorkingTimeSuppliedByUser(form)) {
                 Duration dailyWorkingTime = employeeContract.getDailyWorkingTime();
                 int hours = dailyWorkingTime.toHoursPart();
                 int minutes = dailyWorkingTime.toMinutesPart();
@@ -454,6 +454,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         }
 
         return mapping.getInputForward();
+    }
+
+    private boolean noWorkingTimeSuppliedByUser(AddDailyReportForm form) {
+        return form.getSelectedHourDuration() == 0 && form.getSelectedMinuteDuration() == 0;
     }
 
     private Employeecontract getEmployeeContractAndSetSessionVars(HttpServletRequest request) {
