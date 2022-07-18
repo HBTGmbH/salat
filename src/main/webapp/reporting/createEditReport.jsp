@@ -51,6 +51,7 @@
 			</td>
 		</tr>
 	</table>
+	<html:hidden property="mode" />
 	<html:hidden property="reportId" />
 </html:form>
 </body>
