@@ -1,6 +1,7 @@
 package org.tb.reporting.service;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -11,6 +12,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.tb.auth.AuthorizedUser;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportDefinition_;
 import org.tb.reporting.domain.ReportResult;
@@ -26,22 +28,35 @@ public class ReportingService {
 
   private final ReportDefinitionRepository reportDefinitionRepository;
   private final DataSource dataSource;
+  private final AuthorizedUser authorizedUser;
 
   public List<ReportDefinition> getReportDefinitions() {
+    if(!authorizedUser.isManager()) {
+      return Collections.emptyList();
+    }
     return IteratorUtils.toList(
         reportDefinitionRepository.findAll(Sort.by(ReportDefinition_.NAME)).iterator()
     );
   }
 
   public ReportDefinition getReportDefinition(long reportDefinitionId) {
+    if(!authorizedUser.isManager()) {
+      return new ReportDefinition();
+    }
     return reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
   }
 
   public void save(ReportDefinition reportDefinition) {
+    if(!authorizedUser.isManager()) {
+      return;
+    }
     reportDefinitionRepository.save(reportDefinition);
   }
 
   public ReportResult execute(Long reportDefinitionId, Map<String, Object> parameters) {
+    if(!authorizedUser.isManager()) {
+      return new ReportResult();
+    }
     var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId);
     if(reportDefinition.isEmpty()) {
       throw new IllegalArgumentException("No report definition found for " + reportDefinitionId);

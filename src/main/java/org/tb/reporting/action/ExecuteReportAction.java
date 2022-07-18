@@ -51,7 +51,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
             exportToExcel(reportDefinition, reportResult, response);
             return null;
         } else {
-            if(reportDefinition.getSql().indexOf(':') >= 0) {
+            if(reportDefinition.getSql() != null && reportDefinition.getSql().indexOf(':') >= 0) {
                 // show parameters dialog
                 request.getSession().setAttribute("report", reportDefinition);
                 return mapping.findForward("showReportParameters");
