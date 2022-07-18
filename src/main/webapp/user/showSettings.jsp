@@ -38,7 +38,6 @@
 				style="font-size:10pt;font-weight:bold;"><bean:message
 				key="main.settings.rule.text" /></span><br>
 			<bean:message key="main.settings.rule1.text" /><br>
-			<bean:message key="main.settings.rule2.text" /><br>
 			<bean:message key="main.settings.rule3.text" /><br>
 			<bean:message key="main.settings.rule4.text" /><br>
 			&nbsp;&nbsp;<bean:message key="main.settings.rule41.text" /><br>
