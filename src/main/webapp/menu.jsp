@@ -102,6 +102,9 @@ window.onload=startList;
 					<bean:message key="main.general.mainmenu.invoice.title.text" />
 				</html:link></li>
 			</c:if>
+			<li><html:link styleClass="menu" action="/ShowReports">
+				<bean:message key="main.general.mainmenu.reporting.text" />
+			</html:link></li>
 		</ul>
 		</li>
 	</c:when>

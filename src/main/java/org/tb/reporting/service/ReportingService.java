@@ -33,6 +33,10 @@ public class ReportingService {
     );
   }
 
+  public ReportDefinition getReportDefinition(long reportDefinitionId) {
+    return reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
+  }
+
   public void save(ReportDefinition reportDefinition) {
     reportDefinitionRepository.save(reportDefinition);
   }
