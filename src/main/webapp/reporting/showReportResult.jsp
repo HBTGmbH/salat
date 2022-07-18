@@ -28,7 +28,10 @@
     <span style="color:red"><html:errors footer="<br>" /> </span>
 
     <div>
-        <code><c:out value="${report.sql}" /></code>
+        <code>SQL: <c:out value="${report.sql}" /></code>
+        <c:forEach var="parameter" items="${reportParameters}">
+            <br><code><c:out value="${parameter.name}" /> (<c:out value="${parameter.type}" />) = <c:out value="${parameter.value}" /></code>
+        </c:forEach>
     </div>
 
     <table class="center backgroundcolor">
