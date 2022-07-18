@@ -1,6 +1,7 @@
 package org.tb.reporting.domain;
 
 import java.io.Serializable;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
@@ -17,6 +18,7 @@ public class ReportDefinition extends AuditedEntity implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private String name;
+  @Column(name = "`sql`")
   private String sql;
 
 }

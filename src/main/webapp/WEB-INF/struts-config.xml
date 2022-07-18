@@ -502,13 +502,16 @@
 			<forward name="showReportParameters" path="/reporting/showReportParameters.jsp" />
 			<forward name="showReportResult" path="/reporting/showReportResult.jsp" />
 		</action>
-		<action path="/CreateReport" type="org.tb.reporting.action.ShowReportsAction" name="createEditDeleteReportForm">
+		<action path="/CreateReport" type="org.tb.reporting.action.CreateReportAction" name="createEditDeleteReportForm">
+			<forward name="success" path="/reporting/createEditReport.jsp" />
+		</action>
+		<action path="/EditReport" type="org.tb.reporting.action.EditReportAction" name="createEditDeleteReportForm">
+			<forward name="success" path="/reporting/createEditReport.jsp" />
+		</action>
+		<action path="/StoreReport" type="org.tb.reporting.action.StoreReportAction" name="createEditDeleteReportForm">
 			<forward name="success" path="/reporting/showReports.jsp" />
 		</action>
-		<action path="/EditReport" type="org.tb.reporting.action.ShowReportsAction" name="createEditDeleteReportForm">
-			<forward name="success" path="/reporting/showReports.jsp" />
-		</action>
-		<action path="/DeleteReport" type="org.tb.reporting.action.ShowReportsAction" name="createEditDeleteReportForm">
+		<action path="/DeleteReport" type="org.tb.reporting.action.DeleteReportAction" name="createEditDeleteReportForm">
 			<forward name="success" path="/reporting/showReports.jsp" />
 		</action>
 

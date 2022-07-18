@@ -13,17 +13,18 @@ import javax.servlet.http.HttpServletResponse;
 
 @Component
 @RequiredArgsConstructor
-public class EditReportAction extends LoginRequiredAction<CreateEditDeleteReportForm> {
+public class StoreReportAction extends LoginRequiredAction<CreateEditDeleteReportForm> {
 
     private final ReportingService reportingService;
     private final AuthorizedUser authorizedUser;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, CreateEditDeleteReportForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        form.setMode("edit");
-        var reportDefinition = reportingService.getReportDefinition(authorizedUser, form.getReportId());
-        form.setName(reportDefinition.getName());
-        form.setSql(reportDefinition.getSql());
+        switch(form.getMode()) {
+            case "create" -> reportingService.create(authorizedUser, form.getName(), form.getSql());
+            case "edit" -> reportingService.update(authorizedUser, form.getReportId(), form.getName(), form.getSql());
+        }
+        request.getSession().setAttribute("reportDescriptions", reportingService.getReportDefinitions(authorizedUser));
         return mapping.findForward("success");
     }
 
