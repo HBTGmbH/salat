@@ -19,6 +19,7 @@ public class GlobalConstants {
 
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String DEFAULT_EXCEL_DATE_FORMAT = "dd.MM.yyyy";
+    public static final String DEFAULT_EXCEL_DATETIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
     public static final String DEFAULT_TIMEZONE_ID = "Europe/Berlin";
     public static final Locale DEFAULT_LOCALE = Locale.GERMAN;
 

@@ -6,17 +6,8 @@
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
     <head>
-
         <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.reporting.text" /></title>
         <jsp:include flush="true" page="/head-includes.jsp" />
-        <script type="text/javascript" language="JavaScript">
-
-            function exportResult(form, id) {
-                form.action = "/do/ExecuteReport?task=export&reportId=" + id;
-                form.submit();
-            }
-
-        </script>
     </head>
     <body>
     <jsp:include flush="true" page="/menu.jsp">
@@ -56,6 +47,12 @@
             </tr>
         </c:forEach>
     </table>
+    <html:form action="/ExecuteReport?task=export">
+        <html:submit styleId="button">
+            <bean:message key="main.reporting.button.export.text" />
+        </html:submit>
+        <html:hidden property="reportId" />
+    </html:form>
     <br><br><br>
     </body>
 </html:html>
