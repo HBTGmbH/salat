@@ -576,7 +576,6 @@ databaseChangeLog:
         - not:
           - tableExists:
               tableName: user_access_token
-              columnName: EMPLOYEEORDERCONTENT_ID
       changes:
         - createTable:
             tableName: user_access_token
@@ -617,4 +616,43 @@ databaseChangeLog:
               - column:
                   name: comment
                   type: varchar(255)
-
+  - changeSet:
+      id: 18
+      author: kr
+      comment: Add table for reports definitions
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: report_definition
+      changes:
+        - createTable:
+            tableName: report_definition
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: sql
+                  type: varchar(10000)

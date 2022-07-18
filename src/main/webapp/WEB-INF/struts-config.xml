@@ -53,6 +53,8 @@
 		<form-bean name="userAccessTokenForm" type="org.tb.user.UserAccessTokenForm" />
 		<form-bean name="chicoree/LoginForm" type="org.tb.chicoree.LoginForm" />
 		<form-bean name="chicoree/TimereportForm" type="org.tb.chicoree.TimereportForm" />
+		<form-bean name="executeReportForm" type="org.tb.reporting.action.ExecuteReportForm" />
+		<form-bean name="createEditDeleteReportForm" type="org.tb.reporting.action.CreateEditDeleteReportForm" />
 	</form-beans>
 
 	<!-- ========================================= Global Exception Definitions -->
@@ -490,6 +492,24 @@
 			<forward name="cancel" path="/statusreport/showStatusReport.jsp" />
 			<forward name="reset" path="/statusreport/addStatusReport.jsp" />
 			<forward name="error" path="/error.jsp" />
+		</action>
+
+		<!-- reporting -->
+		<action path="/ShowReports" type="org.tb.reporting.action.ShowReportsAction">
+			<forward name="success" path="/reporting/showReports.jsp" />
+		</action>
+		<action path="/ExecuteReport" type="org.tb.reporting.action.ExecuteReportAction" name="executeReportForm">
+			<forward name="showReportParameters" path="/reporting/showReportParameters.jsp" />
+			<forward name="showReportResult" path="/reporting/showReportResult.jsp" />
+		</action>
+		<action path="/CreateReport" type="org.tb.reporting.action.ShowReportsAction" name="createEditDeleteReportForm">
+			<forward name="success" path="/reporting/showReports.jsp" />
+		</action>
+		<action path="/EditReport" type="org.tb.reporting.action.ShowReportsAction" name="createEditDeleteReportForm">
+			<forward name="success" path="/reporting/showReports.jsp" />
+		</action>
+		<action path="/DeleteReport" type="org.tb.reporting.action.ShowReportsAction" name="createEditDeleteReportForm">
+			<forward name="success" path="/reporting/showReports.jsp" />
 		</action>
 
 	</action-mappings>
