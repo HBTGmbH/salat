@@ -12,6 +12,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
+import org.tb.reporting.domain.ReportResultColumnHeader;
 
 import java.util.HashMap;
 
@@ -123,6 +124,22 @@ public class ReportingServiceTest {
     var firstnameColumnName = result.getColumnHeaders().get(0).getName();
     assertThat(result.getRows().get(0).getColumnValues().get(firstnameColumnName).getValue()).isEqualTo("Antje");
     assertThat(result.getRows().get(1).getColumnValues().get(firstnameColumnName).getValue()).isEqualTo("Klaus");
+  }
+
+  @Test
+  public void should_respect_alias_names_in_queries() {
+    var authorizedUser = new AuthorizedUser();
+    authorizedUser.setManager(true);
+
+    var defs = reportingService.getReportDefinitions(authorizedUser);
+    assertThat(defs).isEmpty();
+
+    var reportDefinition = reportingService.create(authorizedUser, "test", "select id, sign as sign_alias from employee");
+
+    var result = reportingService.execute(authorizedUser, reportDefinition.getId(), new HashMap<>());
+    assertThat(result.getColumnHeaders()).size().isEqualTo(2);
+    assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
+    assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias"));
   }
 
 }

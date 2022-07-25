@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,9 +84,11 @@ public class ReportingService {
     var result = new ReportResult();
 
     // get and create headers
-    var headers = Arrays.stream(rowset.getMetaData().getColumnNames())
-          .map(ReportResultColumnHeader::new)
-          .collect(Collectors.toList());
+    var columnCount = rowset.getMetaData().getColumnCount();
+    var headers = IntStream.rangeClosed(1, columnCount)
+            .mapToObj(index -> rowset.getMetaData().getColumnLabel(index))
+            .map(ReportResultColumnHeader::new)
+            .collect(Collectors.toList());
     result.getColumnHeaders().addAll(headers);
 
     // get and create rows
