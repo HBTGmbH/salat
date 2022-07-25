@@ -12,7 +12,6 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
-import org.tb.reporting.domain.ReportResultColumnHeader;
 
 import java.util.HashMap;
 
@@ -140,6 +139,41 @@ public class ReportingServiceTest {
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias"));
+  }
+
+  @Test
+  public void should_execute_report_with_duplicate_column_and_different_alias() {
+    var authorizedUser = new AuthorizedUser();
+    authorizedUser.setManager(true);
+
+    Employee employee = new Employee();
+    employee.setSign("kr");
+    employee.setFirstname("Klaus");
+    employee.setLastname("Richarz");
+    employee.setGender(GlobalConstants.GENDER_MALE);
+    employeeRepository.save(employee);
+    employee = new Employee();
+    employee.setSign("ar");
+    employee.setFirstname("Antje");
+    employee.setLastname("Richarz");
+    employee.setGender(GlobalConstants.GENDER_FEMALE);
+    employeeRepository.save(employee);
+
+    var defs = reportingService.getReportDefinitions(authorizedUser);
+    assertThat(defs).isEmpty();
+
+    var reportDefinition = reportingService.create(
+            authorizedUser,
+            "test",
+            "select id, sign as sign_alias_1, sign as sign_alias_2 from employee"
+    );
+
+    var result = reportingService.execute(authorizedUser, reportDefinition.getId(), new HashMap<>());
+    assertThat(result.getColumnHeaders()).size().isEqualTo(3);
+    assertThat(result.getRows()).size().isEqualTo(2);
+    assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
+    assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias_1"));
+    assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias_2"));
   }
 
 }
