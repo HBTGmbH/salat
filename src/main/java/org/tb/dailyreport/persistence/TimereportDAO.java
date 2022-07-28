@@ -18,6 +18,8 @@ import javax.persistence.criteria.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AccessLevel;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.dailyreport.domain.Referenceday_;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -39,6 +41,7 @@ public class TimereportDAO {
 
     private final TimereportRepository timereportRepository;
     private final AuthorizedUser authorizedUser;
+    private final AuthService authService;
 
     /**
      * Gets the timereport for the given id.
@@ -593,32 +596,7 @@ public class TimereportDAO {
     }
 
     private boolean accessible(Timereport timereport) {
-
-        // every manager may access any time report
-        if(authorizedUser.isManager()) {
-            return true;
-        }
-
-        // every employee may access her own timereports
-        if(authorizedUser.getEmployeeId().equals(timereport.getEmployeecontract().getEmployee().getId())) {
-            return true;
-        }
-
-        // every project manager may access the time reports of her project
-        if(authorizedUser.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getId())) {
-            return true;
-        }
-        if(authorizedUser.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getId())) {
-            return true;
-        }
-
-        // backoffice users may access time reports that must be invoiced
-        if(authorizedUser.isBackoffice() && timereport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES) {
-            return true;
-        }
-
-        // no rule applied, access is not granted
-        return false;
+        return authService.isAuthorized(timereport, authorizedUser, AccessLevel.READ);
     }
 
 }

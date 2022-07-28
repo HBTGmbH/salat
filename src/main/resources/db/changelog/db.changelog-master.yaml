@@ -656,3 +656,93 @@ databaseChangeLog:
               - column:
                   name: sql
                   type: varchar(10000)
+  - changeSet:
+      id: 19
+      author: kr
+      comment: Add table for employee to employee data access grant
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: employee_to_employee_authorization_rule
+      changes:
+        - createTable:
+            tableName: employee_to_employee_authorization_rule
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+              - column:
+                  name: grantor_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_e2eauthrule_grantor
+                    referencedTableName: employee
+                    referencedColumnNames:
+                      - id
+              - column:
+                  name: recipient_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_e2eauthrule_recipient
+                    referencedTableName: employee
+                    referencedColumnNames:
+                      - id
+              - column:
+                  name: access_level
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: date
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 20
+      author: kr
+      comment: Allow to reduce grant to single customer order
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: employee_to_employee_authorization_rule
+                columnName: customer_order_id
+      changes:
+        - addColumn:
+            tableName: employee_to_employee_authorization_rule
+            columns:
+              - column:
+                  name: customer_order_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_e2eauthrule_customerorder
+                    referencedTableName: customerorder
+                    referencedColumnNames:
+                      - id

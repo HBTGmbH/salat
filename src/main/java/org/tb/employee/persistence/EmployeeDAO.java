@@ -10,6 +10,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.tb.auth.AccessLevel;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
@@ -23,6 +25,7 @@ public class EmployeeDAO {
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
     private final AuthorizedUser authorizedUser;
+    private final AuthService authService;
 
     /**
      * Retrieves the employee with the given loginname.
@@ -78,7 +81,7 @@ public class EmployeeDAO {
     public List<Employee> getEmployees() {
         var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
         return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
-            .filter(e -> authorizedUser.isManager() || e.getId().equals(authorizedUser.getEmployeeId()))
+            .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
             .collect(Collectors.toList());
     }
 
@@ -101,12 +104,16 @@ public class EmployeeDAO {
                 builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
                 builder.like(builder.upper(root.get(Employee_.status)), filterValue)
             )).stream()
-                .filter(e -> authorizedUser.isManager() || e.getId().equals(authorizedUser.getEmployeeId()))
+                .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
                 .collect(Collectors.toList());
         }
     }
 
     public void save(Employee employee) {
+        if(!authService.isAuthorized(employee, authorizedUser, AccessLevel.DELETE)) {
+            throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getEmployeeId());
+        }
+
         employeeRepository.save(employee);
     }
 
@@ -114,6 +121,11 @@ public class EmployeeDAO {
      * Deletes the given employee.
      */
     public boolean deleteEmployeeById(long employeeId) {
+        Employee employee = getEmployeeById(employeeId);
+        if(!authService.isAuthorized(employee, authorizedUser, AccessLevel.DELETE)) {
+            throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getEmployeeId());
+        }
+
         Employee emToDelete = getEmployeeById(employeeId);
 
         List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsByFilters(
