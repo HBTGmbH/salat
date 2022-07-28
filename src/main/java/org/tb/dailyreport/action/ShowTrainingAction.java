@@ -90,11 +90,11 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverviews;
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
         employeecontracts.removeIf(c -> c.getFreelancer()
                                         || c.getDailyWorkingTime().toMinutes() <= 0
                                         || c.getEmployeeorders() == null
-                                        || !authorizedUser.isManager() && !c.getEmployee().getId().equals(authorizedUser.getEmployeeId()));
+                                        || c.getEmployeeorders().isEmpty());
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         // refresh all relevant attributes
@@ -141,7 +141,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
         request.getSession().setAttribute("showTrainingForm", trainingForm);
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts that have training entitlement found - please call system administrator.");
             forward = "error";

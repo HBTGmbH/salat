@@ -67,7 +67,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
         request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
         request.getSession().setAttribute("currentEmployeeContract", ec);
 
-        List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
 
         if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
             request.setAttribute("errorMessage",

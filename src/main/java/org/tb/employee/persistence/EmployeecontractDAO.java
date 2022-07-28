@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AccessLevel;
 import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
+import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -151,10 +152,13 @@ public class EmployeecontractDAO {
      *
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
+    private List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
         return employeecontractRepository.findAllValidAtAndNotHidden(DateUtils.today()).stream()
-            .sorted(comparing((Employeecontract a) -> a.getEmployee().getSign().toLowerCase())
-                .thenComparing(Employeecontract::getValidFrom))
+            .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+            .sorted(
+                comparing((Employeecontract a) -> a.getEmployee().getSign().toLowerCase())
+                .thenComparing(Employeecontract::getValidFrom)
+            )
             .collect(Collectors.toList());
     }
 
@@ -170,10 +174,14 @@ public class EmployeecontractDAO {
     }
 
     public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser() {
-        if (!authorizedUser.isBackoffice()) {
+        return getViewableEmployeeContractsForAuthorizedUser(true);
+    }
+
+    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess) {
+        if (limitAccess) {
             // may only see his own contracts
             return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
-                .filter(e -> e.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
+                .filter(e -> authService.isAuthorized(e.getEmployee(), authorizedUser, AccessLevel.READ))
                 .collect(Collectors.toList());
         } else {
             return getVisibleEmployeeContractsOrderedByEmployeeSign();

@@ -42,7 +42,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         // get lists of existing employee contracts and suborders
-        final List<Employeecontract> employeeContracts = employeecontractDAO.getVisibleEmployeeContractsOrderedByEmployeeSign();
+        final List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
 
         if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
