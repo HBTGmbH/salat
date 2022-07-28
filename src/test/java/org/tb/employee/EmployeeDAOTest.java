@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.AuthorizedUserAuditorAware;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -32,7 +33,8 @@ import org.tb.testutils.EmployeeTestUtils;
 		VacationDAO.class,
 		OvertimeDAO.class,
 		TimereportDAO.class,
-		WorkingdayDAO.class
+		WorkingdayDAO.class,
+		AuthService.class
 })
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class EmployeeDAOTest {
@@ -45,7 +47,9 @@ public class EmployeeDAOTest {
 
 	@BeforeEach
 	public void initAuthorizedUser() {
-		when(authorizedUser.isAuthenticated()).thenReturn(false);
+		when(authorizedUser.isAuthenticated()).thenReturn(true);
+		when(authorizedUser.isManager()).thenReturn(true);
+		when(authorizedUser.getSign()).thenReturn("test");
 	}
 
 	/**
