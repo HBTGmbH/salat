@@ -123,16 +123,6 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
             generateEmployeeOrders(today, employeecontract);
         }
 
-        if (employeecontract.getReportAcceptanceDate() == null) {
-            LocalDate validFromDate = employeecontract.getValidFrom();
-            employeecontract.setReportAcceptanceDate(validFromDate);
-            employeecontractDAO.save(employeecontract);
-        }
-        if (employeecontract.getReportReleaseDate() == null) {
-            LocalDate validFromDate = employeecontract.getValidFrom();
-            employeecontract.setReportReleaseDate(validFromDate);
-            employeecontractDAO.save(employeecontract);
-        }
         // set used employee contract of login employee
         request.getSession().setAttribute("loginEmployeeContract", employeecontract);
         request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());

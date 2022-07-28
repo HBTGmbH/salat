@@ -212,10 +212,10 @@ public class TimereportService {
       reopenTimereport(timereport.getId());
     }
 
-    if (!reopenDate.isAfter(employeecontract.getReportReleaseDate())) {
+    if (employeecontract.getReportReleaseDate() != null && !reopenDate.isAfter(employeecontract.getReportReleaseDate())) {
       employeecontract.setReportReleaseDate(reopenDate.minusDays(1));
     }
-    if (!reopenDate.isAfter(employeecontract.getReportAcceptanceDate())) {
+    if (employeecontract.getReportAcceptanceDate() != null && !reopenDate.isAfter(employeecontract.getReportAcceptanceDate())) {
       employeecontract.setReportAcceptanceDate(reopenDate.minusDays(1));
 
       // recompute overtimeStatic and set it in employeecontract
@@ -273,30 +273,32 @@ public class TimereportService {
       timereportDAO.save(t);
     });
 
-    // recompute overtimeStatic and store it in employeecontract if change made before release date
-    LocalDate reportReleaseDate = timereports.get(0).getEmployeecontract().getReportReleaseDate();
-    Optional<LocalDate> match = timereports.stream()
-        .map(Timereport::getReferenceday)
-        .map(Referenceday::getRefdate)
-        .filter(d -> !d.isAfter(reportReleaseDate))
-        .findAny();
-    if(match.isPresent()) {
-      Employeecontract employeecontract = timereports.get(0).getEmployeecontract();
-      var overtimeStaticNew = overtimeService.calculateOvertime(
-          employeecontract.getId(),
-          employeecontract.getValidFrom(),
-          reportReleaseDate
-      );
-      overtimeStaticNew.ifPresent(overtimeStaticNewValue -> {
-        log.info(
-            "Overtime for employeecontract {} changed from {} to {}",
-            employeecontract.getId(),
-            employeecontract.getOvertimeStatic(),
-            overtimeStaticNewValue
+    // recompute overtimeStatic and store it in employeecontract if change made before acceptance date
+    LocalDate reportAcceptanceDate = timereports.get(0).getEmployeecontract().getReportAcceptanceDate();
+    if(reportAcceptanceDate != null) {
+      Optional<LocalDate> match = timereports.stream()
+              .map(Timereport::getReferenceday)
+              .map(Referenceday::getRefdate)
+              .filter(d -> !d.isAfter(reportAcceptanceDate))
+              .findAny();
+      if(match.isPresent()) {
+        Employeecontract employeecontract = timereports.get(0).getEmployeecontract();
+        var overtimeStaticNew = overtimeService.calculateOvertime(
+                employeecontract.getId(),
+                employeecontract.getValidFrom(),
+                reportAcceptanceDate
         );
-        employeecontract.setOvertimeStatic(overtimeStaticNewValue);
-        employeecontractDAO.save(employeecontract);
-      });
+        overtimeStaticNew.ifPresent(overtimeStaticNewValue -> {
+          log.info(
+                  "Overtime for employeecontract {} changed from {} to {}",
+                  employeecontract.getId(),
+                  employeecontract.getOvertimeStatic(),
+                  overtimeStaticNewValue
+          );
+          employeecontract.setOvertimeStatic(overtimeStaticNewValue);
+          employeecontractDAO.save(employeecontract);
+        });
+      }
     }
   }
 

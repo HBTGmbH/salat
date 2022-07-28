@@ -166,9 +166,7 @@ public class OvertimeService {
   }
 
   private boolean isStaticOvertimeAvailable(Employeecontract employeecontract) {
-    // TODO better to check the static overtime fields value?
-    return employeecontract.getReportAcceptanceDate() != null &&
-           employeecontract.getReportAcceptanceDate().isAfter(employeecontract.getValidFrom());
+    return employeecontract.getReportAcceptanceDate() != null;
   }
 
   private OvertimeInfo calculateOvertime(LocalDate requestedStart, LocalDate requestedEnd, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
@@ -313,6 +311,9 @@ public class OvertimeService {
 
   public void updateOvertimeStatic(Long employeecontractId) {
     var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    if(employeecontract.getReportAcceptanceDate() == null) {
+      throw new IllegalArgumentException("employeecontract.reportAcceptanceDate must not be null for " + employeecontractId);
+    }
     var otStatic = calculateOvertime(employeecontractId, employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
     if(otStatic.isPresent()) {
       employeecontract.setOvertimeStatic(otStatic.get());

@@ -103,7 +103,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         if (reportAcceptanceDate != null) {
             return format(reportAcceptanceDate);
         } else {
-            return format(validFrom);
+            return "";
         }
     }
 
@@ -111,7 +111,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         if (reportReleaseDate != null) {
             return format(reportReleaseDate);
         } else {
-            return format(validFrom);
+            return "";
         }
     }
 
@@ -161,7 +161,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         LocalDate release = getReportReleaseDate();
 
         if (release == null) {
-            // new contract without initial login
+            // new contract
             return false;
         }
 
@@ -183,7 +183,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         LocalDate acceptance = getReportAcceptanceDate();
 
         if (acceptance == null) {
-            // new contract without initial login
+            // new contract
             return false;
         }
 
@@ -214,7 +214,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         LocalDate acceptance = getReportAcceptanceDate();
 
         if (acceptance == null) {
-            // new contract without initial login
+            // new contract
             acceptance = validFrom;
         }
 
