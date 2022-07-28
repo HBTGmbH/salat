@@ -34,17 +34,17 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
             // 'main' task - prepare everything to store the employee.
             // I.e., copy properties from the form into the employee before saving.
-            long emId;
-            Employee em;
+            long employeeId;
+            Employee employee;
             boolean create = false;
 
             if (request.getSession().getAttribute("emId") != null) {
                 // edited employee
-                emId = Long.parseLong(request.getSession().getAttribute("emId").toString());
-                em = employeeDAO.getEmployeeById(emId);
+                employeeId = Long.parseLong(request.getSession().getAttribute("emId").toString());
+                employee = employeeDAO.getEmployeeById(employeeId);
             } else {
                 // new report
-                em = new Employee();
+                employee = new Employee();
                 create = true;
             }
 
@@ -53,19 +53,19 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
                 return mapping.getInputForward();
             }
 
-            em.setFirstname(emForm.getFirstname());
-            em.setLastname(emForm.getLastname());
-            em.setLoginname(emForm.getLoginname());
+            employee.setFirstname(emForm.getFirstname());
+            employee.setLastname(emForm.getLastname());
+            employee.setLoginname(emForm.getLoginname());
 //				em.setPassword(emForm.getPassword());
-            em.setStatus(emForm.getStatus());
-            em.setSign(emForm.getSign());
-            em.setGender(emForm.getGender().charAt(0));
+            employee.setStatus(emForm.getStatus());
+            employee.setSign(emForm.getSign());
+            employee.setGender(emForm.getGender().charAt(0));
 
             if (create) {
-                em.resetPassword();
+                employee.resetPassword();
             }
 
-            employeeDAO.save(em);
+            employeeDAO.save(employee);
 
             request.getSession().setAttribute("employees", employeeDAO.getEmployees());
 
