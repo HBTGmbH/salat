@@ -83,32 +83,19 @@ public class TimereportHelper {
         // check date vs release status
         Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(timereport.getEmployeecontractId());
         LocalDate releaseDate = employeecontract.getReportReleaseDate();
-        if (releaseDate == null) {
-            releaseDate = employeecontract.getValidFrom();
-        }
         LocalDate acceptanceDate = employeecontract.getReportAcceptanceDate();
-        if (acceptanceDate == null) {
-            acceptanceDate = employeecontract.getValidFrom();
-        }
-
-        // check, if refDate is first day
-        boolean firstday = false;
-        if (!releaseDate.isAfter(employeecontract.getValidFrom()) &&
-                !theNewDate.isAfter(employeecontract.getValidFrom())) {
-            firstday = true;
-        }
 
         if (!authorizedUser.isAdmin()) {
             if (authorizedUser.isManager() && !Objects.equals(loginEmployeeContract.getId(), timereport.getEmployeecontractId())) {
-                if (releaseDate.isBefore(theNewDate) || firstday) {
+                if (releaseDate != null && releaseDate.isBefore(theNewDate)) {
                     errors.add("release", new ActionMessage("form.timereport.error.not.released"));
                 }
             } else {
-                if (!releaseDate.isBefore(theNewDate) && !firstday) {
+                if (releaseDate != null &&  !releaseDate.isBefore(theNewDate)) {
                     errors.add("release", new ActionMessage("form.timereport.error.released"));
                 }
             }
-            if (!theNewDate.isAfter(acceptanceDate) && !firstday) {
+            if (acceptanceDate != null && !theNewDate.isAfter(acceptanceDate)) {
                 errors.add("release", new ActionMessage("form.timereport.error.accepted"));
             }
         }

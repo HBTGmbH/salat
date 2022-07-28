@@ -424,7 +424,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     "form.release.error.date.invalid.foremployeecontract"));
         }
 
-        if (date.isBefore(selectedEmployeecontract.getReportReleaseDate())) {
+        if (selectedEmployeecontract.getReportReleaseDate() != null && date.isBefore(selectedEmployeecontract.getReportReleaseDate())) {
             errors.add("releasedate", new ActionMessage(
                     "form.release.error.date.before.stored"));
         }
@@ -467,16 +467,13 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         LocalDate releaseDate = selectedEmployeecontract.getReportReleaseDate();
-        if (releaseDate == null) {
-            releaseDate = selectedEmployeecontract.getValidFrom();
-        }
 
-        if (date.isAfter(releaseDate)) {
+        if (releaseDate == null || date.isAfter(releaseDate)) {
             errors.add("acceptancedate", new ActionMessage(
                     "form.release.error.date.before.release"));
         }
 
-        if (date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
+        if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
             errors.add("acceptancedate", new ActionMessage(
                     "form.release.error.date.before.stored"));
         }
