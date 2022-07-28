@@ -29,7 +29,7 @@ public class AuthService {
   private final EmployeeRepository employeeRepository;
   private final EmployeeToEmployeeAuthorizationRuleRepository employeeToEmployeeAuthorizationRuleRepository;
 
-  @Value("${salat.auth-service.cache-expiry}")
+  @Value("${salat.auth-service.cache-expiry:5m}")
   private Duration cacheExpiry = Duration.ofMinutes(5);
   private long cacheExpiryMillis;
   private Set<AuthCacheEntry> cacheEntries = new HashSet<>();
