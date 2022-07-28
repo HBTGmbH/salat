@@ -46,3 +46,5 @@ management:
 salat:
   url: localhost
   mail-host: localhost
+  auth-service:
+    cache-expiry: 5m

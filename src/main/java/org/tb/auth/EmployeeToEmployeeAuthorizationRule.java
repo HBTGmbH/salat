@@ -37,7 +37,4 @@ public class EmployeeToEmployeeAuthorizationRule extends AuditedEntity {
     @Column(name = "valid_until")
     private LocalDate validUntil;
 
-    public boolean isValid(LocalDate date) {
-        return !date.isBefore(validFrom) && !date.isAfter(validUntil);
-    }
 }

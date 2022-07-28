@@ -4,21 +4,41 @@ import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 import static org.tb.common.util.SecureHashUtils.legacyPasswordMatches;
 import static org.tb.common.util.SecureHashUtils.passwordMatches;
 
+import java.time.*;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
 
+import javax.annotation.PostConstruct;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
+  public static final int ALL_CUSTOMER_ORDERS = -1;
   private final EmployeeRepository employeeRepository;
   private final EmployeeToEmployeeAuthorizationRuleRepository employeeToEmployeeAuthorizationRuleRepository;
+
+  @Value("${salat.auth-service.cache-expiry}")
+  private Duration cacheExpiry = Duration.ofMinutes(5);
+  private long cacheExpiryMillis;
+  private Set<AuthCacheEntry> cacheEntries = new HashSet<>();
+  private long lastCacheUpdate;
+
+  @PostConstruct
+  public void init() {
+    cacheExpiryMillis = cacheExpiry.toMillis();
+  }
 
   public Optional<Employee> authenticate(String loginname, String password) {
     var employeeResult = employeeRepository.findByLoginname(loginname);
@@ -46,7 +66,7 @@ public class AuthService {
   public boolean isAuthorized(Employee employee, AuthorizedUser user, AccessLevel accessLevel) {
     if(user.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
-    if(employee.getId() == user.getEmployeeId()) return true;
+    if(accessLevel == AccessLevel.READ && employee.getId() == user.getEmployeeId()) return true;
     return false;
   }
 
@@ -69,14 +89,52 @@ public class AuthService {
       }
     }
 
-    return StreamSupport.stream(employeeToEmployeeAuthorizationRuleRepository.findAll().spliterator(), false)
-            .filter(rule -> rule.getGrantor() == timereport.getEmployeecontract().getEmployee())
-            .filter(rule -> rule.getRecipient().getId() == user.getEmployeeId())
+    updateCache();
+    return cacheEntries.stream()
+            .filter(rule -> rule.getGrantorId() == timereport.getEmployeecontract().getEmployee().getId())
+            .filter(rule -> rule.getRecipientId() == user.getEmployeeId())
             .filter(rule -> rule.getAccessLevel().satisfies(accessLevel))
             .filter(rule -> rule.isValid(timereport.getReferenceday().getRefdate()))
-            .filter(rule -> rule.getCustomerOrder() == null || rule.getCustomerOrder() == timereport.getSuborder().getCustomerorder())
+            .filter(rule -> rule.getCustomerOrderId() == ALL_CUSTOMER_ORDERS ||
+                    rule.getCustomerOrderId() == timereport.getSuborder().getCustomerorder().getId())
             .map(rule -> true)
             .findAny().orElse(false);
+  }
+
+  private void updateCache() {
+    if(isCacheOutdated()) {
+      this.cacheEntries = StreamSupport.stream(employeeToEmployeeAuthorizationRuleRepository.findAll().spliterator(), false)
+              .map(rule -> new AuthCacheEntry(
+                      rule.getGrantor().getId(),
+                      rule.getRecipient().getId(),
+                      rule.getValidFrom(),
+                      rule.getValidUntil(),
+                      rule.getCustomerOrder() != null ? rule.getCustomerOrder().getId() : ALL_CUSTOMER_ORDERS,
+                      rule.getAccessLevel()
+              ))
+              .collect(Collectors.toSet());
+      lastCacheUpdate = Clock.systemUTC().millis();
+    }
+  }
+
+  private boolean isCacheOutdated() {
+    return lastCacheUpdate == 0 || lastCacheUpdate + cacheExpiryMillis < Clock.systemUTC().millis();
+  }
+
+  @Data
+  @RequiredArgsConstructor
+  private static class AuthCacheEntry {
+    private final long grantorId;
+    private final long recipientId;
+    private final LocalDate validFrom;
+    private final LocalDate validUntil;
+    private final long customerOrderId;
+    private final AccessLevel accessLevel;
+
+    public boolean isValid(LocalDate date) {
+      return !date.isBefore(validFrom) && !date.isAfter(validUntil);
+    }
+
   }
 
 }
