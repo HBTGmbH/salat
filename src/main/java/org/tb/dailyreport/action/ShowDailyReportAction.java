@@ -676,7 +676,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
             return "error";
         }
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false);
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             return "error";

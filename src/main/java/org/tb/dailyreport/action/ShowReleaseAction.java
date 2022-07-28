@@ -57,7 +57,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         request.getSession().setAttribute("days", getDaysToDisplay());
 
         List<Employeecontract> employeeContracts = employeecontractDAO
-                .getVisibleEmployeeContractsOrderedByEmployeeSign();
+                .getViewableEmployeeContractsForAuthorizedUser();
 
         //get a list of all supervisors 
         List<Employee> supervisors = new LinkedList<>();

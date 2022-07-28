@@ -9,7 +9,6 @@ import java.util.stream.StreamSupport;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
@@ -48,13 +47,7 @@ public class AuthService {
     if(user.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
     if(employee.getId() == user.getEmployeeId()) return true;
-    return StreamSupport.stream(employeeToEmployeeAuthorizationRuleRepository.findAll().spliterator(), false)
-            .filter(rule -> rule.getGrantor() == employee)
-            .filter(rule -> rule.getRecipient().getId() == user.getEmployeeId())
-            .filter(rule -> rule.getAccessLevel().satisfies(accessLevel))
-            .filter(rule -> rule.isValid(DateUtils.today()))
-            .map(rule -> true)
-            .findAny().orElse(false);
+    return false;
   }
 
   public boolean isAuthorized(Timereport timereport, AuthorizedUser user, AccessLevel accessLevel) {
