@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AccessLevel;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -35,6 +37,7 @@ public class EmployeecontractDAO {
     private final OvertimeDAO overtimeDAO;
     private final EmployeecontractRepository employeecontractRepository;
     private final AuthorizedUser authorizedUser;
+    private final AuthService authService;
     private final TimereportDAO timereportDAO;
     private final WorkingdayDAO workingdayDAO;
 
@@ -138,7 +141,7 @@ public class EmployeecontractDAO {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
-            .filter(c -> authorizedUser.isManager() || c.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
+            .filter(c -> authService.isAuthorized(c.getEmployee(), authorizedUser, AccessLevel.READ))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
                 .collect(Collectors.toList());
     }

@@ -34,7 +34,7 @@ import org.tb.order.domain.Employeeorder;
  * In the Java object world, their getters/setter are named without the minutes ending, because Duration
  * objects are not minutes in reality.
  */
-@Getter()
+@Getter
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -69,9 +69,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Setter(AccessLevel.NONE)
     private Duration overtimeStaticMinutes = Duration.ZERO;
 
-    @OneToOne
-    // FIXME check if ManyToOne?
     @Fetch(FetchMode.SELECT)
+    @ManyToOne
     @JoinColumn(name = "EMPLOYEE_ID")
     @Cascade(value = {CascadeType.SAVE_UPDATE})
     private Employee employee;
