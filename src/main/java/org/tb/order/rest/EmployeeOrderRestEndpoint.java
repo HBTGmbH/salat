@@ -80,7 +80,7 @@ public class EmployeeOrderRestEndpoint {
                     s.getId(),
                     requestedRefDate
                 );
-                String suborderLabel = s.getCustomerorder().getSign() + "/" + s.getSign() + " " + s.getShortdescription();
+                String suborderLabel = s.getCompleteOrderDescription(true);
                 return new EmployeeOrderData(
                     new SuborderData(s.getId(), suborderLabel, s.getCommentnecessary()),
                     eo.getId()
