@@ -30,6 +30,8 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.persistence.SuborderDAO;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 @Getter
 @Setter
 @Entity
@@ -370,6 +372,40 @@ public class Suborder extends AuditedEntity implements Serializable {
 
     public void setDebithours(Duration value) {
         debitMinutes = value; // its a Duration - hours or minutes make no difference
+    }
+
+    public String getCompleteOrderSign() {
+        StringBuilder result = new StringBuilder();
+        acceptVisitor((suborder) -> {
+            if(result.isEmpty()) {
+                result.append(suborder.getCustomerorder().getSign());
+            }
+            result.append("/");
+            result.append(suborder.getSign());
+        }, VisitorDirection.PARENT);
+        return result.toString();
+    }
+
+    public String getCompleteOrderDescription(boolean shortDescription) {
+        StringBuilder result = new StringBuilder();
+        acceptVisitor((suborder) -> {
+            if(result.isEmpty()) {
+                result.append(suborder.getCustomerorder().getSign()).append(" ");
+                if(shortDescription && !isEmpty(suborder.getCustomerorder().getShortdescription())) {
+                    result.append(suborder.getCustomerorder().getShortdescription());
+                } else {
+                    result.append(suborder.getCustomerorder().getDescription());
+                }
+            }
+            result.append(" / ");
+            result.append(suborder.getSign()).append(" ");
+            if(shortDescription && !isEmpty(suborder.getShortdescription())) {
+                result.append(suborder.getShortdescription());
+            } else {
+                result.append(suborder.getDescription());
+            }
+        }, VisitorDirection.PARENT);
+        return result.toString();
     }
 
 }
