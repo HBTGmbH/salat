@@ -3,6 +3,7 @@ package org.tb.dailyreport.domain.comparator;
 import static lombok.AccessLevel.PRIVATE;
 
 import java.util.Comparator;
+
 import lombok.NoArgsConstructor;
 import org.tb.dailyreport.domain.TimereportDTO;
 
@@ -27,14 +28,9 @@ public class TimereportByEmployeeDescComparator implements Comparator<Timereport
             } else if (tr1.getReferenceday().compareTo(tr2.getReferenceday()) > 0) {
                 return -1;
             } else {
-                if (tr1.getSequencenumber() < tr2.getSequencenumber()) {
-                    return 1;
-                } else if (tr1.getSequencenumber() > tr2.getSequencenumber()) {
-                    return -1;
-                }
+                return tr2.getSequencenumber() - tr1.getSequencenumber();
             }
         }
-        return 0;
     }
 
 }
