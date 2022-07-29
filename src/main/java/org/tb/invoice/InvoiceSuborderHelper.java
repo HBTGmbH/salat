@@ -120,37 +120,11 @@ public class InvoiceSuborderHelper extends Suborder {
     }
 
     public String getCompleteOrderSign() {
-        StringBuilder result = new StringBuilder();
-        suborder.acceptVisitor((suborder) -> {
-            if(result.isEmpty()) {
-                result.append(suborder.getCustomerorder().getSign());
-            }
-            result.append("/");
-            result.append(suborder.getSign());
-        }, VisitorDirection.PARENT);
-        return result.toString();
+        return suborder.getCompleteOrderSign();
     }
 
     public String getCompleteOrderDescription(boolean shortDescription) {
-        StringBuilder result = new StringBuilder();
-        suborder.acceptVisitor((suborder) -> {
-            if(result.isEmpty()) {
-                result.append(suborder.getCustomerorder().getSign()).append(" ");
-                if(shortDescription && !isEmpty(suborder.getCustomerorder().getShortdescription())) {
-                    result.append(suborder.getCustomerorder().getShortdescription());
-                } else {
-                    result.append(suborder.getCustomerorder().getDescription());
-                }
-            }
-            result.append(" / ");
-            result.append(suborder.getSign()).append(" ");
-            if(shortDescription && !isEmpty(suborder.getShortdescription())) {
-                result.append(suborder.getShortdescription());
-            } else {
-                result.append(suborder.getDescription());
-            }
-        }, VisitorDirection.PARENT);
-        return result.toString();
+        return suborder.getCompleteOrderDescription(shortDescription);
     }
 
     @Override
