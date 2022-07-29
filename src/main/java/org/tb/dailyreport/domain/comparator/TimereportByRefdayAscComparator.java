@@ -22,25 +22,8 @@ public class TimereportByRefdayAscComparator implements Comparator<TimereportDTO
         } else if (tr1.getReferenceday().compareTo(tr2.getReferenceday()) > 0) {
             return 1;
         } else {
-            if (tr1.getEmployeeSign().compareTo(tr2.getEmployeeSign()) < 0) {
-                return -1;
-            } else if (tr1.getEmployeeSign().compareTo(tr2.getEmployeeSign()) > 0) {
-                return 1;
-            } else {
-                if (tr1.getCustomerorderSign().compareTo(tr2.getCustomerorderSign()) < 0) {
-                    return -1;
-                } else if (tr1.getCustomerorderSign().compareTo(tr2.getCustomerorderSign()) > 0) {
-                    return 1;
-                } else {
-                    if (tr1.getSuborderSign().compareTo(tr2.getSuborderSign()) < 0) {
-                        return -1;
-                    } else if (tr1.getSuborderSign().compareTo(tr2.getSuborderSign()) > 0) {
-                        return 1;
-                    }
-                }
-            }
+            return tr1.getSequencenumber() - tr2.getSequencenumber();
         }
-        return 0;
     }
 
 }
