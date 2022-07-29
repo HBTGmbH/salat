@@ -24,6 +24,7 @@
 		});	
 	});		
 </script>
+<script src="<c:url value="/webjars/chartjs/dist/chart.min.js" />" type="text/javascript"></script>
 </head>
 <body>
 <c:if test="${currentEmployeeContract.employee.sign eq null}">
