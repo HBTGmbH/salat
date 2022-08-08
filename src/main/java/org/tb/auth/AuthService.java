@@ -66,7 +66,7 @@ public class AuthService {
   public boolean isAuthorized(Employee employee, AuthorizedUser user, AccessLevel accessLevel) {
     if(user.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
-    if(accessLevel == AccessLevel.READ && employee.getId() == user.getEmployeeId()) return true;
+    if(employee.getId() == user.getEmployeeId()) return true;
     return false;
   }
 
