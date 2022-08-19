@@ -155,7 +155,7 @@
 								<html:select property="employeeContractId" styleClass="make-select2"
 									onchange="setUpdateEmployeeContract(this.form)">
 									<html:option value="${loginEmployeeContract.id}">
-										<c:out value="${loginEmployeecontract.employee.name}" /> |
+										<c:out value="${loginEmployeeContract.employee.name}" /> |
 										<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
 											value="${loginEmployeeContract.timeString}" />
 										<c:if test="${loginEmployeeContract.openEnd}">
