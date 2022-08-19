@@ -1,7 +1,5 @@
 package org.tb.employee.action;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -9,6 +7,9 @@ import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * action class for showing all employee contracts
@@ -58,8 +59,10 @@ public class ShowEmployeecontractAction extends LoginRequiredAction<ShowEmployee
             }
         }
 
-        request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContractsByFilters(show, filter, employeeId));
-
+        var employeeContracts = employeecontractDAO.getEmployeeContractsByFilters(show, filter, employeeId).stream()
+                .filter(ec -> !ec.getEmployee().getLastname().startsWith("z_"))
+                .toList();
+        request.getSession().setAttribute("employeecontracts", employeeContracts);
 
         if (request.getParameter("task") != null) {
             if (request.getParameter("task").equalsIgnoreCase("back")) {
