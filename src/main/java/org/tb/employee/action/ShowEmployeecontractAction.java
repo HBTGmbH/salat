@@ -28,7 +28,9 @@ public class ShowEmployeecontractAction extends LoginRequiredAction<ShowEmployee
         ShowEmployeeContractForm contractForm, HttpServletRequest request,
         HttpServletResponse response) {
 
-        request.getSession().setAttribute("employees", employeeDAO.getEmployees());
+        request.getSession().setAttribute("employees", employeeDAO.getEmployees().stream()
+                .filter(e -> !e.getLastname().startsWith("z_"))
+                .toList());
 
         String filter = null;
         Boolean show = null;
