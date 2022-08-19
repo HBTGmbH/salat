@@ -7,7 +7,10 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
+
+import java.util.Comparator;
 
 /**
  * action class for showing all employees
@@ -38,7 +41,9 @@ public class ShowEmployeeAction extends LoginRequiredAction<ShowEmployeeForm> {
             }
         }
 
-        request.getSession().setAttribute("employees", employeeDAO.getEmployeesByFilter(filter));
+        var employees = employeeDAO.getEmployeesByFilter(filter);
+        employees.sort(Comparator.comparing(Employee::getLastname).thenComparing(Employee::getFirstname));
+        request.getSession().setAttribute("employees", employees);
 
         if (request.getParameter("task") != null) {
             if (request.getParameter("task").equalsIgnoreCase("back")) {
