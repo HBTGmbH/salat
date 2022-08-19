@@ -56,7 +56,12 @@
 				<c:choose>
 					<c:when test="${employeeContractContext eq 'create'}">
 						<html:select property="employee" styleClass="make-select2">
-							<html:options collection="employees" labelProperty="name" property="id" />
+							<c:forEach var="employee" items="${employees}">
+								<html:option value="${employee.id}">
+									<c:out value="${employee.name}" /> |
+									<c:out value="${employee.sign}" />
+								</html:option>
+							</c:forEach>
 						</html:select>
 						<span style="color:red"><html:errors property="employee" /></span>
 					</c:when>

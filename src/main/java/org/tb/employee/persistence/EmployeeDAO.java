@@ -3,6 +3,8 @@ package org.tb.employee.persistence;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 
 import com.google.common.collect.Lists;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +61,7 @@ public class EmployeeDAO {
             .map(Employeecontract::getEmployee)
             .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
             .distinct()
+            .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
 
@@ -71,6 +74,7 @@ public class EmployeeDAO {
             .map(Employeecontract::getEmployee)
             .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
             .distinct()
+            .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
 
@@ -82,6 +86,7 @@ public class EmployeeDAO {
         var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
         return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
             .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
+            .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
 
@@ -93,7 +98,8 @@ public class EmployeeDAO {
         if (filter == null || filter.trim().equals("")) {
             return Lists.newArrayList(employeeRepository
                 .findAll(Sort.by(order))).stream()
-                .filter(e -> authorizedUser.isManager() || e.getId().equals(authorizedUser.getEmployeeId()))
+                .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
+                .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
         } else {
             var filterValue = "%" + filter.toUpperCase() + "%";
@@ -105,6 +111,7 @@ public class EmployeeDAO {
                 builder.like(builder.upper(root.get(Employee_.status)), filterValue)
             )).stream()
                 .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
+                .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
         }
     }
