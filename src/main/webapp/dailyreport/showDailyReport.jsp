@@ -166,6 +166,7 @@
 							</c:if>
 							<c:forEach var="employeecontract" items="${employeecontracts}">
 								<html:option value="${employeecontract.id}">
+									<c:out value="${employeecontract.employee.name}" /> |
 									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />
 									<c:if test="${employeecontract.openEnd}">
 										<bean:message key="main.general.open.text" />

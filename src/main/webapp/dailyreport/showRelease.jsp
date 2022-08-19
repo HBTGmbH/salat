@@ -134,6 +134,7 @@
 								</html:option>
 								 <c:forEach var="supervisor" items="${supervisors}">
 									<html:option value="${supervisor.id}">
+										<c:out value="${supervisor.name}" /> |
 										<c:out value="${supervisor.sign}" />
 									</html:option>
 								</c:forEach> 
@@ -154,6 +155,7 @@
 								<html:select property="employeeContractId" styleClass="make-select2"
 									onchange="setUpdateEmployeeContract(this.form)">
 									<html:option value="${loginEmployeeContract.id}">
+										<c:out value="${loginEmployeecontract.employee.name}" /> |
 										<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
 											value="${loginEmployeeContract.timeString}" />
 										<c:if test="${loginEmployeeContract.openEnd}">
@@ -162,6 +164,7 @@
 									</html:option>
 									<c:forEach var="employeecontract" items="${employeecontracts}">
 										<html:option value="${employeecontract.id}">
+											<c:out value="${employeecontract.employee.name}" /> |
 											<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
 												value="${employeecontract.timeString}" />
 											<c:if test="${employeecontract.openEnd}">

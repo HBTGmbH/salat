@@ -181,14 +181,18 @@
 				property="shortdescription" /></span></td>
 		</tr>
 		
-		<!-- Durchf�hrungsverantwortlicher bei HBT -->
+		<!-- Durchführungsverantwortlicher bei HBT -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.customerorder.responsiblehbt.execution.text" /></b></td>
 			<td align="left" class="noBborderStyle">
 				<html:select property="employeeId">
-					<html:options collection="employeeswithcontract" labelProperty="name"
-						property="id" />
+					<c:forEach var="employee" items="${employeeswithcontract}">
+						<html:option value="${employee.id}">
+							<c:out value="${employee.name}" /> |
+							<c:out value="${employee.sign}" />
+						</html:option>
+					</c:forEach>
 				</html:select>
 			</td>
 		</tr>
@@ -199,8 +203,12 @@
 				key="main.customerorder.responsiblehbt.contract.text" /></b></td>
 			<td align="left" class="noBborderStyle">
 				<html:select property="respContrEmployeeId">
-					<html:options collection="employeeswithcontract" labelProperty="name"
-						property="id" />
+					<c:forEach var="employee" items="${employeeswithcontract}">
+						<html:option value="${employee.id}">
+							<c:out value="${employee.name}" /> |
+							<c:out value="${employee.sign}" />
+						</html:option>
+					</c:forEach>
 				</html:select>
 			</td>
 		</tr>

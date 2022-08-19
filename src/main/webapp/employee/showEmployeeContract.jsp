@@ -72,7 +72,8 @@
 				</c:if>
 				<c:forEach var="employee" items="${employees}">
 					<html:option value="${employee.id}">
-						<c:out value="${employee.name}" />
+						<c:out value="${employee.name}" /> |
+						<c:out value="${employee.sign}" />
 					</html:option>
 				</c:forEach>
 			</html:select>

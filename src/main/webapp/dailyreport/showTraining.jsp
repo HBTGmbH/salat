@@ -56,11 +56,12 @@
 								<bean:message key="main.general.allemployees.text" />
 							</html:option>
 						</c:if>
-						<c:forEach var="employeecontracts" items="${employeecontracts}">
-							<html:option value="${employeecontracts.id}">
-								<c:out value="${employeecontracts.employee.sign}" /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
-									value="${employeecontracts.timeString}" />
-								<c:if test="${employeecontracts.openEnd}">
+						<c:forEach var="employeecontract" items="${employeecontracts}">
+							<html:option value="${employeecontract.id}">
+								<c:out value="${employeecontract.employee.name}" /> |
+								<c:out value="${employeecontract.employee.sign}" /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+									value="${employeecontract.timeString}" />
+								<c:if test="${employeecontract.openEnd}">
 									<bean:message key="main.general.open.text" />
 								</c:if>)
 							</html:option>
