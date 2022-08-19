@@ -9,6 +9,7 @@ import static org.tb.common.util.DateUtils.today;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -56,17 +57,17 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         request.getSession().setAttribute("years", getYearsToDisplay());
         request.getSession().setAttribute("days", getDaysToDisplay());
 
-        List<Employeecontract> employeeContracts = employeecontractDAO
-                .getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
 
         //get a list of all supervisors 
         List<Employee> supervisors = new LinkedList<>();
-        for (Employeecontract ec : employeeContracts) {
+        for (Employeecontract ec : viewableEmployeeContracts) {
             Employee supervisor = ec.getSupervisor();
             if (!supervisors.contains(supervisor)) {
                 supervisors.add(supervisor);
             }
         }
+        supervisors.sort(Comparator.comparing(Employee::getName));
         request.getSession().setAttribute("supervisors", supervisors);
 
         /* get team members */
@@ -98,30 +99,28 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                             .getId(), today());
         }
 
+        List<Employeecontract> employeeContracts = null;
         /* check if supervisor has been set before, if not use isSupervisor or employeeAuthorized for preselecting employeecontracts shown*/
         if (request.getSession().getAttribute("supervisorId") != null) {
             superId = (Long) request.getSession().getAttribute("supervisorId");
             if (superId == -1) {
-                request.getSession().setAttribute("employeecontracts",
-                        employeeContracts);
+                employeeContracts = viewableEmployeeContracts;
             } else {
                 teamMemberContracts = employeecontractDAO.getTeamContracts(superId);
-                //                teamMemberContracts.add(employeecontract);
-                request.getSession().setAttribute("employeecontracts",
-                        teamMemberContracts);
+                employeeContracts = teamMemberContracts;
             }
         } else if (supervisor) {
-            //            teamMemberContracts.add(employeecontract);
-            request.getSession().setAttribute("employeecontracts",
-                    teamMemberContracts);
+            employeeContracts = teamMemberContracts;
             request.getSession().setAttribute("supervisorId", loginEmployee.getId());
         } else {
-            request.getSession().setAttribute("employeecontracts",
-                    employeeContracts);
+            employeeContracts = viewableEmployeeContracts;
             request.getSession().setAttribute("supervisorId", -1L);
         }
 
-        releaseForm.setEmployeeContractId(employeecontract.getId());
+        employeeContracts.sort(Comparator.comparing(ec -> ec.getEmployee().getName()));
+        request.getSession().setAttribute("employeecontracts", employeeContracts);
+
+                releaseForm.setEmployeeContractId(employeecontract.getId());
         request.getSession().setAttribute("employeeContractId",
                 employeecontract.getId());
         request.getSession().setAttribute("currentEmployeeId",
@@ -265,7 +264,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             request.getSession().setAttribute("supervisorId", superId);
             if (superId == -1) {
                 request.getSession().setAttribute("employeecontracts",
-                        employeeContracts);
+                        viewableEmployeeContracts);
 
             } else {
                 teamMemberContracts = employeecontractDAO.getTeamContracts(superId);
