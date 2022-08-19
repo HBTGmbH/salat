@@ -54,7 +54,15 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
         request.getSession().setAttribute("customers", customers);
 
         // get list of employees with employee contract
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithContracts();
+        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+
+        // ensure already used employees are still in the list
+        if(!employeesWithContracts.contains(co.getRespEmpHbtContract())) {
+            employeesWithContracts.add(co.getRespEmpHbtContract());
+        }
+        if(!employeesWithContracts.contains(co.getResponsible_hbt())) {
+            employeesWithContracts.add(co.getResponsible_hbt());
+        }
         request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
 
         // fill the form with properties of customerorder to be edited
