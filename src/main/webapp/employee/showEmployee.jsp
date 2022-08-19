@@ -79,12 +79,12 @@
 			title="Info"><b>Info</b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.employees.fristname.text" />"><b><bean:message
-			key="main.employee.firstname.text" /></b></th>
+			key="main.headlinedescription.employees.lastname.text" />"><b><bean:message
+				key="main.employee.lastname.text" /></b></th>
 		<th align="left"
 			title="<bean:message
-			key="main.headlinedescription.employees.lastname.text" />"><b><bean:message
-			key="main.employee.lastname.text" /></b></th>
+			key="main.headlinedescription.employees.fristname.text" />"><b><bean:message
+			key="main.employee.firstname.text" /></b></th>
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employees.sign.text" />"><b><bean:message
@@ -161,9 +161,8 @@
 			src="/images/info_button.gif" />
 		</td>
 
-
-		<td><c:out value="${employee.firstname}" /></td>
 		<td><c:out value="${employee.lastname}" /></td>
+		<td><c:out value="${employee.firstname}" /></td>
 		<td><c:out value="${employee.sign}" /></td>
 		<td><c:out value="${employee.loginname}" /></td>
 		<!--
