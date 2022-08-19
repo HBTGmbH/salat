@@ -108,7 +108,9 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("currentEmployee", theEmployee.getName());
         request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
 
-        List<Employee> employees = employeeDAO.getEmployees();
+        List<Employee> employees = employeeDAO.getEmployees().stream()
+                .filter(e -> !e.getLastname().startsWith("z_"))
+                .toList();
         request.getSession().setAttribute("employees", employees);
 
         List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
