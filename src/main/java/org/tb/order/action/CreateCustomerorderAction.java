@@ -56,7 +56,7 @@ public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomeror
         request.getSession().setAttribute("customers", customers);
 
         // get list of employees with employee contract
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithContracts();
+        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
         request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
 
         // reset/init form entries
