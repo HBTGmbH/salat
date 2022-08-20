@@ -232,7 +232,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                         eo.setDebithoursunit(null);
                     } else {
                         eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));
-                        eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
+                        eo.setDebithoursunit(eoForm.getDebithoursunit());
                     }
                 } else {
                     ActionMessages errors = new ActionMessages();
@@ -244,7 +244,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             } else if (eo.getSuborder().getCustomerorder().getSign().equals(
                     GlobalConstants.CUSTOMERORDER_SIGN_ILL)) {
                 eo.setDebithours(Duration.ZERO);
-                eo.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_YEAR);
+                eo.setDebithoursunit(null);
             } else {
                 if (eoForm.getDebithours() == null
                     || eoForm.getDebithours().isEmpty()
