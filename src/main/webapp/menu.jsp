@@ -27,8 +27,14 @@ window.onload=startList;
 
 <table style="width:100%;">
   <tr>
-    <td class="noBborderStyle" align="center" width="25%"></td>
-    <td class="noBborderStyle" align="center" valign="top" width="50%" title="<bean:message key='main.general.mainmenu.menu.subtext' />"><span style="font-size:14pt;font-weight:bold;"><bean:message key="main.general.mainmenu.menu.text" /></span></td>
+    <td class="noBborderStyle" align="left" width="25%">
+		<img src="/images/hbt-logo.svg" height="40px" />
+	</td>
+    <td class="noBborderStyle" align="center" valign="middle" width="50%" title="<bean:message key='main.general.mainmenu.menu.subtext' />">
+		<span style="font-size:14pt;font-weight:bold;">
+			SALAT: System zum Abrechnen von Leistungen, Arbeitszeiten und T&auml;tigkeiten
+		</span>
+	</td>
     <td class="noBborderStyle" align="right" valign="top" width="25%">
 		<font size="1pt">
 		   	<c:out value="${buildProperties.version}" />
@@ -42,7 +48,7 @@ window.onload=startList;
 	</td>
   </tr>
 </table>
-<div class="menu hiddencontent">
+<div class="menu hiddencontent" style="padding-top: 5px">
 <ul id="nav">
 	<li id="first"><bean:message
 		key="main.general.mainmenu.timereports.text" />

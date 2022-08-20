@@ -16,6 +16,12 @@
 		form.submit();
 	}
 </script>
+	<style>
+		th {
+			background-color: white;
+			color: black;
+		}
+	</style>
 </head>
 <body>
 <form onsubmit="javascript:window.print();return false;">
@@ -24,38 +30,19 @@
 </form>
 <table style="border:1px black solid;" class="matrix" width="100%">
 	<tr class="matrix">
-		<th class="matrix" colspan="2"><span style="font-size:12pt;"><bean:message
-			key="main.matrixoverview.headline.hbtgmbh.text" /></span><br>
-		<bean:message key="main.matrixoverview.headline.adress.text" />,<br>
-		<bean:message key="main.matrixoverview.headline.place.text" />, <bean:message
-			key="main.matrixoverview.headline.phone.text" /></th>
+		<th class="matrix" colspan="2">
+			<img src="/images/hbt-logo.svg" height="40px" style="padding: 5px" />
+		</th>
 		<th class="matrix" colspan="${daysofmonth+1}">
-		<center>
-		<table width="60%">
-			<tr>
-				<th class="matrix noBborderStyle" colspan="2"><span
-					style="font-size:12pt;"><bean:message
-					key="main.matrixoverview.headline.tb.text" /></span></th>
-			</tr>
-			<tr>				
-				<th width="50%" class="matrix noBborderStyle" align="right"><!--<bean:message
-					key="main.matrixoverview.headline.month.text" />:--> <bean:message
-					key="${MonthKey}" /></th>
-				<th width="50%" class="matrix noBborderStyle" align="left"><!--<bean:message
-					key="main.matrixoverview.headline.year.text" />:--> <c:out
-					value="${currentYear}" /></th>
-			</tr>
-			<tr>
-				<th width="100%" class="matrix noBborderStyle" colspan="2" align="center"><c:if
-					test="${currentEmployee eq 'ALL EMPLOYEES'}">
-					<bean:message key="main.matrixoverview.headline.allemployees.text" />
-				</c:if> <c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">
-					<c:out value="${currentEmployee}" />
-				</c:if></th>
-			</tr>
-		</table>
-		</center>
-		<br>
+			<bean:message key="main.matrixoverview.headline.tb.text" /><br />
+			<c:if test="${currentEmployee eq 'ALL EMPLOYEES'}">
+				<bean:message key="main.matrixoverview.headline.allemployees.text" />
+			</c:if>
+			<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">
+				<c:out value="${currentEmployee}" />
+			</c:if>
+			<br />
+			<bean:message key="${MonthKey}" /> <c:out value="${currentYear}" />
 		</th>
 	</tr>
 
