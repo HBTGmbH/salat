@@ -37,14 +37,15 @@ while(names.hasMoreElements()) {
 				height="100px">
 				 
 				<img
-				src="/images/salad.png"
+				src="/images/batavia_180_180.png"
 				width="130"
 				height="110"
 				border="0">
 				 
 			</td>
 			<td class="noBborderStyle">
-				<b><bean:message key="main.general.loginscreen.text" /> </b>
+				<b>SALAT</b><br />
+				System zum <br/>Abrechnen von <br/>Leistungen, <br/>Arbeitszeiten und <br/>T&auml;tigkeiten
 			</td>
 		</tr>
 		<tr></tr>
