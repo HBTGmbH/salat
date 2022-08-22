@@ -101,7 +101,7 @@ tr.primarycolor {
 }
 
 tr.secondarycolor {
-	background-color: #c1d5eb;
+	background-color: lightgray;
 }
 
 /*-- T�tigkeitsbericht --*/
@@ -178,7 +178,7 @@ a:link,a:visited {
 }
 
 a:active {
-	color: red;
+	color: #8C00B5;
 }
 
 a:hover {
