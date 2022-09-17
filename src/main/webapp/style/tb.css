@@ -341,3 +341,8 @@ textarea.showDailyReport {
 .select2-results__option {
 	white-space: nowrap;
 }
+
+i.bi {
+	font-size: 16px;
+	color: #191E55;
+}

@@ -99,6 +99,7 @@
 		HBT.Salat.FavouriteOrders.initializeSuborderSelection();
 	});		
 </script>
+	<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 </head>
 <body>
 <jsp:include flush="true" page="/menu.jsp">
@@ -177,18 +178,12 @@
 				</a>
 				
 				<%-- Arrows for navigating the Date --%>
-				&nbsp;&nbsp;
-				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />">
-					<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
-				</a>
-				&nbsp;&nbsp;
-				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />">
-					<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
-				</a>
-				&nbsp;&nbsp;
-				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />">
-					<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
-				</a>
+
+				<a href="javascript:setDate('-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
+				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
+				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
+				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
+				<a href="javascript:setDate('7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
 				<span style="color:red">
 					<html:errors property="referenceday" />
 					<html:errors property="release" />

@@ -133,6 +133,7 @@
 			var confirmMassDelete = '<bean:message key="main.general.confirmMassDelete.text" />';
 			var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
 		</script>
+		<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 	</head>
 	
 	<body>
@@ -292,18 +293,11 @@
 									<img src="/images/popupcalendar.gif" width="22" height="22" alt='<bean:message key="main.date.popup.alt.text" />' style="border: 0; vertical-align: top">
 								</a>
 								<%-- Arrows for navigating the Date --%>
-								&nbsp;&nbsp;
-								<html:image src="/images/pfeil_links.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
-									onclick="changeDateAndUpdateTimereportsAction(this.form,'start','-1')" titleKey="main.date.popup.prevday">
-								</html:image>
-								&nbsp;&nbsp;
-								<html:image src="/images/pfeil_unten.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
-									onclick="changeDateAndUpdateTimereportsAction(this.form,'start','0')" titleKey="main.date.popup.today">
-								</html:image>
-								&nbsp;&nbsp;
-								<html:image src="/images/pfeil_rechts.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
-									onclick="changeDateAndUpdateTimereportsAction(this.form,'start','1')" titleKey="main.date.popup.nextday">
-								</html:image>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
 							</c:when>
 							<c:otherwise>
 								<html:select property="month" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
@@ -384,18 +378,11 @@
 								<img src="/images/popupcalendar.gif" width="22" height="22" alt="<bean:message key="main.date.popup.alt.text" />" style="border: 0; vertical-align: top">
 							</a> 
 							<%-- Arrows for navigating the Date --%>
-							&nbsp;&nbsp;
-							<html:image src="/images/pfeil_links.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
-								onclick="changeDateAndUpdateTimereportsAction(this.form,'end','-1')" titleKey="main.date.popup.prevday">
-							</html:image>
-							&nbsp;&nbsp;
-							<html:image src="/images/pfeil_unten.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
-								onclick="changeDateAndUpdateTimereportsAction(this.form,'end','0')" titleKey="main.date.popup.today">
-							</html:image>
-							&nbsp;&nbsp;
-							<html:image src="/images/pfeil_rechts.gif" style="border: 0; vertical-align: middle; height: 11px; width: 11px"
-								onclick="changeDateAndUpdateTimereportsAction(this.form,'end','1')" titleKey="main.date.popup.nextday">
-							</html:image>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
 						</td>
 					</tr>
 				</c:if>
