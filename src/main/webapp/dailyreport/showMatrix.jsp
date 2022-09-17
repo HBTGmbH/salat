@@ -29,6 +29,7 @@
 			});	
 		});		
 	</script>
+	<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 </head>
 <body>
 	<jsp:include flush="true" page="/menu.jsp">
@@ -156,18 +157,11 @@
 
 					<c:if test="${matrixview != 'custom'}">
 						<%-- Arrows for navigating the month --%>
-
-						<a href="javascript:setMonth('-1')" style="margin-left: 10px">
-							<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
-						</a>
-
-						<a href="javascript:setMonth('0')" style="margin-left: 10px">
-							<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
-						</a>
-
-						<a href="javascript:setMonth('1')" style="margin-left: 10px">
-							<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
-						</a>
+						<a href="javascript:setMonth('-12')"><i class="bi bi-skip-backward-btn-fill"></i></a>
+						<a href="javascript:setMonth('-1')"><i class="bi bi-skip-start-btn-fill"></i></a>
+						<a href="javascript:setMonth('0')"><i class="bi bi-stop-btn-fill"></i></a>
+						<a href="javascript:setMonth('1')"><i class="bi bi-skip-end-btn-fill"></i></a>
+						<a href="javascript:setMonth('12')"><i class="bi bi-skip-forward-btn-fill"></i></a>
 					</c:if>
 				</td>
 			</tr>
