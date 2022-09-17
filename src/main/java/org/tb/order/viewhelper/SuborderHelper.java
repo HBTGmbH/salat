@@ -65,9 +65,11 @@ public class SuborderHelper {
         if (so != null) {
             assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
         } else if (!theSuborders.isEmpty()) {
-            // set the first Suborder as current
-            so = theSuborders.get(0);
-            assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
+            Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+            if (suborder == null || !theSuborders.contains(suborder)) {
+                suborder = theSuborders.get(0);
+            }
+            assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), suborder, reportForm);
         }
 
         request.getSession().setAttribute("suborders", theSuborders);
