@@ -152,11 +152,11 @@ public class DateTimeViewHelper {
   public static String getMonthMMStringFromShortstring(String st) {
     // returns MM as string from short string (e.g., '01' from 'Jan')
     int index = getMonthMMFromShortstring(st);
-    if (index == -1) { // st might already be in its correct form
-      return st;
-    }
-    if (index > 0 && index < 10) {
-      return "0" + index;
+      if (index == -1) { // st might already be in its correct form
+        return st;
+      }
+      if (index > 0 && index < 10) {
+        return "0" + index;
     } else {
       return Integer.toString(index);
     }

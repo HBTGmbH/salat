@@ -289,15 +289,16 @@
 									});
 
 								</script>
-								<a href="javascript:calenderPopupStartdate()" name="anchor1" ID="anchor1" style="text-decoration: none;">
-									<img src="/images/popupcalendar.gif" width="22" height="22" alt='<bean:message key="main.date.popup.alt.text" />' style="border: 0; vertical-align: top">
+								<a href="javascript:calenderPopupStartdate()" name="anchor1" ID="anchor1"
+								   title="<bean:message key="main.date.popup.alt.text" />">
+									<i class="bi bi-calendar-event mr2"></i>
 								</a>
-								<%-- Arrows for navigating the Date --%>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
+									<%-- Arrows for navigating the Date --%>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" class="mr2" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" class="mr2" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','0')" class="mr2" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','1')" class="mr2" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn"></i></a>
+								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','7')" class="mr2" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
 							</c:when>
 							<c:otherwise>
 								<html:select property="month" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
@@ -374,8 +375,8 @@
 								});
 
 							</script>
-							<a href="javascript:calenderPopupEnddate()" name="anchor2" ID="anchor2" style="text-decoration: none;">
-								<img src="/images/popupcalendar.gif" width="22" height="22" alt="<bean:message key="main.date.popup.alt.text" />" style="border: 0; vertical-align: top">
+							<a href="javascript:calenderPopupEnddate()" name="anchor2" ID="anchor2"  title="<bean:message key="main.date.popup.alt.text" />">
+								<i class="bi bi-calendar-event"></i>
 							</a> 
 							<%-- Arrows for navigating the Date --%>
 							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
@@ -459,9 +460,9 @@
 									<html:select property="selectedWorkMinuteBegin" styleClass="make-select2">
 										<html:options collection="minutes" property="value" labelProperty="label" />
 									</html:select>
-									&nbsp;&nbsp;
-									<html:image onclick="saveBegin(this.form)" src="/images/Save.gif" alt="save start of work" />
-									&nbsp;&nbsp; <i>(optional)</i>
+
+									<a href="#" onclick="saveBegin(this.form)" title="save start of work"><i class="bi bi-save"></i></a>
+									<i>(optional)</i>
 								</nobr>
 							</td>
 						</tr>
@@ -480,8 +481,8 @@
 									<html:select property="selectedBreakMinute" styleClass="make-select2">
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
-									&nbsp;&nbsp; 
-									<html:image onclick="saveBreak(this.form)" src="/images/Save.gif" alt="save break" />
+
+									<a href="#" onclick="saveBreak(this.form)" title="save break"><i class="bi bi-save"></i></a>
 									&nbsp;&nbsp;<i>(optional)</i>
 								</td>
 							</tr>
@@ -771,14 +772,12 @@
 
 							<!-- Bearbeiten -->
 							<td align="center">
-								<html:image	onclick="confirmSave(this.form, ${timereport.id})" src="/images/Save.gif" alt="Speichern" title="Speichern" />
+								<a href="#" onclick="confirmSave(this.form, ${timereport.id})" title="Speichern"><i class="bi bi-save"></i></a>
 								&nbsp;
-								<html:link title="Ändern" href="/do/EditDailyReport?trId=${timereport.id}">
-									<img src="/images/Edit.gif" alt="Ändern" />
-								</html:link>
+								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
-								<html:image	onclick="confirmDelete(this.form, ${timereport.id})" src="/images/Delete.gif" alt="Löschen" title="Löschen" />
-								&nbsp;
+								<a href="#" onclick="confirmSaveconfirmDelete(this.form, ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></a>
+								&nbsp;								&nbsp;
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 								</span>

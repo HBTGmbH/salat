@@ -141,7 +141,7 @@ th.matrix #borderdouble {
 }
 
 .borderdotted{
-	border-style:dotted;	
+	border-style:dotted;
 }
 
 #button {
@@ -152,7 +152,7 @@ th.matrix #borderdouble {
 }
 
 #treeViewStyle {
-	font-size: 14px; 
+	font-size: 14px;
 	font-weight: normal ;
 	border: 0px;
 	background-color: transparent;
@@ -343,6 +343,17 @@ textarea.showDailyReport {
 }
 
 i.bi {
-	font-size: 16px;
+	font-size: 25px;
 	color: #191E55;
+}
+.bi::before, [class^="bi-"]::before, [class*=" bi-"]::before {
+	vertical-align: -.325em!important;
+}
+
+[class*="-btn"]::before {
+	font-size: 120%;
+}
+
+.mr2{
+	margin-right: 2pt;
 }
