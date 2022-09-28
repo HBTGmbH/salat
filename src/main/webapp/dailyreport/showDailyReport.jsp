@@ -133,9 +133,25 @@
 			var confirmMassDelete = '<bean:message key="main.general.confirmMassDelete.text" />';
 			var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
 		</script>
-		<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
+
+		<script type="text/javascript" src="/webjars/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+        <script type="text/javascript">
+            $(function () {
+
+                // INITIALIZE DATEPICKER PLUGIN
+                $('.datepicker').datepicker({
+                    clearBtn: true,
+                    format: "yyyy-mm-dd"
+                }).on('changeDate', function (ev) {
+					document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
+					document.forms[0].submit();
+				});
+            });</script>
+        <link rel="stylesheet" href="/webjars/bootstrap-datepicker/css/bootstrap-datepicker.css">
+        <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 	</head>
-	
+
 	<body>
 		<jsp:include flush="true" page="/menu.jsp">
 			<jsp:param name="title" value="Menu" />
@@ -177,7 +193,7 @@
 						</html:select>
 					</td>
 				</tr>
-		
+
 				<!-- select order -->
 				<tr>
 					<td align="left" class="noBborderStyle">
@@ -195,7 +211,7 @@
 						<c:if test="${currentOrder != 'ALL ORDERS'}">
 							<c:forEach var="order" items="${orders}">
 								<c:if test="${order.sign == currentOrder}">
-									/ 
+									/
 									<html:select property="suborderId" onchange="setUpdateTimereportsAction(this.form)" value="${suborderFilerId}" styleClass="make-select2">
 										<html:option value="-1">
 											<bean:message key="main.general.allsuborders.text" />
@@ -223,7 +239,7 @@
 						</c:if>
 					</td>
 				</tr>
-		
+
 				<!-- select view mode -->
 				<tr>
 					<td align="left" class="noBborderStyle">
@@ -244,7 +260,7 @@
 						</html:select>
 					</td>
 				</tr>
-		
+
 				<!-- select first date -->
 				<tr>
 					<c:choose>
@@ -259,40 +275,14 @@
 							</td>
 						</c:otherwise>
 					</c:choose>
-		
+
 					<td align="left" class="noBborderStyle">
-						<!-- JavaScript Stuff for popup calender -->
 						<c:choose>
 							<c:when test="${!(view eq 'month')}">
-								<script type="text/javascript" language="JavaScript" src="/scripts/CalendarPopup.js">
-								</script>
-								<script type="text/javascript" language="JavaScript">
-									document.write(getCalendarStyles());
-								</script>
-								<html:text property="startdate" onblur="setUpdateTimereportsAction(this.form)" styleId="calinput1" readonly="false" size="10" maxlength="10" />
-								<script type="text/javascript" language="JavaScript">
-									function calenderPopupStartdate() {
-										var cal = new CalendarPopup();
-										cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
-										cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
-										cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-										cal.setTodayText("<bean:message key="main.date.popup.today" />");
-										cal.select(document.forms[0].startdate,'anchor1','yyyy-MM-dd');
-									}
-
-									var calinput1 = document.getElementById("calinput1");
-									calinput1.addEventListener("keypress", function(event) {
-										if (event.key === "Enter") {
-											event.preventDefault();
-											setUpdateTimereportsAction(event.target.form);
-										}
-									});
-
-								</script>
-								<a href="javascript:calenderPopupStartdate()" name="anchor1" ID="anchor1"
-								   title="<bean:message key="main.date.popup.alt.text" />">
+								<span class="datepicker date input-group p-0 shadow-sm">
+									<html:text property="startdate"  styleId="calinput1" styleClass="form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
 									<i class="bi bi-calendar-event mr2"></i>
-								</a>
+								</span>
 									<%-- Arrows for navigating the Date --%>
 								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" class="mr2" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
 								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" class="mr2" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
@@ -347,7 +337,7 @@
 						</c:choose>
 					</td>
 				</tr>
-		
+
 				<!-- select second date -->
 				<c:if test="${view eq 'custom'}">
 					<tr>
@@ -377,7 +367,7 @@
 							</script>
 							<a href="javascript:calenderPopupEnddate()" name="anchor2" ID="anchor2"  title="<bean:message key="main.date.popup.alt.text" />">
 								<i class="bi bi-calendar-event"></i>
-							</a> 
+							</a>
 							<%-- Arrows for navigating the Date --%>
 							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
 							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
@@ -387,7 +377,7 @@
 						</td>
 					</tr>
 				</c:if>
-		
+
 				<!-- avoid refresh -->
 				<tr>
 					<td align="left" valign="top" class="noBborderStyle">
@@ -397,7 +387,7 @@
 						<html:checkbox property="avoidRefresh" onclick="setUpdateTimereportsAction(this.form)" />
 					</td>
 				</tr>
-		
+
 				<!-- show only project based training -->
 				<tr>
 					<td align="left" valign="top" class="noBborderStyle">
@@ -407,7 +397,7 @@
 						<html:checkbox property="showTraining" onclick="setUpdateTimereportsAction(this.form)" />
 					</td>
 				</tr>
-				
+
 				<!-- compute overtime until chosen Date -->
 	      		<tr>
 					<td align="left" valign="top" class="noBborderStyle">
@@ -436,14 +426,14 @@
 						<html:checkbox property="showAllMinutes" onchange="setToggleShowAllMinutes(this.form)" />
 					</td>
 				</tr>
-				
+
 				<!-- seperator line -->
 				<tr>
 					<td width="100%" class="noBborderStyle" colspan="2">
 						<hr>
 					</td>
 				</tr>
-		
+
 				<!-- select working day begin and  break -->
 				<c:if test="${view eq 'day' || view == null}">
 					<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
@@ -466,7 +456,7 @@
 								</nobr>
 							</td>
 						</tr>
-		
+
 						<%-- is a visible, when workingday null --%>
 						<c:if test="${visibleworkingday}">
 							<tr>
@@ -477,7 +467,7 @@
 									<html:select property="selectedBreakHour" styleClass="make-select2">
 										<html:options collection="breakhours" property="value" labelProperty="label" />
 									</html:select>
-									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b> 
+									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
 									<html:select property="selectedBreakMinute" styleClass="make-select2">
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
@@ -507,7 +497,7 @@
 				</c:if>
 			</table>
 		</html:form>
-	
+
 		<bean:size id="timereportsSize" name="timereports" />
 		<c:if test="${timereportsSize>10}">
 			<table>
@@ -529,7 +519,7 @@
 				</tr>
 			</table>
 		</c:if>
-		
+
 		<c:if test="${vacationBudgetOverrun}">
 			<table>
 				<td  class="noBborderStyle"  style="font-size: 14pt; ">
@@ -537,7 +527,7 @@
 				</td>
 			</table>
 		</c:if>
-	
+
 		<table class="center backgroundcolor" width="100%">
 			<tr>
 				<td colspan="6" class="noBborderStyle">
@@ -559,7 +549,7 @@
 					</c:otherwise>
 				</c:choose>
 			</tr>
-		
+
 			<tr>
 				<th align="left">
 					<b>Info</b>
@@ -604,7 +594,7 @@
 					<b><bean:message key="main.timereport.monthly.saveeditdelete.text" /></b>
 				</th>
 			</tr>
-		
+
 			<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
 				<html:form action="/UpdateDailyReport?trId=${timereport.id}">
 					<c:choose>
@@ -615,7 +605,7 @@
 							<tr class="secondarycolor">
 						</c:otherwise>
 					</c:choose>
-		
+
 					<!-- Info -->
 					<td align="center">
 						<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
@@ -704,18 +694,18 @@
 								</tr>
 							</table>
 						</div>
-						<img onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')" 
+						<img onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
 							onMouseOut="hideWMTT()" width="12px" height="12px" src="/images/info_button.gif" />
 						<c:if test="${!timereport.fitsToContract}">
 							<img width="20px" height="20px" src="/images/Pin%20rot.gif" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
 						</c:if>
 					</td>
-		
+
 					<!-- Mitarbeiter -->
 					<td>
 						<c:out value="${timereport.employeeSign}" />
 					</td>
-		
+
 					<!-- Datum -->
 					<td>
 						<logic:equal name="timereport" property="holiday" value="true">
@@ -733,30 +723,30 @@
 						<br>
 						<c:out value="${timereport.suborderSign}" />
 					</td>
-		
+
 					<!-- Bezeichnung -->
 					<td>
 						<c:out value="${timereport.customerorderDescription}" />
 						<br>
 						<c:out value="${timereport.suborderDescription}" />
 					</td>
-		
+
 					<!-- visibility dependent on user and status -->
 					<c:choose>
 						<c:when	test="${((loginEmployee.id == timereport.employeeId) && (timereport.status eq 'open')) || (authorizedUser.manager && timereport.status eq 'commited' && loginEmployee.id != timereport.employeeId) || authorizedUser.admin}">
 							<!-- Kommentar -->
 							<td>
-								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}" 
+								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}"
 									onkeydown="limitText(this.form.comment,this.form.countdown,256);"
-									onkeyup="limitText(this.form.comment,this.form.countdown,256);" 
+									onkeyup="limitText(this.form.comment,this.form.countdown,256);"
 									styleClass="showDailyReport" />
 							</td>
-							
+
 							<!-- Fortbildung -->
 							<td align="center">
-								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />  
+								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
 							</td>
-		
+
 							<!-- Dauer -->
 							<td align="center" nowrap="nowrap">
 								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
@@ -797,7 +787,7 @@
 							</td>
 							<!-- Fortbildung -->
 							<td align="center">
-								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />    
+								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
 							</td>
 							<!-- Dauer -->
 							<td align="center" nowrap>
@@ -848,7 +838,7 @@
 								</table>
 							</div>
 						</div>
-					</html:form>	
+					</html:form>
 				</td>
 			</tr>
 		</table>
@@ -871,17 +861,17 @@
 			</tr>
 		</table>
 		<br>
-	
+
 		<span style="color: red">
 			<b>
 				<html:errors property="trSuborderId" footer="<br>" />
-				<html:errors property="selectedHourEnd" footer="<br>" /> 
+				<html:errors property="selectedHourEnd" footer="<br>" />
 				<html:errors property="status" footer="<br>" />
 				<br>
 				<html:errors property="comment" footer="<br>" />
 			</b>
 		</span>
-	
+
 		<!-- Überstunden und Urlaubstage -->
 		<c:choose>
 			<c:when test="${currentEmployee != 'ALL EMPLOYEES'}">

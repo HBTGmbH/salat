@@ -357,3 +357,8 @@ i.bi {
 .mr2{
 	margin-right: 2pt;
 }
+.datepicker.datepicker-dropdown.dropdown-menu {
+	position: absolute;
+	background: white;
+	border: 1px solid black;
+}
