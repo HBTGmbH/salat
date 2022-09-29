@@ -171,19 +171,18 @@
 						}
 					});
 				</script>
-                <a href="javascript:calenderPopup()" name="anchor1" ID="anchor1" style="text-decoration:none;">
-                	<img src="/images/popupcalendar.gif" width="22" height="22"
-						 alt="<bean:message key="main.date.popup.alt.text" />"
-						 style="border:0;vertical-align:top">
+				<a href="javascript:calenderPopup()" name="anchor1" ID="anchor1"
+				   title="<bean:message key="main.date.popup.alt.text" />">
+					<i class="bi bi-calendar-event mr2"></i>
 				</a>
 				
 				<%-- Arrows for navigating the Date --%>
 
-				<a href="javascript:setDate('-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
-				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
-				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
-				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
-				<a href="javascript:setDate('7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
+				<a href="javascript:setDate('-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
+				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
+				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
+				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn"></i></a>
+				<a href="javascript:setDate('7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
 				<span style="color:red">
 					<html:errors property="referenceday" />
 					<html:errors property="release" />
