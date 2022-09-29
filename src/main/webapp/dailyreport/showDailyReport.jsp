@@ -694,8 +694,8 @@
 								</tr>
 							</table>
 						</div>
-						<img onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
-							onMouseOut="hideWMTT()" width="12px" height="12px" src="/images/info_button.gif" />
+						<a href="#" onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
+						   onMouseOut="hideWMTT()"><i class="bi bi-info-circle"></i></a>
 						<c:if test="${!timereport.fitsToContract}">
 							<img width="20px" height="20px" src="/images/Pin%20rot.gif" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
 						</c:if>
@@ -823,10 +823,15 @@
 				<td class="massedit invisible noBborderStyle" align="center">
 					<html:form action="/ShowDailyReport" style="margin-bottom:0">
 						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
-						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="/images/Delete.gif" alt="Löschen" title="Löschen" />
+						<a href="#" onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" title="Löschen">
+							<i class="bi bi-trash"></i>
+						</a>
 						&nbsp;&nbsp;
 						<div class="massedit-time-shift-dropdown">
-							<img class="dropdown-btn" height="11" src="/images/Button/backwards.svg" title="Um Tage Verschieben" alt="Um Tage verschieben" onclick="$('.dropdown-content').focus()"/>
+							<a href="#" onclick="$('.dropdown-content').focus()"
+							   title="Um Tage Verschieben" />">
+								<i class="bi bi-arrow-left-right"></i>
+							</a>
 							<div class="dropdown-content" tabindex="1">
 								<table>
 									<tr><th colspan="2"><bean:message key="main.timereport.mass.edit.shift.days.text" /></th></tr>
