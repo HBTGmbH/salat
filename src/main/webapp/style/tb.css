@@ -32,6 +32,11 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	color: black;
 }
 
+.borderBottom {
+	border-width: 1 0 0 0;
+	border-color: #191E55;
+}
+
 .borderStyle {
 	border-spacing: 2px;
 	border-collapse: separate;

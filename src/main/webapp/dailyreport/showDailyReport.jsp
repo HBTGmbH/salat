@@ -528,8 +528,8 @@
 			</table>
 		</c:if>
 
-		<table class="center backgroundcolor" width="100%">
-			<tr>
+		<table class="center backgroundcolor nobBorderStyle" width="100%">
+			<tr class="noBborderStyle">
 				<td colspan="6" class="noBborderStyle">
 					&nbsp;
 				</td>
@@ -537,24 +537,24 @@
 					<b><bean:message key="main.timereport.total.text" />:</b>
 				</td>
 				<c:choose>
-					<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
-						<th align="center" color="red">
+					<c:when test="${maxlabortime&& view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
+						<th class="noBborderStyle" align="center" color="red" >
 							<b><font color="red"><c:out	value="${labortime}"></c:out></font></b>
 						</th>
 					</c:when>
 					<c:otherwise>
-						<th align="center">
+						<th class="noBborderStyle" align="center">
 							<b><c:out value="${labortime}"></c:out></b>
 						</th>
 					</c:otherwise>
 				</c:choose>
 			</tr>
 
-			<tr>
-				<th align="left">
+			<tr class="noBborderStyle">
+				<th class="noBborderStyle" align="left">
 					<b>Info</b>
 				</th>
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.employee.text' />">
+				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.employee.text' />">
 					<html:link href="/do/ShowDailyReport?task=sort&column=employee">
 						<b><bean:message key="main.timereport.monthly.employee.sign.text" /></b>
 					</html:link>
@@ -562,7 +562,7 @@
 						<c:out value="${timereportSortModus}" />
 					</c:if>
 				</th>
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.refday.text' />">
+				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.refday.text' />">
 					<html:link href="/do/ShowDailyReport?task=sort&column=refday">
 						<b><bean:message key="main.timereport.monthly.refday.text" /></b>
 					</html:link>
@@ -570,7 +570,7 @@
 						<c:out value="${timereportSortModus}" />
 					</c:if>
 				</th>
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.customerorder.text' />">
+				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.customerorder.text' />">
 					<html:link href="/do/ShowDailyReport?task=sort&column=order">
 						<b><bean:message key="main.timereport.monthly.customerorder.text" /></b>
 					</html:link>
@@ -578,19 +578,19 @@
 						<c:out value="${timereportSortModus}" />
 					</c:if>
 				</th>
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.description.text' />">
+				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.description.text' />">
 					<b><bean:message key="main.customerorder.shortdescription.text" /></b>
 				</th>
-				<th align="left" title="<bean:message key='main.headlinedescription.dailyoverview.taskdescription.text' />" width="25%">
+				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.taskdescription.text' />" width="25%">
 					<b><bean:message key="main.timereport.monthly.taskdescription.text" /></b>
 				</th>
-				<th align="center" title="<bean:message key='main.headlinedescription.dailyoverview.training.text' />">
+				<th class="noBborderStyle" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.training.text' />">
 					<b><bean:message key="main.timereport.monthly.training.text" /></b>
 				</th>
-				<th align="center" title="<bean:message key='main.headlinedescription.dailyoverview.hours.text' />">
+				<th class="noBborderStyle" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.hours.text' />">
 					<b><bean:message key="main.timereport.monthly.hours.text" /></b>
 				</th>
-				<th align="center" title="<bean:message	key='main.headlinedescription.dailyoverview.saveeditdelete.text' />">
+				<th class="noBborderStyle" align="center" title="<bean:message	key='main.headlinedescription.dailyoverview.saveeditdelete.text' />">
 					<b><bean:message key="main.timereport.monthly.saveeditdelete.text" /></b>
 				</th>
 			</tr>
@@ -599,15 +599,15 @@
 				<html:form action="/UpdateDailyReport?trId=${timereport.id}">
 					<c:choose>
 						<c:when test="${statusID.count%2 == 0}">
-							<tr class="primarycolor">
+							<tr class="noBborderStyle primarycolor">
 						</c:when>
 						<c:otherwise>
-							<tr class="secondarycolor">
+							<tr class="noBborderStyle secondarycolor">
 						</c:otherwise>
 					</c:choose>
 
 					<!-- Info -->
-					<td align="center">
+					<td class="noBborderStyle" align="center">
 						<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
 							<table>
 								<tr>
@@ -702,12 +702,12 @@
 					</td>
 
 					<!-- Mitarbeiter -->
-					<td>
+					<td class="noBborderStyle">
 						<c:out value="${timereport.employeeSign}" />
 					</td>
 
 					<!-- Datum -->
-					<td>
+					<td class="noBborderStyle">
 						<logic:equal name="timereport" property="holiday" value="true">
 							<span style="color: red">
 								<java8:formatLocalDate value="${timereport.referenceday}" />
@@ -718,14 +718,14 @@
 						</logic:equal>
 					</td>
 					<!-- Auftrag -->
-					<td>
+					<td class="noBborderStyle">
 						<c:out value="${timereport.customerorderSign}" />
 						<br>
 						<c:out value="${timereport.suborderSign}" />
 					</td>
 
 					<!-- Bezeichnung -->
-					<td>
+					<td class="noBborderStyle">
 						<c:out value="${timereport.customerorderDescription}" />
 						<br>
 						<c:out value="${timereport.suborderDescription}" />
@@ -735,7 +735,7 @@
 					<c:choose>
 						<c:when	test="${((loginEmployee.id == timereport.employeeId) && (timereport.status eq 'open')) || (authorizedUser.manager && timereport.status eq 'commited' && loginEmployee.id != timereport.employeeId) || authorizedUser.admin}">
 							<!-- Kommentar -->
-							<td>
+							<td class="noBborderStyle">
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}"
 									onkeydown="limitText(this.form.comment,this.form.countdown,256);"
 									onkeyup="limitText(this.form.comment,this.form.countdown,256);"
@@ -743,12 +743,12 @@
 							</td>
 
 							<!-- Fortbildung -->
-							<td align="center">
+							<td class="noBborderStyle" align="center">
 								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
 							</td>
 
 							<!-- Dauer -->
-							<td align="center" nowrap="nowrap">
+							<td class="noBborderStyle" align="center" nowrap="nowrap">
 								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
@@ -761,13 +761,12 @@
 							</td>
 
 							<!-- Bearbeiten -->
-							<td align="center">
+							<td class="noBborderStyle" align="center">
 								<a href="#" onclick="confirmSave(this.form, ${timereport.id})" title="Speichern"><i class="bi bi-save"></i></a>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
 								<a href="#" onclick="confirmSaveconfirmDelete(this.form, ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></a>
-								&nbsp;								&nbsp;
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 								</span>
@@ -775,7 +774,7 @@
 						</c:when>
 						<c:otherwise>
 							<!-- Kommentar -->
-							<td>
+							<td class="noBborderStyle">
 								<c:choose>
 									<c:when test="${timereport.taskdescription eq ''}">
 										&nbsp;
@@ -786,15 +785,15 @@
 								</c:choose>
 							</td>
 							<!-- Fortbildung -->
-							<td align="center">
+							<td class="noBborderStyle" align="center">
 								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
 							</td>
 							<!-- Dauer -->
-							<td align="center" nowrap>
+							<td class="noBborderStyle" align="center" nowrap>
 								<java8:formatDuration value="${timereport.duration}"/>
 							</td>
 							<!-- Bearbeiten -->
-							<td align="center">
+							<td class="noBborderStyle" align="center">
 								<img width="12px" height="12px" src="/images/verbot.gif" alt="Delete Timereport" />
 							</td>
 						</c:otherwise>
@@ -802,7 +801,7 @@
 					</tr>
 				</html:form>
 			</c:forEach>
-			<tr>
+			<tr class="borderBottom">
 				<td colspan="6" class="noBborderStyle">
 					&nbsp;
 				</td>
@@ -811,17 +810,17 @@
 				</td>
 				<c:choose>
 					<c:when test="${maxlabortime && view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
-						<th align="center" color="red">
+						<th class="noBborderStyle" align="center" color="red">
 							<b><font color="red"><c:out	value="${labortime}"></c:out></font></b>
 						</th>
 					</c:when>
 					<c:otherwise>
-						<th align="center">
+						<th class="noBborderStyle" align="center">
 							<b><c:out value="${labortime}"></c:out></b>
 						</th>
 					</c:otherwise>
 				</c:choose>
-				<td class="massedit invisible" align="center">
+				<td class="massedit invisible noBborderStyle" align="center">
 					<html:form action="/ShowDailyReport" style="margin-bottom:0">
 						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
 						<html:image	onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" src="/images/Delete.gif" alt="Löschen" title="Löschen" />

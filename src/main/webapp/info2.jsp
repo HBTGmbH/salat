@@ -2,22 +2,22 @@
 <%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <table border="0" cellspacing="2px" cellpadding="0" width="100%"
-		class="center backgroundcolor">
-	<tr>
-		<th align="left" width="33%">
+		class="noBborderStyle center backgroundcolor">
+	<tr class="noBborderStyle">
+		<th class="noBborderStyle" align="left" width="33%">
 			<b><bean:message
 				key="main.welcome.reports.text" /></b>
 		</th>
-		<th align="left" width="33%">
+		<th class="noBborderStyle" align="left" width="33%">
 			<b><bean:message
 				key="main.welcome.overtime.text" /></b>
 		</th>
-		<th align="left" width="33%">
+		<th class="noBborderStyle" align="left" width="33%">
 			<b><bean:message
 				key="main.welcome.vacation.text" /></b>
 		</th>
 	</tr>	
-	<tr>
+	<tr class="noBborderStyle">
 		<td align="left" valign="top" class="noBborderStyle">
 			<table border="0" cellspacing="0" cellpadding="0" 
 				class="center backgroundcolor">
