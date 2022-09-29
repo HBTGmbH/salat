@@ -154,6 +154,13 @@ th.matrix #borderdouble {
 	color: #ffffff;
 	border-style: solid;
 	border-color: #191E55;
+	border-radius: 5px;
+}
+
+#button:hover {
+	background-color: #5F6EF0;
+	border-color: #5F6EF0;
+	cursor: pointer;
 }
 
 #treeViewStyle {
@@ -351,6 +358,11 @@ i.bi {
 	font-size: 25px;
 	color: #191E55;
 }
+
+i.bi:hover {
+	color: #5F6EF0;
+}
+
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before {
 	vertical-align: -.325em!important;
 }
