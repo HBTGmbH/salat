@@ -23,7 +23,7 @@ HBT.MassEdit = HBT.MassEdit || (function(){
 	}
 	
 	// ask the user if he really wants to mass-delete selected bookings
-	var confirmDelete = function(form, confirmMsg) {
+	var confirmDelete = function(element, confirmMsg) {
 		var confirmation = confirm(confirmMsg);
 		if (confirmation) {
 			var ids = [];
@@ -33,6 +33,7 @@ HBT.MassEdit = HBT.MassEdit || (function(){
 					ids.push(id);
 				}
 			});
+			var form = findForm(element)
 			form.action = "/do/ShowDailyReport?task=MassDelete&ids=" + ids.join(",");
 			form.submit();
 		} else {

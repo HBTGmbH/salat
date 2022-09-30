@@ -32,7 +32,7 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	color: black;
 }
 
-.borderBottom {
+.borderTopLine {
 	border-width: 1 0 0 0;
 	border-color: #191E55;
 }
@@ -54,8 +54,6 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	border-spacing: 0px;
 	font-size: 7pt;
 }
-
-
 
 .tooltip {
 	position:absolute;
@@ -341,7 +339,7 @@ textarea.showDailyReport {
 	width: 50%;
 }
 .massedit td:hover {
-	background-color: grey;
+	background-color: #5F6EF0;
 }
 .massedit-error input {
 	box-shadow: 0px 0px 5px 3px red;

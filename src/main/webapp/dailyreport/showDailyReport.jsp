@@ -801,7 +801,7 @@
 					</tr>
 				</html:form>
 			</c:forEach>
-			<tr class="borderBottom">
+			<tr class="borderTopLine">
 				<td colspan="6" class="noBborderStyle">
 					&nbsp;
 				</td>
@@ -823,7 +823,7 @@
 				<td class="massedit invisible noBborderStyle" align="center">
 					<html:form action="/ShowDailyReport" style="margin-bottom:0">
 						<b><bean:message key="main.timereport.mass.edit.text" />:</b><br />
-						<a href="#" onclick="return HBT.MassEdit.confirmDelete(this.form, confirmMassDelete);" title="Löschen">
+						<a href="#" onclick="return HBT.MassEdit.confirmDelete(this, confirmMassDelete);" title="Löschen">
 							<i class="bi bi-trash"></i>
 						</a>
 						&nbsp;&nbsp;
@@ -833,7 +833,7 @@
 								<i class="bi bi-arrow-left-right"></i>
 							</a>
 							<div class="dropdown-content" tabindex="1">
-								<table>
+								<table class="noBborderStyle">
 									<tr><th colspan="2"><bean:message key="main.timereport.mass.edit.shift.days.text" /></th></tr>
 									<c:forEach begin="1" end="7" varStatus="loop">
 										<tr><td><span title='<bean:message key="main.timereport.mass.edit.shift.days.tooltip" arg0='-${loop.index}' />' onclick='return HBT.MassEdit.confirmShiftDays(this, "<bean:message key="main.timereport.mass.edit.shift.days.confirm.msg" arg0='-${loop.index}' />", -${loop.index});'>-${loop.index}</span></td>
