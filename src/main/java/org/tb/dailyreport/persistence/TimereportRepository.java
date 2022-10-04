@@ -21,13 +21,14 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   List<Timereport> findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(long employeecontractId, String status, LocalDate date);
 
-  @Query("select t from Timereport t "
-      + "where t.employeecontract.id = :employeecontractId and "
-      + "t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end "
-      + "order by t.employeecontract.employee.sign asc, "
-      + "t.referenceday.refdate asc, "
-      + "t.employeeorder.suborder.customerorder.sign asc, "
-      + "t.employeeorder.suborder.sign asc")
+  @Query("""
+        select t from Timereport t
+        where t.employeecontract.id = :employeecontractId and
+        t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end 
+        order by t.employeecontract.employee.sign asc, 
+        t.referenceday.refdate asc, 
+        t.employeeorder.suborder.customerorder.sign asc, 
+        t.employeeorder.suborder.sign asc""")
   List<Timereport> findAllByEmployeecontractIdAndReferencedayBetween(long employeecontractId, LocalDate begin, LocalDate end);
 
   @Query("select t from Timereport t "
