@@ -35,7 +35,7 @@
 
 	function setUpdateSubordersAction(select) {	
  		var form = select.form;
- 		if(select.options.length>0) {
+		if(select.options.length>0) {
 			var orderIndex = select.options[select.selectedIndex].value;
 			var paramToAdd = "";
 			if(orderIndex && orderIndex != "0") {
@@ -47,8 +47,8 @@
 
 			form.action = "/do/StoreDailyReport?task=refreshSuborders" + paramToAdd;
 			form.submit();
-		 }
-	}			
+		}
+	}
 
 	function adjustSuborderSignChangedAction(form) {	
  		form.action = "/do/StoreDailyReport?task=adjustSuborderSignChanged";
