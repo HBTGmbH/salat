@@ -203,20 +203,23 @@ a:hover {
 	display: block;
 	font-weight: normal;
 	color: white;
-	padding: 0.2em 8px;
+	padding: 0.3em 8px;
 }
 
 #nav li li a:hover {
-	padding: 0.2em 5px;
-	border: 5px solid #191E55;
-	border-width: 0 5px 0 5px;
+	padding: 0.3em 5px;
+}
+
+.menu > ul > li {
+	border-radius: 5px;
+	margin: 0 .5em;
+	padding: .5em 0;
 }
 
 .menu ul, menu ul {
 	font-family: verdana, arial, sans-serif;
-	font-size: 10pt;
 	font-weight: bold;
-	padding: 0;
+	padding: .5em 0 0 0;
 	margin: 0;
 	list-style: none;
 	z-index:20000;
@@ -226,9 +229,9 @@ menu li, .menu li {
 	text-align: center;
 	float: left;
 	position: relative;
-	width: 19.9%;
-	border: 1px solid black;
-	border-width: 1px 0;
+	width: 19.2%;
+	border-width: 0 0;
+	font-size: 11pt;
 	color: white;
 }
 
