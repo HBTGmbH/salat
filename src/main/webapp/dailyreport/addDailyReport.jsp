@@ -38,9 +38,9 @@
 		if(select.options.length>0) {
 			var orderIndex = select.options[select.selectedIndex].value;
 			var paramToAdd = "";
-			if(orderIndex && orderIndex != "0") {
+			if(orderIndex && orderIndex !== "0") {
 				var suborderIndex = HBT.Salat.FavouriteOrders.getDefaultSuborder(orderIndex);
-				if(suborderIndex && suborderIndex != "0") {
+				if(suborderIndex && suborderIndex !== "0") {
 					paramToAdd = "&defaultSuborderIndex=" + suborderIndex;
 				}
 			}

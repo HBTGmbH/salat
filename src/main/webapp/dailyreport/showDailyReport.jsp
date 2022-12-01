@@ -17,7 +17,17 @@
 			}
 		</script>
 		<script type="text/javascript" language="JavaScript">
-		
+
+
+			function findForm(item) {
+				while(item) {
+					if(item.tagName.toLowerCase() == "form") {
+						return item;
+					}
+					item = item.parentElement;
+				}
+				return null;
+			}
 			function afterCalenderClick() {
 				document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
 				document.forms[0].submit();
@@ -175,7 +185,7 @@
 						<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
+						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 							<c:if test="${authorizedUser.manager}">
 								<html:option value="-1">
 									<bean:message key="main.general.allemployees.text" />
@@ -200,7 +210,7 @@
 						<b><bean:message key="main.monthlyreport.customerorder.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<html:select property="order" value="${currentOrder}" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
+						<html:select property="order" value="${currentOrder}" onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 							<html:option value="ALL ORDERS">
 								<bean:message key="main.general.allorders.text" />
 							</html:option>
@@ -212,7 +222,7 @@
 							<c:forEach var="order" items="${orders}">
 								<c:if test="${order.sign == currentOrder}">
 									/
-									<html:select property="suborderId" onchange="setUpdateTimereportsAction(this.form)" value="${suborderFilerId}" styleClass="make-select2">
+									<html:select property="suborderId" onchange="setUpdateTimereportsAction(findForm(this))" value="${suborderFilerId}" styleClass="make-select2">
 										<html:option value="-1">
 											<bean:message key="main.general.allsuborders.text" />
 										</html:option>
@@ -230,12 +240,12 @@
 							<span style="font-size: 0.6em">
 								<bean:message key="main.general.select.expired.text" />
 							</span>
-							<html:checkbox property="showOnlyValid" onclick="setUpdateTimereportsAction(this.form)" styleClass="middle-aligned">
+							<html:checkbox property="showOnlyValid" onclick="setUpdateTimereportsAction(findForm(this))" styleClass="middle-aligned">
 								<span class="middle-aligned"><bean:message key="main.general.show.only.valid.text"/></span>
 							</html:checkbox>
 						</c:if>
 						<c:if test="${currentOrder == 'ALL ORDERS'}">
-							<html:checkbox property="showOnlyValid" onclick="setUpdateTimereportsAction(this.form)" style="display:none;" />
+							<html:checkbox property="showOnlyValid" onclick="setUpdateTimereportsAction(findForm(this))" style="display:none;" />
 						</c:if>
 					</td>
 				</tr>
@@ -246,7 +256,7 @@
 						<b><bean:message key="main.general.timereport.view.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:select property="view" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
+						<html:select property="view" onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 							<html:option value="day">
 								<bean:message key="main.general.timereport.view.daily.text" />
 							</html:option>
@@ -291,7 +301,7 @@
 								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','7')" class="mr2" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
 							</c:when>
 							<c:otherwise>
-								<html:select property="month" onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
+								<html:select property="month" onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 									<html:option value="Jan">
 										<bean:message key="main.timereport.select.month.jan.text" />
 									</html:option>
@@ -330,7 +340,7 @@
 									</html:option>
 								</html:select>
 								<html:select property="year" value="<%=(String) request.getSession().getAttribute(\"currentYear\")%>"
-									onchange="setUpdateTimereportsAction(this.form)" styleClass="make-select2">
+									onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 									<html:options collection="years" property="value" labelProperty="label" />
 								</html:select>
 							</c:otherwise>
@@ -345,7 +355,7 @@
 							<b><bean:message key="main.monthlyreport.daymonthyear.text" /></b>&nbsp;<i>(<bean:message key="main.general.to.text" />)</i><b>:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:text property="enddate" onblur="setUpdateTimereportsAction(this.form)" readonly="false" size="10" maxlength="10" styleId="calinput2" />
+							<html:text property="enddate" onblur="setUpdateTimereportsAction(findForm(this))" readonly="false" size="10" maxlength="10" styleId="calinput2" />
 							<script type="text/javascript" language="JavaScript">
 								function calenderPopupEnddate() {
 									var cal = new CalendarPopup();
@@ -384,7 +394,7 @@
 						<b><bean:message key="main.general.timereport.avoidrefresh.text"/>:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:checkbox property="avoidRefresh" onclick="setUpdateTimereportsAction(this.form)" />
+						<html:checkbox property="avoidRefresh" onclick="setUpdateTimereportsAction(findForm(this))" />
 					</td>
 				</tr>
 
@@ -394,7 +404,7 @@
 						<b><bean:message key="main.general.timereport.showOnlyTraining.text"/>:</b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:checkbox property="showTraining" onclick="setUpdateTimereportsAction(this.form)" />
+						<html:checkbox property="showTraining" onclick="setUpdateTimereportsAction(findForm(this))" />
 					</td>
 				</tr>
 
@@ -406,12 +416,12 @@
 					<c:choose>
 	      				<c:when test="${overtimeDisabled=='true'}">
 							<td align="left" class="noBborderStyle">
-								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(this.form)" disabled="true"/>
+								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(findForm(this))" disabled="true"/>
 							</td>
 						</c:when>
 						<c:otherwise>
 							<td align="left" class="noBborderStyle">
-								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(this.form)" />
+								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(findForm(this))" />
 							</td>
 						</c:otherwise>
 					</c:choose>
@@ -423,7 +433,7 @@
 						<b><bean:message key="main.timereport.showallminutes.text" /></b>
 					</td>
 					<td align="left" class="noBborderStyle">
-						<html:checkbox property="showAllMinutes" onchange="setToggleShowAllMinutes(this.form)" />
+						<html:checkbox property="showAllMinutes" onchange="setToggleShowAllMinutes(findForm(this))" />
 					</td>
 				</tr>
 
@@ -451,7 +461,7 @@
 										<html:options collection="minutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBegin(this.form)" title="save start of work"><i class="bi bi-save"></i></a>
+									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-save"></i></a>
 									<i>(optional)</i>
 								</nobr>
 							</td>
@@ -472,8 +482,8 @@
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBreak(this.form)" title="save break"><i class="bi bi-save"></i></a>
-									&nbsp;&nbsp;<i>(optional)</i>
+									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-save"></i></a>
+									&nbsp;&nbsp;<i>(optional)</i> test2
 								</td>
 							</tr>
 							<tr>
@@ -762,11 +772,11 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<a href="#" onclick="confirmSave(this.form, ${timereport.id})" title="Speichern"><i class="bi bi-save"></i></a>
+								<a href="#" onclick="confirmSave(findForm(this), ${timereport.id})" title="Speichern"><i class="bi bi-save"></i></a>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
-								<a href="#" onclick="confirmSaveconfirmDelete(this.form, ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></a>
+								<a href="#" onclick="confirmDelete(findForm(this), ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></a>
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 								</span>
@@ -829,7 +839,7 @@
 						&nbsp;&nbsp;
 						<div class="massedit-time-shift-dropdown">
 							<a href="#" onclick="$('.dropdown-content').focus()"
-							   title="Um Tage Verschieben" />">
+							   title="Um Tage Verschieben">">
 								<i class="bi bi-arrow-left-right"></i>
 							</a>
 							<div class="dropdown-content" tabindex="1">
