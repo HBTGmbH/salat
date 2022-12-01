@@ -12,17 +12,17 @@
 <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployeecontract.text" /></title>
 	<jsp:include flush="true" page="/head-includes.jsp" />
 <script type="text/javascript" language="JavaScript">
-	
+
 	function setDate(which, howMuch) {
 		document.forms[0].action = "/do/StoreEmployeecontract?task=setDate&which=" + which + "&howMuch=" + howMuch;
 		document.forms[0].submit();
 	}
-	
-	function setStoreAction(form, actionVal, addMore) {	
+
+	function setStoreAction(form, actionVal, addMore) {
  		form.action = "/do/StoreEmployeecontract?task=" + actionVal + "&continue=" + addMore;
 		form.submit();
 	}
-		
+
 	function afterCalenderClick() {
 	}
 
@@ -71,8 +71,8 @@
 				</c:choose>
 			</td>
 		</tr>
-		
-		
+
+
 	<tr>
 	  <td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.supervisor.text" /></b></td>
@@ -83,8 +83,8 @@
 		<span style="color:red"><html:errors property="supervisorid" /></span>
 	  </td>
 	</tr>
-		
-		
+
+
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.taskdescription.text" /></b></td>
@@ -98,8 +98,28 @@
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.validfrom.text" /></b></td>
 			<td align="left" class="noBborderStyle">
-		
+
 			<!-- JavaScript Stuff for popup calender -->
+
+				<script type="text/javascript" src="/webjars/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+				<script type="text/javascript">
+									$(function () {
+
+										// INITIALIZE DATEPICKER PLUGIN
+										$('.datepicker').datepicker({
+											clearBtn: true,
+											format: "yyyy-mm-dd"
+										}).on('changeDate', function (ev) {
+											document.forms[0].action = "/do/StoreDailyReport?task=adjustBeginTime";
+											document.forms[0].submit();
+										});
+									});</script>
+				<link rel="stylesheet" href="/webjars/bootstrap-datepicker/css/bootstrap-datepicker.css">
+				<span class="datepicker date input-group p-0 shadow-sm">
+					<html:text property="validFrom"  styleId="calinput1" styleClass="form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
+					<i class="bi bi-calendar-event mr2"></i>
+				</span>
 			<script type="text/javascript" language="JavaScript"
 				src="/scripts/CalendarPopup.js"></script> <script type="text/javascript"
 				language="JavaScript">
@@ -123,30 +143,31 @@
                         //cal.select(document.forms[0].validUntil,'until','E yyyy-MM-dd');
                         cal.select(document.forms[0].validUntil,'until','yyyy-MM-dd');
                     }
-                </script> <html:text property="validFrom" readonly="false"
-				size="10" maxlength="10" /> <a
-				href="javascript:calenderPopupFrom()" name="from" ID="from"
-				style="text-decoration:none;"> <img
-                    src="/images/popupcalendar.gif" width="22" height="22"
-                    alt="<bean:message key="main.date.popup.alt.text" />"
-                    style="border:0;vertical-align:top"> </a>
-				
-				<%-- Arrows for navigating the from-Date --%>
+                </script>
+				<html:text property="validFrom" readonly="false" size="10" maxlength="10"/>
+				<a href="javascript:calenderPopupFrom()" name="from" ID="from"
+				   style="text-decoration:none;">
+					<img src="/images/popupcalendar.gif" width="22" height="22"
+						alt="<bean:message key="main.date.popup.alt.text" />"
+						style="border:0;vertical-align:top">
+				</a>
+
+			<%-- Arrows for navigating the from-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','-1')" title="<bean:message key="main.date.popup.prevday" />">
 				<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
+
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','0')" title="<bean:message key="main.date.popup.today" />">
 				<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
+
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','1')" title="<bean:message key="main.date.popup.nextday" />">
 				<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
+
 				<span style="color:red"><html:errors
 				property="validFrom" /></span></td>
 		</tr>
@@ -161,23 +182,23 @@
                     src="/images/popupcalendar.gif" width="22" height="22"
                     alt="<bean:message key="main.date.popup.alt.text" />"
                     style="border:0;vertical-align:top"> </a>
-				
+
 				<%-- Arrows for navigating the until-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','-1')" title="<bean:message key="main.date.popup.prevday" />">
 				<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
+
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','0')" title="<bean:message key="main.date.popup.today" />">
 				<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
+
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','1')" title="<bean:message key="main.date.popup.nextday" />">
 				<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
-				
+
 				<span style="color:red"><html:errors
 				property="validUntil" /></span></td>
 		</tr>
@@ -205,7 +226,7 @@
 				property="yearlyvacation" size="10" /> <span style="color:red"><html:errors
 				property="yearlyvacation" /></span></td>
 		</tr>
-		
+
 		<tr>
 			<c:choose>
 				<c:when test="${employeeContractContext eq 'create'}">
@@ -216,11 +237,11 @@
 						property="initialOvertime" /></span></td>
 				</c:when>
 				<c:otherwise>
-					<td align="left" class="noBborderStyle"></td>	
+					<td align="left" class="noBborderStyle"></td>
 				</c:otherwise>
 			</c:choose>
 		</tr>
-		
+
 		<!-- hide -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
@@ -247,23 +268,23 @@
 			</html:submit></td>
 		</tr>
 	</table>
-	
+
 	<c:if test="${timereportsOutOfRange != null}">
 	<table class="center backgroundcolor" width="100%">
-		
+
 		<tr>
 			<th align="left"><b>Info</b></th>
 			<th align="left"
 				title="<bean:message
-				key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message 
+				key="main.headlinedescription.dailyoverview.employee.text" />"><b><bean:message
 				key="main.timereport.monthly.employee.sign.text" /></b></th>
 			<th align="left"
 				title="<bean:message
-				key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message 
+				key="main.headlinedescription.dailyoverview.refday.text" />"><b><bean:message
 				key="main.timereport.monthly.refday.text" /></b></th>
 			<th align="left"
 				title="<bean:message
-				key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message 
+				key="main.headlinedescription.dailyoverview.customerorder.text" />"><b><bean:message
 				key="main.timereport.monthly.customerorder.text" /></b></th>
 			<th align="left"
 				title="<bean:message
@@ -279,7 +300,7 @@
 				key="main.headlinedescription.dailyoverview.hours.text" />"><b><bean:message
 				key="main.timereport.monthly.hours.text" /></b></th>
 		</tr>
-		
+
 		<c:forEach var="timereport" items="${timereportsOutOfRange}"
 			varStatus="rowID">
 			<c:choose>
@@ -290,7 +311,7 @@
 					<tr class="secondarycolor">
 				</c:otherwise>
 			</c:choose>
-			
+
 			<!-- Info -->
 			<td align="center">
 			<div class="tooltip" id="info<c:out value='${timereport.id}' />">
@@ -405,7 +426,7 @@
 				<c:out value="${timereport.customerorderDescription}" /><br>
 				<c:out value="${timereport.suborderDescription}" />
 			</td>
-			
+
 			<!-- Kommentar -->
 			<td>
 				<c:choose>
@@ -428,12 +449,12 @@
 	</table>
 <br><br>
 </c:if>
-	
-	
+
+
 </html:form>
 
 	<!-- overtime table -->
-	 
+
 <html:form action="/StoreEmployeecontract?task=storeOvertime">
 	<c:if test="${employeeContractContext eq 'edit'}">
 	<br>
@@ -482,7 +503,7 @@
 					<td style="text-align: left">
 						<c:out value="${overtime.comment}" />
 					</td>
-				</tr>	
+				</tr>
 			</c:forEach>
 			<tr>
 				<td style="text-align: right">
@@ -490,13 +511,13 @@
 				</td>
 				<td style="text-align: right">
 					<html:text property="newOvertime" size="10" style="text-align: right" />
-				</td>					
+				</td>
 				<td>
 					<html:text property="newOvertimeComment" size="64" style="text-align: left" />
 				</td>
 				<td class="noBborderStyle">
 					<html:submit styleId="button" styleClass="hiddencontent" titleKey="main.general.button.save.alttext.text">
-						<bean:message key="main.general.button.save.text" />						
+						<bean:message key="main.general.button.save.text" />
 					</html:submit>
 				</td>
 			</tr>
@@ -508,9 +529,9 @@
 					<c:out value="${totalovertime}" />
 				</td>
 			</tr>
-			
+
 			<!-- error messages -->
-			
+
 			<tr>
 				<td class="noBborderStyle" colspan="4">
 					<span style="color:red"><html:errors property="newOvertime" /></span>
@@ -520,7 +541,7 @@
 				<td class="noBborderStyle" colspan="4">
 					<span style="color:red"><html:errors property="newOvertimeComment" /></span>
 				</td>
-			</tr>		
+			</tr>
 		</table>
 	</c:if>
 </html:form>
