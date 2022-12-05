@@ -30,6 +30,9 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	font-family: verdana, arial, sans-serif;
 	font-size: 10pt;
 	color: black;
+	max-width: 1920px;
+	margin: auto;
+	padding: 1em;
 }
 
 .borderTopLine {
@@ -193,6 +196,10 @@ a:active {
 
 a:hover {
 	text-decoration: underline;
+}
+
+#nav {
+	display: flex;
 }
 
 #nav a {
