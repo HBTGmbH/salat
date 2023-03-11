@@ -1,6 +1,6 @@
 package org.tb.common.util;
 
-import jakarta.servlet.ServletContext;
+import javax.servlet.ServletContext;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
