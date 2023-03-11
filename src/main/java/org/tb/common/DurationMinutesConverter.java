@@ -1,8 +1,8 @@
 package org.tb.common;
 
 import java.time.Duration;
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 @Converter
 public class DurationMinutesConverter implements AttributeConverter<Duration, Integer> {

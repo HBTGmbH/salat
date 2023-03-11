@@ -1,6 +1,6 @@
 package org.tb.order.action;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
