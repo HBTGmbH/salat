@@ -22,8 +22,7 @@ public abstract class TypedAction<F extends ActionForm> extends Action {
       HttpServletResponse response) throws Exception;
 
   @Override
-  public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request,
-      HttpServletResponse response) throws Exception {
+  public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
     return executeWithForm(mapping, (F) form, request, response);
   }
 
