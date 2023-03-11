@@ -5,12 +5,15 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.order.domain.Customerorder;
 
 @Repository
 public interface CustomerorderRepository extends PagingAndSortingRepository<Customerorder, Long>,
+    CrudRepository<Customerorder,Long>,
     JpaSpecificationExecutor<Customerorder> {
 
   @Query("select c from Customerorder c where c.responsible_hbt.id = :responsibleHbtId")
