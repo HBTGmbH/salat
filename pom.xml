@@ -66,7 +66,7 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-ui</artifactId>
-			<version>1.6.13</version>
+			<version>1.6.14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -151,7 +151,7 @@
 		<dependency>
 			<groupId>org.codehaus.jettison</groupId>
 			<artifactId>jettison</artifactId>
-			<version>1.5.2</version>
+			<version>1.5.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -209,7 +209,7 @@
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>jquery</artifactId>
-			<version>3.6.1</version>
+			<version>3.6.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.webjars</groupId>
@@ -219,7 +219,7 @@
 		<dependency>
 			<groupId>org.webjars.npm</groupId>
 			<artifactId>bootstrap-icons</artifactId>
-			<version>1.10.2</version>
+			<version>1.10.3</version>
 		</dependency>
 
 	</dependencies>

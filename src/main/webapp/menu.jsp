@@ -32,7 +32,7 @@ window.onload=startList;
 	</td>
     <td class="noBborderStyle" align="center" valign="middle" width="50%" title="<bean:message key='main.general.mainmenu.menu.subtext' />">
 		<span style="font-size:14pt;font-weight:bold;">
-			SALAT: System zum Abrechnen von Leistungen, Arbeitszeiten und T&auml;tigkeiten
+			SALAT<span class="sub-title">: System zum Abrechnen von Leistungen, Arbeitszeiten und T&auml;tigkeiten</span>
 		</span>
 	</td>
     <td class="noBborderStyle" align="right" valign="top" width="25%">
