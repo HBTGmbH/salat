@@ -35,6 +35,18 @@ spring:
     resources:
       cache:
         period: 1d
+  cloud:
+    azure:
+      active-directory:
+        redirect-uri-template: ${REDIRECT-URI-TEMPLATE}
+# Enable related features.
+        enabled: true
+# Specifies your Active Directory ID:
+        profile.tenant-id: ${AZURE_AD_TENANT_ID}
+# Specifies your App Registration's Application ID:
+        credential.client-id: ${AZURE_AD_CLIENT_ID}
+# Specifies your App Registration's secret key:
+        credential.client-secret: ${AZURE_AD_CLIENT_SECRET}
 
 management:
   endpoints:
