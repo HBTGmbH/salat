@@ -99,7 +99,7 @@ CREATE TABLE `customerorder` (
 
 LOCK TABLES `customerorder` WRITE;
 /*!40000 ALTER TABLE `customerorder` DISABLE KEYS */;
-INSERT INTO `customerorder` VALUES (5190,'2006-12-05 13:35:24','mm','EUR',NULL,NULL,'Urlaub','2007-01-01','\0',0,'2007-07-16 12:44:37','adm','Urlaub','---','---','Urlaub','URLAUB',0,NULL,7,3201,1680,1680),(5191,'2006-12-05 13:36:31','mm','EUR',NULL,NULL,'Krankheit','2007-01-01','\0',0,'2007-07-16 12:44:09','adm','Krankheit','---','---','Krankheit','KRANK',0,NULL,7,3201,1680,1680),(180969,'2019-09-11 04:51:49','bm','EUR',NULL,NULL,'Rumsitzen','2019-09-11','\0',100,NULL,NULL,'Ergonomische Studie','Dörte Dörtersen','Hans Hansmann','Rumsitzen','111',0,'2022-10-21',NULL,181388,178367,178367);
+INSERT INTO `customerorder` VALUES (5190,'2006-12-05 13:35:24','mm','EUR',NULL,NULL,'Urlaub','2007-01-01','\0',0,'2007-07-16 12:44:37','adm','Urlaub','---','---','Urlaub','URLAUB',0,NULL,7,3201,1680,1680),(5191,'2006-12-05 13:36:31','mm','EUR',NULL,NULL,'Krankheit','2007-01-01','\0',0,'2007-07-16 12:44:09','adm','Krankheit','---','---','Krankheit','KRANK',0,NULL,7,3201,1680,1680),(180969,'2019-09-11 04:51:49','bm','EUR',NULL,NULL,'Rumsitzen','2019-09-11','\0',100,NULL,NULL,'Ergonomische Studie','Dörte Dörtersen','Hans Hansmann','Rumsitzen','111',0,'2023-10-21',NULL,181388,178367,178367);
 /*!40000 ALTER TABLE `customerorder` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -135,7 +135,7 @@ CREATE TABLE `employee` (
 
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
-INSERT INTO `employee` VALUES (1680,'2006-12-27 13:24:28','adm','salat','m','admin','2019-09-11 04:47:09','adm','admin','21232f297a57a5a743894a0e4a801fc3','\0','adm','adm',151),(178367,'2019-09-11 04:43:54','adm','Bossy','f','Bossmann','2019-09-11 04:58:16','bm','bm','084243855820f9ca47f466f645784636','\0','bm','adm',5),(178368,'2019-09-11 04:48:00','bm','Testy','m','Testmann','2019-09-11 04:57:39','tt','tt','accc9105df5383111407fd5b41255e23','\0','tt','ma',2);
+INSERT INTO `employee` VALUES (1680,'2006-12-27 13:24:28','adm','salat','m','admin','2019-09-11 04:47:09','adm','admin','$2a$10$WUeKyLBkvFBOFKPcj4KTduQe9YRyRrAffzGvinGzx77zkdstiVtF.','\0','adm','adm',151),(178367,'2019-09-11 04:43:54','adm','Bossy','f','Bossmann','2019-09-11 04:58:16','bm','bm','084243855820f9ca47f466f645784636','\0','bm','adm',5),(178368,'2019-09-11 04:48:00','bm','Testy','m','Testmann','2019-09-11 04:57:39','tt','tt','accc9105df5383111407fd5b41255e23','\0','tt','ma',2);
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -523,7 +523,7 @@ CREATE TABLE `suborder` (
 
 LOCK TABLES `suborder` WRITE;
 /*!40000 ALTER TABLE `suborder` DISABLE KEYS */;
-INSERT INTO `suborder` VALUES (5861,'\0','2006-12-22 14:14:18','adm','EUR',NULL,NULL,'Krankheit 2019','\0','2019-01-01','\0',0,'N','2009-02-02 10:42:35','adm','\0','Krankheit 2019','2019','','','\0','2019-12-31',3,5191,NULL),(60208,'\0','2010-01-04 13:27:24','adm','EUR',NULL,NULL,'Urlaub 2019','\0','2019-01-01','\0',0,'N','2011-05-17 14:23:53','adm','\0','Urlaub 2019','2019','','','\0','2019-12-31',3,5190,NULL),(180692,'','2019-09-11 04:53:23','bm','EUR',NULL,NULL,'Testen der Stuhlpolsterung','\0','2019-09-11','\0',100,'Y',NULL,NULL,'\0','Stuhlpolsterung','111.01','\0','SP1','\0','2022-10-21',NULL,180969,NULL);
+INSERT INTO `suborder` VALUES (5861,'\0','2006-12-22 14:14:18','adm','EUR',NULL,NULL,'Krankheit 2019','\0','2019-01-01','\0',0,'N','2009-02-02 10:42:35','adm','\0','Krankheit 2019','2019','','','\0','2019-12-31',3,5191,NULL),(60208,'\0','2010-01-04 13:27:24','adm','EUR',NULL,NULL,'Urlaub 2019','\0','2019-01-01','\0',0,'N','2011-05-17 14:23:53','adm','\0','Urlaub 2019','2019','','','\0','2019-12-31',3,5190,NULL),(180692,'','2019-09-11 04:53:23','bm','EUR',NULL,NULL,'Testen der Stuhlpolsterung','\0','2019-09-11','\0',100,'Y',NULL,NULL,'\0','Stuhlpolsterung','111.01','\0','SP1','\0','2023-10-21',NULL,180969,NULL);
 /*!40000 ALTER TABLE `suborder` ENABLE KEYS */;
 UNLOCK TABLES;
 

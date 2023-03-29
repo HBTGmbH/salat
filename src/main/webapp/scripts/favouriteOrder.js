@@ -1,23 +1,27 @@
-if(typeof HBT === "undefined") HBT = {};
+if (typeof HBT === "undefined") {
+	HBT = {};
+}
 var stored;
 HBT.Salat = HBT.Salat || {};
-HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
+HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function () {
 	var stored = null;
 	var user = null;
 	var lang = null;
-	
-	var getOptionById = function(options, id) {
-		for(var i = 0; i < options.length; i++) {
-			if(options[i].value == id) {
+
+	var getOptionById = function (options, id) {
+		for (var i = 0; i < options.length; i++) {
+			if (options[i].value == id) {
 				return options[i].innerHTML;
 			}
 		}
 		return null;
 	}
-	
-	var setSuborder = function(order, suborder, isSetting) {
-		if(!checkLocalstorageConsent()) return false;
-		if(isSetting) {
+
+	var setSuborder = function (order, suborder, isSetting) {
+		if (!checkLocalstorageConsent()) {
+			return false;
+		}
+		if (isSetting) {
 			user.defaultSuborders[order] = suborder;
 		} else {
 			delete user.defaultSuborders[order];
@@ -25,10 +29,12 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 		localStorage.setItem("SALAT", JSON.stringify(stored));
 		return true;
 	}
-	
-	var setOrder = function(order, isSetting) {
-		if(!checkLocalstorageConsent()) return false;
-		if(isSetting) {
+
+	var setOrder = function (order, isSetting) {
+		if (!checkLocalstorageConsent()) {
+			return false;
+		}
+		if (isSetting) {
 			user.defaultOrder = order;
 		} else {
 			delete user.defaultOrder;
@@ -36,156 +42,177 @@ HBT.Salat.FavouriteOrders = HBT.Salat.FavouriteOrders || function() {
 		localStorage.setItem("SALAT", JSON.stringify(stored));
 		return true;
 	}
-	
-	var checkLocalstorageConsent = function() {
-		if(localStorage.getItem("SALAT") == null) {
+
+	var checkLocalstorageConsent = function () {
+		if (localStorage.getItem("SALAT") == null) {
 			return confirm(lang.localStorageMsg);
 		}
 		return true;
 	}
-	
-	var getOrder = function(combo) {
+
+	var getOrder = function (combo) {
 		var order = user.defaultOrder;
-		if(!order) return null;
-		
-		for(var i = 0; i < combo.options.length; i++) {
+		if (!order) {
+			return null;
+		}
+
+		for (var i = 0; i < combo.options.length; i++) {
 			var option = combo.options[i];
-			if(option.value == order) {
+			if (option.value == order) {
 				return order;
 			}
 		}
 		return null;
 	}
-	
-	var getSuborder = function(combo, order) {
+
+	var getSuborder = function (combo, order) {
 		var suborder = user.defaultSuborders[order];
-		if(!suborder) return null;
-		
-		for(var i = 0; i < combo.options.length; i++) {
+		if (!suborder) {
+			return null;
+		}
+
+		for (var i = 0; i < combo.options.length; i++) {
 			var option = combo.options[i];
-			if(option.value == suborder) {
+			if (option.value == suborder) {
 				return suborder;
 			}
 		}
 		return null;
 	}
-	
-	var evaluatePlaceholderStr = function() {
+
+	var evaluatePlaceholderStr = function () {
 		var work = arguments[0];
-		for(var i = 1; i < arguments.length; i++) {
-			work = work.replace("{" + (i-1) + "}", arguments[i]);
+		for (var i = 1; i < arguments.length; i++) {
+			work = work.replace("{" + (i - 1) + "}", arguments[i]);
 		}
 		return work;
 	}
-	
-	var isSamePage = function() {
-		if(document.URL.endsWith("CreateDailyReport") || document.URL.indexOf("task=reset") > -1) {
+
+	var isSamePage = function () {
+		if (document.URL.endsWith("CreateDailyReport") || document.URL.indexOf("task=reset") > -1) {
 			return false;
 		} else {
-			return document.referrer.endsWith("addDailyReport.jsp") 
-				|| document.referrer.indexOf("continue=true") > -1 
-				|| document.referrer.indexOf("task=reset") > -1
-				|| document.URL.indexOf("EditDailyReport") > -1
-				|| document.referrer.indexOf("EditDailyReport") > -1
-				|| document.referrer.indexOf("StoreDailyReport") > -1
-				|| document.referrer.indexOf("CreateDailyReport") > -1;
+			return document.referrer.endsWith("addDailyReport.jsp")
+					|| document.referrer.indexOf("continue=true") > -1
+					|| document.referrer.indexOf("task=reset") > -1
+					|| document.URL.indexOf("EditDailyReport") > -1
+					|| document.referrer.indexOf("EditDailyReport") > -1
+					|| document.referrer.indexOf("StoreDailyReport") > -1
+					|| document.referrer.indexOf("CreateDailyReport") > -1;
 		}
 	}
-	
+
 	return {
-		initialize: function(langRes) {
+		initialize: function (langRes) {
 			lang = langRes;
 			stored = JSON.parse(localStorage.getItem("SALAT")) || {
 				users: {}
 			};
 			stored.users[currentUser] = stored.users[currentUser] || {
-				defaultSuborders: {}	
+				defaultSuborders: {}
 			};
 			user = stored.users[currentUser];
 		},
-		getDefaultSuborder: function(orderIndex) {
+		getDefaultSuborder: function (orderIndex) {
 			return user.defaultSuborders[orderIndex];
 		},
-		actionOrderSet: function(img) {
+		actionOrderSet: function (img) {
 			var elem = $(".orderCls")[0];
-			if(elem) {
+			if (elem) {
 				var selected = elem.options[elem.selectedIndex].value;
-				if(img.getAttribute("data-isFav") == "true") {
-					if(!setOrder(selected, false)) return;
+				if (img.getAttribute("data-isFav") == "true") {
+					if (!setOrder(selected, false)) {
+						return;
+					}
 					img.src = "/images/Button/whiteStar.svg"
 					img.title = lang.noDefaultOrder;
 					img.removeAttribute("data-isFav");
 				} else {
-					if(!setOrder(selected, true)) return;
+					if (!setOrder(selected, true)) {
+						return;
+					}
 					img.src = "/images/Button/goldStar.svg"
 					img.title = lang.thisIsTheDefaultOrder;
 					img.setAttribute("data-isFav", "true");
 				}
 			}
 		},
-		actionSuborderSet: function(img) {
+		actionSuborderSet: function (img) {
 			var elemOrder = $(".orderCls")[0];
 			var elemSuborder = $(".suborderCls")[0];
-			if(elemOrder && elemSuborder) {
+			if (elemOrder && elemSuborder) {
 				var selectedOrder = elemOrder.options[elemOrder.selectedIndex].value;
 				var selectedSuborder = elemSuborder.options[elemSuborder.selectedIndex].value;
-				if(img.getAttribute("data-isFav") == "true") {
-					if(!setSuborder(selectedOrder, selectedSuborder, false)) return;
+				if (img.getAttribute("data-isFav") == "true") {
+					if (!setSuborder(selectedOrder, selectedSuborder, false)) {
+						return;
+					}
 					img.src = "/images/Button/whiteStar.svg"
 					img.title = lang.noDefaultSuborder;
 					img.removeAttribute("data-isFav");
 				} else {
-					if(!setSuborder(selectedOrder, selectedSuborder, true)) return;
+					if (!setSuborder(selectedOrder, selectedSuborder, true)) {
+						return;
+					}
 					img.src = "/images/Button/goldStar.svg"
 					img.title = lang.thisIsTheDefaultSuborder;
 					img.setAttribute("data-isFav", "true");
 				}
 			}
 		},
-		initializeOrderSelection: function() {
+		initializeOrderSelection: function () {
 			var combo = $(".orderCls");
 			var elem = combo.select2({
 				dropdownAutoWidth: true,
 				width: 'auto',
 			});
 			var defaultOrder = getOrder(combo[0]);
-			if(defaultOrder == null) return;
-			
-			if(combo[0]) {
+			if (defaultOrder == null) {
+				return;
+			}
+
+			if (combo[0]) {
 				var selected = combo[0].options[combo[0].selectedIndex].value;
-				if(!isSamePage() && selected != defaultOrder) {
+				if (!isSamePage() && selected != defaultOrder) {
 					elem.val(defaultOrder).trigger("change.select2");
-				} else if(selected == defaultOrder) {
+				} else if (selected == defaultOrder) {
 					$("#favOrderBtn").attr("src", "/images/Button/goldStar.svg");
 					$("#favOrderBtn").attr("title", lang.thisIsTheDefaultOrder);
 				} else {
 					$("#favOrderBtn").attr("src", "/images/Button/bleachedStar.svg");
-					$("#favOrderBtn").attr("title", evaluatePlaceholderStr(lang.otherIsTheDefaultOrder, getOptionById(combo[0].options, defaultOrder)));
+					$("#favOrderBtn").attr("title", evaluatePlaceholderStr(lang.otherIsTheDefaultOrder,
+							getOptionById(combo[0].options, defaultOrder)));
 				}
 			}
 		},
-		initializeSuborderSelection: function() {
+		initializeSuborderSelection: function () {
 			var comboOrder = $(".orderCls");
 			var comboSuborder = $(".suborderCls");
 			var elem = comboSuborder.select2({
 				dropdownAutoWidth: true,
 				width: 'auto',
 			});
-			var selectedOrder = comboOrder[0].options[comboOrder[0].selectedIndex].value;
-			var defaultSuborder = getSuborder(comboSuborder[0], selectedOrder);
-			
-			if(defaultSuborder == null) return;
-			
-			if(comboSuborder[0]) {
-				var selectedSuborder = comboSuborder[0].options[comboSuborder[0].selectedIndex].value;
-				if(!isSamePage() && selectedSuborder != defaultSuborder) {
-					elem.val(defaultSuborder).trigger("change.select2");
-				} else if(selectedSuborder == defaultSuborder) {
-					$("#favSuborderBtn").attr("src", "/images/Button/goldStar.svg");
-					$("#favSuborderBtn").attr("title", lang.thisIsTheDefaultSuborder);
-				} else {
-					$("#favSuborderBtn").attr("src", "/images/Button/bleachedStar.svg");
-					$("#favSuborderBtn").attr("title", evaluatePlaceholderStr(lang.otherIsTheDefaultSuborder, getOptionById(comboSuborder[0].options, defaultSuborder)));
+			if (comboOrder[0].options.length > 0) {
+				var selectedOrder = comboOrder[0].options[comboOrder[0].selectedIndex].value;
+				var defaultSuborder = getSuborder(comboSuborder[0], selectedOrder);
+
+				if (defaultSuborder == null) {
+					return;
+				}
+
+				if (comboSuborder[0]) {
+					var selectedSuborder = comboSuborder[0].options[comboSuborder[0].selectedIndex].value;
+					if (!isSamePage() && selectedSuborder != defaultSuborder) {
+						elem.val(defaultSuborder).trigger("change.select2");
+					} else if (selectedSuborder == defaultSuborder) {
+						$("#favSuborderBtn").attr("src", "/images/Button/goldStar.svg");
+						$("#favSuborderBtn").attr("title", lang.thisIsTheDefaultSuborder);
+					} else {
+						$("#favSuborderBtn").attr("src", "/images/Button/bleachedStar.svg");
+						$("#favSuborderBtn")
+								.attr("title", evaluatePlaceholderStr(lang.otherIsTheDefaultSuborder,
+										getOptionById(comboSuborder[0].options, defaultSuborder)));
+					}
 				}
 			}
 

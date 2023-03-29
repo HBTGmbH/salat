@@ -31,7 +31,7 @@ Shutdown:
 
 ### Debugging
 Start local database only, without Salat:
-`docker-compose -f docker-compose-infra up`
+`docker-compose -f docker-compose-infra.yml up`
 
 ! Be sure to remove existing docker containers before by running `docker-compose down` if you had the application running before.
 

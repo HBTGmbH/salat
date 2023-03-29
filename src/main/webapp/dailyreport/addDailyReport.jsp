@@ -35,25 +35,21 @@
 
 	function setUpdateSubordersAction(select) {	
  		var form = select.form;
- 		
- 		var orderIndex = select.options[select.selectedIndex].value;
- 		var paramToAdd = "";
- 		if(orderIndex && orderIndex != "0") {
-	 		var suborderIndex = HBT.Salat.FavouriteOrders.getDefaultSuborder(orderIndex);
-	 		if(suborderIndex && suborderIndex != "0") {
-	 			paramToAdd = "&defaultSuborderIndex=" + suborderIndex;
-	 		}
- 		}
-		
-		form.action = "/do/StoreDailyReport?task=refreshSuborders" + paramToAdd;
-		form.submit();
-	}			
-	
-	function adjustBeginTimeAction(form) {
-		form.action = "/do/StoreDailyReport?task=adjustBeginTime";
-		form.submit();
+		if(select.options.length>0) {
+			var orderIndex = select.options[select.selectedIndex].value;
+			var paramToAdd = "";
+			if(orderIndex && orderIndex !== "0") {
+				var suborderIndex = HBT.Salat.FavouriteOrders.getDefaultSuborder(orderIndex);
+				if(suborderIndex && suborderIndex !== "0") {
+					paramToAdd = "&defaultSuborderIndex=" + suborderIndex;
+				}
+			}
+
+			form.action = "/do/StoreDailyReport?task=refreshSuborders" + paramToAdd;
+			form.submit();
+		}
 	}
-	
+
 	function adjustSuborderSignChangedAction(form) {	
  		form.action = "/do/StoreDailyReport?task=adjustSuborderSignChanged";
 		form.submit();
@@ -99,6 +95,21 @@
 		HBT.Salat.FavouriteOrders.initializeSuborderSelection();
 	});		
 </script>
+	<script type="text/javascript" src="/webjars/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+	<script type="text/javascript">
+		$(function () {
+
+			// INITIALIZE DATEPICKER PLUGIN
+			$('.datepicker').datepicker({
+				clearBtn: true,
+				format: "yyyy-mm-dd"
+			}).on('changeDate', function (ev) {
+				document.forms[0].action = "/do/StoreDailyReport?task=adjustBeginTime";
+				document.forms[0].submit();
+			});
+		});</script>
+	<link rel="stylesheet" href="/webjars/bootstrap-datepicker/css/bootstrap-datepicker.css">
 	<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 </head>
 <body>
@@ -142,48 +153,18 @@
 				<b><bean:message key="main.timereport.referenceday.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<!-- JavaScript Stuff for popup calender -->
-				<script type="text/javascript" language="JavaScript" src="/scripts/CalendarPopup.js">
-				</script>
-				<script type="text/javascript" language="JavaScript">
-                    document.write(getCalendarStyles());
-                </script>
-                <html:text property="referenceday" onchange="adjustBeginTimeAction(this.form)" 
-                	readonly="false" size="10" maxlength="10" 
-                	styleId="calinput"/>
-				<script type="text/javascript" language="JavaScript">
-					function calenderPopup() {
-						var cal = new CalendarPopup();
+				<span class="datepicker date input-group p-0 shadow-sm">
+					<html:text property="referenceday"  styleId="calinput1" styleClass="form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
+					<i class="bi bi-calendar-event mr2"></i>
+				</span>
 
-						cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
-						cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
-						cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-						cal.setTodayText("<bean:message key="main.date.popup.today" />");
-						// cal.select(document.forms[0].referenceday,'anchor1','E yyyy-MM-dd');
-						cal.select(document.forms[0].referenceday,'anchor1','yyyy-MM-dd');
-					}
-
-					var calinput = document.getElementById("calinput");
-					calinput.addEventListener("keypress", function(event) {
-						if (event.key === "Enter") {
-							event.preventDefault();
-							adjustBeginTimeAction(event.target.form);
-						}
-					});
-				</script>
-                <a href="javascript:calenderPopup()" name="anchor1" ID="anchor1" style="text-decoration:none;">
-                	<img src="/images/popupcalendar.gif" width="22" height="22"
-						 alt="<bean:message key="main.date.popup.alt.text" />"
-						 style="border:0;vertical-align:top">
-				</a>
-				
 				<%-- Arrows for navigating the Date --%>
 
-				<a href="javascript:setDate('-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
-				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
-				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
-				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
-				<a href="javascript:setDate('7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
+				<a href="javascript:setDate('-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
+				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
+				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
+				<a href="javascript:setDate('1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn"></i></a>
+				<a href="javascript:setDate('7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
 				<span style="color:red">
 					<html:errors property="referenceday" />
 					<html:errors property="release" />
