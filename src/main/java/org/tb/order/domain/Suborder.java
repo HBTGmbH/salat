@@ -1,5 +1,7 @@
 package org.tb.order.domain;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -15,7 +17,10 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -26,19 +31,21 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.persistence.SuborderDAO;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
-
 @Getter
 @Setter
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Suborder extends AuditedEntity implements Serializable {
 
-    public static enum VisitorDirection { PARENT, SUBORDERS }
+    public enum VisitorDirection { PARENT, SUBORDERS }
 
     private static final long serialVersionUID = 1L;
 

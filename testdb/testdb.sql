@@ -649,3 +649,16 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2019-09-11  7:07:08
+
+create table salat.employee_favorite_report
+(
+    id               bigint auto_increment  primary key,
+    description      text   null,
+    durationhours    int    null,
+    durationminutes  int    null,
+    EMPLOYEE_ID      bigint null,
+    EMPLOYEEORDER_ID bigint null,
+    constraint FK6wcikwlmnk378e7bo4b5m5j08 foreign key (EMPLOYEE_ID) references salat.employee (id),
+    constraint FK7m16entp5kxw1e0a8e7jibnla foreign key (EMPLOYEEORDER_ID) references salat.employeeorder (id),
+);
+

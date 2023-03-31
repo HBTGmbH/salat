@@ -3,7 +3,10 @@ package org.tb.employee.domain;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -14,6 +17,9 @@ import org.tb.common.util.SecureHashUtils;
 @Getter
 @Setter
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Employee extends AuditedEntity implements Serializable {
 
