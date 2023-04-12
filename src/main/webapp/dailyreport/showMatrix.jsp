@@ -374,19 +374,19 @@
 						<td class="matrix"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
 							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+								test="${!(dayhourcount.workingHour eq 'PT0S')}">
+							<c:out value="${dayhourcount.workingHourString}"></c:out>
+						</c:if>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 					<c:if test="${dayhourcount.publicHoliday==false}">
 						<td class="matrix"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: lightgrey;"
 							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+								test="${!(dayhourcount.workingHour eq 'PT0S')}">
+							<c:out value="${dayhourcount.workingHourString}"></c:out>
+						</c:if>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 				</c:if>
 				<c:if test="${dayhourcount.satSun==false}">
@@ -394,19 +394,19 @@
 						<td class="matrix"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
 							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+								test="${!(dayhourcount.workingHour eq 'PT0S')}">
+							<c:out value="${dayhourcount.workingHourString}"></c:out>
+						</c:if>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 					<c:if test="${dayhourcount.publicHoliday==false}">
 						<td class="matrix"
 							style="font-size: 7pt; border-top: 2px black solid;"
 							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+								test="${!(dayhourcount.workingHour eq 'PT0S')}">
+							<c:out value="${dayhourcount.workingHourString}"></c:out>
+						</c:if>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 				</c:if>
 
