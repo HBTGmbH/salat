@@ -56,22 +56,22 @@ public class HttpFilterConfiguration {
         return registrationBean;
     }
 
-    @Bean
-    public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
-        var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
-        registrationBean.setOrder(101);
-        registrationBean.setFilter(new AuthenticationFilter(authorizedUser, employeeRepository));
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
-        return registrationBean;
-    }
+//    @Bean
+//    public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
+//        var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
+//        registrationBean.setOrder(101);
+//        registrationBean.setFilter(new AuthenticationFilter(authorizedUser, employeeRepository));
+//        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+//        return registrationBean;
+//    }
 
-    @Bean
-    public FilterRegistrationBean<UserAccessTokenFilter> userAccessTokenFilter(){
-        var registrationBean = new FilterRegistrationBean<UserAccessTokenFilter>();
-        registrationBean.setOrder(102);
-        registrationBean.setFilter(new UserAccessTokenFilter(authorizedUser, userAccessTokenService));
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
-        return registrationBean;
-    }
+//    @Bean
+//    public FilterRegistrationBean<UserAccessTokenFilter> userAccessTokenFilter(){
+//        var registrationBean = new FilterRegistrationBean<UserAccessTokenFilter>();
+//        registrationBean.setOrder(102);
+//        registrationBean.setFilter(new UserAccessTokenFilter(authorizedUser, userAccessTokenService));
+//        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+//        return registrationBean;
+//    }
 
 }

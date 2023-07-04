@@ -163,6 +163,7 @@
 	</head>
 
 	<body>
+	test
 		<jsp:include flush="true" page="/menu.jsp">
 			<jsp:param name="title" value="Menu" />
 		</jsp:include>

@@ -79,67 +79,67 @@
 
 	<action-mappings>
 
-		<action path="/chicoree/Login" input="/chicoree/login.jsp" validate="true"
-			name="chicoree/LoginForm" type="org.tb.chicoree.LoginAction">
-			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
-		</action>
+<!--		<action path="/chicoree/Login" input="/chicoree/login.jsp" validate="true"-->
+<!--			name="chicoree/LoginForm" type="org.tb.chicoree.LoginAction">-->
+<!--			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />-->
+<!--		</action>-->
 
-		<action path="/chicoree/Logout" type="org.tb.chicoree.LogoutAction">
-			<forward name="success" path="/chicoree/login.jsp" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
-		</action>
+<!--		<action path="/chicoree/Logout" type="org.tb.chicoree.LogoutAction">-->
+<!--			<forward name="success" path="/chicoree/login.jsp" redirect="true" />-->
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
+<!--		</action>-->
 
 		<action path="/chicoree/ShowDashboard" type="org.tb.chicoree.ShowDashboardAction">
 			<forward name="success" path="/chicoree/dashboard.jsp" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
 		</action>
 
 		<action path="/chicoree/ChangeDay" type="org.tb.chicoree.ChangeDayAction">
 			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
 		</action>
 
 		<action path="/chicoree/DeleteTimereport" type="org.tb.chicoree.DeleteTimereportAction"
 			input="/chicoree/dashboard.jsp">
 			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
 		</action>
 
 		<action path="/chicoree/AddTimereport" type="org.tb.chicoree.EditTimereportAction"
 			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
 			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
 		</action>
 
 		<action path="/chicoree/EditTimereport" type="org.tb.chicoree.EditTimereportAction"
 			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
 			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
 		</action>
 
 		<action path="/chicoree/RefreshTimereportFormFields" type="org.tb.chicoree.RefreshTimereportFormFieldsAction"
 			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
 			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
 		</action>
 
 		<action path="/chicoree/StoreTimereport" type="org.tb.chicoree.StoreTimereportAction"
 			input="/chicoree/timereport.jsp" name="chicoree/TimereportForm" validate="true">
 			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
-			<forward name="login" path="/chicoree/login.jsp" redirect="true" />
+<!--			<forward name="login" path="/chicoree/login.jsp" redirect="true" />-->
 		</action>
 
-		<action path="/LoginEmployee" input="/auth/login.jsp" validate="true" name="loginEmployeeForm"
-			type="org.tb.auth.LoginEmployeeAction">
-			<forward name="success" path="/welcome/showWelcome.jsp" redirect="true" />
-			<forward name="error" path="/error.jsp" />
-			<forward name="password" path="/user/showSettings.jsp" />
-		</action>
+<!--		<action path="/LoginEmployee" input="/auth/login.jsp" validate="true" name="loginEmployeeForm"-->
+<!--			type="org.tb.auth.LoginEmployeeAction">-->
+<!--			<forward name="success" path="/welcome/showWelcome.jsp" redirect="true" />-->
+<!--			<forward name="error" path="/error.jsp" />-->
+<!--			<forward name="password" path="/user/showSettings.jsp" />-->
+<!--		</action>-->
 
-		<action path="/LogoutEmployee" name="logoutEmployeeForm"
-			type="org.tb.auth.LogoutEmployeeAction">
-			<forward name="success" path="/auth/login.jsp" />
-		</action>
+<!--		<action path="/LogoutEmployee" name="logoutEmployeeForm"-->
+<!--			type="org.tb.auth.LogoutEmployeeAction">-->
+<!--			<forward name="success" path="/auth/login.jsp" />-->
+<!--		</action>-->
 
 		<action path="/CreateDailyReport" name="addDailyReportForm"
 			type="org.tb.dailyreport.action.CreateDailyReportAction">
@@ -212,7 +212,7 @@
 
 		<action path="/ShowWelcome" input="/welcome/showWelcome.jsp" validate="true"
 			name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeAction">
-			<forward name="login" path="/auth/login.jsp" />
+<!--			<forward name="login" path="/auth/login.jsp" />-->
 			<forward name="success" path="/welcome/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>

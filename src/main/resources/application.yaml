@@ -35,7 +35,27 @@ spring:
     resources:
       cache:
         period: 1d
+  security:
+    oauth2:
+      client:
 
+        provider:
+          azure:
+            issuer-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/v2.0 # TODO ${salat-tenant-id}
+#            authorization-uri:
+        registration:
+          "azure":
+            provider: azure
+            client-id: ${AZURE_AD_CLIENT_ID} #TODO ${salat-client-id}
+            client-secret: ${AZURE_AD_CLIENT_SECRET} # TODO ${salat-client-secret}
+            scope:
+              - openid
+              - email
+              - profile
+
+#      keyvault:
+#        secret:
+#          endpoint: https://salat-key-vault.vault.azure.net/
 management:
   endpoints:
     web:

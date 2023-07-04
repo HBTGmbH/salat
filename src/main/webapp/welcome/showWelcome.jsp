@@ -27,7 +27,7 @@
 </head>
 <body>
 <c:if test="${currentEmployeeContract.employee.sign eq null}">
-	<jsp:forward page="/auth/login.jsp" />
+	<h1>Not logged in</h1>
 </c:if>
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
