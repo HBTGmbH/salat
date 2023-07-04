@@ -7,6 +7,9 @@ server:
     session:
       persistent: false
       timeout: 660m
+  error:
+    whitelabel:
+      enabled=false:
   forward-headers-strategy: native # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
 spring:
   datasource:
@@ -35,24 +38,15 @@ spring:
     resources:
       cache:
         period: 1d
-  security:
-    oauth2:
-      client:
-
-        provider:
-          azure:
-            issuer-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/v2.0 # TODO ${salat-tenant-id}
-#            authorization-uri:
-        registration:
-          "azure":
-            provider: azure
-            client-id: ${AZURE_AD_CLIENT_ID} #TODO ${salat-client-id}
-            client-secret: ${AZURE_AD_CLIENT_SECRET} # TODO ${salat-client-secret}
-            scope:
-              - openid
-              - email
-              - profile
-
+  cloud:
+    azure:
+      active-directory:
+        enabled: true
+        profile:
+          tenant-id: ${AZURE_AD_TENANT_ID} # TODO use Key-vault
+        credential:
+          client-id: ${AZURE_AD_CLIENT_ID} # TODO use Key-vault
+          client-secret: ${AZURE_AD_CLIENT_SECRET} # TODO use Key-vault
 #      keyvault:
 #        secret:
 #          endpoint: https://salat-key-vault.vault.azure.net/
