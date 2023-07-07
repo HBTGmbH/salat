@@ -61,40 +61,52 @@ public class AuthenticationFilter extends HttpFilter {
     protected void doFilter(HttpServletRequest request, HttpServletResponse response,
         FilterChain chain)
         throws IOException, ServletException {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() != null) {
-            if (auth.getPrincipal() instanceof DefaultOAuth2User user) {
-                String userSign = user.getAttribute("preferred_username");
-                employeeRepository.findBySign(userSign)
-                    .ifPresentOrElse(
-                        loginEmployee -> {
-                            authorizedUser.init(loginEmployee);
-                            processLoginEmployee(loginEmployee, request);
-                        },
-                        () -> {
-                            getEmployeeByApiKey(request).ifPresentOrElse(loginEmployee -> {
+
+        Employee oldLoginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+        if (oldLoginEmployee != null) {
+            log.trace("got old Employee {}", oldLoginEmployee);
+            authorizedUser.init(oldLoginEmployee);
+        } else {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() != null) {
+                //request.getSession().setprUserPrincipal();
+                if (auth.getPrincipal() instanceof DefaultOAuth2User user) {
+                    String userSign = user.getAttribute("preferred_username");
+
+                    log.info("userSign: {}", userSign);
+                    employeeRepository.findBySign(userSign)
+                        .ifPresentOrElse(
+                            loginEmployee -> {
                                 authorizedUser.init(loginEmployee);
                                 processLoginEmployee(loginEmployee, request);
-                            }, () -> {
-                                // TODO generate user from Principal
-                                log.info("no user found for sign " + userSign
-                                    + " please contact the Administrator to create your user");
-                                throw new AuthenticationCredentialsNotFoundException(
-                                    "no user found for sign " + userSign
+                            },
+                            () -> {
+                                getEmployeeByApiKey(request).ifPresentOrElse(loginEmployee -> {
+                                    authorizedUser.init(loginEmployee);
+                                    processLoginEmployee(loginEmployee, request);
+                                }, () -> {
+                                    // TODO generate user from Principal
+                                    log.info("no user found for sign " + userSign
                                         + " please contact the Administrator to create your user");
+                                    throw new AuthenticationCredentialsNotFoundException(
+                                        "no user found for sign " + userSign
+                                            + " please contact the Administrator to create your user");
+                                });
                             });
-                        });
+                } else {
+                    log.error("got Principal of {}, but expected DefaultOAuth2User",
+                        auth.getPrincipal().getClass());
+                }
+            } else {
+                log.info("no user given from Auth-Service");
+                throw new AuthenticationServiceException("no user given from Auth-Service");
             }
-
-        } else {
-            log.info("no user given from Auth-Service");
-            throw new AuthenticationServiceException("no user given from Auth-Service");
         }
-// TODO was ist das?
-//        Object oldValue = request.getAttribute("authorizedUser");
-//        request.setAttribute("authorizedUser", authorizedUser);
+        //Object oldValue = request.getAttribute("authorizedUser");
+        //request.setAttribute("authorizedUser", authorizedUser);
         super.doFilter(request, response, chain);
-//        request.setAttribute("authorizedUser", oldValue);
+        //request.setAttribute("authorizedUser", oldValue);
+        log.info("Status: {}", response.getStatus());
 
     }
 

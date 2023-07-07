@@ -9,7 +9,7 @@ server:
       timeout: 660m
   error:
     whitelabel:
-      enabled=false:
+      enabled: false
   forward-headers-strategy: native # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
 spring:
   datasource:
@@ -47,6 +47,8 @@ spring:
         credential:
           client-id: ${AZURE_AD_CLIENT_ID} # TODO use Key-vault
           client-secret: ${AZURE_AD_CLIENT_SECRET} # TODO use Key-vault
+       # user-name-attribute:
+
 #      keyvault:
 #        secret:
 #          endpoint: https://salat-key-vault.vault.azure.net/
