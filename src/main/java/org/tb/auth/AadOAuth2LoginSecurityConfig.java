@@ -20,7 +20,6 @@ public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapte
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
     http
-        //  .addFilterAfter(authenticationFilter, AnonymousAuthenticationFilter.class)
         .authorizeHttpRequests(
             (authorize) -> authorize
                 .antMatchers("/swagger-ui.html"

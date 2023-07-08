@@ -102,10 +102,7 @@ public class AuthenticationFilter extends HttpFilter {
                 throw new AuthenticationServiceException("no user given from Auth-Service");
             }
         }
-        //Object oldValue = request.getAttribute("authorizedUser");
-        //request.setAttribute("authorizedUser", authorizedUser);
         super.doFilter(request, response, chain);
-        //request.setAttribute("authorizedUser", oldValue);
         log.info("Status: {}", response.getStatus());
 
     }
