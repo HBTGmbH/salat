@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @RequiredArgsConstructor
 @EnableWebSecurity
@@ -20,7 +20,7 @@ public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapte
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
     http
-        .addFilterAfter(authenticationFilter, AnonymousAuthenticationFilter.class)
+        //  .addFilterAfter(authenticationFilter, AnonymousAuthenticationFilter.class)
         .authorizeHttpRequests(
             (authorize) -> authorize
                 .antMatchers("/swagger-ui.html"
@@ -37,7 +37,9 @@ public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapte
                 //.hasRole("salat-user")
                 //.anyRequest()
                 .authenticated()
+
         )
+        .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
         ;
   }
 }
