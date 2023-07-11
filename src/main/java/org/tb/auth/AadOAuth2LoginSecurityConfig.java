@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @RequiredArgsConstructor
 @EnableWebSecurity
@@ -39,7 +38,8 @@ public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapte
                 //.anyRequest()
                 .authenticated()
         )
-        .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        .csrf().disable()
+//        .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
         ;
   }
 }
