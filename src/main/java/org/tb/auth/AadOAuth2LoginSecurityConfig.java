@@ -2,6 +2,7 @@ package org.tb.auth;
 
 import com.azure.spring.cloud.autoconfigure.aad.AadWebSecurityConfigurerAdapter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -10,6 +11,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 @RequiredArgsConstructor
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
+@Profile({"test","prod","local"})
 public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapter {
 
   private final AuthenticationFilter authenticationFilter;
@@ -36,7 +38,6 @@ public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapte
                 //.hasRole("salat-user")
                 //.anyRequest()
                 .authenticated()
-
         )
         .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
         ;
