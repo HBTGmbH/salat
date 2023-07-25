@@ -8,6 +8,7 @@ import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
 import org.springframework.web.servlet.resource.ResourceUrlEncodingFilter;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.tb.auth.AuthorizedUser;
+import org.tb.auth.HbtAuthenticationFilter;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.user.UserAccessTokenService;
 
@@ -17,6 +18,8 @@ public class HttpFilterConfiguration {
 
     private final AuthorizedUser authorizedUser;
     private final EmployeeRepository employeeRepository;
+    private final HbtAuthenticationFilter hbtAuthenticationFilter;
+
     private final UserAccessTokenService userAccessTokenService;
     private final ResourceUrlProvider resourceUrlProvider;
 
@@ -56,14 +59,15 @@ public class HttpFilterConfiguration {
         return registrationBean;
     }
 
-//    @Bean
-//    public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
-//        var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
-//        registrationBean.setOrder(101);
-//        registrationBean.setFilter(new AuthenticationFilter(authorizedUser, employeeRepository));
-//        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
-//        return registrationBean;
-//    }
+    @Bean
+    public FilterRegistrationBean<HbtAuthenticationFilter> authenticationFilter(){
+        var registrationBean = new FilterRegistrationBean<HbtAuthenticationFilter>();
+        registrationBean.setOrder(101);
+        registrationBean.setFilter(hbtAuthenticationFilter);
+        registrationBean.addUrlPatterns();
+        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+        return registrationBean;
+    }
 
 //    @Bean
 //    public FilterRegistrationBean<UserAccessTokenFilter> userAccessTokenFilter(){

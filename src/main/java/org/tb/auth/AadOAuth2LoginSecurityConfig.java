@@ -13,7 +13,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @Profile({"test","prod","local"})
 public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapter {
 
-  private final AuthenticationFilter authenticationFilter;
   /**
    * Add configuration logic as needed.
    */

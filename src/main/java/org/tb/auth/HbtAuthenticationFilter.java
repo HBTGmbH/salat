@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpFilter;
@@ -19,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
 import org.apache.struts.util.RequestUtils;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -32,7 +32,6 @@ import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Employeeorder;
@@ -44,13 +43,12 @@ import org.tb.user.UserAccessTokenService;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class AuthenticationFilter extends HttpFilter {
+public class HbtAuthenticationFilter extends HttpFilter {
 
     private final AuthorizedUser authorizedUser;
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
     private final EmployeeorderDAO employeeorderDAO;
-    private final EmployeeDAO employeeDAO;
     private final PublicholidayDAO publicholidayDAO;
     private final SuborderDAO suborderDAO;
     private final AfterLogin afterLogin;
@@ -62,8 +60,13 @@ public class AuthenticationFilter extends HttpFilter {
         FilterChain chain)
         throws IOException, ServletException {
 
-        Employee oldLoginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        if (oldLoginEmployee != null) {
+        Employee oldLoginEmployee = (Employee) request.getSession()
+            .getAttribute("loginEmployee");
+
+        if (List.of("/auth/login.jsp").contains(request.getServletPath())
+        || List.of("/LoginEmployee").contains(request.getPathInfo())) {
+            chain.doFilter(request, response);
+        } else if (oldLoginEmployee != null) {
             log.trace("got old Employee {}", oldLoginEmployee);
             authorizedUser.init(oldLoginEmployee);
         } else {
@@ -72,41 +75,53 @@ public class AuthenticationFilter extends HttpFilter {
                 //request.getSession().setprUserPrincipal();
                 if (auth.getPrincipal() instanceof DefaultOAuth2User user) {
                     String userSign = user.getAttribute("preferred_username");
-
-                    log.info("userSign: {}", userSign);
-                    employeeRepository.findBySign(userSign)
-                        .ifPresentOrElse(
+                    if (userSign == null) {
+                        log.error(
+                            "sign was null please contact the Administrator to configure the user correctly");
+                    } else {
+                        log.info("userSign: {}", userSign);
+                        findEmployee(List.of(
+                                () -> employeeRepository.findBySign(userSign),
+                                () -> employeeRepository.findBySign(userSign.replace("@hbt.de", "")),
+                                () -> getEmployeeByApiKey(request)
+                            )
+                        ).ifPresentOrElse(
                             loginEmployee -> {
                                 authorizedUser.init(loginEmployee);
                                 processLoginEmployee(loginEmployee, request);
                             },
                             () -> {
-                                getEmployeeByApiKey(request).ifPresentOrElse(loginEmployee -> {
-                                    authorizedUser.init(loginEmployee);
-                                    processLoginEmployee(loginEmployee, request);
-                                }, () -> {
-                                    // TODO generate user from Principal
-                                    log.info("no user found for sign " + userSign
-                                        + " please contact the Administrator to create your user");
-                                    throw new AuthenticationCredentialsNotFoundException(
-                                        "no user found for sign " + userSign
-                                            + " please contact the Administrator to create your user");
-                                });
+                                // TODO generate user from Principal
+                                log.info("no user found for sign " + userSign
+                                    + " please contact the Administrator to create your user");
                             });
+                    }
                 } else {
                     log.error("got Principal of {}, but expected DefaultOAuth2User",
                         auth.getPrincipal().getClass());
                 }
             } else {
-                log.info("no user given from Auth-Service");
-                throw new AuthenticationServiceException("no user given from Auth-Service");
+                log.error("no user given from Auth-Service");
             }
         }
-        super.doFilter(request, response, chain);
+        if (!authorizedUser.isAuthenticated()) {
+            response.sendRedirect("/auth/login.jsp");
+        } else {
+            chain.doFilter(request, response);
+        }
         log.info("Status: {}", response.getStatus());
-
     }
 
+    private Optional<Employee> findEmployee(List<Supplier<Optional<Employee>>> functions)
+        throws AuthenticationCredentialsNotFoundException {
+        for (Supplier<Optional<Employee>> function : functions) {
+            Optional<Employee> res = function.get();
+            if (res.isPresent()) {
+                return res;
+            }
+        }
+        return Optional.empty();
+    }
 
     Optional<Employee> getEmployeeByApiKey(HttpServletRequest request) {
 
@@ -320,5 +335,4 @@ public class AuthenticationFilter extends HttpFilter {
     public static LocalDate today() {
         return LocalDate.now(ZoneId.of(DEFAULT_TIMEZONE_ID));
     }
-
 }
