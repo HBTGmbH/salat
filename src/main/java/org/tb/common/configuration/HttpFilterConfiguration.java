@@ -59,15 +59,16 @@ public class HttpFilterConfiguration {
         return registrationBean;
     }
 
-    @Bean
-    public FilterRegistrationBean<HbtAuthenticationFilter> authenticationFilter(){
-        var registrationBean = new FilterRegistrationBean<HbtAuthenticationFilter>();
-        registrationBean.setOrder(101);
-        registrationBean.setFilter(hbtAuthenticationFilter);
-        registrationBean.addUrlPatterns();
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
-        return registrationBean;
-    }
+//    @Bean
+//    public FilterRegistrationBean<HbtAuthenticationFilter> authenticationFilter(){
+//        var registrationBean = new FilterRegistrationBean<HbtAuthenticationFilter>();
+//        registrationBean.setOrder(101);
+//        registrationBean.setFilter(hbtAuthenticationFilter);
+//        registrationBean.addUrlPatterns();
+//        //
+//        //registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+//        return registrationBean;
+//    }
 
 //    @Bean
 //    public FilterRegistrationBean<UserAccessTokenFilter> userAccessTokenFilter(){

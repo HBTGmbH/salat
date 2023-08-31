@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -63,10 +64,8 @@ public class HbtAuthenticationFilter extends HttpFilter {
         Employee oldLoginEmployee = (Employee) request.getSession()
             .getAttribute("loginEmployee");
 
-        if (List.of("/auth/login.jsp").contains(request.getServletPath())
-        || List.of("/LoginEmployee").contains(request.getPathInfo())) {
-            chain.doFilter(request, response);
-        } else if (oldLoginEmployee != null) {
+        AtomicReference<String> userSign = new AtomicReference<>("empty");
+        if (oldLoginEmployee != null) {
             log.trace("got old Employee {}", oldLoginEmployee);
             authorizedUser.init(oldLoginEmployee);
         } else {
@@ -74,15 +73,15 @@ public class HbtAuthenticationFilter extends HttpFilter {
             if (auth != null && auth.getPrincipal() != null) {
                 //request.getSession().setprUserPrincipal();
                 if (auth.getPrincipal() instanceof DefaultOAuth2User user) {
-                    String userSign = user.getAttribute("preferred_username");
-                    if (userSign == null) {
+                    userSign.set(user.getAttribute("preferred_username"));
+                    if (userSign.get() == null) {
                         log.error(
                             "sign was null please contact the Administrator to configure the user correctly");
                     } else {
-                        log.info("userSign: {}", userSign);
+                        log.info("userSign: {}", userSign.get());
                         findEmployee(List.of(
-                                () -> employeeRepository.findBySign(userSign),
-                                () -> employeeRepository.findBySign(userSign.replace("@hbt.de", "")),
+                                () -> employeeRepository.findBySign(userSign.get()),
+                                () -> employeeRepository.findBySign(userSign.get().replace("@hbt.de", "")),
                                 () -> getEmployeeByApiKey(request)
                             )
                         ).ifPresentOrElse(
@@ -92,8 +91,9 @@ public class HbtAuthenticationFilter extends HttpFilter {
                             },
                             () -> {
                                 // TODO generate user from Principal
-                                log.info("no user found for sign " + userSign
+                                log.info("no user found for sign " + userSign.get()
                                     + " please contact the Administrator to create your user");
+
                             });
                     }
                 } else {
@@ -105,7 +105,9 @@ public class HbtAuthenticationFilter extends HttpFilter {
             }
         }
         if (!authorizedUser.isAuthenticated()) {
-            response.sendRedirect("/auth/login.jsp");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                "No user found for sign " + userSign.get()
+                + ". Please contact the Administrator to create your user.");
         } else {
             chain.doFilter(request, response);
         }
