@@ -13,6 +13,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @Profile({"test","prod","local"})
 public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapter {
 
+  final private HbtAuthenticationFilter hbtAuthenticationFilter;
+
   /**
    * Add configuration logic as needed.
    */
@@ -20,17 +22,10 @@ public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapte
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
     http
+        //.addFilterAfter(hbtAuthenticationFilter, )
         .authorizeHttpRequests(
             (authorize) -> authorize
-                .antMatchers("/swagger-ui.html"
-                    , "/swagger-ui/**"
-                    , "/v3/**"
-                    , "/favicon.ico"
-                    , "/error"
-                    , "/**error**"
-                    , "/error.jsp"
-                    //,"/**"
-                )
+                .antMatchers(HbtAuthenticationFilter.EXCLUDE_PATTERN.toArray(new String[0]))
                 .permitAll()
                 .antMatchers("/**")
                 //.hasRole("salat-user")
