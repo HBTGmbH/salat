@@ -28,77 +28,7 @@ while(names.hasMoreElements()) {
 <html:errors />
 </span>
 </b>
-<html:form action="/LoginEmployee" focus="loginname">
-	<table align="center" cellspacing="10">
-		<tr>
-			<td
-				colspan="1"
-				class="noBborderStyle"
-				height="100px">
-				 
-				<img
-				src="/images/batavia_180_180.png"
-				width="130"
-				height="110"
-				border="0">
-				 
-			</td>
-			<td class="noBborderStyle">
-				<b>SALAT</b><br />
-				System zum <br/>Abrechnen von <br/>Leistungen, <br/>Arbeitszeiten und <br/>T&auml;tigkeiten
-			</td>
-		</tr>
-		<tr></tr>
-		<tr></tr>
-		<tr>
-			<td class="noBborderStyle"><bean:message key="main.general.employeesign.text" />:</td>
-			<td class="noBborderStyle"><html:text
-				property="loginname"
-				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_LOGINNAME_MAX_LENGTH) %>" /></td>
-		</tr>
-		<tr>
-			<td class="noBborderStyle"><bean:message key="main.general.password.text" />:</td>
-			<td class="noBborderStyle"><html:password
-				property="password"
-				maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH) %>" /></td>
-		</tr>
-		<tr>
-			<td class="noBborderStyle">&nbsp;</td>
-			<td class="noBborderStyle">
-			<html:submit styleId="button"> 
-				<bean:message key="main.general.loginsubmit.text"/>
-			</html:submit>	
-			</td>
-		</tr>
-		<tr></tr>
-		<tr>
-			<td class="noBborderStyle">
-				<img src="/images/flag_en_GB.gif" width="36" height="24" border="0">
-			</td>
-			<td class="noBborderStyle">
-				<bean:message key="main.general.loginscreen.en.1"/><br>
-				<bean:message key="main.general.loginscreen.en.2"/>
-			</td>
-		</tr>
-		<tr>
-			<td class="noBborderStyle">
-				<img src="/images/flag_de_DE.gif" width="36" height="24" border="0">
-			</td>
-			<td class="noBborderStyle">
-				<bean:message key="main.general.loginscreen.de.1"/><br>
-				<bean:message key="main.general.loginscreen.de.2"/>
-			</td>
-		</tr>
-		<tr><td colspan="2" class="noBborderStyle"><font color="red"> </font>
-		</td></tr>
-		
-		<!-- debug info -->
-		<!--  
-		<tr><td colspan="2" class="noBborderStyle">Client: <c:out value="${pageContext.request.remoteAddr}" /></td></tr>
-		<tr><td colspan="2" class="noBborderStyle">Server: <c:out value="${pageContext.request.serverName}" />:<c:out value="${pageContext.request.serverPort}" /></td></tr> 
-		-->
-	</table>
-</html:form>
+Your user is not in my Database. Please ask your Administrator to create a Salat-User.
 <div style="text-align: center">
 	<h3>Try the new mobile friendly salad. Go to <a href="/chicoree/login.jsp" style="color: black">chicoree!</a></h3>
 </div>

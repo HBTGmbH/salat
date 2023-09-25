@@ -1,7 +1,7 @@
 package org.tb.auth;
 
 import static java.lang.Boolean.TRUE;
-import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
+import static org.springframework.web.context.WebApplicationContext.SCOPE_SESSION;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BO;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import org.tb.employee.domain.Employee;
 
 @Component
-@Scope(value = SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
+@Scope(value = SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
 @Data
 public class AuthorizedUser implements Serializable {
 

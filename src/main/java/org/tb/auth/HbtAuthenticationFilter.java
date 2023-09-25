@@ -23,7 +23,7 @@ import org.apache.struts.util.RequestUtils;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.tb.common.ErrorCode;
@@ -68,20 +68,15 @@ public class HbtAuthenticationFilter extends HttpFilter {
   protected void doFilter(HttpServletRequest request, HttpServletResponse response,
       FilterChain chain) throws IOException, ServletException {
 
-    Employee oldLoginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
     AtomicReference<String> userSign = new AtomicReference<>("empty");
     if (shouldNotFilter(request)) {
       log.trace("excluded {}", request.getRequestURI());
       chain.doFilter(request, response);
     } else {
-      if (oldLoginEmployee != null) {
-        log.trace("got old Employee {}", oldLoginEmployee);
-        authorizedUser.init(oldLoginEmployee);
-      } else {
+      {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() != null) {
-          //request.getSession().setprUserPrincipal();
-          if (auth.getPrincipal() instanceof DefaultOAuth2User user) {
+          if (auth.getPrincipal() instanceof DefaultOidcUser user) {
             userSign.set(user.getAttribute("preferred_username"));
             if (userSign.get() == null) {
               log.error(
