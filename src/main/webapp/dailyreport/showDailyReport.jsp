@@ -21,13 +21,18 @@
 
 			function findForm(item) {
 				while(item) {
-					if(item.tagName.toLowerCase() == "form") {
+					if(item.tagName.toLowerCase() === "form") {
 						return item;
 					}
 					item = item.parentElement;
 				}
 				return null;
 			}
+
+			function findFormById(id) {
+				return document.getElementById(id);
+			}
+
 			function afterCalenderClick() {
 				document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
 				document.forms[0].submit();
@@ -77,6 +82,7 @@
 				var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 				if (agree) {
 					form.action = "/do/DeleteTimereportFromDailyDisplay?trId=" + id;
+					console.log("submit with ", "/do/DeleteTimereportFromDailyDisplay?trId=" + id);
 					form.submit();
 				}
 			}
@@ -606,7 +612,7 @@
 			</tr>
 
 			<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
-				<html:form action="/UpdateDailyReport?trId=${timereport.id}">
+
 					<c:choose>
 						<c:when test="${statusID.count%2 == 0}">
 							<tr class="noBborderStyle primarycolor">
@@ -618,6 +624,7 @@
 
 					<!-- Info -->
 					<td class="noBborderStyle" align="center">
+						<html:form action="/UpdateDailyReport?trId=${timereport.id}" styleId="form${timereport.id}"><input type="hidden" name="id" value="${timereport.id}" /></html:form>
 						<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
 							<table>
 								<tr>
@@ -754,7 +761,7 @@
 
 							<!-- Fortbildung -->
 							<td class="noBborderStyle" align="center">
-								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
+								<input type="checkbox" form="form${timereport.id}" name="training" ${timereport.training ? 'checked' : '' } />
 							</td>
 
 							<!-- Dauer -->
@@ -772,13 +779,13 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<a href="#" onclick="confirmSave(findForm(this), ${timereport.id})" title="Speichern"><i class="bi bi-floppy2-fill"></i></a>
+								<a href="#" onclick="confirmSave(findFormById('form${timereport.id}'), ${timereport.id})" title="Speichern"><i class="bi bi-floppy2-fill"></i></a>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
-								<a href="#" onclick="confirmDelete(findForm(this), ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></a>
+								<a href="#" onclick="confirmDelete(findFormById('form${timereport.id}'), ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></a>
 								<span id="span-massedit-${timereport.id}">
-									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
+									<input type="checkbox" form="form${timereport.id}" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 								</span>
 							</td>
 						</c:when>
@@ -796,7 +803,7 @@
 							</td>
 							<!-- Fortbildung -->
 							<td class="noBborderStyle" align="center">
-								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
+								<input type="checkbox" form="form${timereport.id}" name="training" ${timereport.training ? 'checked' : '' } />
 							</td>
 							<!-- Dauer -->
 							<td class="noBborderStyle" align="center" nowrap>
@@ -809,7 +816,6 @@
 						</c:otherwise>
 					</c:choose>
 					</tr>
-				</html:form>
 			</c:forEach>
 			<tr class="borderTopLine">
 				<td colspan="6" class="noBborderStyle">
