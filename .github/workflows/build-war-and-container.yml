@@ -55,8 +55,8 @@ jobs:
           src: ghcr.io/hbtgmbh/salat:ci
           dst: |
             ${{ steps.meta.outputs.tags }}
-      - name: 'Run Azure webapp deploy action using publish profile credentials'
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: salat-test
-          publish-profile: ${{ secrets.azureWebAppPublishProfile }}
+#      - name: 'Run Azure webapp deploy action using publish profile credentials'
+#        uses: azure/webapps-deploy@v2
+#        with:
+#          app-name: salat-test
+#          publish-profile: ${{ secrets.azureWebAppPublishProfile }}
