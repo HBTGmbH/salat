@@ -178,7 +178,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 try {
                     simpleMailService.sendSalatBuchungenReleasedMail(recipient, from);
                 } catch (Exception e) {
-                    log.error("sending release mail failed!!!");
+                    log.error("sending release mail failed!!!", e);
                 }
             }
         }
