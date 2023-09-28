@@ -82,7 +82,7 @@ public class HbtAuthenticationFilter extends HttpFilter {
               log.error(
                   "sign was null please contact the Administrator to configure the user correctly");
             } else {
-              log.info("userSign: {}", userSign.get());
+              log.debug("userSign: {}", userSign.get());
               findEmployee(List.of(() -> employeeRepository.findBySign(userSign.get()),
                   () -> employeeRepository.findBySign(userSign.get().replace("@hbt.de", "")),
                   () -> getEmployeeByApiKey(request))).ifPresentOrElse(loginEmployee -> {
@@ -111,7 +111,6 @@ public class HbtAuthenticationFilter extends HttpFilter {
         chain.doFilter(request, response);
       }
     }
-    log.info("Status: {}", response.getStatus());
   }
 
   private Optional<Employee> findEmployee(List<Supplier<Optional<Employee>>> functions)
