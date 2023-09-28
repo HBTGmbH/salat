@@ -461,7 +461,7 @@
 										<html:options collection="minutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-save"></i></a>
+									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy2-fill"></i></a>
 									<i>(optional)</i>
 								</nobr>
 							</td>
@@ -482,8 +482,8 @@
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-save"></i></a>
-									&nbsp;&nbsp;<i>(optional)</i> test2
+									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy2-fill"></i></a>
+									&nbsp;&nbsp;<i>(optional)</i>
 								</td>
 							</tr>
 							<tr>
@@ -772,7 +772,7 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<a href="#" onclick="confirmSave(findForm(this), ${timereport.id})" title="Speichern"><i class="bi bi-save"></i></a>
+								<a href="#" onclick="confirmSave(findForm(this), ${timereport.id})" title="Speichern"><i class="bi bi-floppy2-fill"></i></a>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;

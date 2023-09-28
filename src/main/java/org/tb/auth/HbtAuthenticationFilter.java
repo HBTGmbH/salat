@@ -30,6 +30,7 @@ import org.tb.common.ErrorCode;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
@@ -67,49 +68,55 @@ public class HbtAuthenticationFilter extends HttpFilter {
   @Override
   protected void doFilter(HttpServletRequest request, HttpServletResponse response,
       FilterChain chain) throws IOException, ServletException {
+    try {
+      AtomicReference<String> userSign = new AtomicReference<>("empty");
+      if (shouldNotFilter(request)) {
+        log.trace("excluded {}", request.getRequestURI());
+        chain.doFilter(request, response);
+      } else {
+        {
+          Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+          if (auth != null && auth.getPrincipal() != null) {
+            if (auth.getPrincipal() instanceof DefaultOidcUser user) {
+              userSign.set(user.getAttribute("preferred_username"));
+              if (userSign.get() == null) {
+                log.error(
+                    "sign was null please contact the Administrator to configure the user correctly");
+              } else {
+                log.debug("userSign: {}", userSign.get());
+                findEmployee(List.of(() -> employeeRepository.findBySign(userSign.get()),
+                    () -> employeeRepository.findBySign(userSign.get().replace("@hbt.de", "")),
+                    () -> getEmployeeByApiKey(request))).ifPresentOrElse(loginEmployee -> {
+                  authorizedUser.init(loginEmployee);
+                  processLoginEmployee(loginEmployee, request);
+                }, () -> {
+                  // FIXME generate user from Principal
+                  log.info("no user found for sign " + userSign.get()
+                           + " please contact the Administrator to create your user");
 
-    AtomicReference<String> userSign = new AtomicReference<>("empty");
-    if (shouldNotFilter(request)) {
-      log.trace("excluded {}", request.getRequestURI());
-      chain.doFilter(request, response);
-    } else {
-      {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() != null) {
-          if (auth.getPrincipal() instanceof DefaultOidcUser user) {
-            userSign.set(user.getAttribute("preferred_username"));
-            if (userSign.get() == null) {
-              log.error(
-                  "sign was null please contact the Administrator to configure the user correctly");
+                });
+              }
             } else {
-              log.debug("userSign: {}", userSign.get());
-              findEmployee(List.of(() -> employeeRepository.findBySign(userSign.get()),
-                  () -> employeeRepository.findBySign(userSign.get().replace("@hbt.de", "")),
-                  () -> getEmployeeByApiKey(request))).ifPresentOrElse(loginEmployee -> {
-                authorizedUser.init(loginEmployee);
-                processLoginEmployee(loginEmployee, request);
-              }, () -> {
-                // FIXME generate user from Principal
-                log.info("no user found for sign " + userSign.get()
-                         + " please contact the Administrator to create your user");
-
-              });
+              log.error("got Principal of {}, but expected DefaultOAuth2User: {}",
+                  auth.getPrincipal().getClass(), auth.getPrincipal().toString());
             }
           } else {
-            log.error("got Principal of {}, but expected DefaultOAuth2User: {}",
-                auth.getPrincipal().getClass(), auth.getPrincipal().toString());
+            log.error("no user given from Auth-Service");
           }
+        }
+        if (!authorizedUser.isAuthenticated()) {
+          response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+              "No user found for sign " + userSign.get()
+              + ". Please contact the Administrator to create your user.");
         } else {
-          log.error("no user given from Auth-Service");
+          chain.doFilter(request, response);
         }
       }
-      if (!authorizedUser.isAuthenticated()) {
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-            "No user found for sign " + userSign.get()
-            + ". Please contact the Administrator to create your user.");
-      } else {
-        chain.doFilter(request, response);
-      }
+    } catch (ErrorCodeException e) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getErrorCode().getMessage());
+    } catch (Exception e) {
+      log.error("error while authentication", e);
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
     }
   }
 

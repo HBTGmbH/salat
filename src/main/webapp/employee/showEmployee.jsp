@@ -74,9 +74,6 @@
 		</tr>
 	</c:if>
 	</c:if>
-
-	authorizedUser.manager: ${authorizedUser.manager} <br>
-	authorizedUser null: ${authorizedUser == null} <br>
 	<tr>
 		<th align="left"
 			title="Info"><b>Info</b></th>

@@ -6,7 +6,6 @@ import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,11 +20,12 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.common.ErrorCode;
 import org.tb.common.OptionItem;
 import org.tb.common.SimpleMailService;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
@@ -59,7 +59,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
 
-        //get a list of all supervisors 
+        //get a list of all supervisors
         List<Employee> supervisors = new LinkedList<>();
         for (Employeecontract ec : viewableEmployeeContracts) {
             Employee supervisor = ec.getSupervisor();
@@ -67,7 +67,9 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                 supervisors.add(supervisor);
             }
         }
-        supervisors.sort(Comparator.comparing(Employee::getName));
+        if (supervisors.isEmpty()){
+          throw new InvalidDataException(ErrorCode.EC_SUPERVISOR_INVALID);
+        }
         request.getSession().setAttribute("supervisors", supervisors);
 
         /* get team members */
