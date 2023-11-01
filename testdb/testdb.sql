@@ -99,7 +99,11 @@ CREATE TABLE `customerorder` (
 
 LOCK TABLES `customerorder` WRITE;
 /*!40000 ALTER TABLE `customerorder` DISABLE KEYS */;
-INSERT INTO `customerorder` VALUES (5190,'2006-12-05 13:35:24','mm','EUR',NULL,NULL,'Urlaub','2007-01-01','\0',0,'2007-07-16 12:44:37','adm','Urlaub','---','---','Urlaub','URLAUB',0,NULL,7,3201,1680,1680),(5191,'2006-12-05 13:36:31','mm','EUR',NULL,NULL,'Krankheit','2007-01-01','\0',0,'2007-07-16 12:44:09','adm','Krankheit','---','---','Krankheit','KRANK',0,NULL,7,3201,1680,1680),(180969,'2019-09-11 04:51:49','bm','EUR',NULL,NULL,'Rumsitzen','2019-09-11','\0',100,NULL,NULL,'Ergonomische Studie','Dörte Dörtersen','Hans Hansmann','Rumsitzen','111',0,'2023-10-21',NULL,181388,178367,178367);
+INSERT INTO `customerorder` VALUES
+                                (5190,'2006-12-05 13:35:24','mm','EUR',NULL,NULL,'Urlaub','2007-01-01','\0',0,'2007-07-16 12:44:37','adm','Urlaub','---','---','Urlaub','URLAUB',0,NULL,7,3201,1680,1680),
+                                (5191,'2006-12-05 13:36:31','mm','EUR',NULL,NULL,'Krankheit','2007-01-01','\0',0,'2007-07-16 12:44:09','adm','Krankheit','---','---','Krankheit','KRANK',0,NULL,7,3201,1680,1680),
+                                (180969,'2019-09-11 04:51:49','bm','EUR',NULL,NULL,'Rumsitzen','2019-09-11','\0',100,NULL,NULL,'Ergonomische Studie','Dörte Dörtersen','Hans Hansmann','Rumsitzen','111',0,'2023-10-21',NULL,181388,178367,178367);
+                                (180970,'2019-09-11 04:51:49','bm','EUR',NULL,NULL,'Fortbildung','2019-09-11','\0',100,NULL,NULL,'Fortbildung','Dörte Dörtersen','Hans Hansmann','Fortbildung','i976',0,'2023-10-21',NULL,3201,1680,1680);
 /*!40000 ALTER TABLE `customerorder` ENABLE KEYS */;
 UNLOCK TABLES;
 

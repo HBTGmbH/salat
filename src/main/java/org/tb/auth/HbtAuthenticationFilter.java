@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
 import org.apache.struts.util.RequestUtils;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,6 +47,7 @@ import org.tb.user.UserAccessTokenService;
 @Slf4j
 @RequiredArgsConstructor
 @Component
+@Profile( {"!test"})
 public class HbtAuthenticationFilter extends HttpFilter {
 
   private final AuthorizedUser authorizedUser;
@@ -84,9 +86,7 @@ public class HbtAuthenticationFilter extends HttpFilter {
                     "sign was null please contact the Administrator to configure the user correctly");
               } else {
                 log.debug("userSign: {}", userSign.get());
-                findEmployee(List.of(() -> employeeRepository.findBySign(userSign.get()),
-                    () -> employeeRepository.findBySign(userSign.get().replace("@hbt.de", "")),
-                    () -> getEmployeeByApiKey(request))).ifPresentOrElse(loginEmployee -> {
+                getEmployee(request, userSign).ifPresentOrElse(loginEmployee -> {
                   authorizedUser.init(loginEmployee);
                   processLoginEmployee(loginEmployee, request);
                 }, () -> {
@@ -120,6 +120,13 @@ public class HbtAuthenticationFilter extends HttpFilter {
     }
   }
 
+  protected Optional<Employee> getEmployee(HttpServletRequest request,
+      AtomicReference<String> userSign) {
+    return findEmployee(List.of(() -> employeeRepository.findBySign(userSign.get()),
+        () -> employeeRepository.findBySign(userSign.get().replace("@hbt.de", "")),
+        () -> getEmployeeByApiKey(request)));
+  }
+
   private Optional<Employee> findEmployee(List<Supplier<Optional<Employee>>> functions)
       throws AuthenticationCredentialsNotFoundException {
     for (Supplier<Optional<Employee>> function : functions) {
@@ -146,7 +153,7 @@ public class HbtAuthenticationFilter extends HttpFilter {
     return Optional.empty();
   }
 
-  private void processLoginEmployee(Employee loginEmployee, HttpServletRequest request) {
+  void processLoginEmployee(Employee loginEmployee, HttpServletRequest request) {
 
     request.setAttribute("authorizedUser", authorizedUser);
 

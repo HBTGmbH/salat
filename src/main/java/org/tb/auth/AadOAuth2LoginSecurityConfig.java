@@ -10,7 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @RequiredArgsConstructor
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-@Profile({"test","prod","local"})
+@Profile({"!test"})
 public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapter {
 
   final private HbtAuthenticationFilter hbtAuthenticationFilter;
