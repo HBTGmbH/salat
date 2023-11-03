@@ -47,7 +47,7 @@ public class HbtTestAuthenticationFilter extends HbtAuthenticationFilter {
       } else {
         userSign.set(request.getHeader("user"));
         if (userSign.get() == null) {
-          userSign.set("adm");
+          userSign.set("tt");
         }
         if (userSign.get() == null) {
           log.error(

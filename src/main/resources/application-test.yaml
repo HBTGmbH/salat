@@ -3,3 +3,7 @@ spring:
     azure:
       active-directory:
         enabled: false
+server:
+  servlet:
+    session:
+      tracking-modes: cookie

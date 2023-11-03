@@ -544,7 +544,7 @@
 			</table>
 		</c:if>
 
-		<table class="center backgroundcolor nobBorderStyle" width="100%">
+		<table class="center backgroundcolor nobBorderStyle timereports" width="100%">
 			<tr class="noBborderStyle">
 				<td colspan="6" class="noBborderStyle">
 					&nbsp;
@@ -615,10 +615,10 @@
 
 					<c:choose>
 						<c:when test="${statusID.count%2 == 0}">
-							<tr class="noBborderStyle primarycolor">
+							<tr class="noBborderStyle primarycolor timereport">
 						</c:when>
 						<c:otherwise>
-							<tr class="noBborderStyle secondarycolor">
+							<tr class="noBborderStyle secondarycolor timereport">
 						</c:otherwise>
 					</c:choose>
 
@@ -781,9 +781,9 @@
 							<td class="noBborderStyle" align="center">
 								<a href="#" onclick="confirmSave(findFormById('form${timereport.id}'), ${timereport.id})" title="Speichern"><i class="bi bi-floppy2-fill"></i></a>
 								&nbsp;
-								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
+								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern" class="function-edit"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
-								<a href="#" onclick="confirmDelete(findFormById('form${timereport.id}'), ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></a>
+								<a href="#" onclick="confirmDelete(findFormById('form${timereport.id}'), ${timereport.id})" title="Löschen" class="function-delete"><i class="bi bi bi-trash"></i></a>
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" form="form${timereport.id}" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 								</span>
@@ -866,7 +866,7 @@
 			<tr>
 				<html:form action="/CreateDailyReport">
 					<td class="noBborderStyle" colspan="6" align="left">
-						<html:submit styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
+						<html:submit styleId="button" styleClass="createnewreport" titleKey="main.general.button.createnewreport.alttext.text">
 							<bean:message key="main.general.button.createnewreport.text" />
 						</html:submit>
 					</td>
