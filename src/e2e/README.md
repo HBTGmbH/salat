@@ -1,13 +1,15 @@
 # e2e-Test
 ## Vorbereitung
+* `$ npm install`
+* DB Starten: `$ docker-compose -f .\docker-compose-infra.yml up` (im Project root)
 * Salat mit Profil 'test' starten (die Authentifizierung wird deaktiviert)
   * [runConfiguration](../../.run/SalatApplication test.run.xml)
 
 ## Ausführung
-* `$cypress run`
+* `$ cypress run`
 
 ## Entwicklung von Tests
-* `$cypress open`
+* `$ cypress open`
   * -> E2E Testing
   * -> Browser auswählen
   * -> spec auswählen
