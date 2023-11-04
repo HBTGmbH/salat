@@ -300,11 +300,11 @@
 									<i class="bi bi-calendar-event mr2"></i>
 								</span>
 									<%-- Arrows for navigating the Date --%>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" class="mr2" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" class="mr2" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','0')" class="mr2" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','1')" class="mr2" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn"></i></a>
-								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','7')" class="mr2" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
+								<a href="#" data-testid="skip-prevweek" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" class="mr2" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
+								<a href="#" data-testid="skip-prevday" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" class="mr2" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
+								<a href="#" data-testid="skip-today" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','0')" class="mr2" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
+								<a href="#" data-testid="skip-nextday" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','1')" class="mr2" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn"></i></a>
+								<a href="#" data-testid="skip-nextweek" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','7')" class="mr2" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
 							</c:when>
 							<c:otherwise>
 								<html:select property="month" onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">

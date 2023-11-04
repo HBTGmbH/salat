@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "ui": "npx playwright test --ui"
+    "ui": "npx playwright test --ui",
+    "test": "npx playwright test"
   },
   "keywords": [],
   "author": "",
