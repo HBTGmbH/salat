@@ -7,4 +7,5 @@
 /tb/target/
 /.java-version
 /.jpb/
-/src/e2e/node_modules/
+/src/e2e/**/node_modules/
+/src/e2e/cypress/node_modules/
