@@ -49,5 +49,6 @@ it('create report ', () => {
   cy.get('[name="save"]').click();
   cy.get('[name="comment"]').last().should('have.text', 'test:'+timestamp);
   cy.get('.timereports tr.timereport .function-delete').last().click();
+  cy.get('[name="comment"]').last().should('not.have.text', 'test:'+timestamp);
 
 })

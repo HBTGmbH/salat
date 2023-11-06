@@ -210,6 +210,12 @@
 			<version>2.11.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.microsoft.playwright</groupId>
+			<artifactId>playwright</artifactId>
+			<version>1.39.0</version>
+		</dependency>
+
 		<!-- web jars -->
 		<dependency>
 			<groupId>org.webjars</groupId>
@@ -284,6 +290,16 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.10.1</version>
+				<!-- References to interface static methods are allowed only at source level 1.8 or above -->
+				<configuration>
+					<source>17</source>
+					<target>17</target>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

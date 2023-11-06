@@ -49,7 +49,7 @@ public class HbtTestAuthenticationFilter extends HbtAuthenticationFilter {
       } else {
         userSign.set(getuser(request));
         if (userSign.get() == null) {
-          userSign.set("adm");
+          userSign.set("tt");
         }
         if (userSign.get() == null) {
           log.error(
@@ -85,14 +85,14 @@ public class HbtTestAuthenticationFilter extends HbtAuthenticationFilter {
   private String getuser(HttpServletRequest request) {
     if (request.getHeader("user") != null) {
       return request.getHeader("user");
-    } else {
+    } else if (request.getCookies() != null) {
       return Arrays.stream(request.getCookies())
           .filter(cookie -> cookie.getName().equals("user"))
           .map(Cookie::getValue)
           .findFirst()
           .orElse(null);
-
     }
+    return null;
   }
 
 }
