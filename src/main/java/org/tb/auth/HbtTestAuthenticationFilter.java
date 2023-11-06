@@ -1,9 +1,11 @@
 package org.tb.auth;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -45,9 +47,9 @@ public class HbtTestAuthenticationFilter extends HbtAuthenticationFilter {
         log.trace("excluded {}", request.getRequestURI());
         chain.doFilter(request, response);
       } else {
-        userSign.set(request.getHeader("user"));
+        userSign.set(getuser(request));
         if (userSign.get() == null) {
-          userSign.set("tt");
+          userSign.set("adm");
         }
         if (userSign.get() == null) {
           log.error(
@@ -77,6 +79,19 @@ public class HbtTestAuthenticationFilter extends HbtAuthenticationFilter {
     } catch (Exception e) {
       log.error("error while authentication", e);
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+    }
+  }
+
+  private String getuser(HttpServletRequest request) {
+    if (request.getHeader("user") != null) {
+      return request.getHeader("user");
+    } else {
+      return Arrays.stream(request.getCookies())
+          .filter(cookie -> cookie.getName().equals("user"))
+          .map(Cookie::getValue)
+          .findFirst()
+          .orElse(null);
+
     }
   }
 
