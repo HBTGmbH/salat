@@ -1,11 +1,11 @@
 package org.tb.dailyreport.action;
 
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
 import static org.tb.common.DateTimeViewHelper.getSerialDayList;
+import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
+import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.util.DateUtils.now;
 
 import java.time.LocalDate;
@@ -27,9 +27,9 @@ import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.domain.comparator.SubOrderByDescriptionComparator;
 import org.tb.order.domain.Suborder;
+import org.tb.order.domain.comparator.SubOrderByDescriptionComparator;
+import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
 /**
@@ -51,15 +51,15 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) {
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-        Employeecontract ec;
+        Employeecontract employeecontract;
 
         if (request.getSession().getAttribute("currentEmployeeContract") != null && authorizedUser.isManager()) {
-            ec = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+            employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         } else {
-            ec = loginEmployeeContract;
+            employeecontract = loginEmployeeContract;
         }
 
-        if (ec == null) {
+        if (employeecontract == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO
             return mapping.findForward("error");
         }
@@ -67,19 +67,19 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         // get selected date for new report
         LocalDate selectedDate = getSelectedDateFromRequest(request);
 
-        Employeecontract matchingEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), selectedDate);
+        Employeecontract matchingEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeecontract.getEmployee().getId(), selectedDate);
         if (matchingEC != null) {
-            ec = matchingEC;
+            employeecontract = matchingEC;
         }
 
-        request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
-        request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
-        request.getSession().setAttribute("currentEmployeeContract", ec);
+        request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
+        request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+        request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 
         List<Employeecontract> employeecontracts = employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
-        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
+        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeecontract.getId(), selectedDate);
 
         // set attributes to be analyzed by target jsp
         request.getSession().setAttribute("orders", orders);
@@ -91,14 +91,11 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("serialBookings", getSerialDayList());
 
         // search for adequate workingday and set status in session
-        Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, ec.getId());
+        Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, employeecontract.getId());
 
-        boolean workingDayIsAvailable = false;
-        if (workingday != null) {
-            workingDayIsAvailable = true;
-        }
+        boolean workingDayIsAvailable = workingday != null;
 
-        // workingday should only be available for today
+      // workingday should only be available for today
         LocalDate today = DateUtils.today();
         if (!selectedDate.equals(today)) {
             workingDayIsAvailable = false;
@@ -108,7 +105,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set the begin time as the end time of the latest existing timereport of current employee
         // for current day. If no other reports exist so far, set standard begin time (0800).
-        long[] beginTime = timereportHelper.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
+        long[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeecontract.getId(), selectedDate, workingday);
         form.setSelectedHourBegin(beginTime[0]);
         form.setSelectedMinuteBegin(beginTime[1]);
         //		TimereportHelper.refreshHours(reportForm);
@@ -145,7 +142,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
             form.setOrder(orders.get(0).getSign());
             form.setOrderId(orders.get(0).getId());
 
-            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(), selectedDate);
+            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontract.getId(), orders.get(0).getId(), selectedDate);
 
             if (theSuborders == null || theSuborders.isEmpty()) {
                 request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator."); //TODO
@@ -155,6 +152,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
             request.getSession().setAttribute("isEdit", false);
         } else {
             request.setAttribute("errorMessage", "no orders found for employee - please call system administrator."); //TODO
+            log.error("no orders found for employee {} - please call system administrator.", employeecontract.getEmployee().getSign());
             return mapping.findForward("error");
         }
         // prepare second collection of suborders sorted by description

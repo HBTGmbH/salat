@@ -3,34 +3,30 @@ package org.tb.auth;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
 import static org.tb.common.util.DateUtils.formatYear;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpFilter;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
-import org.apache.struts.util.RequestUtils;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.annotation.SessionScope;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.tb.common.ErrorCode;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
 import org.tb.common.exception.AuthorizationException;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
@@ -41,13 +37,13 @@ import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
-import org.tb.user.UserAccessTokenService;
 
-@Slf4j
+@Component
 @RequiredArgsConstructor
-//@Component
-@Profile( {"!test"})
-public class HbtAuthenticationFilter extends HttpFilter {
+@Slf4j
+@SessionScope
+public class AuthenticationSuccessListener implements
+    ApplicationListener<InteractiveAuthenticationSuccessEvent> {
 
   private final AuthorizedUser authorizedUser;
   private final EmployeecontractDAO employeecontractDAO;
@@ -57,73 +53,35 @@ public class HbtAuthenticationFilter extends HttpFilter {
   private final SuborderDAO suborderDAO;
   private final AfterLogin afterLogin;
   private final VacationDAO vacationDAO;
-  private final UserAccessTokenService userAccessTokenService;
-  public final static List<String> EXCLUDE_PATTERN = List.of(
-      "/favicon.ico",
-      "/error",
-      "/**error**",
-      "/error.jsp");
-  private final List<AntPathRequestMatcher> excludePattern = EXCLUDE_PATTERN.stream()
-      .map(s -> new AntPathRequestMatcher(s, null)).toList();
 
   @Override
-  protected void doFilter(HttpServletRequest request, HttpServletResponse response,
-      FilterChain chain) throws IOException, ServletException {
+  public void onApplicationEvent(InteractiveAuthenticationSuccessEvent event) {
     try {
-      AtomicReference<String> userSign = new AtomicReference<>("empty");
-      if (shouldNotFilter(request)) {
-        log.trace("excluded {}", request.getRequestURI());
-        chain.doFilter(request, response);
-      } else {
-        {
-          Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-          if (auth != null && auth.getPrincipal() != null) {
-            if (auth.getPrincipal() instanceof DefaultOidcUser user) {
-              userSign.set(user.getAttribute("preferred_username"));
-              if (userSign.get() == null) {
-                log.error(
-                    "sign was null please contact the Administrator to configure the user correctly");
-              } else {
-                log.debug("userSign: {}", userSign.get());
-                getEmployee(request, userSign).ifPresentOrElse(loginEmployee -> {
-                  authorizedUser.init(loginEmployee);
-                  processLoginEmployee(loginEmployee, request);
-                }, () -> {
-                  // FIXME generate user from Principal
-                  log.info("no user found for sign " + userSign.get()
-                           + " please contact the Administrator to create your user");
+      if (event.getAuthentication().getPrincipal() instanceof DefaultOidcUser user) {
+        String userSign = user.getAttribute("preferred_username");
+        log.info("LOGIN name: " + user.getAttributes().get("preferred_username")); //TODO
+        log.debug("userSign: {}", userSign);
 
-                });
-              }
-            } else {
-              log.error("got Principal of {}, but expected DefaultOAuth2User: {}",
-                  auth.getPrincipal().getClass(), auth.getPrincipal().toString());
-            }
-          } else {
-            log.error("no user given from Auth-Service");
-          }
-        }
-        if (!authorizedUser.isAuthenticated()) {
-          response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-              "No user found for sign " + userSign.get()
-              + ". Please contact the Administrator to create your user.");
+        if (userSign != null) {
+          findEmployee(List.of(() -> employeeRepository.findBySign(userSign),
+              () -> employeeRepository.findBySign(
+                  userSign.replace("@hbt.de", "")))).ifPresentOrElse(loginEmployee -> {
+            authorizedUser.init(loginEmployee);
+            processLoginEmployee(loginEmployee, session());
+          }, () -> {
+            // FIXME generate user from Principal
+            throw new AuthenticationCredentialsNotFoundException(
+                "no user found for sign " + userSign
+                + " please contact the Administrator to create your user");
+          });
         } else {
-          chain.doFilter(request, response);
+          throw new AuthenticationCredentialsNotFoundException(
+              "sign was null please contact the Administrator to configure the user correctly");
         }
       }
-    } catch (ErrorCodeException e) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getErrorCode().getMessage());
     } catch (Exception e) {
-      log.error("error while authentication", e);
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+      log.info("",e);
     }
-  }
-
-  protected Optional<Employee> getEmployee(HttpServletRequest request,
-      AtomicReference<String> userSign) {
-    return findEmployee(List.of(() -> employeeRepository.findBySign(userSign.get()),
-        () -> employeeRepository.findBySign(userSign.get().replace("@hbt.de", "")),
-        () -> getEmployeeByApiKey(request)));
   }
 
   private Optional<Employee> findEmployee(List<Supplier<Optional<Employee>>> functions)
@@ -137,24 +95,14 @@ public class HbtAuthenticationFilter extends HttpFilter {
     return Optional.empty();
   }
 
-  Optional<Employee> getEmployeeByApiKey(HttpServletRequest request) {
-
-    final var apiKeyValue = request.getHeader("x-api-key");
-    if (apiKeyValue != null && !apiKeyValue.isBlank()) {
-      // apiKeyValue = username:password
-      final var tokenIdAndSecret = apiKeyValue.split(":", 2);
-      if (tokenIdAndSecret.length == 2) {
-        return userAccessTokenService.authenticate(tokenIdAndSecret[0], tokenIdAndSecret[1]);
-      } else {
-        log.warn("Could not interpret value of http header x-api-key.");
-      }
-    }
-    return Optional.empty();
+  public static HttpSession session() {
+    ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+    return attr.getRequest().getSession(true); // true == allow create
   }
 
-  void processLoginEmployee(Employee loginEmployee, HttpServletRequest request) {
+  private void processLoginEmployee(Employee loginEmployee, HttpSession session) {
 
-    request.setAttribute("authorizedUser", authorizedUser);
+    session.setAttribute("authorizedUser", authorizedUser);
 
     LocalDate today = today();
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(
@@ -164,10 +112,10 @@ public class HbtAuthenticationFilter extends HttpFilter {
       throw new AuthorizationException(ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND);
     }
 
-    request.getSession().setAttribute("loginEmployee", loginEmployee);
+    session.setAttribute("loginEmployee", loginEmployee);
     String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
-    request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
-    request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+    session.setAttribute("loginEmployeeFullName", loginEmployeeFullName);
+    session.setAttribute("currentEmployeeId", loginEmployee.getId());
     authorizedUser.init(loginEmployee);
 
     // check if public holidays are available
@@ -175,14 +123,14 @@ public class HbtAuthenticationFilter extends HttpFilter {
 
     // check if employee has an employee contract and is has employee orders for all standard suborders
     if (employeecontract != null) {
-      request.getSession().setAttribute("employeeHasValidContract", true);
-      handleEmployeeWithValidContract(request, loginEmployee, today, employeecontract);
+      session.setAttribute("employeeHasValidContract", true);
+      handleEmployeeWithValidContract(session, loginEmployee, today, employeecontract);
     } else {
-      request.getSession().setAttribute("employeeHasValidContract", false);
+      session.setAttribute("employeeHasValidContract", false);
     }
   }
 
-  private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee,
+  private void handleEmployeeWithValidContract(HttpSession session, Employee loginEmployee,
       LocalDate today, Employeecontract employeecontract) {
     // auto generate employee orders
     if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)
@@ -191,43 +139,43 @@ public class HbtAuthenticationFilter extends HttpFilter {
     }
 
     // set used employee contract of login employee
-    request.getSession().setAttribute("loginEmployeeContract", employeecontract);
-    request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
-    request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+    session.setAttribute("loginEmployeeContract", employeecontract);
+    session.setAttribute("loginEmployeeContractId", employeecontract.getId());
+    session.setAttribute("currentEmployeeContract", employeecontract);
 
     // get info about vacation, overtime and report status
-    request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
-    request.getSession().setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
+    session.setAttribute("releaseWarning", employeecontract.getReleaseWarning());
+    session.setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
 
     String releaseDate = employeecontract.getReportReleaseDateString();
     String acceptanceDate = employeecontract.getReportAcceptanceDateString();
 
-    request.getSession().setAttribute("releasedUntil", releaseDate);
-    request.getSession().setAttribute("acceptedUntil", acceptanceDate);
+    session.setAttribute("releasedUntil", releaseDate);
+    session.setAttribute("acceptedUntil", acceptanceDate);
 
-    afterLogin.handleOvertime(employeecontract, request.getSession());
+    afterLogin.handleOvertime(employeecontract, session);
 
     // get warnings
-    Employeecontract loginEmployeeContract = (Employeecontract) request.getSession()
-        .getAttribute("loginEmployeeContract");
+    Employeecontract loginEmployeeContract = (Employeecontract) session.getAttribute(
+        "loginEmployeeContract");
     List<Warning> warnings = afterLogin.createWarnings(employeecontract, loginEmployeeContract,
-        getResources(request), getLocale(request));
+        getResources(), getLocale());
 
     if (!warnings.isEmpty()) {
-      request.getSession().setAttribute("warnings", warnings);
-      request.getSession().setAttribute("warningsPresent", true);
+      session.setAttribute("warnings", warnings);
+      session.setAttribute("warningsPresent", true);
     } else {
-      request.getSession().setAttribute("warningsPresent", false);
+      session.setAttribute("warningsPresent", false);
     }
   }
 
-  private Locale getLocale(HttpServletRequest request) {
-    return RequestUtils.getUserLocale(request, (String) null);
+  private Locale getLocale() {
+    return LocaleContextHolder.getLocale();
   }
 
-  private MessageResources getResources(HttpServletRequest request) {
-
-    return (MessageResources) request.getAttribute("org.apache.struts.action.MESSAGE");
+  private MessageResources getResources() {
+    return (MessageResources) RequestContextHolder.getRequestAttributes()
+        .getAttribute("org.apache.struts.action.MESSAGE", RequestAttributes.SCOPE_SESSION);
   }
 
 
@@ -286,6 +234,7 @@ public class HbtAuthenticationFilter extends HttpFilter {
           LocalDate untilDate = null;
 
           if (ecUntilDate == null && soUntilDate == null) {
+
             //untildate remains null
           } else if (ecUntilDate == null) {
             untilDate = soUntilDate;
@@ -344,9 +293,5 @@ public class HbtAuthenticationFilter extends HttpFilter {
     return LocalDate.now(ZoneId.of(DEFAULT_TIMEZONE_ID));
   }
 
-
-  protected boolean shouldNotFilter(HttpServletRequest request) {
-    return excludePattern.stream().anyMatch(matcher -> matcher.matches(request));
-  }
 
 }

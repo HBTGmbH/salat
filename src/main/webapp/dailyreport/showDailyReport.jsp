@@ -18,6 +18,15 @@
 		</script>
 		<script type="text/javascript" language="JavaScript">
 
+			function setFormAttribute(htmlTtag) {
+				$('textarea').forEach(function(){
+					console.log(Array.from(this.classList));
+					Array.from(this.classList).get("");
+				})
+
+				form${timereport.id}
+			}
+			setFormAttribute()
 
 			function findForm(item) {
 				while(item) {
@@ -756,7 +765,7 @@
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}"
 									onkeydown="limitText(this.form.comment,this.form.countdown,256);"
 									onkeyup="limitText(this.form.comment,this.form.countdown,256);"
-									styleClass="showDailyReport" />
+                                    styleClass="showDailyReport form${timereport.id}" />
 							</td>
 
 							<!-- Fortbildung -->
@@ -766,10 +775,16 @@
 
 							<!-- Dauer -->
 							<td class="noBborderStyle" align="center" nowrap="nowrap">
-								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
+								<html:select name="timereport" property="selectedDurationHour"
+											 value="${timereport.durationhours}"
+											 disabled="${timereport.suborderSign eq overtimeCompensation}"
+											 styleClass="make-select2 form${timereport.id}">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
-								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
+								<html:select property="selectedDurationMinute"
+											 value="${timereport.durationminutes}"
+											 disabled="${timereport.suborderSign eq overtimeCompensation}"
+											 styleClass="make-select2 form${timereport.id}">
 									<html:options collection="minutes" property="value"	labelProperty="label" />
 									<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, timereport.durationminutes)}">
 										<html:option value="${timereport.durationminutes}">${timereport.durationminutes}</html:option>
