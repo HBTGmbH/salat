@@ -18,13 +18,11 @@
 		</script>
 		<script type="text/javascript" language="JavaScript">
 
-			function setFormAttribute(htmlTtag) {
-				$('textarea').forEach(function(){
+			function setFormAttribute() {
+				$('.timereport select, .timereport textarea').each(function(){
 					console.log(Array.from(this.classList));
-					Array.from(this.classList).get("");
+					console.log(Array.from(this.classList).filter(value => {value.startsWith("form")}));
 				})
-
-				form${timereport.id}
 			}
 			setFormAttribute()
 
@@ -468,7 +466,7 @@
 							</td>
 							<td align="left" class="noBborderStyle">
 								<nobr>
-									<html:select property="selectedWorkHourBegin" styleClass="make-select2">
+									<html:select property="selectedWorkHourBegin">
 										<html:options collection="hours" property="value" labelProperty="label" />
 									</html:select>
 									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
@@ -632,7 +630,7 @@
 					</c:choose>
 
 					<!-- Info -->
-					<td class="noBborderStyle" align="center">
+					<td class="noBborderStyle timereport" align="center">
 						<html:form action="/UpdateDailyReport?trId=${timereport.id}" styleId="form${timereport.id}"><input type="hidden" name="id" value="${timereport.id}" /></html:form>
 						<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
 							<table>
@@ -794,7 +792,7 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<a href="#" onclick="confirmSave(findFormById('form${timereport.id}'), ${timereport.id})" title="Speichern"><i class="bi bi-floppy2-fill"></i></a>
+								<a href="#" onclick="confirmSave(findFormById('form${timereport.id}'), ${timereport.id})"  class="function-save" title="Speichern"><i class="bi bi-floppy2-fill"></i></a>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern" class="function-edit"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
