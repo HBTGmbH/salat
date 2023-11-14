@@ -17,15 +17,6 @@
 			}
 		</script>
 		<script type="text/javascript" language="JavaScript">
-
-			function setFormAttribute() {
-				$('.timereport select, .timereport textarea').each(function(){
-					console.log(Array.from(this.classList));
-					console.log(Array.from(this.classList).filter(value => {value.startsWith("form")}));
-				})
-			}
-			setFormAttribute()
-
 			function findForm(item) {
 				while(item) {
 					if(item.tagName.toLowerCase() === "form") {
@@ -124,17 +115,6 @@
 			function setUpdateTimereportsAction(form) {
 				form.action = "/do/ShowDailyReport?task=refreshTimereports";
 				form.submit();
-			}
-
-			function showWMTT(Trigger,id) {
-				wmtt = document.getElementById(id);
-				var hint;
-				hint = Trigger.getAttribute("hint");
-				wmtt.style.display = "block";
-			}
-
-			function hideWMTT() {
-				wmtt.style.display = "none";
 			}
 
 			// textarea limitation
@@ -466,7 +446,7 @@
 							</td>
 							<td align="left" class="noBborderStyle">
 								<nobr>
-									<html:select property="selectedWorkHourBegin">
+									<html:select property="selectedWorkHourBegin" styleClass="make-select2">
 										<html:options collection="hours" property="value" labelProperty="label" />
 									</html:select>
 									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
@@ -631,95 +611,97 @@
 
 					<!-- Info -->
 					<td class="noBborderStyle timereport" align="center">
-						<html:form action="/UpdateDailyReport?trId=${timereport.id}" styleId="form${timereport.id}"><input type="hidden" name="id" value="${timereport.id}" /></html:form>
-						<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
-							<table>
-								<tr>
-									<td class="info">id:</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.id}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.employee" />:</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.employeeName}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
-									<td class="info" colspan="3">
-										<c:out	value="${timereport.customerorderSign}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info">&nbsp;</td>
-									<td class="info" colspan="3">
-										<c:out	value="${timereport.customerorderDescription}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.suborder" />:</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.suborderSign}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info">&nbsp;</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.suborderDescription}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.status" />:</td>
-									<td class="info">
-										<c:out value="${timereport.status}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.created" />:</td>
-									<td class="info">
-										<java8:formatLocalDateTime value="${timereport.created}" />
-									</td>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.createdby}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.edited" />:</td>
-									<td class="info">
-										<java8:formatLocalDateTime value="${timereport.lastupdate}" />
-									</td>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.lastupdatedby}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.released" />:</td>
-									<td class="info">
-										<c:out value="${timereport.released}" />
-									</td>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.releasedby}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.accepted" />:</td>
-									<td class="info">
-										<c:out value="${timereport.accepted}" />
-									</td>
-									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.acceptedby}" />
-									</td>
-								</tr>
-							</table>
-						</div>
-						<a href="#" onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
-						   onMouseOut="hideWMTT()"><i class="bi bi-info-circle"></i></a>
+						<html:form action="/UpdateDailyReport?trId=${timereport.id}" styleId="form${timereport.id}" style="margin:0;">
+							<input type="hidden" name="id" value="${timereport.id}" />
+						</html:form>
+						<a href="#" class="tooltipTrigger"><i class="bi bi-info-circle"></i>
+							<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
+								<table>
+									<tr>
+										<td class="info">id:</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.id}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.employee" />:</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.employeeName}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
+										<td class="info" colspan="3">
+											<c:out	value="${timereport.customerorderSign}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info">&nbsp;</td>
+										<td class="info" colspan="3">
+											<c:out	value="${timereport.customerorderDescription}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.suborder" />:</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.suborderSign}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info">&nbsp;</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.suborderDescription}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.status" />:</td>
+										<td class="info">
+											<c:out value="${timereport.status}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.created" />:</td>
+										<td class="info">
+											<java8:formatLocalDateTime value="${timereport.created}" />
+										</td>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.createdby}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.edited" />:</td>
+										<td class="info">
+											<java8:formatLocalDateTime value="${timereport.lastupdate}" />
+										</td>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.lastupdatedby}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.released" />:</td>
+										<td class="info">
+											<c:out value="${timereport.released}" />
+										</td>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.releasedby}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.accepted" />:</td>
+										<td class="info">
+											<c:out value="${timereport.accepted}" />
+										</td>
+										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.acceptedby}" />
+										</td>
+									</tr>
+								</table>
+							</div>
+						</a>
 						<c:if test="${!timereport.fitsToContract}">
 							<img width="20px" height="20px" src="/images/Pin%20rot.gif" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
 						</c:if>
@@ -917,5 +899,18 @@
 				<br><br><br><br><br><br><br><br><br><br><br>
 			</c:otherwise>
 		</c:choose>
+        <script type="text/javascript" language="JavaScript">
+
+          // Workaround for the inability of struts to take 'form' attributes
+          Array.from($('.timereport textarea')).forEach(function (item) {
+            item.setAttribute("form",
+                Array.from(item.classList).find(value => value.startsWith("form")));
+          });
+
+          Array.from($('.timereport select')).forEach(function (item) {
+            item.setAttribute("form",
+                Array.from(item.classList).find(value => value.startsWith("form")));
+          });
+        </script>
 	</body>
 </html:html>
