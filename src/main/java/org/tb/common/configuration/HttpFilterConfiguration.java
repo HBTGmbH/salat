@@ -17,6 +17,7 @@ public class HttpFilterConfiguration {
 
     private final AuthorizedUser authorizedUser;
     private final EmployeeRepository employeeRepository;
+
     private final UserAccessTokenService userAccessTokenService;
     private final ResourceUrlProvider resourceUrlProvider;
 
@@ -52,24 +53,6 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<OpenEntityManagerInViewFilter>();
         registrationBean.setOrder(100);
         registrationBean.setFilter(new OpenEntityManagerInViewFilter());
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
-        return registrationBean;
-    }
-
-    @Bean
-    public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
-        var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
-        registrationBean.setOrder(101);
-        registrationBean.setFilter(new AuthenticationFilter(authorizedUser, employeeRepository));
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
-        return registrationBean;
-    }
-
-    @Bean
-    public FilterRegistrationBean<UserAccessTokenFilter> userAccessTokenFilter(){
-        var registrationBean = new FilterRegistrationBean<UserAccessTokenFilter>();
-        registrationBean.setOrder(102);
-        registrationBean.setFilter(new UserAccessTokenFilter(authorizedUser, userAccessTokenService));
         registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
         return registrationBean;
     }

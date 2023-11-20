@@ -103,7 +103,7 @@
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employees.gender.text" />"><b><bean:message
-			key="main.employee.gender.text" /></b></th>
+			key="main.employee.gender.text" /></b>  ${authorizedUser.manager}</th>
 		<c:if test="${authorizedUser.manager}">
 			<th align="left"
 				title="<bean:message

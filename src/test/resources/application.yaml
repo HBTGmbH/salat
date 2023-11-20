@@ -13,3 +13,4 @@ spring:
     database: h2
   liquibase:
     enabled: false
+  security:
