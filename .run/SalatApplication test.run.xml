@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="SalatApplication test" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <option name="ACTIVE_PROFILES" value="test" />
+    <option name="ACTIVE_PROFILES" value="e2etest" />
     <module name="tb" />
     <selectedOptions>
       <option name="environmentVariables" />

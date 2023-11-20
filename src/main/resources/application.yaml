@@ -7,10 +7,12 @@ server:
     session:
       persistent: false
       timeout: 660m
+      tracking-modes: cookie
   error:
     whitelabel:
       enabled: false
   forward-headers-strategy: native # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
+
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true

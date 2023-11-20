@@ -8,9 +8,10 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Supplier;
 import javax.servlet.http.HttpSession;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
 import org.springframework.context.ApplicationListener;
@@ -42,6 +43,9 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 @Slf4j
 @SessionScope
+
+//@Profile({"!e2etest"})
+@FieldDefaults(level = AccessLevel.PROTECTED)
 public class AuthenticationSuccessListener implements
     ApplicationListener<InteractiveAuthenticationSuccessEvent> {
 
@@ -59,24 +63,16 @@ public class AuthenticationSuccessListener implements
     try {
       if (event.getAuthentication().getPrincipal() instanceof DefaultOidcUser user) {
         String userSign = user.getAttribute("preferred_username");
-        log.info("LOGIN name: " + user.getAttributes().get("preferred_username")); //TODO
+        log.info("LOGIN name: " + user.getAttributes().get("preferred_username")); //TODO remove
         log.debug("userSign: {}", userSign);
 
         if (userSign != null) {
-          findEmployee(List.of(() -> employeeRepository.findBySign(userSign),
-              () -> employeeRepository.findBySign(
-                  userSign.replace("@hbt.de", "")))).ifPresentOrElse(loginEmployee -> {
+          Employee loginEmployee = findEmployee(userSign);
             authorizedUser.init(loginEmployee);
             processLoginEmployee(loginEmployee, session());
-          }, () -> {
-            // FIXME generate user from Principal
-            throw new AuthenticationCredentialsNotFoundException(
-                "no user found for sign " + userSign
-                + " please contact the Administrator to create your user");
-          });
         } else {
           throw new AuthenticationCredentialsNotFoundException(
-              "sign was null please contact the Administrator to configure the user correctly");
+              "sign was null please contact the Administrator to configure the user in the AD correctly");
         }
       }
     } catch (Exception e) {
@@ -84,23 +80,29 @@ public class AuthenticationSuccessListener implements
     }
   }
 
-  private Optional<Employee> findEmployee(List<Supplier<Optional<Employee>>> functions)
+  protected Employee findEmployee(String userSign)
       throws AuthenticationCredentialsNotFoundException {
-    for (Supplier<Optional<Employee>> function : functions) {
-      Optional<Employee> res = function.get();
+
+    Optional<Employee> res = employeeRepository.findBySign(userSign)
+        .or(() -> employeeRepository.findBySign(
+            userSign.replace("@hbt.de", "")));
       if (res.isPresent()) {
-        return res;
+      return res.get();
+    } else {
+      // FIXME generate user from Principal
+
+      throw new AuthenticationCredentialsNotFoundException(
+          "no user found for sign " + userSign
+          + " please contact the Administrator to create your user");
       }
     }
-    return Optional.empty();
-  }
 
   public static HttpSession session() {
     ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
     return attr.getRequest().getSession(true); // true == allow create
   }
 
-  private void processLoginEmployee(Employee loginEmployee, HttpSession session) {
+  protected void processLoginEmployee(Employee loginEmployee, HttpSession session) {
 
     session.setAttribute("authorizedUser", authorizedUser);
 

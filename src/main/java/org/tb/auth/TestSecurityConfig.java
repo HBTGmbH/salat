@@ -1,40 +1,56 @@
 package org.tb.auth;
 
-import java.util.Arrays;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.channel.ChannelProcessingFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @RequiredArgsConstructor
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-@Profile({"test"})
-public class TestSecurityConfig  extends WebSecurityConfigurerAdapter {
+@Profile({"e2etest"})
+public class TestSecurityConfig {
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception {
-    http
-        .cors().configurationSource(request -> new CorsConfiguration().applyPermitDefaultValues())
-        .and()
-        .anonymous()
-        .and().csrf().disable()
-      ;
-  }
+  public final static List<String> EXCLUDE_PATTERN = List.of(
+      "/favicon.ico",
+      "/error",
+      "/**error**",
+      "/error.jsp");
+  private final List<AntPathRequestMatcher> excludePattern = EXCLUDE_PATTERN.stream()
+      .map(s -> new AntPathRequestMatcher(s, null)).toList();
+  private final AuthenticationSuccessTestListener authenticationSuccessTestListener;
 
+
+  /**
+   * Add configuration logic as needed.
+   */
   @Bean
-  CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(Arrays.asList("*"));
-    configuration.setAllowedMethods(Arrays.asList("GET","POST"));
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http
+
+        //.addFilterAfter(hbtAuthenticationFilter, )
+        .authorizeHttpRequests(
+            (authorize) -> authorize
+                .antMatchers("/**")
+                .permitAll()
+        )
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.ALWAYS).and()
+        .addFilterBefore(authenticationSuccessTestListener, ChannelProcessingFilter.class)
+        .csrf().disable()
+//        .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        .build();
   }
+
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    return excludePattern.stream().anyMatch(matcher -> matcher.matches(request));
+  }
+
 }
