@@ -18,7 +18,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @Profile({"!e2etest"})
-public class OAuth2LoginSecurityConfig{
+public class OAuth2LoginSecurityConfig {
 
   public final static List<String> EXCLUDE_PATTERN = List.of(
       "/favicon.ico",
@@ -48,6 +48,12 @@ public class OAuth2LoginSecurityConfig{
         )
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.ALWAYS).and()
         .oauth2Login(withDefaults())
+        .cors()
+        .and()
+//        .antMatchers(HttpMethod.GET, "/user/info", "/api/foos/**")
+//        .hasAuthority("SCOPE_read")
+//        .antMatchers(HttpMethod.POST, "/api/foos")
+//        .hasAuthority("SCOPE_write")
         .csrf().disable()
 //        .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
         .build();

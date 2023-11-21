@@ -1,10 +1,10 @@
 package org.tb.common.configuration;
 
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.In;
-import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -17,6 +17,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@SecurityScheme(
+    name = "bearerAuth",
+    type = SecuritySchemeType.HTTP,
+    bearerFormat = "JWT",
+    scheme = "bearer"
+)
+@SecurityScheme(name = "apikey",
+    type = SecuritySchemeType.APIKEY,
+    in = SecuritySchemeIn.HEADER,
+    paramName = "x-api-key",
+    description = "tokenId:secret"
+)
 public class OpenApiConfiguration {
 
   @Bean
@@ -32,19 +44,12 @@ public class OpenApiConfiguration {
     gitProperties.ifPresent(entries -> openApiDescription.append(" / ").append(entries.getCommitId()));
     openApiDescription.append(")\n").append("Use SALAT user access tokens. Header value must be in the form TokenID:TokenSecret");
 
-    SecurityScheme apikey = new SecurityScheme();
-    apikey.setType(Type.APIKEY);
-    apikey.setName("apikey");
-    apikey.setIn(In.HEADER);
-    apikey.setDescription("Use SALAT user access tokens. Header value must be in the form TokenID:TokenSecret");
-
     // see https://springdoc.org/faq.html
     return new OpenAPI()
         .info(new Info()
             .title("SALAT API")
             .version(buildProperties.isPresent() ? buildProperties.get().getVersion() : "")
-            .description(openApiDescription.toString()))
-            .schemaRequirement("apikey", apikey);
+            .description(openApiDescription.toString()));
   }
 
 }

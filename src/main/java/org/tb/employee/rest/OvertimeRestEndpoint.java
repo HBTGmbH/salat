@@ -7,10 +7,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.tb.common.util.DateUtils.today;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,12 +23,6 @@ import org.tb.employee.service.OvertimeService;
 
 @RestController
 @RequiredArgsConstructor
-@SecurityScheme(name = "apikey",
-    type = SecuritySchemeType.APIKEY,
-    in = SecuritySchemeIn.HEADER,
-    paramName = "x-api-key",
-    description = "tokenId:secret"
-)
 @RequestMapping(path = "/rest/overtimes")
 public class OvertimeRestEndpoint {
 
@@ -41,7 +32,7 @@ public class OvertimeRestEndpoint {
 
   @GetMapping(path = "/status", produces = APPLICATION_JSON_VALUE)
   @ResponseStatus(OK)
-  @Operation(security = @SecurityRequirement(name = "apikey"))
+  @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
   public OvertimeStatus getStatus(@RequestParam(name = "includeToday", required = false, defaultValue = "false") boolean includeToday) {
     if(!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
