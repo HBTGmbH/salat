@@ -11,7 +11,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -43,7 +43,7 @@ public class AuthenticationSuccessTestListener extends AuthenticationSuccessList
   }
 
   @Override
-  public void onApplicationEvent(InteractiveAuthenticationSuccessEvent event) {
+  public void onApplicationEvent(AuthenticationSuccessEvent event) {
     try {
       if (event.getAuthentication().getPrincipal() instanceof DefaultOidcUser user) {
         String userSign = user.getAttribute("preferred_username");

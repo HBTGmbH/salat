@@ -66,7 +66,7 @@ public class OAuth2LoginSecurityConfig{
                 .antMatchers(EXCLUDE_PATTERN.toArray(new String[0]))
                 .permitAll()
                 .antMatchers("/rest/**")
-                .authenticated()
+                .hasAuthority("SCOPE_user_impersonation")
         )
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER).and()
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
@@ -77,6 +77,10 @@ public class OAuth2LoginSecurityConfig{
   private CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.applyPermitDefaultValues();
+    configuration.addAllowedOrigin("*");
+    configuration.addAllowedHeader("*");
+    configuration.addAllowedMethod("*");
+    configuration.setAllowCredentials(true);
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/rest/**", configuration);
     return source;

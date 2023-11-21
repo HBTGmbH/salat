@@ -38,7 +38,7 @@ public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
     return new WebMvcConfigurer() {
       @Override
       public void addCorsMappings(@NonNull CorsRegistry registry) {
-        registry.addMapping("/**").allowedOrigins("*").allowedHeaders("*").allowCredentials(true);
+        registry.addMapping("/**").allowedOrigins("localhost,localhost:8080,localhost:4200").allowedHeaders("*").allowCredentials(true);
       }
     };
   }
