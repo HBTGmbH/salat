@@ -33,8 +33,13 @@ public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
 
   }
 
-  @Override
-  public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**").allowedMethods("*");
+  @Bean
+  public WebMvcConfigurer corsConfigurer() {
+    return new WebMvcConfigurer() {
+      @Override
+      public void addCorsMappings(@NonNull CorsRegistry registry) {
+        registry.addMapping("/**").allowedOrigins("*").allowedHeaders("*").allowCredentials(true);
+      }
+    };
   }
 }

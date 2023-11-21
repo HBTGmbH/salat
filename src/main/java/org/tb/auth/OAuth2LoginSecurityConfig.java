@@ -13,6 +13,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @RequiredArgsConstructor
 @EnableWebSecurity
@@ -24,6 +27,8 @@ public class OAuth2LoginSecurityConfig{
       "/favicon.ico",
       "/error",
       "/**error**",
+      "/v3/api-docs",
+      "/actuator/*",
       "/error.jsp");
   private final List<AntPathRequestMatcher> excludePattern = EXCLUDE_PATTERN.stream()
       .map(s -> new AntPathRequestMatcher(s, null)).toList();
@@ -34,9 +39,7 @@ public class OAuth2LoginSecurityConfig{
    */
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    return http
-
-        //.addFilterAfter(hbtAuthenticationFilter, )
+    return configRest(http)
         .authorizeHttpRequests(
             (authorize) -> authorize
                 .antMatchers(EXCLUDE_PATTERN.toArray(new String[0]))
@@ -49,8 +52,34 @@ public class OAuth2LoginSecurityConfig{
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.ALWAYS).and()
         .oauth2Login(withDefaults())
         .csrf().disable()
+        .cors().configurationSource(corsConfigurationSource()).and()
 //        .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
         .build();
+  }
+
+  private HttpSecurity configRest(HttpSecurity httpSecurity) throws Exception {
+    return httpSecurity
+
+        //.addFilterAfter(hbtAuthenticationFilter, )
+        .authorizeHttpRequests(
+            (authorize) -> authorize
+                .antMatchers(EXCLUDE_PATTERN.toArray(new String[0]))
+                .permitAll()
+                .antMatchers("/rest/**")
+                .authenticated()
+        )
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER).and()
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt())
+        .csrf().disable()
+        .cors().configurationSource(corsConfigurationSource()).and();
+  }
+
+  private CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.applyPermitDefaultValues();
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/rest/**", configuration);
+    return source;
   }
 
   protected boolean shouldNotFilter(HttpServletRequest request) {
