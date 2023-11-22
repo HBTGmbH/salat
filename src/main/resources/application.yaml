@@ -40,6 +40,25 @@ spring:
     resources:
       cache:
         period: 1d
+  security:
+    oauth2:
+      client:
+        registration:
+          azure:
+            client-id: ${AZURE_AD_CLIENT_ID}
+            client-secret: ${AZURE_AD_CLIENT_SECRET}
+            scope: openid,profile,email,offline_access
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            authorization-grant-type: authorization_code
+        provider:
+          azure:
+            authorization-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/authorize
+            token-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/token
+            user-name-attribute: name
+            user-info-authentication-method: header
+            jwk-set-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/discovery/v2.0/keys
+            #user-info-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/openid/userinfo
+
 management:
   endpoints:
     web:
