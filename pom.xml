@@ -320,7 +320,12 @@
 					<target>17</target>
 				</configuration>
 			</plugin>
-		</plugins>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>-Dspring.profiles.active=test</argLine>
+				</configuration>
+			</plugin>	</plugins>
 	</build>
 
 	<distributionManagement>

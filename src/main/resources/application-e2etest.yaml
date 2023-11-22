@@ -3,3 +3,6 @@ spring:
     ignored: /**
     user:
       name: test
+salat:
+  oauth:
+    enabled: false

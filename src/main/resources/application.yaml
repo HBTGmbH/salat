@@ -73,3 +73,7 @@ salat:
   mail-host: localhost
   auth-service:
     cache-expiry: 5m
+  oauth:
+    enabled: true
+    logout:
+      url: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/logout

@@ -131,11 +131,16 @@ window.onload=startList;
 		</html:link></li>
 	</ul>
 	</li>
-	<li id="last"><html:link action="/LogoutEmployee">
+	<li id="last"><html:link href="/logout">
 		<bean:message key="main.general.logout.text" /> (<c:out
 			value="${loginEmployee.loginname}" />/<c:out
 			value="${loginEmployee.status}" />)
 	</html:link></li>
+<%--	<li id="last"><html:link action="/LogoutEmployee">--%>
+<%--	<bean:message key="main.general.logout.text" /> (<c:out--%>
+<%--		value="${loginEmployee.loginname}" />/<c:out--%>
+<%--		value="${loginEmployee.status}" />)--%>
+<%--</html:link></li>--%>
 </ul>
 </div>
 <br>

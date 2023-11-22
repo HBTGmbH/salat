@@ -14,3 +14,7 @@ spring:
   liquibase:
     enabled: false
   security:
+
+salat:
+  oauth:
+    enabled: false
