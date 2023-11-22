@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 public class FavoriteDB {
   Long id;
+  Long employeeId;
   Long employeeorderId;
   long hours;
   long minutes;
