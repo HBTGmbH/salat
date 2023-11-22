@@ -17,7 +17,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @RequiredArgsConstructor
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-@Profile({"!e2etest"})
+@Profile({"production"})
 public class OAuth2LoginSecurityConfig {
 
   public final static List<String> EXCLUDE_PATTERN = List.of(

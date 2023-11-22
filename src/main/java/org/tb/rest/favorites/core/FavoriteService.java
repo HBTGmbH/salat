@@ -1,4 +1,4 @@
-package de.hbt.salat.rest.favorites.core;
+package org.tb.rest.favorites.core;
 
 import java.util.Collection;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package de.hbt.salat.rest.favorites.core;
+package org.tb.rest.favorites.core;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
