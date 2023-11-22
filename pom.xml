@@ -19,7 +19,7 @@
 		<maven.build.timestamp.format>dd.MM.yyyy HH:mm</maven.build.timestamp.format>
 		<java.version>17</java.version>
     <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
-    <org.hibernate.orm.version>6.2.13.Final</org.hibernate.orm.version>
+    <org.hibernate.version>6.1.7.Final</org.hibernate.version>
 	</properties>
 
 	<dependencies>
@@ -46,10 +46,6 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>com.azure.spring</groupId>-->
-<!--			<artifactId>spring-cloud-azure-starter-active-directory</artifactId>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -93,7 +89,7 @@
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
-      <version>1.18.26</version>
+<!--      <version>1.18.26</version>-->
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
@@ -101,9 +97,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-      <groupId>org.hibernate.orm</groupId>
+      <groupId>org.hibernate</groupId>
 			<artifactId>hibernate-jpamodelgen</artifactId>
-      <version>${org.hibernate.orm.version}</version>
+<!--      <version>${org.hibernate.version}</version>-->
 		</dependency>
 		<dependency>
 			<groupId>org.liquibase</groupId>
@@ -244,7 +240,7 @@
     <dependency>
       <groupId>org.mapstruct</groupId>
       <artifactId>mapstruct</artifactId>
-      <version>${org.mapstruct.version}</version>
+<version>${org.mapstruct.version}</version>
     </dependency>
 	</dependencies>
 
@@ -297,28 +293,27 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.10.1</version>
 				<!-- References to interface static methods are allowed only at source level 1.8 or above -->
 				<configuration>
 					<source>17</source>
 					<target>17</target>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.mapstruct</groupId>
-              <artifactId>mapstruct-processor</artifactId>
-              <version>${org.mapstruct.version}</version>
-            </path>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-              <version>1.18.26</version>
-            </path>
-            <path>
-              <groupId>org.hibernate.orm</groupId>
-              <artifactId>hibernate-jpamodelgen</artifactId>
-              <version>${org.hibernate.orm.version}</version>
-            </path>
-          </annotationProcessorPaths>
+<!--          <annotationProcessorPaths>-->
+<!--            <path>-->
+<!--              <groupId>org.mapstruct</groupId>-->
+<!--              <artifactId>mapstruct-processor</artifactId>-->
+<!--              <version>${org.mapstruct.version}</version>-->
+<!--            </path>-->
+<!--            <path>-->
+<!--              <groupId>org.projectlombok</groupId>-->
+<!--              <artifactId>lombok</artifactId>-->
+<!--              <version>1.18.26</version>-->
+<!--            </path>-->
+<!--            <path>-->
+<!--              <groupId>org.hibernate</groupId>-->
+<!--              <artifactId>hibernate-jpamodelgen</artifactId>-->
+<!--              <version>${org.hibernate.version}</version>-->
+<!--            </path>-->
+<!--          </annotationProcessorPaths>-->
 				</configuration>
 			</plugin>
 		</plugins>
