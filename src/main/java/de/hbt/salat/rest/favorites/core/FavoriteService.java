@@ -10,6 +10,6 @@ public class FavoriteService {
   private final FavoriteRepository favoriteRepository;
 
   public Collection<Favorite> getFavorites(Long employeeId) {
-    return  favoriteRepository.findAllByEmployeeId(employeeId);
+    return favoriteRepository.findAllByEmployeeId(employeeId);
   }
 }

@@ -1,9 +1,11 @@
 package de.hbt.salat.rest.favorites.core;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +23,9 @@ public class Favorite {
   Long id;
   Long employeeId;
   Long employeeorderId;
-  long hours;
-  long minutes;
+  Integer hours;
+  Integer minutes;
+  @Lob
+  @Column(columnDefinition = "text")
   String comment;
 }

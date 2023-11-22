@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class FavoriteDto {
   Long id;
   Long employeeorderId;
-  long hours;
-  long minutes;
+  int hours;
+  int minutes;
   String comment;
 }
