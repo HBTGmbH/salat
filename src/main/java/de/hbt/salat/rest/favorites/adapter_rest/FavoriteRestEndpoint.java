@@ -48,13 +48,15 @@ public class FavoriteRestEndpoint {
   @PutMapping(path = "", consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
-  public void addFavorite(@RequestBody FavoriteDto favorite) {
+  public FavoriteDto addFavorite(@RequestBody FavoriteDto favorite) {
+    return favoriteDtoMapper.map(favoriteService.addFavorite(favoriteDtoMapper.map(favorite)));
   }
 
   @DeleteMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
   @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
   public void deleteFavorite(@PathVariable long id) {
+    favoriteService.deleteFavorite(id);
   }
 }
 

@@ -71,3 +71,16 @@ salat:
   mail-host: localhost
   auth-service:
     cache-expiry: 5m
+
+springdoc:
+  swagger-ui:
+    path: '/rest/doc/'
+    try-it-out-enabled: true
+  api-docs:
+    path: '/rest/doc/api-docs'
+  default-produces-media-type: 'application/json'
+
+openapi:
+  description: 'Open API Documentation for the Salat Endpoints'
+  version: 0.1
+  title: 'Salat API'

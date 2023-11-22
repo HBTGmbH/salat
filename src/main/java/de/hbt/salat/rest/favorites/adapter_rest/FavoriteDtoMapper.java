@@ -13,6 +13,7 @@ import org.mapstruct.ReportingPolicy;
 public interface FavoriteDtoMapper {
 
     FavoriteDto map(Favorite favorite);
+    Favorite map(FavoriteDto favorite);
 
     Collection<FavoriteDto> map(Collection<Favorite> favorites);
 
