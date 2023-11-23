@@ -22,15 +22,15 @@ jobs:
     - name: Log in to registry
       uses: docker/login-action@v2
       with:
-        registry: https://geofox.azurecr.io/
-        username: ${{ secrets.AzureAppService_ContainerUsername_535ee4b3c4dc4911b34cd6d6ca73019e }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_9d3c66c0413040578eecaea5bec5af80 }}
+        registry: https://ghcr.io/hbtgmbh/
+        username: ${{ secrets.AzureAppService_ContainerUsername_38a69bf4650f4dacbeb1716835cb19a0 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_64bec68babe248b0859e154fb664ed88 }}
 
     - name: Build and push container image to registry
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: geofox.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_535ee4b3c4dc4911b34cd6d6ca73019e }}/salat-test:${{ github.sha }}
+        tags: ghcr.io/hbtgmbh/${{ secrets.AzureAppService_ContainerUsername_38a69bf4650f4dacbeb1716835cb19a0 }}/salat:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -47,5 +47,5 @@ jobs:
       with:
         app-name: 'salat-test'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_014d67e2094b4690bdf10068def76aa8 }}
-        images: 'geofox.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_535ee4b3c4dc4911b34cd6d6ca73019e }}/salat-test:${{ github.sha }}'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_70a40d1f6a6143d79f09f52f2003ae6a }}
+        images: 'ghcr.io/hbtgmbh/${{ secrets.AzureAppService_ContainerUsername_38a69bf4650f4dacbeb1716835cb19a0 }}/salat:${{ github.sha }}'
