@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -91,6 +92,7 @@ public class OAuth2SecurityConfig {
             (authorize) -> authorize
                 .antMatchers(EXCLUDE_PATTERN)
                 .permitAll()
+                .antMatchers(HttpMethod.OPTIONS,"/rest/**").permitAll()
                 .antMatchers("/rest/**")
                 .hasAuthority("SCOPE_user_impersonation")
         )
