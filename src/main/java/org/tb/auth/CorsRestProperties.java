@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "salat.rest.cors")
 @Data
-public class CorsRestConfiguration {
+public class CorsRestProperties {
 
   private List<String> allowedOrigins;
 
