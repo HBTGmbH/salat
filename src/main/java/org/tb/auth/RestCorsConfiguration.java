@@ -15,7 +15,7 @@ import org.springframework.web.filter.CorsFilter;
 @Slf4j
 public class RestCorsConfiguration {
 
-  private final CorsRestConfiguration corsRestConfiguration;
+  private final CorsRestProperties corsRestConfiguration;
 
   @Bean
   public FilterRegistrationBean corsRestFilterBean() {
