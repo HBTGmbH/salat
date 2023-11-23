@@ -784,3 +784,7 @@ databaseChangeLog:
                      name:  comment
                      type:  text
                      defaultOnNull: true
+#  - include:
+#      file: db/changelog/includes/addAllEmployees.sql
+  - include:
+      file: db/changelog/includes/landingpageToEmployees.sql

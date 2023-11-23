@@ -23,6 +23,34 @@
 <bean:message key="main.general.mainmenu.settings.title.text" />:<br>
 </span>
 <br>
+<br>
+<html:form action="/ShowSettings">
+	<table border="0" cellspacing="0" cellpadding="2"
+	class="center backgroundcolor">
+
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.settings.landingpage.text" />:</b></td>
+			<td align="left" class="noBborderStyle">
+				<html:text
+					property="landingPage" size="30"
+					maxlength="<%=String.valueOf(org.tb.common.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH) %>" />
+				<span style="color:red"><html:errors property="landingPage" /></span></td>
+		</tr>
+
+	</table>
+	<br>
+	<table class="center">
+		<tr>
+			<td class="noBborderStyle"><html:submit
+					onclick="setStoreAction(this.form, 'saveSettings');return false"
+					styleId="button">
+				<bean:message key="main.general.button.save.text" />
+			</html:submit></td>
+		</tr>
+	</table>
+</html:form>
+
 
 <c:if test="${generatedToken != null}">
 	<table class="center backgroundcolor">

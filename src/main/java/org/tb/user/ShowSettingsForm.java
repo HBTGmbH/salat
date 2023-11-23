@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionMapping;
 public class ShowSettingsForm extends ActionForm {
     private static final long serialVersionUID = 1L; // 4564667507077065751L;
 
+    private String landingPage;
     private String oldpassword;
     private String newpassword;
     private String confirmpassword;
@@ -19,6 +20,7 @@ public class ShowSettingsForm extends ActionForm {
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         oldpassword = "";
         newpassword = "";
+        landingPage="";
         confirmpassword = "";
     }
 

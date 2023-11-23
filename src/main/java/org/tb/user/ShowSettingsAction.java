@@ -30,7 +30,23 @@ public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
         request.setAttribute("passwordchanged", false);
         request.setAttribute("userAccessTokens", userAccessTokenService.getTokens(authorizedUser.getEmployeeId()));
 
-        if ("changePassword".equalsIgnoreCase(request.getParameter("task"))) {
+        if ("saveSettings".equalsIgnoreCase(request.getParameter("task"))) {
+            String landingPage = settingsForm.getLandingPage();
+
+            // get employee
+            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+            // set new landingPage and save
+            if(userService.setLandingPage(loginEmployee.getId(), landingPage)) {
+                loginEmployee.setLandingpage(landingPage);
+                request.setAttribute("settingsSaved", true);
+                return mapping.findForward("success");
+            }else {
+              ActionMessages messages = new ActionMessages();
+              messages.add("settings", new ActionMessage("main.error.title.text"));
+              saveErrors(request, messages);
+              return mapping.getInputForward();
+            }
+        } else if ("changePassword".equalsIgnoreCase(request.getParameter("task"))) {
             ActionMessages errorMessages = validatePassword(request, settingsForm);
             if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
@@ -50,6 +66,9 @@ public class ShowSettingsAction extends LoginRequiredAction<ShowSettingsForm> {
                 return mapping.getInputForward();
             }
         } else {
+
+            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+            settingsForm.setLandingPage(loginEmployee.getLandingpage());
             // task == null -> standard procedure
             return mapping.findForward("success");
         }
