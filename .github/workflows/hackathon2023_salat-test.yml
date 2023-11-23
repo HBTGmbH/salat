@@ -1,51 +1,51 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy container app to Azure Web App - salat-test
-
-on:
-  push:
-    branches:
-      - hackathon2023
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: 'ubuntu-latest'
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Log in to the Container registry
-      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and push container image to registry
-      uses: docker/build-push-action@v3
-      with:
-        push: true
-        tags: ghcr.io/${{ secrets.AzureAppService_ContainerUsername_d1c13e5cdd37499e91ad43434ab316a2 }}/hbtgmbh/salat:${{ github.sha }}
-        file: ./Dockerfile
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: 'production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
-    steps:
-    - name: Deploy to Azure Web App
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'salat-test'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_883e9f1ac40a467ab34754b7b52aebc8 }}
-        images: 'ghcr.io/${{ secrets.AzureAppService_ContainerUsername_d1c13e5cdd37499e91ad43434ab316a2 }}/hbtgmbh/salat:${{ github.sha }}'
+## Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+## More GitHub Actions for Azure: https://github.com/Azure/actions
+#
+#name: Build and deploy container app to Azure Web App - salat-test
+#
+#on:
+#  push:
+#    branches:
+#      - hackathon2023
+#  workflow_dispatch:
+#
+#jobs:
+#  build:
+#    runs-on: 'ubuntu-latest'
+#
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - name: Set up Docker Buildx
+#      uses: docker/setup-buildx-action@v2
+#
+#    - name: Log in to the Container registry
+#      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+#      with:
+#        registry: ${{ env.REGISTRY }}
+#        username: ${{ github.actor }}
+#        password: ${{ secrets.GITHUB_TOKEN }}
+#
+#    - name: Build and push container image to registry
+#      uses: docker/build-push-action@v3
+#      with:
+#        push: true
+#        tags: ghcr.io/${{ secrets.AzureAppService_ContainerUsername_d1c13e5cdd37499e91ad43434ab316a2 }}/hbtgmbh/salat:${{ github.sha }}
+#        file: ./Dockerfile
+#
+#  deploy:
+#    runs-on: ubuntu-latest
+#    needs: build
+#    environment:
+#      name: 'production'
+#      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+#
+#    steps:
+#    - name: Deploy to Azure Web App
+#      id: deploy-to-webapp
+#      uses: azure/webapps-deploy@v2
+#      with:
+#        app-name: 'salat-test'
+#        slot-name: 'production'
+#        publish-profile: ${{ secrets.AzureAppService_PublishProfile_883e9f1ac40a467ab34754b7b52aebc8 }}
+#        images: 'ghcr.io/${{ secrets.AzureAppService_ContainerUsername_d1c13e5cdd37499e91ad43434ab316a2 }}/hbtgmbh/salat:${{ github.sha }}'

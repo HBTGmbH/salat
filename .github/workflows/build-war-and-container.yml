@@ -45,13 +45,29 @@ jobs:
             type=ref,event=tag
             type=ref,event=pr
             type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
-      - name: Log in to registry
-        uses: docker/login-action@v2
-        with:
-          registry: https://geofox.azurecr.io/
-          username: ${{ secrets.AzureAppService_ContainerUsername_535ee4b3c4dc4911b34cd6d6ca73019e }}
-          password: ${{ secrets.AzureAppService_ContainerPassword_9d3c66c0413040578eecaea5bec5af80 }}
       - name: Build Docker image
         run: ./mvnw -B -Dmaven.test.skip=true -Dspring-boot.build-image.imageName=ghcr.io/hbtgmbh/salat:ci spring-boot:build-image
       - name: Push Docker image with ci tag (required by tag-push-action)
-        run: docker push geofox.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_535ee4b3c4dc4911b34cd6d6ca73019e }}/salat-test:${{ github.sha }}
+        run: docker push ghcr.io/hbtgmbh/salat:ci
+      - name: Push Docker image
+        uses: akhilerm/tag-push-action@v2.0.0
+        with:
+          src: ghcr.io/hbtgmbh/salat:ci
+          dst: |
+            ${{ steps.meta.outputs.tags }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    steps:
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'salat-test'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_883e9f1ac40a467ab34754b7b52aebc8 }}
+          images: 'ghcr.io/hbtgmbh/salat:${{ github.sha }}'
