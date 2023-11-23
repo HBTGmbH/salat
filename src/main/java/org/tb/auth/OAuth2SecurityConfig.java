@@ -38,7 +38,7 @@ public class OAuth2SecurityConfig {
       "/favicon.ico",
       "/error",
       "/**error**",
-      "/v3/api-docs",
+      "/rest/doc/api-docs",
       "/actuator/*",
       "/error.jsp")
       .toArray(new String[0]);
