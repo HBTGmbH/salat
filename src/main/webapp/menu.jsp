@@ -121,7 +121,7 @@ window.onload=startList;
 		<li>&nbsp;</li>
 	</c:otherwise>
 	</c:choose>
-	<li><bean:message key="main.general.mainmenu.management.text" />
+	<li id="last"><bean:message key="main.general.mainmenu.management.text" />
 	<ul style="width: 100%">
 		<li class="first"><html:link styleClass="menu" action="/ShowWelcome">
 			<bean:message key="main.general.mainmenu.overview.text" />
@@ -129,18 +129,13 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowSettings">
 			<bean:message key="main.general.mainmenu.settings.text" />
 		</html:link></li>
+		<li><html:link styleClass="menu" href="/logout">
+			<bean:message key="main.general.logout.text" /> (<c:out
+				value="${loginEmployee.loginname}" />/<c:out
+				value="${loginEmployee.status}" />)
+		</html:link></li>
 	</ul>
 	</li>
-	<li id="last"><html:link href="/logout">
-		<bean:message key="main.general.logout.text" /> (<c:out
-			value="${loginEmployee.loginname}" />/<c:out
-			value="${loginEmployee.status}" />)
-	</html:link></li>
-<%--	<li id="last"><html:link action="/LogoutEmployee">--%>
-<%--	<bean:message key="main.general.logout.text" /> (<c:out--%>
-<%--		value="${loginEmployee.loginname}" />/<c:out--%>
-<%--		value="${loginEmployee.status}" />)--%>
-<%--</html:link></li>--%>
 </ul>
 </div>
 <br>
