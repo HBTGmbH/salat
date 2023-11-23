@@ -746,3 +746,41 @@ databaseChangeLog:
                     referencedTableName: customerorder
                     referencedColumnNames:
                       - id
+  - changeSet:
+       id:  21
+       author:  jp
+       changes:
+         -  createTable:
+              tableName:  favorite
+              columns:
+                -  column:
+                     name:  id
+                     type:  bigint(20)
+                     autoIncrement:  true
+                     constraints:
+                       primaryKey:  true
+                       nullable:  false
+                -  column:
+                     name:  employeeId
+                     type:  bigint(20)
+                     constraints:
+                       nullable:  false
+                -  column:
+                     name:  employeeorderId
+                     type:  bigint(20)
+                     constraints:
+                       nullable:  false
+                -  column:
+                     name:  hours
+                     type:  int(11)
+                     constraints:
+                       nullable:  false
+                -  column:
+                     name:  minutes
+                     type:  int(11)
+                     constraints:
+                       nullable:  false
+                -  column:
+                     name:  comment
+                     type:  text
+                     defaultOnNull: true
