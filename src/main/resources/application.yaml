@@ -36,12 +36,11 @@ spring:
       ddl-auto: validate
     open-in-view: true
     database: mysql
-  web:
-    resources:
-      cache:
-        period: 1d
   security:
     oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys
       client:
         registration:
           azure:
@@ -57,8 +56,10 @@ spring:
             user-name-attribute: name
             user-info-authentication-method: header
             jwk-set-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/discovery/v2.0/keys
-            #user-info-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/openid/userinfo
-
+  web:
+    resources:
+      cache:
+        period: 1d
 management:
   endpoints:
     web:
@@ -71,7 +72,10 @@ salat:
   mail-host: localhost
   auth-service:
     cache-expiry: 5m
-
+  oauth:
+    enabled: true
+    logout:
+      url: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/logout
 springdoc:
   swagger-ui:
     path: '/rest/doc/'
@@ -79,7 +83,6 @@ springdoc:
   api-docs:
     path: '/rest/doc/api-docs'
   default-produces-media-type: 'application/json'
-
 openapi:
   description: 'Open API Documentation for the Salat Endpoints'
   version: 0.1
