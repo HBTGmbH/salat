@@ -76,6 +76,10 @@ salat:
     enabled: true
     logout:
       url: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/logout
+  rest:
+    cors:
+      allowed-origins: http://localhost,http://localhost:8080,http://localhost:4200,https://salat-test.hbt.de,https://salat.hbt.de
+
 springdoc:
   swagger-ui:
     path: '/rest/doc/'
