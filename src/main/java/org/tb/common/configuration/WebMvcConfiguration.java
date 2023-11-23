@@ -2,7 +2,6 @@ package org.tb.common.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -38,7 +37,7 @@ public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
     return new WebMvcConfigurer() {
       @Override
       public void addCorsMappings(@NonNull CorsRegistry registry) {
-        registry.addMapping("/**").allowedOrigins("localhost,localhost:8080,localhost:4200").allowedHeaders("*").allowCredentials(true);
+        registry.addMapping("/**").allowedOrigins("localhost,localhost:8080,localhost:4200,orange-pebble-048f4f103.4.azurestaticapps.net").allowedHeaders("*").allowCredentials(true);
       }
     };
   }

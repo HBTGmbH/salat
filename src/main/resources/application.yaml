@@ -78,7 +78,7 @@ salat:
       url: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/logout
   rest:
     cors:
-      allowed-origins: http://localhost,http://localhost:8080,http://localhost:4200,https://salat-test.hbt.de,https://salat.hbt.de
+      allowed-origins: http://localhost,http://localhost:8080,http://localhost:4200,https://salat-test.hbt.de,https://salat.hbt.de,https://orange-pebble-048f4f103.4.azurestaticapps.net
 
 springdoc:
   swagger-ui:
