@@ -13,17 +13,14 @@ import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
@@ -75,27 +72,27 @@ public class DailyReportRestEndpoint {
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
+        return getDailyReports(employeecontract.getId(), refDate);
+    }
 
-        List<TimereportDTO> timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
-            employeecontract.getId(),
-            refDate
-        );
-        return timeReports.stream()
-            .map(tr ->
-                DailyReportData.builder()
-                    .employeeorderId(tr.getEmployeeorderId())
-                    .date(DateUtils.format(tr.getReferenceday()))
-                    .orderLabel(tr.getCustomerorderDescription())
-                    .suborderLabel(tr.getSuborderDescription())
-                    .comment(tr.getTaskdescription())
-                    .training(tr.isTraining())
-                    .hours(tr.getDuration().toHours())
-                    .minutes(tr.getDuration().toMinutesPart())
-                    .suborderSign(tr.getSuborderSign())
-                    .orderSign(tr.getCustomerorderSign())
-                    .build()
-            )
-            .collect(Collectors.toList());
+    @GetMapping(path = "/{employeeContractId}/list", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(OK)
+    @Operation(security = @SecurityRequirement(name = "apikey"))
+    public List<DailyReportData> getBookingsForEmployee(
+            @RequestParam("refDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate,
+            @PathVariable("employeeContractId") Long employeeContractId
+    ) {
+        if(!authorizedUser.isAuthenticated()) {
+            throw new ResponseStatusException(UNAUTHORIZED);
+        }
+        Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+        if (employeecontract == null) {
+            throw new ResponseStatusException(NOT_FOUND);
+        }
+        if (!userIsAllowedToReadContract(employeecontract)) {
+            throw new ResponseStatusException(UNAUTHORIZED);
+        }
+        return getDailyReports(employeeContractId, refDate);
     }
 
     @PostMapping(path = "/", consumes = APPLICATION_JSON_VALUE)
@@ -130,5 +127,39 @@ public class DailyReportRestEndpoint {
         } catch (BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could create timereport. " + e.getErrorCode());
         }
+    }
+
+    private List<DailyReportData> getDailyReports(Long employeeContractId, LocalDate refDate) {
+        if (employeeContractId == null) {
+            return Collections.emptyList();
+        }
+        LocalDate date = Optional.ofNullable(refDate).orElseGet(DateUtils::today);
+        return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)
+                .stream()
+                .map(this::mapToDailyReportData)
+                .collect(Collectors.toList());
+    }
+
+
+    private DailyReportData mapToDailyReportData(TimereportDTO tr) {
+        return DailyReportData.builder()
+                .employeeorderId(tr.getEmployeeorderId())
+                .date(DateUtils.format(tr.getReferenceday()))
+                .orderLabel(tr.getCustomerorderDescription())
+                .suborderLabel(tr.getSuborderDescription())
+                .comment(tr.getTaskdescription())
+                .training(tr.isTraining())
+                .hours(tr.getDuration().toHours())
+                .minutes(tr.getDuration().toMinutesPart())
+                .suborderSign(tr.getSuborderSign())
+                .orderSign(tr.getCustomerorderSign())
+                .build();
+    }
+
+    private boolean userIsAllowedToReadContract(Employeecontract employeecontract) {
+        if (authorizedUser.isManager()) {
+            return true;
+        }
+        return Objects.equals(employeecontract.getEmployee().getId(), authorizedUser.getEmployeeId());
     }
 }
