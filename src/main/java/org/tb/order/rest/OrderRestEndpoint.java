@@ -85,8 +85,8 @@ public class OrderRestEndpoint {
   }
 
   private List<OrderData> mergeOrders(List<OrderData> orders) {
-    boolean hassSuborders = orders.stream().map(OrderData::getSuborder).anyMatch(Objects::nonNull);
-    if (hassSuborders) {
+    boolean hasSuborders = orders.stream().map(OrderData::getSuborder).anyMatch(Objects::nonNull);
+    if (hasSuborders) {
       return orders.stream().collect(Collectors.groupingBy(OrderData::getId)).values().stream().map(
           orderList -> orderList.get(0).toBuilder().suborder(mergeOrders(
                   orderList.stream()
