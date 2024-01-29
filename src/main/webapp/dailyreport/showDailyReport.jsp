@@ -21,6 +21,9 @@
 
 			function findForm(item) {
 				while(item) {
+					if(item.form) {
+						return item.form;
+					}
 					if(item.tagName.toLowerCase() == "form") {
 						return item;
 					}
