@@ -103,7 +103,8 @@
 			// INITIALIZE DATEPICKER PLUGIN
 			$('.datepicker').datepicker({
 				clearBtn: true,
-				format: "yyyy-mm-dd"
+				format: "yyyy-mm-dd",
+				weekStart: 1
 			}).on('changeDate', function (ev) {
 				document.forms[0].action = "/do/StoreDailyReport?task=adjustBeginTime";
 				document.forms[0].submit();
