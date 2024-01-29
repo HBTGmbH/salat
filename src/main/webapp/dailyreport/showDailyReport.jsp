@@ -484,7 +484,7 @@
 									</html:select>
 
 									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-save"></i></a>
-									&nbsp;&nbsp;<i>(optional)</i> test2
+									<i>(optional)</i>
 								</td>
 							</tr>
 							<tr>
