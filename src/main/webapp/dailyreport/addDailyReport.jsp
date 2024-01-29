@@ -104,7 +104,8 @@
 			$('.datepicker').datepicker({
 				clearBtn: true,
 				format: "yyyy-mm-dd",
-				weekStart: 1
+				weekStart: 1,
+				language: "de-DE"
 			}).on('changeDate', function (ev) {
 				document.forms[0].action = "/do/StoreDailyReport?task=adjustBeginTime";
 				document.forms[0].submit();
