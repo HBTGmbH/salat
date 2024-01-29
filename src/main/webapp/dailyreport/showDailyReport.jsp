@@ -128,11 +128,9 @@
 			}
 
 			// textarea limitation
-			function limitText(limitField, limitCount, limitNum) {
+			function limitText(limitField, limitNum) {
 				if (limitField.value.length > limitNum) {
 					limitField.value = limitField.value.substring(0, limitNum);
-				} else {
-					limitCount.value = limitNum - limitField.value.length;
 				}
 			}
 
@@ -750,8 +748,8 @@
 							<!-- Kommentar -->
 							<td class="noBborderStyle">
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}"
-									onkeydown="limitText(this.form.comment,this.form.countdown,256);"
-									onkeyup="limitText(this.form.comment,this.form.countdown,256);"
+									onkeydown="limitText(this.form.comment,256);"
+									onkeyup="limitText(this.form.comment,256);"
 									styleClass="showDailyReport" />
 							</td>
 
