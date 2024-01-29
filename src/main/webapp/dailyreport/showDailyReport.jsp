@@ -773,11 +773,11 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<button onclick="confirmSave(findForm(this), ${timereport.id})" title="Speichern"><i class="bi bi-save"></i></button>
+								<button onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-save"></i></button>
 								&nbsp;
-								<button onclick="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></button>
+								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
-								<button onclick="confirmDelete(findForm(this), ${timereport.id})" title="Löschen"><i class="bi bi bi-trash"></i></button>
+								<button onclick="confirmDelete(findForm(this), ${timereport.id}); return false" title="Löschen" style="border: 0; background-color: transparent"><i class="bi bi bi-trash"></i></button>
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 								</span>
