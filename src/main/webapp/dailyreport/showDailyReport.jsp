@@ -155,7 +155,10 @@
                     clearBtn: true,
                     format: "yyyy-mm-dd",
 					weekStart: 1,
-					language: "de-DE"
+					language: "de-DE",
+					todayBtn: true,
+					todayHighlight: true,
+					clearBtn: false
                 }).on('changeDate', function (ev) {
 					document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
 					document.forms[0].submit();
