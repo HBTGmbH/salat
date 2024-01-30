@@ -5,6 +5,7 @@ import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
 import static org.tb.common.DateTimeViewHelper.getMonthMMStringFromShortstring;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
+import static org.tb.common.DateTimeViewHelper.getShortstringFromMonthMM;
 import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
@@ -13,6 +14,8 @@ import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.getDateAsStringArray;
+import static org.tb.common.util.DateUtils.getDateFormStrings;
+import static org.tb.common.util.DateUtils.getYearString;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
@@ -341,6 +344,19 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         // set start and end dates
         String view = reportForm.getView();
         if (GlobalConstants.VIEW_MONTHLY.equals(view)) {
+            // change startdate or enddate by buttons
+            if (request.getParameter("change") != null) {
+                LocalDate beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                int change = Integer.parseInt(request.getParameter("change"));
+                if(change == 0) {
+                    beginDate = today();
+                } else {
+                    beginDate = changeMonths(beginDate, change);
+                }
+                reportForm.setMonth(getShortstringFromMonthMM(beginDate.getMonthValue()));
+                reportForm.setYear(getYearString(beginDate));
+            }
+
             // monthly view -> create date and synchronize with end-/lastdate-fields
             reportForm.setStartdate(reportForm.getYear() + "-" + getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay());
             reportForm.setLastday(reportForm.getDay());
@@ -370,9 +386,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 try {
                     int change = Integer.parseInt(request.getParameter("change"));
                     if ("start".equals(request.getParameter("date"))) {
-                        startdate = changeDate(startdate, change);
+                        startdate = changeDays(startdate, change);
                     } else if ("end".equals(request.getParameter("date"))) {
-                        enddate = changeDate(enddate, change);
+                        enddate = changeDays(enddate, change);
                     }
                 } catch (NumberFormatException e) {
                     return mapping.findForward("error");
@@ -659,9 +675,18 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         return mapping.findForward("success");
     }
 
-    private LocalDate changeDate(LocalDate date, int change) {
+    private LocalDate changeDays(LocalDate date, int change) {
         if (change != 0) {
             date = DateUtils.addDays(date, change);
+        } else {
+            date = today();
+        }
+        return date;
+    }
+
+    private LocalDate changeMonths(LocalDate date, int change) {
+        if (change != 0) {
+            date = DateUtils.addMonths(date, change);
         } else {
             date = today();
         }
