@@ -96,6 +96,7 @@
 	});		
 </script>
 	<script type="text/javascript" src="/webjars/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	<script type="text/javascript" src="/webjars/bootstrap-datepicker/locales/bootstrap-datepicker.de.min.js"></script>
 
 	<script type="text/javascript">
 		$(function () {
@@ -106,7 +107,7 @@
 				format: "yyyy-mm-dd",
 				weekStart: 1,
 				language: "de-DE",
-				todayBtn: true,
+				todayBtn: "linked",
 				todayHighlight: true,
 				clearBtn: false
 			}).on('changeDate', function (ev) {
