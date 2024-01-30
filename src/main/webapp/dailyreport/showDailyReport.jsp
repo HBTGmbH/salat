@@ -24,7 +24,7 @@
 					if(item.form) {
 						return item.form;
 					}
-					if(item.tagName.toLowerCase() == "form") {
+					if(item.tagName && item.tagName.toLowerCase() == "form") {
 						return item;
 					}
 					item = item.parentElement;
