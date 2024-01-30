@@ -156,6 +156,7 @@
 					</html:select>
 
 					<c:if test="${matrixview != 'custom'}">
+						<br />
 						<%-- Arrows for navigating the month --%>
 						<a href="javascript:setMonth('-12')"><i class="bi bi-skip-backward-btn"></i></a>
 						<a href="javascript:setMonth('-1')"><i class="bi bi-skip-start-btn"></i></a>

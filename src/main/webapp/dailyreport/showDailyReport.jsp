@@ -41,6 +41,11 @@
 				form.submit();
 			}
 
+			function setMonth(form, mode) {
+				form.action = "/do/ShowDailyReport?task=refreshTimereports&change=" + change;
+				form.submit();
+			}
+
 			function setUpdateTimereportsAction(form) {
 				form.action = "/do/ShowDailyReport?task=refreshTimereports";
 				form.submit();
@@ -350,6 +355,13 @@
 									onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 									<html:options collection="years" property="value" labelProperty="label" />
 								</html:select>
+								<br />
+								<%-- Arrows for navigating the month --%>
+								<a href="javascript:setMonth(findForm(this),'-12')"><i class="bi bi-skip-backward-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'-1')"><i class="bi bi-skip-start-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'0')"><i class="bi bi-stop-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'1')"><i class="bi bi-skip-end-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'12')"><i class="bi bi-skip-forward-btn"></i></a>
 							</c:otherwise>
 						</c:choose>
 					</td>
