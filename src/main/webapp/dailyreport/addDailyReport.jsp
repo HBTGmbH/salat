@@ -159,9 +159,8 @@
 				<b><bean:message key="main.timereport.referenceday.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<span class="datepicker date input-group p-0 shadow-sm">
-					<html:text property="referenceday"  styleId="calinput1" styleClass="form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
-					<i class="bi bi-calendar-event mr2"></i>
+				<span class="date input-group p-0 shadow-sm">
+					<html:text property="referenceday"  styleId="calinput1" styleClass="datepicker form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
 				</span>
 
 				<%-- Arrows for navigating the Date --%>

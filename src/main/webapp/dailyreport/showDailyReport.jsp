@@ -301,9 +301,8 @@
 					<td align="left" class="noBborderStyle">
 						<c:choose>
 							<c:when test="${!(view eq 'month')}">
-								<span class="datepicker date input-group p-0 shadow-sm">
-									<html:text property="startdate"  styleId="calinput1" styleClass="form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
-									<i class="bi bi-calendar-event mr2"></i>
+								<span class="date input-group p-0 shadow-sm">
+									<html:text property="startdate"  styleId="calinput1" styleClass="datepicker form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
 								</span>
 									<%-- Arrows for navigating the Date --%>
 								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" class="mr2" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
