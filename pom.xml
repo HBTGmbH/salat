@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>de.hbt.salat</groupId>
 	<artifactId>tb</artifactId>
-	<version>3.11.0</version>
+	<version>4.0.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<properties>
