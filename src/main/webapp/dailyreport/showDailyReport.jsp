@@ -150,27 +150,6 @@
 			var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
 		</script>
 
-		<script type="text/javascript" src="/webjars/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
-		<script type="text/javascript" src="/webjars/bootstrap-datepicker/locales/bootstrap-datepicker.de.min.js"></script>
-
-        <script type="text/javascript">
-            $(function () {
-
-                // INITIALIZE DATEPICKER PLUGIN
-                $('.datepicker').datepicker({
-                    clearBtn: true,
-                    format: "yyyy-mm-dd",
-					weekStart: 1,
-					language: "de-DE",
-					todayBtn: "linked",
-					todayHighlight: true,
-					clearBtn: false
-                }).on('changeDate', function (ev) {
-					document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
-					document.forms[0].submit();
-				});
-            });</script>
-        <link rel="stylesheet" href="/webjars/bootstrap-datepicker/css/bootstrap-datepicker.css">
         <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 	</head>
 
@@ -301,13 +280,8 @@
 					<td align="left" class="noBborderStyle">
 						<c:choose>
 							<c:when test="${!(view eq 'month')}">
-								<div class="input-group date">
-									<html:text property="startdate" styleClass="form-control" />
-									<div class="input-group-addon">
-										<i class="bi bi-calendar"></i>
-									</div>
-								</div>
-									<%-- Arrows for navigating the Date --%>
+								<input type='date' name='startdate' value='<bean:write name="showDailyReportForm" property="startdate" />' onchange="afterCalenderClick(findForm(this))" />
+								<%-- Arrows for navigating the Date --%>
 								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" class="mr2" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
 								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" class="mr2" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
 								<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','0')" class="mr2" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
@@ -376,35 +350,13 @@
 							<b><bean:message key="main.monthlyreport.daymonthyear.text" /></b>&nbsp;<i>(<bean:message key="main.general.to.text" />)</i><b>:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:text property="enddate" onblur="setUpdateTimereportsAction(findForm(this))" readonly="false" size="10" maxlength="10" styleId="calinput2" />
-							<script type="text/javascript" language="JavaScript">
-								function calenderPopupEnddate() {
-									var cal = new CalendarPopup();
-									cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
-									cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
-									cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-									cal.setTodayText("<bean:message key="main.date.popup.today" />");
-									cal.select(document.forms[0].enddate,'anchor2','yyyy-MM-dd');
-								}
-
-								var calinput2 = document.getElementById("calinput2");
-								calinput2.addEventListener("keypress", function(event) {
-									if (event.key === "Enter") {
-										event.preventDefault();
-										setUpdateTimereportsAction(event.target.form);
-									}
-								});
-
-							</script>
-							<a href="javascript:calenderPopupEnddate()" name="anchor2" ID="anchor2"  title="<bean:message key="main.date.popup.alt.text" />">
-								<i class="bi bi-calendar-event"></i>
-							</a>
+							<input type='date' name='enddate' value='<bean:write name="showDailyReportForm" property="enddate" />' onchange="afterCalenderClick(findForm(this))" />
 							<%-- Arrows for navigating the Date --%>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
 						</td>
 					</tr>
 				</c:if>
@@ -482,7 +434,7 @@
 										<html:options collection="minutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-save"></i></a>
+									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
 									<i>(optional)</i>
 								</nobr>
 							</td>
@@ -503,7 +455,7 @@
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-save"></i></a>
+									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy"></i></a>
 									<i>(optional)</i>
 								</td>
 							</tr>
@@ -793,7 +745,7 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<button onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-save"></i></button>
+								<button onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
