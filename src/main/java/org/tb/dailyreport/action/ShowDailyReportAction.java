@@ -103,6 +103,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
+        boolean doRefreshVacationAndOvertime = false;
         String task = request.getParameter("task");
         if ("massdelete".equalsIgnoreCase(task)) {
             // delete the selected ids from the database and continue as if this was a refreshTimereports task
@@ -137,6 +138,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 }
                 return mapping.findForward("success");
             }
+            task = "refreshTimereports";
+        } else if("switchEmployee".equalsIgnoreCase(task)) {
+            doRefreshVacationAndOvertime = true;
             task = "refreshTimereports";
         }
 
@@ -217,6 +221,14 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         reportForm.setShowAllMinutes(anyTimereportNotMatches5MinuteSchema);
         request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
         request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
+
+        // check if vacation and overtime should be recalculated - see https://github.com/HBTGmbH/salat/issues/226
+        if(doRefreshVacationAndOvertime) {
+            Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+            if(currentEmployeeContract != null) {
+                refreshVacationAndOvertime(request, currentEmployeeContract);
+            }
+        }
 
         return actionResult;
     }

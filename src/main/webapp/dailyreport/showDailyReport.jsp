@@ -51,6 +51,11 @@
 				form.submit();
 			}
 
+			function switchEmployee(form) {
+				form.action = "/do/ShowDailyReport?task=switchEmployee";
+				form.submit();
+			}
+
 			function setUpdateOrdersAction(form) {
 				form.action = "/do/ShowDailyReport?task=refreshOrders";
 				form.submit();
@@ -176,7 +181,7 @@
 						<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
+						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="switchEmployee(findForm(this))" styleClass="make-select2">
 							<c:if test="${authorizedUser.manager}">
 								<html:option value="-1">
 									<bean:message key="main.general.allemployees.text" />
