@@ -184,6 +184,18 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
                 String date = request.getParameter("year") + "-" + getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
                 reportForm.setStartdate(date);
+
+                // sync form fields - see https://github.com/HBTGmbH/salat/issues/219
+                LocalDate startdate = LocalDate.parse(date);
+                String day = formatDayOfMonth(startdate);
+                String month = formatMonth(startdate);
+                reportForm.setDay(day);
+                reportForm.setMonth(month);
+                reportForm.setYear(formatYear(startdate));
+                request.getSession().setAttribute("currentDay", reportForm.getDay());
+                request.getSession().setAttribute("currentMonth", reportForm.getMonth());
+                request.getSession().setAttribute("currentYear", reportForm.getYear());
+                request.getSession().setAttribute("startdate", reportForm.getStartdate());
             }
             //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
             if (request.getSession().getAttribute("overtimeCompensation") == null
