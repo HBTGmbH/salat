@@ -135,7 +135,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
     }
 
     public String getSignAndDescription() {
-        return sign + " - " + getShortdescription();
+        return sign + " - " + getShortdescription() + " (" + customer.getShortname() + ")";
     }
 
     public Boolean getHide() {
