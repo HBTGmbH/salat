@@ -121,10 +121,10 @@ public class EmployeecontractService {
     employeecontract.setHide(hide);
     employeecontract.setDailyWorkingTime(dailyWorkingTime);
 
-    adjustVacations(employeecontract, vacationEntitlement);
     employeecontractDAO.save(employeecontract);
 
     adjustEmployeeOrders(employeecontract);
+    adjustVacations(employeecontract, vacationEntitlement);
   }
 
   private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {
@@ -135,6 +135,7 @@ public class EmployeecontractService {
       employeecontract.getVacations()
           .stream()
           .forEach(v -> v.setEntitlement(vacationEntitlement));
+      employeecontractDAO.save(employeecontract);
     }
   }
 
