@@ -59,6 +59,13 @@
 			form.submit();
 		}
 	}
+
+	$(document).ready(function() {
+		$(".make-select2").select2({
+			dropdownAutoWidth: true,
+			width: 'auto'
+		});
+	});
 	
 </script>
 
@@ -86,7 +93,8 @@
 				<b><bean:message key="main.suborder.customerorder.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="customerorderId" value="${currentOrderId}" onchange="setStoreAction(this.form,'changeCustomerorder')">
+				<html:select property="customerorderId" value="${currentOrderId}" onchange="setStoreAction(this.form,'changeCustomerorder')"
+							 styleClass="make-select2">
 					<html:options collection="customerorders" labelProperty="signAndDescription" property="id" />
 				</html:select>
 				<span style="color:red">
