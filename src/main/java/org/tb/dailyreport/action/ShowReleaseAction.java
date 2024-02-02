@@ -63,7 +63,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         List<Employee> supervisors = new LinkedList<>();
         for (Employeecontract ec : viewableEmployeeContracts) {
             Employee supervisor = ec.getSupervisor();
-            if (!supervisors.contains(supervisor)) {
+            if (supervisor != null && !supervisors.contains(supervisor)) {
                 supervisors.add(supervisor);
             }
         }
