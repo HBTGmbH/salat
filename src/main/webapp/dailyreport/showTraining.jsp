@@ -75,7 +75,8 @@
 				<td align="left" class="noBborderStyle"><b><bean:message
 							key="main.training.year" />:</b></td>
 				<td align="left" class="noBborderStyle" nowrap="nowrap"><html:select
-						property="year" value="${year}" onchange="setUpdate(this.form)">
+						property="year" value="${year}" onchange="setUpdate(this.form)"
+						styleClass="make-select2">
 						<html:options collection="years" property="value"
 							labelProperty="label" />
 					</html:select></td>
