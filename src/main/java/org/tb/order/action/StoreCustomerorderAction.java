@@ -5,7 +5,6 @@ import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,16 +20,11 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.customer.CustomerDAO;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.domain.Employeeorder;
-import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 
 /**
@@ -42,12 +36,9 @@ import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 @RequiredArgsConstructor
 public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
-    private final CustomerDAO customerDAO;
-    private final SuborderDAO suborderDAO;
+    private final CustomerorderService customerorderService;
     private final TimereportDAO timereportDAO;
     private final CustomerorderDAO customerorderDAO;
-    private final EmployeeDAO employeeDAO;
-    private final EmployeeorderDAO employeeorderDAO;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -113,104 +104,9 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             }
             LocalDate fromDate = DateUtils.parseOrNull(coForm.getValidFrom());
 
-            /* adjust suborders */
-            List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(coId, false);
-            if (suborders != null && !suborders.isEmpty()) {
-                for (Suborder so : suborders) {
-                    boolean suborderchanged = false;
-                    if (so.getFromDate().isBefore(fromDate)) {
-                        so.setFromDate(fromDate);
-                        suborderchanged = true;
-                    }
-                    if (so.getUntilDate() != null && so.getUntilDate().isBefore(fromDate)) {
-                        so.setUntilDate(fromDate);
-                        suborderchanged = true;
-                    }
-                    if (untilDate != null) {
-                        if (so.getFromDate().isAfter(untilDate)) {
-                            so.setFromDate(untilDate);
-                            suborderchanged = true;
-                        }
-                        if (so.getUntilDate() == null || so.getUntilDate().isAfter(untilDate)) {
-                            so.setUntilDate(untilDate);
-                            suborderchanged = true;
-                        }
-                    }
-
-                    if (suborderchanged) {
-
-                        suborderDAO.save(so);
-
-                        // adjust employeeorders
-                        List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
-                        if (employeeorders != null && !employeeorders.isEmpty()) {
-                            for (Employeeorder employeeorder : employeeorders) {
-                                boolean changed = false;
-                                if (employeeorder.getFromDate().isBefore(so.getFromDate())) {
-                                    employeeorder.setFromDate(so.getFromDate());
-                                    changed = true;
-                                }
-                                if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(so.getFromDate())) {
-                                    employeeorder.setUntilDate(so.getFromDate());
-                                    changed = true;
-                                }
-                                if (so.getUntilDate() != null) {
-                                    if (employeeorder.getFromDate().isAfter(so.getUntilDate())) {
-                                        employeeorder.setFromDate(so.getUntilDate());
-                                        changed = true;
-                                    }
-                                    if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(so.getUntilDate())) {
-                                        employeeorder.setUntilDate(so.getUntilDate());
-                                        changed = true;
-                                    }
-                                }
-                                if (changed) {
-                                    employeeorderDAO.save(employeeorder);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (coId != 0 && coId != -1) {
-                co = customerorderDAO.getCustomerorderById(coId);
-            }
-            if (co == null) {
-                // new customer order
-                co = new Customerorder();
-            }
-
-            /* set attributes */
-            co.setCustomer(customerDAO.getCustomerById(coForm.getCustomerId()));
-
-            co.setUntilDate(untilDate);
-            co.setFromDate(fromDate);
-
-            co.setSign(coForm.getSign());
-            co.setDescription(coForm.getDescription());
-            co.setShortdescription(coForm.getShortdescription());
-            co.setOrder_customer(coForm.getOrderCustomer());
-
-            co.setResponsible_customer_contractually(coForm.getResponsibleCustomerContractually());
-            co.setResponsible_customer_technical(coForm.getResponsibleCustomerTechnical());
-            co.setResponsible_hbt(employeeDAO.getEmployeeById(coForm.getEmployeeId()));
-            co.setRespEmpHbtContract(employeeDAO.getEmployeeById(coForm.getRespContrEmployeeId()));
-
-            if (coForm.getDebithours() == null
-                || coForm.getDebithours().isEmpty()
-                || DurationUtils.parseDuration(coForm.getDebithours()).isZero()) {
-                co.setDebithours(Duration.ZERO);
-                co.setDebithoursunit(null);
-            } else {
-                co.setDebithours(DurationUtils.parseDuration(coForm.getDebithours()));
-                co.setDebithoursunit(coForm.getDebithoursunit());
-            }
-
-            co.setStatusreport(coForm.getStatusreport());
-            co.setHide(coForm.getHide());
-
-            customerorderDAO.save(co);
+            customerorderService.createOrUpdateOrder(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
+                coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(), coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
+                coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide());
 
             request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
             request.getSession().removeAttribute("coId");

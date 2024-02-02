@@ -200,6 +200,13 @@ public class Suborder extends AuditedEntity implements Serializable {
         return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
     }
 
+    public LocalDate getEffectiveUntilDate() {
+        if (untilDate == null) {
+            return customerorder.getUntilDate();
+        }
+        return untilDate;
+    }
+
     /**
      * Checks, if time period fits to the next higher hierachical element.
      *

@@ -58,8 +58,7 @@ public class EmployeeorderDAO {
         );
 
         employeeorders = employeeorders.stream()
-            .filter(eo -> !eo.getFromDate().isAfter(date))
-            .filter(eo -> eo.getUntilDate() == null || !eo.getUntilDate().isBefore(date))
+            .filter(eo -> eo.isValidAt(date))
             .filter(eo -> !eo.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
             .collect(Collectors.toList());
 
