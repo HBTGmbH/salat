@@ -640,10 +640,13 @@ public class MatrixHelper {
             ecId = ec.getId();
             if (!ec.getAcceptanceWarningByDate(dateLast)) {
                 if (ec.getReportAcceptanceDate() != null && !dateLast.isAfter(ec.getReportAcceptanceDate())) {
-                    newAcceptance = true;
-                    Employee employee = employeeDAO.getEmployeeBySign(
-                        timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, ec.getId()).getAcceptedby());
-                    results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
+                    TimereportDTO acceptedTimereport = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(
+                        dateLast, ec.getId());
+                    if(acceptedTimereport != null) {
+                        newAcceptance = true;
+                        Employee employee = employeeDAO.getEmployeeBySign(acceptedTimereport.getAcceptedby());
+                        results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
+                    }
                 }
             }
             results.put("acceptance", newAcceptance);
