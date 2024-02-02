@@ -32,7 +32,6 @@ import static org.tb.common.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
-import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getFirstDay;
 import static org.tb.common.util.DateUtils.getLastDay;
 import static org.tb.common.util.DateUtils.getYear;
@@ -51,7 +50,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.BusinessRuleChecks;
@@ -77,7 +76,7 @@ import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.EmployeeorderDAO;
 
 @Slf4j
-@Component
+@Service
 @Transactional
 @RequiredArgsConstructor
 public class TimereportService {
