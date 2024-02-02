@@ -52,36 +52,6 @@
 				}
 			}
 
-			function refreshDate(form) {
-				form.action = "/do/ShowRelease?task=refreshDate";
-				form.submit();
-			}
-
-			function refreshAcceptanceDate(form) {
-				form.action = "/do/ShowRelease?task=refreshAcceptanceDate";
-				form.submit();
-			}
-
-			function refreshReopenDate(form) {
-				form.action = "/do/ShowRelease?task=refreshReopenDate";
-				form.submit();
-			}
-
-			function refreshMonth(form) {
-				form.action = "/do/ShowRelease?task=refreshDate&refreshMonth=true";
-				form.submit();
-			}
-
-			function refreshAcceptanceMonth(form) {
-				form.action = "/do/ShowRelease?task=refreshAcceptanceDate&refreshMonth=true";
-				form.submit();
-			}
-
-			function refreshReopenMonth(form) {
-				form.action = "/do/ShowRelease?task=refreshReopenDate&refreshMonth=true";
-				form.submit();
-			}
-
 			function setUpdateEmployeeContract(form) {
 				form.action = "/do/ShowRelease?task=updateEmployee";
 				form.submit();
@@ -210,54 +180,7 @@
 							<b><bean:message key="main.release.release.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:select property="day" styleClass="make-select2">
-								<html:options collection="days" property="value"
-									labelProperty="label" />
-							</html:select>
-
-							<html:select property="month" onchange="refreshMonth(this.form)" styleClass="make-select2">
-								<html:option value="Jan">
-									<bean:message key="main.timereport.select.month.jan.text" />
-								</html:option>
-								<html:option value="Feb">
-									<bean:message key="main.timereport.select.month.feb.text" />
-								</html:option>
-								<html:option value="Mar">
-									<bean:message key="main.timereport.select.month.mar.text" />
-								</html:option>
-								<html:option value="Apr">
-									<bean:message key="main.timereport.select.month.apr.text" />
-								</html:option>
-								<html:option value="May">
-									<bean:message key="main.timereport.select.month.may.text" />
-								</html:option>
-								<html:option value="Jun">
-									<bean:message key="main.timereport.select.month.jun.text" />
-								</html:option>
-								<html:option value="Jul">
-									<bean:message key="main.timereport.select.month.jul.text" />
-								</html:option>
-								<html:option value="Aug">
-									<bean:message key="main.timereport.select.month.aug.text" />
-								</html:option>
-								<html:option value="Sep">
-									<bean:message key="main.timereport.select.month.sep.text" />
-								</html:option>
-								<html:option value="Oct">
-									<bean:message key="main.timereport.select.month.oct.text" />
-								</html:option>
-								<html:option value="Nov">
-									<bean:message key="main.timereport.select.month.nov.text" />
-								</html:option>
-								<html:option value="Dec">
-									<bean:message key="main.timereport.select.month.dec.text" />
-								</html:option>
-							</html:select>
-
-							<html:select property="year" onchange="refreshDate(this.form)" styleClass="make-select2">
-								<html:options collection="years" property="value"
-									labelProperty="label" />
-							</html:select>
+							<input type="date" name="releaseDate" value="<bean:write name="showReleaseForm" property="releaseDate" />"  />
 							<span style="color: red"><html:errors
 									property="releasedate" />
 							</span>
@@ -285,56 +208,7 @@
 							<b><bean:message key="main.release.accept.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:select property="acceptanceDay" styleClass="make-select2">
-								<html:options collection="acceptanceDays" property="value"
-									labelProperty="label" />
-							</html:select>
-
-							<html:select property="acceptanceMonth" styleClass="make-select2"
-								onchange="refreshAcceptanceMonth(this.form)">
-								<html:option value="Jan">
-									<bean:message key="main.timereport.select.month.jan.text" />
-								</html:option>
-								<html:option value="Feb">
-									<bean:message key="main.timereport.select.month.feb.text" />
-								</html:option>
-								<html:option value="Mar">
-									<bean:message key="main.timereport.select.month.mar.text" />
-								</html:option>
-								<html:option value="Apr">
-									<bean:message key="main.timereport.select.month.apr.text" />
-								</html:option>
-								<html:option value="May">
-									<bean:message key="main.timereport.select.month.may.text" />
-								</html:option>
-								<html:option value="Jun">
-									<bean:message key="main.timereport.select.month.jun.text" />
-								</html:option>
-								<html:option value="Jul">
-									<bean:message key="main.timereport.select.month.jul.text" />
-								</html:option>
-								<html:option value="Aug">
-									<bean:message key="main.timereport.select.month.aug.text" />
-								</html:option>
-								<html:option value="Sep">
-									<bean:message key="main.timereport.select.month.sep.text" />
-								</html:option>
-								<html:option value="Oct">
-									<bean:message key="main.timereport.select.month.oct.text" />
-								</html:option>
-								<html:option value="Nov">
-									<bean:message key="main.timereport.select.month.nov.text" />
-								</html:option>
-								<html:option value="Dec">
-									<bean:message key="main.timereport.select.month.dec.text" />
-								</html:option>
-							</html:select>
-
-							<html:select property="acceptanceYear" styleClass="make-select2"
-								onchange="refreshAcceptanceDate(this.form)">
-								<html:options collection="years" property="value"
-									labelProperty="label" />
-							</html:select>
+							<input type="date" name="acceptanceDate" value="<bean:write name="showReleaseForm" property="acceptanceDate" />"  />
 							<span style="color: red"><html:errors
 									property="acceptancedate" />
 							</span>
@@ -362,56 +236,7 @@
 							<b><bean:message key="main.release.reopen.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:select property="reopenDay" styleClass="make-select2">
-								<html:options collection="reopenDays" property="value"
-									labelProperty="label" />
-							</html:select>
-
-							<html:select property="reopenMonth" styleClass="make-select2"
-								onchange="refreshReopenMonth(this.form)">
-								<html:option value="Jan">
-									<bean:message key="main.timereport.select.month.jan.text" />
-								</html:option>
-								<html:option value="Feb">
-									<bean:message key="main.timereport.select.month.feb.text" />
-								</html:option>
-								<html:option value="Mar">
-									<bean:message key="main.timereport.select.month.mar.text" />
-								</html:option>
-								<html:option value="Apr">
-									<bean:message key="main.timereport.select.month.apr.text" />
-								</html:option>
-								<html:option value="May">
-									<bean:message key="main.timereport.select.month.may.text" />
-								</html:option>
-								<html:option value="Jun">
-									<bean:message key="main.timereport.select.month.jun.text" />
-								</html:option>
-								<html:option value="Jul">
-									<bean:message key="main.timereport.select.month.jul.text" />
-								</html:option>
-								<html:option value="Aug">
-									<bean:message key="main.timereport.select.month.aug.text" />
-								</html:option>
-								<html:option value="Sep">
-									<bean:message key="main.timereport.select.month.sep.text" />
-								</html:option>
-								<html:option value="Oct">
-									<bean:message key="main.timereport.select.month.oct.text" />
-								</html:option>
-								<html:option value="Nov">
-									<bean:message key="main.timereport.select.month.nov.text" />
-								</html:option>
-								<html:option value="Dec">
-									<bean:message key="main.timereport.select.month.dec.text" />
-								</html:option>
-							</html:select>
-
-							<html:select property="reopenYear" styleClass="make-select2"
-								onchange="refreshReopenDate(this.form)">
-								<html:options collection="years" property="value"
-									labelProperty="label" />
-							</html:select>
+							<input type="date" name="reopenDate" value="<bean:write name="showReleaseForm" property="reopenDate" />"  />
 							<span style="color: red"><html:errors
 									property="reopendate" />
 							</span>
