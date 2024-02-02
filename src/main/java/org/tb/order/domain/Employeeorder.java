@@ -61,15 +61,15 @@ public class Employeeorder extends AuditedEntity implements Serializable {
         return getUntilDate() == null;
     }
 
-    public LocalDate getUntilDate() {
+    public LocalDate getEffectiveUntilDate() {
         if (untilDate == null) {
-            return suborder.getUntilDate();
+            return suborder.getEffectiveUntilDate();
         }
         return untilDate;
     }
 
     public boolean isValidAt(java.time.LocalDate date) {
-        return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
+        return !date.isBefore(getFromDate()) && (getEffectiveUntilDate() == null || !date.isAfter(getEffectiveUntilDate()));
     }
 
     public String getEmployeeOrderAsString() {
@@ -92,7 +92,7 @@ public class Employeeorder extends AuditedEntity implements Serializable {
      */
     public boolean getCurrentlyValid() {
         LocalDate today = DateUtils.today();
-        return !today.isBefore(getFromDate()) && (getUntilDate() == null || !today.isAfter(getUntilDate()));
+        return !today.isBefore(getFromDate()) && (getEffectiveUntilDate() == null || !today.isAfter(getEffectiveUntilDate()));
     }
 
     /**

@@ -196,10 +196,10 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                         }
 
                         // employeeorder ends in the past
-                        if (eo.getUntilDate() != null && eo.getUntilDate().isBefore(today)
-                            && (dateFrom == null || dateFrom.isBefore(eo.getUntilDate()))) {
+                        if (eo.getEffectiveUntilDate() != null && eo.getEffectiveUntilDate().isBefore(today)
+                            && (dateFrom == null || dateFrom.isBefore(eo.getEffectiveUntilDate()))) {
 
-                            dateFrom = eo.getUntilDate();
+                            dateFrom = eo.getEffectiveUntilDate();
                         }
                     }
 
