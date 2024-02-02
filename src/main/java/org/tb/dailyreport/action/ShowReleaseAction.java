@@ -1,14 +1,8 @@
 package org.tb.dailyreport.action;
 
-import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
-import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
-import static org.tb.common.util.DateUtils.getDateAsStringArray;
-import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
-import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,18 +15,14 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.common.OptionItem;
 import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.service.OvertimeService;
 
 @Slf4j
 @Component
@@ -40,11 +30,9 @@ import org.tb.employee.service.OvertimeService;
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
     private final EmployeecontractDAO employeecontractDAO;
-    private final TimereportDAO timereportDAO;
     private final EmployeeDAO employeeDAO;
     private final SimpleMailService simpleMailService;
     private final TimereportService timereportService;
-    private final OvertimeService overtimeService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
@@ -131,7 +119,13 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         // Release Action
         if (request.getParameter("task") != null && request.getParameter("task").equals("release")) {
 
-            LocalDate releaseDate = LocalDate.parse(releaseForm.getReleaseDate());
+            // validate form data
+            ActionMessages errorMessages = validateFormDataForRelease(request, releaseForm, employeecontract);
+            if (!errorMessages.isEmpty()) {
+                return mapping.getInputForward();
+            }
+
+                LocalDate releaseDate = LocalDate.parse(releaseForm.getReleaseDate());
             timereportService.releaseTimereports(employeecontract.getId(), releaseDate);
 
             Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(employeecontract.getId());
@@ -181,6 +175,12 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("accept")) {
+            // validate form data
+            ActionMessages errorMessages = validateFormDataForAcceptance(request, releaseForm, employeecontract);
+            if (!errorMessages.isEmpty()) {
+                return mapping.getInputForward();
+            }
+
             LocalDate acceptanceDate = LocalDate.parse(releaseForm.getAcceptanceDate());
             timereportService.acceptTimereports(employeecontract.getId(), acceptanceDate);
 
@@ -229,6 +229,71 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         request.getSession().setAttribute("acceptedUntil", acceptedUntil);
 
         return mapping.findForward("success");
+    }
+
+    private ActionMessages validateFormDataForRelease(
+        HttpServletRequest request, ShowReleaseForm releaseForm,
+        Employeecontract selectedEmployeecontract) {
+
+        ActionMessages errors = getErrors(request);
+        if (errors == null) {
+            errors = new ActionMessages();
+        }
+
+        LocalDate date = LocalDate.parse(releaseForm.getReleaseDate());
+
+        if (date.isBefore(selectedEmployeecontract.getValidFrom())
+            || selectedEmployeecontract.getValidUntil() != null && date
+            .isAfter(selectedEmployeecontract.getValidUntil())) {
+            errors.add("releasedate", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
+        }
+
+        if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
+            errors.add("releasedate", new ActionMessage("form.release.error.date.before.acceptance"));
+        }
+
+        saveErrors(request, errors);
+
+        return errors;
+
+    }
+
+    private ActionMessages validateFormDataForAcceptance(
+        HttpServletRequest request, ShowReleaseForm releaseForm,
+        Employeecontract selectedEmployeecontract) {
+
+        ActionMessages errors = getErrors(request);
+        if (errors == null) {
+            errors = new ActionMessages();
+        }
+
+        LocalDate date = LocalDate.parse(releaseForm.getAcceptanceDate());
+
+        if (date.isBefore(selectedEmployeecontract.getValidFrom())
+            || selectedEmployeecontract.getValidUntil() != null && date.isAfter(selectedEmployeecontract.getValidUntil())) {
+            errors.add("acceptancedate", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
+        }
+
+        LocalDate releaseDate = selectedEmployeecontract.getReportReleaseDate();
+
+        if (selectedEmployeecontract.getReportReleaseDate() != null && date.isAfter(selectedEmployeecontract.getReportReleaseDate())) {
+            errors.add("acceptancedate", new ActionMessage("form.release.error.date.after.release"));
+        }
+
+        if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
+            errors.add("acceptancedate", new ActionMessage("form.release.error.date.before.stored"));
+        }
+
+        Employee loginEmployee = (Employee) request.getSession().getAttribute(
+            "loginEmployee");
+        if (selectedEmployeecontract.getEmployee().equals(loginEmployee)) {
+            errors.add("acceptancedate", new ActionMessage("form.release.error.foureyesprinciple"));
+        }
+
+        saveErrors(request, errors);
+
+        return errors;
+
     }
 
     @Override
