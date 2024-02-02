@@ -1,27 +1,14 @@
 package org.tb.order.rest;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
@@ -34,8 +21,20 @@ import org.tb.order.domain.Suborder.VisitorDirection;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 @RestController
 @RequiredArgsConstructor
+@SecurityScheme(name = "apikey", type = SecuritySchemeType.APIKEY, in = SecuritySchemeIn.HEADER, paramName = "x-api-key", description = "tokenId:secret")
 @RequestMapping(path = "/rest/orders")
 public class OrderRestEndpoint {
 
@@ -81,8 +80,9 @@ public class OrderRestEndpoint {
   }
 
   private List<OrderData> mergeOrders(List<OrderData> orders) {
-    boolean hassSuborders = orders.stream().map(OrderData::getSuborder).anyMatch(Objects::nonNull);
-    if (hassSuborders) {
+
+    boolean hasSuborders = orders.stream().map(OrderData::getSuborder).anyMatch(Objects::nonNull);
+    if (hasSuborders) {
       return orders.stream().collect(Collectors.groupingBy(OrderData::getId)).values().stream().map(
           orderList -> orderList.get(0).toBuilder().suborder(mergeOrders(
                   orderList.stream()

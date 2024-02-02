@@ -2,27 +2,13 @@
 <%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <script type="text/javascript">
-startList = function() {
-	if (document.all&&document.getElementById) {
-		navRoot = document.getElementById("nav");
-		for (i=0; i<navRoot.childNodes.length; i++) {
-			node = navRoot.childNodes[i];
-			if (node.nodeName=="LI") {
-				node.onmouseover=function() {
-					this.className+=" over";
-				}
-				node.onmouseout=function() {
-					this.className=this.className.replace(" over", "");
-				}
-			}
+	$(function() {
+		var err = '<%= session.getAttribute("errors") %>';
+		if (err == 'true') {
+			window.scrollTo(0,document.body.scrollHeight);
 		}
-	}
-	var err = '<%= session.getAttribute("errors") %>';
-	if (err == 'true') {
-		window.scrollTo(0,document.body.scrollHeight);
-	}
-}
-window.onload=startList;
+		$("#nav > li").click(function(){ $(this).toggleClass("over") });
+	});
 </script>
 
 <table style="width:100%;">

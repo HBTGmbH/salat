@@ -19,19 +19,20 @@
 		<script type="text/javascript" language="JavaScript">
 			function findForm(item) {
 				while(item) {
-					if(item.tagName.toLowerCase() === "form") {
+					if(item.form) {
+						return item.form;
+					}
+					if(item.tagName && item.tagName.toLowerCase() == "form") {
 						return item;
 					}
 					item = item.parentElement;
 				}
 				return null;
 			}
-
-			function findFormById(id) {
-				return document.getElementById(id);
-			}
-
-			function afterCalenderClick() {
+            function findFormById(id) {
+                return document.getElementById(id);
+            }
+            function afterCalenderClick() {
 				document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
 				document.forms[0].submit();
 			}
@@ -41,8 +42,18 @@
 				form.submit();
 			}
 
+			function setMonth(form, mode) {
+				form.action = "/do/ShowDailyReport?task=refreshTimereports&change=" + change;
+				form.submit();
+			}
+
 			function setUpdateTimereportsAction(form) {
 				form.action = "/do/ShowDailyReport?task=refreshTimereports";
+				form.submit();
+			}
+
+			function switchEmployee(form) {
+				form.action = "/do/ShowDailyReport?task=switchEmployee";
 				form.submit();
 			}
 
@@ -80,7 +91,6 @@
 				var agree=confirm("<bean:message key="main.general.confirmdelete.text" />");
 				if (agree) {
 					form.action = "/do/DeleteTimereportFromDailyDisplay?trId=" + id;
-					console.log("submit with ", "/do/DeleteTimereportFromDailyDisplay?trId=" + id);
 					form.submit();
 				}
 			}
@@ -117,12 +127,21 @@
 				form.submit();
 			}
 
+			function showWMTT(Trigger,id) {
+				wmtt = document.getElementById(id);
+				var hint;
+				hint = Trigger.getAttribute("hint");
+				wmtt.style.display = "block";
+			}
+
+			function hideWMTT() {
+				wmtt.style.display = "none";
+			}
+
 			// textarea limitation
-			function limitText(limitField, limitCount, limitNum) {
+			function limitText(limitField, limitNum) {
 				if (limitField.value.length > limitNum) {
 					limitField.value = limitField.value.substring(0, limitNum);
-				} else {
-					limitCount.value = limitNum - limitField.value.length;
 				}
 			}
 
@@ -137,21 +156,6 @@
 			var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
 		</script>
 
-		<script type="text/javascript" src="/webjars/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
-
-        <script type="text/javascript">
-            $(function () {
-
-                // INITIALIZE DATEPICKER PLUGIN
-                $('.datepicker').datepicker({
-                    clearBtn: true,
-                    format: "yyyy-mm-dd"
-                }).on('changeDate', function (ev) {
-					document.forms[0].action = "/do/ShowDailyReport?task=refreshTimereports";
-					document.forms[0].submit();
-				});
-            });</script>
-        <link rel="stylesheet" href="/webjars/bootstrap-datepicker/css/bootstrap-datepicker.css">
         <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 	</head>
 
@@ -178,7 +182,7 @@
 						<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
 					</td>
 					<td align="left" class="noBborderStyle" nowrap="nowrap">
-						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
+						<html:select property="employeeContractId" value="${currentEmployeeContract.id}" onchange="switchEmployee(findForm(this))" styleClass="make-select2">
 							<c:if test="${authorizedUser.manager}">
 								<html:option value="-1">
 									<bean:message key="main.general.allemployees.text" />
@@ -282,11 +286,8 @@
 					<td align="left" class="noBborderStyle">
 						<c:choose>
 							<c:when test="${!(view eq 'month')}">
-								<span class="datepicker date input-group p-0 shadow-sm">
-									<html:text property="startdate"  styleId="calinput1" styleClass="form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
-									<i class="bi bi-calendar-event mr2"></i>
-								</span>
-									<%-- Arrows for navigating the Date --%>
+								<input type='date' name='startdate' value='<bean:write name="showDailyReportForm" property="startdate" />' onchange="afterCalenderClick(findForm(this))" />
+								<%-- Arrows for navigating the Date --%>
 								<a href="#" data-testid="skip-prevweek" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-7')" class="mr2" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
 								<a href="#" data-testid="skip-prevday" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','-1')" class="mr2" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
 								<a href="#" data-testid="skip-today" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'start','0')" class="mr2" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
@@ -336,6 +337,13 @@
 									onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 									<html:options collection="years" property="value" labelProperty="label" />
 								</html:select>
+								<br />
+								<%-- Arrows for navigating the month --%>
+								<a href="javascript:setMonth(findForm(this),'-12')"><i class="bi bi-skip-backward-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'-1')"><i class="bi bi-skip-start-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'0')"><i class="bi bi-stop-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'1')"><i class="bi bi-skip-end-btn"></i></a>
+								<a href="javascript:setMonth(findForm(this),'12')"><i class="bi bi-skip-forward-btn"></i></a>
 							</c:otherwise>
 						</c:choose>
 					</td>
@@ -348,35 +356,13 @@
 							<b><bean:message key="main.monthlyreport.daymonthyear.text" /></b>&nbsp;<i>(<bean:message key="main.general.to.text" />)</i><b>:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<html:text property="enddate" onblur="setUpdateTimereportsAction(findForm(this))" readonly="false" size="10" maxlength="10" styleId="calinput2" />
-							<script type="text/javascript" language="JavaScript">
-								function calenderPopupEnddate() {
-									var cal = new CalendarPopup();
-									cal.setMonthNames(<bean:message key="main.date.popup.monthnames" />);
-									cal.setDayHeaders(<bean:message key="main.date.popup.dayheaders" />);
-									cal.setWeekStartDay(<bean:message key="main.date.popup.weekstartday" />);
-									cal.setTodayText("<bean:message key="main.date.popup.today" />");
-									cal.select(document.forms[0].enddate,'anchor2','yyyy-MM-dd');
-								}
-
-								var calinput2 = document.getElementById("calinput2");
-								calinput2.addEventListener("keypress", function(event) {
-									if (event.key === "Enter") {
-										event.preventDefault();
-										setUpdateTimereportsAction(event.target.form);
-									}
-								});
-
-							</script>
-							<a href="javascript:calenderPopupEnddate()" name="anchor2" ID="anchor2"  title="<bean:message key="main.date.popup.alt.text" />">
-								<i class="bi bi-calendar-event"></i>
-							</a>
+							<input type='date' name='enddate' value='<bean:write name="showDailyReportForm" property="enddate" />' onchange="afterCalenderClick(findForm(this))" />
 							<%-- Arrows for navigating the Date --%>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn-fill"></i></a>
-							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn-fill"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','1')" title="<bean:message key="main.date.popup.nextday" />"><i class="bi bi-skip-end-btn"></i></a>
+							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','7')" title="<bean:message key="main.date.popup.nextweek" />"><i class="bi bi-skip-forward-btn"></i></a>
 						</td>
 					</tr>
 				</c:if>
@@ -454,7 +440,7 @@
 										<html:options collection="minutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy2-fill"></i></a>
+									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
 									<i>(optional)</i>
 								</nobr>
 							</td>
@@ -475,8 +461,8 @@
 										<html:options collection="breakminutes" property="value" labelProperty="label" />
 									</html:select>
 
-									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy2-fill"></i></a>
-									&nbsp;&nbsp;<i>(optional)</i>
+									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy"></i></a>
+									<i>(optional)</i>
 								</td>
 							</tr>
 							<tr>
@@ -599,7 +585,7 @@
 			</tr>
 
 			<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
-
+				<html:form action="/UpdateDailyReport?trId=${timereport.id}" styleId="form${timereport.id}">
 					<c:choose>
 						<c:when test="${statusID.count%2 == 0}">
 							<tr class="noBborderStyle primarycolor timereport">
@@ -610,98 +596,96 @@
 					</c:choose>
 
 					<!-- Info -->
-					<td class="noBborderStyle timereport" align="center">
-						<html:form action="/UpdateDailyReport?trId=${timereport.id}" styleId="form${timereport.id}" style="margin:0;">
-							<input type="hidden" name="id" value="${timereport.id}" />
-						</html:form>
-						<a href="#" class="tooltipTrigger"><i class="bi bi-info-circle"></i>
-							<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
-								<table>
-									<tr>
-										<td class="info">id:</td>
-										<td class="info" colspan="3">
-											<c:out value="${timereport.id}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info"><bean:message key="main.timereport.tooltip.employee" />:</td>
-										<td class="info" colspan="3">
-											<c:out value="${timereport.employeeName}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
-										<td class="info" colspan="3">
-											<c:out	value="${timereport.customerorderSign}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info">&nbsp;</td>
-										<td class="info" colspan="3">
-											<c:out	value="${timereport.customerorderDescription}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info"><bean:message key="main.timereport.tooltip.suborder" />:</td>
-										<td class="info" colspan="3">
-											<c:out value="${timereport.suborderSign}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info">&nbsp;</td>
-										<td class="info" colspan="3">
-											<c:out value="${timereport.suborderDescription}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info"><bean:message key="main.timereport.tooltip.status" />:</td>
-										<td class="info">
-											<c:out value="${timereport.status}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.created" />:</td>
-										<td class="info">
-											<java8:formatLocalDateTime value="${timereport.created}" />
-										</td>
-										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-										<td class="info" valign="top">
-											<c:out value="${timereport.createdby}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.edited" />:</td>
-										<td class="info">
-											<java8:formatLocalDateTime value="${timereport.lastupdate}" />
-										</td>
-										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-										<td class="info" valign="top">
-											<c:out value="${timereport.lastupdatedby}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.released" />:</td>
-										<td class="info">
-											<c:out value="${timereport.released}" />
-										</td>
-										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-										<td class="info" valign="top">
-											<c:out value="${timereport.releasedby}" />
-										</td>
-									</tr>
-									<tr>
-										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.accepted" />:</td>
-										<td class="info">
-											<c:out value="${timereport.accepted}" />
-										</td>
-										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.by" /></td>
-										<td class="info" valign="top">
-											<c:out value="${timereport.acceptedby}" />
-										</td>
-									</tr>
-								</table>
-							</div>
-						</a>
+					<td class="noBborderStyle" align="center">
+                        <input type="hidden" name="id" value="${timereport.id}" />
+                        <div class="tooltip" id="info<c:out value='${timereport.id}'/>">
+							<table>
+								<tr>
+									<td class="info">id:</td>
+									<td class="info" colspan="3">
+										<c:out value="${timereport.id}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info"><bean:message key="main.timereport.tooltip.employee" />:</td>
+									<td class="info" colspan="3">
+										<c:out value="${timereport.employeeName}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
+									<td class="info" colspan="3">
+										<c:out	value="${timereport.customerorderSign}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info">&nbsp;</td>
+									<td class="info" colspan="3">
+										<c:out	value="${timereport.customerorderDescription}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info"><bean:message key="main.timereport.tooltip.suborder" />:</td>
+									<td class="info" colspan="3">
+										<c:out value="${timereport.suborderSign}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info">&nbsp;</td>
+									<td class="info" colspan="3">
+										<c:out value="${timereport.suborderDescription}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info"><bean:message key="main.timereport.tooltip.status" />:</td>
+									<td class="info">
+										<c:out value="${timereport.status}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.created" />:</td>
+									<td class="info">
+										<java8:formatLocalDateTime value="${timereport.created}" />
+									</td>
+									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+									<td class="info" valign="top">
+										<c:out value="${timereport.createdby}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.edited" />:</td>
+									<td class="info">
+										<java8:formatLocalDateTime value="${timereport.lastupdate}" />
+									</td>
+									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+									<td class="info" valign="top">
+										<c:out value="${timereport.lastupdatedby}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.released" />:</td>
+									<td class="info">
+										<c:out value="${timereport.released}" />
+									</td>
+									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+									<td class="info" valign="top">
+										<c:out value="${timereport.releasedby}" />
+									</td>
+								</tr>
+								<tr>
+									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.accepted" />:</td>
+									<td class="info">
+										<c:out value="${timereport.accepted}" />
+									</td>
+									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.by" /></td>
+									<td class="info" valign="top">
+										<c:out value="${timereport.acceptedby}" />
+									</td>
+								</tr>
+							</table>
+						</div>
+						<a href="#" onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
+						   onMouseOut="hideWMTT()"><i class="bi bi-info-circle"></i></a>
 						<c:if test="${!timereport.fitsToContract}">
 							<img width="20px" height="20px" src="/images/Pin%20rot.gif" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
 						</c:if>
@@ -743,9 +727,9 @@
 							<!-- Kommentar -->
 							<td class="noBborderStyle">
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}"
-									onkeydown="limitText(this.form.comment,this.form.countdown,256);"
-									onkeyup="limitText(this.form.comment,this.form.countdown,256);"
-                                    styleClass="showDailyReport form${timereport.id}" />
+									onkeydown="limitText(this.form.comment,256);"
+									onkeyup="limitText(this.form.comment,256);"
+									styleClass="showDailyReport form${timereport.id}" />
 							</td>
 
 							<!-- Fortbildung -->
@@ -755,16 +739,10 @@
 
 							<!-- Dauer -->
 							<td class="noBborderStyle" align="center" nowrap="nowrap">
-								<html:select name="timereport" property="selectedDurationHour"
-											 value="${timereport.durationhours}"
-											 disabled="${timereport.suborderSign eq overtimeCompensation}"
-											 styleClass="make-select2 form${timereport.id}">
+								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2 form${timereport.id}">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
-								<html:select property="selectedDurationMinute"
-											 value="${timereport.durationminutes}"
-											 disabled="${timereport.suborderSign eq overtimeCompensation}"
-											 styleClass="make-select2 form${timereport.id}">
+								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2 form${timereport.id}">
 									<html:options collection="minutes" property="value"	labelProperty="label" />
 									<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, timereport.durationminutes)}">
 										<html:option value="${timereport.durationminutes}">${timereport.durationminutes}</html:option>
@@ -774,13 +752,13 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<a href="#" onclick="confirmSave(findFormById('form${timereport.id}'), ${timereport.id})"  class="function-save" title="Speichern"><i class="bi bi-floppy2-fill"></i></a>
+								<button onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" class="function-save"  style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern" class="function-edit"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
-								<a href="#" onclick="confirmDelete(findFormById('form${timereport.id}'), ${timereport.id})" title="Löschen" class="function-delete"><i class="bi bi bi-trash"></i></a>
+								<button onclick="confirmDelete(findForm(this), ${timereport.id}); return false" title="Löschen" class="function-delete" style="border: 0; background-color: transparent"><i class="bi bi bi-trash"></i></button>
 								<span id="span-massedit-${timereport.id}">
-									<input type="checkbox" form="form${timereport.id}" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
+									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
 								</span>
 							</td>
 						</c:when>
@@ -811,6 +789,7 @@
 						</c:otherwise>
 					</c:choose>
 					</tr>
+				</html:form>
 			</c:forEach>
 			<tr class="borderTopLine">
 				<td colspan="6" class="noBborderStyle">
