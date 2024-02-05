@@ -17,8 +17,10 @@ import org.apache.struts.util.MessageResources;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.context.request.RequestAttributes;
@@ -47,7 +49,7 @@ import org.tb.order.persistence.SuborderDAO;
 //@Profile({"!e2etest"})
 @FieldDefaults(level = AccessLevel.PROTECTED)
 public class AuthenticationSuccessListener implements
-    ApplicationListener<InteractiveAuthenticationSuccessEvent> {
+    ApplicationListener<AuthenticationSuccessEvent> {
 
   private final AuthorizedUser authorizedUser;
   private final EmployeecontractDAO employeecontractDAO;
@@ -59,21 +61,24 @@ public class AuthenticationSuccessListener implements
   private final VacationDAO vacationDAO;
 
   @Override
-  public void onApplicationEvent(InteractiveAuthenticationSuccessEvent event) {
+  public void onApplicationEvent(AuthenticationSuccessEvent event) {
     try {
-      if (event.getAuthentication().getPrincipal() instanceof DefaultOidcUser user) {
-        String userSign = user.getAttribute("preferred_username");
-        log.info("LOGIN name: " + user.getAttributes().get("preferred_username")); //TODO remove
-        log.debug("userSign: {}", userSign);
+      String userSign = null;
+      if (event.getSource() instanceof JwtAuthenticationToken jwtToken && jwtToken.getCredentials() instanceof Jwt creds) {
+        userSign = creds.getClaim("unique_name");
+      } else if (event.getAuthentication().getPrincipal() instanceof DefaultOidcUser user) {
+        userSign = user.getAttribute("preferred_username");
+      }
+      log.info("LOGIN name: " + userSign); //TODO remove
+      log.debug("userSign: {}", userSign);
 
-        if (userSign != null) {
-          Employee loginEmployee = findEmployee(userSign);
-            authorizedUser.init(loginEmployee);
-            processLoginEmployee(loginEmployee, session());
-        } else {
-          throw new AuthenticationCredentialsNotFoundException(
-              "sign was null please contact the Administrator to configure the user in the AD correctly");
-        }
+      if (userSign != null) {
+        Employee loginEmployee = findEmployee(userSign);
+          authorizedUser.init(loginEmployee);
+          processLoginEmployee(loginEmployee, session());
+      } else {
+        throw new AuthenticationCredentialsNotFoundException(
+            "sign was null please contact the Administrator to configure the user in the AD correctly");
       }
     } catch (Exception e) {
       log.info("",e);

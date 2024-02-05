@@ -135,6 +135,7 @@ public class EmployeecontractService {
       employeecontract.getVacations()
           .stream()
           .forEach(v -> v.setEntitlement(vacationEntitlement));
+      employeecontractDAO.save(employeecontract);
     }
   }
 

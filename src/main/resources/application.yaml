@@ -36,6 +36,26 @@ spring:
       ddl-auto: validate
     open-in-view: true
     database: mysql
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys
+      client:
+        registration:
+          azure:
+            client-id: ${AZURE_AD_CLIENT_ID}
+            client-secret: ${AZURE_AD_CLIENT_SECRET}
+            scope: openid,profile,email,offline_access
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            authorization-grant-type: authorization_code
+        provider:
+          azure:
+            authorization-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/authorize
+            token-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/token
+            user-name-attribute: name
+            user-info-authentication-method: header
+            jwk-set-uri: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/discovery/v2.0/keys
   web:
     resources:
       cache:
@@ -52,3 +72,22 @@ salat:
   mail-host: localhost
   auth-service:
     cache-expiry: 5m
+  oauth:
+    enabled: true
+    logout:
+      url: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/logout
+  rest:
+    cors:
+      allowed-origins: http://localhost,http://localhost:8080,http://localhost:4200,https://salat-test.hbt.de,https://salat.hbt.de,https://orange-pebble-048f4f103.4.azurestaticapps.net
+
+springdoc:
+  swagger-ui:
+    path: '/rest/doc/'
+    try-it-out-enabled: true
+  api-docs:
+    path: '/rest/doc/api-docs'
+  default-produces-media-type: 'application/json'
+openapi:
+  description: 'Open API Documentation for the Salat Endpoints'
+  version: 0.1
+  title: 'Salat API'

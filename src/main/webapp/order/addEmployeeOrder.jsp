@@ -86,8 +86,12 @@
 				<html:select property="employeeContractId" onchange="setStoreAction(this.form, 'refreshEmployee')" styleClass="make-select2">
 					<c:forEach var="employeecontract" items="${employeecontracts}" >
 							<html:option value="${employeecontract.id}">
-								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out value="${employeecontract.timeString}" />
-								<c:if test="${employeecontract.openEnd}"><bean:message key="main.general.open.text" /></c:if>)
+								<c:out value="${employeecontract.employee.name}" /> |
+								<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+									value="${employeecontract.timeString}" />
+								<c:if test="${employeecontract.openEnd}">
+									<bean:message key="main.general.open.text" />
+								</c:if>)
 							</html:option>
 					</c:forEach>
 				</html:select>

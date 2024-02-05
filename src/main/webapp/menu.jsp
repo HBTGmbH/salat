@@ -2,27 +2,13 @@
 <%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <script type="text/javascript">
-startList = function() {
-	if (document.all&&document.getElementById) {
-		navRoot = document.getElementById("nav");
-		for (i=0; i<navRoot.childNodes.length; i++) {
-			node = navRoot.childNodes[i];
-			if (node.nodeName=="LI") {
-				node.onmouseover=function() {
-					this.className+=" over";
-				}
-				node.onmouseout=function() {
-					this.className=this.className.replace(" over", "");
-				}
-			}
+	$(function() {
+		var err = '<%= session.getAttribute("errors") %>';
+		if (err == 'true') {
+			window.scrollTo(0,document.body.scrollHeight);
 		}
-	}
-	var err = '<%= session.getAttribute("errors") %>';
-	if (err == 'true') {
-		window.scrollTo(0,document.body.scrollHeight);
-	}
-}
-window.onload=startList;
+		$("#nav > li").click(function(){ $(this).toggleClass("over") });
+	});
 </script>
 
 <table style="width:100%;">
@@ -121,7 +107,7 @@ window.onload=startList;
 		<li>&nbsp;</li>
 	</c:otherwise>
 	</c:choose>
-	<li><bean:message key="main.general.mainmenu.management.text" />
+	<li id="last"><bean:message key="main.general.mainmenu.management.text" />
 	<ul style="width: 100%">
 		<li class="first"><html:link styleClass="menu" action="/ShowWelcome">
 			<bean:message key="main.general.mainmenu.overview.text" />
@@ -129,13 +115,13 @@ window.onload=startList;
 		<li><html:link styleClass="menu" action="/ShowSettings">
 			<bean:message key="main.general.mainmenu.settings.text" />
 		</html:link></li>
+		<li><html:link styleClass="menu" href="/logout">
+			<bean:message key="main.general.logout.text" /> (<c:out
+				value="${loginEmployee.loginname}" />/<c:out
+				value="${loginEmployee.status}" />)
+		</html:link></li>
 	</ul>
 	</li>
-	<li id="last"><html:link action="/LogoutEmployee">
-		<bean:message key="main.general.logout.text" /> (<c:out
-			value="${loginEmployee.loginname}" />/<c:out
-			value="${loginEmployee.status}" />)
-	</html:link></li>
 </ul>
 </div>
 <br>

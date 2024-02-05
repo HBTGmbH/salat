@@ -5,6 +5,7 @@ import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
 import static org.tb.common.DateTimeViewHelper.getMonthMMStringFromShortstring;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
+import static org.tb.common.DateTimeViewHelper.getShortstringFromMonthMM;
 import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
@@ -13,6 +14,8 @@ import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.getDateAsStringArray;
+import static org.tb.common.util.DateUtils.getDateFormStrings;
+import static org.tb.common.util.DateUtils.getYearString;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
@@ -100,6 +103,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
+        boolean doRefreshVacationAndOvertime = false;
         String task = request.getParameter("task");
         if ("massdelete".equalsIgnoreCase(task)) {
             // delete the selected ids from the database and continue as if this was a refreshTimereports task
@@ -134,6 +138,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 }
                 return mapping.findForward("success");
             }
+            task = "refreshTimereports";
+        } else if("switchEmployee".equalsIgnoreCase(task)) {
+            doRefreshVacationAndOvertime = true;
             task = "refreshTimereports";
         }
 
@@ -181,6 +188,18 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 // these parameters are only set when user clicked on day in matrix view -> redirected to showDailyReport with specific date
                 String date = request.getParameter("year") + "-" + getMonthMMStringFromShortstring(request.getParameter("month")) + "-" + request.getParameter("day");
                 reportForm.setStartdate(date);
+
+                // sync form fields - see https://github.com/HBTGmbH/salat/issues/219
+                LocalDate startdate = LocalDate.parse(date);
+                String day = formatDayOfMonth(startdate);
+                String month = formatMonth(startdate);
+                reportForm.setDay(day);
+                reportForm.setMonth(month);
+                reportForm.setYear(formatYear(startdate));
+                request.getSession().setAttribute("currentDay", reportForm.getDay());
+                request.getSession().setAttribute("currentMonth", reportForm.getMonth());
+                request.getSession().setAttribute("currentYear", reportForm.getYear());
+                request.getSession().setAttribute("startdate", reportForm.getStartdate());
             }
             //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
             if (request.getSession().getAttribute("overtimeCompensation") == null
@@ -202,6 +221,14 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         reportForm.setShowAllMinutes(anyTimereportNotMatches5MinuteSchema);
         request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
         request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
+
+        // check if vacation and overtime should be recalculated - see https://github.com/HBTGmbH/salat/issues/226
+        if(doRefreshVacationAndOvertime) {
+            Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+            if(currentEmployeeContract != null) {
+                refreshVacationAndOvertime(request, currentEmployeeContract);
+            }
+        }
 
         return actionResult;
     }
@@ -341,6 +368,19 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         // set start and end dates
         String view = reportForm.getView();
         if (GlobalConstants.VIEW_MONTHLY.equals(view)) {
+            // change startdate or enddate by buttons
+            if (request.getParameter("change") != null) {
+                LocalDate beginDate = getDateFormStrings(reportForm.getDay(), reportForm.getMonth(), reportForm.getYear(), true);
+                int change = Integer.parseInt(request.getParameter("change"));
+                if(change == 0) {
+                    beginDate = today();
+                } else {
+                    beginDate = changeMonths(beginDate, change);
+                }
+                reportForm.setMonth(getShortstringFromMonthMM(beginDate.getMonthValue()));
+                reportForm.setYear(getYearString(beginDate));
+            }
+
             // monthly view -> create date and synchronize with end-/lastdate-fields
             reportForm.setStartdate(reportForm.getYear() + "-" + getMonthMMStringFromShortstring(reportForm.getMonth()) + "-" + reportForm.getDay());
             reportForm.setLastday(reportForm.getDay());
@@ -370,9 +410,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 try {
                     int change = Integer.parseInt(request.getParameter("change"));
                     if ("start".equals(request.getParameter("date"))) {
-                        startdate = changeDate(startdate, change);
+                        startdate = changeDays(startdate, change);
                     } else if ("end".equals(request.getParameter("date"))) {
-                        enddate = changeDate(enddate, change);
+                        enddate = changeDays(enddate, change);
                     }
                 } catch (NumberFormatException e) {
                     return mapping.findForward("error");
@@ -659,9 +699,18 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         return mapping.findForward("success");
     }
 
-    private LocalDate changeDate(LocalDate date, int change) {
+    private LocalDate changeDays(LocalDate date, int change) {
         if (change != 0) {
             date = DateUtils.addDays(date, change);
+        } else {
+            date = today();
+        }
+        return date;
+    }
+
+    private LocalDate changeMonths(LocalDate date, int change) {
+        if (change != 0) {
+            date = DateUtils.addMonths(date, change);
         } else {
             date = today();
         }

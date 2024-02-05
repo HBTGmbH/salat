@@ -156,6 +156,7 @@
 					</html:select>
 
 					<c:if test="${matrixview != 'custom'}">
+						<br />
 						<%-- Arrows for navigating the month --%>
 						<a href="javascript:setMonth('-12')"><i class="bi bi-skip-backward-btn"></i></a>
 						<a href="javascript:setMonth('-1')"><i class="bi bi-skip-start-btn"></i></a>
@@ -373,40 +374,39 @@
 					<c:if test="${dayhourcount.publicHoliday==true}">
 						<td class="matrix"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
-							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
+							align="right">
+							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
 								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 					<c:if test="${dayhourcount.publicHoliday==false}">
 						<td class="matrix"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: lightgrey;"
-							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
+							align="right">
+							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
 								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 				</c:if>
 				<c:if test="${dayhourcount.satSun==false}">
 					<c:if test="${dayhourcount.publicHoliday==true}">
 						<td class="matrix"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
-							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
+							align="right">
+							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
 								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 					<c:if test="${dayhourcount.publicHoliday==false}">
 						<td class="matrix"
-							style="font-size: 7pt; border-top: 2px black solid;"
-							align="right"><c:if
-								test="${!(dayhourcount.workingHour eq '0.0')}">
+							style="font-size: 7pt; border-top: 2px black solid;" align="right">
+							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
 								<c:out value="${dayhourcount.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq '0.0')}">&nbsp;</c:if></td>
+							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 				</c:if>
 

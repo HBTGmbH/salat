@@ -95,21 +95,6 @@
 		HBT.Salat.FavouriteOrders.initializeSuborderSelection();
 	});		
 </script>
-	<script type="text/javascript" src="/webjars/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
-
-	<script type="text/javascript">
-		$(function () {
-
-			// INITIALIZE DATEPICKER PLUGIN
-			$('.datepicker').datepicker({
-				clearBtn: true,
-				format: "yyyy-mm-dd"
-			}).on('changeDate', function (ev) {
-				document.forms[0].action = "/do/StoreDailyReport?task=adjustBeginTime";
-				document.forms[0].submit();
-			});
-		});</script>
-	<link rel="stylesheet" href="/webjars/bootstrap-datepicker/css/bootstrap-datepicker.css">
 	<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.css">
 </head>
 <body>
@@ -153,13 +138,8 @@
 				<b><bean:message key="main.timereport.referenceday.text" />:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<span class="datepicker date input-group p-0 shadow-sm">
-					<html:text property="referenceday"  styleId="calinput1" styleClass="form-control py-4 px-4"  readonly="false" size="10" maxlength="10" />
-					<i class="bi bi-calendar-event mr2"></i>
-				</span>
-
+				<input type='date' name='referenceday' value='<bean:write name="addDailyReportForm" property="referenceday" />' onchange="afterCalenderClick(findForm(this))" />
 				<%-- Arrows for navigating the Date --%>
-
 				<a href="javascript:setDate('-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
 				<a href="javascript:setDate('-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
 				<a href="javascript:setDate('0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>

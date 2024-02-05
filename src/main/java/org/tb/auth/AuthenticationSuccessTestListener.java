@@ -10,8 +10,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
-import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -25,11 +25,8 @@ import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
 @Component
-//@SuperBuilder
-//@RequiredArgsConstructor
-@Profile({"e2etest"})
+@ConditionalOnExpression("!${salat.oauth.enabled}")
 @Slf4j
-//@SessionScope
 public class AuthenticationSuccessTestListener extends AuthenticationSuccessListener implements
     Filter {
 
@@ -43,7 +40,7 @@ public class AuthenticationSuccessTestListener extends AuthenticationSuccessList
   }
 
   @Override
-  public void onApplicationEvent(InteractiveAuthenticationSuccessEvent event) {
+  public void onApplicationEvent(AuthenticationSuccessEvent event) {
     try {
       if (event.getAuthentication().getPrincipal() instanceof DefaultOidcUser user) {
         String userSign = user.getAttribute("preferred_username");

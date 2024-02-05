@@ -1,14 +1,18 @@
 package org.tb.user;
 
-import lombok.RequiredArgsConstructor;
-import org.passay.*;
-import org.springframework.stereotype.Service;
-import org.tb.common.GlobalConstants;
-import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
-
 import static org.tb.common.GlobalConstants.EMPLOYEE_PASSWORD_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.EMPLOYEE_PASSWORD_MIN_LENGTH;
+
+import lombok.RequiredArgsConstructor;
+import org.passay.CharacterCharacteristicsRule;
+import org.passay.CharacterRule;
+import org.passay.EnglishCharacterData;
+import org.passay.GermanCharacterData;
+import org.passay.LengthRule;
+import org.passay.PasswordData;
+import org.passay.PasswordValidator;
+import org.springframework.stereotype.Service;
+import org.tb.employee.persistence.EmployeeDAO;
 
 @Service
 @RequiredArgsConstructor
@@ -36,4 +40,11 @@ public class UserService {
         return valid;
     }
 
+    public boolean setLandingPage(Long employeeId, String landingPage) {
+
+      var employee = employeeDAO.getEmployeeById(employeeId);
+      employee.setLandingpage(landingPage);
+      employeeDAO.save(employee);
+      return true;
+    }
 }

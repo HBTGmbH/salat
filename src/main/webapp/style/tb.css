@@ -248,7 +248,7 @@ menu li, .menu li {
 	text-align: center;
 	float: left;
 	position: relative;
-	width: calc(20% - .4em); /* minus margin on both sides*/
+	width: calc(25% - .4em); /* minus margin on both sides*/
 	border-width: 0 0;
 	font-size: 11pt;
 	color: white;

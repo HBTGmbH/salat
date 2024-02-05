@@ -67,6 +67,7 @@ public class LoginEmployeeAction extends TypedAction<LoginEmployeeForm> {
                     Employee em = employeeDAO.getEmployeeById(loginEmployee.getId());
                     em.changePassword(loginEmployeeForm.getPassword());
                     loginEmployee.changePassword(loginEmployeeForm.getPassword());
+                    authorizedUser.init(loginEmployee);
                     employeeDAO.save(em);
                 } else {
                     return loginFailed(request, "form.login.error.unknownuser", mapping);

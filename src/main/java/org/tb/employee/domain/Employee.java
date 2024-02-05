@@ -52,6 +52,11 @@ public class Employee extends AuditedEntity implements Serializable {
      */
     private Boolean passwordchange;
 
+    /**
+     * requested landingpage
+     */
+    private String landingpage;
+
     private transient Boolean restricted = null;
 
     public String getName() {

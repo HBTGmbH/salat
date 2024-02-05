@@ -9,7 +9,8 @@ spring:
           client-id: ${AZURE_AD_CLIENT_ID} # TODO use Key-vault
           client-secret: ${AZURE_AD_CLIENT_SECRET} # TODO use Key-vault
        # user-name-attribute:
-
-#      keyvault:
+  profiles:
+    active: production
+      #      keyvault:
 #        secret:
 #          endpoint: https://salat-key-vault.vault.azure.net/
