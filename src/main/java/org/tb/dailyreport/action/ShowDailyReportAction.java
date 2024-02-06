@@ -103,7 +103,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
-        boolean doRefreshVacationAndOvertime = false;
+        boolean doRefreshEmployeeSummaryData = false;
         String task = request.getParameter("task");
         if ("massdelete".equalsIgnoreCase(task)) {
             // delete the selected ids from the database and continue as if this was a refreshTimereports task
@@ -140,7 +140,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             }
             task = "refreshTimereports";
         } else if("switchEmployee".equalsIgnoreCase(task)) {
-            doRefreshVacationAndOvertime = true;
+            doRefreshEmployeeSummaryData = true;
             task = "refreshTimereports";
         }
 
@@ -223,10 +223,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(reportForm.isShowAllMinutes()));
 
         // check if vacation and overtime should be recalculated - see https://github.com/HBTGmbH/salat/issues/226
-        if(doRefreshVacationAndOvertime) {
+        if(doRefreshEmployeeSummaryData) {
             Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
             if(currentEmployeeContract != null) {
-                refreshVacationAndOvertime(request, currentEmployeeContract);
+                refreshEmployeeSummaryData(request, currentEmployeeContract);
             }
         }
 
@@ -870,7 +870,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             }
         }
         // vacation and overtime balance
-        refreshVacationAndOvertime(request, ec);
+        refreshEmployeeSummaryData(request, ec);
 
         // set current order = all orders
         request.getSession().setAttribute("currentOrder", "ALL ORDERS");

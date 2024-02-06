@@ -386,7 +386,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 // refresh overtime and vacation
                 var employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
-                refreshVacationAndOvertime(request, employeecontract);
+                refreshEmployeeSummaryData(request, employeecontract);
 
                 return mapping.findForward("showDaily");
 

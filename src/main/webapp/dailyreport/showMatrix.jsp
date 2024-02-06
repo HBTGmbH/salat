@@ -12,6 +12,12 @@
 	</title>
 	<jsp:include flush="true" page="/head-includes.jsp" />
 	<script type="text/javascript" language="JavaScript">
+
+		function setSwitchEmployee(form) {
+			form.action = "/do/ShowMatrix?task=switchEmployee";
+			form.submit();
+		}
+
 		function setUpdateMergedreportsAction(form) {
 			form.action = "/do/ShowMatrix?task=refreshMergedreports";
 			form.submit();
@@ -48,7 +54,7 @@
 				<td align="left" class="noBborderStyle"><html:select
 						property="employeeContractId"
 						value="${currentEmployeeContract.id}"
-						onchange="setUpdateMergedreportsAction(this.form)"
+						onchange="setSwitchEmployee(this.form)"
 						styleClass="make-select2">
 						<c:if test="${authorizedUser.manager}">
 							<html:option value="-1">
