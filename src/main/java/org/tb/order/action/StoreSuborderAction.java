@@ -52,7 +52,6 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
     private final CustomerorderDAO customerorderDAO;
     private final SuborderDAO suborderDAO;
     private final TimereportDAO timereportDAO;
-    private final EmployeeorderDAO employeeorderDAO;
     private final SuborderService suborderService;
 
     @Override
@@ -252,109 +251,18 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             // 'main' task - prepare everything to store the suborder.
             // I.e., copy properties from the form into the suborder before
             // saving.
-            long soId;
-            Suborder so;
+            Long soId = null;
             Customerorder customerorder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
 
-            if (request.getSession().getAttribute("soId") != null) {
-                // edited suborder
+            if(request.getSession().getAttribute("soId") != null) {
                 soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
-                so = suborderDAO.getSuborderById(soId);
-
-                if (so.getSuborders() != null
-                    && !so.getSuborders().isEmpty()
-                    && !Objects.equals(so.getCustomerorder().getId(), customerorder.getId())) {
-                    // set customerorder in all descendants					
-                    so.setCustomerOrderForAllDescendants(customerorder, suborderDAO, so);
-                }
-                so = suborderDAO.getSuborderById(soId);
-            } else {
-                // new report
-                so = new Suborder();
             }
-            so.setCustomerorder(customerorder);
-            so.setSign(addSuborderForm.getSign());
-            so.setSuborder_customer(addSuborderForm.getSuborder_customer());
-            so.setDescription(addSuborderForm.getDescription());
-            so.setShortdescription(addSuborderForm.getShortdescription());
-            so.setInvoice(addSuborderForm.getInvoice());
-            so.setStandard(addSuborderForm.getStandard());
-            so.setCommentnecessary(addSuborderForm.getCommentnecessary());
-            so.setFixedPrice(addSuborderForm.getFixedPrice());
-            so.setTrainingFlag(addSuborderForm.getTrainingFlag());
-
-            if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().equals("")) {
-                LocalDate fromDate = DateUtils.parseOrNull(addSuborderForm.getValidFrom());
-                so.setFromDate(fromDate);
-            } else {
-                so.setFromDate(so.getCustomerorder().getFromDate());
-            }
-            if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
-                LocalDate untilDate = DateUtils.parseOrNull(addSuborderForm.getValidUntil());
-                so.setUntilDate(untilDate);
-            } else {
-                so.setUntilDate(null);
-            }
-
-            // adjust employeeorders
-            if(!so.isNew()) {
-                List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
-                if (employeeorders != null && !employeeorders.isEmpty()) {
-                    for (Employeeorder employeeorder : employeeorders) {
-                        boolean changed = false;
-                        if (employeeorder.getFromDate().isBefore(so.getFromDate())) {
-                            employeeorder.setFromDate(so.getFromDate());
-                            changed = true;
-                        }
-                        if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(so.getFromDate())) {
-                            employeeorder.setUntilDate(so.getFromDate());
-                            changed = true;
-                        }
-                        if (so.getUntilDate() != null) {
-                            if (employeeorder.getFromDate().isAfter(so.getUntilDate())) {
-                                employeeorder.setFromDate(so.getUntilDate());
-                                changed = true;
-                            }
-                            if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(so.getUntilDate())) {
-                                employeeorder.setUntilDate(so.getUntilDate());
-                                changed = true;
-                            }
-                        }
-                        if (changed) {
-                            employeeorderDAO.save(employeeorder);
-                        }
-                    }
-                }
-            }
-
-            if (addSuborderForm.getDebithours() == null
-                || addSuborderForm.getDebithours().isEmpty()
-                || DurationUtils.parseDuration(addSuborderForm.getDebithours()).isZero()) {
-                so.setDebithours(Duration.ZERO);
-                so.setDebithoursunit(null);
-            } else {
-                so.setDebithours(DurationUtils.parseDuration(addSuborderForm.getDebithours()));
-                so.setDebithoursunit(addSuborderForm.getDebithoursunit());
-            }
-
-            so.setHide(addSuborderForm.getHide());
-            Suborder parentOrderCandidate = suborderDAO.getSuborderById(addSuborderForm.getParentId());
-            // Falls die Suborder nicht zum Customerorder passt (Kollision der IDs), ist sie kein geeigneter Kandidat (HACK, da UI die ID manchmal auch mit CustomerOrderID besetzt)
-            if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {
-                if (!addSuborderForm.getParentId().equals(addSuborderForm.getCustomerorderId())) {
-                    throw new IllegalStateException("parentId is neither a valid suborderId nor the customerorderId, but: " + addSuborderForm.getParentId());
-                }
-                parentOrderCandidate = null;
-            }
-            so.setParentorder(parentOrderCandidate);
-
-            suborderDAO.save(so);
+            Suborder so = suborderService.createOrUpdate(soId, addSuborderForm, customerorder);
 
             request.getSession().removeAttribute("soId");
 
             // store used customer order id for the next creation of a suborder
-            request.getSession().setAttribute("lastCoId",
-                    so.getCustomerorder().getId());
+            request.getSession().setAttribute("lastCoId", so.getCustomerorder().getId());
 
             boolean addMoreSuborders = Boolean.parseBoolean(request.getParameter("continue"));
 

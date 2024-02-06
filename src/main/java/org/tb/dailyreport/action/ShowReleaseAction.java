@@ -1,13 +1,8 @@
 package org.tb.dailyreport.action;
 
-import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
-import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
-import static org.tb.common.util.DateUtils.getDateAsStringArray;
-import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,18 +16,15 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.ErrorCode;
-import org.tb.common.OptionItem;
 import org.tb.common.SimpleMailService;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.service.OvertimeService;
 
 @Slf4j
 @Component
@@ -40,11 +32,9 @@ import org.tb.employee.service.OvertimeService;
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
     private final EmployeecontractDAO employeecontractDAO;
-    private final TimereportDAO timereportDAO;
     private final EmployeeDAO employeeDAO;
     private final SimpleMailService simpleMailService;
     private final TimereportService timereportService;
-    private final OvertimeService overtimeService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
@@ -54,22 +44,20 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         boolean updateEmployee = false;
         long superId;
 
-        request.getSession().setAttribute("years", getYearsToDisplay());
-        request.getSession().setAttribute("days", getDaysToDisplay());
-
         List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
 
         //get a list of all supervisors
         List<Employee> supervisors = new LinkedList<>();
         for (Employeecontract ec : viewableEmployeeContracts) {
             Employee supervisor = ec.getSupervisor();
-            if (!supervisors.contains(supervisor)) {
+            if (supervisor != null && !supervisors.contains(supervisor)) {
                 supervisors.add(supervisor);
             }
         }
-        if (supervisors.isEmpty()){
-          throw new InvalidDataException(ErrorCode.EC_SUPERVISOR_INVALID);
-        }
+      if (supervisors.isEmpty()){
+        throw new InvalidDataException(ErrorCode.EC_SUPERVISOR_INVALID);
+      }
+        supervisors.sort(Comparator.comparing(Employee::getName));
         request.getSession().setAttribute("supervisors", supervisors);
 
         /* get team members */
@@ -80,9 +68,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         Employeecontract employeecontract = null;
         if (releaseForm.getEmployeeContractId() != null) {
-            employeecontract = employeecontractDAO
-                    .getEmployeeContractById(releaseForm
-                            .getEmployeeContractId());
+            employeecontract = employeecontractDAO.getEmployeeContractById(releaseForm.getEmployeeContractId());
         }
         if (supervisor || authorizedUser.isManager()) {
             Employeecontract currentEmployeeContract;
@@ -90,18 +76,15 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                     && request.getParameter("task").equals("updateEmployee")) {
                 updateEmployee = true;
             } else {
-                currentEmployeeContract = (Employeecontract) request
-                        .getSession().getAttribute("currentEmployeeContract");
+                currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
                 employeecontract = currentEmployeeContract;
             }
         }
         if (employeecontract == null) {
-            employeecontract = employeecontractDAO
-                    .getEmployeeContractByEmployeeIdAndDate(loginEmployee
-                            .getId(), today());
+            employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), today());
         }
 
-        List<Employeecontract> employeeContracts = null;
+        List<Employeecontract> employeeContracts;
         /* check if supervisor has been set before, if not use isSupervisor or employeeAuthorized for preselecting employeecontracts shown*/
         if (request.getSession().getAttribute("supervisorId") != null) {
             superId = (Long) request.getSession().getAttribute("supervisorId");
@@ -122,18 +105,14 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         employeeContracts.sort(Comparator.comparing(ec -> ec.getEmployee().getName()));
         request.getSession().setAttribute("employeecontracts", employeeContracts);
 
-                releaseForm.setEmployeeContractId(employeecontract.getId());
-        request.getSession().setAttribute("employeeContractId",
-                employeecontract.getId());
-        request.getSession().setAttribute("currentEmployeeId",
-                employeecontract.getEmployee().getId());
-        request.getSession().setAttribute("currentEmployeeContract",
-                employeecontract);
+        releaseForm.setEmployeeContractId(employeecontract.getId());
+        request.getSession().setAttribute("employeeContractId", employeecontract.getId());
+        request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+        request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 
         // date from contract
         LocalDate releaseDateFromContract = employeecontract.getReportReleaseDate();
-        LocalDate acceptanceDateFromContract = employeecontract
-                .getReportAcceptanceDate();
+        LocalDate acceptanceDateFromContract = employeecontract.getReportAcceptanceDate();
 
         if (releaseDateFromContract == null) {
             releaseDateFromContract = employeecontract.getValidFrom();
@@ -143,32 +122,21 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         // Release Action
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("release")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("release")) {
 
             // validate form data
-            ActionMessages errorMessages = validateFormDataForRelease(request,
-                    releaseForm, employeecontract);
-            if (errorMessages.size() > 0) {
+            ActionMessages errorMessages = validateFormDataForRelease(request, releaseForm, employeecontract);
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
-            // set selected date in session
-            request.getSession().setAttribute("releaseDay",
-                    releaseForm.getDay());
-            request.getSession().setAttribute("releaseMonth",
-                    releaseForm.getMonth());
-            request.getSession().setAttribute("releaseYear",
-                    releaseForm.getYear());
-
-            LocalDate releaseDate = (LocalDate) request.getSession()
-                    .getAttribute("releaseDate");
-
+                LocalDate releaseDate = LocalDate.parse(releaseForm.getReleaseDate());
             timereportService.releaseTimereports(employeecontract.getId(), releaseDate);
 
-            releaseDateFromContract = releaseDate;
-            request.getSession().setAttribute("days",
-                    getDayList(releaseDateFromContract));
+            Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(employeecontract.getId());
+            releaseDateFromContract = employeeContract.getReportReleaseDate();
+            releaseForm.setReleaseDate(releaseDateFromContract.toString());
+            request.getSession().setAttribute("currentEmployeeContract", employeeContract);
 
             // build recipient for releasemail for BL
 
@@ -184,9 +152,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
         // End Release Action
 
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("sendreleasemail")) {
-
+        if (request.getParameter("task") != null && request.getParameter("task").equals("sendreleasemail")) {
             // build recipient for releasemail
             Employee recipient = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
 
@@ -197,7 +163,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("sendacceptancemail")) {
-
             // build recipient for acceptancemail
             // Contract from Employee
             Employee contEmployee = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
@@ -215,53 +180,34 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("accept")) {
-
             // validate form data
             ActionMessages errorMessages = validateFormDataForAcceptance(request, releaseForm, employeecontract);
-            if (errorMessages.size() > 0) {
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
-            LocalDate acceptanceDate = (LocalDate) request.getSession().getAttribute("acceptanceDate");
-
+            LocalDate acceptanceDate = LocalDate.parse(releaseForm.getAcceptanceDate());
             timereportService.acceptTimereports(employeecontract.getId(), acceptanceDate);
 
-            acceptanceDateFromContract = acceptanceDate;
-            request.getSession().setAttribute("acceptanceDays", getDayList(acceptanceDateFromContract));
+            Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(employeecontract.getId());
+            acceptanceDateFromContract = employeeContract.getReportAcceptanceDate();
+            releaseForm.setAcceptanceDate(acceptanceDateFromContract.toString());
+            request.getSession().setAttribute("currentEmployeeContract", employeeContract);
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
-            LocalDate reopenDate;
-
-            reopenDate = getDateFormStrings(releaseForm.getReopenDay(),
-                    releaseForm.getReopenMonth(), releaseForm.getReopenYear(),
-                    false);
-
-            if (reopenDate == null) {
-                reopenDate = DateUtils.today();
-            }
-
+            LocalDate reopenDate = LocalDate.parse(releaseForm.getReopenDate());
             timereportService.reopenTimereports(employeecontract.getId(), reopenDate);
 
             // reload potenial updated data to feed the session and form
             employeecontract = employeecontractDAO.getEmployeeContractById(employeecontract.getId());
             releaseDateFromContract = employeecontract.getReportReleaseDate();
-            String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
-            releaseForm.setDay(releaseDateArray[0]);
-            releaseForm.setMonth(releaseDateArray[1]);
-            releaseForm.setYear(releaseDateArray[2]);
+            releaseForm.setReleaseDate(releaseDateFromContract.toString());
             acceptanceDateFromContract = employeecontract.getReportAcceptanceDate();
-            String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
-            releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
-            releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);
-            releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
-
-            request.getSession().setAttribute("reopenDays",
-                    getDayList(reopenDate.minusDays(1)));
+            releaseForm.setAcceptanceDate(acceptanceDateFromContract.toString());
         }
 
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("updateSupervisor")) {
+        if (request.getParameter("task") != null && request.getParameter("task").equals("updateSupervisor")) {
             superId = releaseForm.getSupervisorId();
             request.getSession().setAttribute("supervisorId", superId);
             if (superId == -1) {
@@ -275,115 +221,10 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
         }
 
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("refreshDate")) {
-            // set selected date in session
-            request.getSession().setAttribute("releaseDay",
-                    releaseForm.getDay());
-            request.getSession().setAttribute("releaseMonth",
-                    releaseForm.getMonth());
-            request.getSession().setAttribute("releaseYear",
-                    releaseForm.getYear());
-
-            int day = Integer.parseInt(releaseForm.getDay());
-
-            LocalDate selectedDate = getDateFormStrings("01", releaseForm
-                    .getMonth(), releaseForm.getYear(), false);
-
-            List<OptionItem> days = getDayList(selectedDate);
-
-            int lastDay = Integer
-                    .parseInt(days.get(days.size() - 1).getValue());
-
-            if (request.getParameter("refreshMonth") != null
-                    && request.getParameter("refreshMonth").equals("true")) {
-                releaseForm.setDay(lastDay + "");
-            } else if (lastDay < day) {
-                releaseForm.setDay(lastDay + "");
-            }
-
-            request.getSession().setAttribute("days", days);
-
-        }
-
-        if (request.getParameter("task") != null
-                && request.getParameter("task")
-                .equals("refreshAcceptanceDate")) {
-
-            int day = Integer.parseInt(releaseForm.getAcceptanceDay());
-
-            LocalDate selectedDate = getDateFormStrings("01", releaseForm
-                            .getAcceptanceMonth(), releaseForm.getAcceptanceYear(),
-                    false);
-
-            List<OptionItem> days = getDayList(selectedDate);
-
-            int lastDay = Integer
-                    .parseInt(days.get(days.size() - 1).getValue());
-
-            if (request.getParameter("refreshMonth") != null
-                    && request.getParameter("refreshMonth").equals("true")) {
-                releaseForm.setAcceptanceDay(lastDay + "");
-            } else if (lastDay < day) {
-                releaseForm.setAcceptanceDay(lastDay + "");
-            }
-
-            request.getSession().setAttribute("acceptanceDays", days);
-
-        }
-
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("refreshReopenDate")) {
-
-            int day = Integer.parseInt(releaseForm.getReopenDay());
-
-            LocalDate selectedDate = getDateFormStrings("01", releaseForm
-                    .getReopenMonth(), releaseForm.getReopenYear(), false);
-
-            List<OptionItem> days = getDayList(selectedDate);
-
-            int lastDay = Integer
-                    .parseInt(days.get(days.size() - 1).getValue());
-
-            if (request.getParameter("refreshMonth") != null
-                    && request.getParameter("refreshMonth").equals("true")) {
-                releaseForm.setReopenDay(lastDay + "");
-            } else if (lastDay < day) {
-                releaseForm.setReopenDay(lastDay + "");
-            }
-
-            request.getSession().setAttribute("reopenDays", days);
-
-        }
-
         if (request.getParameter("task") == null || updateEmployee) {
-            String[] releaseDateArray = getDateAsStringArray(releaseDateFromContract);
-            String[] acceptanceDateArray = getDateAsStringArray(acceptanceDateFromContract);
-
-            // set form entries
-            releaseForm.setDay(releaseDateArray[0]);
-            releaseForm.setMonth(releaseDateArray[1]);
-            releaseForm.setYear(releaseDateArray[2]);
-            releaseForm.setAcceptanceDay(acceptanceDateArray[0]);
-            releaseForm.setAcceptanceMonth(acceptanceDateArray[1]);
-            releaseForm.setAcceptanceYear(acceptanceDateArray[2]);
-            releaseForm.setReopenDay(releaseDateArray[0]);
-            releaseForm.setReopenMonth(releaseDateArray[1]);
-            releaseForm.setReopenYear(releaseDateArray[2]);
-
-            request.getSession()
-                    .setAttribute("releaseDay", releaseDateArray[0]);
-            request.getSession().setAttribute("releaseMonth",
-                    releaseDateArray[1]);
-            request.getSession().setAttribute("releaseYear",
-                    releaseDateArray[2]);
-
-            request.getSession().setAttribute("days",
-                    getDayList(releaseDateFromContract));
-            request.getSession().setAttribute("acceptanceDays",
-                    getDayList(acceptanceDateFromContract));
-            request.getSession().setAttribute("reopenDays",
-                    getDayList(releaseDateFromContract));
+            releaseForm.setReleaseDate(releaseDateFromContract.toString());
+            releaseForm.setAcceptanceDate(acceptanceDateFromContract.toString());
+            releaseForm.setReopenDate(releaseForm.getReleaseDate());
         }
 
         String releasedUntil = DateUtils.format(releaseDateFromContract);
@@ -396,38 +237,24 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     }
 
     private ActionMessages validateFormDataForRelease(
-            HttpServletRequest request, ShowReleaseForm releaseForm,
-            Employeecontract selectedEmployeecontract) {
+        HttpServletRequest request, ShowReleaseForm releaseForm,
+        Employeecontract selectedEmployeecontract) {
 
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();
         }
 
-        LocalDate date = null;
-        try {
-            date = getDateFormStrings(releaseForm.getDay(), releaseForm
-                    .getMonth(), releaseForm.getYear(), false);
-        } catch (Exception e) {
-            errors.add("releasedate", new ActionMessage(
-                    "form.release.error.date.corrupted"));
-        }
-
-        if (date == null) {
-            date = today();
-        }
-        request.getSession().setAttribute("releaseDate", date);
+        LocalDate date = LocalDate.parse(releaseForm.getReleaseDate());
 
         if (date.isBefore(selectedEmployeecontract.getValidFrom())
-                || selectedEmployeecontract.getValidUntil() != null && date
-                .isAfter(selectedEmployeecontract.getValidUntil())) {
-            errors.add("releasedate", new ActionMessage(
-                    "form.release.error.date.invalid.foremployeecontract"));
+            || selectedEmployeecontract.getValidUntil() != null && date
+            .isAfter(selectedEmployeecontract.getValidUntil())) {
+            errors.add("releasedate", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
         }
 
-        if (selectedEmployeecontract.getReportReleaseDate() != null && date.isBefore(selectedEmployeecontract.getReportReleaseDate())) {
-            errors.add("releasedate", new ActionMessage(
-                    "form.release.error.date.before.stored"));
+        if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
+            errors.add("releasedate", new ActionMessage("form.release.error.date.before.acceptance"));
         }
 
         saveErrors(request, errors);
@@ -437,82 +264,41 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
     }
 
     private ActionMessages validateFormDataForAcceptance(
-            HttpServletRequest request, ShowReleaseForm releaseForm,
-            Employeecontract selectedEmployeecontract) {
+        HttpServletRequest request, ShowReleaseForm releaseForm,
+        Employeecontract selectedEmployeecontract) {
 
         ActionMessages errors = getErrors(request);
         if (errors == null) {
             errors = new ActionMessages();
         }
 
-        LocalDate date = null;
-        try {
-            date = getDateFormStrings(releaseForm.getAcceptanceDay(),
-                    releaseForm.getAcceptanceMonth(), releaseForm
-                            .getAcceptanceYear(), false);
-        } catch (Exception e) {
-            errors.add("acceptancedate", new ActionMessage(
-                    "form.release.error.date.corrupted"));
-        }
-
-        if (date == null) {
-            date = today();
-        }
-        request.getSession().setAttribute("acceptanceDate", date);
+        LocalDate date = LocalDate.parse(releaseForm.getAcceptanceDate());
 
         if (date.isBefore(selectedEmployeecontract.getValidFrom())
-                || selectedEmployeecontract.getValidUntil() != null && date
-                .isAfter(selectedEmployeecontract.getValidUntil())) {
-            errors.add("acceptancedate", new ActionMessage(
-                    "form.release.error.date.invalid.foremployeecontract"));
+            || selectedEmployeecontract.getValidUntil() != null && date.isAfter(selectedEmployeecontract.getValidUntil())) {
+            errors.add("acceptancedate", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
         }
 
         LocalDate releaseDate = selectedEmployeecontract.getReportReleaseDate();
 
-        if (releaseDate == null || date.isAfter(releaseDate)) {
-            errors.add("acceptancedate", new ActionMessage(
-                    "form.release.error.date.before.release"));
+        if (selectedEmployeecontract.getReportReleaseDate() != null && date.isAfter(selectedEmployeecontract.getReportReleaseDate())) {
+            errors.add("acceptancedate", new ActionMessage("form.release.error.date.after.release"));
         }
 
         if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
-            errors.add("acceptancedate", new ActionMessage(
-                    "form.release.error.date.before.stored"));
+            errors.add("acceptancedate", new ActionMessage("form.release.error.date.before.stored"));
         }
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute(
-                "loginEmployee");
+            "loginEmployee");
         if (selectedEmployeecontract.getEmployee().equals(loginEmployee)) {
-            errors.add("acceptanceda)te", new ActionMessage(
-                    "form.release.error.foureyesprinciple"));
+            errors.add("acceptancedate", new ActionMessage("form.release.error.foureyesprinciple"));
         }
 
         saveErrors(request, errors);
 
         return errors;
 
-    }
-
-    /**
-     * Returns a list of days as {@link OptionItem}s ("01", "02", "03",...)
-     * fitting to the given date (month, year).
-     */
-    private List<OptionItem> getDayList(LocalDate date) {
-        int maxDays = DateUtils.getMonthDays(date);
-        List<OptionItem> days = new ArrayList<>();
-
-        String dayValue;
-        String dayLabel;
-        for (int i = 1; i <= maxDays; i++) {
-            if (i < 10) {
-                dayLabel = "0" + i;
-                dayValue = "0" + i;
-            } else {
-                dayLabel = "" + i;
-                dayValue = "" + i;
-            }
-            days.add(new OptionItem(dayValue, dayLabel));
-        }
-        return days;
     }
 
     @Override
