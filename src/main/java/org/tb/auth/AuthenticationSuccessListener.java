@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.http.HttpSession;
 import lombok.AccessLevel;
@@ -64,8 +65,11 @@ public class AuthenticationSuccessListener implements
   public void onApplicationEvent(AuthenticationSuccessEvent event) {
     try {
       String userSign = null;
-      if (event.getSource() instanceof JwtAuthenticationToken jwtToken && jwtToken.getCredentials() instanceof Jwt creds) {
-        userSign = creds.getClaim("unique_name");
+      if (event.getSource() instanceof JwtAuthenticationToken jwtToken
+          && jwtToken.getCredentials() instanceof Jwt creds) {
+        userSign = Objects.requireNonNullElse(
+            creds.getClaim("unique_name"),
+            creds.getClaim("preferred_username"));
       } else if (event.getAuthentication().getPrincipal() instanceof DefaultOidcUser user) {
         userSign = user.getAttribute("preferred_username");
       }
@@ -74,14 +78,14 @@ public class AuthenticationSuccessListener implements
 
       if (userSign != null) {
         Employee loginEmployee = findEmployee(userSign);
-          authorizedUser.init(loginEmployee);
-          processLoginEmployee(loginEmployee, session());
+        authorizedUser.init(loginEmployee);
+        processLoginEmployee(loginEmployee, session());
       } else {
         throw new AuthenticationCredentialsNotFoundException(
             "sign was null please contact the Administrator to configure the user in the AD correctly");
       }
     } catch (Exception e) {
-      log.info("",e);
+      log.info("", e);
     }
   }
 
@@ -91,16 +95,16 @@ public class AuthenticationSuccessListener implements
     Optional<Employee> res = employeeRepository.findBySign(userSign)
         .or(() -> employeeRepository.findBySign(
             userSign.replace("@hbt.de", "")));
-      if (res.isPresent()) {
+    if (res.isPresent()) {
       return res.get();
     } else {
       // FIXME generate user from Principal
 
       throw new AuthenticationCredentialsNotFoundException(
           "no user found for sign " + userSign
-          + " please contact the Administrator to create your user");
-      }
+              + " please contact the Administrator to create your user");
     }
+  }
 
   public static HttpSession session() {
     ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
@@ -197,7 +201,7 @@ public class AuthenticationSuccessListener implements
 
           // do not create an employeeorder for past years "URLAUB" !
           if (suborder.getCustomerorder().getSign()
-                  .equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) && !formatYear(
+              .equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) && !formatYear(
               today).startsWith(suborder.getSign())) {
             continue;
           }
@@ -211,7 +215,7 @@ public class AuthenticationSuccessListener implements
 
             // employeeorder starts in the future
             if (eo.getFromDate() != null && eo.getFromDate().isAfter(today) && (dateUntil == null
-                                                                                || dateUntil.isAfter(
+                || dateUntil.isAfter(
                 eo.getFromDate()))) {
 
               dateUntil = eo.getFromDate();
@@ -220,7 +224,7 @@ public class AuthenticationSuccessListener implements
 
             // employeeorder ends in the past
             if (eo.getUntilDate() != null && eo.getUntilDate().isBefore(today) && (dateFrom == null
-                                                                                   || dateFrom.isBefore(
+                || dateFrom.isBefore(
                 eo.getUntilDate()))) {
 
               dateFrom = eo.getUntilDate();
@@ -269,7 +273,7 @@ public class AuthenticationSuccessListener implements
             employeeorder.setUntilDate(untilDate);
           }
           if (suborder.getCustomerorder().getSign()
-                  .equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) && !suborder.getSign()
+              .equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) && !suborder.getSign()
               .equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
             var vacation = employeecontract.getVacation(today().getYear());
             if (vacation.isEmpty()) {

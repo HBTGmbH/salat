@@ -72,7 +72,9 @@ public class AuthService {
 
   public boolean isAuthorized(Timereport timereport, AuthorizedUser user, AccessLevel accessLevel) {
     if(user.isManager()) return true;
-    if(timereport.getEmployeecontract().getEmployee().getId() == user.getEmployeeId()) return true;
+    if (timereport.getEmployeecontract().getEmployee().getId().equals(user.getEmployeeId())) {
+      return true;
+    }
 
     if(accessLevel == AccessLevel.READ) {
       // every project manager may see the time reports of her project
