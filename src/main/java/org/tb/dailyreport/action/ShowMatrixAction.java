@@ -14,7 +14,6 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -74,7 +73,6 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             // call on MatrixView without a parameter
 
             // no special task - prepare everything to show reports
-            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
             EmployeeViewHelper eh = new EmployeeViewHelper();
             Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
 
@@ -83,8 +81,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
                     ec,
                     (Employeecontract) request.getSession().getAttribute("currentEmployeeContract"),
                     (Long) request.getSession().getAttribute("currentEmployeeId"),
-                    (String) request.getSession().getAttribute("currentMonth"),
-                    loginEmployee);
+                    (String) request.getSession().getAttribute("currentMonth"));
             return finishHandling(results, request, matrixHelper, mapping);
         }
     }

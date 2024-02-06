@@ -38,25 +38,22 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AfterLogin;
-import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.action.ShowMatrixForm;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
-import org.tb.dailyreport.action.ShowMatrixForm;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.viewhelper.matrix.MergedReport.OrderSummaryData;
-import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.OvertimeService;
 import org.tb.order.domain.Customerorder;
@@ -82,7 +79,7 @@ public class MatrixHelper {
      */
     private static final Map<String, String> NUMBER_TO_SHORT_MONTH = new HashMap<>();
 
-    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    private static final String LINE_SEPARATOR = System.lineSeparator();
 
     static {
         String[] SHORT_MONTH = new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -112,7 +109,6 @@ public class MatrixHelper {
     private final CustomerorderDAO customerorderDAO;
     private final SuborderDAO suborderDAO;
     private final EmployeeDAO employeeDAO;
-    private final AuthorizedUser authorizedUser;
     private final OvertimeService overtimeService;
     private final AfterLogin afterLogin;
 
@@ -148,7 +144,7 @@ public class MatrixHelper {
             // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Überstundenausgleich" into it
             // -> needed because overtime compensation should be shown in matrix overview! (taskdescription as if-clause in jsp!)
             if (timeReport.getSuborderSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                if (taskdescription.length() == 0) {
+                if (taskdescription.isEmpty()) {
                     taskdescription = GlobalConstants.OVERTIME_COMPENSATION_TEXT;
                 }
             }
@@ -407,8 +403,6 @@ public class MatrixHelper {
         Customerorder order = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
         ReportWrapper reportWrapper;
         Long ecId = reportForm.getEmployeeContractId();
-        boolean isAcceptanceWarning = false;
-        String acceptedBy = null;
         boolean isInvoiceable = reportForm.getInvoice();
         boolean isNonInvoiceable = reportForm.getNonInvoice();
         if (ecId == -1) {
@@ -429,18 +423,6 @@ public class MatrixHelper {
             results.put("currentEmployee", "ALL EMPLOYEES");
             results.put("currentEmployeeContract", null);
             results.put("currentEmployeeId", -1L);
-            List<Employeecontract> ecList = employeecontractDAO.getEmployeeContracts();
-            for (Employeecontract employeeContract : ecList) {
-                if (!authorizedUser.isAdmin()) {
-                    isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
-                    if (!isAcceptanceWarning) {
-                        break;
-                    }
-                }
-            }
-            if (isAcceptanceWarning) {
-                acceptedBy = "";
-            }
         } else {
             // consider timereports for specific employee
             Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(ecId);
@@ -453,7 +435,7 @@ public class MatrixHelper {
             // employee
             List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
             results.put("orders", orders);
-            if (orders.size() > 0) {
+            if (!orders.isEmpty()) {
                 results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(employeeContract.getId()));
             }
 
@@ -481,25 +463,12 @@ public class MatrixHelper {
                     || (employeeContract.getValidFrom() != null) && dateLast.isBefore(employeeContract.getValidFrom()));
             results.put("invalid", isInvalid);
 
-            isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
-            if (isAcceptanceWarning) {
-                TimereportDTO timereport = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, employeeContract.getId());
-                if (timereport != null) {
-                    Employee employee = employeeDAO.getEmployeeBySign(timereport.getAcceptedby());
-                    acceptedBy = employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")";
-                }
-            }
-
             // calculate overtime and holiday
             afterLogin.handleOvertime(employeeContract, request.getSession());
         }
 
         // refresh all relevant attributes
         String sOrder = reportForm.getOrder();
-        if (acceptedBy != null) {
-            results.put("acceptedby", acceptedBy);
-        }
-        results.put("acceptance", isAcceptanceWarning);
         results.put("mergedreports", reportWrapper.getMergedReportList());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
         results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
@@ -522,7 +491,7 @@ public class MatrixHelper {
         return results;
     }
 
-    public Map<String, Object> handleNoArgs(ShowMatrixForm reportForm, Employeecontract ec, Employeecontract currentEc, Long currentEmployeeId, String currentMonth, Employee loginEmployee) {
+    public Map<String, Object> handleNoArgs(ShowMatrixForm reportForm, Employeecontract ec, Employeecontract currentEc, Long currentEmployeeId, String currentMonth) {
         // selected view and selected dates
         Map<String, Object> results = new HashMap<>();
         // set daily view as standard
@@ -563,26 +532,8 @@ public class MatrixHelper {
             LocalDate dateLast = initStartEndDate(maxDayString, reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
 
             long ecId = -1L;
-            boolean isAcceptanceWarning = false;
             if (currentEc != null) {
                 ecId = currentEc.getId();
-                isAcceptanceWarning = checkAcceptanceWarning(currentEc, dateLast);
-            } else {
-                List<Employeecontract> ecList = employeecontractDAO.getEmployeeContracts();
-                for (Employeecontract employeeContract : ecList) {
-                    if (!authorizedUser.isAdmin()) {
-                        isAcceptanceWarning = checkAcceptanceWarning(employeeContract, dateLast);
-                        if (!isAcceptanceWarning) {
-                            break;
-                        }
-                    }
-                }
-            }
-            results.put("acceptance", isAcceptanceWarning);
-            if (isAcceptanceWarning) {
-                TimereportDTO tr = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(dateLast, Objects.requireNonNull(currentEc).getId());
-                Employee employee = employeeDAO.getEmployeeBySign(tr.getAcceptedby());
-                results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
             }
 
             reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable);
@@ -605,7 +556,7 @@ public class MatrixHelper {
             // set Month for first call
             if (reportForm.getFromMonth() == null || reportForm.getFromMonth().trim().equalsIgnoreCase("")) {
                 String month = currentMonth;
-                if (month == null || month.trim().equals("")) {
+                if (month == null || month.trim().isEmpty()) {
                     LocalDate date = today();
                     String[] dateArray = getDateAsStringArray(date);
                     month = dateArray[1];
@@ -635,21 +586,7 @@ public class MatrixHelper {
             String maxDayString = getTwoDigitStr(maxDays);
             LocalDate dateLast = initStartEndDate(maxDayString, currMonth, yearString, monthString, yearString);
 
-            long ecId;
-            boolean newAcceptance = false;
-            ecId = ec.getId();
-            if (!ec.getAcceptanceWarningByDate(dateLast)) {
-                if (ec.getReportAcceptanceDate() != null && !dateLast.isAfter(ec.getReportAcceptanceDate())) {
-                    TimereportDTO acceptedTimereport = timereportDAO.getLastAcceptedTimereportByDateAndEmployeeContractId(
-                        dateLast, ec.getId());
-                    if(acceptedTimereport != null) {
-                        newAcceptance = true;
-                        Employee employee = employeeDAO.getEmployeeBySign(acceptedTimereport.getAcceptedby());
-                        results.put("acceptedby", employee.getFirstname() + " " + employee.getLastname() + " (" + employee.getStatus() + ")");
-                    }
-                }
-            }
-            results.put("acceptance", newAcceptance);
+            long ecId = ec.getId();
 
             // orders
             List<Customerorder> orders;
@@ -664,7 +601,7 @@ public class MatrixHelper {
             }
             results.put("orders", orders);
             results.put("currentOrder", "ALL ORDERS");
-            if (orders.size() > 0) {
+            if (!orders.isEmpty()) {
                 results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
             }
 
@@ -693,14 +630,6 @@ public class MatrixHelper {
 
     public boolean isHandlingError(String key) {
         return HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE.equals(key);
-    }
-
-    private boolean checkAcceptanceWarning(Employeecontract ec, LocalDate dateLast) {
-        if (!ec.getAcceptanceWarningByDate(dateLast)) {
-            LocalDate acceptanceDate = ec.getReportAcceptanceDate();
-            return acceptanceDate != null && !dateLast.isAfter(acceptanceDate);
-        }
-        return false;
     }
 
     private String getTwoDigitStr(int i) {

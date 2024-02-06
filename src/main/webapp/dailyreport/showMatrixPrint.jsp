@@ -175,22 +175,5 @@
 </table>
 <br>
 <br>
-<table>
-	<tr>
-		<td
-			style="font-size: 12pt;border:1px black solid;border-style:none none solid none;"
-			class="bold matrix" width="250px">&nbsp;</td>
-		<td style="font-size: 12pt;border:0px black solid;" width="40px">&nbsp;</td>
-		<td
-			style="font-size: 12pt;border:1px black solid;border-style:none none solid none;"
-			class="bold matrix" width="250px">&nbsp;</td>
-		<td
-			style="border:1px black solid;border-style:none none none none;text-align:right;"
-			class="bold matrix" width="500px"><c:if test="${acceptance}">
-			<bean:message key="main.matrixoverview.table.accepted" />
-			<c:out value="${acceptedby}" />
-		</c:if></td>
-	</tr>
-</table>
 </body>
 </html>
