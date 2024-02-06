@@ -33,16 +33,22 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         // check if special tasks initiated from the daily display need to be
         // carried out...
         String task = request.getParameter("task");
+        boolean doRefreshEmployeeSummaryData = false;
 
         // call on MatrixView with parameter print
         if ("print".equals(task)) {
             return mapping.findForward("print");
         }
 
+        if ("switchEmployee".equalsIgnoreCase(task)) {
+            task = "refreshMergedreports";
+            doRefreshEmployeeSummaryData = true;
+        }
+
         // call on MatrixView with parameter refreshMergedreports to update request
         if ("refreshMergedreports".equals(task)) {
             Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm, request);
-            return finishHandling(results, request, matrixHelper, mapping);
+            return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 
         if ("setMonth".equals(task)) {
@@ -60,7 +66,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             reportForm.setFromMonth(fromMonth);
             reportForm.setFromYear(fromYear);
             Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm, request);
-            return finishHandling(results, request, matrixHelper, mapping);
+            return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 
         // call on MatrixView with any parameter to forward or go back
@@ -82,11 +88,12 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
                     (Employeecontract) request.getSession().getAttribute("currentEmployeeContract"),
                     (Long) request.getSession().getAttribute("currentEmployeeId"),
                     (String) request.getSession().getAttribute("currentMonth"));
-            return finishHandling(results, request, matrixHelper, mapping);
+            return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
     }
 
-    private ActionForward finishHandling(Map<String, Object> results, HttpServletRequest request, MatrixHelper mh, ActionMapping mapping) {
+    private ActionForward finishHandling(Map<String, Object> results, HttpServletRequest request, MatrixHelper mh, ActionMapping mapping,
+        boolean doRefreshEmployeeSummaryData) {
         String errorValue = null;
         for (Entry<String, Object> entry : results.entrySet()) {
             if (mh.isHandlingError(entry.getKey())) {
@@ -101,6 +108,15 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         }
         request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
         request.getSession().setAttribute("oTCText", GlobalConstants.OVERTIME_COMPENSATION_TEXT);
+
+        // check if vacation and overtime should be recalculated - see https://github.com/HBTGmbH/salat/issues/292
+        if(doRefreshEmployeeSummaryData) {
+            Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+            if(currentEmployeeContract != null) {
+                refreshEmployeeSummaryData(request, currentEmployeeContract);
+            }
+        }
+
         return mapping.findForward("success");
     }
 

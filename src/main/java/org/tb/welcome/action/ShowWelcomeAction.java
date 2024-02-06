@@ -52,7 +52,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
             request.getSession().setAttribute("currentEmployeeContract", employeecontract);
         }
 
-        refreshVacationAndOvertime(request, employeecontract);
+        refreshEmployeeSummaryData(request, employeecontract);
 
         // warnings
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");

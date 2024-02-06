@@ -131,7 +131,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
 
             //refresh overtime
             Employeecontract ec = employeecontractDAO.getEmployeeContractById(tr.getEmployeecontractId());
-            refreshVacationAndOvertime(request, ec);
+            refreshEmployeeSummaryData(request, ec);
 
             return mapping.findForward("success");
         }

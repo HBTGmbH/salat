@@ -64,7 +64,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
     /**
      * Calculates the overtime and vaction and sets the attributes in the session.
      */
-    protected void refreshVacationAndOvertime(HttpServletRequest request, Employeecontract employeecontract) {
+    protected void refreshEmployeeSummaryData(HttpServletRequest request, Employeecontract employeecontract) {
         afterLogin.handleOvertime(employeecontract, request.getSession());
 
         // release
