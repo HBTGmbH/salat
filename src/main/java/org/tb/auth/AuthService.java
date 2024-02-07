@@ -1,32 +1,27 @@
 package org.tb.auth;
 
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
-import static org.tb.common.util.SecureHashUtils.legacyPasswordMatches;
-import static org.tb.common.util.SecureHashUtils.passwordMatches;
 
-import java.time.*;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
+import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeRepository;
-
-import javax.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
   public static final int ALL_CUSTOMER_ORDERS = -1;
-  private final EmployeeRepository employeeRepository;
   private final EmployeeToEmployeeAuthorizationRuleRepository employeeToEmployeeAuthorizationRuleRepository;
 
   @Value("${salat.auth-service.cache-expiry:5m}")
@@ -38,29 +33,6 @@ public class AuthService {
   @PostConstruct
   public void init() {
     cacheExpiryMillis = cacheExpiry.toMillis();
-  }
-
-  public Optional<Employee> authenticate(String loginname, String password) {
-    var employeeResult = employeeRepository.findByLoginname(loginname);
-    if(employeeResult.isPresent()) {
-      var employee = employeeResult.get();
-      var passwordMatches = passwordMatches(password, employee.getPassword());
-      if (!passwordMatches) {
-        // Fallback to legacy password matching - some users may not have been migrated yet!
-        var legacyPasswordMatches = legacyPasswordMatches(password, employee.getPassword());
-        if (legacyPasswordMatches) {
-          // employee still has old password form
-          // store password again with new hashing algorithm
-          employee.changePassword(password);
-          employeeRepository.save(employee);
-          passwordMatches = true;
-        }
-      }
-      if(passwordMatches) {
-        return Optional.of(employee);
-      }
-    }
-    return Optional.empty();
   }
 
   public boolean isAuthorized(Employee employee, AuthorizedUser user, AccessLevel accessLevel) {
