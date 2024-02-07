@@ -1,6 +1,7 @@
 package org.tb.common.configuration;
 
 import java.io.IOException;
+import java.security.Principal;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpFilter;
@@ -8,6 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.tb.auth.AuthorizedUser;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
@@ -22,9 +25,15 @@ public class AuthenticationFilter extends HttpFilter {
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
         throws IOException, ServletException {
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        if(loginEmployee != null && loginEmployee.getId() != null) {
-            employeeRepository.findById(loginEmployee.getId()).ifPresent(authorizedUser::init);
+        Principal principal = SecurityContextHolder.getContext().getAuthentication();
+        if(principal != null && principal.getName() != null) {
+            employeeRepository.findBySign(principal.getName()).ifPresent(authorizedUser::init);
+        }
+        if(!authorizedUser.isAuthenticated()) {
+            Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+            if(loginEmployee != null && loginEmployee.getId() != null) {
+                employeeRepository.findById(loginEmployee.getId()).ifPresent(authorizedUser::init);
+            }
         }
         Object oldValue = request.getAttribute("authorizedUser");
         request.setAttribute("authorizedUser", authorizedUser);
