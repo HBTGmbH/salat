@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.employee.domain.Employeecontract;
@@ -17,6 +18,7 @@ import org.tb.employee.domain.Employeecontract;
  */
 @Getter
 @Setter
+@Slf4j
 public class ShowEmployeeOrderForm extends ActionForm {
     private static final long serialVersionUID = 1L; // -6415687265295197319L;
 
@@ -42,7 +44,7 @@ public class ShowEmployeeOrderForm extends ActionForm {
                 Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
                 employeeContractId = loginEmployeeContract.getId();
             } catch (Exception e) {
-                mapping.findForward("login");
+                log.error("reset threw exception.", e);
             }
         }
 

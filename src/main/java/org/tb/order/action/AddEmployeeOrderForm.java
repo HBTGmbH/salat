@@ -5,6 +5,7 @@ import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.common.util.DateUtils;
@@ -18,6 +19,7 @@ import org.tb.order.domain.Customerorder;
  */
 @Getter
 @Setter
+@Slf4j
 public class AddEmployeeOrderForm extends ActionForm {
     private static final long serialVersionUID = 1L; // -2418121509861779749L;
 
@@ -45,7 +47,7 @@ public class AddEmployeeOrderForm extends ActionForm {
                 Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
                 employeeContractId = loginEmployeeContract.getId();
             } catch (Exception e) {
-                mapping.findForward("login");
+                log.error("reset threw exception.", e);
             }
         }
 

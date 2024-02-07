@@ -2,13 +2,6 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%
-    Object loginEmployee = session.getAttribute("loginEmployee");
-    if(loginEmployee == null) {
-        response.sendRedirect("/chicoree/login.jsp");
-        return;
-    }
-%>
 <html:html>
 <head>
     <title><bean:message key="chicoree.product.title" /></title>
