@@ -35,6 +35,11 @@ spring:
     resources:
       cache:
         period: 1d
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/0af2c34e-4e40-42d9-89ab-e095b8151308/v2.0
 
 management:
   endpoints:
