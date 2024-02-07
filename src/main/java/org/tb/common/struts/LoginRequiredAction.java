@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.apache.struts.util.RequestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.Warning;
 
@@ -55,7 +56,8 @@ public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAct
             request.getSession().setAttribute("warningsPresent", true);
             return mapping.findForward("showWelcome");
         } else {
-            return mapping.findForward("login");
+            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Not logged in!");
+            return null;
         }
     }
 
