@@ -41,7 +41,7 @@
 				form.submit();
 			}
 
-			function setMonth(form, mode) {
+			function setMonth(form, change) {
 				form.action = "/do/ShowDailyReport?task=refreshTimereports&change=" + change;
 				form.submit();
 			}
