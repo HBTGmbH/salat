@@ -3,13 +3,6 @@
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
-<%
-    Object loginEmployee = session.getAttribute("loginEmployee");
-    if(loginEmployee == null) {
-        response.sendRedirect("/chicoree/login.jsp");
-        return;
-    }
-%>
 <html:html>
 <head>
     <title><bean:message key="chicoree.product.title" /></title>
@@ -126,11 +119,6 @@
             </div>
         </div>
     </c:if>
-    <div class="container text-center">
-        <a href="/do/chicoree/Logout" class="btn btn-secondary mb-4">
-            <i class="bi bi-power"></i> <bean:message key="chicoree.btn.logout" />
-        </a>
-    </div>
 </div>
 <script src="/webjars/jquery/jquery.min.js"></script>
 <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
