@@ -117,11 +117,11 @@
 		</html:link></li>
 	</ul>
 	</li>
-	<li id="last"><html:link action="/LogoutEmployee">
-		<bean:message key="main.general.logout.text" /> (<c:out
+	<li id="last">
+		Angemeldet als <c:out
 			value="${loginEmployee.loginname}" />/<c:out
-			value="${loginEmployee.status}" />)
-	</html:link></li>
+			value="${loginEmployee.status}" />
+	</li>
 </ul>
 </div>
 <br>
