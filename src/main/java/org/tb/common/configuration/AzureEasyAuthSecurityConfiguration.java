@@ -2,6 +2,7 @@ package org.tb.common.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -10,7 +11,8 @@ import org.springframework.security.oauth2.server.resource.web.HeaderBearerToken
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-public class AzureEasyAuthConfiguration {
+@Profile("production")
+public class AzureEasyAuthSecurityConfiguration {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

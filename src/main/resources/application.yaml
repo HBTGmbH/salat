@@ -1,14 +1,12 @@
 server:
-  tomcat:
-    resource:
-      allow-caching: true
-      cache-ttl: 1d
   servlet:
     session:
       persistent: false
       timeout: 660m
   forward-headers-strategy: native # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
 spring:
+  profiles:
+    default: local
   datasource:
     url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
     username: salattest
@@ -31,15 +29,6 @@ spring:
       ddl-auto: validate
     open-in-view: true
     database: mysql
-  web:
-    resources:
-      cache:
-        period: 1d
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://login.microsoftonline.com/0af2c34e-4e40-42d9-89ab-e095b8151308/v2.0
 
 management:
   endpoints:
