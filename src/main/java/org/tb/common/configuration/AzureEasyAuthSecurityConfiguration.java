@@ -11,7 +11,7 @@ import org.springframework.security.oauth2.server.resource.web.HeaderBearerToken
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@Profile("production")
+@Profile({ "production", "test" })
 public class AzureEasyAuthSecurityConfiguration {
 
   @Bean
