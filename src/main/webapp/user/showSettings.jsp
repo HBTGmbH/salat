@@ -5,7 +5,7 @@
 <html>
 <head>
 	<title><bean:message key="main.general.application.title" /> -
-	<bean:message key="main.general.mainmenu.settings.titl‚e.text" /></title>
+	<bean:message key="main.general.mainmenu.settings.title.text" /></title>
 	<jsp:include flush="true" page="/head-includes.jsp" />
 </head>
 <body>
