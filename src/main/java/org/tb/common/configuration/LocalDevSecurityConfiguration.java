@@ -35,7 +35,7 @@ public class LocalDevSecurityConfiguration {
 
   @Bean
   public WebSecurityCustomizer ignoringCustomizer() {
-    return (web) -> web.ignoring().antMatchers("*.png", "/images/**", "/style/**", "/scripts/**", "/webjars/**", "/favicon.ico");
+    return (web) -> web.ignoring().antMatchers("*.png", "/images/**", "/style/**", "/scripts/**", "/webjars/**", "/favicon.ico","/rest/doc/**");
   }
 
   @Bean
