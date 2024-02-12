@@ -86,7 +86,7 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     // check if public holidays are available
     publicholidayDAO.checkPublicHolidaysForCurrentYear();
 
-    // check if employee has an employee contract and is has employee orders for all standard suborders
+    // check if employee has an employee contract and it has employee orders for all standard suborders
     if (employeecontract != null) {
       request.getSession().setAttribute("employeeHasValidContract", true);
       handleEmployeeWithValidContract(request, loginEmployee, today, employeecontract);

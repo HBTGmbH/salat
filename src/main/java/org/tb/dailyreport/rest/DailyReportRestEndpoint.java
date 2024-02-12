@@ -143,6 +143,7 @@ public class DailyReportRestEndpoint {
 
     private DailyReportData mapToDailyReportData(TimereportDTO tr) {
         return DailyReportData.builder()
+                .id(tr.getId())
                 .employeeorderId(tr.getEmployeeorderId())
                 .date(DateUtils.format(tr.getReferenceday()))
                 .orderLabel(tr.getCustomerorderDescription())
@@ -161,5 +162,18 @@ public class DailyReportRestEndpoint {
             return true;
         }
         return Objects.equals(employeecontract.getEmployee().getId(), authorizedUser.getEmployeeId());
+    }
+
+    @DeleteMapping(path = "/", consumes = APPLICATION_JSON_VALUE)
+    @ResponseStatus(OK)
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    public void deleteBooking(@RequestBody DailyReportData report) {
+        if (!authorizedUser.isAuthenticated()) {
+            throw new ResponseStatusException(UNAUTHORIZED);
+        }
+
+        if (report.getId() != -1) {
+            timereportDAO.deleteTimereportById(report.getId());
+        }
     }
 }
