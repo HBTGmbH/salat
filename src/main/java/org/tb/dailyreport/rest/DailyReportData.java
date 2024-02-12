@@ -7,6 +7,7 @@ import lombok.Getter;
 @Builder
 public class DailyReportData {
 
+    private long id;
     private long employeeorderId;
     private String orderLabel;
     private String suborderLabel;

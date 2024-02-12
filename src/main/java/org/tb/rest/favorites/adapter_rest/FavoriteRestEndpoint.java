@@ -49,6 +49,9 @@ public class FavoriteRestEndpoint {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
   public FavoriteDto addFavorite(@RequestBody FavoriteDto favorite) {
+    if (!authorizedUser.isAuthenticated()) {
+      throw new ResponseStatusException(UNAUTHORIZED);
+    }
     return favoriteDtoMapper.map(favoriteService.addFavorite(favoriteDtoMapper.map(favorite)));
   }
 
@@ -56,6 +59,9 @@ public class FavoriteRestEndpoint {
   @ResponseStatus(HttpStatus.OK)
   @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
   public void deleteFavorite(@PathVariable long id) {
+    if (!authorizedUser.isAuthenticated()) {
+      throw new ResponseStatusException(UNAUTHORIZED);
+    }
     favoriteService.deleteFavorite(id);
   }
 }
