@@ -225,6 +225,11 @@
 			<artifactId>bootstrap-icons</artifactId>
 			<version>1.11.3</version>
 		</dependency>
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>chartjs</artifactId>
+			<version>3.7.1</version>
+		</dependency>
 
 	</dependencies>
 
