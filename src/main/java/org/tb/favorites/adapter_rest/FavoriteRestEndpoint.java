@@ -1,4 +1,4 @@
-package org.tb.rest.favorites.adapter_rest;
+package org.tb.favorites.adapter_rest;
 
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
-import org.tb.rest.favorites.core.FavoriteService;
+import org.tb.favorites.core.FavoriteService;
 
 @Slf4j
 @RestController
