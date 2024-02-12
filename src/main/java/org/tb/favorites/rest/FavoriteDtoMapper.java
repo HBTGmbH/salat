@@ -1,6 +1,6 @@
 package org.tb.favorites.rest;
 
-import java.util.Collection;
+import java.util.List;
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValueCheckStrategy;
@@ -14,8 +14,6 @@ public interface FavoriteDtoMapper {
 
     FavoriteDto map(Favorite favorite);
     Favorite map(FavoriteDto favorite);
-
-    Collection<FavoriteDto> map(Collection<Favorite> favorites);
-
+    List<FavoriteDto> map(List<Favorite> favorites);
 
 }
