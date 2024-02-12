@@ -1,4 +1,4 @@
-package org.tb.favorites.core;
+package org.tb.favorites.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

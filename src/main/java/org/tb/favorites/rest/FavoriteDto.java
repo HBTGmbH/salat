@@ -1,4 +1,4 @@
-package org.tb.favorites.adapter_rest;
+package org.tb.favorites.rest;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;

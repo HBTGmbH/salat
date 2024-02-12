@@ -1,11 +1,11 @@
-package org.tb.favorites.adapter_rest;
+package org.tb.favorites.rest;
 
 import java.util.Collection;
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.ReportingPolicy;
-import org.tb.favorites.core.Favorite;
+import org.tb.favorites.domain.Favorite;
 
 @Mapper(collectionMappingStrategy = CollectionMappingStrategy.ADDER_PREFERRED,
     nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
