@@ -1,6 +1,6 @@
 package org.tb.favorites.service;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,7 +18,7 @@ public class FavoriteService {
   private final FavoriteRepository favoriteRepository;
   private final AuthorizedUser authorizedUser;
 
-  public Collection<Favorite> getFavorites(Long employeeId) {
+  public List<Favorite> getFavorites(Long employeeId) {
     return favoriteRepository.findAllByEmployeeId(employeeId);
   }
 
