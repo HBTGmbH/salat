@@ -2,7 +2,6 @@ package org.tb.favorites.rest;
 
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collection;
@@ -37,7 +36,6 @@ public class FavoriteRestEndpoint {
 
   @GetMapping(path = "", produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
-  @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
   public Collection<FavoriteDto> getFavorites() {
     if(!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
@@ -47,7 +45,6 @@ public class FavoriteRestEndpoint {
 
   @PutMapping(path = "", consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
-  @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
   public FavoriteDto addFavorite(@RequestBody FavoriteDto favorite) {
     if (!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
@@ -57,7 +54,6 @@ public class FavoriteRestEndpoint {
 
   @DeleteMapping(path = "/{id}")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(security = {@SecurityRequirement(name = "bearerAuth")})
   public void deleteFavorite(@PathVariable long id) {
     if (!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
