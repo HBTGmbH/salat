@@ -15,9 +15,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(description = "to save your favorite reports", name = "Favorite")
 public class FavoriteDto {
-  Long id;
-  Long employeeorderId;
-  int hours;
-  int minutes;
-  String comment;
+  private Long id;
+  private Long employeeorderId;
+  private int hours;
+  private int minutes;
+  private String comment;
 }

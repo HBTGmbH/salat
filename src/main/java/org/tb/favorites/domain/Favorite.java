@@ -23,12 +23,13 @@ public class Favorite {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  Long id;
-  Long employeeId;
-  Long employeeorderId;
-  Integer hours;
-  Integer minutes;
+  private Long id;
+  private Long employeeId;
+  private Long employeeorderId;
+  private Integer hours;
+  private Integer minutes;
   @Lob
   @Column(columnDefinition = "text")
-  String comment;
+  private String comment;
+
 }
