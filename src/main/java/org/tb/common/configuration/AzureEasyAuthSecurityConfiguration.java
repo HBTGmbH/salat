@@ -15,10 +15,10 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile({ "production", "test" })
 public class AzureEasyAuthSecurityConfiguration {
 
-  @Value("${}")
+  @Value("${salat.auth.id-token.header-name}")
   private String idTokenHeaderName;
 
-  @Value("${}")
+  @Value("${salat.auth.id-token.principal-claim-name}")
   private String idTokenPrinciplaClaimName;
 
   @Bean
