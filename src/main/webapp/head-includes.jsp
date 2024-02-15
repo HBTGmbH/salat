@@ -10,3 +10,16 @@
 <script src="<c:url value="/scripts/select2.full.min.js" />" type="text/javascript"></script>
 <script src="<c:url value="/scripts/favouriteOrder.js" />" type="text/javascript"></script>
 <script src="<c:url value="/scripts/massedit.js" />" type="text/javascript"></script>
+
+<c:if test="${salatProperties.auth.oidcIdToken.enabled}">
+    <script type="text/javascript">
+      setInterval(function() {
+        let refreshUrl = "<c:out value="${salatProperties.auth.oidcIdToken.refreshUrl}" />";
+        $.ajax(refreshUrl).done(function() {
+          console.log("Token refresh completed successfully.");
+        }).fail(function() {
+          console.log("Token refresh failed. See application logs for details.");
+        });
+      }, 1000 * 60 * 2);
+    </script>
+</c:if>

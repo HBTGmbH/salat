@@ -22,6 +22,8 @@ public class SalatProperties {
 
     @Data
     public static class OidcIdToken {
+      private boolean enabled;
+      private String refreshUrl;
       private String principalClaimName;
       private String headerName;
     }

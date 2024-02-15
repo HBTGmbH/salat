@@ -15,6 +15,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.tb.common.configuration.SalatProperties;
 
 @Slf4j
 public class DelegatingRequestProcessor extends RequestProcessor {
@@ -29,7 +30,9 @@ public class DelegatingRequestProcessor extends RequestProcessor {
   }
 
   protected WebApplicationContext initWebApplicationContext(ActionServlet actionServlet) throws IllegalStateException {
-    return WebApplicationContextUtils.getRequiredWebApplicationContext(actionServlet.getServletContext());
+    WebApplicationContext context = WebApplicationContextUtils.getRequiredWebApplicationContext(actionServlet.getServletContext());
+    context.getServletContext().setAttribute("salatProperties", context.getBean(SalatProperties.class));
+    return context;
   }
 
   protected final WebApplicationContext getWebApplicationContext() {
