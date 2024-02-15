@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.AuthorizedUserAuditorAware;
+import org.tb.common.configuration.SalatProperties;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -34,7 +35,8 @@ import org.tb.testutils.EmployeeTestUtils;
 		OvertimeDAO.class,
 		TimereportDAO.class,
 		WorkingdayDAO.class,
-		AuthService.class
+		AuthService.class,
+		SalatProperties.class
 })
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class EmployeeDAOTest {
