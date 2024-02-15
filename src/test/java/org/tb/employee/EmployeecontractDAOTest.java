@@ -14,6 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
+import org.tb.common.configuration.SalatProperties;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -28,7 +29,7 @@ import org.tb.testutils.EmployeecontractTestUtils;
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @Import({ EmployeeDAO.class, EmployeecontractDAO.class, VacationDAO.class, OvertimeDAO.class, TimereportDAO.class,
-		WorkingdayDAO.class, AuthService.class})
+		WorkingdayDAO.class, AuthService.class, SalatProperties.class})
 public class EmployeecontractDAOTest {
 
 	@Autowired
