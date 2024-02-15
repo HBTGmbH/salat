@@ -1,6 +1,5 @@
 package org.tb.common.configuration;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -14,12 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @Profile({ "production", "test" })
 public class AzureEasyAuthSecurityConfiguration {
-
-  @Value("${salat.auth.id-token.header-name}")
-  private String idTokenHeaderName;
-
-  @Value("${salat.auth.id-token.principal-claim-name}")
-  private String idTokenPrinciplaClaimName;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -35,15 +28,14 @@ public class AzureEasyAuthSecurityConfiguration {
   }
 
   @Bean
-  BearerTokenResolver bearerTokenResolver() {
-    HeaderBearerTokenResolver bearerTokenResolver = new HeaderBearerTokenResolver(idTokenHeaderName);
-    return bearerTokenResolver;
+  BearerTokenResolver bearerTokenResolver(SalatProperties salatProperties) {
+    return new HeaderBearerTokenResolver(salatProperties.getAuth().getOidcIdToken().getHeaderName());
   }
 
   @Bean
-  public JwtAuthenticationConverter customJwtAuthenticationConverter() {
+  public JwtAuthenticationConverter customJwtAuthenticationConverter(SalatProperties salatProperties) {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-    converter.setPrincipalClaimName(idTokenPrinciplaClaimName);
+    converter.setPrincipalClaimName(salatProperties.getAuth().getOidcIdToken().getPrincipalClaimName());
     return converter;
   }
 

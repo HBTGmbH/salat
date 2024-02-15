@@ -3,7 +3,6 @@ package org.tb.auth;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,8 +11,8 @@ import java.util.stream.StreamSupport;
 import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.tb.common.configuration.SalatProperties;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 
@@ -22,17 +21,17 @@ import org.tb.employee.domain.Employee;
 public class AuthService {
 
   public static final int ALL_CUSTOMER_ORDERS = -1;
-  private final EmployeeToEmployeeAuthorizationRuleRepository employeeToEmployeeAuthorizationRuleRepository;
 
-  @Value("${salat.auth-service.cache-expiry:5m}")
-  private Duration cacheExpiry = Duration.ofMinutes(5);
+  private final EmployeeToEmployeeAuthorizationRuleRepository employeeToEmployeeAuthorizationRuleRepository;
+  private final SalatProperties salatProperties;
+
   private long cacheExpiryMillis;
   private Set<AuthCacheEntry> cacheEntries = new HashSet<>();
   private long lastCacheUpdate;
 
   @PostConstruct
   public void init() {
-    cacheExpiryMillis = cacheExpiry.toMillis();
+    cacheExpiryMillis = salatProperties.getAuthService().getCacheExpiry().toMillis();
   }
 
   public boolean isAuthorized(Employee employee, AuthorizedUser user, AccessLevel accessLevel) {
