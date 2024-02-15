@@ -39,7 +39,7 @@ management:
     port: 8081
 salat:
   auth:
-    id-token:
+    oidc-id-token:
       principal-claim-name: 'mailnickname'
       header-name: 'x-ms-token-aad-id-token'
   url: localhost
