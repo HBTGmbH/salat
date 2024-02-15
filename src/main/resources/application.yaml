@@ -2,20 +2,20 @@ server:
   servlet:
     session:
       persistent: false
-      timeout: 660m
-  forward-headers-strategy: native # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
+      timeout: '660m'
+  forward-headers-strategy: 'native' # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
 spring:
   profiles:
-    default: local
+    default: 'local'
   datasource:
-    url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
-    username: salattest
-    password: salattest
+    url: 'jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true'
+    username: 'salattest'
+    password: 'salattest'
     hikari:
       connection-timeout: 1000
       minimum-idle: 0
       maximum-pool-size: 20
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: 'com.mysql.cj.jdbc.Driver'
   jpa:
     generate-ddl: false
     show-sql: false
@@ -24,24 +24,28 @@ spring:
         format_sql: true
     hibernate:
       naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: 'org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl'
+        implicit-strategy: 'org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl'
       ddl-auto: validate
     open-in-view: true
-    database: mysql
+    database: 'mysql'
 
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: '*'
   server:
     port: 8081
 salat:
+  auth:
+    id-token:
+      principal-claim-name: 'mailnickname'
+      header-name: 'x-ms-token-aad-id-token'
   url: localhost
   mail-host: localhost
   auth-service:
-    cache-expiry: 5m
+    cache-expiry: '5m'
 springdoc:
   swagger-ui:
     path: '/rest/doc/'
@@ -51,5 +55,5 @@ springdoc:
   default-produces-media-type: 'application/json'
 openapi:
   description: 'Open API Documentation for the Salat Endpoints'
-  version: 0.1
+  version: '1.0'
   title: 'Salat API'
