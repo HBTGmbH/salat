@@ -34,9 +34,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*'
-  server:
-    port: 8081
+        include: 'health'
 salat:
   auth:
     oidc-id-token:
