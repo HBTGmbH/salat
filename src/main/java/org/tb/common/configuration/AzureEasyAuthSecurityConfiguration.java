@@ -22,7 +22,10 @@ public class AzureEasyAuthSecurityConfiguration {
       "/webjars/**",
       "/favicon.ico",
       "/rest/doc/**",
-      "/actuator/health"
+      "/actuator/health",
+      "/http-headers*",
+      "/error*",
+      "/index*"
   };
 
   @Bean
