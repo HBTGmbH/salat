@@ -13,6 +13,7 @@
         <img width="65px" height="62px" src="/images/fehlerteufer.jpg" title="<bean:message key="main.general.errormessage" />"/>
     </h1>
     <p><%= request.getAttribute("errorMessage") %></p>
+    <p><a href="/">OK</a></p>
 </center>
 </body>
 </html:html>
