@@ -54,7 +54,6 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
   @SneakyThrows
   @Override
   public void onApplicationEvent(AuthenticationSuccessEvent event) {
-    // TODO only required if request is a user request - not REST for example ...
     if(request.getSession().getAttribute("loginEmployee") == null) {
       Authentication authentication = event.getAuthentication();
       onAuthenticationSuccess(request, response, authentication);
