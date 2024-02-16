@@ -25,7 +25,8 @@ public class AzureEasyAuthSecurityConfiguration {
       "/actuator/health",
       "/http-headers*",
       "/error*",
-      "/index*"
+      "/index*",
+      "/"
   };
 
   @Bean
