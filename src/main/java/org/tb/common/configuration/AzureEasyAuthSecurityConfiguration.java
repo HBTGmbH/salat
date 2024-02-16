@@ -3,8 +3,8 @@ package org.tb.common.configuration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.HeaderBearerTokenResolver;
@@ -14,17 +14,35 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile({ "production", "test" })
 public class AzureEasyAuthSecurityConfiguration {
 
+  public static final String[] UNAUTHENTICATED_URL_PATTERNS = {
+      "*.png",
+      "/images/**",
+      "/style/**",
+      "/scripts/**",
+      "/webjars/**",
+      "/favicon.ico",
+      "/rest/doc/**",
+      "/actuator/health"
+  };
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.authorizeRequests(authz -> authz.antMatchers("/do/**", "**/*.jsp", "/rest/**").authenticated())
-        .oauth2ResourceServer(oauth2 -> oauth2.jwt());
-    http.csrf().disable();
+    http.authorizeRequests(authz -> authz.anyRequest().authenticated())
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt())
+        .csrf().disable();
     return http.build();
   }
 
   @Bean
-  public WebSecurityCustomizer ignoringCustomizer() {
-    return (web) -> web.ignoring().antMatchers("*.png", "/images/**", "/style/**", "/scripts/**", "/webjars/**", "/favicon.ico", "/rest/doc/**");
+  @Order(0)
+  SecurityFilterChain resources(HttpSecurity http) throws Exception {
+    http.requestMatchers((matchers) -> matchers.antMatchers(UNAUTHENTICATED_URL_PATTERNS))
+        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
+        .requestCache().disable()
+        .securityContext().disable()
+        .sessionManagement().disable()
+        .csrf().disable();
+    return http.build();
   }
 
   @Bean
