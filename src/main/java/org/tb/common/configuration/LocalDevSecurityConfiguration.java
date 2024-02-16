@@ -6,12 +6,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,16 +26,37 @@ import org.tb.employee.domain.Employee;
 @Profile("local")
 public class LocalDevSecurityConfiguration {
 
+  public static final String[] UNAUTHENTICATED_URL_PATTERNS = {
+      "*.png",
+      "/images/**",
+      "/style/**",
+      "/scripts/**",
+      "/webjars/**",
+      "/favicon.ico",
+      "/rest/doc/**",
+      "/actuator/health"
+  };
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-    http.addFilter(preAuthenticatedProcessingFilter(authenticationManager)).authorizeRequests(authz -> authz.antMatchers("/do/**", "**/*.jsp", "/rest/**").authenticated());
-    http.csrf().disable();
+    http
+        .addFilter(preAuthenticatedProcessingFilter(authenticationManager))
+        .authorizeRequests(authz -> authz.anyRequest().authenticated())
+        .csrf().disable();
     return http.build();
   }
 
   @Bean
-  public WebSecurityCustomizer ignoringCustomizer() {
-    return (web) -> web.ignoring().antMatchers("*.png", "/images/**", "/style/**", "/scripts/**", "/webjars/**", "/favicon.ico","/rest/doc/**");
+  @Order(0)
+  SecurityFilterChain resources(HttpSecurity http) throws Exception {
+    http
+        .requestMatchers((matchers) -> matchers.antMatchers(UNAUTHENTICATED_URL_PATTERNS))
+        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
+        .requestCache().disable()
+        .securityContext().disable()
+        .sessionManagement().disable()
+        .csrf().disable();
+    return http.build();
   }
 
   @Bean
