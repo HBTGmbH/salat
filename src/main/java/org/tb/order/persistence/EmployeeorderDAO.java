@@ -131,16 +131,11 @@ public class EmployeeorderDAO {
     /**
      * Gets the list of employeeorders for the given employee contract and suborder id and date.
      */
-    public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(long employeeContractId, long suborderId, LocalDate date) {
-        return employeeorderRepository.findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(
+    public long countEmployeeorders(long employeeContractId, long suborderId) {
+        return employeeorderRepository.countEmployeeorders(
             employeeContractId,
-            suborderId,
-            date
-        ).stream()
-            .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
-                .thenComparing(Employeeorder::getFromDate))
-            .collect(Collectors.toList());
+            suborderId
+        );
     }
 
     /**
