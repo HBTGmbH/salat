@@ -66,11 +66,8 @@ Datenbankänderungen werden via Liquibase in nachfolgender Datei gepflegt.
 - AfterLogin#handleOvertime - berechnet Überstunden zur Anzeige beim User. Sollte in den OvertimeService
   überführt werden. Dieser existiert bereits und ist auch in der Lage, Überstunden zu
   berechnen. Könnte man entsprechend zusammenführen.
-- LoginEmployeeAction#setEmployeeIsInternalAttribute - zeigt an, ob der Mitarbeiter sich von HBT aus
+- AutoLoginHandler#setEmployeeIsInternalAttribute - zeigt an, ob der Mitarbeiter sich von HBT aus
   angemeldet hat. Ersatzlos streichen.
-- LoginEmployeeAction#generateEmployeeOrders - erzeugt fehlende Standard-Employeeorders. Könnte im
-  EmployeecontractService oder EmployeeorderService untergebracht werden. Ggf. auch von einem scheduled
-  Job (zusätzlich) ausführen lassen.
 - SimpleMailService - brachen wir einen Email-Versand noch?
 - StoreCustomerAction#executeAuthenticated - bei task=save wird ein Customer angelegt. Sollte im 
   CustomerService sein.
