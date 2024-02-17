@@ -36,8 +36,8 @@ public class SalatProperties {
 
     @Data
     public static class AccessToken {
-      private boolean headerName;
-      private boolean expiresOnHeaderName;
+      private String headerName;
+      private String expiresOnHeaderName;
     }
   }
 
