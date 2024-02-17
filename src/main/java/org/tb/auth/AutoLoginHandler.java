@@ -21,8 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
-import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
+import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -41,7 +41,7 @@ import org.tb.order.persistence.SuborderDAO;
 public class AutoLoginHandler implements ApplicationListener<AuthenticationSuccessEvent> {
 
   private final EmployeeDAO employeeDAO;
-  private final PublicholidayDAO publicholidayDAO;
+  private final PublicholidayService publicholidayService;
   private final EmployeecontractDAO employeecontractDAO;
   private final SuborderDAO suborderDAO;
   private final EmployeeorderDAO employeeorderDAO;
@@ -71,6 +71,8 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
 
     LocalDate today = today();
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), today);
+
+    // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
     if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
       response.sendError(HttpStatus.FORBIDDEN.value(), "No valid contract found for " + loginEmployee.getSign());
       return;
@@ -83,7 +85,7 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     authorizedUser.init(loginEmployee);
 
     // check if public holidays are available
-    publicholidayDAO.checkPublicHolidaysForCurrentYear();
+    publicholidayService.checkPublicHolidaysForCurrentYear();
 
     // check if employee has an employee contract and it has employee orders for all standard suborders
     if (employeecontract != null) {
