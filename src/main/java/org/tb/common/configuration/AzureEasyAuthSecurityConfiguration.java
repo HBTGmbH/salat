@@ -2,6 +2,8 @@ package org.tb.common.configuration;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.Arrays;
 import javax.servlet.http.Cookie;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,7 +64,16 @@ public class AzureEasyAuthSecurityConfiguration {
   }
 
   private RequestMatcher logoutRequestMatcher(SalatProperties salatProperties) {
-    return (request) -> request.getHeader(salatProperties.getAuth().getOidcIdToken().getHeaderName()) == null;
+    // a logout is required if no id token is provided any more or if the access token expires in the next 2 minutes or has been expired
+    return (request) -> {
+      boolean appServiceAuthSessionPresent = Arrays.stream(request.getCookies()).anyMatch(c -> c.getName().equalsIgnoreCase("AppServiceAuthSession"));
+      boolean oidcTokenPresent = request.getHeader(salatProperties.getAuth().getOidcIdToken().getHeaderName()) != null;
+      boolean accessTokenPresent = request.getHeader(salatProperties.getAuth().getAccessToken().getHeaderName()) != null;
+      String accessTokenExpiresOn = request.getHeader(salatProperties.getAuth().getAccessToken().getExpiresOnHeaderName());
+      OffsetDateTime expires = accessTokenExpiresOn != null ? OffsetDateTime.parse(accessTokenExpiresOn) : OffsetDateTime.MAX;
+      boolean accessTokenExpired = accessTokenPresent && expires.isBefore(OffsetDateTime.now().plusMinutes(2)); // grace period of 2 minutes
+      return appServiceAuthSessionPresent && (!oidcTokenPresent || accessTokenExpired);
+    };
   }
 
   @Bean
