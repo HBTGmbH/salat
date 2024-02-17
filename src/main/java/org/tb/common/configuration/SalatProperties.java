@@ -19,6 +19,7 @@ public class SalatProperties {
   @Data
   public static class Auth {
     private OidcIdToken oidcIdToken;
+    private AccessToken accessToken;
 
     @Data
     public static class OidcIdToken {
@@ -26,6 +27,12 @@ public class SalatProperties {
       private String refreshUrl;
       private String principalClaimName;
       private String headerName;
+    }
+
+    @Data
+    public static class AccessToken {
+      private boolean headerName;
+      private boolean expiresOnHeaderName;
     }
   }
 
