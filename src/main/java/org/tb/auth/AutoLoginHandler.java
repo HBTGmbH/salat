@@ -31,6 +31,7 @@ import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 /**
  * Performs login procedures after the user has been authenticated by spring security (JWT/oauth2/azure).
@@ -43,13 +44,11 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
   private final EmployeeDAO employeeDAO;
   private final PublicholidayService publicholidayService;
   private final EmployeecontractDAO employeecontractDAO;
-  private final SuborderDAO suborderDAO;
-  private final EmployeeorderDAO employeeorderDAO;
   private final AfterLogin afterLogin;
-  private final VacationDAO vacationDAO;
   private final AuthorizedUser authorizedUser;
   private final HttpServletRequest request;
   private final HttpServletResponse response;
+  private final EmployeeorderService employeeorderService;
 
   @SneakyThrows
   @Override
@@ -90,7 +89,7 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     // check if employee has an employee contract and it has employee orders for all standard suborders
     if (employeecontract != null) {
       request.getSession().setAttribute("employeeHasValidContract", true);
-      handleEmployeeWithValidContract(request, loginEmployee, today, employeecontract);
+      handleEmployeeWithValidContract(request, loginEmployee, employeecontract);
     } else {
       request.getSession().setAttribute("employeeHasValidContract", false);
     }
@@ -100,12 +99,12 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     request.getSession().setAttribute("employeecontracts", employeecontracts);
   }
 
-  private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee, LocalDate today,
+  private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee,
       Employeecontract employeecontract) {
     // auto generate employee orders
     if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
         Boolean.FALSE.equals(employeecontract.getFreelancer())) {
-      generateEmployeeOrders(today, employeecontract);
+      employeeorderService.generateMissingStandardOrders(employeecontract.getId());
     }
 
     // set used employee contract of login employee
@@ -145,111 +144,6 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
                          clientIP.startsWith("172.16.") ||
                          clientIP.startsWith("127.0.0.");
     request.getSession().setAttribute("clientIntern", isInternal);
-  }
-
-  private void generateEmployeeOrders(LocalDate today, Employeecontract employeecontract) {
-    List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
-    if (standardSuborders != null && !standardSuborders.isEmpty()) {
-      // test if employeeorder exists
-      for (Suborder suborder : standardSuborders) {
-        List<Employeeorder> employeeorders = employeeorderDAO
-            .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate3(
-                employeecontract.getId(), suborder
-                    .getId(), today);
-        if (employeeorders == null || employeeorders.isEmpty()) {
-
-          // do not create an employeeorder for past years "URLAUB" !
-          if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-              && !formatYear(today).startsWith(suborder.getSign())) {
-            continue;
-          }
-
-          // find latest untilLocalDate of all employeeorders for this suborder
-          List<Employeeorder> invalidEmployeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(
-              employeecontract.getId(), suborder.getId());
-          LocalDate dateUntil = null;
-          LocalDate dateFrom = null;
-          for (Employeeorder eo : invalidEmployeeorders) {
-
-            // employeeorder starts in the future
-            if (eo.getFromDate() != null && eo.getFromDate().isAfter(today)
-                && (dateUntil == null || dateUntil.isAfter(eo.getFromDate()))) {
-
-              dateUntil = eo.getFromDate();
-              continue;
-            }
-
-            // employeeorder ends in the past
-            if (eo.getEffectiveUntilDate() != null && eo.getEffectiveUntilDate().isBefore(today)
-                && (dateFrom == null || dateFrom.isBefore(eo.getEffectiveUntilDate()))) {
-
-              dateFrom = eo.getEffectiveUntilDate();
-            }
-          }
-
-          // calculate time period
-          LocalDate ecFromDate = employeecontract.getValidFrom();
-          LocalDate ecUntilDate = employeecontract.getValidUntil();
-          LocalDate soFromDate = suborder.getFromDate();
-          LocalDate soUntilDate = suborder.getUntilDate();
-          LocalDate fromDate = ecFromDate.isBefore(soFromDate) ? soFromDate : ecFromDate;
-
-          // fromLocalDate should not be before the ending of the most recent contract
-          if (dateFrom != null && dateFrom.isAfter(fromDate)) {
-            fromDate = dateFrom;
-          }
-          LocalDate untilDate = null;
-
-          if (ecUntilDate == null && soUntilDate == null) {
-            //untildate remains null
-          } else if (ecUntilDate == null) {
-            untilDate = soUntilDate;
-          } else if (soUntilDate == null) {
-            untilDate = ecUntilDate;
-          } else if (ecUntilDate.isBefore(soUntilDate)) {
-            untilDate = ecUntilDate;
-          } else {
-            untilDate = soUntilDate;
-          }
-
-          Employeeorder employeeorder = new Employeeorder();
-          employeeorder.setFromDate(fromDate);
-
-          // untilDate should not overreach a future employee contract
-          if (untilDate == null) {
-            untilDate = dateUntil;
-          } else {
-            if (dateUntil != null && dateUntil.isBefore(untilDate)) {
-              untilDate = dateUntil;
-            }
-          }
-
-          if (untilDate != null) {
-            employeeorder.setUntilDate(untilDate);
-          }
-          if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
-              && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-            var vacation = employeecontract.getVacation(today().getYear());
-            if(vacation.isEmpty()) {
-              vacationDAO.addNewVacation(employeecontract, today().getYear(), employeecontract.getVacationEntitlement());
-            }
-            var vacationBudget = employeecontract.getEffectiveVacationEntitlement(today().getYear()); // create vacation employee order for current year
-            employeeorder.setDebithours(vacationBudget);
-            employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
-          } else {
-            // not decided yet
-          }
-          employeeorder.setEmployeecontract(employeecontract);
-          employeeorder.setSign(" ");
-          employeeorder.setSuborder(suborder);
-
-          if (untilDate == null || !fromDate.isAfter(untilDate)) {
-            employeeorderDAO.save(employeeorder);
-          }
-
-        }
-      }
-    }
   }
 
   private Locale getLocale(HttpServletRequest request) {
