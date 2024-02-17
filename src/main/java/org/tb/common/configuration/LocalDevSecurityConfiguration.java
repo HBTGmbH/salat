@@ -1,6 +1,9 @@
 package org.tb.common.configuration;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Set;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -17,9 +20,11 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.tb.employee.domain.Employee;
 
 @Configuration
@@ -42,8 +47,31 @@ public class LocalDevSecurityConfiguration {
     http
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager))
         .authorizeRequests(authz -> authz.anyRequest().authenticated())
+        .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .csrf().disable();
     return http.build();
+  }
+
+  private LogoutHandler logoutHandler() {
+    return (request, response, auth) -> {
+      Cookie[] cookies = request.getCookies();
+      for(Cookie cookie : cookies) {
+        cookie.setValue("");
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        cookie.setComment("EXPIRING COOKIE at " + LocalDateTime.now());
+        response.addCookie(cookie);
+      }
+      try {
+        response.sendRedirect("/");
+      } catch (IOException e) {
+        throw new RuntimeException("Could not send redirect to /", e);
+      }
+    };
+  }
+
+  private RequestMatcher logoutRequestMatcher() {
+    return (request) -> request.getParameter("logout") != null;
   }
 
   @Bean
