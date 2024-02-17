@@ -46,6 +46,7 @@ salat:
     access-token:
       header-name: 'x-ms-token-aad-access-token'
       expires-on-header-name: 'x-ms-token-aad-expires-on'
+    session-cookie-name: 'AppServiceAuthSession'
   url: localhost
   mail-host: localhost
   auth-service:
