@@ -1,5 +1,8 @@
 package org.tb.common.configuration;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import javax.servlet.http.Cookie;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -9,6 +12,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.HeaderBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
 @Profile({ "production", "test" })
@@ -30,11 +35,34 @@ public class AzureEasyAuthSecurityConfiguration {
   };
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(HttpSecurity http, SalatProperties salatProperties) throws Exception {
     http.authorizeRequests(authz -> authz.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
+        .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher(salatProperties)).addLogoutHandler(logoutHandler()))
         .csrf().disable();
     return http.build();
+  }
+
+  private LogoutHandler logoutHandler() {
+    return (request, response, auth) -> {
+      Cookie[] cookies = request.getCookies();
+      for(Cookie cookie : cookies) {
+        cookie.setValue("");
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        cookie.setComment("EXPIRING COOKIE at " + LocalDateTime.now());
+        response.addCookie(cookie);
+      }
+      try {
+        response.sendRedirect("/");
+      } catch (IOException e) {
+        throw new RuntimeException("Could not send redirect to /", e);
+      }
+    };
+  }
+
+  private RequestMatcher logoutRequestMatcher(SalatProperties salatProperties) {
+    return (request) -> request.getHeader(salatProperties.getAuth().getOidcIdToken().getHeaderName()) == null;
   }
 
   @Bean
