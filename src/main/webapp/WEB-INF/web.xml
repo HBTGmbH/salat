@@ -4,8 +4,4 @@
 	      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 	version="3.0">
 	<display-name>Salat Application</display-name>
-	<error-page>
-		<location>/401.jsp</location>
-		<error-code>401</error-code>
-	</error-page>
 </web-app>
