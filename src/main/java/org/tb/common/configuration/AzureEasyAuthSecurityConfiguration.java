@@ -52,6 +52,7 @@ public class AzureEasyAuthSecurityConfiguration {
         cookie.setValue("");
         cookie.setPath("/");
         cookie.setMaxAge(0);
+        cookie.setSecure(true);
         cookie.setComment("EXPIRING COOKIE at " + LocalDateTime.now());
         response.addCookie(cookie);
       }
