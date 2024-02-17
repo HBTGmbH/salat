@@ -6,14 +6,16 @@ import static org.tb.common.util.DateUtils.validateDate;
 
 import java.time.LocalDate;
 import javax.servlet.http.HttpServletRequest;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.tb.dailyreport.domain.TimereportDTO;
 
-@Data
+@Getter
+@Setter
 public class TimereportForm extends ActionForm {
 
   private String id;
