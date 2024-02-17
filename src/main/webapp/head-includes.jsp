@@ -11,10 +11,10 @@
 <script src="<c:url value="/scripts/favouriteOrder.js" />" type="text/javascript"></script>
 <script src="<c:url value="/scripts/massedit.js" />" type="text/javascript"></script>
 
-<c:if test="${salatProperties.auth.oidcIdToken.enabled}">
+<c:if test="${salatProperties.auth.refresh.enabled}">
     <script type="text/javascript">
       setInterval(function() {
-        let refreshUrl = "<c:out value="${salatProperties.auth.oidcIdToken.refreshUrl}" />";
+        let refreshUrl = "<c:out value="${salatProperties.auth.refresh.refreshUrl}" />";
         $.ajax(refreshUrl).done(function() {
           console.log("Token refresh completed successfully.");
         }).fail(function() {

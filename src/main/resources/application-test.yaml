@@ -15,6 +15,5 @@ spring:
           issuer-uri: 'https://login.microsoftonline.com/0af2c34e-4e40-42d9-89ab-e095b8151308/v2.0'
 salat:
   auth:
-    oidc-id-token:
+    refresh:
       enabled: true
-      refresh-url: '/.auth/refresh'
