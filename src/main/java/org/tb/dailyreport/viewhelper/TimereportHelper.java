@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,10 +15,8 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
-import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -38,7 +35,6 @@ public class TimereportHelper {
 
     private final TimereportDAO timereportDAO;
     private final EmployeeorderDAO employeeorderDAO;
-    private final PublicholidayDAO publicholidayDAO;
     private final AuthorizedUser authorizedUser;
     private final EmployeecontractDAO employeecontractDAO;
 
@@ -66,18 +62,6 @@ public class TimereportHelper {
         // check date range (must be in current or previous year)
         if (DateUtils.getCurrentYear() - DateUtils.getYear(theNewDate).getValue() >= 2) {
             errors.add("referenceday", new ActionMessage("form.timereport.error.date.invalidyear"));
-        }
-
-        // if sort of report is not 'W' reports are only allowed for workdays
-        // e.g., vacation cannot be set on a Sunday
-        boolean valid = DateUtils.isWeekday(theNewDate);
-
-        // checks for public holidays
-        if (valid) {
-            Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(theNewDate);
-            if (publicHoliday.isPresent()) {
-                valid = false;
-            }
         }
 
         // check date vs release status
