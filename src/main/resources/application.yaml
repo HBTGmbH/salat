@@ -41,6 +41,9 @@ salat:
       enabled: false
       principal-claim-name: 'mailnickname'
       header-name: 'x-ms-token-aad-id-token'
+    access-token:
+      header-name: 'x-ms-token-aad-access-token'
+      expires-on-header-name: 'x-ms-token-aad-expires-on'
   url: localhost
   mail-host: localhost
   auth-service:
