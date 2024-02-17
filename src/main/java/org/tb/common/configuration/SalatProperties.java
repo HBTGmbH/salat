@@ -18,6 +18,7 @@ public class SalatProperties {
 
   @Data
   public static class Auth {
+    private String sessionCookieName;
     private OidcIdToken oidcIdToken;
     private AccessToken accessToken;
     private Refresh refresh;
