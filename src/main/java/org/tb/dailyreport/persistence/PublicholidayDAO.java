@@ -39,27 +39,6 @@ public class PublicholidayDAO {
     }
 
     /**
-     * Sets the German public holidays of current year if not yet done.
-     * This method will be carried out once at the first login of an employee in a new year.
-     */
-    public void checkPublicHolidaysForCurrentYear() {
-        Iterable<Publicholiday> holidays = publicholidayRepository.findAll();
-
-        int maxYear = 0;
-        for (Publicholiday holiday : holidays) {
-            maxYear = Math.max(maxYear, DateUtils.getYear(holiday.getRefdate()).getValue());
-        }
-
-        for (LocalDate easterSunday : HolidaysUtil.loadEasterSundayDates()) {
-            if (maxYear < easterSunday.getYear()) {
-                for (Publicholiday newHoliday : HolidaysUtil.generateHolidays(easterSunday)) {
-                    save(newHoliday);
-                }
-            }
-        }
-    }
-
-    /**
      * Returns a List of all {@link Publicholiday}s with a {@link Referenceday#getRefdate()} between the two given dates.
      */
     public List<Publicholiday> getPublicHolidaysBetween(LocalDate start, LocalDate end) {
