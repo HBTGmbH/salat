@@ -37,8 +37,10 @@ management:
         include: 'health'
 salat:
   auth:
-    oidc-id-token:
+    refresh:
       enabled: false
+      refresh-url: "/.auth/refresh"
+    oidc-id-token:
       principal-claim-name: 'mailnickname'
       header-name: 'x-ms-token-aad-id-token'
     access-token:

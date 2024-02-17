@@ -20,11 +20,16 @@ public class SalatProperties {
   public static class Auth {
     private OidcIdToken oidcIdToken;
     private AccessToken accessToken;
+    private Refresh refresh;
+
+    @Data
+    public static class Refresh {
+      private boolean enabled;
+      private String refreshUrl;
+    }
 
     @Data
     public static class OidcIdToken {
-      private boolean enabled;
-      private String refreshUrl;
       private String principalClaimName;
       private String headerName;
     }
