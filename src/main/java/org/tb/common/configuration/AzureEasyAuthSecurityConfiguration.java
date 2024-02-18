@@ -67,7 +67,7 @@ public class AzureEasyAuthSecurityConfiguration {
   private RequestMatcher logoutRequestMatcher(SalatProperties salatProperties) {
     // a logout is required if no id token is provided any more or if the access token expires in the next 2 minutes or has been expired
     return (request) -> {
-      boolean appServiceAuthSessionPresent = Arrays.stream(request.getCookies()).anyMatch(c -> c.getName().equalsIgnoreCase("AppServiceAuthSession"));
+      boolean appServiceAuthSessionPresent = request.getCookies() != null && Arrays.stream(request.getCookies()).anyMatch(c -> c.getName().equalsIgnoreCase("AppServiceAuthSession"));
       boolean oidcTokenPresent = request.getHeader(salatProperties.getAuth().getOidcIdToken().getHeaderName()) != null;
       boolean accessTokenPresent = request.getHeader(salatProperties.getAuth().getAccessToken().getHeaderName()) != null;
       String accessTokenExpiresOn = request.getHeader(salatProperties.getAuth().getAccessToken().getExpiresOnHeaderName());
