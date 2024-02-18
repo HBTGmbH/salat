@@ -8,10 +8,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +17,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
@@ -37,13 +42,8 @@ import org.tb.order.persistence.EmployeeorderDAO;
 
 @RestController
 @RequiredArgsConstructor
-@SecurityScheme(name = "apikey",
-    type = SecuritySchemeType.APIKEY,
-    in = SecuritySchemeIn.HEADER,
-    paramName = "x-api-key",
-    description = "tokenId:secret"
-)
 @RequestMapping(path = "/rest/daily-reports")
+@Tag(name = "daily report")
 public class DailyReportRestEndpoint {
 
     private final EmployeecontractDAO employeecontractDAO;
@@ -54,7 +54,7 @@ public class DailyReportRestEndpoint {
 
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
-    @Operation(security = @SecurityRequirement(name = "apikey"))
+    @Operation
     public List<DailyReportData> getBookings(
         @RequestParam("refDate")
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -77,7 +77,7 @@ public class DailyReportRestEndpoint {
 
     @GetMapping(path = "/{employeeContractId}/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
-    @Operation(security = @SecurityRequirement(name = "apikey"))
+    @Operation
     public List<DailyReportData> getBookingsForEmployee(
             @RequestParam("refDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate,
             @PathVariable("employeeContractId") Long employeeContractId
@@ -97,7 +97,7 @@ public class DailyReportRestEndpoint {
 
     @PostMapping(path = "/", consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
-    @Operation(security = @SecurityRequirement(name = "apikey"))
+    @Operation
     public void createBooking(@RequestBody DailyReportData booking) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
@@ -166,7 +166,7 @@ public class DailyReportRestEndpoint {
 
     @DeleteMapping(path = "/", consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
-    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation
     public void deleteBooking(@RequestBody DailyReportData report) {
         if (!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);

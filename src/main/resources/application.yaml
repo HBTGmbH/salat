@@ -47,6 +47,7 @@ salat:
       header-name: 'x-ms-token-aad-access-token'
       expires-on-header-name: 'x-ms-token-aad-expires-on'
     session-cookie-name: 'AppServiceAuthSession'
+    api-scope: 'api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation'
   url: localhost
   mail-host: localhost
   auth-service:
@@ -58,7 +59,3 @@ springdoc:
   api-docs:
     path: '/rest/doc/api-docs'
   default-produces-media-type: 'application/json'
-openapi:
-  description: 'Open API Documentation for the Salat Endpoints'
-  version: '1.0'
-  title: 'Salat API'
