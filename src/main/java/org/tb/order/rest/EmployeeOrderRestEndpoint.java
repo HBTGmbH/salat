@@ -6,10 +6,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,19 +23,14 @@ import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
 @RestController
 @RequiredArgsConstructor
-@SecurityScheme(name = "apikey",
-    type = SecuritySchemeType.APIKEY,
-    in = SecuritySchemeIn.HEADER,
-    paramName = "x-api-key",
-    description = "tokenId:secret"
-)
 @RequestMapping(path = "/rest/employee-orders")
+@Tag(name = "order")
 public class EmployeeOrderRestEndpoint {
 
     private final EmployeecontractDAO employeecontractDAO;
@@ -48,7 +40,7 @@ public class EmployeeOrderRestEndpoint {
 
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
-    @Operation(security = @SecurityRequirement(name = "apikey"))
+    @Operation
     public List<EmployeeOrderData> getValidEmployeeOrders(
         @RequestParam("refDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate
     ) {

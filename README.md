@@ -22,12 +22,17 @@ Steps to start Salat locally:
 
 1. Build the .war-file: `./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=docker.io/hbt/salat:latest`
 2. Run docker-compose: `docker-compose up`
-3. Open in browser: http://localhost:8080
-4. Valid credentials in the test-dataset are: admin/admin, bm/bm, tt/tt
+3. Open in browser: `http://localhost:8080?employee-sign=<sign>`
+4. Valid signs in the test-dataset are: admin, bm, tt
 
 Shutdown:
 1. Stop docker-compose: CTRL+C
 2. Remove built containers: `docker-compose down`
+
+### Login / Logout
+Einfach den SALAT mit der URL `http://localhost:8080?employee-sign=<sign>` aufrufen.
+
+Einfach den SALAT mit der URL `http://localhost:8080?logout` aufrufen.
 
 ### Debugging
 Start local database only, without Salat:

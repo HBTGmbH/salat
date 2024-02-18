@@ -17,3 +17,4 @@ salat:
   auth:
     refresh:
       enabled: true
+    api-scope: 'api://865b95c4-f360-4ca2-ba20-4fe28e3ea4f6/user_impersonation'

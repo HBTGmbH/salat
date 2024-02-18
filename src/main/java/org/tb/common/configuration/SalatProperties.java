@@ -1,10 +1,10 @@
 package org.tb.common.configuration;
 
 import java.time.Duration;
+import java.util.List;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 @Data
 @Configuration
@@ -19,6 +19,7 @@ public class SalatProperties {
   @Data
   public static class Auth {
     private String sessionCookieName;
+    private String apiScope;
     private OidcIdToken oidcIdToken;
     private AccessToken accessToken;
     private Refresh refresh;

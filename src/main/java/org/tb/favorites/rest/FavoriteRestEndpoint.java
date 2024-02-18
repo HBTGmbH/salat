@@ -2,7 +2,6 @@ package org.tb.favorites.rest;
 
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +25,6 @@ import org.tb.favorites.service.FavoriteService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(path = "/rest/favorite")
-@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "favorite")
 public class FavoriteRestEndpoint {
 

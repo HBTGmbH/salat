@@ -6,10 +6,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,8 +36,8 @@ import org.tb.order.persistence.SuborderDAO;
 
 @RestController
 @RequiredArgsConstructor
-@SecurityScheme(name = "apikey", type = SecuritySchemeType.APIKEY, in = SecuritySchemeIn.HEADER, paramName = "x-api-key", description = "tokenId:secret")
 @RequestMapping(path = "/rest/orders")
+@Tag(name = "order")
 public class OrderRestEndpoint {
 
   private final EmployeecontractDAO employeecontractDAO;
@@ -50,7 +47,7 @@ public class OrderRestEndpoint {
 
   @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
   @ResponseStatus(OK)
-  @Operation(security = @SecurityRequirement(name = "apikey"))
+  @Operation
   public List<OrderData> getValidEmployeeOrders(
       @RequestParam("refDate") @DateTimeFormat(iso = ISO.DATE) LocalDate refDate) {
     if (!authorizedUser.isAuthenticated()) {
