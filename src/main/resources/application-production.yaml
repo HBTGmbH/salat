@@ -17,3 +17,22 @@ salat:
   auth:
     refresh:
       enabled: true
+      refresh-url: "/.auth/refresh"
+    oidc-id-token:
+      principal-claim-name: 'mailnickname'
+      header-name: 'x-ms-token-aad-id-token'
+    access-token:
+      header-name: 'x-ms-token-aad-access-token'
+      expires-on-header-name: 'x-ms-token-aad-expires-on'
+    session-cookie-name: 'AppServiceAuthSession'
+    api-scope: 'api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation'
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: 'dea20d63-0092-4fdd-8192-44e6743c6a71'
+      client-secret:
+      use-pkce-with-authorization-code-grant: true
+      scopes:
+        - 'api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation'
+        - 'openid'
+      oauth2-redirect-url: 'http://salat.hbt.de/rest/doc/swagger-ui/oauth2-redirect.html'
