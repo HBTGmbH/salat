@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Profile;
 
 @Configuration
 @Profile({ "production", "test" })
-public class AzureEsyAuthOpenApiConfiguration {
+public class AzureEasyAuthOpenApiConfiguration {
 
   @Bean
   public OpenAPI customOpenAPI(Optional<BuildProperties> buildProperties, Optional<GitProperties> gitProperties, SalatProperties salatProperties) {
