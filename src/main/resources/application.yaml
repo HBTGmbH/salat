@@ -3,6 +3,10 @@ server:
     session:
       persistent: false
       timeout: '660m'
+      cookie:
+        same-site: strict
+        name: SALATSESSIONID
+        secure: true
   forward-headers-strategy: 'native' # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
 spring:
   profiles:
