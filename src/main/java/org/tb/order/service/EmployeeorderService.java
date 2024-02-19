@@ -69,7 +69,8 @@ public class EmployeeorderService {
         if (!employeeorderPresent) {
 
           // skip vacation orders that do not match the contract
-          if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
+          if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)
+              && !suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
             int vacationOrderYear = Year.parse(suborder.getSign()).getValue();
             if(vacationOrderYear < contractValidFrom.getYear()) {
               continue; // skip creation
