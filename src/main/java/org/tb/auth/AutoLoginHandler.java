@@ -63,8 +63,6 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
 
   private void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
       Authentication authentication) throws IOException {
-    // check if user is internal or extern
-    setEmployeeIsInternalAttribute(request);
 
     Employee loginEmployee = employeeDAO.getLoginEmployee(authentication.getName());
 
@@ -135,15 +133,6 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     } else {
       request.getSession().setAttribute("warningsPresent", false);
     }
-  }
-
-  private void setEmployeeIsInternalAttribute(HttpServletRequest request) {
-    String clientIP = request.getRemoteHost();
-    boolean isInternal = clientIP.startsWith("10.") ||
-                         clientIP.startsWith("192.168.") ||
-                         clientIP.startsWith("172.16.") ||
-                         clientIP.startsWith("127.0.0.");
-    request.getSession().setAttribute("clientIntern", isInternal);
   }
 
   private Locale getLocale(HttpServletRequest request) {
