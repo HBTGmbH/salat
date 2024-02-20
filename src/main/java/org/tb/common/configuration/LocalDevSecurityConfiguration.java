@@ -15,6 +15,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,7 +33,7 @@ import org.tb.employee.domain.Employee;
 public class LocalDevSecurityConfiguration {
 
   public static final String[] UNAUTHENTICATED_URL_PATTERNS = {
-      "*.png",
+      "/*.png",
       "/images/**",
       "/style/**",
       "/scripts/**",
@@ -43,9 +44,36 @@ public class LocalDevSecurityConfiguration {
   };
 
   @Bean
+  @Order(0)
+  SecurityFilterChain resources(HttpSecurity http) throws Exception {
+    http
+        .requestMatchers((matchers) -> matchers.antMatchers(UNAUTHENTICATED_URL_PATTERNS))
+        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
+        .requestCache().disable()
+        .securityContext().disable()
+        .sessionManagement().disable()
+        .csrf().disable();
+    return http.build();
+  }
+
+  @Bean
+  @Order(1)
+  SecurityFilterChain restApi(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    http.requestMatchers((matchers) -> matchers.antMatchers("/rest/**"))
+        .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
+        .authorizeRequests(authz -> authz.anyRequest().authenticated())
+        .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
+        .requestCache().disable()
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .csrf().disable();
+    return http.build();
+  }
+
+  @Bean
+  @Order(2)
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
     http
-        .addFilter(preAuthenticatedProcessingFilter(authenticationManager))
+        .addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
         .authorizeRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .csrf().disable();
@@ -76,31 +104,18 @@ public class LocalDevSecurityConfiguration {
   }
 
   @Bean
-  @Order(0)
-  SecurityFilterChain resources(HttpSecurity http) throws Exception {
-    http
-        .requestMatchers((matchers) -> matchers.antMatchers(UNAUTHENTICATED_URL_PATTERNS))
-        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
-        .requestCache().disable()
-        .securityContext().disable()
-        .sessionManagement().disable()
-        .csrf().disable();
-    return http.build();
-  }
-
-  @Bean
   public AuthenticationManager authenticationManager(AuthenticationProvider authenticationProvider, ApplicationEventPublisher publisher) {
     ProviderManager providerManager = new ProviderManager(authenticationProvider);
     providerManager.setAuthenticationEventPublisher(new DefaultAuthenticationEventPublisher(publisher));
     return providerManager;
   }
 
-  private AbstractPreAuthenticatedProcessingFilter preAuthenticatedProcessingFilter(AuthenticationManager authenticationManager) {
+  private AbstractPreAuthenticatedProcessingFilter preAuthenticatedProcessingFilter(AuthenticationManager authenticationManager, boolean useSession) {
     AbstractPreAuthenticatedProcessingFilter preAuthenticatedProcessingFilter = new AbstractPreAuthenticatedProcessingFilter() {
       @Override
       protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         String employeeSign = request.getParameter("employee-sign");
-        if(employeeSign == null) {
+        if(employeeSign == null && useSession) {
           Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
           if(loginEmployee != null) {
             employeeSign = loginEmployee.getSign();

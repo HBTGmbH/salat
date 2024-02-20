@@ -24,7 +24,7 @@ import org.springframework.util.Assert;
 public class AzureEasyAuthSecurityConfiguration {
 
   public static final String[] UNAUTHENTICATED_URL_PATTERNS = {
-      "*.png",
+      "/*.png",
       "/images/**",
       "/style/**",
       "/scripts/**",
@@ -57,7 +57,7 @@ public class AzureEasyAuthSecurityConfiguration {
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .requestCache().disable()
-        .sessionManagement().disable()
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .csrf().disable();
     return http.build();
   }

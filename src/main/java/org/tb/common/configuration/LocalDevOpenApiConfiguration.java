@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Profile;
 
 @Configuration
 @Profile("local")
-public class LocalDevSecurityOpenApiConfiguration {
+public class LocalDevOpenApiConfiguration {
 
   @Bean
   public OpenAPI customOpenAPI(Optional<BuildProperties> buildProperties, Optional<GitProperties> gitProperties, SalatProperties salatProperties) {
