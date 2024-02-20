@@ -1,6 +1,5 @@
 package org.tb.auth;
 
-import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.today;
 
 import java.io.IOException;
@@ -9,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.struts.Globals;
@@ -19,18 +19,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Warning;
-import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.domain.Employeeorder;
-import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
 import org.tb.order.service.EmployeeorderService;
 
 /**
@@ -53,7 +49,8 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
   @SneakyThrows
   @Override
   public void onApplicationEvent(AuthenticationSuccessEvent event) {
-    if(request.getSession().getAttribute("loginEmployee") == null) {
+    HttpSession session = request.getSession(false);
+    if(session == null || session.getAttribute("loginEmployee") == null) {
       Authentication authentication = event.getAuthentication();
       onAuthenticationSuccess(request, response, authentication);
     } else {
@@ -65,6 +62,10 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
       Authentication authentication) throws IOException {
 
     Employee loginEmployee = employeeDAO.getLoginEmployee(authentication.getName());
+    // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
+    if (loginEmployee == null) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authentication.getName());
+    }
 
     LocalDate today = today();
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), today);
@@ -72,14 +73,17 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
     if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
       response.sendError(HttpStatus.FORBIDDEN.value(), "No valid contract found for " + loginEmployee.getSign());
-      return;
     }
+
+    authorizedUser.init(loginEmployee);
+
+    // no further stuff for REST API calls - all is just for struts and old web UI
+    if(request.getRequestURL().toString().contains("/rest/")) return;
 
     request.getSession().setAttribute("loginEmployee", loginEmployee);
     String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
     request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
     request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
-    authorizedUser.init(loginEmployee);
 
     // check if public holidays are available
     publicholidayService.checkPublicHolidaysForCurrentYear();
