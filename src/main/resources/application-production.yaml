@@ -26,6 +26,8 @@ salat:
       expires-on-header-name: 'x-ms-token-aad-expires-on'
     session-cookie-name: 'AppServiceAuthSession'
     api-scope: 'api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation'
+  auth-service:
+    cache-expiry: '1h'
 springdoc:
   swagger-ui:
     oauth:
