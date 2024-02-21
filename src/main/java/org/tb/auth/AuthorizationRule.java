@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @Table(name = "authorization_rule")
 public class AuthorizationRule extends AuditedEntity {
 
-    public enum Category { TIMEREPORT, REPORT }
+    public enum Category { TIMEREPORT, REPORT_DEFINITION}
 
     @Enumerated(EnumType.STRING)
     private Category category;
