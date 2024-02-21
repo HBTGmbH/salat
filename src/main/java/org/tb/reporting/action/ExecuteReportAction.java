@@ -113,7 +113,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
     }
 
     private void setCellValue(XSSFCell cell, ReportResultColumnValue columnValue, Map<String, CellStyle> cellStyles) {
-        if(columnValue == null) return;
+        if(columnValue.getValue() == null) return;
         switch(columnValue.getValue().getClass().getSimpleName()) {
             case "LocalDate" -> {
                 cell.setCellValue((LocalDate) columnValue.getValue());
@@ -132,7 +132,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
     }
 
     private CellType getCellType(ReportResultColumnValue columnValue) {
-        if(columnValue == null) return CellType.BLANK;
+        if(columnValue.getValue() == null) return CellType.BLANK;
         return switch(columnValue.getValue().getClass().getSimpleName()) {
             case "String" -> CellType.STRING;
             default -> CellType.NUMERIC;
