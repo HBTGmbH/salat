@@ -5,8 +5,8 @@ import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.validateDate;
 import static org.tb.common.util.DurationUtils.parseDuration;
 import static org.tb.common.util.DurationUtils.validateDuration;
-import static org.tb.common.util.ValdationUtils.isInRange;
-import static org.tb.common.util.ValdationUtils.isPositiveInteger;
+import static org.tb.common.util.ValidationUtils.isInRange;
+import static org.tb.common.util.ValidationUtils.isPositiveInteger;
 
 import java.time.Duration;
 import java.time.LocalDate;

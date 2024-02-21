@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
 import org.tb.employee.persistence.EmployeeRepository;
 
@@ -18,6 +19,7 @@ import org.tb.employee.persistence.EmployeeRepository;
 @RequiredArgsConstructor
 public class AuthenticationFilter extends HttpFilter {
 
+    private final AuthViewHelper authViewHelper;
     private final AuthorizedUser authorizedUser;
     private final EmployeeRepository employeeRepository;
 
@@ -30,6 +32,7 @@ public class AuthenticationFilter extends HttpFilter {
         }
         Object oldValue = request.getAttribute("authorizedUser");
         request.setAttribute("authorizedUser", authorizedUser);
+        request.setAttribute("authViewHelper", authViewHelper);
         super.doFilter(request, response, chain);
         request.setAttribute("authorizedUser", oldValue);
 

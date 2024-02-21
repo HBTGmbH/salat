@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
 import org.springframework.web.servlet.resource.ResourceUrlEncodingFilter;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
+import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
 import org.tb.employee.persistence.EmployeeRepository;
 
@@ -14,6 +15,7 @@ import org.tb.employee.persistence.EmployeeRepository;
 @RequiredArgsConstructor
 public class HttpFilterConfiguration {
 
+    private final AuthViewHelper authViewHelper;
     private final AuthorizedUser authorizedUser;
     private final EmployeeRepository employeeRepository;
     private final ResourceUrlProvider resourceUrlProvider;
@@ -58,7 +60,7 @@ public class HttpFilterConfiguration {
     public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
         var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
         registrationBean.setOrder(101);
-        registrationBean.setFilter(new AuthenticationFilter(authorizedUser, employeeRepository));
+        registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, employeeRepository));
         registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
         return registrationBean;
     }
