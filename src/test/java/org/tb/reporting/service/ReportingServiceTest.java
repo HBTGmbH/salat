@@ -7,21 +7,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.TestExecutionListeners.MergeMode;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
+import org.tb.common.configuration.SalatProperties;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
 
 import java.util.HashMap;
+import org.tb.testutils.WebContextTestExecutionListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 
 @DataJpaTest
-@Import({ReportingService.class, AuthorizedUser.class})
+@Import({ReportingService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
 @WebAppConfiguration
+@TestExecutionListeners(listeners = WebContextTestExecutionListener.class, mergeMode = MERGE_WITH_DEFAULTS)
 public class ReportingServiceTest {
 
   @Autowired
@@ -30,37 +37,38 @@ public class ReportingServiceTest {
   @Autowired
   private EmployeeRepository employeeRepository;
 
+  @Autowired
+  private AuthorizedUser authorizedUser;
+
   @Test
   public void should_get_report_definitions() {
-    var authorizedUser = new AuthorizedUser();
     authorizedUser.setManager(true);
 
-    var defs = reportingService.getReportDefinitions(authorizedUser);
+    var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create(authorizedUser, "test", "select id, sign from employee");
+    var reportDefinition = reportingService.create("test", "select id, sign from employee");
+    assertThat(reportDefinition).isNotNull();
 
-    defs = reportingService.getReportDefinitions(authorizedUser);
+    defs = reportingService.getReportDefinitions();
     assertThat(defs).size().isEqualTo(1);
   }
 
   @Test
   public void should_execute_report_definitions_without_parameters() {
-    var authorizedUser = new AuthorizedUser();
     authorizedUser.setManager(true);
 
-    var defs = reportingService.getReportDefinitions(authorizedUser);
+    var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create(authorizedUser, "test", "select id, sign from employee");
+    var reportDefinition = reportingService.create("test", "select id, sign from employee");
 
-    var result = reportingService.execute(authorizedUser, reportDefinition.getId(), new HashMap<>());
+    var result = reportingService.execute(reportDefinition.getId(), new HashMap<>());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
   }
 
   @Test
   public void should_execute_report_definitions_with_parameters_1() {
-    var authorizedUser = new AuthorizedUser();
     authorizedUser.setManager(true);
 
     Employee employee = new Employee();
@@ -74,25 +82,23 @@ public class ReportingServiceTest {
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     employeeRepository.save(employee);
 
-    var defs = reportingService.getReportDefinitions(authorizedUser);
+    var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
     var reportDefinition = reportingService.create(
-            authorizedUser,
             "test",
             "select id, sign from employee where firstname like :firstname"
     );
 
     var parameters = new HashMap<String, Object>();
     parameters.put("firstname", "%Klaus%");
-    var result = reportingService.execute(authorizedUser, reportDefinition.getId(), parameters);
+    var result = reportingService.execute(reportDefinition.getId(), parameters);
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
     assertThat(result.getRows()).size().isEqualTo(1);
   }
 
   @Test
   public void should_execute_report_definitions_with_parameters_2() {
-    var authorizedUser = new AuthorizedUser();
     authorizedUser.setManager(true);
 
     Employee employee = new Employee();
@@ -106,18 +112,17 @@ public class ReportingServiceTest {
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     employeeRepository.save(employee);
 
-    var defs = reportingService.getReportDefinitions(authorizedUser);
+    var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
     var reportDefinition = reportingService.create(
-            authorizedUser,
             "test",
             "select firstname from employee where lastname = :lastname order by firstname"
     );
 
     var parameters = new HashMap<String, Object>();
     parameters.put("lastname", "Richarz");
-    var result = reportingService.execute(authorizedUser, reportDefinition.getId(), parameters);
+    var result = reportingService.execute(reportDefinition.getId(), parameters);
     assertThat(result.getColumnHeaders()).size().isEqualTo(1);
     assertThat(result.getRows()).size().isEqualTo(2);
     var firstnameColumnName = result.getColumnHeaders().get(0).getName();
@@ -127,15 +132,14 @@ public class ReportingServiceTest {
 
   @Test
   public void should_respect_alias_names_in_queries() {
-    var authorizedUser = new AuthorizedUser();
     authorizedUser.setManager(true);
 
-    var defs = reportingService.getReportDefinitions(authorizedUser);
+    var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create(authorizedUser, "test", "select id, sign as sign_alias from employee");
+    var reportDefinition = reportingService.create("test", "select id, sign as sign_alias from employee");
 
-    var result = reportingService.execute(authorizedUser, reportDefinition.getId(), new HashMap<>());
+    var result = reportingService.execute(reportDefinition.getId(), new HashMap<>());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias"));
@@ -143,7 +147,6 @@ public class ReportingServiceTest {
 
   @Test
   public void should_execute_report_with_duplicate_column_and_different_alias() {
-    var authorizedUser = new AuthorizedUser();
     authorizedUser.setManager(true);
 
     Employee employee = new Employee();
@@ -159,16 +162,15 @@ public class ReportingServiceTest {
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     employeeRepository.save(employee);
 
-    var defs = reportingService.getReportDefinitions(authorizedUser);
+    var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
     var reportDefinition = reportingService.create(
-            authorizedUser,
             "test",
             "select id, sign as sign_alias_1, sign as sign_alias_2 from employee"
     );
 
-    var result = reportingService.execute(authorizedUser, reportDefinition.getId(), new HashMap<>());
+    var result = reportingService.execute(reportDefinition.getId(), new HashMap<>());
     assertThat(result.getColumnHeaders()).size().isEqualTo(3);
     assertThat(result.getRows()).size().isEqualTo(2);
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));

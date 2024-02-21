@@ -1,7 +1,9 @@
 package org.tb.reporting.service;
 
-import java.util.Arrays;
-import java.util.Collections;
+import static org.tb.auth.AccessLevel.DELETE;
+import static org.tb.auth.AccessLevel.EXECUTE;
+import static org.tb.auth.AccessLevel.WRITE;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,7 +15,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.AuthService;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportDefinition_;
 import org.tb.reporting.domain.ReportResult;
@@ -29,29 +31,30 @@ public class ReportingService {
 
   private final ReportDefinitionRepository reportDefinitionRepository;
   private final DataSource dataSource;
+  private final AuthService authService;
 
-  public List<ReportDefinition> getReportDefinitions(AuthorizedUser authorizedUser) {
-    if(!authorizedUser.isManager()) {
-      return Collections.emptyList();
-    }
+  public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
         reportDefinitionRepository.findAll(Sort.by(ReportDefinition_.NAME)).iterator()
-    );
+    ).stream().filter(r -> authService.isAuthorized(r, EXECUTE)).toList();
   }
 
-  public void deleteReportDefinition(AuthorizedUser authorizedUser, long reportDefinitionId) {
-    reportDefinitionRepository.deleteById(reportDefinitionId);
+  public void deleteReportDefinition(long reportDefinitionId) {
+    reportDefinitionRepository.findById(reportDefinitionId).ifPresent(report -> {
+      if(authService.isAuthorized(report, DELETE)) {
+        reportDefinitionRepository.delete(report);
+      }
+    });
   }
 
-  public ReportDefinition getReportDefinition(AuthorizedUser authorizedUser, long reportDefinitionId) {
-    if(!authorizedUser.isManager()) {
-      return new ReportDefinition();
-    }
-    return reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
+  public ReportDefinition getReportDefinition(long reportDefinitionId) {
+    return reportDefinitionRepository.findById(reportDefinitionId)
+        .filter(report -> authService.isAuthorized(report, EXECUTE))
+        .orElseThrow();
   }
 
-  public ReportDefinition create(AuthorizedUser authorizedUser, String name, String sql) {
-    if(!authorizedUser.isManager()) {
+  public ReportDefinition create(String name, String sql) {
+    if(!authService.isAuthorizedForAnyReportDefinition(WRITE)) {
       return null;
     }
     var reportDefinition = new ReportDefinition();
@@ -61,20 +64,17 @@ public class ReportingService {
     return reportDefinition;
   }
 
-  public void update(AuthorizedUser authorizedUser, long reportDefinitionId, String name, String sql) {
-    if(!authorizedUser.isManager()) {
+  public void update(long reportDefinitionId, String name, String sql) {
+    var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
+    if(!authService.isAuthorized(reportDefinition, WRITE)) {
       return;
     }
-    var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
     reportDefinition.setName(name);
     reportDefinition.setSql(sql);
     reportDefinitionRepository.save(reportDefinition);
   }
 
-  public ReportResult execute(AuthorizedUser authorizedUser, Long reportDefinitionId, Map<String, Object> parameters) {
-    if(!authorizedUser.isManager()) {
-      return new ReportResult();
-    }
+  public ReportResult execute(Long reportDefinitionId, Map<String, Object> parameters) {
     var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId);
     if(reportDefinition.isEmpty()) {
       throw new IllegalArgumentException("No report definition found for " + reportDefinitionId);

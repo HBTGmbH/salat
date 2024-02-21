@@ -80,7 +80,7 @@ public class AuthService {
                 && rule.getAccessLevel().satisfies(accessLevel)
                 && rule.isValid(timereport.getReferenceday().getRefdate())
                 && (rule.getObjectId().equals(ALL_OBJECTS) ||
-                    rule.getObjectId().equals(timereport.getSuborder().getCustomerorder().getId())));
+                    rule.getObjectId().equals(String.valueOf(timereport.getSuborder().getCustomerorder().getId()))));
   }
 
   public boolean isAuthorized(ReportDefinition report, AccessLevel accessLevel) {
@@ -92,7 +92,7 @@ public class AuthService {
         rule -> rule.getGranteeId().equals(authorizedUser.getSign())
                 && rule.getAccessLevel().satisfies(accessLevel)
                 && rule.isValid(today)
-                && (rule.getObjectId().equals(report.getId()) ||
+                && (rule.getObjectId().equals(String.valueOf(report.getId())) ||
                     rule.getObjectId().equals(ALL_OBJECTS)));
   }
 
@@ -113,7 +113,7 @@ public class AuthService {
     return collectAccessLevels(REPORT_DEFINITION,
         rule -> rule.getGranteeId().equals(authorizedUser.getSign())
                 && rule.isValid(today)
-                && (rule.getObjectId().equals(report.getId()) ||
+                && (rule.getObjectId().equals(String.valueOf(report.getId())) ||
                     rule.getObjectId().equals(ALL_OBJECTS)));
   }
 
