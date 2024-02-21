@@ -5,7 +5,7 @@ import static org.tb.auth.AccessLevel.DELETE;
 import static org.tb.auth.AccessLevel.EXECUTE;
 import static org.tb.auth.AccessLevel.READ;
 import static org.tb.auth.AccessLevel.WRITE;
-import static org.tb.auth.AuthorizationRule.Category.REPORT;
+import static org.tb.auth.AuthorizationRule.Category.REPORT_DEFINITION;
 import static org.tb.auth.AuthorizationRule.Category.TIMEREPORT;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 
@@ -75,21 +75,45 @@ public class AuthService {
 
     return anyRuleMatches(TIMEREPORT,
         rule -> rule.getGrantorId().equals(timereport.getEmployeecontract().getEmployee().getId())
-                && rule.getRecipientId().equals(authorizedUser.getEmployeeId())
+                && rule.getGranteeId().equals(authorizedUser.getEmployeeId())
                 && rule.getAccessLevel().satisfies(accessLevel)
                 && rule.isValid(timereport.getReferenceday().getRefdate())
                 && (rule.getObjectId().equals(ALL_OBJECTS) ||
                     rule.getObjectId().equals(timereport.getSuborder().getCustomerorder().getId())));
   }
 
-  public Set<AccessLevel> getAccessLevels(ReportDefinition report) {
+  public boolean isAuthorized(ReportDefinition report, AccessLevel accessLevel) {
+    if (authorizedUser.isManager()) {
+      return true;
+    }
     LocalDate today = DateUtils.today();
+    return anyRuleMatches(REPORT_DEFINITION,
+        rule -> rule.getGranteeId().equals(authorizedUser.getSign())
+                && rule.getAccessLevel().satisfies(accessLevel)
+                && rule.isValid(today)
+                && (rule.getObjectId().equals(report.getId()) ||
+                    rule.getObjectId().equals(ALL_OBJECTS)));
+  }
+
+  public boolean isAuthorizedForAnyReportDefinition(AccessLevel accessLevel) {
+    if (authorizedUser.isManager()) {
+      return true;
+    }
+    LocalDate today = DateUtils.today();
+    return anyRuleMatches(REPORT_DEFINITION, rule -> rule.getGranteeId().equals(
+        authorizedUser.getSign()) && rule.getAccessLevel().satisfies(accessLevel) && rule.isValid(today));
+  }
+
+  public Set<AccessLevel> getAccessLevels(ReportDefinition report) {
     if (authorizedUser.isManager()) {
       return Set.of(EXECUTE, READ, WRITE, DELETE);
     }
-    return collectAccessLevels(REPORT,
-        rule -> rule.getObjectId().equals(report.getId()) && rule.getRecipientId().equals(
-            authorizedUser.getSign()) && rule.isValid(today));
+    LocalDate today = DateUtils.today();
+    return collectAccessLevels(REPORT_DEFINITION,
+        rule -> rule.getGranteeId().equals(authorizedUser.getSign())
+                && rule.isValid(today)
+                && (rule.getObjectId().equals(report.getId()) ||
+                    rule.getObjectId().equals(ALL_OBJECTS)));
   }
 
   private Set<AccessLevel> collectAccessLevels(Category category, Predicate<Rule> rulePredicate) {
@@ -130,7 +154,7 @@ public class AuthService {
   private static class Rule {
     private final Category category;
     private final String grantorId;
-    private final String recipientId;
+    private final String granteeId;
     private final LocalDate validFrom;
     private final LocalDate validUntil;
     private final String objectId;
