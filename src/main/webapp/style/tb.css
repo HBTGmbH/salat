@@ -35,6 +35,10 @@ body { /*#CCFF99, #9fa9cc, #9db7b7,#c4e1f1*/
 	padding: 1em;
 }
 
+form {
+	margin-block-end: 0;
+}
+
 .borderTopLine {
 	border-width: 1 0 0 0;
 	border-color: #191E55;
