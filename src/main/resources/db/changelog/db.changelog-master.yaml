@@ -149,9 +149,9 @@ databaseChangeLog:
             tableName: timereport
             columnName: sortofreport
       changes:
-        -  dropColumn:
-             tableName:  timereport
-             columnName:  sortofreport
+        - dropColumn:
+            tableName: timereport
+            columnName: sortofreport
   - changeSet:
       id: 5
       author: kr
@@ -163,17 +163,17 @@ databaseChangeLog:
             columnName: currency
       changes:
         - dropColumn:
-            tableName:  customerorder
-            columnName:  currency
+            tableName: customerorder
+            columnName: currency
         - dropColumn:
-            tableName:  customerorder
-            columnName:  hourly_rate
+            tableName: customerorder
+            columnName: hourly_rate
         - dropColumn:
-            tableName:  suborder
-            columnName:  currency
+            tableName: suborder
+            columnName: currency
         - dropColumn:
-            tableName:  suborder
-            columnName:  hourly_rate
+            tableName: suborder
+            columnName: hourly_rate
   - changeSet:
       id: 6
       author: kr
@@ -519,27 +519,27 @@ databaseChangeLog:
       author: kr
       comment: Minutes columns must be 0 at least
       changes:
-      - update:
-          columns:
-            - column:
-                name: debitMinutes
-                valueNumeric: 0
-          tableName: customerorder
-          where: debitMinutes is null
-      - update:
-          columns:
-            - column:
-                name: debitMinutes
-                valueNumeric: 0
-          tableName: employeeorder
-          where: debitMinutes is null
-      - update:
-          columns:
-            - column:
-                name: debitMinutes
-                valueNumeric: 0
-          tableName: suborder
-          where: debitMinutes is null
+        - update:
+            columns:
+              - column:
+                  name: debitMinutes
+                  valueNumeric: 0
+            tableName: customerorder
+            where: debitMinutes is null
+        - update:
+            columns:
+              - column:
+                  name: debitMinutes
+                  valueNumeric: 0
+            tableName: employeeorder
+            where: debitMinutes is null
+        - update:
+            columns:
+              - column:
+                  name: debitMinutes
+                  valueNumeric: 0
+            tableName: suborder
+            where: debitMinutes is null
   - changeSet:
       id: 15
       author: kr
@@ -574,8 +574,8 @@ databaseChangeLog:
       preConditions:
         - onFail: MARK_RAN
         - not:
-          - tableExists:
-              tableName: user_access_token
+            - tableExists:
+                tableName: user_access_token
       changes:
         - createTable:
             tableName: user_access_token
@@ -747,42 +747,118 @@ databaseChangeLog:
                     referencedColumnNames:
                       - id
   - changeSet:
-       id:  21
-       author:  jp
-       changes:
-         -  createTable:
-              tableName:  favorite
-              columns:
-                -  column:
-                     name:  id
-                     type:  bigint(20)
-                     autoIncrement:  true
-                     constraints:
-                       primaryKey:  true
-                       nullable:  false
-                -  column:
-                     name:  employeeId
-                     type:  bigint(20)
-                     constraints:
-                       nullable:  false
-                -  column:
-                     name:  employeeorderId
-                     type:  bigint(20)
-                     constraints:
-                       nullable:  false
-                -  column:
-                     name:  hours
-                     type:  int(11)
-                     constraints:
-                       nullable:  false
-                -  column:
-                     name:  minutes
-                     type:  int(11)
-                     constraints:
-                       nullable:  false
-                -  column:
-                     name:  comment
-                     type:  text
-                     defaultOnNull: true
+      id: 21
+      author: jp
+      changes:
+        - createTable:
+            tableName: favorite
+            columns:
+              - column:
+                  name: id
+                  type: bigint(20)
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: employeeId
+                  type: bigint(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: employeeorderId
+                  type: bigint(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: hours
+                  type: int(11)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: minutes
+                  type: int(11)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: comment
+                  type: text
+                  defaultOnNull: true
+  - changeSet:
+      id: 22
+      author: kr
+      comment: Add table for data access grants
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: authorization_rule
+      changes:
+        - createTable:
+            tableName: authorization_rule
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+              - column:
+                  name: category
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: object_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: grantor_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: grantee_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                      - id
+              - column:
+                  name: access_level
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: date
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: insert into authorization_rule (category, created, createdby, lastupdate, lastupdatedby, updatecounter, object_id, grantor_id, grantee_id, access_level, valid_from,  valid_until) select 'TIMEREPORT' as category, created, createdby, lastupdate, lastupdatedby, updatecounter, customer_order_id as object_id, grantor_id, recipient_id as grantee_id, access_level, valid_from,  valid_until from employee_to_employee_authorization_rule
+        - dropTable:
+            tableName: employee_to_employee_authorization_rule
+            cascadeConstraints: true
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

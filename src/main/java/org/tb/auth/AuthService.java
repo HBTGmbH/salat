@@ -1,32 +1,45 @@
 package org.tb.auth;
 
+import static java.util.function.Function.identity;
+import static org.tb.auth.AccessLevel.DELETE;
+import static org.tb.auth.AccessLevel.EXECUTE;
+import static org.tb.auth.AccessLevel.READ;
+import static org.tb.auth.AccessLevel.WRITE;
+import static org.tb.auth.AuthorizationRule.Category.REPORT;
+import static org.tb.auth.AuthorizationRule.Category.TIMEREPORT;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.tb.auth.AuthorizationRule.Category;
 import org.tb.common.configuration.SalatProperties;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
+import org.tb.reporting.domain.ReportDefinition;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-  public static final int ALL_CUSTOMER_ORDERS = -1;
+  private static final String ALL_OBJECTS = "ALL_OBJECTS";
 
-  private final EmployeeToEmployeeAuthorizationRuleRepository employeeToEmployeeAuthorizationRuleRepository;
+  private final AuthorizedUser authorizedUser;
+  private final AuthorizationRuleRepository authorizationRuleRepository;
   private final SalatProperties salatProperties;
 
   private long cacheExpiryMillis;
-  private Set<AuthCacheEntry> cacheEntries = new HashSet<>();
+  private Map<Category, Set<Rule>> cacheEntries = new HashMap<>();
   private long lastCacheUpdate;
 
   @PostConstruct
@@ -34,56 +47,76 @@ public class AuthService {
     cacheExpiryMillis = salatProperties.getAuthService().getCacheExpiry().toMillis();
   }
 
-  public boolean isAuthorized(Employee employee, AuthorizedUser user, AccessLevel accessLevel) {
-    if(user.isManager()) return true;
+  public boolean isAuthorized(Employee employee, AccessLevel accessLevel) {
+    if(authorizedUser.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
-    if(employee.getId() == user.getEmployeeId()) return true;
+    if(employee.getId() == authorizedUser.getEmployeeId()) return true;
     return false;
   }
 
-  public boolean isAuthorized(Timereport timereport, AuthorizedUser user, AccessLevel accessLevel) {
-    if(user.isManager()) return true;
-    if(timereport.getEmployeecontract().getEmployee().getId() == user.getEmployeeId()) return true;
+  public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
+    if(authorizedUser.isManager()) return true;
+    if(timereport.getEmployeecontract().getEmployee().getId() == authorizedUser.getEmployeeId()) return true;
 
-    if(accessLevel == AccessLevel.READ) {
+    if(accessLevel == READ) {
       // every project manager may see the time reports of her project
-      if(user.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getId())) {
+      if(authorizedUser.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getId())) {
         return true;
       }
-      if(user.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getId())) {
+      if(authorizedUser.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getId())) {
         return true;
       }
 
-      // backoffice users may see time reports that must be invoiced
-      if(user.isBackoffice() && timereport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES) {
+      // backoffice authorizedUsers may see time reports that must be invoiced
+      if(authorizedUser.isBackoffice() && timereport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES) {
         return true;
       }
     }
 
-    updateCache();
-    return cacheEntries.stream()
-            .filter(rule -> rule.getGrantorId() == timereport.getEmployeecontract().getEmployee().getId())
-            .filter(rule -> rule.getRecipientId() == user.getEmployeeId())
-            .filter(rule -> rule.getAccessLevel().satisfies(accessLevel))
-            .filter(rule -> rule.isValid(timereport.getReferenceday().getRefdate()))
-            .filter(rule -> rule.getCustomerOrderId() == ALL_CUSTOMER_ORDERS ||
-                    rule.getCustomerOrderId() == timereport.getSuborder().getCustomerorder().getId())
-            .map(rule -> true)
-            .findAny().orElse(false);
+    return anyRuleMatches(TIMEREPORT,
+        rule -> rule.getGrantorId().equals(timereport.getEmployeecontract().getEmployee().getId())
+                && rule.getRecipientId().equals(authorizedUser.getEmployeeId())
+                && rule.getAccessLevel().satisfies(accessLevel)
+                && rule.isValid(timereport.getReferenceday().getRefdate())
+                && (rule.getObjectId().equals(ALL_OBJECTS) ||
+                    rule.getObjectId().equals(timereport.getSuborder().getCustomerorder().getId())));
   }
 
-  private void updateCache() {
-    if(isCacheOutdated()) {
-      this.cacheEntries = StreamSupport.stream(employeeToEmployeeAuthorizationRuleRepository.findAll().spliterator(), false)
-              .map(rule -> new AuthCacheEntry(
-                      rule.getGrantor().getId(),
-                      rule.getRecipient().getId(),
-                      rule.getValidFrom(),
-                      rule.getValidUntil(),
-                      rule.getCustomerOrder() != null ? rule.getCustomerOrder().getId() : ALL_CUSTOMER_ORDERS,
-                      rule.getAccessLevel()
-              ))
-              .collect(Collectors.toSet());
+  public Set<AccessLevel> getAccessLevels(ReportDefinition report) {
+    LocalDate today = DateUtils.today();
+    if (authorizedUser.isManager()) {
+      return Set.of(EXECUTE, READ, WRITE, DELETE);
+    }
+    return collectAccessLevels(REPORT,
+        rule -> rule.getObjectId().equals(report.getId()) && rule.getRecipientId().equals(
+            authorizedUser.getSign()) && rule.isValid(today));
+  }
+
+  private Set<AccessLevel> collectAccessLevels(Category category, Predicate<Rule> rulePredicate) {
+    ensureUpToDateCache();
+    return cacheEntries.get(category).stream().filter(rulePredicate).map(Rule::getAccessLevel)
+        .collect(Collectors.toSet());
+  }
+
+  private boolean anyRuleMatches(Category category, Predicate<Rule> rulePredicate) {
+    ensureUpToDateCache();
+    return cacheEntries.get(category).stream().anyMatch(rulePredicate);
+  }
+
+  private void ensureUpToDateCache() {
+    if (isCacheOutdated()) {
+      this.cacheEntries = StreamSupport.stream(authorizationRuleRepository.findAll().spliterator(), false)
+          .map(rule -> new Rule(
+              rule.getCategory(),
+              rule.getGrantorId(),
+              rule.getGranteeId(),
+              rule.getValidFrom(),
+              rule.getValidUntil(),
+              rule.getObjectId() != null ? rule.getObjectId() : ALL_OBJECTS,
+              rule.getAccessLevel()
+          ))
+          .collect(
+              Collectors.groupingBy(Rule::getCategory, Collectors.mapping(identity(), Collectors.toSet())));
       lastCacheUpdate = Clock.systemUTC().millis();
     }
   }
@@ -94,12 +127,13 @@ public class AuthService {
 
   @Data
   @RequiredArgsConstructor
-  private static class AuthCacheEntry {
-    private final long grantorId;
-    private final long recipientId;
+  private static class Rule {
+    private final Category category;
+    private final String grantorId;
+    private final String recipientId;
     private final LocalDate validFrom;
     private final LocalDate validUntil;
-    private final long customerOrderId;
+    private final String objectId;
     private final AccessLevel accessLevel;
 
     public boolean isValid(LocalDate date) {
