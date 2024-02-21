@@ -848,12 +848,12 @@ databaseChangeLog:
                   name: valid_from
                   type: date
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
                   name: valid_until
                   type: date
                   constraints:
-                    nullable: false
+                    nullable: true
         - sql:
             sql: insert into authorization_rule (category, created, createdby, lastupdate, lastupdatedby, updatecounter, object_id, grantor_id, grantee_id, access_level, valid_from,  valid_until) select 'TIMEREPORT' as category, created, createdby, lastupdate, lastupdatedby, updatecounter, customer_order_id as object_id, grantor_id, recipient_id as grantee_id, access_level, valid_from,  valid_until from employee_to_employee_authorization_rule
         - dropTable:

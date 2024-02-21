@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizationRule.Category;
 import org.tb.common.configuration.SalatProperties;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.ValidationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 import org.tb.reporting.domain.ReportDefinition;
@@ -161,7 +162,7 @@ public class AuthService {
     private final AccessLevel accessLevel;
 
     public boolean isValid(LocalDate date) {
-      return !date.isBefore(validFrom) && !date.isAfter(validUntil);
+      return ValidationUtils.isInRange(date, validFrom, validUntil);
     }
 
   }
