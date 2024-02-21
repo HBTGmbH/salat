@@ -60,29 +60,44 @@
             <td><c:out value="${report.name}" /></td>
             <td><java8:formatLocalDateTime value="${report.lastupdate}" /></td>
             <td><c:out value="${report.lastupdatedby}" /></td>
-            <html:form action="/ExecuteReport">
-                <td align="center"><html:image
-                        onclick="execute(this.form, ${report.id})"
-                        src="/images/red_circle.gif" altKey="main.reporting.button.execute.text" /></td>
-            </html:form>
-            <html:form action="/EditReport">
-                <td align="center"><html:image
-                        onclick="edit(this.form, ${report.id})"
-                        src="/images/Edit.gif" altKey="main.reporting.button.edit.text" /></td>
-            </html:form>
-            <html:form action="/DeleteReport">
-                <td align="center"><html:image
-                        onclick="confirmDelete(this.form, ${report.id})"
-                        src="/images/Delete.gif" altKey="main.reporting.button.delete.text" /></td>
-            </html:form>
+            <td align="center">
+                <html:form action="/ExecuteReport">
+                    <html:image
+                            onclick="execute(this.form, ${report.id})"
+                            src="/images/red_circle.gif"
+                            altKey="main.reporting.button.execute.text"/>
+                </html:form>
+            </td>
+            <td align="center">
+                <c:if test="${authViewHelper.isAuth(report,'READ')}">
+                    <html:form action="/EditReport">
+                        <html:image
+                                onclick="edit(this.form, ${report.id})"
+                                src="/images/Edit.gif" altKey="main.reporting.button.edit.text"/>
+                    </html:form>
+
+                </c:if>
+            </td>
+            <td align="center">
+                <c:if test="${authViewHelper.isAuth(report,'DELETE')}">
+                    <html:form action="/DeleteReport">
+                        <html:image
+                                onclick="confirmDelete(this.form, ${report.id})"
+                                src="/images/Delete.gif"
+                                altKey="main.reporting.button.delete.text"/>
+                    </html:form>
+                </c:if>
+            </td>
             </tr>
         </c:forEach>
     </table>
-    <html:form action="/CreateReport">
-        <html:submit styleId="button">
-            <bean:message key="main.reporting.button.create.text" />
-        </html:submit>
-    </html:form>
+    <c:if test="${authViewHelper.isAuth(report,'WRITE')}">
+        <html:form action="/CreateReport">
+            <html:submit styleId="button">
+                <bean:message key="main.reporting.button.create.text" />
+            </html:submit>
+        </html:form>
+    </c:if>
     <br><br><br>
     </body>
 </html:html>

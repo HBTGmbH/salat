@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
+import org.tb.reporting.domain.ReportDefinition;
 
 @Component
 @Scope(value = SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
@@ -16,6 +17,10 @@ public class AuthViewHelper {
 
   public boolean isReportMenuAvailable() {
     return authService.isAuthorizedForAnyReportDefinition(AccessLevel.EXECUTE);
+  }
+
+  public boolean isAuth(ReportDefinition report, String accessLevel) {
+    return authService.isAuthorized(report, AccessLevel.valueOf(accessLevel));
   }
 
 }
