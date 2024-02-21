@@ -2,17 +2,19 @@ package org.tb.auth;
 
 public enum AccessLevel {
 
-    READ,
-    WRITE,
-    DELETE;
+    EXECUTE(0),
+    READ(1),
+    WRITE(2),
+    DELETE(3);
+
+    private int level;
+
+    private AccessLevel(int level) {
+        this.level = level;
+    }
 
     public boolean satisfies(AccessLevel accessLevel) {
-        return switch (accessLevel) {
-            case READ -> true;
-            case WRITE -> this == WRITE || this == DELETE;
-            case DELETE -> this == DELETE;
-            default -> false;
-        };
+        return this.level >= accessLevel.level;
     }
 
 }

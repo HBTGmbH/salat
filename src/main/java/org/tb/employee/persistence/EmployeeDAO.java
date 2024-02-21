@@ -85,7 +85,7 @@ public class EmployeeDAO {
     public List<Employee> getEmployees() {
         var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
         return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
-            .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
+            .filter(e -> authService.isAuthorized(e, AccessLevel.READ))
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
@@ -95,10 +95,10 @@ public class EmployeeDAO {
      */
     public List<Employee> getEmployeesByFilter(String filter) {
         var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
-        if (filter == null || filter.trim().equals("")) {
+        if (filter == null || filter.trim().isEmpty()) {
             return Lists.newArrayList(employeeRepository
                 .findAll(Sort.by(order))).stream()
-                .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
+                .filter(e -> authService.isAuthorized(e, AccessLevel.READ))
                 .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
         } else {
@@ -110,14 +110,14 @@ public class EmployeeDAO {
                 builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
                 builder.like(builder.upper(root.get(Employee_.status)), filterValue)
             )).stream()
-                .filter(e -> authService.isAuthorized(e, authorizedUser, AccessLevel.READ))
+                .filter(e -> authService.isAuthorized(e, AccessLevel.READ))
                 .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
         }
     }
 
     public void save(Employee employee) {
-        if(!authService.isAuthorized(employee, authorizedUser, AccessLevel.DELETE)) {
+        if(!authService.isAuthorized(employee, AccessLevel.WRITE)) {
             throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getEmployeeId());
         }
 
@@ -129,7 +129,7 @@ public class EmployeeDAO {
      */
     public boolean deleteEmployeeById(long employeeId) {
         Employee employee = getEmployeeById(employeeId);
-        if(!authService.isAuthorized(employee, authorizedUser, AccessLevel.DELETE)) {
+        if(!authService.isAuthorized(employee, AccessLevel.DELETE)) {
             throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getEmployeeId());
         }
 

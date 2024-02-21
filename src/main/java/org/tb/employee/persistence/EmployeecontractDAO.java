@@ -142,7 +142,7 @@ public class EmployeecontractDAO {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
-            .filter(c -> authService.isAuthorized(c.getEmployee(), authorizedUser, AccessLevel.READ))
+            .filter(c -> authService.isAuthorized(c.getEmployee(), AccessLevel.READ))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
                 .collect(Collectors.toList());
     }
@@ -181,7 +181,7 @@ public class EmployeecontractDAO {
         if (limitAccess) {
             // may only see his own contracts
             return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
-                .filter(e -> authService.isAuthorized(e.getEmployee(), authorizedUser, AccessLevel.READ))
+                .filter(e -> authService.isAuthorized(e.getEmployee(), AccessLevel.READ))
                 .collect(Collectors.toList());
         } else {
             return getVisibleEmployeeContractsOrderedByEmployeeSign();

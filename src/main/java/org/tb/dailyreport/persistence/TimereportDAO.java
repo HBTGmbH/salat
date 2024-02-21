@@ -6,8 +6,6 @@ import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 import static org.tb.common.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
-import static org.tb.common.util.DateUtils.getBeginOfMonth;
-import static org.tb.common.util.DateUtils.getEndOfMonth;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,7 +18,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AccessLevel;
 import org.tb.auth.AuthService;
-import org.tb.auth.AuthorizedUser;
 import org.tb.dailyreport.domain.Referenceday_;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Timereport_;
@@ -40,7 +37,6 @@ import org.tb.order.domain.Suborder_;
 public class TimereportDAO {
 
     private final TimereportRepository timereportRepository;
-    private final AuthorizedUser authorizedUser;
     private final AuthService authService;
 
     /**
@@ -81,13 +77,6 @@ public class TimereportDAO {
      */
     public long getTotalDurationMinutesForEmployeeOrder(long employeeorderId, LocalDate fromDate, LocalDate untilDate) {
         return timereportRepository.getReportedMinutesForEmployeeorderAndBetween(employeeorderId, fromDate, untilDate).orElse(0L);
-    }
-
-    /**
-     * Gets the sum of all duration minutes WITH considering the hours.
-     */
-    public long getTotalDurationMinutesForEmployeecontract(long employeecontractId, LocalDate fromDate, LocalDate untilDate) {
-        return timereportRepository.getReportedMinutesForEmployeecontractAndBetween(employeecontractId, fromDate, untilDate).orElse(0L);
     }
 
     /**
@@ -434,26 +423,6 @@ public class TimereportDAO {
         return toDaoList(allTimereports);
     }
 
-    /**
-     * @return Returns a timereport thats valid between the first and the last day of the given date and belonging to employeecontractid
-     */
-    public TimereportDTO getLastAcceptedTimereportByDateAndEmployeeContractId(LocalDate end, long ecId) {
-        LocalDate firstDay = getBeginOfMonth(end);
-        LocalDate lastDay = getEndOfMonth(end);
-        List<Timereport> timereportList = timereportRepository.findAll(
-            where(reportedBetween(firstDay, lastDay))
-                .and(matchesEmployeecontractId(ecId))
-                .and((root, query, builder) -> {
-            query.orderBy(builder.desc(root.join(Timereport_.referenceday).get(Referenceday_.refdate)));
-            return builder.isNotNull(root.get(Timereport_.accepted));
-        }));
-        if (!timereportList.isEmpty()) {
-            return toDao(timereportList.get(0));
-        } else {
-            return null;
-        }
-    }
-
     public List<TimereportDTO> getTimereportsByEmployeeorderIdInvalidForDates(LocalDate begin, LocalDate end, Long employeeOrderId) {
         if (end == null) {
             return toDaoList(timereportRepository.findAll(
@@ -599,7 +568,7 @@ public class TimereportDAO {
     }
 
     private boolean accessible(Timereport timereport) {
-        return authService.isAuthorized(timereport, authorizedUser, AccessLevel.READ);
+        return authService.isAuthorized(timereport, AccessLevel.READ);
     }
 
 }
