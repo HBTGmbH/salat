@@ -45,9 +45,11 @@
 	<table class="center">
 		<tr>
 			<td class="noBborderStyle">
-				<html:submit styleId="button">
-					<bean:message key="main.reporting.button.store.text" />
-				</html:submit>
+				<c:if test="${authViewHelper.isAuth(report,'WRITE')}">
+					<html:submit styleId="button">
+						<bean:message key="main.reporting.button.store.text" />
+					</html:submit>
+				</c:if>
 			</td>
 		</tr>
 	</table>
