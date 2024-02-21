@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AccessLevel;
+import org.tb.auth.AuthService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.reporting.service.ReportingService;
 
@@ -14,6 +16,7 @@ import org.tb.reporting.service.ReportingService;
 public class EditReportAction extends LoginRequiredAction<CreateEditDeleteReportForm> {
 
     private final ReportingService reportingService;
+    private final AuthService authService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, CreateEditDeleteReportForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -21,6 +24,8 @@ public class EditReportAction extends LoginRequiredAction<CreateEditDeleteReport
         var reportDefinition = reportingService.getReportDefinition(form.getReportId());
         form.setName(reportDefinition.getName());
         form.setSql(reportDefinition.getSql());
+        boolean authorizedToStore = authService.isAuthorized(reportDefinition, AccessLevel.WRITE);
+        request.setAttribute("createEditReport_authorizedToStore", authorizedToStore);
         return mapping.findForward("success");
     }
 

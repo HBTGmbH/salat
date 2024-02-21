@@ -45,7 +45,7 @@
 	<table class="center">
 		<tr>
 			<td class="noBborderStyle">
-				<c:if test="${authViewHelper.isAuth(report,'WRITE')}">
+				<c:if test="${createEditReport_authorizedToStore}">
 					<html:submit styleId="button">
 						<bean:message key="main.reporting.button.store.text" />
 					</html:submit>

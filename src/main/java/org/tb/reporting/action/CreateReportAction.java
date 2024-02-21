@@ -16,6 +16,7 @@ public class CreateReportAction extends LoginRequiredAction<CreateEditDeleteRepo
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping, CreateEditDeleteReportForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         form.setMode("create");
+        request.setAttribute("createEditReport_authorizedToStore", true);
         return mapping.findForward("success");
     }
 
