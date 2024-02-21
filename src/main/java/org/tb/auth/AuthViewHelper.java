@@ -14,6 +14,7 @@ import org.tb.reporting.domain.ReportDefinition;
 public class AuthViewHelper {
 
   private final AuthService authService;
+  private final AuthorizedUser authorizedUser;
 
   public boolean isReportMenuAvailable() {
     return authService.isAuthorizedForAnyReportDefinition(AccessLevel.EXECUTE);
@@ -21,6 +22,10 @@ public class AuthViewHelper {
 
   public boolean isAuth(ReportDefinition report, String accessLevel) {
     return authService.isAuthorized(report, AccessLevel.valueOf(accessLevel));
+  }
+
+  public boolean mayCreateNewReports() {
+    return authorizedUser.isManager();
   }
 
 }

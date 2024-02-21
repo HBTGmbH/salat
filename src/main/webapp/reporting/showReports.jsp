@@ -91,7 +91,7 @@
             </tr>
         </c:forEach>
     </table>
-    <c:if test="${authViewHelper.isAuth(report,'WRITE')}">
+    <c:if test="${authViewHelper.mayCreateNewReports()}">
         <html:form action="/CreateReport">
             <html:submit styleId="button">
                 <bean:message key="main.reporting.button.create.text" />
