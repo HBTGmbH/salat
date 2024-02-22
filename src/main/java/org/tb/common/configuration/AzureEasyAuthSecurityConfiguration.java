@@ -1,11 +1,11 @@
 package org.tb.common.configuration;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -41,8 +41,7 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   @Order(0)
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
-    http.requestMatchers((matchers) -> matchers.antMatchers(UNAUTHENTICATED_URL_PATTERNS))
-        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
+    http.authorizeHttpRequests((authorize) -> authorize.requestMatchers(UNAUTHENTICATED_URL_PATTERNS).permitAll())
         .requestCache().disable()
         .securityContext().disable()
         .sessionManagement().disable()
@@ -53,8 +52,7 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http) throws Exception {
-    http.requestMatchers((matchers) -> matchers.antMatchers("/rest/**"))
-        .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
+    http.authorizeHttpRequests((authorize) -> authorize.requestMatchers("/rest/**").authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

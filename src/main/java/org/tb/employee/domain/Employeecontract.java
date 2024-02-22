@@ -45,7 +45,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "SUPERVISOR_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     private Employee supervisor;
 
     private LocalDate validFrom;
@@ -72,7 +72,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Fetch(FetchMode.SELECT)
     @ManyToOne
     @JoinColumn(name = "EMPLOYEE_ID")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(value = CascadeType.PERSIST)
     private Employee employee;
 
     /**
@@ -86,7 +86,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      * list of vacations, associated to this employeecontract
      */
     @OneToMany(mappedBy = "employeecontract")
-    @Cascade(value = {CascadeType.SAVE_UPDATE})
+    @Cascade(value = CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Vacation> vacations = new ArrayList<>();
 

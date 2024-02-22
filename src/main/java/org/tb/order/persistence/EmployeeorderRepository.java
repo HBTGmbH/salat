@@ -12,20 +12,16 @@ import org.tb.order.domain.Employeeorder;
 public interface EmployeeorderRepository extends CrudRepository<Employeeorder, Long>, JpaSpecificationExecutor<Employeeorder> {
 
   @Query("""
-      select eo from Employeeorder eo where \
-      eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId and \
-      (eo.untilDate >= :date or eo.untilDate is null) \
-      order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc\
+      select eo from Employeeorder eo where
+      eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId and
+      (eo.untilDate >= :date or eo.untilDate is null)
+      order by eo.suborder.customerorder.sign asc, eo.suborder.sign asc, eo.fromDate asc
       """)
   List<Employeeorder> findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(long employeeContractId, long suborderId, LocalDate date);
 
-  @Query("select count(distinct eo) from Employeeorder eo where "
-         + "eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId")
-  long countEmployeeorders(long employeeContractId, long suborderId);
-
   @Query("""
-         select count(distinct eo) from Employeeorder eo where \
-         eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId\
+      select count(distinct eo) from Employeeorder eo where
+      eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId
          """)
   long countEmployeeorders(long employeeContractId, long suborderId);
 

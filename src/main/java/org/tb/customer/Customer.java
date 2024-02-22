@@ -30,7 +30,7 @@ public class Customer extends AuditedEntity implements Serializable {
      * list of customerorders, associated to this customer
      */
     @OneToMany(mappedBy = "customer")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Customerorder> customerorders;
 

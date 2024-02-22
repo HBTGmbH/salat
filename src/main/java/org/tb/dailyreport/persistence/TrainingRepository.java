@@ -21,10 +21,10 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
   List<TrainingInformation> getProjectTrainingTimesByDates(LocalDate begin, LocalDate end);
   
   @Query("""
-      select new org.tb.dailyreport.domain.TrainingInformation(t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes)) from Timereport t 
+      select new org.tb.dailyreport.domain.TrainingInformation(t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes)) from Timereport t
       where t.employeecontract.freelancer=false and t.employeecontract.dailyWorkingTimeMinutes > 0
       and t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end
-      and t.suborder.customerorder.id = :customerorderId and  t.suborder.sign not like 'x_%'  
+      and t.suborder.customerorder.id = :customerorderId and  t.suborder.sign not like 'x_%'
       group by t.employeecontract.id
   """)
   List<TrainingInformation> getCommonTrainingTimesByDates(LocalDate begin, LocalDate end, long customerorderId);

@@ -1,10 +1,10 @@
 package org.tb.common.configuration;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Set;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,9 +46,7 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(0)
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
-    http
-        .requestMatchers((matchers) -> matchers.antMatchers(UNAUTHENTICATED_URL_PATTERNS))
-        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
+    http.authorizeHttpRequests(auth -> auth.requestMatchers(UNAUTHENTICATED_URL_PATTERNS).permitAll())
         .requestCache().disable()
         .securityContext().disable()
         .sessionManagement().disable()
@@ -59,9 +57,8 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-    http.requestMatchers((matchers) -> matchers.antMatchers("/rest/**"))
+    http.authorizeRequests(authz -> authz.requestMatchers("/rest/**").authenticated())
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
-        .authorizeRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -72,9 +69,8 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(2)
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-    http
+    http.authorizeRequests(authz -> authz.anyRequest().authenticated())
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
-        .authorizeRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .csrf().disable();
     return http.build();

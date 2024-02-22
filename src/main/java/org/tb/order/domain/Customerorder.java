@@ -43,14 +43,14 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "CUSTOMER_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     private Customer customer;
 
     /**
      * list of suborders, associated to this customerorder
      */
     @OneToMany(mappedBy = "customerorder")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Suborder> suborders;
 
@@ -66,7 +66,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "RESPONSIBLE_HBT_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     private Employee responsible_hbt;
 
     /**
@@ -75,7 +75,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "RESPONSIBLE_HBT_CONTRACTUALLY_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     private Employee respEmpHbtContract;
 
     /**
