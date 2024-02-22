@@ -4,7 +4,7 @@ import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;

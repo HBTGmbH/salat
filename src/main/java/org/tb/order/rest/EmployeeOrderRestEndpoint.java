@@ -42,7 +42,7 @@ public class EmployeeOrderRestEndpoint {
     @ResponseStatus(OK)
     @Operation
     public List<EmployeeOrderData> getValidEmployeeOrders(
-        @RequestParam("refDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate
     ) {
         if(!authorizedUser.isAuthenticated()) {
           throw new ResponseStatusException(UNAUTHORIZED);

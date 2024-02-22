@@ -34,7 +34,7 @@ public class OvertimeRestEndpoint {
   @GetMapping(path = "/status", produces = APPLICATION_JSON_VALUE)
   @ResponseStatus(OK)
   @Operation
-  public OvertimeStatus getStatus(@RequestParam(name = "includeToday", required = false, defaultValue = "false") boolean includeToday) {
+  public OvertimeStatus getStatus(@RequestParam(required = false, defaultValue = "false") boolean includeToday) {
     if(!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }

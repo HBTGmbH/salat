@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.IteratorUtils;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import org.tb.reporting.domain.ReportResultColumnValue;
 import org.tb.reporting.domain.ReportResultRow;
 import org.tb.reporting.persistence.ReportDefinitionRepository;
 
+@DependsOnDatabaseInitialization
 @Slf4j
 @Service
 @RequiredArgsConstructor

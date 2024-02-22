@@ -5,7 +5,7 @@ import static org.tb.common.util.DateUtils.format;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionForm;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.persistence.TimereportDAO;

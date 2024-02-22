@@ -39,8 +39,7 @@ public class Workingday extends AuditedEntity implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Workingday) {
-            Workingday other = (Workingday) obj;
+        if (obj instanceof Workingday other) {
             return refday.equals(other.refday) &&
                    Objects.equals(employeecontract.getId(), other.getEmployeecontract().getId());
         }

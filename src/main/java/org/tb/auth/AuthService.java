@@ -9,6 +9,7 @@ import static org.tb.auth.AuthorizationRule.Category.REPORT_DEFINITION;
 import static org.tb.auth.AuthorizationRule.Category.TIMEREPORT;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 
+import jakarta.annotation.PostConstruct;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -17,7 +18,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
