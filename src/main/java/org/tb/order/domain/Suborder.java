@@ -51,12 +51,12 @@ public class Suborder extends AuditedEntity implements Serializable {
      * list of employeeorders, associated to this suborder
      */
     @OneToMany(mappedBy = "suborder")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Employeeorder> employeeorders;
 
     @OneToMany(mappedBy = "parentorder")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Suborder> suborders;
 

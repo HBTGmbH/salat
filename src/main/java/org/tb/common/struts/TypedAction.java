@@ -2,8 +2,6 @@ package org.tb.common.struts;
 
 import static org.apache.struts.action.ActionMessages.GLOBAL_MESSAGE;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.struts.action.Action;

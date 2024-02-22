@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.tb.common.AuditedEntity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Getter

@@ -67,7 +67,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   Optional<Long> getReportedMinutesForCustomerorder(long customerorderId);
 
   @Query("""
-      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr 
+      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
       where tr.employeeorder.suborder.id in (:ids)
   """)
   Optional<Long> getReportedMinutesForSuborders(List<Long> ids);

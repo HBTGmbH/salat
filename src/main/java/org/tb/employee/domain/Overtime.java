@@ -29,7 +29,7 @@ public class Overtime extends AuditedEntity implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "EMPLOYEECONTRACT_ID")
-    @Cascade(CascadeType.SAVE_UPDATE)
+    @Cascade(CascadeType.PERSIST)
     private Employeecontract employeecontract;
 
     private String comment;
