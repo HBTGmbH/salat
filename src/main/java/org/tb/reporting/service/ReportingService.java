@@ -25,10 +25,10 @@ import org.tb.reporting.domain.ReportResultColumnValue;
 import org.tb.reporting.domain.ReportResultRow;
 import org.tb.reporting.persistence.ReportDefinitionRepository;
 
-@DependsOnDatabaseInitialization
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@DependsOnDatabaseInitialization
 public class ReportingService {
 
   private final ReportDefinitionRepository reportDefinitionRepository;
