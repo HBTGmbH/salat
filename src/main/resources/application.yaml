@@ -32,7 +32,6 @@ spring:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
       ddl-auto: validate
     open-in-view: true
-    database: mysql
 
 management:
   endpoints:
