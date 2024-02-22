@@ -41,7 +41,8 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   @Order(0)
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests((authorize) -> authorize.requestMatchers(UNAUTHENTICATED_URL_PATTERNS).permitAll())
+    http.securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
+        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
         .requestCache().disable()
         .securityContext().disable()
         .sessionManagement().disable()
@@ -52,7 +53,8 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests((authorize) -> authorize.requestMatchers("/rest/**").authenticated())
+    http.securityMatcher("/rest/**")
+        .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

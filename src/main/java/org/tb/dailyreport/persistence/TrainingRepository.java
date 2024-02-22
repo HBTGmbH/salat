@@ -14,7 +14,7 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
 
   @Query("""
       select new org.tb.dailyreport.domain.TrainingInformation(t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes)) from Timereport t
-      where t.employeecontract.freelancer is false and t.employeecontract.dailyWorkingTimeMinutes > 0
+      where t.employeecontract.freelancer = false and t.employeecontract.dailyWorkingTimeMinutes > 0
       and t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end  and t.training = true
       group by t.employeecontract.id
   """)

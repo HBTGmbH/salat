@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
@@ -40,13 +41,16 @@ public class LocalDevSecurityConfiguration {
       "/webjars/**",
       "/favicon.ico",
       "/rest/doc/**",
-      "/actuator/health"
+      "/actuator/health",
+      "/error"
   };
 
   @Bean
   @Order(0)
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(auth -> auth.requestMatchers(UNAUTHENTICATED_URL_PATTERNS).permitAll())
+    http
+        .securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
+        .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
         .requestCache().disable()
         .securityContext().disable()
         .sessionManagement().disable()
@@ -57,8 +61,9 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-    http.authorizeRequests(authz -> authz.requestMatchers("/rest/**").authenticated())
+    http.securityMatcher("/rest/**")
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
+        .authorizeRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -69,8 +74,8 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(2)
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-    http.authorizeRequests(authz -> authz.anyRequest().authenticated())
-        .addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
+    http.addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
+        .authorizeRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .csrf().disable();
     return http.build();

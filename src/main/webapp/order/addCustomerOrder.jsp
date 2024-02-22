@@ -3,7 +3,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@taglib uri="jakarta.tags.core" prefix="c"%>
 <%@ taglib prefix="java8" uri="http://hbt.de/jsp/taglib/java8-date-formatting" %>
 <html:html>
 <head>

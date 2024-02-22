@@ -3,8 +3,8 @@
 <%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@taglib uri="jakarta.tags.core" prefix="c"%>
+<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <html>
 	<head>
 		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.release.title.text" /></title>

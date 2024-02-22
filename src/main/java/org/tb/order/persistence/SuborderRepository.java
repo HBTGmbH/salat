@@ -15,7 +15,7 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
   @Query("""
     select distinct so from Suborder so
     inner join fetch so.customerorder co
-    where so.standard is true and (so.untilDate is null or so.untilDate >= :refDate)
+    where so.standard = true and (so.untilDate is null or so.untilDate >= :refDate)
     order by co.sign asc, so.sign asc
   """)
   List<Suborder> findAllStandardSubordersByUntilDateGreaterThanEqual(LocalDate refDate);
