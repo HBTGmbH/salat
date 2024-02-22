@@ -2,39 +2,39 @@ server:
   tomcat:
     resource:
       allow-caching: true
-      cache-ttl: '1m'
+      cache-ttl: 1m
 spring:
   web:
     resources:
       cache:
-        period: '1m'
+        period: 1m
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: 'https://login.microsoftonline.com/0af2c34e-4e40-42d9-89ab-e095b8151308/v2.0'
+          issuer-uri: https://login.microsoftonline.com/0af2c34e-4e40-42d9-89ab-e095b8151308/v2.0
 salat:
   auth:
     refresh:
       enabled: true
-      refresh-url: "/.auth/refresh"
+      refresh-url: /.auth/refresh
     oidc-id-token:
-      principal-claim-name: 'mailnickname'
-      header-name: 'x-ms-token-aad-id-token'
+      principal-claim-name: mailnickname
+      header-name: x-ms-token-aad-id-token
     access-token:
-      header-name: 'x-ms-token-aad-access-token'
-      expires-on-header-name: 'x-ms-token-aad-expires-on'
-    session-cookie-name: 'AppServiceAuthSession'
-    api-scope: 'api://865b95c4-f360-4ca2-ba20-4fe28e3ea4f6/user_impersonation'
+      header-name: x-ms-token-aad-access-token
+      expires-on-header-name: x-ms-token-aad-expires-on
+    session-cookie-name: AppServiceAuthSession
+    api-scope: api://865b95c4-f360-4ca2-ba20-4fe28e3ea4f6/user_impersonation
   auth-service:
-    cache-expiry: '5m'
+    cache-expiry: 5m
 springdoc:
   swagger-ui:
     oauth:
-      client-id: '865b95c4-f360-4ca2-ba20-4fe28e3ea4f6'
+      client-id: 865b95c4-f360-4ca2-ba20-4fe28e3ea4f6
       client-secret:
       scopes:
-        - 'api://865b95c4-f360-4ca2-ba20-4fe28e3ea4f6/user_impersonation'
-        - 'openid'
+        - api://865b95c4-f360-4ca2-ba20-4fe28e3ea4f6/user_impersonation
+        - openid
       use-pkce-with-authorization-code-grant: true
-    oauth2-redirect-url: 'https://salat-test.hbt.de/rest/doc/swagger-ui/oauth2-redirect.html'
+    oauth2-redirect-url: https://salat-test.hbt.de/rest/doc/swagger-ui/oauth2-redirect.html

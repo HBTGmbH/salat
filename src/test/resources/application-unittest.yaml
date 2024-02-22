@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: 'jdbc:h2:mem:salat;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR'
-    username: 'sa'
+    url: jdbc:h2:mem:salat;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR
+    username: sa
     password:
-    driver-class-name: 'org.h2.Driver'
+    driver-class-name: org.h2.Driver
   jpa:
     generate-ddl: true
     show-sql: true
@@ -11,8 +11,8 @@ spring:
       hibernate:
         format_sql: true
         auto_quote_keyword: true
-    database: 'h2'
+    database: h2
     hibernate:
-      ddl-auto: 'create'
+      ddl-auto: create
   liquibase:
     enabled: false
