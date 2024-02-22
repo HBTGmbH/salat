@@ -3,9 +3,9 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@taglib uri="jakarta.tags.core" prefix="c"%>
+<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
+<%@taglib uri="jakarta.tags.functions" prefix="fn"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="myjsp" %>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>

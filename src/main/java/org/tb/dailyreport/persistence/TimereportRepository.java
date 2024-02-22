@@ -22,39 +22,39 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   List<Timereport> findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(long employeecontractId, String status, LocalDate date);
 
   @Query("""
-      select t from Timereport t \
-      where t.employeecontract.id = :employeecontractId and \
-      t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end \
-      order by t.employeecontract.employee.sign asc, \
-      t.referenceday.refdate asc, \
-      t.employeeorder.suborder.customerorder.sign asc, \
-      t.employeeorder.suborder.sign asc\
+      select t from Timereport t
+      where t.employeecontract.id = :employeecontractId and
+      t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end
+      order by t.employeecontract.employee.sign asc,
+      t.referenceday.refdate asc,
+      t.employeeorder.suborder.customerorder.sign asc,
+      t.employeeorder.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndReferencedayBetween(long employeecontractId, LocalDate begin, LocalDate end);
 
   @Query("""
-      select t from Timereport t \
-      where t.employeecontract.id = :employeecontractId \
-      and (t.referenceday.refdate < t.employeecontract.validFrom \
-      or t.employeecontract.validUntil is not null and t.referenceday.refdate > t.employeecontract.validUntil) \
-      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc\
+      select t from Timereport t
+      where t.employeecontract.id = :employeecontractId
+      and (t.referenceday.refdate < t.employeecontract.validFrom
+      or t.employeecontract.validUntil is not null and t.referenceday.refdate > t.employeecontract.validUntil)
+      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingEmployeecontractValidity(long employeecontractId);
 
   @Query("""
-      select t from Timereport t \
-      where t.employeecontract.id = :employeecontractId \
-      and (t.referenceday.refdate < t.employeeorder.fromDate \
-      or t.employeeorder.untilDate is not null and t.referenceday.refdate > t.employeeorder.untilDate) \
-      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc\
+      select t from Timereport t
+      where t.employeecontract.id = :employeecontractId
+      and (t.referenceday.refdate < t.employeeorder.fromDate
+      or t.employeeorder.untilDate is not null and t.referenceday.refdate > t.employeeorder.untilDate)
+      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingEmployeeorderValidity(long employeecontractId);
 
   @Query("""
-      select t from Timereport t where t.employeecontract.id = :employeecontractId \
-      and t.referenceday.refdate >= :releaseDate \
-      and t.durationminutes = 0 and t.durationhours = 0 \
-      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc\
+      select t from Timereport t where t.employeecontract.id = :employeecontractId
+      and t.referenceday.refdate >= :releaseDate
+      and t.durationminutes = 0 and t.durationhours = 0
+      order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, LocalDate releaseDate);
 
