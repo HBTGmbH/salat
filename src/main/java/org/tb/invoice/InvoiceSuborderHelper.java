@@ -1,6 +1,5 @@
 package org.tb.invoice;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
 
 import java.time.Duration;

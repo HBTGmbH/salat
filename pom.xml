@@ -20,9 +20,21 @@
     <java.version>21</java.version>
     <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
     <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
-    <lombok.version>1.18.30</lombok.version>
-    <hibernate-jpamodelgen.version>6.4.4.Final</hibernate-jpamodelgen.version>
     <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+    <guava.version>33.0.0-jre</guava.version>
+    <jettison.version>1.5.4</jettison.version>
+    <commons-email.version>1.6.0</commons-email.version>
+    <poi.version>5.2.5</poi.version>
+    <struts-weblegacy.version>1.5.0-RC1</struts-weblegacy.version>
+    <jstl-api.version>3.0.0</jstl-api.version>
+    <jstl.version>3.0.1</jstl.version>
+    <jsp-api.version>3.1.1</jsp-api.version>
+    <commons-io.version>2.15.1</commons-io.version>
+    <webjars-bootstrap.version>5.3.2</webjars-bootstrap.version>
+    <webjars-jquery.version>3.7.1</webjars-jquery.version>
+    <webjars-bootstrap-icons.version>1.11.3</webjars-bootstrap-icons.version>
+    <spotbugs-maven-plugin.version>4.8.3</spotbugs-maven-plugin.version>
+    <springdoc-openapi-starter-webmvc-ui.version>2.3.0</springdoc-openapi-starter-webmvc-ui.version>
   </properties>
 
   <dependencies>
@@ -75,7 +87,7 @@
     <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-      <version>2.3.0</version>
+      <version>${springdoc-openapi-starter-webmvc-ui.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -104,48 +116,43 @@
     <dependency>
       <groupId>io.github.weblegacy</groupId>
       <artifactId>struts-core</artifactId>
-      <version>1.5.0-RC1</version>
+      <version>${struts-weblegacy.version}</version>
     </dependency>
     <dependency>
       <groupId>io.github.weblegacy</groupId>
       <artifactId>struts-el</artifactId>
-      <version>1.5.0-RC1</version>
+      <version>${struts-weblegacy.version}</version>
     </dependency>
     <!-- other stuff -->
     <dependency>
-      <groupId>org.passay</groupId>
-      <artifactId>passay</artifactId>
-      <version>1.6.4</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.6</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
-      <version>5.2.5</version>
+      <version>${poi.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
-      <version>5.2.5</version>
+      <version>${poi.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-email</artifactId>
-      <version>1.6.0</version>
+      <version>${commons-email.version}</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.jettison</groupId>
       <artifactId>jettison</artifactId>
-      <version>1.5.4</version>
+      <version>${jettison.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>33.0.0-jre</version>
+      <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>${org.mapstruct.version}</version>
     </dependency>
     <dependency>
       <groupId>com.mysql</groupId>
@@ -154,17 +161,17 @@
     <dependency>
       <groupId>jakarta.servlet.jsp.jstl</groupId>
       <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
-      <version>3.0.0</version>
+      <version>${jstl-api.version}</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.web</groupId>
       <artifactId>jakarta.servlet.jsp.jstl</artifactId>
-      <version>3.0.1</version>
+      <version>${jstl.version}</version>
     </dependency>
     <dependency>
       <groupId>jakarta.servlet.jsp</groupId>
       <artifactId>jakarta.servlet.jsp-api</artifactId>
-      <version>3.1.1</version>
+      <version>${jsp-api.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -172,34 +179,25 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <version>2.15.1</version>
+      <version>${commons-io.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <!-- web jars -->
     <dependency>
       <groupId>org.webjars</groupId>
       <artifactId>bootstrap</artifactId>
-      <version>5.3.2</version>
+      <version>${webjars-bootstrap.version}</version>
     </dependency>
     <dependency>
       <groupId>org.webjars</groupId>
       <artifactId>jquery</artifactId>
-      <version>3.7.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.webjars</groupId>
-      <artifactId>bootstrap-datepicker</artifactId>
-      <version>1.10.0</version>
+      <version>${webjars-jquery.version}</version>
     </dependency>
     <dependency>
       <groupId>org.webjars.npm</groupId>
       <artifactId>bootstrap-icons</artifactId>
-      <version>1.11.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.mapstruct</groupId>
-      <artifactId>mapstruct</artifactId>
-      <version>${org.mapstruct.version}</version>
+      <version>${webjars-bootstrap-icons.version}</version>
     </dependency>
 
     <!-- annotation processors -->
@@ -211,7 +209,6 @@
     <dependency>
       <groupId>org.hibernate.orm</groupId>
       <artifactId>hibernate-jpamodelgen</artifactId>
-      <version>6.4.1.Final</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -250,25 +247,6 @@
           <offline>true</offline>
         </configuration>
       </plugin>
-      <!--
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${project.build.directory}/generated-sources/annotations</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -302,7 +280,7 @@
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.8.3.2-SNAPSHOT</version>
+        <version>${spotbugs-maven-plugin.version}</version>
       </plugin>
     </plugins>
   </reporting>
