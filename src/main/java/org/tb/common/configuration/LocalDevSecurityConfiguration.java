@@ -42,9 +42,7 @@ public class LocalDevSecurityConfiguration {
       "/rest/doc/**",
       "/actuator/health",
       "/http-headers*",
-      "/error*",
-      "/index*",
-      "/"
+      "/error*"
   };
 
   @Bean
