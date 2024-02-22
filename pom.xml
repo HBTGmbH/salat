@@ -35,6 +35,7 @@
     <webjars-bootstrap-icons.version>1.11.3</webjars-bootstrap-icons.version>
     <spotbugs-maven-plugin.version>4.8.3</spotbugs-maven-plugin.version>
     <springdoc-openapi-starter-webmvc-ui.version>2.3.0</springdoc-openapi-starter-webmvc-ui.version>
+    <webjars-locator.version>0.50</webjars-locator.version>
   </properties>
 
   <dependencies>
@@ -184,6 +185,11 @@
     </dependency>
 
     <!-- web jars -->
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>webjars-locator</artifactId>
+      <version>${webjars-locator.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.webjars</groupId>
       <artifactId>bootstrap</artifactId>
