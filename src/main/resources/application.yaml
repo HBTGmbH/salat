@@ -33,6 +33,7 @@ spring:
       ddl-auto: validate
     open-in-view: true
 
+
 management:
   endpoints:
     web:
