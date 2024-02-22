@@ -21,7 +21,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
@@ -42,7 +41,10 @@ public class LocalDevSecurityConfiguration {
       "/favicon.ico",
       "/rest/doc/**",
       "/actuator/health",
-      "/error"
+      "/http-headers*",
+      "/error*",
+      "/index*",
+      "/"
   };
 
   @Bean

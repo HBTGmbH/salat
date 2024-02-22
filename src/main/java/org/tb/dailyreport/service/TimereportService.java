@@ -160,7 +160,8 @@ public class TimereportService {
   public void deleteTimereports(List<Long> timereportIds, AuthorizedUser authorizedUser)
       throws AuthorizationException, InvalidDataException, BusinessRuleException{
     List<Timereport> timereports = timereportIds.stream().map(timereportRepository::findById)
-        .flatMap(Optional::stream)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .collect(Collectors.toList());
     checkAuthorization(timereports, authorizedUser);
     timereports.stream()
