@@ -23,7 +23,7 @@ public class DurationUtils {
       sb.append('-');
     }
     sb.append(abs(duration.toHours())).append(':');
-    sb.append(String.format("%02d", abs(duration.toMinutesPart())));
+    sb.append("%02d".formatted(abs(duration.toMinutesPart())));
     return sb.toString();
   }
 
@@ -117,7 +117,7 @@ public class DurationUtils {
         .multiply(BigDecimal.valueOf(100))
         .divide(BigDecimal.valueOf(MINUTES_PER_HOUR), RoundingMode.HALF_UP)
         .intValueExact();
-    sb.append(String.format("%02d", abs(minutesDecimal)));
+    sb.append("%02d".formatted(abs(minutesDecimal)));
     return sb.toString();
   }
 

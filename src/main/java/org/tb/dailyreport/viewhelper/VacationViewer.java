@@ -12,7 +12,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employeecontract;

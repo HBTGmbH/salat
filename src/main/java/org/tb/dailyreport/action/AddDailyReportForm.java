@@ -4,7 +4,7 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

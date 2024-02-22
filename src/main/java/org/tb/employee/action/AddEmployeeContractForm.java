@@ -10,7 +10,7 @@ import static org.tb.common.util.ValidationUtils.isPositiveInteger;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionErrors;

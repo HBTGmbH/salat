@@ -1,7 +1,7 @@
 package org.tb.dailyreport.action;
 
 import jakarta.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;

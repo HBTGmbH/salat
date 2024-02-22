@@ -160,8 +160,7 @@ public class TimereportService {
   public void deleteTimereports(List<Long> timereportIds, AuthorizedUser authorizedUser)
       throws AuthorizationException, InvalidDataException, BusinessRuleException{
     List<Timereport> timereports = timereportIds.stream().map(timereportRepository::findById)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .collect(Collectors.toList());
     checkAuthorization(timereports, authorizedUser);
     timereports.stream()
@@ -360,7 +359,7 @@ public class TimereportService {
       LocalDate nextDay = DateUtils.addDays(day, 1);
       if(DateUtils.isWeekday(nextDay)) {
         Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(nextDay);
-        if(!publicHoliday.isPresent()) {
+        if(publicHoliday.isEmpty()) {
           // we have found a weekday that is not a public holiday, hooray!
           nextWorkableDay = referencedayDAO.getOrAddReferenceday(nextDay);
         }

@@ -6,11 +6,10 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.domain.Employeecontract;
 
 @Repository
-public interface EmployeeRepository extends PagingAndSortingRepository<Employee, Long>,
-    CrudRepository<Employee,Long>, JpaSpecificationExecutor<Employee> {
+public interface EmployeeRepository extends PagingAndSortingRepository<Employee, Long>, JpaSpecificationExecutor<Employee>,
+    CrudRepository<Employee, Long> {
 
   Optional<Employee> findBySign(String sign);
 

@@ -12,15 +12,15 @@ import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.parse;
 
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import jakarta.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;

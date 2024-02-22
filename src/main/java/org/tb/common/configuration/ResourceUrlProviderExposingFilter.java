@@ -1,11 +1,11 @@
 package org.tb.common.configuration;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpFilter;
 import java.io.IOException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.ServletRequestBindingException;
@@ -19,8 +19,8 @@ public class ResourceUrlProviderExposingFilter extends HttpFilter {
   private final ResourceUrlProvider resourceUrlProvider;
 
   @Override
-  public void doFilter(
-      ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+  protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
     try {
       request.setAttribute(RESOURCE_URL_PROVIDER_ATTR, this.resourceUrlProvider);
     }

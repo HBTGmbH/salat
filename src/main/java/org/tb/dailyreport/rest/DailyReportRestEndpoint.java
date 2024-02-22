@@ -56,7 +56,7 @@ public class DailyReportRestEndpoint {
     @ResponseStatus(OK)
     @Operation
     public List<DailyReportData> getBookings(
-        @RequestParam("refDate")
+        @RequestParam
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate refDate
     ) {
@@ -79,8 +79,8 @@ public class DailyReportRestEndpoint {
     @ResponseStatus(OK)
     @Operation
     public List<DailyReportData> getBookingsForEmployee(
-            @RequestParam("refDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate,
-            @PathVariable("employeeContractId") Long employeeContractId
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate,
+            @PathVariable Long employeeContractId
     ) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
