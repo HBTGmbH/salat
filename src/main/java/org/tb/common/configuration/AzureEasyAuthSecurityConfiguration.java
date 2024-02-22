@@ -48,6 +48,7 @@ public class AzureEasyAuthSecurityConfiguration {
         .requestCache().disable()
         .securityContext().disable()
         .sessionManagement().disable()
+        .cors().disable()
         .csrf().disable();
     return http.build();
   }
@@ -60,6 +61,7 @@ public class AzureEasyAuthSecurityConfiguration {
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf().disable();
     return http.build();
   }
@@ -70,6 +72,7 @@ public class AzureEasyAuthSecurityConfiguration {
     http.authorizeRequests(authz -> authz.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher(salatProperties)).addLogoutHandler(logoutHandler()))
+        .cors().disable()
         .csrf().disable();
     return http.build();
   }
@@ -148,8 +151,7 @@ public class AzureEasyAuthSecurityConfiguration {
 
   }
 
-  @Bean
-  CorsConfigurationSource corsConfigurationSource() {
+  private CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(List.of("*"));
     configuration.setAllowedHeaders(List.of("*"));

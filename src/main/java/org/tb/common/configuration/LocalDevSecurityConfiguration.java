@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,9 @@ import org.springframework.security.web.authentication.preauth.AbstractPreAuthen
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.employee.domain.Employee;
 
 @Configuration
@@ -48,12 +52,12 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(0)
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
-    http
-        .securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
+    http.securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
         .requestCache().disable()
         .securityContext().disable()
         .sessionManagement().disable()
+        .cors().disable()
         .csrf().disable();
     return http.build();
   }
@@ -62,6 +66,7 @@ public class LocalDevSecurityConfiguration {
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
     http.securityMatcher("/rest/**")
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
         .authorizeRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
@@ -77,6 +82,7 @@ public class LocalDevSecurityConfiguration {
     http.addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
         .authorizeRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
+        .cors().disable()
         .csrf().disable();
     return http.build();
   }
@@ -145,6 +151,16 @@ public class LocalDevSecurityConfiguration {
       }
     });
     return provider;
+  }
+
+  private CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of("*"));
+    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowedMethods(List.of("*"));
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 
 }
