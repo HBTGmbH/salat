@@ -1,7 +1,7 @@
 package org.tb.invoice;
 
 import java.time.LocalDate;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 
@@ -33,7 +33,7 @@ public class InvoiceTimereportHelper {
 
     public String getTaskdescriptionHtml() {
         if (timereport.getTaskdescription() != null) {
-            return StringEscapeUtils.escapeHtml(timereport.getTaskdescription()).replaceAll("\n", "<br>");
+            return StringEscapeUtils.escapeHtml4(timereport.getTaskdescription()).replaceAll("\n", "<br>");
         } else {
             return null;
         }
