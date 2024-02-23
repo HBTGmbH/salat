@@ -43,6 +43,7 @@ spring:
       static-locations:
         - /style/
         - /scripts/
+        - /images/
 management:
   endpoints:
     web:

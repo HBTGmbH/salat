@@ -5,12 +5,12 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
-import org.springframework.web.servlet.resource.ResourceUrlEncodingFilter;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.filter.AuthenticationFilter;
 import org.tb.common.filter.PerformanceLoggingFilter;
+import org.tb.common.filter.ResourceUrlEncodingFilter;
 import org.tb.common.filter.ResourceUrlProviderExposingFilter;
 import org.tb.employee.persistence.EmployeeRepository;
 
@@ -28,7 +28,7 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<ResourceUrlEncodingFilter>();
         registrationBean.setOrder(97);
         registrationBean.setFilter(new ResourceUrlEncodingFilter());
-        registrationBean.addUrlPatterns("/*");
+        registrationBean.addUrlPatterns("/do/*", "*.jsp");
         return registrationBean;
     }
 
@@ -37,7 +37,7 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<ResourceUrlProviderExposingFilter>();
         registrationBean.setOrder(98);
         registrationBean.setFilter(new ResourceUrlProviderExposingFilter(resourceUrlProvider));
-        registrationBean.addUrlPatterns("/*");
+        registrationBean.addUrlPatterns("/do/*", "*.jsp");
         return registrationBean;
     }
 
