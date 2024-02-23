@@ -1,3 +1,4 @@
+
 server:
   servlet:
     session:
@@ -8,6 +9,7 @@ server:
         name: SALATSESSIONID
         secure: true
   forward-headers-strategy: native # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
+  max-http-request-header-size: 256KB
 spring:
   profiles:
     default: local
@@ -32,8 +34,15 @@ spring:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
       ddl-auto: validate
     open-in-view: true
-
-
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+      static-locations:
+        - /style/
+        - /scripts/
 management:
   endpoints:
     web:
