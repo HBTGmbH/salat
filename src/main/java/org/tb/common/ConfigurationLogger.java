@@ -1,4 +1,4 @@
-package org.tb.common.configuration;
+package org.tb.common;
 
 import java.util.Arrays;
 import java.util.stream.StreamSupport;

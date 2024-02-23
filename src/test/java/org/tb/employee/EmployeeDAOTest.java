@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.AuthorizedUserAuditorAware;
-import org.tb.common.configuration.SalatProperties;
+import org.tb.common.SalatProperties;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;

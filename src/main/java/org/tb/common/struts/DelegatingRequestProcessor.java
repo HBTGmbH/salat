@@ -15,7 +15,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.tb.common.configuration.SalatProperties;
+import org.tb.common.SalatProperties;
 
 @Slf4j
 public class DelegatingRequestProcessor extends RequestProcessor {

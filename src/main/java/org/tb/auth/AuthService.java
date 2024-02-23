@@ -22,7 +22,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizationRule.Category;
-import org.tb.common.configuration.SalatProperties;
+import org.tb.common.SalatProperties;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.ValidationUtils;
 import org.tb.dailyreport.domain.Timereport;

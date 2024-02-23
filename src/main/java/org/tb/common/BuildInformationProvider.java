@@ -1,4 +1,4 @@
-package org.tb.common.configuration;
+package org.tb.common;
 
 import java.util.Properties;
 import jakarta.servlet.ServletContext;

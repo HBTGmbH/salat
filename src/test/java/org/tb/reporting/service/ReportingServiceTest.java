@@ -8,12 +8,11 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.TestExecutionListeners.MergeMode;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
-import org.tb.common.configuration.SalatProperties;
+import org.tb.common.SalatProperties;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
 

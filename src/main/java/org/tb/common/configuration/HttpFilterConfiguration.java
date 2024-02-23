@@ -9,6 +9,9 @@ import org.springframework.web.servlet.resource.ResourceUrlEncodingFilter;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
+import org.tb.common.filter.AuthenticationFilter;
+import org.tb.common.filter.PerformanceLoggingFilter;
+import org.tb.common.filter.ResourceUrlProviderExposingFilter;
 import org.tb.employee.persistence.EmployeeRepository;
 
 @Configuration
