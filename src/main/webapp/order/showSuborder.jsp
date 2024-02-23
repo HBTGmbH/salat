@@ -674,7 +674,7 @@
 							<c:when	test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
 								<td align="center"><html:link
 										href="/do/EditSuborder?soId=${suborder.id}">
-										<img src="/images/Edit.gif" alt="Edit Suborder"
+										<img src="<c:url value="/images/Edit.gif"/>" alt="Edit Suborder"
 											 title="<bean:message key="main.headlinedescription.suborders.edit.text"/>" />
 									</html:link></td>
 								<td align="center"><html:image

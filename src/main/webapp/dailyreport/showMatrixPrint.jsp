@@ -31,7 +31,7 @@
 <table style="border:1px black solid;" class="matrix" width="100%">
 	<tr class="matrix">
 		<th class="matrix" colspan="2">
-			<img src="/images/hbt-logo.svg" height="40px" style="padding: 5px" />
+			<img src="<c:url value="/images/hbt-logo.svg" />" height="40px" style="padding: 5px" />
 		</th>
 		<th class="matrix" colspan="${daysofmonth+1}">
 			<bean:message key="main.matrixoverview.headline.tb.text" /><br />

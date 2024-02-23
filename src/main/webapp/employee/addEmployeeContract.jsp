@@ -127,24 +127,24 @@
 				size="10" maxlength="10" /> <a
 				href="javascript:calenderPopupFrom()" name="from" ID="from"
 				style="text-decoration:none;"> <img
-                    src="/images/popupcalendar.gif" width="22" height="22"
+                    src="<c:url value="/images/popupcalendar.gif" />" width="22" height="22"
                     alt="<bean:message key="main.date.popup.alt.text" />"
                     style="border:0;vertical-align:top"> </a>
 				
 				<%-- Arrows for navigating the from-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','-1')" title="<bean:message key="main.date.popup.prevday" />">
-				<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="<c:url value="/images/pfeil_links.gif"/>" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','0')" title="<bean:message key="main.date.popup.today" />">
-				<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="<c:url value="/images/pfeil_unten.gif"/>" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('from','1')" title="<bean:message key="main.date.popup.nextday" />">
-				<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="<c:url value="/images/pfeil_rechts.gif"/>" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				<span style="color:red"><html:errors
@@ -165,17 +165,17 @@
 				<%-- Arrows for navigating the until-Date --%>
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','-1')" title="<bean:message key="main.date.popup.prevday" />">
-				<img src="/images/pfeil_links.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="<c:url value="/images/pfeil_links.gif"/>" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','0')" title="<bean:message key="main.date.popup.today" />">
-				<img src="/images/pfeil_unten.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="<c:url value="/images/pfeil_unten.gif"/>" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				&nbsp;&nbsp;
 				<a href="javascript:setDate('until','1')" title="<bean:message key="main.date.popup.nextday" />">
-				<img src="/images/pfeil_rechts.gif" height="11px" width="11px" style="border:0;vertical-align:middle" />
+				<img src="<c:url value="/images/pfeil_rechts.gif"/>" height="11px" width="11px" style="border:0;vertical-align:middle" />
 				</a>
 				
 				<span style="color:red"><html:errors

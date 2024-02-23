@@ -14,7 +14,7 @@
 <table style="width:100%;">
   <tr>
     <td class="noBborderStyle" align="left" width="25%">
-		<img src="/images/hbt-logo.svg" height="40px" />
+		<img src="<c:url value="/images/hbt-logo.svg" />" height="40px" />
 	</td>
     <td class="noBborderStyle" align="center" valign="middle" width="50%" title="<bean:message key='main.general.mainmenu.menu.subtext' />">
 		<span style="font-size:14pt;font-weight:bold;">

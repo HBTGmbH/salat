@@ -173,7 +173,7 @@
 		<c:if test="${authorizedUser.manager}">
 			<td align="center"><html:link
 				href="/do/EditEmployee?emId=${employee.id}">
-				<img src="/images/Edit.gif" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
+				<img src="<c:url value="/images/Edit.gif"/>" alt="Edit Employee" title="<bean:message key="main.headlinedescription.employees.edit.text"/>"/>
 			</html:link></td>
 			<html:form action="/DeleteEmployee">
 				<td align="center"><html:image

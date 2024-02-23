@@ -258,7 +258,7 @@
 			<c:if test="${authorizedUser.manager}">
 				<td align="center"><html:link
 					href="/do/EditEmployeecontract?ecId=${employeecontract.id}">
-					<img src="/images/Edit.gif" alt="Edit Employeecontract" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text"/>"/>
+					<img src="<c:url value="/images/Edit.gif"/>" alt="Edit Employeecontract" title="<bean:message key="main.headlinedescription.employeecontracts.edit.text"/>"/>
 				</html:link></td>
 				<html:form action="/DeleteEmployeecontract">
 					<td align="center"><html:image

@@ -38,8 +38,8 @@
 				</div>
 			</form>
 			<div>
-				<img src="/images/HBT_Logo_RGB_positiv.svg" class="hbt_logo" />
-				<img src="/images/HBT_Claim_RGB_positiv.svg" class="hbt_claim" />
+				<img src="<c:url value="/images/HBT_Logo_RGB_positiv.svg"/>" class="hbt_logo" />
+				<img src="<c:url value="/images/HBT_Claim_RGB_positiv.svg"/>" class="hbt_claim" />
 			</div>
 			<table style="clear: both; float: left">
 				<tr>

@@ -422,7 +422,7 @@
 		<c:if test="${authorizedUser.manager}">
 			<td align="center"><html:link
 				href="/do/EditCustomerorder?coId=${customerorder.id}">
-				<img src="/images/Edit.gif" alt="Edit Customerorder"
+				<img src="<c:url value="/images/Edit.gif"/>" alt="Edit Customerorder"
 					 title="<bean:message key="main.headlinedescription.orders.edit.text"/>" />
 			</html:link></td>
 			<html:form action="/DeleteCustomerorder">
