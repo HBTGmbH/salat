@@ -96,7 +96,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
             if (orderswithsuborders.contains(customerOrderFromFilter)) {
                 selectedCustomerorder = customerOrderFromFilter;
             } else {
-                selectedCustomerorder = orderswithsuborders.get(0);
+                selectedCustomerorder = orderswithsuborders.getFirst();
             }
 
             request.getSession().setAttribute("selectedcustomerorder", selectedCustomerorder);
@@ -124,19 +124,19 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
 
             request.getSession().setAttribute("suborders", suborders);
             if (!suborders.isEmpty()) {
-                request.getSession().setAttribute("selectedsuborder", suborders.get(0));
+                request.getSession().setAttribute("selectedsuborder", suborders.getFirst());
             }
             if ((selectedCustomerorder.getSuborders() != null) && (!selectedCustomerorder.getSuborders().isEmpty())) {
-                employeeOrderForm.setSuborder(selectedCustomerorder.getSuborders().get(0).getSign());
-                employeeOrderForm.setSuborderId(selectedCustomerorder.getSuborders().get(0).getId());
+                employeeOrderForm.setSuborder(selectedCustomerorder.getSuborders().getFirst().getSign());
+                employeeOrderForm.setSuborderId(selectedCustomerorder.getSuborders().getFirst().getId());
             }
 
             if (!selectedCustomerorder.getSuborders().isEmpty()
-                && selectedCustomerorder.getSuborders().get(0).getDebithours() != null
-                && !selectedCustomerorder.getSuborders().get(0).getDebithours().isZero()) {
-                employeeOrderForm.setDebithours(DurationUtils.format(selectedCustomerorder.getSuborders().get(0).getDebithours()));
+                && selectedCustomerorder.getSuborders().getFirst().getDebithours() != null
+                && !selectedCustomerorder.getSuborders().getFirst().getDebithours().isZero()) {
+                employeeOrderForm.setDebithours(DurationUtils.format(selectedCustomerorder.getSuborders().getFirst().getDebithours()));
                 /* set unit if applicable */
-                employeeOrderForm.setDebithoursunit(selectedCustomerorder.getSuborders().get(0).getDebithoursunit());
+                employeeOrderForm.setDebithoursunit(selectedCustomerorder.getSuborders().getFirst().getDebithoursunit());
             } else {
                 employeeOrderForm.setDebithoursunit(null);
             }

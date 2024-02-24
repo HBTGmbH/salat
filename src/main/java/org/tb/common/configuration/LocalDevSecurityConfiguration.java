@@ -68,7 +68,7 @@ public class LocalDevSecurityConfiguration {
     http.securityMatcher("/api/**")
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
-        .authorizeRequests(authz -> authz.anyRequest().authenticated())
+        .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -80,7 +80,7 @@ public class LocalDevSecurityConfiguration {
   @Order(2)
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
     http.addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
-        .authorizeRequests(authz -> authz.anyRequest().authenticated())
+        .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .cors().disable()
         .csrf().disable();

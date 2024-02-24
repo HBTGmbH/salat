@@ -134,8 +134,8 @@ public class TimereportHelper {
     public long[] determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, TimereportDTO tr) {
         List<TimereportDTO> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
-            int hourBegin = workingday.getStarttimehour();
-            int minuteBegin = workingday.getStarttimeminute();
+            long hourBegin = workingday.getStarttimehour();
+            long minuteBegin = workingday.getStarttimeminute();
             hourBegin += workingday.getBreakhours();
             minuteBegin += workingday.getBreakminutes();
             for (TimereportDTO timereport : timereports) {

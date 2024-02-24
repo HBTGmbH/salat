@@ -213,7 +213,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
              * null){ List<InvoiceSuborderViewHelper>
              * invoiceSuborderViewHelperList = (List<InvoiceSuborderViewHelper>)
              * request.getSession().getAttribute("viewhelpers");
-             * invoiceSuborderViewHelperList.get(0).getParentorder().equals(customerorderDAO.getCustomerorderBySign(invoiceForm.getOrder())); }
+             * invoiceSuborderViewHelperList.getFirst().getParentorder().equals(customerorderDAO.getCustomerorderBySign(invoiceForm.getOrder())); }
              */
 
             // activate subcheckboxes for timereport-attributes

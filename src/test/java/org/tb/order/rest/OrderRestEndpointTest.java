@@ -48,7 +48,7 @@ class OrderRestEndpointTest {
         LocalDate.parse("2020-01-08"));
     System.out.println(res);
     assertThat(res.size()).isEqualTo(1);
-    assertThat(res.get(0).getSuborder().size()).isEqualTo(3);
+    assertThat(res.getFirst().getSuborder().size()).isEqualTo(3);
   }
 
   private Employeeorder newEmployeeorder() {

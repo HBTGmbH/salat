@@ -142,10 +142,10 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         // init form with first order and corresponding suborders
         List<Suborder> theSuborders;
         if (orders != null && !orders.isEmpty()) {
-            form.setOrder(orders.get(0).getSign());
-            form.setOrderId(orders.get(0).getId());
+            form.setOrder(orders.getFirst().getSign());
+            form.setOrderId(orders.getFirst().getId());
 
-            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.get(0).getId(), selectedDate);
+            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.getFirst().getId(), selectedDate);
 
             if (theSuborders == null || theSuborders.isEmpty()) {
                 request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator."); //TODO
@@ -162,11 +162,11 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         subordersByDescription.sort(SubOrderByDescriptionComparator.INSTANCE);
         request.getSession().setAttribute("suborders", theSuborders);
         request.getSession().setAttribute("subordersByDescription", subordersByDescription);
-        request.getSession().setAttribute("currentSuborderId", theSuborders.get(0).getId());
-        request.getSession().setAttribute("currentSuborderSign", theSuborders.get(0).getSign());
+        request.getSession().setAttribute("currentSuborderId", theSuborders.getFirst().getId());
+        request.getSession().setAttribute("currentSuborderSign", theSuborders.getFirst().getSign());
 
         // get first Suborder to synchronize suborder lists
-        Suborder so = theSuborders.get(0);
+        Suborder so = theSuborders.getFirst();
         request.getSession().setAttribute("currentSuborderId", so.getId());
 
         // make sure, no cuId still exists in session, remove from form, too

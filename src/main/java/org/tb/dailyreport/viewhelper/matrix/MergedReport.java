@@ -20,6 +20,7 @@ public class MergedReport implements Comparable<MergedReport> {
     private final List<BookingDay> bookingDays = new ArrayList<>();
 
     public MergedReport(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
+        super();
         this.subOrder = subOrder;
         this.customOrder = customOrder;
         addBookingDay(date, durationHours, durationMinutes, taskdescription);

@@ -96,8 +96,8 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
         List<Suborder> theSuborders = new ArrayList<>();
         if (orders != null && !orders.isEmpty()) {
-            reportForm.setOrder(orders.get(0).getSign());
-            reportForm.setOrderId(orders.get(0).getId());
+            reportForm.setOrder(orders.getFirst().getSign());
+            reportForm.setOrderId(orders.getFirst().getId());
             theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getCustomerorderId(), utilDate);
             if (theSuborders == null || theSuborders.isEmpty()) {
                 request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator.");

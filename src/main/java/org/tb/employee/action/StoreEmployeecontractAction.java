@@ -275,7 +275,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             // actually, vacation entitlement is a constant value
             // for an employee (not year-dependent), so just take the
             // first vacation entry to set the form value
-            Vacation va = ec.getVacations().get(0);
+            Vacation va = ec.getVacations().getFirst();
             ecForm.setYearlyvacation(va.getEntitlement().toString());
         } else {
             ecForm.setYearlyvacation(String.valueOf(VACATION_PER_YEAR));

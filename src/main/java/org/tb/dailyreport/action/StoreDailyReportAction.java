@@ -117,7 +117,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustBeginTime")) {
-            refreshWorkdayAvailability = true;
             Duration dailyWorkingTime = employeeContract.getDailyWorkingTime();
             Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
@@ -235,7 +234,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 );
             long employeeorderId = -1;
             if(!employeeorders.isEmpty()) {
-                employeeorderId = employeeorders.get(0).getId();
+                employeeorderId = employeeorders.getFirst().getId();
             }
 
             if(form.isNewTimeReport()) {
@@ -429,7 +428,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 if (!orders.isEmpty()) {
                     long orderId = form.getOrderId();
                     if (orderId == 0) {
-                        orderId = orders.get(0).getId();
+                        orderId = orders.getFirst().getId();
                     }
                     theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(form.getEmployeeContractId(), orderId, selectedDate);
                 } else {
@@ -518,10 +517,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         //reset first order and corresponding suborders
         if (!orders.isEmpty()) {
-            reportForm.setOrder(orders.get(0).getSign());
-            reportForm.setOrderId(orders.get(0).getId());
+            reportForm.setOrder(orders.getFirst().getSign());
+            reportForm.setOrderId(orders.getFirst().getId());
             // prepare second collection of suborders sorted by description
-            suborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(loginEmployeeContract.getId(), orders.get(0).getId(), date);
+            suborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(loginEmployeeContract.getId(), orders.getFirst().getId(), date);
         } else {
             reportForm.setOrder(null);
             reportForm.setOrderId(-1);

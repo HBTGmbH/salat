@@ -80,8 +80,8 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
         if (customerorders.size() > 0) {
             if (request.getSession().getAttribute("lastCoId") == null) {
-                request.getSession().setAttribute("currentOrderId", customerorders.get(0).getId());
-                request.getSession().setAttribute("currentOrder", customerorders.get(0));
+                request.getSession().setAttribute("currentOrderId", customerorders.getFirst().getId());
+                request.getSession().setAttribute("currentOrder", customerorders.getFirst());
             }
 
             Customerorder customerorder;
@@ -89,7 +89,7 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             if (customerOrderId != null && customerorderDAO.getCustomerorderById(customerOrderId) != null) {
                 customerorder = customerorderDAO.getCustomerorderById(customerOrderId);
             } else {
-                customerorder = customerorders.get(0);
+                customerorder = customerorders.getFirst();
             }
             request.getSession().setAttribute("currentOrderId", customerorder.getId());
             request.getSession().setAttribute("currentOrder", customerorder);

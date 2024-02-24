@@ -154,7 +154,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("timereportSortModus", sortModus);
         }
         String sortColumn = (String) request.getSession().getAttribute("timereportSortColumn");
-        if (sortColumn == null || sortColumn.trim().equals("")) {
+        if (sortColumn == null || sortColumn.trim().isEmpty()) {
             sortColumn = "employee";
             request.getSession().setAttribute("timereportSortColumn", sortColumn);
         }
@@ -470,7 +470,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             if (orders.contains(customerorder)) {
                 suborders = customerorder.getSuborders();
             } else if (!orders.isEmpty()) {
-                suborders = orders.get(0).getSuborders();
+                suborders = orders.getFirst().getSuborders();
             }
 
             // if <code>reportForm.showOnlyValid == true</code>, remove all invalid suborders

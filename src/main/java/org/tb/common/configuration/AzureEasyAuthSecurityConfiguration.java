@@ -70,7 +70,7 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   @Order(2)
   public SecurityFilterChain filterChain(HttpSecurity http, SalatProperties salatProperties) throws Exception {
-    http.authorizeRequests(authz -> authz.anyRequest().authenticated())
+    http.authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher(salatProperties)).addLogoutHandler(logoutHandler()))
         .cors().disable()

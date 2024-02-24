@@ -67,10 +67,9 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
     }
 
     private void exportToExcel(ReportDefinition reportDefinition, ReportResult reportResult, HttpServletResponse response) {
-        Workbook workbook = createExcel(reportResult);
-        response.setHeader("Content-disposition", "attachment; filename=\"" + createFilename(reportDefinition) + "\"");
-        response.setContentType(GlobalConstants.INVOICE_EXCEL_NEW_CONTENT_TYPE);
-        try (ServletOutputStream out = response.getOutputStream()) {
+        try (ServletOutputStream out = response.getOutputStream(); Workbook workbook = createExcel(reportResult)) {
+            response.setHeader("Content-disposition", "attachment; filename=\"" + createFilename(reportDefinition) + "\"");
+            response.setContentType(GlobalConstants.INVOICE_EXCEL_NEW_CONTENT_TYPE);
             workbook.write(out);
         } catch (IOException e) {
             log.warn("Could not write excel export to output stream", e);

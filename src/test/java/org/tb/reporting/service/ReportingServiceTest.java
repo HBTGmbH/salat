@@ -124,8 +124,8 @@ public class ReportingServiceTest {
     var result = reportingService.execute(reportDefinition.getId(), parameters);
     assertThat(result.getColumnHeaders()).size().isEqualTo(1);
     assertThat(result.getRows()).size().isEqualTo(2);
-    var firstnameColumnName = result.getColumnHeaders().get(0).getName();
-    assertThat(result.getRows().get(0).getColumnValues().get(firstnameColumnName).getValue()).isEqualTo("Antje");
+    var firstnameColumnName = result.getColumnHeaders().getFirst().getName();
+    assertThat(result.getRows().getFirst().getColumnValues().get(firstnameColumnName).getValue()).isEqualTo("Antje");
     assertThat(result.getRows().get(1).getColumnValues().get(firstnameColumnName).getValue()).isEqualTo("Klaus");
   }
 

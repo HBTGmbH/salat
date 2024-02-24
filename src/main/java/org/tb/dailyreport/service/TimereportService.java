@@ -273,7 +273,7 @@ public class TimereportService {
     });
 
     // recompute overtimeStatic and store it in employeecontract if change made before acceptance date
-    LocalDate reportAcceptanceDate = timereports.get(0).getEmployeecontract().getReportAcceptanceDate();
+    LocalDate reportAcceptanceDate = timereports.getFirst().getEmployeecontract().getReportAcceptanceDate();
     if(reportAcceptanceDate != null) {
       Optional<LocalDate> match = timereports.stream()
               .map(Timereport::getReferenceday)
@@ -281,7 +281,7 @@ public class TimereportService {
               .filter(d -> !d.isAfter(reportAcceptanceDate))
               .findAny();
       if(match.isPresent()) {
-        Employeecontract employeecontract = timereports.get(0).getEmployeecontract();
+        Employeecontract employeecontract = timereports.getFirst().getEmployeecontract();
         var overtimeStaticNew = overtimeService.calculateOvertime(
                 employeecontract.getId(),
                 employeecontract.getValidFrom(),
@@ -392,15 +392,15 @@ public class TimereportService {
 
   private void validateEmployeeorderBudget(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same suborder & employeeorder
-    Employeeorder employeeorder = timereports.get(0).getEmployeeorder();
+    Employeeorder employeeorder = timereports.getFirst().getEmployeeorder();
     if(employeeorder.getDebithoursunit() == null) {
       return; // no budget defined!
     }
     long debitMinutesTemp = employeeorder.getDebithours().toMinutes();
     // increase debit minutes if timereport exists (update case) by the time of that timereport
     // because this time is read from the database query, too. This is a trick to circumvent this special case.
-    if(timereports.size() == 1 && !timereports.get(0).isNew()) {
-      Timereport timereport = timereports.get(0);
+    if(timereports.size() == 1 && !timereports.getFirst().isNew()) {
+      Timereport timereport = timereports.getFirst();
       debitMinutesTemp += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
     }
     final long debitMinutes = debitMinutesTemp;
@@ -453,7 +453,7 @@ public class TimereportService {
 
   private void validateOrderBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same data
-    Timereport timereport = timereports.get(0);
+    Timereport timereport = timereports.getFirst();
     LocalDate refdate = timereport.getReferenceday().getRefdate();
     Suborder suborder = timereport.getSuborder();
     Employeeorder employeeorder = timereport.getEmployeeorder();
@@ -468,7 +468,7 @@ public class TimereportService {
 
   private void validateContractBusinessRules(List<Timereport> timereports) throws BusinessRuleException {
     // one timereport exists at least and all share the same data
-    Timereport timereport = timereports.get(0);
+    Timereport timereport = timereports.getFirst();
     LocalDate refdate = timereport.getReferenceday().getRefdate();
     BusinessRuleChecks.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
         TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE);

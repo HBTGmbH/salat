@@ -48,7 +48,7 @@ public class AddDailyReportForm extends ActionForm {
     private boolean showAllMinutes;
 
     public AddDailyReportForm() {
-        setReferenceday(DateUtils.format(today()));
+        referenceday = DateUtils.format(today());
     }
 
     @Override

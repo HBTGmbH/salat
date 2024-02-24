@@ -77,13 +77,13 @@ public class CustomerorderHelper {
             if (suborder != null && theSuborders.contains(suborder)) {
                 suborderId = suborder.getId();
             } else if(!theSuborders.isEmpty()) {
-                suborderId = theSuborders.get(0).getId();
+                suborderId = theSuborders.getFirst().getId();
             }
         } else {
-            customerorder = orders.get(0);
+            customerorder = orders.getFirst();
             theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
             if (!theSuborders.isEmpty()) {
-                suborderId = theSuborders.get(0).getId();
+                suborderId = theSuborders.getFirst().getId();
             }
         }
 
@@ -138,7 +138,7 @@ public class CustomerorderHelper {
             return false;
         }
         // get suborders related to employee AND selected customer order...
-        long customerorderId = orders.get(0).getId();
+        long customerorderId = orders.getFirst().getId();
         request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, reportForm.getShowOnlyValid()));
 
         return true;

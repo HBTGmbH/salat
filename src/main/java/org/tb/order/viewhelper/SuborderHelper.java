@@ -67,7 +67,7 @@ public class SuborderHelper {
         } else if (!theSuborders.isEmpty()) {
             Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
             if (suborder == null || !theSuborders.contains(suborder)) {
-                suborder = theSuborders.get(0);
+                suborder = theSuborders.getFirst();
             }
             assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), suborder, reportForm);
         }
