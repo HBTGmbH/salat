@@ -166,7 +166,7 @@
 			</td>
 			<td align="left" class="noBborderStyle">
 				<!-- JavaScript Stuff for popup calender -->
-				<script type="text/javascript" language="JavaScript" src="/scripts/CalendarPopup.js">
+				<script type="text/javascript" language="JavaScript" src="<c:url value="/scripts/CalendarPopup.js"/>">
 				</script>
 				<script type="text/javascript" language="JavaScript">
                     document.write(getCalendarStyles());
@@ -463,7 +463,7 @@
 					<img
 							onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
 							onMouseOut="hideWMTT()" width="12px" height="12px"
-							src="/images/info_button.gif" />
+							src="<c:url value="/images/info_button.gif"/>" />
 				</td>
 
 				<!-- Mitarbeiter -->

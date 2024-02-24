@@ -196,7 +196,7 @@
 				</div>
 				<img onMouseOver="showWMTT(this,'info<c:out value="${employeecontract.id}" />')"
 					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="/images/info_button.gif" />
+					src="<c:url value="/images/info_button.gif"/>" />
 			</td>
 			
 			<c:choose>
@@ -263,7 +263,7 @@
 				<html:form action="/DeleteEmployeecontract">
 					<td align="center"><html:image
 						onclick="confirmDelete(this.form, ${employeecontract.id})"
-						src="/images/Delete.gif" alt="Delete Employeecontract" titleKey="main.headlinedescription.employeecontracts.delete.text"/></td>
+						src="/images/Delete.gif"/>" alt="Delete Employeecontract" titleKey="main.headlinedescription.employeecontracts.delete.text"/></td>
 				</html:form>
 			</c:if>
 			</tr>

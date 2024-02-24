@@ -247,11 +247,11 @@
 					</tr>
 					<br>
 					<td class="noBborderStyle" nowrap align="left"><img id="img1"
-																		src="/images/Edit.gif" border="0"> <bean:message
+																		src="<c:url value="/images/Edit.gif"/>" border="0"> <bean:message
 							key="main.general.structureInstructionEdit.text" /></td>
 					<br>
 					<td class="noBborderStyle" nowrap align="left"><img id="img1"
-																		src="/images/Delete.gif" border="0"> <bean:message
+																		src="<c:url value="/images/Delete.gif"/>" border="0"> <bean:message
 							key="main.general.structureInstructionDelete.text" /></td>
 				</c:when>
 				<c:otherwise>
@@ -438,7 +438,7 @@
 							</div> <img
 							onMouseOver="showWMTT(this,'info<c:out value="${suborder.id}" />')"
 							onMouseOut="hideWMTT()" width="12px" height="12px"
-							src="/images/info_button.gif" />
+							src="<c:url value="/images/info_button.gif"/>" />
 						</td>
 
 						<!-- invalid suborders should be gray -->
@@ -684,10 +684,10 @@
 							</c:when>
 							<c:otherwise>
 								<td align="center"><img height="12px" width="12px"
-														src="/images/verbot.gif" alt="Edit Suborder"
+														src="<c:url value="/images/verbot.gif"/>" alt="Edit Suborder"
 														title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
 								<td align="center"><img height="12px" width="12px"
-														src="/images/verbot.gif" alt="Delete Suborder"
+														src="<c:url value="/images/verbot.gif"/>" alt="Delete Suborder"
 														title="<bean:message key="main.headlinedescription.suborders.accessdenied.text"/>" /></td>
 							</c:otherwise>
 						</c:choose>

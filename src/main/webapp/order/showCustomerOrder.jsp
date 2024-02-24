@@ -234,7 +234,7 @@
 				<img
 					onMouseOver="showWMTT(this,'info<c:out value="${customerorder.id}" />')"
 					onMouseOut="hideWMTT()" width="12px" height="12px"
-					src="/images/info_button.gif" /></td>
+					src="<c:url value="/images/info_button.gif"/>" /></td>
 
 		<!-- invalid orders should be gray -->
 		<c:choose>

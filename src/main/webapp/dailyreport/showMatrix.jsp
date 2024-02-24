@@ -35,7 +35,7 @@
 			});	
 		});		
 	</script>
-	<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
 </head>
 <body>
 	<jsp:include flush="true" page="/menu.jsp">

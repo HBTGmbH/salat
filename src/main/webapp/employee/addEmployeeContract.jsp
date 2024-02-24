@@ -101,7 +101,7 @@
 		
 			<!-- JavaScript Stuff for popup calender -->
 			<script type="text/javascript" language="JavaScript"
-				src="/scripts/CalendarPopup.js"></script> <script type="text/javascript"
+				src="<c:url value="/scripts/CalendarPopup.js"/>"></script> <script type="text/javascript"
 				language="JavaScript">
                     document.write(getCalendarStyles());
                 </script> <script type="text/javascript" language="JavaScript">
@@ -158,7 +158,7 @@
 				property="validUntil" readonly="false" size="10" maxlength="10" />
 			<a href="javascript:calenderPopupUntil()" name="until" ID="until"
 				style="text-decoration:none;"> <img
-                    src="/images/popupcalendar.gif" width="22" height="22"
+                    src="<c:url value="/images/popupcalendar.gif"/>" width="22" height="22"
                     alt="<bean:message key="main.date.popup.alt.text" />"
                     style="border:0;vertical-align:top"> </a>
 				
@@ -376,7 +376,7 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/images/info_button.gif" />
+				src="<c:url value="/images/info_button.gif"/>" />
 			</td>
 
 			<!-- Mitarbeiter -->

@@ -95,7 +95,7 @@
 		HBT.Salat.FavouriteOrders.initializeSuborderSelection();
 	});		
 </script>
-	<link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
 </head>
 <body>
 <jsp:include flush="true" page="/menu.jsp">
@@ -176,13 +176,13 @@
 				<html:select property="orderId" onchange="setUpdateSubordersAction(this)" styleClass="make-select2 orderCls">
 					<html:options collection="orders" labelProperty="signAndDescription" property="id" />
 				</html:select>
-				<img id="favOrderBtn" class="favOrderBtn" src="/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
+				<img id="favOrderBtn" class="favOrderBtn" src="<c:url value="/images/Button/whiteStar.svg"/>" width="20" height="20" title="<bean:message key="add.report.no.default.order" />" onclick="HBT.Salat.FavouriteOrders.actionOrderSet(this);" />
 				<b> / </b>
 				<html:select property="suborderSignId" styleClass="mandatory make-select2 suborderCls" value="${currentSuborderId}"
 					onchange="adjustSuborderSignChangedAction(this.form)">
 					<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
 				</html:select>
-				<img id="favSuborderBtn" class="favOrderBtn" src="/images/Button/whiteStar.svg" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
+				<img id="favSuborderBtn" class="favOrderBtn" src="<c:url value="/images/Button/whiteStar.svg"/>" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
 				<span style="color:red">
 					<html:errors property="orderId" />
 					<html:errors property="suborderId" />

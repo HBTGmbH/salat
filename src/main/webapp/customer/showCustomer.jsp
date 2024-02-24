@@ -140,7 +140,7 @@
 			<img
 				onMouseOver="showWMTT(this,'info<c:out value="${customer.id}" />')"
 				onMouseOut="hideWMTT()" width="12px" height="12px"
-				src="/images/info_button.gif" />
+				src="<c:url value="/images/info_button.gif"/>" />
 			</td>
 		<td><c:out value="${customer.shortname}" /></td>
 		<td><c:out value="${customer.name}" /></td>

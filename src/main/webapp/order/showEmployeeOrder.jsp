@@ -342,7 +342,7 @@
 		<img
 			onMouseOver="showWMTT(this,'info<c:out value="${employeeorder.id}" />')"
 			onMouseOut="hideWMTT()" width="12px" height="12px"
-			src="/images/info_button.gif" /></td>
+			src="<c:url value="/images/info_button.gif"/>" /></td>
 
 		<c:choose>
 			<c:when test="${!employeeorder.currentlyValid}">
@@ -560,10 +560,10 @@
 			</c:when>
 			<c:otherwise>
 				<td align="center"><img height="12px" width="12px"
-                                        src="/images/verbot.gif" alt="Edit Employeeorder"
+                                        src="<c:url value="/images/verbot.gif"/>" alt="Edit Employeeorder"
                                         title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 				<td align="center"><img height="12px" width="12px"
-                                        src="/images/verbot.gif" alt="Delete Employeeorder"
+                                        src="<c:url value="/images/verbot.gif"/>" alt="Delete Employeeorder"
                                         title="<bean:message key="main.headlinedescription.employeeorders.accessdenied.text"/>" /></td>
 			</c:otherwise>
 		</c:choose>

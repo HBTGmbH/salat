@@ -155,7 +155,7 @@
 			var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
 		</script>
 
-        <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css">
+		<link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
 	</head>
 
 	<body>
@@ -685,7 +685,7 @@
 						<a href="#" onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
 						   onMouseOut="hideWMTT()"><i class="bi bi-info-circle"></i></a>
 						<c:if test="${!timereport.fitsToContract}">
-							<img width="20px" height="20px" src="/images/Pin%20rot.gif" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
+							<img width="20px" height="20px" src="<c:url value="/images/Pin%20rot.gif"/>" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
 						</c:if>
 					</td>
 
@@ -782,7 +782,7 @@
 							</td>
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<img width="12px" height="12px" src="/images/verbot.gif" alt="Delete Timereport" />
+								<img width="12px" height="12px" src="<c:url value="/images/verbot.gif"/>" alt="Delete Timereport" />
 							</td>
 						</c:otherwise>
 					</c:choose>
