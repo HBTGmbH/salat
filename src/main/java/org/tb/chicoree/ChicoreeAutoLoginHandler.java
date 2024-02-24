@@ -35,7 +35,7 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<Authenticat
   public void onApplicationEvent(AuthenticationSuccessEvent event) {
 
     // no further stuff for REST API calls - all is just for struts and old web UI
-    if(request.getRequestURL().toString().contains("/rest/")) return;
+    if(request.getRequestURL().toString().contains("/api/")) return;
 
     if(chicoreeSessionStore.getLoginEmployeecontractId().isEmpty()) {
       Authentication authentication = event.getAuthentication();

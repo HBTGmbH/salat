@@ -24,7 +24,7 @@ import org.tb.favorites.service.FavoriteService;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(path = "/rest/favorite")
+@RequestMapping(path = "/api/favorite")
 @Tag(name = "favorite")
 public class FavoriteRestEndpoint {
 

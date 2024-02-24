@@ -37,4 +37,4 @@ springdoc:
         - api://865b95c4-f360-4ca2-ba20-4fe28e3ea4f6/user_impersonation
         - openid
       use-pkce-with-authorization-code-grant: true
-    oauth2-redirect-url: https://salat-test.hbt.de/rest/doc/swagger-ui/oauth2-redirect.html
+    oauth2-redirect-url: https://salat-test.hbt.de/api/doc/swagger-ui/oauth2-redirect.html

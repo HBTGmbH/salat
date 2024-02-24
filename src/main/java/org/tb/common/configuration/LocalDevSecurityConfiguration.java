@@ -43,7 +43,7 @@ public class LocalDevSecurityConfiguration {
       "/scripts/**",
       "/webjars/**",
       "/favicon.ico",
-      "/rest/doc/**",
+      "/api/doc/**",
       "/actuator/health",
       "/http-headers*",
       "/error*"
@@ -65,7 +65,7 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-    http.securityMatcher("/rest/**")
+    http.securityMatcher("/api/**")
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
         .authorizeRequests(authz -> authz.anyRequest().authenticated())

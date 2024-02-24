@@ -42,7 +42,7 @@ import org.tb.order.persistence.EmployeeorderDAO;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(path = "/rest/daily-reports")
+@RequestMapping(path = "/api/daily-reports")
 @Tag(name = "daily report")
 public class DailyReportRestEndpoint {
 

@@ -78,7 +78,7 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     authorizedUser.init(loginEmployee);
 
     // no further stuff for REST API calls - all is just for struts and old web UI
-    if(request.getRequestURL().toString().contains("/rest/")) return;
+    if(request.getRequestURL().toString().contains("/api/")) return;
 
     request.getSession().setAttribute("loginEmployee", loginEmployee);
     String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();

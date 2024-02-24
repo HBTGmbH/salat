@@ -60,8 +60,8 @@ salat:
     cache-expiry: 1s
 springdoc:
   swagger-ui:
-    path: /rest/doc/
+    path: /api/doc/
     try-it-out-enabled: true
   api-docs:
-    path: /rest/doc/api-docs
+    path: /api/doc/api-docs
   default-produces-media-type: application/json

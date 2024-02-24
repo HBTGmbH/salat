@@ -37,4 +37,4 @@ springdoc:
       scopes:
         - api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation
         - openid
-      oauth2-redirect-url: https://salat.hbt.de/rest/doc/swagger-ui/oauth2-redirect.html
+      oauth2-redirect-url: https://salat.hbt.de/api/doc/swagger-ui/oauth2-redirect.html

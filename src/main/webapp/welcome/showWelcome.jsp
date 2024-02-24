@@ -33,7 +33,7 @@
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
 <div style="width: 100%; text-align: center">
-	<h1>Probier die neue <a href="/rest/doc/swagger-ui/index.html" style="color:black">REST API</a> aus!</h1>
+	<h1>Probier die neue <a href="/api/doc/swagger-ui/index.html" style="color:black">REST API</a> aus!</h1>
 </div>
 <br><span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.overview.text" /><br></span>
 <br>
