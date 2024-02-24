@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
+import org.springframework.boot.web.error.ErrorAttributeOptions.Include;
 import org.springframework.boot.web.servlet.error.ErrorAttributes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,14 +39,23 @@ public class ExceptionConfiguration {
         while (error instanceof ServletException && error.getCause() != null) {
           error = error.getCause();
         }
-        errorAttributes.put("exception", error.getClass().getName());
-        addStackTrace(errorAttributes, error);
+        if(options.isIncluded(Include.EXCEPTION)) {
+          errorAttributes.put("exception", error.getClass().getName());
+        }
+        if(options.isIncluded(Include.STACK_TRACE)) {
+          addStackTrace(errorAttributes, error);
+        }
+
 
         if(error instanceof ResponseStatusException e) {
           status = e.getStatusCode().value();
-          errorAttributes.put("message", e.getReason());
+          if(options.isIncluded(Include.MESSAGE)) {
+            errorAttributes.put("message", e.getReason());
+          }
         } else {
-          errorAttributes.put("message", error.getMessage());
+          if(options.isIncluded(Include.MESSAGE)) {
+            errorAttributes.put("message", error.getMessage());
+          }
         }
       }
 
