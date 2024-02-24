@@ -72,6 +72,7 @@ public class CustomerorderService {
     co.setHide(hide);
 
     customerorderDAO.save(co);
+    coId = co.getId();
 
     /* adjust suborders */
     List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(coId, false);

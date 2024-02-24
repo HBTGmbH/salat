@@ -89,7 +89,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
             // 'main' task - prepare everything to store the customer.
             // I.e., copy properties from the form into the customerorder before saving.
-            long coId = -1;
+            Long coId = null;
             Customerorder co = null;
             if (request.getSession().getAttribute("coId") != null) {
                 // edited customerorder

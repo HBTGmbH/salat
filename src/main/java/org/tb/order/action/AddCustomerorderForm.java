@@ -36,7 +36,7 @@ public class AddCustomerorderForm extends ActionForm {
     private int statusreport;
     private Boolean hide;
 
-    private long customerId;
+    private Long customerId;
     private long employeeId;
     private long respContrEmployeeId;
 
