@@ -46,7 +46,7 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<PerformanceLoggingFilter>();
         registrationBean.setOrder(99);
         registrationBean.setFilter(new PerformanceLoggingFilter());
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+        registrationBean.addUrlPatterns("/do/*", "/api/*", "*.jsp");
         return registrationBean;
     }
 
@@ -55,7 +55,7 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<OpenEntityManagerInViewFilter>();
         registrationBean.setOrder(100);
         registrationBean.setFilter(new OpenEntityManagerInViewFilter());
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+        registrationBean.addUrlPatterns("/do/*", "/api/*", "*.jsp");
         return registrationBean;
     }
 
@@ -64,7 +64,7 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
         registrationBean.setOrder(101);
         registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, employeeRepository));
-        registrationBean.addUrlPatterns("/do/*", "/rest/*", "*.jsp");
+        registrationBean.addUrlPatterns("/do/*", "/api/*", "*.jsp");
         return registrationBean;
     }
 

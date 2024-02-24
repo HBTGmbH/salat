@@ -23,7 +23,7 @@ import org.tb.employee.service.OvertimeService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(path = "/rest/overtimes")
+@RequestMapping(path = "/api/overtimes")
 @Tag(name = "overtime")
 public class OvertimeRestEndpoint {
 

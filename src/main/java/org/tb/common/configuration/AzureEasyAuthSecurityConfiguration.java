@@ -35,7 +35,7 @@ public class AzureEasyAuthSecurityConfiguration {
       "/scripts/**",
       "/webjars/**",
       "/favicon.ico",
-      "/rest/doc/**",
+      "/api/doc/**",
       "/actuator/health",
       "/http-headers*",
       "/error*"
@@ -57,7 +57,7 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http) throws Exception {
-    http.securityMatcher("/rest/**")
+    http.securityMatcher("/api/**")
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .requestCache().disable()
