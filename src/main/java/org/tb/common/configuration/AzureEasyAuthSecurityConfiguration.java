@@ -57,7 +57,7 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http) throws Exception {
-    http.securityMatcher("/api/**")
+    http.securityMatcher("/api/**", "/rest/**")
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .requestCache().disable()
