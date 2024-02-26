@@ -153,12 +153,12 @@ public class SuborderDAO {
     private Specification<Suborder> filterMatches(String filter) {
         final var filterValue = ('%' + filter + '%').toUpperCase();
         return (root, query, builder) -> builder.or(
-            builder.like(builder.upper(root.get(Suborder_.description)), filterValue),
-            builder.like(builder.upper(root.get(Suborder_.shortdescription)), filterValue),
+            builder.like(builder.upper(root.get(Suborder_.description).as(String.class)), filterValue),
+            builder.like(builder.upper(root.get(Suborder_.shortdescription).as(String.class)), filterValue),
             builder.like(builder.upper(root.get(Suborder_.sign)), filterValue),
             builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.sign)), filterValue),
-            builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.description)), filterValue),
-            builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.shortdescription)), filterValue)
+            builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.description).as(String.class)), filterValue),
+            builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.shortdescription).as(String.class)), filterValue)
         );
     }
 
