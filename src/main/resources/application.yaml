@@ -55,6 +55,9 @@ management:
         include: health
 salat:
   auth:
+    logout:
+      enabled: true
+      logout-url: /?logout=true
     refresh:
       enabled: false
       refresh-url: /.auth/refresh

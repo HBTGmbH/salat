@@ -22,7 +22,14 @@ public class SalatProperties {
     private String apiScope;
     private OidcIdToken oidcIdToken;
     private AccessToken accessToken;
+    private Logout logout;
     private Refresh refresh;
+
+    @Data
+    public static class Logout {
+      private boolean enabled;
+      private String logoutUrl;
+    }
 
     @Data
     public static class Refresh {

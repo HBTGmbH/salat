@@ -118,9 +118,18 @@
 	</ul>
 	</li>
 	<li id="last">
-		Angemeldet als <c:out
-			value="${loginEmployee.loginname}" />/<c:out
-			value="${loginEmployee.status}" />
+		<c:choose>
+			<c:when test="${salatProperties.auth.logout.enabled}">
+				<a class="menu" href="<c:out value="${salatProperties.auth.logout.logoutUrl}" />">Abmelden (<c:out
+						value="${loginEmployee.loginname}"/>/<c:out
+						value="${loginEmployee.status}"/>)</a>
+			</c:when>
+			<c:otherwise>
+				Angemeldet als <c:out
+					value="${loginEmployee.loginname}"/>/<c:out
+					value="${loginEmployee.status}"/>
+			</c:otherwise>
+		</c:choose>
 	</li>
 </ul>
 </div>
