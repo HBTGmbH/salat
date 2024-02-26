@@ -36,7 +36,7 @@ import org.tb.order.persistence.SuborderDAO;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(path = "/api/orders")
+@RequestMapping(path = { "/api/orders", "/rest/orders" })
 @Tag(name = "order")
 public class OrderRestEndpoint {
 
