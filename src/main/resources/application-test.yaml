@@ -16,7 +16,9 @@ spring:
 salat:
   auth:
     enabled: true
-    logout-url: /.auth/logout
+    logout:
+      enabled: true
+      logout-url: /.auth/logout
     refresh:
       enabled: true
       refresh-url: /.auth/refresh
