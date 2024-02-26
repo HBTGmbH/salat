@@ -48,7 +48,7 @@ public class AddCustomerorderForm extends ActionForm {
         description = "";
         shortdescription = "";
         validFrom = DateUtils.format(today()); // 'yyyy-mm-dd'
-        validUntil = DateUtils.format(today()); // 'yyyy-mm-dd'
+        validUntil = null; // 'yyyy-mm-dd'
         responsibleCustomerTechnical = "";
         responsibleCustomerContractually = "";
         Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
