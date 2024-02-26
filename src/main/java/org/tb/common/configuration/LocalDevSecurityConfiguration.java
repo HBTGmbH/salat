@@ -65,7 +65,7 @@ public class LocalDevSecurityConfiguration {
   @Bean
   @Order(1)
   SecurityFilterChain restApi(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-    http.securityMatcher("/api/**")
+    http.securityMatcher("/api/**", "/rest/**")
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
