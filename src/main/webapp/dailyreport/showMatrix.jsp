@@ -1,29 +1,30 @@
-<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
-<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@page pageEncoding="UTF-8"%>
 <%@taglib uri="jakarta.tags.core" prefix="c"%>
 <%@taglib uri="jakarta.tags.functions" prefix="fn"%>
+<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
+<%@taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles"%>
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="myjsp" %>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
-<html>
-<head>
-	<title>
-		<bean:message key="main.general.application.title" /> -
-		<bean:message key="main.general.mainmenu.matrix.title.text" />
-	</title>
-	<jsp:include flush="true" page="/head-includes.jsp" />
-	<script type="text/javascript" language="JavaScript">
-		function setSwitchEmployee(form) {
-			form.action = "/do/ShowMatrix?task=switchEmployee";
-			form.submit();
-		}
+<tiles:insert definition="page">
+	<tiles:put name="menuactive" direct="true" value="timereport" />
+	<tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.timereports.text"/></tiles:put>
+	<tiles:put name="subsection" direct="true"><bean:message key="main.general.mainmenu.matrix.title.text"/></tiles:put>
+	<tiles:put name="scripts" direct="true">
+		<script type="text/javascript" language="JavaScript">
+			function setSwitchEmployee(form) {
+				form.action = "/do/ShowMatrix?task=switchEmployee";
+				form.submit();
+			}
 
 		function setRefreshMatrixAction(form) {
 			form.action = "/do/ShowMatrix?task=refreshMatrix";
-			form.submit();
-		}
+				form.submit();
+			}
 
-		function setMonth(mode) {
+			function setMonth(mode) {
 			var mainForm = document.getElementById("mainform");
 			mainForm.action = "/do/ShowMatrix?task=setMonth&mode=" + mode;
 			mainForm.submit();
@@ -37,67 +38,64 @@
 		function hideImportDialog() {
 			const dialog = document.getElementById("importDialog");
 			dialog.close();
-		}
+			}
 
-		$(document).ready(function() {
-			$(".make-select2").select2({
-				dropdownAutoWidth: true,
-				width: 'auto'
-			});	
-		});		
-	</script>
-	<style>
-		::backdrop {
-			background-image: linear-gradient(45deg, #191E55, blue);
-			opacity: 0.20;
-		}
-	</style>
-	<link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
-</head>
-<body>
-	<dialog id="importDialog">
-		<html:form action="/ShowMatrix?task=importCsv" enctype="multipart/form-data" method="POST">
-			<span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.csvimport.dialog.title.text" /><br></span>
-			<div style="margin-top: 10px;">
-				<input type="file" name="importFile" accept="text/csv" />
-			</div>
-			<div style="margin-top: 10px;">
-				<fieldset>
-					<legend><bean:message key="main.csvimport.dialog.mode.legend" /></legend>
-					<div>
-						<input type="radio" id="add" name="importMode" value="add" checked />
-						<label for="add"><bean:message key="main.csvimport.dialog.mode.add.label" /></label>
-					</div>
-					<div>
-						<input type="radio" id="replace" name="importMode" value="replace" />
-						<label for="replace"><bean:message key="main.csvimport.dialog.mode.replace.label" /></label>
-					</div>
-				</fieldset>
-			</div>
-			<div style="margin-top: 10px;">
-				<button id="cancel" type="reset" class="button" onclick="hideImportDialog()"><bean:message key="main.csvimport.dialog.cancel.text" /></button>
-				<button class="button-special" type="submit"><bean:message key="main.csvimport.dialog.confirm.text" /></button>
-			</div>
-		</html:form>
-	</dialog>
-	<jsp:include flush="true" page="/menu.jsp">
-		<jsp:param name="title" value="Menu" />
-	</jsp:include>
-	<br>
-		<span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.general.mainmenu.matrix.text" /><br></span>
-	<br>
-	<html:form action="/ShowMatrix" styleId="mainform">
-		<table class="center backgroundcolor">
-			<!-- select employee -->
-			<tr>
-				<td align="left" class="noBborderStyle">
-					<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
-				</td>
-				<td align="left" class="noBborderStyle"><html:select
-						property="employeeContractId"
-						value="${currentEmployeeContract.id}"
-						onchange="setSwitchEmployee(this.form)"
-						styleClass="make-select2">
+			$(document).ready(function() {
+				$(".make-select2").select2({
+					dropdownAutoWidth: true,
+					width: 'auto'
+				});
+			});
+		</script>
+        <style>
+          ::backdrop {
+            background-image: linear-gradient(45deg, #191E55, blue);
+            opacity: 0.20;
+          }
+        </style>
+        <link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
+    </tiles:put>
+	<tiles:put name="content" direct="true">
+        <dialog id="importDialog">
+            <html:form action="/ShowMatrix?task=importCsv" enctype="multipart/form-data" method="POST">
+                <span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.csvimport.dialog.title.text" /><br></span>
+                <div style="margin-top: 10px;">
+                    <input type="file" name="importFile" accept="text/csv" />
+                </div>
+                <div style="margin-top: 10px;">
+                    <fieldset>
+                        <legend><bean:message key="main.csvimport.dialog.mode.legend" /></legend>
+                        <div>
+                            <input type="radio" id="add" name="importMode" value="add" checked />
+                            <label for="add"><bean:message key="main.csvimport.dialog.mode.add.label" /></label>
+                        </div>
+                        <div>
+                            <input type="radio" id="replace" name="importMode" value="replace" />
+                            <label for="replace"><bean:message key="main.csvimport.dialog.mode.replace.label" /></label>
+                        </div>
+                    </fieldset>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button id="cancel" type="reset" class="button" onclick="hideImportDialog()"><bean:message key="main.csvimport.dialog.cancel.text" /></button>
+                    <button class="button-special" type="submit"><bean:message key="main.csvimport.dialog.confirm.text" /></button>
+                </div>
+            </html:form>
+        </dialog>
+        <br>
+        <span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.general.mainmenu.matrix.text" /><br></span>
+        <br>
+		<html:form action="/ShowMatrix">
+			<table class="center backgroundcolor">
+				<!-- select employee -->
+				<tr>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.monthlyreport.employee.fullname.text" />:</b>
+					</td>
+					<td align="left" class="noBborderStyle"><html:select
+							property="employeeContractId"
+							value="${currentEmployeeContract.id}"
+							onchange="setSwitchEmployee(this.form)"
+							styleClass="make-select2">
 						<c:if test="${authorizedUser.manager}">
 							<html:option value="-1">
 								<bean:message key="main.general.allemployees.text" />
@@ -114,49 +112,49 @@
 								</c:if>)
 							</html:option>
 						</c:forEach>
-					</html:select> 
-				</td>
-			</tr>
+					</html:select>
+					</td>
+				</tr>
 
-			<!-- select order -->
-			<tr>
-				<td align="left" class="noBborderStyle">
-					<b><bean:message key="main.monthlyreport.customerorder.text" />:</b>
-				</td>
-				<td align="left" class="noBborderStyle"><html:select
-						property="order"
-						value="<%=(String) request.getSession().getAttribute(\"currentOrder\")%>"
+				<!-- select order -->
+				<tr>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.monthlyreport.customerorder.text" />:</b>
+					</td>
+					<td align="left" class="noBborderStyle"><html:select
+							property="order"
+							value="<%=(String) request.getSession().getAttribute(\"currentOrder\")%>"
 						onchange="setRefreshMatrixAction(this.form)"
-						styleClass="make-select2">
+							styleClass="make-select2">
 
 						<html:option value="ALL ORDERS">
 							<bean:message key="main.general.allorders.text" />
 						</html:option>
 
 						<html:options collection="orders"
-							labelProperty="signAndDescription" property="sign" />
+									  labelProperty="signAndDescription" property="sign" />
 					</html:select><html:hidden property="orderId" /></td>
-			</tr>
+				</tr>
 
-			<!-- select first date -->
-			<tr>
-				<c:choose>
-					<c:when test="${matrixview eq 'month'}">
-						<td align="left" class="noBborderStyle"><b><bean:message
+				<!-- select first date -->
+				<tr>
+					<c:choose>
+						<c:when test="${matrixview eq 'month'}">
+							<td align="left" class="noBborderStyle"><b><bean:message
 									key="main.monthlyreport.monthyear.text" />:</b></td>
-					</c:when>
-					<c:otherwise>
-						<td align="left" class="noBborderStyle"><b><bean:message
+						</c:when>
+						<c:otherwise>
+							<td align="left" class="noBborderStyle"><b><bean:message
 									key="main.monthlyreport.daymonthyear.text" />:</b></td>
-					</c:otherwise>
-				</c:choose>
+						</c:otherwise>
+					</c:choose>
 
-				<td align="left" class="noBborderStyle"><c:if
-						test="${!(matrixview eq 'month')}">
+					<td align="left" class="noBborderStyle"><c:if
+							test="${!(matrixview eq 'month')}">
 						<html:select property="fromDay" value="${currentDay}"
 							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:options collection="days" property="value"
-								labelProperty="label" />
+										  labelProperty="label" />
 						</html:select>
 					</c:if> <html:select property="fromMonth" value="${currentMonth}"
 						onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
@@ -199,31 +197,31 @@
 					</html:select> <html:select property="fromYear" value="${currentYear}"
 						onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 						<html:options collection="years" property="value"
-							labelProperty="label" />
+									  labelProperty="label" />
 					</html:select>
 
-					<c:if test="${matrixview != 'custom'}">
-						<br />
-						<%-- Arrows for navigating the month --%>
-						<a href="javascript:setMonth('-12')"><i class="bi bi-skip-backward-btn"></i></a>
-						<a href="javascript:setMonth('-1')"><i class="bi bi-skip-start-btn"></i></a>
-						<a href="javascript:setMonth('0')"><i class="bi bi-stop-btn"></i></a>
-						<a href="javascript:setMonth('1')"><i class="bi bi-skip-end-btn"></i></a>
-						<a href="javascript:setMonth('12')"><i class="bi bi-skip-forward-btn"></i></a>
-					</c:if>
-				</td>
-			</tr>
+						<c:if test="${matrixview != 'custom'}">
+							<br />
+							<%-- Arrows for navigating the month --%>
+							<a href="javascript:setMonth('-12')"><i class="bi bi-skip-backward-btn"></i></a>
+							<a href="javascript:setMonth('-1')"><i class="bi bi-skip-start-btn"></i></a>
+							<a href="javascript:setMonth('0')"><i class="bi bi-stop-btn"></i></a>
+							<a href="javascript:setMonth('1')"><i class="bi bi-skip-end-btn"></i></a>
+							<a href="javascript:setMonth('12')"><i class="bi bi-skip-forward-btn"></i></a>
+						</c:if>
+					</td>
+				</tr>
 
-			<!-- select second date -->
-			<c:if test="${matrixview eq 'custom'}">
-				<tr>
-					<td align="left" class="noBborderStyle"><b><bean:message
+				<!-- select second date -->
+				<c:if test="${matrixview eq 'custom'}">
+					<tr>
+						<td align="left" class="noBborderStyle"><b><bean:message
 								key="main.monthlyreport.daymonthyear.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><html:select
-							property="untilDay" value="${lastDay}"
+						<td align="left" class="noBborderStyle"><html:select
+								property="untilDay" value="${lastDay}"
 							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:options collection="days" property="value"
-								labelProperty="label" />
+										  labelProperty="label" />
 						</html:select> <html:select property="untilMonth" value="${lastMonth}"
 							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:option value="Jan">
@@ -265,21 +263,21 @@
 						</html:select> <html:select property="untilYear" value="${lastYear}"
 							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:options collection="years" property="value"
-								labelProperty="label" />
+										  labelProperty="label" />
 						</html:select></td>
-				</tr>
-			</c:if>
-			<!-- select invoice -->
-			<tr>
-				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.invoice.text" />:</b></td>
+					</tr>
+				</c:if>
+				<!-- select invoice -->
+				<tr>
+					<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.invoice.text" />:</b></td>
 				<td align="left" class="noBborderStyle">
 					<html:checkbox property="invoice" onclick="setRefreshMatrixAction(this.form)" />
 					<html:hidden property="invoice" value="false" />
 				</td>
-			</tr>
-			<!-- select invoice -->
-			<tr>
-				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.non.invoice.text" />:</b></td>
+				</tr>
+				<!-- select invoice -->
+				<tr>
+					<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.non.invoice.text" />:</b></td>
 				<td align="left" class="noBborderStyle">
 					<html:checkbox property="nonInvoice" onclick="setRefreshMatrixAction(this.form)" />
 					<html:hidden property="nonInvoice" value="false" />
@@ -295,56 +293,56 @@
 					</td>
 				</tr>
 			</c:if>
-		</table>
-	</html:form>
+			</table>
+		</html:form>
 
 	<bean:size id="matrixlinesSize" name="matrixlines" />
 	<c:if test="${matrixlinesSize>10}">
-		<table>
-			<tr>
-				<c:if
-					test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
-					<html:form action="/CreateDailyReport?task=matrix">
-						<td class="noBborderStyle" align="left"><html:submit
-								styleId="button"
-								titleKey="main.general.button.createnewreport.alttext.text">
+			<table>
+				<tr>
+					<c:if
+							test="${(loginEmployee.name == currentEmployee) || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
+						<html:form action="/CreateDailyReport?task=matrix">
+							<td class="noBborderStyle" align="left"><html:submit
+									styleId="button"
+									titleKey="main.general.button.createnewreport.alttext.text">
 								<bean:message key="main.general.button.createnewreport.text" />
 							</html:submit></td>
-					</html:form>
-				</c:if>
-				<html:form target="_blank"
-					action="/ShowMatrix?task=print">
-					<td class="noBborderStyle" align="left"><html:submit
-							styleId="button"
-							titleKey="main.general.button.printpreview.alttext.text">
+						</html:form>
+					</c:if>
+					<html:form target="_blank"
+							   action="/ShowMatrix?task=print">
+						<td class="noBborderStyle" align="left"><html:submit
+								styleId="button"
+								titleKey="main.general.button.printpreview.alttext.text">
 							<bean:message key="main.general.button.printpreview.text" />
 						</html:submit></td>
-				</html:form>
+					</html:form>
+				</tr>
+			</table>
+			<br>
+		</c:if>
+
+		<table class="matrix" width="100%">
+			<tr class="matrix">
+				<th class="matrix" colspan="2"></th>
+				<th class="matrix" colspan="${daysofmonth+1}" align="left">
+					<c:if test="${currentEmployee eq 'ALL EMPLOYEES'}">
+						<bean:message
+								key="main.matrixoverview.headline.allemployees.text" />
+					</c:if>
+					<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">
+						<c:out value="${currentEmployee}" />
+					</c:if>
+					-
+					<bean:message key="${MonthKey}" />
+					<c:out value="${currentYear}" />
+				</th>
 			</tr>
-		</table>
-		<br>
-	</c:if>
 
-	<table class="matrix" width="100%">
-		<tr class="matrix">
-			<th class="matrix" colspan="2"></th>
-			<th class="matrix" colspan="${daysofmonth+1}" align="left">
-				<c:if test="${currentEmployee eq 'ALL EMPLOYEES'}">
-					<bean:message
-						key="main.matrixoverview.headline.allemployees.text" />
-				</c:if>
-				<c:if test="${!(currentEmployee eq 'ALL EMPLOYEES')}">
-					<c:out value="${currentEmployee}" />
-				</c:if>
-				-
-				<bean:message key="${MonthKey}" />
-				<c:out value="${currentYear}" />
-			</th>
-		</tr>
-
-		<tr>
-			<td class="matrix bold"><bean:message key="main.matrixoverview.table.order" /></td>
-			<td class="matrix bold"><bean:message key="main.matrixoverview.table.orderdescription" /></td>
+			<tr>
+				<td class="matrix bold"><bean:message key="main.matrixoverview.table.order" /></td>
+				<td class="matrix bold"><bean:message key="main.matrixoverview.table.orderdescription" /></td>
 			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
 				<td title="${matrixdaytotal.publicHolidayName} / <bean:message key="${matrixdaytotal.weekDay}" />"
 					class="matrix bold${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
@@ -353,33 +351,33 @@
 					<html:link href="/do/ShowDailyReport?day=${matrixdaytotal.dayString}&month=${currentMonth}&year=${currentYear}">
 						&nbsp;<c:out value="${matrixdaytotal.dayString}" />&nbsp;
 					</html:link>
-				</td>
-			</c:forEach>
+					</td>
+				</c:forEach>
 			<td class="matrix bold" align="right"><bean:message key="main.matrixoverview.table.sum.text" /></td>
-		</tr>
+			</tr>
 
 		<c:forEach var="matrixline" items="${matrixlines}">
-			<tr class="matrix">
+				<tr class="matrix">
 				<td class="matrix"><c:out value="${matrixline.customOrder.sign}"></c:out> (<c:out value="${matrixline.customerShortname}"></c:out>)<br><c:out value="${matrixline.subOrder.sign}" /></td>
 				<td class="matrix"><c:out value="${matrixline.customOrder.shortdescription}"></c:out><br><c:out value="${matrixline.subOrder.shortdescription}" /></td>
 				<c:forEach var="bookingday" items="${matrixline.bookingDays}">
-					<td title="${fn:escapeXml(bookingday.taskdescription)}"
+								<td title="${fn:escapeXml(bookingday.taskdescription)}"
 					class="matrix${bookingday.publicHoliday ? ' holiday' : (bookingday.satSun ? ' weekend' : '')}"
 					align="right"
 					style="font-size: 7pt; border: 1px black solid;">
-						<c:out value="${bookingday.durationString}" />
-					</td>
-				</c:forEach>
+							<c:out value="${bookingday.durationString}" />
+						</td>
+					</c:forEach>
 				<td class="matrix" align="right"><c:out	value="${matrixline.totalString}"></c:out></td>
-			</tr>
-		</c:forEach>
+				</tr>
+			</c:forEach>
 
-		<tr class="matrix">
-			<td colspan="2" class="matrix bold"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.overall.text" /></td>
+			<tr class="matrix">
+				<td colspan="2" class="matrix bold"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.overall.text" /></td>
 			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
 				<td class="matrix bold${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
 					style="font-size: 7pt; border-top: 2px black solid;"
-					align="right">
+								align="right">
 					<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
 				</td>
 			</c:forEach>
@@ -398,7 +396,7 @@
 			</c:forEach>
 			<td class="matrix bold" align="right"><c:out value="${totalovertimecompensationstring}"></c:out></td>
 		</tr>
-		</c:if>
+						</c:if>
 
 		<c:if test="${dailyReportViewHelper.displayWorkingDayStartBreak and showStartAndBreakTime}">
 			<tr class="matrix">
@@ -424,7 +422,7 @@
 				</c:forEach>
 				<td class="matrix" align="right">&nbsp;</td>
 			</tr>
-		</c:if>
+					</c:if>
 		<c:if test="${dailyReportViewHelper.displayWorkingDay}">
 			<tr class="matrix">
 				<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.notworked.text" /></td>
@@ -461,30 +459,30 @@
 									<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.overtimecompensation.text" /></td>
 									<td class="matrix" style="border-style:none;text-align: right"><c:out value="${totalovertimecompensationstring}" /></td>
 								</tr>
-								<tr class="matrix">
+							<tr class="matrix">
 									<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.differencewithovertimecompensation.text" /></td>
 									<td class="matrix" style="border-style:none;text-align: right"><c:out value="${totalworkingtimediffwithcompensationstring}" /></td>
-								</tr>
-							</c:if>
+							</tr>
+						</c:if>
 						</c:if>
 					</table>
 				</td>
 			</tr>
 		</c:if>
 
-	</table>
+		</table>
 	<table style="width: 100%">
-		<tr>
+			<tr>
 			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
-				<html:form action="/CreateDailyReport?task=matrix">
-					<td class="noBborderStyle" align="left"><html:submit
-							styleId="button"
-							titleKey="main.general.button.createnewreport.alttext.text">
+					<html:form action="/CreateDailyReport?task=matrix">
+						<td class="noBborderStyle" align="left"><html:submit
+								styleId="button"
+								titleKey="main.general.button.createnewreport.alttext.text">
 							<bean:message key="main.general.button.createnewreport.text" />
 						</html:submit></td>
-				</html:form>
-			</c:if>
-			<html:form target="_blank" action="/ShowMatrix?task=print">
+					</html:form>
+				</c:if>
+				<html:form target="_blank" action="/ShowMatrix?task=print">
 				<td class="noBborderStyle" align="left">
 					<html:submit styleId="button" titleKey="main.general.button.printpreview.alttext.text">
 						<bean:message key="main.general.button.printpreview.text" />
@@ -524,14 +522,12 @@
 					</td>
 				</html:form>
 			</c:if>
-		</tr>
-	</table>
+			</tr>
+		</table>
 	<c:if test="${dailyReportViewHelper.displayEmployeeInfo}">
 		<!-- Überstunden und Urlaubstage -->
-		<br><br><br>
-		<jsp:include flush="true" page="/WEB-INF/assets/info2.jsp">
-			<jsp:param name="info" value="Info" />
-		</jsp:include>
-	</c:if>
-</body>
-</html>
+			<br><br><br>
+			<tiles:insert definition="info2" flush="false" />
+		</c:if>
+	</tiles:put>
+</tiles:insert>
