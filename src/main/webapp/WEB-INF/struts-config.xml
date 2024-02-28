@@ -453,13 +453,6 @@
 
 	</action-mappings>
 
-
-	<!-- ============================================= Controller Configuration -->
-
-	<controller
-		processorClass="org.tb.common.struts.DelegatingRequestProcessor"
-		nocache="false" />
-
 	<!-- ======================================== Message Resources Definitions -->
 
 	<message-resources parameter="org/tb/web/MessageResources" null="false" />

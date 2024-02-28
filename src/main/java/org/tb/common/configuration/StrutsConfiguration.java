@@ -14,6 +14,7 @@ public class StrutsConfiguration {
   public ServletRegistrationBean<ActionServlet> actionServlet() {
     var bean = new ServletRegistrationBean<>(new ActionServlet());
     bean.addInitParameter("config", "/WEB-INF/struts-config.xml");
+    bean.addInitParameter("chainConfig", "/WEB-INF/struts-chain-config.xml");
     bean.addInitParameter("convertNull", "false"); // don't set to true, this results in severe problems!
     bean.setLoadOnStartup(1);
     bean.addUrlMappings("/do/*");
