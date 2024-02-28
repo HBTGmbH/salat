@@ -13,6 +13,9 @@
 	<tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.timereports.text"/></tiles:put>
 	<tiles:put name="subsection" direct="true"><bean:message key="main.general.addtimereport.text"/></tiles:put>
 	<tiles:put name="scripts" direct="true">
+		<script type="text/javascript" language="JavaScript">
+			var currentUser = "<c:out value="authorizedUser.sign" />";
+		</script>
 		<script src="<c:url value="/scripts/favouriteOrder.js" />" type="text/javascript"></script>
 		<script type="text/javascript" language="JavaScript">
 			if(typeof Storage !== "undefined") HBT.Salat.FavouriteOrders.initialize({
