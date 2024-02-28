@@ -124,6 +124,11 @@
       <artifactId>struts-el</artifactId>
       <version>${struts-weblegacy.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.github.weblegacy</groupId>
+      <artifactId>struts-tiles</artifactId>
+      <version>${struts-weblegacy.version}</version>
+    </dependency>
     <!-- other stuff -->
     <dependency>
       <groupId>org.apache.poi</groupId>
