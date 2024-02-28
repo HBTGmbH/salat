@@ -1,14 +1,18 @@
-<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
-<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@page pageEncoding="UTF-8"%>
 <%@taglib uri="jakarta.tags.core" prefix="c"%>
+<%@taglib uri="jakarta.tags.functions" prefix="fn"%>
 <%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
-<html>
-	<head>
-		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.release.title.text" /></title>
-		<jsp:include flush="true" page="/head-includes.jsp" />
+<%@taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles"%>
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="myjsp" %>
+<%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
+<tiles:insert definition="page">
+	<tiles:put name="menuactive" direct="true" value="timereport" />
+	<tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.timereports.text"/></tiles:put>
+	<tiles:put name="subsection" direct="true"><bean:message key="main.general.mainmenu.release.title.text"/></tiles:put>
+	<tiles:put name="scripts" direct="true">
 		<script type="text/javascript" language="JavaScript">
 			function confirmSendReleaseMail(form, sign) {
 				var agree=confirm("<bean:message key="main.general.confirmmail.text" />");
@@ -69,61 +73,44 @@
 				});
 			});
 		</script>
-
-	</head>
-	<body>
-		<jsp:include flush="true" page="/menu.jsp">
-			<jsp:param name="title" value="Menu" />
-		</jsp:include>
-		<br>
-
+	</tiles:put>
+	<tiles:put name="content" direct="true">
 		<html:form action="/ShowRelease">
-			<table border="0" cellspacing="0" cellpadding="2"
-				class="center backgroundcolor">
-
-				<tr>
-					<td class="noBborderStyle" align="left">
-						<span style="font-size: 14pt; font-weight: bold;"><bean:message
-								key="main.general.mainmenu.release.title.text" />:&nbsp;&nbsp;
-							<p>
-						</span>
-					</td>
-				</tr>
-				
+			<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 				<c:if test="${isSupervisor or authorizedUser.manager}">
 					<tr>
 						<td align="left" class="noBborderStyle">
 							<b><bean:message key="main.release.supervisor.text" />:&nbsp;&nbsp;</b>
 						</td>
-					
+
 						<td align="left" class="noBborderStyle">
-							<html:select property="supervisorId" value="${supervisorId}" 
-								onchange="setUpdateSupervisor(this.form)" styleClass="make-select2">
+							<html:select property="supervisorId" value="${supervisorId}"
+										 onchange="setUpdateSupervisor(this.form)" styleClass="make-select2">
 								<html:option value="-1">
 									<bean:message key="main.general.all.text" />
 								</html:option>
-								 <c:forEach var="supervisor" items="${supervisors}">
+								<c:forEach var="supervisor" items="${supervisors}">
 									<html:option value="${supervisor.id}">
 										<c:out value="${supervisor.name}" /> |
 										<c:out value="${supervisor.sign}" />
 									</html:option>
-								</c:forEach> 
+								</c:forEach>
 							</html:select>
-							<html:hidden property="supervisorId" /> 
+							<html:hidden property="supervisorId" />
 						</td>
 					</tr>
-				</c:if> 
-				
+				</c:if>
+
 				<tr>
 					<td align="left" class="noBborderStyle">
 						<b><bean:message key="main.release.employee.text" />:</b>
 					</td>
-						
+
 					<td align="left" class="noBborderStyle">
 						<c:choose>
 							<c:when test="${authorizedUser.manager or isSupervisor}">
 								<html:select property="employeeContractId" styleClass="make-select2"
-									onchange="setUpdateEmployeeContract(this.form)">
+											 onchange="setUpdateEmployeeContract(this.form)">
 									<html:option value="${loginEmployeeContract.id}">
 										<c:out value="${loginEmployeeContract.employee.name}" /> |
 										<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
@@ -171,7 +158,7 @@
 				<!-- release -->
 
 				<c:if
-					test="${authorizedUser.manager || employeeContractId == loginEmployeeContractId}">
+						test="${authorizedUser.manager || employeeContractId == loginEmployeeContractId}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="10"></td>
 					</tr>
@@ -185,12 +172,11 @@
 
 						<td class="noBborderStyle">
 							<html:submit onclick="confirmRelease(this.form);return false"
-								styleId="button">
+										 styleId="button">
 								<bean:message key="main.general.button.release.text" />
 							</html:submit>
 						</td>
 					</tr>
-					<br>
 				</c:if>
 
 
@@ -211,12 +197,11 @@
 
 						<td class="noBborderStyle">
 							<html:submit onclick="confirmAcceptance(this.form);return false"
-								styleId="button">
+										 styleId="button">
 								<bean:message key="main.general.button.accept.text" />
 							</html:submit>
 						</td>
 					</tr>
-					<br>
 				</c:if>
 
 
@@ -237,13 +222,12 @@
 
 						<td class="noBborderStyle">
 							<html:submit onclick="confirmReopen(this.form);return false"
-								styleId="button">
+										 styleId="button">
 								<bean:message key="main.general.button.reopen.text" />
 							</html:submit>
 						</td>
 					</tr>
 				</c:if>
-				<br>
 			</table>
 
 			<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
@@ -251,119 +235,119 @@
 			<!-- overview table -->
 			<br>
 			<br>
-<%--	Benachrichtigung �ber emailvesand		--%>
+			<%--	Benachrichtigung �ber emailvesand		--%>
 			<div style="font-size: 12pt;"><i><c:out value="${actionInfo}" />&nbsp;</i></div>
 			<c:if test="${not loginEmployee.restricted}">
-			<br>
+				<br>
 
-			<table class="center backgroundcolor">
-				<tr>
-					<td colspan="2" align="left" class="noBborderStyle">
-						<h3>
-							<bean:message key="main.release.overview.text" />
-						</h3>
-					</td>
-				</tr>
-				<tr>
-					<th align="left">
-						<b> <bean:message key="main.employeeorder.employee.text" />
-						</b>
-					</th>
-					<th align="left">
-						<b> <bean:message key="main.release.employee.text" />
-						</b>
-					</th>
-					<th align="left">
-						<b> <bean:message key="main.release.timeperiod.text" />
-						</b>
-					</th>
-					<th align="left">
-						<b> <bean:message key="main.release.released.until.text" />
-						</b>
-					</th>
-					<th align="left">
-						<b> <bean:message key="main.employeecontract.supervisor.text" />
-						</b>
-					</th>
-					<th align="left">
-						<b> <bean:message key="main.release.accepted.until.text" />
-						</b>
-					</th>
-					<!-- <th align="left">
-						Buchungen pr�fen
-					</th> -->
-				</tr>
-				<c:forEach var="employeecontract" items="${employeecontracts}"
-					varStatus="statusID">
-					<c:choose>
-						<c:when test="${statusID.count%2==0}">
-							<tr class="primarycolor">
-						</c:when>
-						<c:otherwise>
-							<tr class="secondarycolor">
-						</c:otherwise>
-					</c:choose>
-					<td>
-						<c:out value="${employeecontract.employee.sign}" />
-					</td>
-					<td>
-						<c:out value="${employeecontract.employee.name}" />
-					</td>
-					<td align="left">
-						<c:out value="${employeecontract.timeString}" />
-						<c:if test="${employeecontract.openEnd}">
-							<bean:message key="main.general.open.text" />
-						</c:if>
-					</td>
-					<td align="center">
-						<c:choose>
-							<c:when test="${employeecontract.releaseWarning}">
-								<font color="red"><c:out
-										value="${employeecontract.reportReleaseDateString}" />
-								</font>
-
-								<c:if test="${authorizedUser.manager}">
-									<html:image title="Erinnerungsmail senden"
-										onclick="confirmSendReleaseMail(this.form, '${employeecontract.employee.sign}');return false"
-										src="/images/mail_icon_01.gif">
-										<font color="red"><c:out
-												value="${employeecontract.reportReleaseDateString}" />
-										</font>
-									</html:image>
-								</c:if>
-							</c:when>
-							<c:otherwise>
-								<c:out value="${employeecontract.reportReleaseDateString}" />
-							</c:otherwise>
-						</c:choose>
-					</td>
-					<td align="center">
-					  <c:out value="${employeecontract.supervisor.sign}" />&nbsp;
-					</td>
-					<td align="center">
-						<c:choose>
-							<c:when test="${employeecontract.acceptanceWarning}">
-								<font color="red"><c:out value="${employeecontract.reportAcceptanceDateString}" />
-								</font>
-								<c:if test="${authorizedUser.manager && !employeecontract.releaseWarning}">
-									<html:image title="Erinnerungsmail senden"
-										onclick="confirmSendAcceptanceMail(this.form, '${employeecontract.employee.sign}');return false"
-										src="/images/mail_icon_01.gif">
-										<font color="red"><c:out
-												value="${employeecontract.reportReleaseDateString}" />
-										</font>
-									</html:image>
-								</c:if>
-							</c:when>
-							<c:otherwise>
-								<c:out value="${employeecontract.reportAcceptanceDateString}" />
-							</c:otherwise>
-						</c:choose>
-					</td>
+				<table class="center backgroundcolor">
+					<tr>
+						<td colspan="2" align="left" class="noBborderStyle">
+							<h3>
+								<bean:message key="main.release.overview.text" />
+							</h3>
+						</td>
 					</tr>
-				</c:forEach>
-			</table>
+					<tr>
+						<th align="left">
+							<b> <bean:message key="main.employeeorder.employee.text" />
+							</b>
+						</th>
+						<th align="left">
+							<b> <bean:message key="main.release.employee.text" />
+							</b>
+						</th>
+						<th align="left">
+							<b> <bean:message key="main.release.timeperiod.text" />
+							</b>
+						</th>
+						<th align="left">
+							<b> <bean:message key="main.release.released.until.text" />
+							</b>
+						</th>
+						<th align="left">
+							<b> <bean:message key="main.employeecontract.supervisor.text" />
+							</b>
+						</th>
+						<th align="left">
+							<b> <bean:message key="main.release.accepted.until.text" />
+							</b>
+						</th>
+						<!-- <th align="left">
+                            Buchungen pr�fen
+                        </th> -->
+					</tr>
+					<c:forEach var="employeecontract" items="${employeecontracts}"
+							   varStatus="statusID">
+						<c:choose>
+							<c:when test="${statusID.count%2==0}">
+								<tr class="primarycolor">
+							</c:when>
+							<c:otherwise>
+								<tr class="secondarycolor">
+							</c:otherwise>
+						</c:choose>
+						<td>
+							<c:out value="${employeecontract.employee.sign}" />
+						</td>
+						<td>
+							<c:out value="${employeecontract.employee.name}" />
+						</td>
+						<td align="left">
+							<c:out value="${employeecontract.timeString}" />
+							<c:if test="${employeecontract.openEnd}">
+								<bean:message key="main.general.open.text" />
+							</c:if>
+						</td>
+						<td align="center">
+							<c:choose>
+								<c:when test="${employeecontract.releaseWarning}">
+									<font color="red"><c:out
+											value="${employeecontract.reportReleaseDateString}" />
+									</font>
+
+									<c:if test="${authorizedUser.manager}">
+										<html:image title="Erinnerungsmail senden"
+													onclick="confirmSendReleaseMail(this.form, '${employeecontract.employee.sign}');return false"
+													src="/images/mail_icon_01.gif">
+											<font color="red"><c:out
+													value="${employeecontract.reportReleaseDateString}" />
+											</font>
+										</html:image>
+									</c:if>
+								</c:when>
+								<c:otherwise>
+									<c:out value="${employeecontract.reportReleaseDateString}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
+						<td align="center">
+							<c:out value="${employeecontract.supervisor.sign}" />&nbsp;
+						</td>
+						<td align="center">
+							<c:choose>
+								<c:when test="${employeecontract.acceptanceWarning}">
+									<font color="red"><c:out value="${employeecontract.reportAcceptanceDateString}" />
+									</font>
+									<c:if test="${authorizedUser.manager && !employeecontract.releaseWarning}">
+										<html:image title="Erinnerungsmail senden"
+													onclick="confirmSendAcceptanceMail(this.form, '${employeecontract.employee.sign}');return false"
+													src="/images/mail_icon_01.gif">
+											<font color="red"><c:out
+													value="${employeecontract.reportReleaseDateString}" />
+											</font>
+										</html:image>
+									</c:if>
+								</c:when>
+								<c:otherwise>
+									<c:out value="${employeecontract.reportAcceptanceDateString}" />
+								</c:otherwise>
+							</c:choose>
+						</td>
+						</tr>
+					</c:forEach>
+				</table>
 			</c:if>
 		</html:form>
-	</body>
-</html>
+	</tiles:put>
+</tiles:insert>
