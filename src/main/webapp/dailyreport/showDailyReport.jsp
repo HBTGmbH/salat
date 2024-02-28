@@ -852,14 +852,9 @@
 		</span>
 
 		<!-- Überstunden und Urlaubstage -->
-		<c:choose>
-			<c:when test="${currentEmployee != 'ALL EMPLOYEES'}">
-				<br><br><br>
-				<tiles:insert definition="info2" flush="false" />
-			</c:when>
-			<c:otherwise>
-				<br><br><br><br><br><br><br><br><br><br><br>
-			</c:otherwise>
-		</c:choose>
+		<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
+			<br><br><br>
+			<tiles:insert definition="info2" flush="false" />
+		</c:if>
 	</tiles:put>
 </tiles:insert>
