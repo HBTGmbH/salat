@@ -529,7 +529,7 @@
 	<c:if test="${dailyReportViewHelper.displayEmployeeInfo}">
 		<!-- Überstunden und Urlaubstage -->
 		<br><br><br>
-		<jsp:include flush="true" page="/info2.jsp">
+		<jsp:include flush="true" page="/WEB-INF/assets/info2.jsp">
 			<jsp:param name="info" value="Info" />
 		</jsp:include>
 	</c:if>
