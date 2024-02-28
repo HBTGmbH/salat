@@ -125,9 +125,10 @@
       className="org.apache.struts.chain.commands.servlet.SetOriginalURI"/>
 
 
-    <!-- Set (if needed) no cache HTTP response headers -->
+    <!-- Set (if needed) no cache HTTP response headers
     <command
       className="org.apache.struts.chain.commands.servlet.RequestNoCache"/>
+      -->
 
 
     <!-- Set (if needed) the HTTP response content type -->
