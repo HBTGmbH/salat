@@ -1,23 +1,23 @@
-<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
-<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@page pageEncoding="UTF-8"%>
 <%@taglib uri="jakarta.tags.core" prefix="c"%>
+<%@taglib uri="jakarta.tags.functions" prefix="fn"%>
 <%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
+<%@taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles"%>
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="myjsp" %>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
-<html:html>
-	<head>
-		<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.daily.text" /></title>
-		<jsp:include flush="true" page="/head-includes.jsp" />
+<tiles:insert definition="page">
+	<tiles:put name="menuactive" direct="true" value="order" />
+	<tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.timereports.text"/></tiles:put>
+	<tiles:put name="subsection" direct="true"><bean:message key="main.general.mainmenu.daily.text"/></tiles:put>
+	<tiles:put name="scripts" direct="true">
 		<script type="text/javascript" language="JavaScript">
 			var failedMassEditIds = '${failedMassEditIds.toString()}';
 			if(failedMassEditIds != "") {
 				failedMassEditIds = JSON.parse(failedMassEditIds);
 			}
-		</script>
-		<script type="text/javascript" language="JavaScript">
-
 
 			function findForm(item) {
 				while(item) {
@@ -154,21 +154,8 @@
 			var confirmMassDelete = '<bean:message key="main.general.confirmMassDelete.text" />';
 			var cannotShiftReportsMsg = '<bean:message key="main.general.cannotShiftReports.text" />';
 		</script>
-
-		<link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
-	</head>
-
-	<body>
-		<jsp:include flush="true" page="/menu.jsp">
-			<jsp:param name="title" value="Menu" />
-		</jsp:include>
-		<br>
-		<span style="font-size: 14pt; font-weight: bold;">
-			<br>
-			<bean:message key="main.general.mainmenu.daily.text" />
-			<br>
-		</span>
-		<br>
+	</tiles:put>
+	<tiles:put name="content" direct="true">
 		<html:form action="/ShowDailyReport">
 			<table class="center backgroundcolor">
 				<colgroup>
@@ -333,7 +320,7 @@
 									</html:option>
 								</html:select>
 								<html:select property="year" value="<%=(String) request.getSession().getAttribute(\"currentYear\")%>"
-									onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
+											 onchange="setUpdateTimereportsAction(findForm(this))" styleClass="make-select2">
 									<html:options collection="years" property="value" labelProperty="label" />
 								</html:select>
 								<br />
@@ -356,7 +343,7 @@
 						</td>
 						<td align="left" class="noBborderStyle">
 							<input type='date' name='enddate' value='<bean:write name="showDailyReportForm" property="enddate" />' onchange="afterCalenderClick(findForm(this))" />
-							<%-- Arrows for navigating the Date --%>
+								<%-- Arrows for navigating the Date --%>
 							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-7')" title="<bean:message key="main.date.popup.prevweek" />"><i class="bi bi-skip-backward-btn"></i></a>
 							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','-1')" title="<bean:message key="main.date.popup.prevday" />"><i class="bi bi-skip-start-btn"></i></a>
 							<a href="#" onclick="changeDateAndUpdateTimereportsAction(document.forms.showDailyReportForm,'end','0')" title="<bean:message key="main.date.popup.today" />"><i class="bi bi-stop-btn"></i></a>
@@ -387,12 +374,12 @@
 				</tr>
 
 				<!-- compute overtime until chosen Date -->
-	      		<tr>
+				<tr>
 					<td align="left" valign="top" class="noBborderStyle">
 						<b><bean:message key="main.general.timereport.overtimeUntilDate"/>:</b>
 					</td>
 					<c:choose>
-	      				<c:when test="${overtimeDisabled=='true'}">
+						<c:when test="${overtimeDisabled=='true'}">
 							<td align="left" class="noBborderStyle">
 								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(findForm(this))" disabled="true"/>
 							</td>
@@ -725,9 +712,9 @@
 							<!-- Kommentar -->
 							<td class="noBborderStyle">
 								<html:textarea property="comment" cols="30" rows="1" value="${timereport.taskdescription}"
-									onkeydown="limitText(this.form.comment,256);"
-									onkeyup="limitText(this.form.comment,256);"
-									styleClass="showDailyReport" />
+											   onkeydown="limitText(this.form.comment,256);"
+											   onkeyup="limitText(this.form.comment,256);"
+											   styleClass="showDailyReport" />
 							</td>
 
 							<!-- Fortbildung -->
@@ -825,7 +812,7 @@
 									<tr><th colspan="2"><bean:message key="main.timereport.mass.edit.shift.days.text" /></th></tr>
 									<c:forEach begin="1" end="7" varStatus="loop">
 										<tr><td><span title='<bean:message key="main.timereport.mass.edit.shift.days.tooltip" arg0='-${loop.index}' />' onclick='return HBT.MassEdit.confirmShiftDays(this, "<bean:message key="main.timereport.mass.edit.shift.days.confirm.msg" arg0='-${loop.index}' />", -${loop.index});'>-${loop.index}</span></td>
-										    <td><span title='<bean:message key="main.timereport.mass.edit.shift.days.tooltip" arg0='+${loop.index}' />' onclick='return HBT.MassEdit.confirmShiftDays(this, "<bean:message key="main.timereport.mass.edit.shift.days.confirm.msg" arg0='+${loop.index}' />", ${loop.index});'>+${loop.index}</span></td></tr>
+											<td><span title='<bean:message key="main.timereport.mass.edit.shift.days.tooltip" arg0='+${loop.index}' />' onclick='return HBT.MassEdit.confirmShiftDays(this, "<bean:message key="main.timereport.mass.edit.shift.days.confirm.msg" arg0='+${loop.index}' />", ${loop.index});'>+${loop.index}</span></td></tr>
 									</c:forEach>
 								</table>
 							</div>
@@ -852,7 +839,7 @@
 				</html:form>
 			</tr>
 		</table>
-		<br>
+		<br />
 
 		<span style="color: red">
 			<b>
@@ -868,13 +855,11 @@
 		<c:choose>
 			<c:when test="${currentEmployee != 'ALL EMPLOYEES'}">
 				<br><br><br>
-				<jsp:include flush="true" page="/WEB-INF/assets/info2.jsp">
-					<jsp:param name="info" value="Info" />
-				</jsp:include>
+				<tiles:insert definition="info2" flush="false" />
 			</c:when>
 			<c:otherwise>
 				<br><br><br><br><br><br><br><br><br><br><br>
 			</c:otherwise>
 		</c:choose>
-	</body>
-</html:html>
+	</tiles:put>
+</tiles:insert>
