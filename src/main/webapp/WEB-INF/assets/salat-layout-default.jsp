@@ -45,7 +45,7 @@
             </button>
             <h1 class="navbar-brand navbar-brand-autodark">
         <span>
-          <img src="/images/hbt-logo.svg" alt="SALAT" class="navbar-brand-image"
+          <img src="<c:url value="/images/hbt-logo.svg" />" alt="SALAT" class="navbar-brand-image"
                style="height: 24px">
           <h4 style="margin-block-end: 0"><bean:message key="main.general.application.title" /></h4>
         </span>
