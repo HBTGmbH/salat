@@ -25,7 +25,7 @@
     <jettison.version>1.5.4</jettison.version>
     <commons-email.version>1.6.0</commons-email.version>
     <poi.version>5.2.5</poi.version>
-    <struts-weblegacy.version>1.5.0-RC1</struts-weblegacy.version>
+    <struts-weblegacy.version>1.5.0-RC2</struts-weblegacy.version>
     <jstl-api.version>3.0.0</jstl-api.version>
     <jstl.version>3.0.1</jstl.version>
     <jsp-api.version>3.1.1</jsp-api.version>
