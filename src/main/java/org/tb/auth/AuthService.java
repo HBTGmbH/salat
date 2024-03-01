@@ -4,6 +4,7 @@ import static java.util.function.Function.identity;
 import static org.tb.auth.AccessLevel.ACCEPT;
 import static org.tb.auth.AccessLevel.DELETE;
 import static org.tb.auth.AccessLevel.EXECUTE;
+import static org.tb.auth.AccessLevel.LOGIN;
 import static org.tb.auth.AccessLevel.READ;
 import static org.tb.auth.AccessLevel.RELEASE;
 import static org.tb.auth.AccessLevel.WRITE;
@@ -20,11 +21,13 @@ import jakarta.annotation.PostConstruct;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +63,21 @@ public class AuthService {
     cacheExpiryMillis = salatProperties.getAuthService().getCacheExpiry().toMillis();
   }
 
+  public List<Employee> getLoginEmployees() {
+    return StreamSupport
+        .stream(employeeRepository.findAll().spliterator(), false)
+        .filter(e -> e.getSign().equals(authorizedUser.getLoginSign()) || isAuthorized(e, LOGIN))
+        .toList();
+  }
+
+  public void switchLogin(long loginEmployeeId) {
+    employeeRepository.findById(loginEmployeeId).ifPresent(loginEmployee -> {
+      if(isAuthorized(loginEmployee, LOGIN)) {
+        authorizedUser.init(loginEmployee);
+      }
+    });
+  }
+
   public boolean isAuthorizedForEmployee(long employeeId, AccessLevel accessLevel) {
     return employeeRepository
         .findById(employeeId)
@@ -68,11 +86,20 @@ public class AuthService {
   }
 
   public boolean isAuthorized(Employee employee, AccessLevel accessLevel) {
+    if(accessLevel == LOGIN) {
+      if(employee.getSign().equals(authorizedUser.getLoginSign())) return true;
+      return anyRuleMatches(EMPLOYEE,
+          rule -> rule.getGrantorId().equals(employee.getSign())
+                  && rule.getGranteeId().equals(authorizedUser.getLoginSign())
+                  && rule.getAccessLevel().satisfies(LOGIN)
+                  && rule.isValid(today()));
+    }
+
     if(authorizedUser.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
 
     if(accessLevel == EXECUTE || accessLevel == READ || accessLevel == RELEASE) {
-      if(employee.getId() == authorizedUser.getEmployeeId()) return true;
+      if(employee.getId().equals(authorizedUser.getEmployeeId())) return true;
       return anyRuleMatches(EMPLOYEE,
           rule -> rule.getGrantorId().equals(employee.getSign())
                   && rule.getGranteeId().equals(authorizedUser.getSign())
@@ -89,7 +116,7 @@ public class AuthService {
     boolean checkRule = false;
     if(accessLevel == READ || accessLevel == EXECUTE) {
       if(authorizedUser.isManager()) return true;
-      if(timereport.getEmployeecontract().getEmployee().getId() == authorizedUser.getEmployeeId()) return true;
+      if(timereport.getEmployeecontract().getEmployee().getId().equals(authorizedUser.getEmployeeId())) return true;
 
       // every project manager may see the time reports of her project
       if(authorizedUser.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getId())) {

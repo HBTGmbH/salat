@@ -160,7 +160,7 @@
 		</action>
 
 		<action path="/ShowWelcome" input="/welcome/showWelcome.jsp" validate="true"
-			name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeAction">
+			name="showWelcomeForm" type="org.tb.welcome.action.ShowWelcomeAction" scope="request">
 			<forward name="success" path="/welcome/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>

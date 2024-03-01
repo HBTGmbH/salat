@@ -17,6 +17,11 @@
 		form.submit();
 	}
 
+	function switchLogin(form) {
+		form.action = "/do/ShowWelcome?task=switch-login";
+		form.submit();
+	}
+
 	$(document).ready(function() {
 		$(".make-select2").select2({
 			dropdownAutoWidth: true,
@@ -38,8 +43,7 @@
 <br><span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.overview.text" /><br></span>
 <br>
 <html:form action="/ShowWelcome">
-&nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)"
-			 value="${currentEmployeeContract.id}" styleClass="make-select2">
+&nbsp;<html:select property="employeeContractId" onchange="setUpdate(this.form)" styleClass="make-select2">
 	<c:forEach var="employeecontract" items="${employeecontracts}" >
 			<html:option value="${employeecontract.id}">
 				<c:out value="${employeecontract.employee.name}" /> |
@@ -48,6 +52,16 @@
 			</html:option>
 	</c:forEach>
 </html:select>
+<c:if test="${loginEmployees.size() > 1}">
+	<html:select property="loginEmployeeId" onchange="switchLogin(this.form)" styleClass="make-select2">
+		<c:forEach var="employee" items="${loginEmployees}" >
+			<html:option value="${employee.id}">
+				<c:out value="${employee.name}" /> |
+				<c:out value="${employee.sign}" />
+			</html:option>
+		</c:forEach>
+	</html:select>
+</c:if>
 </html:form>
 <br />
 <jsp:include flush="true" page="/info2.jsp">

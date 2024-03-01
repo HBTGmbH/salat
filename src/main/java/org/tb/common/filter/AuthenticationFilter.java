@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
 
 
@@ -28,7 +29,12 @@ public class AuthenticationFilter extends HttpFilter {
         throws IOException, ServletException {
         Principal principal = SecurityContextHolder.getContext().getAuthentication();
         if(principal != null && principal.getName() != null) {
-            employeeRepository.findBySign(principal.getName()).ifPresent(authorizedUser::init);
+            authorizedUser.setLoginSign(principal.getName());
+            if(request.getSession(false) != null && request.getSession().getAttribute("loginEmployee") != null) {
+                authorizedUser.init((Employee) request.getSession().getAttribute("loginEmployee"));
+            } else {
+                employeeRepository.findBySign(principal.getName()).ifPresent(authorizedUser::init);
+            }
         }
         Object oldValue = request.getAttribute("authorizedUser");
         request.setAttribute("authorizedUser", authorizedUser);

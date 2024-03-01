@@ -15,6 +15,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -34,6 +35,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
 
     private final CustomerorderDAO customerorderDAO;
     private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
     private final EmployeecontractDAO employeecontractDAO;
     private final SuborderDAO suborderDAO;
     private final EmployeeorderDAO employeeorderDAO;
@@ -53,7 +55,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
             return mapping.getInputForward();
         }
 
-        if (!timereportDAO.deleteTimereportById(trId)) {
+        if (!timereportService.deleteTimereport(trId)) {
             return mapping.findForward("error");
         }
 

@@ -8,10 +8,12 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AfterLogin;
+import org.tb.auth.AuthService;
 import org.tb.common.Warning;
 import org.tb.dailyreport.action.DailyReportAction;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 
 @Component
@@ -20,20 +22,32 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final AfterLogin afterLogin;
+    private final AuthService authService;
+    private final EmployeeDAO employeeDAO;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
         ShowWelcomeForm welcomeForm, HttpServletRequest request,
         HttpServletResponse response) throws Exception {
 
-        Employeecontract employeecontract;
+        if("switch-login".equals(request.getParameter("task"))) {
+            authService.switchLogin(welcomeForm.getLoginEmployeeId());
+            var loginEmployee = employeeDAO.getEmployeeById(authorizedUser.getEmployeeId());
+            request.getSession().setAttribute("loginEmployee", loginEmployee);
+            String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
+            request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
+            request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+        }
+
+        // collect login contracts
+        var loginEmployees = authService.getLoginEmployees();
+        request.getSession().setAttribute("loginEmployees", loginEmployees);
 
         // create collection of employeecontracts
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
-
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
+        Employeecontract employeecontract;
         if (request.getParameter("task") != null &&
                 request.getParameter("task").equals("refresh")) {
 
@@ -64,6 +78,9 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
         } else {
             request.getSession().setAttribute("warningsPresent", false);
         }
+
+        welcomeForm.setLoginEmployeeId(authorizedUser.getEmployeeId());
+        welcomeForm.setEmployeeContractId(employeecontract.getId());
 
         return mapping.findForward("success");
     }

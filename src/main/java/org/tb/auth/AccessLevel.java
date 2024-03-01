@@ -10,7 +10,8 @@ public enum AccessLevel {
     DELETE(WRITE, READ, EXECUTE),
     RELEASE,
     ACCEPT,
-    REOPEN;
+    REOPEN,
+    LOGIN;
 
     private Set<AccessLevel> includedAccessLevels;
 
