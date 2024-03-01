@@ -240,7 +240,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             if(form.isNewTimeReport()) {
                 try {
                     timereportService.createTimereports(
-                        authorizedUser,
                         form.getEmployeeContractId(),
                         employeeorderId,
                         referencedayRefDate,
@@ -258,7 +257,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 long timeReportId = form.getId();
                 try {
                     timereportService.updateTimereport(
-                        authorizedUser,
                         timeReportId,
                         form.getEmployeeContractId(),
                         employeeorderId,

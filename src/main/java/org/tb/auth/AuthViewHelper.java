@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
+import org.tb.employee.domain.Employee;
 import org.tb.reporting.domain.ReportDefinition;
 
 @Component
@@ -22,6 +23,10 @@ public class AuthViewHelper {
 
   public boolean isAuth(ReportDefinition report, String accessLevel) {
     return authService.isAuthorized(report, AccessLevel.valueOf(accessLevel));
+  }
+
+  public boolean isAuthForEmployee(long employeeId, String accessLevel) {
+    return authService.isAuthorizedForEmployee(employeeId, AccessLevel.valueOf(accessLevel));
   }
 
   public boolean mayCreateNewReports() {

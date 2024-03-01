@@ -110,7 +110,6 @@ public class DailyReportRestEndpoint {
 
         try {
             timereportService.createTimereports(
-                authorizedUser,
                 employeeorder.getEmployeecontract().getId(),
                 employeeorder.getId(),
                 DateUtils.parse(booking.getDate()),

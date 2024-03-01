@@ -42,7 +42,6 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -98,7 +97,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final CustomerorderHelper customerorderHelper;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
-    private final AuthorizedUser authorizedUser;
     private final OvertimeService overtimeService;
 
     @Override
@@ -114,7 +112,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 .collect(Collectors.toList());
 
             try {
-                timereportService.deleteTimereports(timereportIds, authorizedUser);
+                timereportService.deleteTimereports(timereportIds);
             } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                 addToErrors(request, e.getErrorCode());
                 return mapping.getInputForward();
@@ -285,7 +283,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         List<Long> problematicTimereportIds = new ArrayList<>();
         ids.forEach(id -> {
             try {
-                timereportService.shiftDays(id, days, authorizedUser);
+                timereportService.shiftDays(id, days);
             } catch (ErrorCodeException e) {
                 log.error(e.getMessage(), e);
                 problematicTimereportIds.add(id);
@@ -728,7 +726,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
             return "error";
         }
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false);
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             return "error";

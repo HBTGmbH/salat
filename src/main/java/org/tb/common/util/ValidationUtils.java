@@ -30,10 +30,11 @@ public class ValidationUtils {
   }
 
   public static boolean isInRange(LocalDate value, LocalDate min, LocalDate max) {
+    if (value == null) throw new IllegalArgumentException("value must not be null");
     if (min == null && max == null) return true;
     if (min == null && !value.isAfter(max)) return true;
     if (max == null && !value.isBefore(min)) return true;
-    return !value.isAfter(max) && !value.isBefore(min);
+    return max != null && min != null && !value.isAfter(max) && !value.isBefore(min);
   }
 
 }

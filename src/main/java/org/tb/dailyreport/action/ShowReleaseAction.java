@@ -3,6 +3,7 @@ package org.tb.dailyreport.action;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AccessLevel;
 import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
@@ -42,7 +44,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         boolean updateEmployee = false;
         long superId;
 
-        List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            AccessLevel.RELEASE);
 
         //get a list of all supervisors 
         List<Employee> supervisors = new LinkedList<>();
@@ -98,10 +101,18 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         employeeContracts.sort(Comparator.comparing(ec -> ec.getEmployee().getName()));
+
+        final Long employeecontractId = employeecontract.getId();
+        if(!employeeContracts.stream().anyMatch(e -> e.getId().equals(employeecontractId))) {
+            var temp = employeeContracts;
+            employeeContracts = new ArrayList<>();
+            employeeContracts.add(employeecontract);
+            employeeContracts.addAll(temp);
+        }
         request.getSession().setAttribute("employeecontracts", employeeContracts);
 
         releaseForm.setEmployeeContractId(employeecontract.getId());
-        request.getSession().setAttribute("employeeContractId", employeecontract.getId());
+        request.getSession().setAttribute("employeeContractId", employeecontractId);
         request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", employeecontract);
 

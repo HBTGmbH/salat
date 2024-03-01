@@ -3,6 +3,7 @@ package org.tb.dailyreport.service;
 import static java.lang.Boolean.TRUE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
+import static org.tb.common.ErrorCode.TR_AUTH_FAILED;
 import static org.tb.common.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 import static org.tb.common.ErrorCode.TR_DURATION_HOURS_INVALID;
@@ -45,13 +46,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.AccessLevel;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.BusinessRuleChecks;
 import org.tb.common.DataValidation;
@@ -89,8 +91,9 @@ public class TimereportService {
   private final PublicholidayDAO publicholidayDAO;
   private final OvertimeService overtimeService;
   private final AuthorizedUser authorizedUser;
+  private final AuthService authService;
 
-  public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+  public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
   throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
@@ -110,30 +113,29 @@ public class TimereportService {
       timereportTemplate.setReferenceday(nextWorkableDay);
     }
 
-    checkAndSaveTimereports(authorizedUser, timereportsToSave);
+    checkAndSaveTimereports(timereportsToSave);
   }
 
-  public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+  public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereport);
-    checkAndSaveTimereports(authorizedUser, Collections.singletonList(timereport));
+    checkAndSaveTimereports(Collections.singletonList(timereport));
   }
 
   /**
    * shifts a timereport by days
    */
-  public void shiftDays(long timereportId, int amountDays, AuthorizedUser authorizedUser)
+  public void shiftDays(long timereportId, int amountDays)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     Referenceday referenceday = timereport.getReferenceday();
     LocalDate shiftedDate = DateUtils.addDays(referenceday.getRefdate(), amountDays);
-    updateTimereport(authorizedUser,
-        timereport.getId(),
+    updateTimereport(timereport.getId(),
         timereport.getEmployeecontract().getId(),
         timereport.getEmployeeorder().getId(),
         shiftedDate,
@@ -143,11 +145,11 @@ public class TimereportService {
         timereport.getDurationminutes());
   }
 
-  public boolean deleteTimereport(long timereportId, AuthorizedUser authorizedUser)
+  public boolean deleteTimereport(long timereportId)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
-    checkAuthorization(Collections.singletonList(timereport), authorizedUser);
+    checkAuthorization(Collections.singletonList(timereport), AccessLevel.DELETE);
     timereportDAO.deleteTimereportById(timereportId);
     return true;
   }
@@ -157,13 +159,13 @@ public class TimereportService {
    *
    * @param timereportIds ids of the timereports
    */
-  public void deleteTimereports(List<Long> timereportIds, AuthorizedUser authorizedUser)
+  public void deleteTimereports(List<Long> timereportIds)
       throws AuthorizationException, InvalidDataException, BusinessRuleException{
     List<Timereport> timereports = timereportIds.stream().map(timereportRepository::findById)
         .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(Collectors.toList());
-    checkAuthorization(timereports, authorizedUser);
+    checkAuthorization(timereports, AccessLevel.DELETE);
     timereports.stream()
         .map(Timereport::getId)
         .forEach(timereportDAO::deleteTimereportById);
@@ -171,10 +173,18 @@ public class TimereportService {
 
   public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
     // set status in timereports
-    var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(
-        employeecontractId,
-        releaseDate
-    );
+    var timereports = timereportRepository
+        .findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(
+            employeecontractId,
+            TIMEREPORT_STATUS_OPEN,
+            releaseDate
+        );
+
+    // check authorization
+    if(timereports.stream().anyMatch(t -> !authService.isAuthorized(t, AccessLevel.RELEASE))) {
+      return; // skip silently
+    }
+
     for (var timereport : timereports) {
       releaseTimereport(timereport.getId(), authorizedUser.getSign());
     }
@@ -187,7 +197,18 @@ public class TimereportService {
 
   public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
     // set status in timereports
-    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
+    var timereports = timereportRepository
+        .findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(
+            employeecontractId,
+            TIMEREPORT_STATUS_COMMITED,
+            acceptanceDate
+        );
+
+    // check authorization
+    if(timereports.stream().anyMatch(t -> !authService.isAuthorized(t, AccessLevel.ACCEPT))) {
+      return; // skip silently
+    }
+
     for (var timereport : timereports) {
       acceptTimereport(timereport.getId(), authorizedUser.getSign());
     }
@@ -206,7 +227,13 @@ public class TimereportService {
     var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
 
     // set status in timereports
-    var timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontractId, reopenDate);
+    var timereports = timereportRepository.findAllByEmployeecontractIdAndReferencedayRefdateIsGreaterThanEqual(employeecontractId, reopenDate);
+
+    // check authorization
+    if(timereports.stream().anyMatch(t -> !authService.isAuthorized(t, AccessLevel.REOPEN))) {
+      return; // skip silently
+    }
+
     for (var timereport : timereports) {
       reopenTimereport(timereport.getId());
     }
@@ -258,10 +285,10 @@ public class TimereportService {
     timereportDAO.save(timereport);
   }
 
-  private void checkAndSaveTimereports(AuthorizedUser authorizedUser, List<Timereport> timereports) {
+  private void checkAndSaveTimereports(List<Timereport> timereports) {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
-    checkAuthorization(timereports, authorizedUser);
+    checkAuthorization(timereports, AccessLevel.WRITE);
     validateTimeReportingBusinessRules(timereports);
     validateContractBusinessRules(timereports);
     validateOrderBusinessRules(timereports);
@@ -370,22 +397,20 @@ public class TimereportService {
     return nextWorkableDay;
   }
 
-  private void checkAuthorization(List<Timereport> timereports, AuthorizedUser authorizedUser) throws AuthorizationException {
+  private void checkAuthorization(List<Timereport> timereports, AccessLevel accessLevel) throws AuthorizationException {
     // authorization is based on the status
     timereports.forEach(t -> {
-      if(TIMEREPORT_STATUS_CLOSED.equals(t.getStatus()) &&
-          !authorizedUser.isAdmin()) {
-        throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
-      }
-      if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
-          !authorizedUser.isManager() &&
-          !authorizedUser.isAdmin()) {
-        throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
-      }
-      if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
-          !authorizedUser.isAdmin() &&
-          !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
-        throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
+      if(!authService.isAuthorized(t, accessLevel)) {
+        switch(t.getStatus()) {
+          case TIMEREPORT_STATUS_CLOSED:
+            throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
+          case TIMEREPORT_STATUS_COMMITED:
+            throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
+          case TIMEREPORT_STATUS_OPEN:
+            throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
+          default:
+            throw new AuthorizationException(TR_AUTH_FAILED);
+        }
       }
     });
   }

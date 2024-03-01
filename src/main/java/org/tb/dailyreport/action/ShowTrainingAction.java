@@ -148,10 +148,9 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             return forward;
         }
 
-        employeecontracts.removeIf(c -> c.getFreelancer()
-                                        || c.getDailyWorkingTime().toMinutes() <= 0
-                                        || c.getEmployeeorders() == null
-                                        || !authorizedUser.isManager() && !c.getEmployee().getId().equals(authorizedUser.getEmployeeId()));
+        employeecontracts.removeIf(c -> c.getFreelancer() // not freelancers
+                                        || c.getDailyWorkingTime().toMinutes() <= 0 // no employees without any working time
+                                        || c.getEmployeeorders() == null); // no employees without "jobs"‚
 
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");

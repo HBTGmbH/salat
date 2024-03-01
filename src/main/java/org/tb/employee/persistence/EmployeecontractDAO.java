@@ -173,19 +173,16 @@ public class EmployeecontractDAO {
         }
     }
 
-    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser() {
-        return getViewableEmployeeContractsForAuthorizedUser(true);
+    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(AccessLevel accessLevel) {
+        return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
+            .filter(e -> authService.isAuthorized(e.getEmployee(), accessLevel))
+            .collect(Collectors.toList());
     }
 
-    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess) {
-        if (limitAccess) {
-            // may only see his own contracts
-            return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
-                .filter(e -> authService.isAuthorized(e.getEmployee(), AccessLevel.READ))
-                .collect(Collectors.toList());
-        } else {
-            return getVisibleEmployeeContractsOrderedByEmployeeSign();
-        }
+    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser() {
+        return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
+            .filter(e -> authService.isAuthorized(e.getEmployee(), AccessLevel.READ))
+            .collect(Collectors.toList());
     }
 
     /**

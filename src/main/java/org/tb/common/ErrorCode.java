@@ -34,6 +34,7 @@ public enum ErrorCode {
   TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE("TR-0021","employee contract must be valid for the reference day of the time report"),
   TR_YEAR_OUT_OF_RANGE("TR-0022","Time reports must be modified only in the current, the previous or the next year"),
   TR_DURATION_OVERTIME_COMPENSATION_INVALID("TR-0023","Overtime compensations must always be booked with 0 time"),
+  TR_AUTH_FAILED("TR-0024","access diened to timereport."),
   ;
 
   private final String code;

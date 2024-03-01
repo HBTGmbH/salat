@@ -120,35 +120,20 @@
 					</td>
 						
 					<td align="left" class="noBborderStyle">
-						<c:choose>
-							<c:when test="${authorizedUser.manager or isSupervisor}">
-								<html:select property="employeeContractId" styleClass="make-select2"
-									onchange="setUpdateEmployeeContract(this.form)">
-									<html:option value="${loginEmployeeContract.id}">
-										<c:out value="${loginEmployeeContract.employee.name}" /> |
-										<c:out value="${loginEmployeeContract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
-											value="${loginEmployeeContract.timeString}" />
-										<c:if test="${loginEmployeeContract.openEnd}">
-											<bean:message key="main.general.open.text" />
-										</c:if>)
-									</html:option>
-									<c:forEach var="employeecontract" items="${employeecontracts}">
-										<html:option value="${employeecontract.id}">
-											<c:out value="${employeecontract.employee.name}" /> |
-											<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
-												value="${employeecontract.timeString}" />
-											<c:if test="${employeecontract.openEnd}">
-												<bean:message key="main.general.open.text" />
-											</c:if>)
-										</html:option>
-									</c:forEach>
-								</html:select>
-								<html:hidden property="employeeContractId" />
-							</c:when>
-							<c:otherwise>
-								<c:out value="${loginEmployee.name}" />
-							</c:otherwise>
-						</c:choose>
+						<html:select property="employeeContractId" styleClass="make-select2"
+							onchange="setUpdateEmployeeContract(this.form)">
+							<c:forEach var="employeecontract" items="${employeecontracts}">
+								<html:option value="${employeecontract.id}">
+									<c:out value="${employeecontract.employee.name}" /> |
+									<c:out value="${employeecontract.employee.sign}" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<c:out
+										value="${employeecontract.timeString}" />
+									<c:if test="${employeecontract.openEnd}">
+										<bean:message key="main.general.open.text" />
+									</c:if>)
+								</html:option>
+							</c:forEach>
+						</html:select>
+						<html:hidden property="employeeContractId" />
 					</td>
 				</tr>
 				<tr>
@@ -170,8 +155,7 @@
 
 				<!-- release -->
 
-				<c:if
-					test="${authorizedUser.manager || employeeContractId == loginEmployeeContractId}">
+				<c:if test="${authViewHelper.isAuthForEmployee(currentEmployeeId, 'READ')}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="10"></td>
 					</tr>

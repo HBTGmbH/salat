@@ -34,7 +34,6 @@ public class StoreTimereportAction extends LoginRequiredAction<TimereportForm> {
     try {
       if(form.isNew()) {
         timereportService.createTimereports(
-            authorizedUser,
             employeecontractId,
             employeeorderId,
             form.getDateTyped(),
@@ -46,7 +45,6 @@ public class StoreTimereportAction extends LoginRequiredAction<TimereportForm> {
         );
       } else {
         timereportService.updateTimereport(
-            authorizedUser,
             form.getIdTyped(),
             employeecontractId,
             employeeorderId,
