@@ -8,28 +8,21 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.tb.auth.AuthorizedUser;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
 
 @ExtendWith(MockitoExtension.class)
 class OrderRestEndpointTest {
 
-  @Mock
-  EmployeecontractDAO employeecontractDAO;
   @Mock
   EmployeeorderDAO employeeorderDAO;
 
@@ -46,7 +39,6 @@ class OrderRestEndpointTest {
     List<OrderData> res = orderRestEndpoint.createSuborderDataHierarchical(testdata,
         employeecontract,
         LocalDate.parse("2020-01-08"));
-    System.out.println(res);
     assertThat(res.size()).isEqualTo(1);
     assertThat(res.getFirst().getSuborder().size()).isEqualTo(3);
   }
