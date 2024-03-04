@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Profile;
 import org.tb.common.SalatProperties;
 
 @Configuration
-@Profile({ "production", "test" })
+@Profile({ "production", "staging" })
 public class AzureEasyAuthOpenApiConfiguration {
 
   @Bean

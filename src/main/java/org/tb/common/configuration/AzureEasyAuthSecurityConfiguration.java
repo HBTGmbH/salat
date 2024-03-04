@@ -25,7 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.common.SalatProperties;
 
 @Configuration
-@Profile({ "production", "test" })
+@Profile({ "production", "staging" })
 public class AzureEasyAuthSecurityConfiguration {
 
   public static final String[] UNAUTHENTICATED_URL_PATTERNS = {
