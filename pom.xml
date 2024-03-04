@@ -11,7 +11,7 @@
   <groupId>de.hbt.salat</groupId>
   <artifactId>tb</artifactId>
   <version>4.2.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>war</packaging>
 
   <properties>
     <salat.image.name>ghcr.io/hbtgmbh/salat</salat.image.name>
