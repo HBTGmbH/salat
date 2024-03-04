@@ -18,6 +18,10 @@
             form.action = "/do/ShowWelcome?task=refresh";
             form.submit();
           }
+          function switchLogin(form) {
+            form.action = "/do/ShowWelcome?task=switch-login";
+            form.submit();
+          }
         </script>
     </tiles:put>
     <tiles:put name="content" direct="true">
