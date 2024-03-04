@@ -14,6 +14,8 @@
   <packaging>jar</packaging>
 
   <properties>
+    <salat.image.name>ghcr.io/hbtgmbh/salat</salat.image.name>
+    <salat.image.tag>latest</salat.image.tag>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>dd.MM.yyyy HH:mm</maven.build.timestamp.format>
@@ -235,7 +237,9 @@
           </execution>
         </executions>
         <configuration>
-          <imageName>ghcr.io/hbtgmbh/salat</imageName>
+          <image>
+            <name>${salat.image.name}:${salat.image.tag}</name>
+          </image>
         </configuration>
       </plugin>
       <plugin>

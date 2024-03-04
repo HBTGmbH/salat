@@ -12,7 +12,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository.lowercase }}
+  BUILD_ID: ${{github.run_number}}
 
 jobs:
   build:
@@ -28,18 +29,20 @@ jobs:
           distribution: 'temurin' # See 'Supported distributions' for available options
           java-version: '21'
       - name: Build with Maven
-        run: ./mvnw spring-boot:build-image --batch-mode --no-transfer-progress
+        run: ./mvnw spring-boot:build-image --batch-mode --no-transfer-progress -Dsalat.image.tag=${{ env.BUILD_ID }}
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push docker image
+        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }}
       - name: Extract metadata (tags, labels) to use for Docker (incl. image tags)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/hbtgmbh/salat
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -48,7 +51,7 @@ jobs:
       - name: Push Docker image
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ghcr.io/hbtgmbh/salat:latest
+          src: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }}
           dst: |
             ${{ steps.meta.outputs.tags }}
     
