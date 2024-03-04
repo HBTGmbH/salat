@@ -175,14 +175,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- test frameworks -->
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons-io.version}</version>
-      <scope>test</scope>
-    </dependency>
-
     <!-- web jars -->
     <dependency>
       <groupId>org.webjars</groupId>
