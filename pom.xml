@@ -272,7 +272,7 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>-Dspring.profiles.active=unittest</argLine>
+          <argLine>-Dspring.profiles.active=unittest -XX:+EnableDynamicAgentLoading</argLine>
         </configuration>
       </plugin>
     </plugins>
