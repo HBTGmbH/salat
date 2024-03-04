@@ -11,7 +11,7 @@
   <groupId>de.hbt.salat</groupId>
   <artifactId>tb</artifactId>
   <version>4.2.0-SNAPSHOT</version>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,7 +29,6 @@
     <jstl-api.version>3.0.0</jstl-api.version>
     <jstl.version>3.0.1</jstl.version>
     <jsp-api.version>3.1.1</jsp-api.version>
-    <commons-io.version>2.15.1</commons-io.version>
     <webjars-bootstrap.version>5.3.3</webjars-bootstrap.version>
     <webjars-jquery.version>3.7.1</webjars-jquery.version>
     <webjars-bootstrap-icons.version>1.11.3</webjars-bootstrap-icons.version>
@@ -235,6 +234,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <imageName>ghcr.io/hbtgmbh/salat</imageName>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>pl.project13.maven</groupId>
