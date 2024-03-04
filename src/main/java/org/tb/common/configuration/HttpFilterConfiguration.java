@@ -9,6 +9,7 @@ import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.filter.AuthenticationFilter;
+import org.tb.common.filter.LoggingFilter;
 import org.tb.common.filter.PerformanceLoggingFilter;
 import org.tb.common.filter.ResourceUrlEncodingFilter;
 import org.tb.common.filter.ResourceUrlProviderExposingFilter;
@@ -64,6 +65,15 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
         registrationBean.setOrder(101);
         registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, employeeRepository));
+        registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
+        return registrationBean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<LoggingFilter> loggingFilter(){
+        var registrationBean = new FilterRegistrationBean<LoggingFilter>();
+        registrationBean.setOrder(102);
+        registrationBean.setFilter(new LoggingFilter(authorizedUser));
         registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
         return registrationBean;
     }
