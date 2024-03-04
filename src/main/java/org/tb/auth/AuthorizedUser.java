@@ -22,12 +22,17 @@ public class AuthorizedUser implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private boolean authenticated;
+  private String loginSign;
   private Long employeeId;
   private String sign;
   private boolean restricted;
   private boolean backoffice;
   private boolean admin;
   private boolean manager;
+
+  public void login(String loginSign) {
+    this.setLoginSign(loginSign);
+  }
 
   public void init(Employee loginEmployee) {
     this.setAuthenticated(true);

@@ -1,20 +1,23 @@
 package org.tb.auth;
 
+import java.util.Set;
+
 public enum AccessLevel {
 
-    EXECUTE(0),
-    READ(1),
-    WRITE(2),
-    DELETE(3);
+    EXECUTE(),
+    READ(EXECUTE),
+    WRITE(READ, EXECUTE),
+    DELETE(WRITE, READ, EXECUTE),
+    LOGIN;
 
-    private int level;
+    private Set<AccessLevel> includedAccessLevels;
 
-    private AccessLevel(int level) {
-        this.level = level;
+    private AccessLevel(AccessLevel... includedAccessLevels) {
+        this.includedAccessLevels = Set.of(includedAccessLevels);
     }
 
     public boolean satisfies(AccessLevel accessLevel) {
-        return this.level >= accessLevel.level;
+        return this == accessLevel || includedAccessLevels.contains(accessLevel);
     }
 
 }

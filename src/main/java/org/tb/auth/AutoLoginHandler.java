@@ -61,6 +61,8 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
   private void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
       Authentication authentication) throws IOException {
 
+    authorizedUser.setLoginSign(authentication.getName());
+
     Employee loginEmployee = employeeDAO.getLoginEmployee(authentication.getName());
     // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
     if (loginEmployee == null) {
