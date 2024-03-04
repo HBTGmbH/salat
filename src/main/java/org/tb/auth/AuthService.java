@@ -3,16 +3,20 @@ package org.tb.auth;
 import static java.util.function.Function.identity;
 import static org.tb.auth.AccessLevel.DELETE;
 import static org.tb.auth.AccessLevel.EXECUTE;
+import static org.tb.auth.AccessLevel.LOGIN;
 import static org.tb.auth.AccessLevel.READ;
 import static org.tb.auth.AccessLevel.WRITE;
+import static org.tb.auth.AuthorizationRule.Category.EMPLOYEE;
 import static org.tb.auth.AuthorizationRule.Category.REPORT_DEFINITION;
 import static org.tb.auth.AuthorizationRule.Category.TIMEREPORT;
 import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
+import static org.tb.common.util.DateUtils.today;
 
 import jakarta.annotation.PostConstruct;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -27,6 +31,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.ValidationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
+import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.reporting.domain.ReportDefinition;
 
 @Service
@@ -38,6 +43,7 @@ public class AuthService {
   private final AuthorizedUser authorizedUser;
   private final AuthorizationRuleRepository authorizationRuleRepository;
   private final SalatProperties salatProperties;
+  private final EmployeeRepository employeeRepository;
 
   private long cacheExpiryMillis;
   private Map<Category, Set<Rule>> cacheEntries = new HashMap<>();
@@ -48,16 +54,47 @@ public class AuthService {
     cacheExpiryMillis = salatProperties.getAuthService().getCacheExpiry().toMillis();
   }
 
+  public List<Employee> getLoginEmployees() {
+    return StreamSupport
+        .stream(employeeRepository.findAll().spliterator(), false)
+        .filter(e -> e.getSign().equals(authorizedUser.getLoginSign()) || isAuthorized(e, LOGIN))
+        .toList();
+  }
+
+  public void switchLogin(long loginEmployeeId) {
+    employeeRepository.findById(loginEmployeeId).ifPresent(loginEmployee -> {
+      if(isAuthorized(loginEmployee, LOGIN)) {
+        authorizedUser.init(loginEmployee);
+      }
+    });
+  }
+
+  public boolean isAuthorizedForEmployee(long employeeId, AccessLevel accessLevel) {
+    return employeeRepository
+        .findById(employeeId)
+        .map(e -> isAuthorized(e, accessLevel))
+        .orElse(false);
+  }
+
   public boolean isAuthorized(Employee employee, AccessLevel accessLevel) {
+    if(accessLevel == LOGIN) {
+      if(employee.getSign().equals(authorizedUser.getLoginSign())) return true;
+      return anyRuleMatches(EMPLOYEE,
+          rule -> rule.getGrantorId().equals(employee.getSign())
+                  && rule.getGranteeId().equals(authorizedUser.getLoginSign())
+                  && rule.getAccessLevel().satisfies(LOGIN)
+                  && rule.isValid(today()));
+    }
+
     if(authorizedUser.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
-    if(employee.getId() == authorizedUser.getEmployeeId()) return true;
+    if(employee.getId().equals(authorizedUser.getEmployeeId())) return true;
     return false;
   }
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
     if(authorizedUser.isManager()) return true;
-    if(timereport.getEmployeecontract().getEmployee().getId() == authorizedUser.getEmployeeId()) return true;
+    if(timereport.getEmployeecontract().getEmployee().getId().equals(authorizedUser.getEmployeeId())) return true;
 
     if(accessLevel == READ) {
       // every project manager may see the time reports of her project
@@ -87,7 +124,7 @@ public class AuthService {
     if (authorizedUser.isManager()) {
       return true;
     }
-    LocalDate today = DateUtils.today();
+    LocalDate today = today();
     return anyRuleMatches(REPORT_DEFINITION,
         rule -> rule.getGranteeId().equals(authorizedUser.getSign())
                 && rule.getAccessLevel().satisfies(accessLevel)
@@ -100,7 +137,7 @@ public class AuthService {
     if (authorizedUser.isManager()) {
       return true;
     }
-    LocalDate today = DateUtils.today();
+    LocalDate today = today();
     return anyRuleMatches(REPORT_DEFINITION, rule -> rule.getGranteeId().equals(
         authorizedUser.getSign()) && rule.getAccessLevel().satisfies(accessLevel) && rule.isValid(today));
   }
@@ -109,7 +146,7 @@ public class AuthService {
     if (authorizedUser.isManager()) {
       return Set.of(EXECUTE, READ, WRITE, DELETE);
     }
-    LocalDate today = DateUtils.today();
+    LocalDate today = today();
     return collectAccessLevels(REPORT_DEFINITION,
         rule -> rule.getGranteeId().equals(authorizedUser.getSign())
                 && rule.isValid(today)
@@ -131,15 +168,15 @@ public class AuthService {
   private void ensureUpToDateCache() {
     if (isCacheOutdated()) {
       this.cacheEntries = StreamSupport.stream(authorizationRuleRepository.findAll().spliterator(), false)
-          .map(rule -> new Rule(
+          .flatMap(rule -> rule.getAccessLevels().stream().map(accessLevel -> new Rule(
               rule.getCategory(),
               rule.getGrantorId(),
               rule.getGranteeId(),
               rule.getValidFrom(),
               rule.getValidUntil(),
               rule.getObjectId() != null ? rule.getObjectId() : ALL_OBJECTS,
-              rule.getAccessLevel()
-          ))
+              accessLevel
+          )))
           .collect(
               Collectors.groupingBy(Rule::getCategory, Collectors.mapping(identity(), Collectors.toSet())));
       lastCacheUpdate = Clock.systemUTC().millis();

@@ -1,5 +1,6 @@
 package org.tb.auth;
 
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
@@ -14,7 +15,7 @@ import java.time.LocalDate;
 @Table(name = "authorization_rule")
 public class AuthorizationRule extends AuditedEntity {
 
-    public enum Category { TIMEREPORT, REPORT_DEFINITION}
+    public enum Category { TIMEREPORT, REPORT_DEFINITION, EMPLOYEE }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", columnDefinition = "varchar")
@@ -29,9 +30,8 @@ public class AuthorizationRule extends AuditedEntity {
     @Column(name = "object_id")
     private String objectId;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "access_level", columnDefinition = "varchar")
-    private AccessLevel accessLevel;
+    private Set<AccessLevel> accessLevels;
 
     @Column(name = "valid_from")
     private LocalDate validFrom;

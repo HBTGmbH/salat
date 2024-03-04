@@ -123,10 +123,9 @@ public class LocalDevSecurityConfiguration {
       protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         String employeeSign = request.getParameter("employee-sign");
         if(employeeSign == null && useSession) {
-          Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-          if(loginEmployee != null) {
-            employeeSign = loginEmployee.getSign();
-          }
+          employeeSign = (String) request.getSession().getAttribute("employee-sign");
+        } else if(useSession) {
+          request.getSession().setAttribute("employee-sign", employeeSign);
         }
         return employeeSign;
       }
