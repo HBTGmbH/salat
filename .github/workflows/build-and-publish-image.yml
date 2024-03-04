@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository.lowercase }}
+  IMAGE_NAME: hbtgmbh/salat
   BUILD_ID: ${{github.run_number}}
 
 jobs:
