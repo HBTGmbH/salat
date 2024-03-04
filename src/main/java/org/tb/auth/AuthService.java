@@ -162,7 +162,7 @@ public class AuthService {
 
   private boolean anyRuleMatches(Category category, Predicate<Rule> rulePredicate) {
     ensureUpToDateCache();
-    return cacheEntries.get(category).stream().anyMatch(rulePredicate);
+    return cacheEntries.getOrDefault(category, Set.of()).stream().anyMatch(rulePredicate);
   }
 
   private void ensureUpToDateCache() {
