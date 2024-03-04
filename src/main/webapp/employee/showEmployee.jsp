@@ -178,7 +178,7 @@
 			<html:form action="/DeleteEmployee">
 				<td align="center"><html:image
 					onclick="confirmDelete(this.form, ${employee.id})"
-					src="/images/Delete.gif"/>" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
+					src="/images/Delete.gif" alt="Delete Employee" titleKey="main.headlinedescription.employees.delete.text"/></td>
 			</html:form>
 		</c:if>
 		</tr>
