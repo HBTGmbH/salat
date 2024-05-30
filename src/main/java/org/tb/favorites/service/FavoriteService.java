@@ -24,6 +24,10 @@ public class FavoriteService {
     return favoriteRepository.findAllByEmployeeId(employeeId);
   }
 
+  public Optional<Favorite> getFavorite(Long favoriteId) {
+    return favoriteRepository.findById(favoriteId);
+  }
+
   public Favorite addFavorite(Favorite favorite) {
     favorite.setEmployeeId(authorizedUser.getEmployeeId());
     try {
@@ -42,7 +46,7 @@ public class FavoriteService {
     if (authorizedUser.getEmployeeId().equals(favorite.get().getEmployeeId())) {
       favoriteRepository.deleteById(id);
     } else {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not your Favorite (id="+id+")");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not your Favorite (id=" + id + ")");
     }
   }
 }
