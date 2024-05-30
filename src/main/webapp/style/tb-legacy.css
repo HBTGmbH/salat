@@ -156,6 +156,7 @@
 		border-style: dotted;
 	}
 
+	.button,
 	#button {
 		background-color: #191E55;
 		color: #ffffff;
@@ -164,6 +165,7 @@
 		border-radius: 5px;
 	}
 
+	.button:hover,
 	#button:hover {
 		background-color: #5F6EF0;
 		border-color: #5F6EF0;
@@ -410,4 +412,30 @@
 		background: white;
 		border: 1px solid black;
 	}
+
+	.favorites {
+		margin: 10px 0;
+
+		.favorite {
+			padding: 0 3px;
+			margin: 3px;
+			display: inline-block;
+
+		}
+
+		.favoriteDelete {
+			padding: 0 3px;
+			margin: 3px 3px 3px -8px;
+			display: inline-block;
+			border: 0;
+			background-color: transparent;
+
+			i.bi {
+				font-size: unset;
+				position: relative;
+				bottom: 3px;
+			}
+		}
+	}
+
 }

@@ -126,6 +126,22 @@
 				form.submit();
 			}
 
+			function addFavoriteAsReport(form, date, favoriteID) {
+				form.action = "/do/ShowDailyReport?task=addFavoriteAsReport&date=" + date + "&favoriteID=" + favoriteID;
+				form.submit();
+			}
+
+			function createFavorite(form,timereportId) {
+
+				form.action = "/do/ShowDailyReport?task=createFavorite&timereportId="+timereportId;
+				form.submit();
+			}
+
+			function deleteFavorite(form, favoriteID) {
+				form.action = "/do/ShowDailyReport?task=deleteFavorite&favoriteID=" + favoriteID;
+				form.submit();
+			}
+
 			function showWMTT(Trigger,id) {
 				wmtt = document.getElementById(id);
 				var hint;
@@ -503,6 +519,24 @@
 			</table>
 		</c:if>
 
+		<html:form action="/ShowDailyReport">
+			<div class="favorites">
+				<c:forEach var="favorite" items="${favorites}" varStatus="statusID">
+					<div class="button favorite"
+							onclick="addFavoriteAsReport(findForm(this),'<bean:write name="showDailyReportForm" property="enddate"/>', ${favorite.id}); return false"
+							title="Erstellen"
+							>
+						${favorite.comment} ${favorite.hours}:${favorite.minutes}
+					</div>
+					<div class="button favoriteDelete"
+						 onclick="deleteFavorite(findForm(this), ${favorite.id}); return false" title="Löschen" class="delete"
+						 title="delete">
+						<i class="bi bi-trash"></i>
+					</div>
+				</c:forEach>
+			</div>
+		</html:form>
+
 		<table class="center backgroundcolor nobBorderStyle" width="100%">
 			<tr class="noBborderStyle">
 				<td colspan="6" class="noBborderStyle">
@@ -737,7 +771,10 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<button onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
+								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
+								&nbsp;
+								<button type="button"  onclick="createFavorite(findForm(this), ${timereport.id}); return false"
+										title="Favorite" style="border: 0; background-color: transparent"><i class="bi bi-star"></i></button>
 								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 								&nbsp;
