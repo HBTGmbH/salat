@@ -47,7 +47,6 @@ class OrderRestEndpointTest {
     Employeeorder res = new Employeeorder();
     ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
     return res;
-
   }
 
   private Employeecontract newEmployeecontract() {
@@ -58,12 +57,9 @@ class OrderRestEndpointTest {
 
   private void insertBacklinks(List<Suborder> testdata) {
     testdata.forEach(order -> {
-      order.getSuborders().forEach(suborder -> {
-        suborder.setParentorder(order);
-      });
+      order.getSuborders().forEach(suborder -> suborder.setParentorder(order));
       insertBacklinks(order.getSuborders());
     });
-
   }
 
   private Customerorder createCustomerOrder() {
@@ -89,6 +85,5 @@ class OrderRestEndpointTest {
     res.setCustomerorder(customerOrder);
     res.setSuborders(createTestDatList(depth - 1, depth, customerOrder));
     return res;
-
   }
 }
