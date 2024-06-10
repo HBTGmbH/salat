@@ -181,8 +181,8 @@
 						</td>
 						<td align="left" class="noBborderStyle">
 							<input type="date" name="releaseDate" value="<bean:write name="showReleaseForm" property="releaseDate" />"  />
-							<span style="color: red"><html:errors
-									property="releasedate" />
+							<span style="color: red">
+								<html:errors property="validation"/>
 							</span>
 						</td>
 
