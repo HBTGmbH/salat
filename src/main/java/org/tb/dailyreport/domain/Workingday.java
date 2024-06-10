@@ -3,7 +3,10 @@ package org.tb.dailyreport.domain;
 import static java.lang.Math.max;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Objects;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -52,4 +55,16 @@ public class Workingday extends AuditedEntity implements Serializable {
                 employeecontract.hashCode();
     }
 
+    public int getBreakTimeInMinutes() {
+        return breakhours * 60 + breakminutes;
+    }
+
+    public LocalDateTime getStartOfWorkingDay() {
+        LocalTime localTime = LocalTime.of(Starttimehour, Starttimeminute);
+        return LocalDateTime.of(refday, localTime);
+    }
+
+    public Duration getBreakLength() {
+        return Duration.ofHours(breakhours).plusMinutes(breakminutes);
+    }
 }

@@ -217,4 +217,10 @@ public class GlobalConstants {
     public static final int QUARTER_HOUR_IN_MINUTES = 15;
 
     public static final int REPORT_NAME_MAX_LENGTH = 200;
+
+    public static final int SIX_HOURS_IN_MINUTES = 360;
+    public static final int NINE_HOURS_IN_MINUTES = 540;
+    public static final int BREAK_MINUTES_AFTER_SIX_HOURS = 30;
+    public static final int BREAK_MINUTES_AFTER_NINE_HOURS = 45;
+    public static final int REST_PERIOD_IN_MINUTES = 11 * MINUTES_PER_HOUR;
 }
