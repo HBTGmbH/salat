@@ -1,11 +1,5 @@
 package org.tb.dailyreport.action;
 
-import static org.tb.common.util.DateUtils.today;
-
-import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +17,13 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.tb.common.util.DateUtils.today;
 
 @Slf4j
 @Component
@@ -245,12 +246,14 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         if (date.isBefore(selectedEmployeecontract.getValidFrom())
             || selectedEmployeecontract.getValidUntil() != null && date
             .isAfter(selectedEmployeecontract.getValidUntil())) {
-            errors.add("releasedate", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
+            errors.add("validation", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
         }
 
         if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
-            errors.add("releasedate", new ActionMessage("form.release.error.date.before.acceptance"));
+            errors.add("validation", new ActionMessage("form.release.error.date.before.acceptance"));
         }
+
+        timereportService.validateForRelease(selectedEmployeecontract.getId(), date, errors);
 
         saveErrors(request, errors);
 
