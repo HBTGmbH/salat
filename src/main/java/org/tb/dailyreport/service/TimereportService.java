@@ -209,6 +209,7 @@ public class TimereportService {
 
     public void validateForRelease(Long employeeContractId, LocalDate releaseDate, ActionMessages errors) {
         timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
+                .filter(timeReport -> !timeReport.isSuborderIrrelevantForWorkingTimeContingent())
                 .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
                 .forEach((date, timeReports) -> {
                     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
