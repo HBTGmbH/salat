@@ -380,6 +380,14 @@
 				<html:checkbox property="hide" />
 			</td>
 		</tr>
+		<tr>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.suborder.irrelevantForWorkingTimeContingent.text" />:</b>
+			</td>
+			<td align="left" valign="top" class="noBborderStyle">
+				<html:checkbox property="irrelevantForWorkingTimeContingent" />
+			</td>
+		</tr>
 
 	</table>
 	<br>

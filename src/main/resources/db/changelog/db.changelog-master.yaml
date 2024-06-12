@@ -859,6 +859,24 @@ databaseChangeLog:
         - dropTable:
             tableName: employee_to_employee_authorization_rule
             cascadeConstraints: true
+  - changeSet:
+      id: 23
+      author: cpe
+      comment: Add a flag to mark suborders that are irrelevant for working time contingent
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: suborder
+                columnName: irrelevantForWorkingTimeContingent
+      changes:
+        - addColumn:
+            tableName: suborder
+            columns:
+              - column:
+                  name: irrelevantForWorkingTimeContingent
+                  type: boolean
+                  defaultValueBoolean: false
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

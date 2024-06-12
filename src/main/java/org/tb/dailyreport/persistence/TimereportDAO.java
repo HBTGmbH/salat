@@ -546,6 +546,7 @@ public class TimereportDAO {
             .suborderId(timereport.getSuborder().getId())
             .suborderSign(timereport.getSuborder().getSign())
             .suborderDescription(timereport.getSuborder().getShortdescription())
+            .suborderIrrelevantForWorkingTimeContingent(timereport.getSuborder().getIrrelevantForWorkingTimeContingent())
             .employeeOrderAsString(timereport.getEmployeeorder().getEmployeeOrderAsString())
             .timeReportAsString(timereport.getTimeReportAsString())
             .releasedby(timereport.getReleasedby())
