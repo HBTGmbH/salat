@@ -351,37 +351,27 @@ class TimereportServiceTest {
             // then should add errors regarding resttime
             assertThat(errors.size("validation")).isEqualTo(0);
         }
-/*
+
         @Test
-        void template() {
-            // given
+        void whenTimeReportIsForSuborderThatIsIrrelevantForWorkingDayContingent_shouldNotAddError() {
+            // given someone has booked 8 hours of vacation
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
-            final TimereportDTO timeReport1 = TimereportDTO.builder()
+            final TimereportDTO timeReport = TimereportDTO.builder()
+                    .suborderIrrelevantForWorkingTimeContingent(true)
                     .referenceday(date)
-                    .duration(Duration.ofHours(7L))
+                    .duration(Duration.ofHours(8))
                     .build();
-            final TimereportDTO timeReport2 = TimereportDTO.builder()
-                    .referenceday(date)
-                    .duration(Duration.ofMinutes(5L))
-                    .build();
-            final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
+            final List<TimereportDTO> result = List.of(timeReport);
             ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
 
-            // when
+            // when validating
             classUnderTest.validateForRelease(employeeContractId, date, errors);
 
-            // then
-            ActionMessage expected = new ActionMessage("break", "form.release.error.breaktime.six.length");
-            assertThat(errors.size("validation")).isEqualTo(1);
-            assertThat(errors.get("validation").next()).isEqualTo(expected);
-        }
-        */
-
-        private Duration moreThan(long hours) {
-            return Duration.ofHours(hours).plusMinutes(1);
+            // then should not add any errors regarding breaktime
+            assertThat(errors.size("validation")).isEqualTo(0);
         }
     }
 }
