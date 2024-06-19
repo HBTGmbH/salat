@@ -1,7 +1,6 @@
 package org.tb.dailyreport.service;
 
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,6 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -40,15 +40,14 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final List<TimereportDTO> result = new ArrayList<>();
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
 
             // when validating
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then should not add any errors regarding breaktime
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then should not return any errors
+            assertThat(errors).hasSize(0);
         }
 
         @Test
@@ -62,16 +61,15 @@ class TimereportServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
             // when validating
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then should not add any errors regarding breaktime
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then should not return any errors
+            assertThat(errors).hasSize(0);
         }
 
         @Test
@@ -85,16 +83,15 @@ class TimereportServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
             // when validating
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then should not add any errors regarding breaktime
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then should not return any errors
+            assertThat(errors).hasSize(0);
         }
 
         @Test
@@ -109,18 +106,18 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(0);
-            ActionMessages errors = new ActionMessages();
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
-            // when
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            // when validating
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then
-            ActionMessage expected = new ActionMessage("form.release.error.breaktime.six.length");
-            assertThat(errors.size("validation")).isEqualTo(1);
-            assertThat(errors.get("validation").next()).usingRecursiveComparison().isEqualTo(expected);
+            // then should return an error regarding breaktime
+            assertThat(errors).hasSize(1);
+            assertThat(errors.getFirst().getDate()).isEqualTo(date);
+            assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.six.length");
         }
 
         @Test
@@ -135,18 +132,18 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(25);
-            ActionMessages errors = new ActionMessages();
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
-            // when
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            // when validating
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then
-            ActionMessage expected = new ActionMessage("form.release.error.breaktime.six.length");
-            assertThat(errors.size("validation")).isEqualTo(1);
-            assertThat(errors.get("validation").next()).usingRecursiveComparison().isEqualTo(expected);
+            // then should return an error regarding breaktime
+            assertThat(errors).hasSize(1);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(date);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.six.length");
         }
 
         @Test
@@ -161,16 +158,15 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(30);
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
-            // when
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            // when validating
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then should not return any error
+            assertThat(errors).hasSize(0);
         }
 
         @Test
@@ -189,16 +185,15 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(30);
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
             // when validating
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then should not add any errors regarding breaktime
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then should not return any error
+            assertThat(errors).hasSize(0);
         }
 
         @Test
@@ -217,18 +212,18 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(0);
-            ActionMessages errors = new ActionMessages();
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
-            // when
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            // when validating
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then
-            ActionMessage expected = new ActionMessage("form.release.error.breaktime.nine.length");
-            assertThat(errors.size("validation")).isEqualTo(1);
-            assertThat(errors.get("validation").next()).usingRecursiveComparison().isEqualTo(expected);
+            // then should return an error regarding breaktime
+            assertThat(errors).hasSize(1);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(date);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.nine.length");
         }
 
         @Test
@@ -247,18 +242,18 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(40);
-            ActionMessages errors = new ActionMessages();
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
-            // when
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            // when validating
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then
-            ActionMessage expected = new ActionMessage("form.release.error.breaktime.nine.length");
-            assertThat(errors.size("validation")).isEqualTo(1);
-            assertThat(errors.get("validation").next()).usingRecursiveComparison().isEqualTo(expected);
+            // then should return an error regarding breaktime
+            assertThat(errors).hasSize(1);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(date);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.nine.length");
         }
 
         @Test
@@ -277,16 +272,15 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(45);
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
 
-            // when
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            // when validating
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then expect no error
+            assertThat(errors).hasSize(0);
         }
 
         @Test
@@ -307,19 +301,18 @@ class TimereportServiceTest {
             yesterday.setStarttimehour(19);
             yesterday.setStarttimeminute(1);
             yesterday.setRefday(yesterdayDate);
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate, employeeContractId)).thenReturn(releaseDay);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(yesterdayDate, employeeContractId)).thenReturn(yesterday);
 
             // when validating
-            classUnderTest.validateForRelease(employeeContractId, releaseDate, errors);
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
 
-            // then should add errors regarding resttime
-            ActionMessage expected = new ActionMessage("form.release.error.resttime.length");
-            assertThat(errors.size("validation")).isEqualTo(1);
-            assertThat(errors.get("validation").next()).usingRecursiveComparison().isEqualTo(expected);
+            // then expect an error regarding resttime
+            assertThat(errors).hasSize(1);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(releaseDate);
+            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.resttime.length");
         }
 
         @Test
@@ -339,17 +332,16 @@ class TimereportServiceTest {
             final Workingday yesterday = new Workingday();
             yesterday.setStarttimehour(19);
             yesterday.setRefday(yesterdayDate);
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate, employeeContractId)).thenReturn(releaseDay);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(yesterdayDate, employeeContractId)).thenReturn(yesterday);
 
             // when validating
-            classUnderTest.validateForRelease(employeeContractId, releaseDate, errors);
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
 
-            // then should add errors regarding resttime
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then expect no error to be returned
+            assertThat(errors).hasSize(0);
         }
 
         @Test
@@ -363,15 +355,14 @@ class TimereportServiceTest {
                     .duration(Duration.ofHours(8))
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
-            ActionMessages errors = new ActionMessages();
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
 
             // when validating
-            classUnderTest.validateForRelease(employeeContractId, date, errors);
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
-            // then should not add any errors regarding breaktime
-            assertThat(errors.size("validation")).isEqualTo(0);
+            // then expect no error to be returned
+            assertThat(errors).hasSize(0);
         }
     }
 }

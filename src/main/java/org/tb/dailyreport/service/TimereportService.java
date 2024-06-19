@@ -2,8 +2,6 @@ package org.tb.dailyreport.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
@@ -18,6 +16,7 @@ import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.ReferencedayDAO;
@@ -207,16 +206,24 @@ public class TimereportService {
     employeecontractDAO.save(employeecontract);
   }
 
-    public void validateForRelease(Long employeeContractId, LocalDate releaseDate, ActionMessages errors) {
-        timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
-                .filter(timeReport -> !timeReport.isSuborderIrrelevantForWorkingTimeContingent())
-                .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
-                .forEach((date, timeReports) -> {
-                    Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
-                    validateBreakTimes(errors, timeReports, workingDay);
-                    validateRestTime(errors, workingDay, date, employeeContractId);
-                });
-    }
+  public List<WorkingDayValidationError> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
+    final List<WorkingDayValidationError> errors = new ArrayList<>();
+    timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
+            .filter(timeReport -> !timeReport.isSuborderIrrelevantForWorkingTimeContingent())
+            .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
+            .forEach((date, timeReports) -> {
+              Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
+              WorkingDayValidationError error = validateBreakTimes(timeReports, workingDay);
+              if (error != null) {
+                errors.add(error);
+              }
+              error = validateRestTime(workingDay, date, employeeContractId);
+              if (error != null) {
+                errors.add(error);
+              }
+            });
+    return errors;
+  }
 
   private void releaseTimereport(long timereportId, String releasedBy) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
@@ -480,24 +487,24 @@ public class TimereportService {
     });
   }
 
-  private void validateBreakTimes(ActionMessages errors, List<TimereportDTO> timeReports, Workingday workingDay) {
+  private WorkingDayValidationError validateBreakTimes(List<TimereportDTO> timeReports, Workingday workingDay) {
     Duration workDurationPerDay = timeReports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
     boolean notEnoughBreaksAfter9Hours = workingDay != null && workingDay.getBreakTimeInMinutes() < BREAK_MINUTES_AFTER_NINE_HOURS;
     boolean notEnoughBreaksAfter6Hours = workingDay != null && workingDay.getBreakTimeInMinutes() < BREAK_MINUTES_AFTER_SIX_HOURS;
     if (workDurationPerDay.toMinutes() > NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
-      errors.add("validation", new ActionMessage("form.release.error.breaktime.nine.length"));
+      return new WorkingDayValidationError(workingDay.getRefday(), "form.release.error.breaktime.nine.length");
     } else if (workDurationPerDay.toMinutes() > SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
-      errors.add("validation", new ActionMessage("form.release.error.breaktime.six.length"));
-      }
+      return new WorkingDayValidationError(workingDay.getRefday(), "form.release.error.breaktime.six.length");
+    }
+    return null;
   }
 
-  private void validateRestTime(ActionMessages errors,
-                                Workingday workingDay,
+  private WorkingDayValidationError validateRestTime(Workingday workingDay,
                                 LocalDate releaseDate,
                                 long employeeContractId) {
     Workingday theDayBefore = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate.minusDays(1), employeeContractId);
     if (theDayBefore == null) {
-      return;
+      return null;
     }
     Duration workDurationPerDay = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate.minusDays(1)).stream()
             .map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
@@ -505,7 +512,8 @@ public class TimereportService {
     LocalDateTime startOfWorkingDay = workingDay.getStartOfWorkingDay();
     Duration restTime = Duration.between(endOfWorkingDay, startOfWorkingDay);
     if (restTime.toMinutes() < REST_PERIOD_IN_MINUTES) {
-      errors.add("validation", new ActionMessage("form.release.error.resttime.length"));
+      return new WorkingDayValidationError(workingDay.getRefday(), "form.release.error.resttime.length");
     }
+    return null;
   }
 }
