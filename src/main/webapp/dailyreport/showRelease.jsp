@@ -180,10 +180,7 @@
 							<b><bean:message key="main.release.release.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<input type="date" name="releaseDate" value="<bean:write name="showReleaseForm" property="releaseDate" />"  />
-							<span style="color: red">
-								<html:errors property="validation"/>
-							</span>
+							<input type="date" name="releaseDate" value="<bean:write name="showReleaseForm" property="releaseDate" />"/>
 						</td>
 
 						<td class="noBborderStyle">
@@ -252,6 +249,8 @@
 				</c:if>
 				<br>
 			</table>
+
+			<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 			<!-- overview table -->
 			<br>
