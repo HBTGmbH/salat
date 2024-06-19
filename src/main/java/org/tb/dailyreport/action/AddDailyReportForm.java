@@ -39,6 +39,8 @@ public class AddDailyReportForm extends ActionForm {
     private long selectedMinuteEnd;
     private long selectedHourDuration;
     private long selectedMinuteDuration;
+    private int selectedHourBeginDay;
+    private int selectedMinuteBeginDay;
     private long orderId;
     private long suborderSignId;
     private long suborderDescriptionId;
@@ -92,6 +94,8 @@ public class AddDailyReportForm extends ActionForm {
         selectedMinuteBegin = 0;
         selectedHourEnd = 0;
         selectedMinuteEnd = 0;
+        selectedHourBeginDay = 6;
+        selectedMinuteBeginDay = 0;
         referenceday = DateUtils.format(DateUtils.today());
         training = false;
         numberOfSerialDays = 0;

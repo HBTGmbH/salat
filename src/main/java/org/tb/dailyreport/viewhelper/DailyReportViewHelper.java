@@ -10,9 +10,7 @@ public class DailyReportViewHelper implements Serializable {
     return items
         .stream()
         .map(OptionItem::getValue)
-        .filter(value -> value.equals(String.valueOf(minutes)))
-        .findAny()
-        .isPresent();
+        .anyMatch(value -> value.equals(String.valueOf(minutes)));
   }
 
 }
