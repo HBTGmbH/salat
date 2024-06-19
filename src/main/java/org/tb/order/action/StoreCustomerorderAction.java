@@ -23,6 +23,7 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
@@ -104,9 +105,10 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             }
             LocalDate fromDate = DateUtils.parseOrNull(coForm.getValidFrom());
 
+            OrderType orderType = OrderType.fromLabel(coForm.getOrderType());
             customerorderService.createOrUpdateOrder(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
                 coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(), coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
-                coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide());
+                coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
 
             request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
             request.getSession().removeAttribute("coId");

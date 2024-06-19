@@ -288,6 +288,18 @@
 				property="hide" /> </td>
 		</tr>
 
+		<tr>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.customerorder.orderType.text" /></b></td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="orderType">
+					<c:forEach var="orderT" items="${orderTypes}">
+						<html:option value="${orderT}"/>
+					</c:forEach>
+				</html:select>
+			</td>
+		</tr>
+
 	</table>
 	<br>
 	<table class="center">

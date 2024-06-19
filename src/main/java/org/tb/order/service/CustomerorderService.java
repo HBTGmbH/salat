@@ -11,6 +11,7 @@ import org.tb.customer.CustomerDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
@@ -29,7 +30,7 @@ public class CustomerorderService {
   public Customerorder createOrUpdateOrder(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
-      Byte debithoursunit, int statusreport, Boolean hide) {
+      Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
 
     Customerorder co;
     if (coId != null) {
@@ -70,6 +71,8 @@ public class CustomerorderService {
 
     co.setStatusreport(statusreport);
     co.setHide(hide);
+
+    co.setOrderType(orderType);
 
     customerorderDAO.save(co);
     coId = co.getId();

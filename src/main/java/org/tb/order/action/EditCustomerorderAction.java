@@ -1,6 +1,7 @@
 package org.tb.order.action;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +17,7 @@ import org.tb.customer.CustomerDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.persistence.CustomerorderDAO;
 
 /**
@@ -65,6 +67,9 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
         }
         request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
 
+        List<String> orderTypeLabels = Arrays.stream(OrderType.values()).map(OrderType::getLabel).toList();
+        request.getSession().setAttribute("orderTypes", orderTypeLabels);
+
         // fill the form with properties of customerorder to be edited
         setFormEntries(request, coForm, co);
 
@@ -112,6 +117,11 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
             coForm.setStatusreport(0);
         } else {
             coForm.setStatusreport(co.getStatusreport());
+        }
+        if (co.getOrderType() == null) {
+            coForm.setOrderType(OrderType.KUNDE.getLabel());
+        } else {
+            coForm.setOrderType(co.getOrderType().getLabel());
         }
 
         coForm.setHide(co.getHide());

@@ -9,6 +9,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee;
+import org.tb.order.domain.OrderType;
 
 /**
  * Form for adding a customer order
@@ -40,6 +41,8 @@ public class AddCustomerorderForm extends ActionForm {
     private long employeeId;
     private long respContrEmployeeId;
 
+    private String orderType;
+
     private String action;
 
     @Override
@@ -69,6 +72,7 @@ public class AddCustomerorderForm extends ActionForm {
         debithoursunit = null;
         statusreport = 0;
         hide = false;
+        orderType = OrderType.KUNDE.getLabel();
     }
 
 }
