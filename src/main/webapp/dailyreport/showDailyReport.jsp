@@ -456,7 +456,6 @@
 									</html:select>
 
 									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
-									<i>(optional)</i>
 								</nobr>
 							</td>
 						</tr>
@@ -477,7 +476,6 @@
 									</html:select>
 
 									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy"></i></a>
-									<i>(optional)</i>
 								</td>
 							</tr>
 							<tr>
