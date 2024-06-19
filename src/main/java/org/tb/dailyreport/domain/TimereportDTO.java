@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
+import org.tb.order.domain.OrderType;
 
 /**
  * Timereports are very sensitive information. Thus we need to care about time reports in a special kind of way
@@ -23,10 +24,10 @@ public class TimereportDTO implements Serializable {
   private final String employeeName;
   private final String employeeSign;
   private final long employeecontractId;
+  private final OrderType orderType;
   private final long suborderId;
   private final String suborderSign;
   private final String suborderDescription;
-  private final boolean suborderIrrelevantForWorkingTimeContingent;
   private final long customerorderId;
   private final String customerorderSign;
   private final String customerorderDescription;

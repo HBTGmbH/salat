@@ -6,8 +6,12 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -99,6 +103,10 @@ public class Customerorder extends AuditedEntity implements Serializable {
      * Hide in select boxes
      */
     private Boolean hide;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "orderType", columnDefinition = "varchar(255)")
+    private OrderType orderType;
 
     public Integer getStatusreport() {
         if (statusreport == null) {
