@@ -37,7 +37,6 @@ public class AddSuborderForm extends ActionForm {
     private Boolean hide;
     private Long parentId;
     private String parentDescriptionAndSign;
-    private boolean irrelevantForWorkingTimeContingent;
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -50,7 +49,6 @@ public class AddSuborderForm extends ActionForm {
         commentnecessary = false;
         fixedPrice = false;
         trainingFlag = false;
-        irrelevantForWorkingTimeContingent = false;
 
         validFrom = DateUtils.format(DateUtils.today());
         validUntil = validFrom;

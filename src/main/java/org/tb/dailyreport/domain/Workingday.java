@@ -55,10 +55,6 @@ public class Workingday extends AuditedEntity implements Serializable {
                 employeecontract.hashCode();
     }
 
-    public int getBreakTimeInMinutes() {
-        return breakhours * 60 + breakminutes;
-    }
-
     public LocalDateTime getStartOfWorkingDay() {
         LocalTime localTime = LocalTime.of(Starttimehour, Starttimeminute);
         return LocalDateTime.of(refday, localTime);
@@ -66,5 +62,9 @@ public class Workingday extends AuditedEntity implements Serializable {
 
     public Duration getBreakLength() {
         return Duration.ofHours(breakhours).plusMinutes(breakminutes);
+    }
+
+    public long getBreakLengthInMinutes() {
+        return getBreakLength().toMinutes();
     }
 }

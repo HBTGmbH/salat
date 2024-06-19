@@ -104,8 +104,6 @@ public class Suborder extends AuditedEntity implements Serializable {
      */
     private Boolean fixedPrice;
 
-    private Boolean irrelevantForWorkingTimeContingent;
-
     public void addSuborder(Suborder child) {
         if (suborders == null) {
             suborders = new LinkedList<>();

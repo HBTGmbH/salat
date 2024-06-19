@@ -862,21 +862,36 @@ databaseChangeLog:
   - changeSet:
       id: 23
       author: cpe
-      comment: Add a flag to mark suborders that are irrelevant for working time contingent
+      comment: Add an OrderType to mark orders as a specific type
       preConditions:
         - onFail: MARK_RAN
         - not:
             - columnExists:
-                tableName: suborder
-                columnName: irrelevantForWorkingTimeContingent
+                tableName: customerorder
+                columnName: orderType
       changes:
         - addColumn:
-            tableName: suborder
+            tableName: customerorder
             columns:
               - column:
-                  name: irrelevantForWorkingTimeContingent
-                  type: boolean
-                  defaultValueBoolean: false
+                  name: orderType
+                  type: varchar(255)
+                  defaultValue: 'KUNDE'
+        - update:
+            tableName: customerorder
+            columns:
+              - column:
+                  name: orderType
+                  value: URLAUB
+            where: sign = 'URLAUB'
+        - update:
+            tableName: customerorder
+            columns:
+              - column:
+                  name: orderType
+                  value: KRANK
+            where: sign = 'KRANK'
+
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

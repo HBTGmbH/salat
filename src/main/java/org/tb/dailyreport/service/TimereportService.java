@@ -209,7 +209,7 @@ public class TimereportService {
   public List<WorkingDayValidationError> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     final List<WorkingDayValidationError> errors = new ArrayList<>();
     timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
-            .filter(timeReport -> !timeReport.isSuborderIrrelevantForWorkingTimeContingent())
+            .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
             .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
             .forEach((date, timeReports) -> {
               Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
@@ -489,8 +489,8 @@ public class TimereportService {
 
   private WorkingDayValidationError validateBreakTimes(List<TimereportDTO> timeReports, Workingday workingDay) {
     Duration workDurationPerDay = timeReports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
-    boolean notEnoughBreaksAfter9Hours = workingDay != null && workingDay.getBreakTimeInMinutes() < BREAK_MINUTES_AFTER_NINE_HOURS;
-    boolean notEnoughBreaksAfter6Hours = workingDay != null && workingDay.getBreakTimeInMinutes() < BREAK_MINUTES_AFTER_SIX_HOURS;
+    boolean notEnoughBreaksAfter9Hours = workingDay != null && workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_NINE_HOURS;
+    boolean notEnoughBreaksAfter6Hours = workingDay != null && workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_SIX_HOURS;
     if (workDurationPerDay.toMinutes() > NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
       return new WorkingDayValidationError(workingDay.getRefday(), "form.release.error.breaktime.nine.length");
     } else if (workDurationPerDay.toMinutes() > SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
@@ -500,14 +500,16 @@ public class TimereportService {
   }
 
   private WorkingDayValidationError validateRestTime(Workingday workingDay,
-                                LocalDate releaseDate,
-                                long employeeContractId) {
+                                                     LocalDate releaseDate,
+                                                     long employeeContractId) {
     Workingday theDayBefore = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate.minusDays(1), employeeContractId);
     if (theDayBefore == null) {
       return null;
     }
     Duration workDurationPerDay = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate.minusDays(1)).stream()
-            .map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+            .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
+            .map(TimereportDTO::getDuration)
+            .reduce(Duration.ZERO, Duration::plus);
     LocalDateTime endOfWorkingDay = theDayBefore.getStartOfWorkingDay().plus(theDayBefore.getBreakLength()).plus(workDurationPerDay);
     LocalDateTime startOfWorkingDay = workingDay.getStartOfWorkingDay();
     Duration restTime = Duration.between(endOfWorkingDay, startOfWorkingDay);
