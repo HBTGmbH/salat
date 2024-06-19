@@ -64,6 +64,11 @@
 		document.forms[0].action = "/do/StoreDailyReport?task=setDate&howMuch=" + howMuch;
 		document.forms[0].submit();
 	}
+
+	function saveBeginOfWorkingDay(form) {
+		form.action = "/do/StoreDailyReport?task=saveBeginOfWorkingDay";
+		form.submit();
+	}
 	
 	function setUpdateHoursAction(form) {
  		form.action = "/do/StoreDailyReport?task=refreshHours";
@@ -83,6 +88,19 @@
 	function backToOverview(form) {	
  		form.action = "/do/ShowDailyReport?task=refreshTimereports";
 		form.submit();
+	}
+
+	function findForm(item) {
+		while(item) {
+			if(item.form) {
+				return item.form;
+			}
+			if(item.tagName && item.tagName.toLowerCase() == "form") {
+				return item;
+			}
+			item = item.parentElement;
+		}
+		return null;
 	}
 
 	$(document).ready(function() {
@@ -187,6 +205,22 @@
 					<html:errors property="orderId" />
 					<html:errors property="suborderId" />
 				</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td align="left" class="noBborderStyle">
+				<b><bean:message key="main.timereport.startofwork.day.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
+			</td>
+			<td align="left" class="noBborderStyle">
+				<html:select property="selectedHourBeginDay">
+					<html:options collection="hours" property="value" labelProperty="label" />
+				</html:select>
+				<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+				<html:select property="selectedMinuteBeginDay">
+					<html:options collection="minutes" property="value"	labelProperty="label" />
+				</html:select>
+				<a href="#" onclick="saveBeginOfWorkingDay(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
 			</td>
 		</tr>
 

@@ -154,6 +154,8 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
             reportForm.setSelectedMinuteDuration(tr.getDuration().toMinutesPart());
         }
 
+        reportForm.setSelectedHourBeginDay(workingday.getStarttimehour());
+        reportForm.setSelectedMinuteBeginDay(workingday.getStarttimeminute());
         reportForm.setSuborder(tr.getSuborderSign());
         reportForm.setSuborderSignId(tr.getSuborderId());
         reportForm.setSuborderDescriptionId(tr.getSuborderId());

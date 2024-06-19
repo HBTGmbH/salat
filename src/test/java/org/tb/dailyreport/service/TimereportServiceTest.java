@@ -36,6 +36,30 @@ class TimereportServiceTest {
     @Nested
     class ValidateForRelease {
         @Test
+        void whenNoWorkingDayWasSaved_shouldReturnError() {
+            // given the Workingday object does not exist
+            final long employeeContractId = 1L;
+            final LocalDate date = LocalDate.of(2024, 1, 1);
+            final TimereportDTO timeReport = TimereportDTO.builder()
+                    .orderType(OrderType.KUNDE)
+                    .referenceday(date)
+                    .duration(Duration.ofHours(6).minusMinutes(1))
+                    .build();
+            final List<TimereportDTO> result = List.of(timeReport);
+
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(null);
+
+            // when validating
+            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+
+            // then should return error about missing begin of working time
+            assertThat(errors).hasSize(1);
+            assertThat(errors.getFirst().getDate()).isEqualTo(date);
+            assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.beginofworkingday.required");
+        }
+
+        @Test
         void whenNoTimeReports_shouldNotReturnError() {
             // given no timeReports in the specified timeframe
             final long employeeContractId = 1L;
@@ -63,6 +87,8 @@ class TimereportServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
+            workingday.setStarttimehour(8);
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
@@ -86,6 +112,8 @@ class TimereportServiceTest {
                     .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
+            workingday.setStarttimehour(8);
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
@@ -164,6 +192,8 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(30);
+            workingday.setStarttimehour(8);
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
@@ -193,6 +223,8 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(30);
+            workingday.setStarttimehour(8);
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
@@ -286,6 +318,8 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport1, timeReport2);
             final Workingday workingday = new Workingday();
             workingday.setBreakminutes(45);
+            workingday.setStarttimehour(8);
+            workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);

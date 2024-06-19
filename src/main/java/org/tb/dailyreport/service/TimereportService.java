@@ -213,7 +213,11 @@ public class TimereportService {
             .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
             .forEach((date, timeReports) -> {
               Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
-              WorkingDayValidationError error = validateBreakTimes(timeReports, workingDay);
+              WorkingDayValidationError error = validateBeginOfWorkingDay(workingDay, date);
+              if (error != null) {
+                errors.add(error);
+              }
+              error = validateBreakTimes(timeReports, workingDay);
               if (error != null) {
                 errors.add(error);
               }
@@ -309,6 +313,12 @@ public class TimereportService {
     DataValidation.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
     DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
+
+    if (employeeorder.getSuborder().getCustomerorder().isRelevantForWorkingTimeValidation()) {
+      Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContractId);
+      DataValidation.notNull(workingDay, TR_WORKING_DAY_START_NULL);
+      DataValidation.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
+    }
 
     timereport.setEmployeecontract(employeecontract);
     timereport.setEmployeeorder(employeeorder);
@@ -515,6 +525,13 @@ public class TimereportService {
     Duration restTime = Duration.between(endOfWorkingDay, startOfWorkingDay);
     if (restTime.toMinutes() < REST_PERIOD_IN_MINUTES) {
       return new WorkingDayValidationError(workingDay.getRefday(), "form.release.error.resttime.length");
+    }
+    return null;
+  }
+
+  private WorkingDayValidationError validateBeginOfWorkingDay(Workingday workingDay, LocalDate date) {
+    if (workingDay == null || workingDay.getStartOfWorkingDay() == null) {
+      return new WorkingDayValidationError(date, "form.release.error.beginofworkingday.required");
     }
     return null;
   }

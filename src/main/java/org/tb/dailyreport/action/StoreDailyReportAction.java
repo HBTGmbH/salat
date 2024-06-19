@@ -175,6 +175,25 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             setSubOrder(suborder, request, form);
         }
 
+        if (request.getParameter("task") != null && request.getParameter("task").equals("saveBeginOfWorkingDay")) {
+            LocalDate dateOfReport = parse(form.getReferenceday());
+            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(dateOfReport, employeeContract.getId());
+            if (workingday == null) {
+                workingday = new Workingday();
+                workingday.setRefday(dateOfReport);
+                workingday.setEmployeecontract(employeeContract);
+                workingday.setStarttimehour(form.getSelectedHourBeginDay());
+                workingday.setStarttimeminute(form.getSelectedMinuteBeginDay());
+                workingday.setBreakhours(0);
+                workingday.setBreakminutes(0);
+                workingdayDAO.save(workingday);
+            } else {
+                workingday.setStarttimehour(form.getSelectedHourBeginDay());
+                workingday.setStarttimeminute(form.getSelectedMinuteBeginDay());
+                workingdayDAO.save(workingday);
+            }
+        }
+
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshHours")) {
             // refreshes the hours displayed after a change of duration period
             timereportHelper.refreshHours(form);
