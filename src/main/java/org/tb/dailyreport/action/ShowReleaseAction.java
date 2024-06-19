@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -19,6 +20,7 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -244,8 +246,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         LocalDate date = LocalDate.parse(releaseForm.getReleaseDate());
 
         if (date.isBefore(selectedEmployeecontract.getValidFrom())
-            || selectedEmployeecontract.getValidUntil() != null && date
-            .isAfter(selectedEmployeecontract.getValidUntil())) {
+                || selectedEmployeecontract.getValidUntil() != null
+                && date.isAfter(selectedEmployeecontract.getValidUntil())) {
             errors.add("validation", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
         }
 
@@ -253,7 +255,14 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             errors.add("validation", new ActionMessage("form.release.error.date.before.acceptance"));
         }
 
-        timereportService.validateForRelease(selectedEmployeecontract.getId(), date, errors);
+        List<WorkingDayValidationError> validationErrors = timereportService.validateForRelease(selectedEmployeecontract.getId(), date).stream()
+                .sorted(Comparator.comparing(WorkingDayValidationError::getDate))
+                .toList();
+        for (WorkingDayValidationError validationError : validationErrors) {
+            String dateFormatted = validationError.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            ActionMessage message = new ActionMessage(validationError.getMessage(), dateFormatted);
+            errors.add("validation", message);
+        }
 
         saveErrors(request, errors);
 
