@@ -19,6 +19,9 @@ import static org.tb.common.util.DateUtils.getYearString;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -33,14 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
+import org.mapstruct.factory.Mappers;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
@@ -68,6 +69,10 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.OvertimeService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.favorites.domain.Favorite;
+import org.tb.favorites.rest.FavoriteDto;
+import org.tb.favorites.rest.FavoriteDtoMapper;
+import org.tb.favorites.service.FavoriteService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -92,6 +97,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final EmployeecontractDAO employeecontractDAO;
     private final SuborderDAO suborderDAO;
     private final EmployeeorderDAO employeeorderDAO;
+    private final FavoriteService favoriteService;
     private final WorkingdayDAO workingdayDAO;
     private final EmployeeDAO employeeDAO;
     private final SuborderHelper suborderHelper;
@@ -100,6 +106,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
     private final OvertimeService overtimeService;
+    private final FavoriteDtoMapper favoriteDtoMapper = Mappers.getMapper(FavoriteDtoMapper.class);
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
@@ -147,7 +154,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         request.getSession().setAttribute("vacationBudgetOverrun", false);
         Employeecontract ec = getEmployeeContractFromRequest(request);
 
-        // check if special tasks initiated from the daily display need to be carried out...
+        updateFavorites(request, ec.getEmployee().getId());
+
+                // check if special tasks initiated from the daily display need to be carried out...
         String sortModus = (String) request.getSession().getAttribute("timereportSortModus");
         if (sortModus == null || !(sortModus.equals("+") || sortModus.equals("-"))) {
             sortModus = "+";
@@ -158,7 +167,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             sortColumn = "employee";
             request.getSession().setAttribute("timereportSortColumn", sortColumn);
         }
-
         final ActionForward actionResult;
         if ("sort".equals(task)) {
             actionResult = doSort(mapping, request, sortModus, sortColumn);
@@ -175,6 +183,15 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         } else if ("back".equalsIgnoreCase(task)) {
             // just go back to main menu
             actionResult = mapping.findForward("backtomenu");
+        } else if ("addFavoriteAsReport".equalsIgnoreCase(task)) {
+          // just go back to main menu
+          actionResult = addFavoriteAsReport(mapping, request, reportForm, ec);
+        } else if ("deleteFavorite".equalsIgnoreCase(task)) {
+          // just go back to main menu
+          actionResult = deleteFavorite(mapping, request, ec);
+        }else if ("createFavorite".equalsIgnoreCase(task)) {
+          // just go back to main menu
+          actionResult = createFavorite(mapping, request, ec);
         } else if(task != null) {
             actionResult = mapping.findForward("success");
         } else {
@@ -231,6 +248,57 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         }
 
         return actionResult;
+    }
+
+    private ActionForward createFavorite(ActionMapping mapping, HttpServletRequest request, Employeecontract ec) {
+      if (ec == null || ec.getId() == null) {
+        throw new IllegalStateException("Employeecontract is null");
+      }
+        long timereportId = Long.parseLong(request.getParameter("timereportId"));
+        TimereportDTO timereport = timereportDAO.getTimereportById(timereportId);
+        if (timereport == null) {
+          throw new IllegalArgumentException("timereport not found");
+        }
+        if (timereport.getEmployeecontractId() != ec.getId()) {
+          throw new IllegalArgumentException("not your timereport");
+        }
+
+      Favorite favorite =Favorite.builder()
+          .employeeorderId(timereport.getEmployeeorderId())
+          .employeeId(timereport.getEmployeeId())
+          .hours((int) timereport.getDurationhours())
+          .minutes((int) timereport.getDurationminutes())
+          .comment(timereport.getTaskdescription())
+          .build();
+      favoriteService.addFavorite(favorite);
+      updateFavorites(request, ec.getEmployee().getId());
+        return mapping.findForward("success");
+    }
+
+    private ActionForward deleteFavorite(ActionMapping mapping, HttpServletRequest request, Employeecontract ec) {
+    long favoriteId = Long.parseLong(request.getParameter("favoriteID"));
+    favoriteService.deleteFavorite(favoriteId);
+      updateFavorites(request, ec.getEmployee().getId());
+
+      return mapping.findForward("success");
+  }
+
+  private ActionForward addFavoriteAsReport(ActionMapping mapping, HttpServletRequest request,
+      ShowDailyReportForm reportForm, Employeecontract ec) {
+      if (ec == null) {
+        throw new IllegalStateException("Employeecontract is null");
+      }
+      Long favoriteId = Long.parseLong(request.getParameter("favoriteID"));
+      Favorite favorite = favoriteService.getFavorite(favoriteId)
+          .orElseThrow(() -> new IllegalArgumentException("favoriteID not found"));
+
+      LocalDate date = DateUtils.parse(request.getParameter("date"));
+
+      timereportService.createTimereports(authorizedUser, ec.getId(), favorite.getEmployeeorderId(), date,
+          favorite.getComment(), false,
+          favorite.getHours(), favorite.getMinutes(), 1);
+
+      return doRefreshTimereports(mapping, request, reportForm, ec);
     }
 
     /**
@@ -593,6 +661,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
                     request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
                     request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+
+                    updateFavorites(request,employeecontract.getEmployee().getId());
+
                 }
                 request.getSession().setAttribute("suborderFilerId", reportForm.getSuborderId());
 
@@ -616,11 +687,17 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 request.getSession().setAttribute("lastDay", reportForm.getLastday());
                 request.getSession().setAttribute("lastMonth", reportForm.getLastmonth());
                 request.getSession().setAttribute("lastYear", reportForm.getLastyear());
+
                 return mapping.findForward("success");
             } else {
                 return mapping.findForward("error");
             }
         }
+    }
+
+    private void updateFavorites(HttpServletRequest request, Long employeeId) {
+        List<FavoriteDto> favorites = favoriteDtoMapper.map(favoriteService.getFavorites(employeeId));
+        request.getSession().setAttribute("favorites", favorites);
     }
 
     private ActionForward doSaveBeginOrBreak(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm, Employeecontract ec, String task) {
