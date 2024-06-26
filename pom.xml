@@ -256,6 +256,7 @@
         <!-- References to interface static methods are allowed only at source level 1.8 or above -->
         <configuration>
           <compilerArgs>
+            <compilerArg>-proc:full</compilerArg>
             <compilerArg>-Xlint</compilerArg>
             <!--
             <compilerArg>-Xdiags:verbose</compilerArg>
