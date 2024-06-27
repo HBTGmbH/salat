@@ -76,6 +76,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         } else {
             reportForm.setInvoice(true);
             reportForm.setNonInvoice(true);
+            reportForm.setStartAndBreakTime(true);
             // call on MatrixView without a parameter
 
             // no special task - prepare everything to show reports

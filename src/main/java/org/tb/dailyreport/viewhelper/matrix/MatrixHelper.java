@@ -17,6 +17,8 @@ import static java.time.DayOfWeek.SUNDAY;
 import static java.time.DayOfWeek.THURSDAY;
 import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES;
@@ -49,8 +51,10 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.action.ShowMatrixForm;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.viewhelper.matrix.MergedReport.OrderSummaryData;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -111,8 +115,9 @@ public class MatrixHelper {
     private final EmployeeDAO employeeDAO;
     private final OvertimeService overtimeService;
     private final AfterLogin afterLogin;
+    private final WorkingdayDAO workingdayDAO;
 
-    public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable) {
+    public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable, boolean startAndBreakTime) {
         Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
         LocalDate validFrom = dateFirst;
         LocalDate validUntil = dateLast;
@@ -122,6 +127,10 @@ public class MatrixHelper {
             if (employeecontract.getValidUntil() != null && dateLast.isAfter(employeecontract.getValidUntil()))
                 validUntil = employeecontract.getValidUntil();
         }
+
+        Map<LocalDate, Workingday> workingDays = startAndBreakTime
+                ? queryWorkingDays(dateFirst, dateLast, employeeContractId)
+                : emptyMap();
 
         List<TimereportDTO> timeReportList;
         if (invoiceable || nonInvoiceable) {
@@ -163,7 +172,7 @@ public class MatrixHelper {
         List<Publicholiday> publicHolidayList = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast);
 
         List<DayAndWorkingHourCount> dayHoursCount = new ArrayList<>();
-        int workdayCount = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList);
+        int workdayCount = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList, workingDays);
 
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
         handlePublicHolidays(dateFirst, dateLast, mergedReportList, dayHoursCount, publicHolidayList);
@@ -209,14 +218,26 @@ public class MatrixHelper {
         return sb.toString();
     }
 
-    private int fillDayHoursCount(LocalDate dateFirst, LocalDate dateLast, LocalDate validFrom, LocalDate validUntil, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
+    private int fillDayHoursCount(LocalDate dateFirst,
+                                  LocalDate dateLast,
+                                  LocalDate validFrom,
+                                  LocalDate validUntil,
+                                  List<DayAndWorkingHourCount> dayHoursCount,
+                                  List<Publicholiday> publicHolidayList,
+                                  Map<LocalDate, Workingday> workingDays) {
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
         LocalDate dateLoop = dateFirst;
         int day = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
-            dayHoursCount.add(new DayAndWorkingHourCount(day, Duration.ZERO, dateLoop));
+            var workingHourCount = new DayAndWorkingHourCount(day, Duration.ZERO, dateLoop);
+            var workingDay = workingDays.get(dateLoop);
+            if (workingDay != null) {
+                workingHourCount.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * 60L);
+                workingHourCount.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * 60L);
+            }
+            dayHoursCount.add(workingHourCount);
             dateLoop = DateUtils.addDays(dateLoop, 1);
         }
 
@@ -264,7 +285,11 @@ public class MatrixHelper {
         return workdayCount;
     }
 
-    private void handlePublicHolidays(LocalDate dateFirst, LocalDate dateLast, List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayHoursCount, List<Publicholiday> publicHolidayList) {
+    private void handlePublicHolidays(LocalDate dateFirst,
+                                      LocalDate dateLast,
+                                      List<MergedReport> mergedReportList,
+                                      List<DayAndWorkingHourCount> dayHoursCount,
+                                      List<Publicholiday> publicHolidayList) {
         LocalDate dateLoop = dateFirst;
         int day = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
@@ -293,6 +318,8 @@ public class MatrixHelper {
                                 otherDayAndWorkingHourCount.setPublicHolidayName(dayAndWorkingHourCount.getPublicHolidayName());
                                 otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.isSatSun());
                                 otherDayAndWorkingHourCount.setWeekDay(dayAndWorkingHourCount.getWeekDay());
+                                otherDayAndWorkingHourCount.setStartOfWorkMinute(dayAndWorkingHourCount.getStartOfWorkMinute());
+                                otherDayAndWorkingHourCount.setBreakMinutes(dayAndWorkingHourCount.getBreakMinutes());
                                 dayHoursCount.set(i, otherDayAndWorkingHourCount);
                                 for (Publicholiday publicHoliday : publicHolidayList) {
                                     if (publicHoliday.getRefdate().equals(dateLoop)) {
@@ -347,6 +374,12 @@ public class MatrixHelper {
         }
         timeReportList.clear();
         timeReportList.addAll(tempTimeReportList);
+    }
+
+    private Map<LocalDate, Workingday> queryWorkingDays(LocalDate dateFirst, LocalDate dateLast, long employeeContractId) {
+        return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast)
+                .stream()
+                .collect(toMap(Workingday::getRefday, workingDay -> workingDay));
     }
 
     private List<TimereportDTO> queryTimereports(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId) {
@@ -405,6 +438,7 @@ public class MatrixHelper {
         Long ecId = reportForm.getEmployeeContractId();
         boolean isInvoiceable = reportForm.getInvoice();
         boolean isNonInvoiceable = reportForm.getNonInvoice();
+        boolean isStartAndBreakTime = reportForm.getStartAndBreakTime();
         if (ecId == -1) {
             // consider timereports for all employees
             List<Customerorder> orders = customerorderDAO.getCustomerorders();
@@ -413,11 +447,11 @@ public class MatrixHelper {
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
                 // get the timereports for specific date, all employees, all
                 // orders
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
             } else {
                 // get the timereports for specific date, all employees,
                 // specific order
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
+                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
             }
 
             results.put("currentEmployee", "ALL EMPLOYEES");
@@ -442,15 +476,15 @@ public class MatrixHelper {
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
                 // get the timereports for specific date, specific employee,
                 // all orders
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
             } else {
                 // get the timereports for specific date, specific employee,
                 // specific order
                 List<Customerorder> customerOrder = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
                 if (customerOrder.contains(order)) {
-                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable);
+                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
                 } else {
-                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
                 }
             }
 
@@ -487,6 +521,7 @@ public class MatrixHelper {
         results.put("lastMonth", reportForm.getUntilMonth());
         results.put("lastYear", reportForm.getUntilYear());
         results.put("daysofmonth", DateUtils.getMonthDays(dateFirst));
+        results.put("showStartAndBreakTime", reportForm.getStartAndBreakTime());
 
         return results;
     }
@@ -515,6 +550,7 @@ public class MatrixHelper {
 
         boolean isInvoiceable = reportForm.getInvoice();
         boolean isNonInvoiceable = reportForm.getNonInvoice();
+        boolean isStartAndBreakTime = reportForm.getStartAndBreakTime();
 
         ReportWrapper reportWrapper;
         int maxDays;
@@ -536,7 +572,7 @@ public class MatrixHelper {
                 ecId = currentEc.getId();
             }
 
-            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable);
+            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
         } else {
 
             // call from main menu: set current month, year,
@@ -605,7 +641,7 @@ public class MatrixHelper {
                 results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
             }
 
-            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable);
+            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
         }
         results.put("mergedreports", reportWrapper.getMergedReportList());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
@@ -617,6 +653,8 @@ public class MatrixHelper {
         results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
         results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
         results.put("daysofmonth", maxDays);
+        results.put("showStartAndBreakTime", reportForm.getStartAndBreakTime());
+
         return results;
     }
 
