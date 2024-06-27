@@ -24,11 +24,13 @@ public class ShowMatrixForm extends ActionForm {
     private long orderId;
     private Boolean invoice;
     private Boolean nonInvoice;
+    private Boolean startAndBreakTime;
 
     @Override
     public void reset(ActionMapping arg0, HttpServletRequest arg1) {
         invoice = false;
         nonInvoice = false;
+        startAndBreakTime = false;
     }
 
 }

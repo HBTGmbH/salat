@@ -20,6 +20,10 @@ public class WorkingdayDAO {
         return workingdayRepository.findAllByEmployeecontractId(employeeContractId);
     }
 
+    public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate begin, LocalDate end) {
+        return workingdayRepository.findAllByEmployeecontractIdAndReferencedayBetween(employeeContractId, begin, end);
+    }
+
     public void save(Workingday wd) {
         workingdayRepository.save(wd);
     }
