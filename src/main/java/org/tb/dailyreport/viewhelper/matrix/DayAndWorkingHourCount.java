@@ -18,7 +18,9 @@ public class DayAndWorkingHourCount {
     private String weekDay;
     private String publicHolidayName;
     private Long startOfWorkMinute;
+    private boolean invalidStartOfWork;
     private Long breakMinutes;
+    private boolean invalidBreakTime;
 
     public DayAndWorkingHourCount(int day, Duration workingHour, LocalDate date) {
         this.day = day;
@@ -39,7 +41,7 @@ public class DayAndWorkingHourCount {
     }
 
     public String getBreakDurationString() {
-        return breakMinutes != null && breakMinutes > 0L ? timeFormatMinutes(breakMinutes) : null;
+        return breakMinutes != null ? timeFormatMinutes(breakMinutes) : null;
     }
 
 }
