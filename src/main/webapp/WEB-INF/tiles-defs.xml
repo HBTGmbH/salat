@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE tiles-definitions PUBLIC
+  "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+  "https://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+  <definition name="page" template="/WEB-INF/assets/salat-layout-default.jsp">
+    <put-attribute name="menuactive" value="" />
+    <put-attribute name="section" value="" />
+    <put-attribute name="subsection" value="" />
+    <put-attribute name="styles" value="" />
+    <put-attribute name="scripts" value="" />
+    <put-attribute name="content" value="" />
+  </definition>
+  <definition name="info2" template="/WEB-INF/assets/info2.jsp" />
+</tiles-definitions>

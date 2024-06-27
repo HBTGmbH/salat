@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+  <title>SALAT - Buchung hinzufügen/bearbeiten</title>
+  <!-- CSS files -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+  <link rel="stylesheet" href="./style/tb.tabler.css" />
+  <style>
+    @import url('https://rsms.me/inter/inter.css');
+
+    :root {
+      --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+    }
+
+    body {
+      font-feature-settings: "cv03", "cv04", "cv11";
+    }
+  </style>
+</head>
+<body class="bi-layout-sidebar" data-bs-theme="dark">
+<script src="scripts/theme-selector.js"></script>
+<div class="page">
+  <!-- Sidebar -->
+  <aside class="navbar navbar-vertical navbar-expand-md" data-bs-theme="dark" id="salat-nav">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+              data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false"
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <h1 class="navbar-brand navbar-brand-autodark">
+        <span>
+          <img src="./images/hbt-logo.svg" alt="SALAT" class="navbar-brand-image"
+               style="height: 24px">
+          <h4 style="margin-block-end: 0">SALAT</h4>
+        </span>
+      </h1>
+      <div class="collapse navbar-collapse" id="sidebar-menu">
+        <ul class="navbar-nav pt-lg-3">
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="nav-link-icon ti ti-home"></i>
+              <span class="nav-link-title">Home</span>
+            </a>
+          </li>
+          <li class="nav-item active dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon ti ti-clock"></i>
+              <span class="nav-link-title">Buchungen</span>
+            </a>
+            <div class="dropdown-menu show">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" href="#">
+                    Neue Buchung
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Einzelübersicht
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Matrixübersicht
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Fortbildung
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Freigabe
+                  </a>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon ti ti-users"></i>
+              <span class="nav-link-title">Mitarbeiter</span>
+            </a>
+            <div class="dropdown-menu">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" href="#">
+                    Mitarbeiter
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Mitarbeiterverträge
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Mitarbeiteraufträge
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Überstunden
+                  </a>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon ti ti-file-invoice"></i>
+              <span class="nav-link-title">Aufträge</span>
+            </a>
+            <div class="dropdown-menu">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" href="#">
+                    Auftraggeber
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Aufträge
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Unteraufträge
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Rechnungsanlage
+                  </a>
+                  <a class="dropdown-item" href="#">
+                    Reports
+                  </a>
+                </div>
+              </div>
+            </div>
+          </li>
+
+        </ul>
+        <div class="card border-0">
+          <div class="card-body p-4 text-center">
+            <p class="text-secondary">Angemeldet als</p>
+            <span class="avatar avatar-xl mb-3 rounded" style="background-image: url(./images/profile/udr.png)"></span>
+            <h3 class="m-0 mb-1">Ulf Diener</h3>
+            <div class="text-secondary">udr</div>
+            <div class="mt-3">
+              <span class="badge bg-purple-lt">Mitarbeiter</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="page-wrapper">
+    <!-- Page header -->
+    <div class="page-header d-print-none">
+      <div class="container-md">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <!-- Page pre-title -->
+            <div class="page-pretitle">
+              Buchungen
+            </div>
+            <h2 class="page-title">
+              Neue Buchung
+            </h2>
+          </div>
+          <!-- Page title actions -->
+          <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+              <button class="btn hide-theme-dark" aria-label="Enable dark mode" onclick="selectTheme('dark')">
+                <i class="ti ti-moon ti-size-3"></i>
+              </button>
+              <button class="btn hide-theme-light" aria-label="Enable light mode" onclick="selectTheme('light')">
+                <i class="ti ti-sun-high ti-size-3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Page body -->
+    <div class="page-body">
+      <div class="container-md">
+
+        <div class="alert alert-primary alert-danger" role="alert">
+          Es wurde keine Zeit angegeben (mindestens eine Minute erforderlich)
+        </div>
+
+        <form action="https://httpbin.org/post" method="post" class="card">
+          <div class="card-body">
+            <div class="row mb-3">
+              <label for="Mitarbeiter" class="col-sm-2 col-form-label">Mitarbeiter</label>
+              <div class="col-sm-10">
+                <select class="form-select" id="Mitarbeiter" name="Mitarbeiter">
+
+                  <option value="4212">Andreas Foede |
+                  af&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2007-01-01 - offen)</option>
+
+                  <option value="180717">Alexey Gusev (AKRA) |
+                    AGUSE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-03-01 - offen)</option>
+
+                  <option value="89492">Arne Habermann |
+                    aha&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2011-04-01 - offen)</option>
+
+                  <option value="180778">Anneliese Otto |
+                    ano&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-12-01 - offen)</option>
+
+                  <option value="180755">Antje Richarz |
+                    ar&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-01-01 - offen)</option>
+
+                  <option value="180750">Anna-Sophie Franke |
+                    asf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-01-01 - offen)</option>
+
+                  <option value="180703">Atabek Amanov |
+                    ata&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2020-10-01 - offen)</option>
+
+                  <option value="180748">Adrian Teichert |
+                    ate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-12-01 - offen)</option>
+
+                  <option value="180742">Behnaz Nabhan |
+                    bam&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-10-01 - offen)</option>
+
+                  <option value="180796">Bastian Silies |
+                    bas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-07-01 - offen)</option>
+
+                  <option value="173020">Benedikt Westphal |
+                    bw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2015-01-01 - offen)</option>
+
+                  <option value="35120">Claas Gaidies |
+                    cg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2008-09-01 - offen)</option>
+
+                  <option value="180667">Christian Binder |
+                    chb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2017-10-01 - offen)</option>
+
+                  <option value="180794">Christin Meienberg |
+                    cm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-05-01 - offen)</option>
+
+                  <option value="180712">Christoph Jannik Peglow |
+                    cpe&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-01-01 - offen)</option>
+
+                  <option value="180761">Dominik Elflein |
+                    doe&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-03-01 - offen)</option>
+
+                  <option value="5796">Dirk Richter |
+                    dr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2007-01-01 - offen)</option>
+
+                  <option value="180792">Edward Davenport |
+                    eda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-06-01 - offen)</option>
+
+                  <option value="15140">Sven Elvers |
+                    elv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2007-07-01 - offen)</option>
+
+                  <option value="180806">Felix Favre (AKRA) |
+                    FELFA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-02-01 - offen)</option>
+
+                  <option value="180800">Felix Pütter |
+                    fep&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-12-01 - offen)</option>
+
+                  <option value="180734">Felix Goede |
+                    fgo&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-07-01 - offen)</option>
+
+                  <option value="180765">Finn Junker |
+                    fj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-04-01 - offen)</option>
+
+                  <option value="180662">Florian Siebert |
+                    fls&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2017-07-01 - offen)</option>
+
+                  <option value="180738">Florian Plähn |
+                    fp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-08-01 - offen)</option>
+
+                  <option value="180693">Frank Schneider |
+                    fs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2019-12-01 - offen)</option>
+
+                  <option value="180746">Franz Xaver Schmid |
+                    fxs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-11-01 - offen)</option>
+
+                  <option value="69350">Hauke Stipp |
+                    hsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2010-05-10 - offen)</option>
+
+                  <option value="180675">Henning Voß |
+                    hvo&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2018-05-01 - offen)</option>
+
+                  <option value="76594">Ilja Erbis |
+                    ie&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2010-10-01 - offen)</option>
+
+                  <option value="180678">Inge Fiehn |
+                    if&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2018-07-01 - offen)</option>
+
+                  <option value="180774">Jesper Junker |
+                    jej&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-10-17 - offen)</option>
+
+                  <option value="180769">Jessica Köhnke |
+                    jek&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-07-01 - offen)</option>
+
+                  <option value="180690">Jim Martens |
+                    jma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2019-11-01 - offen)</option>
+
+                  <option value="180714">Josias Polchau |
+                    jp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-01-01 - offen)</option>
+
+                  <option value="180772">Jonas Schroerschwarz |
+                    jsc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-08-01 - 2024-03-31)</option>
+
+                  <option value="180754">Julian Seegebarth |
+                    jsee&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-01-01 - offen)</option>
+
+                  <option value="180722">Janek Stoeck (AKRA) |
+                    JSTOE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-04-01 - offen)</option>
+
+                  <option value="89490">Kai Burjack |
+                    kb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2011-04-01 - offen)</option>
+
+                  <option value="180779">Kai Burjack Support |
+                    kbS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-08-01 - offen)</option>
+
+                  <option value="180790">Kai Dittmer |
+                    kd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-04-01 - offen)</option>
+
+                  <option value="180637">Kai Dittmer Support |
+                    kds&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2016-02-01 - offen)</option>
+
+                  <option value="180685" selected="selected">Klaus Richarz |
+                    kr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2019-01-01 - offen)</option>
+
+                  <option value="180720">Lars-Ole Junker |
+                    lj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-04-01 - offen)</option>
+
+                  <option value="180751">Linus Maier |
+                    lma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-01-01 - 2024-03-31)</option>
+
+                  <option value="180681">Lukas Matthias Müller |
+                    lmm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2018-10-01 - offen)</option>
+
+                  <option value="180807">Lovis Jungbludt |
+                    loj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-02-01 - offen)</option>
+
+                  <option value="180768">Leonard Riemann |
+                    lri&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-07-01 - offen)</option>
+
+                  <option value="180709">Max Gosau |
+                    mag&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-01-01 - offen)</option>
+
+                  <option value="180788">Matti Wilhelmi |
+                    maw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-03-01 - offen)</option>
+
+                  <option value="180808">Michael Brunswig (Randstad Digital) |
+                    MIBRU&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-02-19 - offen)</option>
+
+                  <option value="180798">Marian Johannes Begemann |
+                    mjb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-09-13 - 2025-08-12)</option>
+
+                  <option value="180795">Matthias Miro |
+                    mmi&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-07-01 - offen)</option>
+
+                  <option value="180787">Morteza Nabhan |
+                    mon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-03-01 - offen)</option>
+
+                  <option value="180740">Malte Petersen |
+                    mp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-11-01 - offen)</option>
+
+                  <option value="180764">Mathes Petscheleit |
+                    mpe&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-04-01 - offen)</option>
+
+                  <option value="180797">Niklas Thilmont |
+                    nt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-07-01 - offen)</option>
+
+                  <option value="180707">Oliver Bannert |
+                    olb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2020-11-01 - offen)</option>
+
+                  <option value="180804">Ruben Schempp |
+                    rms&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-01-01 - offen)</option>
+
+                  <option value="180799">Romina Rominaz Fahimi Vahid |
+                    rrv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-11-06 - 2024-03-31)</option>
+
+                  <option value="4210">René Steinhäuser |
+                    rst&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2007-01-01 - offen)</option>
+
+                  <option value="180775">Sandra Siebert |
+                    sas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-09-01 - offen)</option>
+
+                  <option value="82701">Stefan Engelhardt |
+                    se&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2011-02-01 - offen)</option>
+
+                  <option value="150150">Stefan Kurzbach |
+                    sku&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2013-11-01 - offen)</option>
+
+                  <option value="180697">Sebastian Lips |
+                    sl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2020-04-01 - offen)</option>
+
+                  <option value="180688">Sven Merget |
+                    sme&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2019-10-01 - offen)</option>
+
+                  <option value="180805">Sven Kiesewetter |
+                    svk&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-01-01 - offen)</option>
+
+                  <option value="76592">Thorsten Dahmke |
+                    td&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2010-09-01 - offen)</option>
+
+                  <option value="180770">Tarek Garir (AKRA) |
+                    TGAR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-07-01 - offen)</option>
+
+                  <option value="109020">Torge Hirsch |
+                    th&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2012-02-01 - offen)</option>
+
+                  <option value="180803">Tina Scheffler (AKRA) |
+                    TINAS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-01-01 - offen)</option>
+
+                  <option value="180791">Thomas Kiendl (NestorIT) |
+                    TKIEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-01-01 - offen)</option>
+
+                  <option value="180694">Tommy Heyding |
+                    toh&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2020-02-01 - offen)</option>
+
+                  <option value="180785">Tobias Krause |
+                    tok&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2023-01-01 - offen)</option>
+
+                  <option value="180801">Timm Schwemann |
+                    ts&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-01-01 - 2024-04-30)</option>
+
+                  <option value="180802">Timm Schwemann |
+                    ts&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2024-05-01 - offen)</option>
+
+                  <option value="180710">Tim Tönnsen (AKRA) |
+                    tt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2021-01-01 - offen)</option>
+
+                  <option value="4900">Thomas Wuppermann |
+                    tw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2007-01-01 - offen)</option>
+
+                  <option value="63100">Tim Zielasko |
+                    tz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2010-02-01 - offen)</option>
+
+                  <option value="180767">Ulf Diener |
+                    udr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2022-05-01 - offen)</option></select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <label for="Bezugsdatum" class="col-sm-2 col-form-label">Bezugsdatum</label>
+              <div class="col-sm-2">
+                <input type="date" class="form-control" id="Bezugsdatum" name="Bezugsdatum">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <label for="Serienbuchung" class="col-sm-2 col-form-label">Serienbuchung</label>
+              <div class="col-sm-1">
+                <select id="Serienbuchung" name="Serienbuchung" class="form-select">
+                  <option value="0" selected="selected">--</option>
+                  <option value="1">01</option>
+                  <option value="2">02</option>
+                  <option value="3">03</option>
+                  <option value="4">04</option>
+                  <option value="5">05</option>
+                  <option value="6">06</option>
+                  <option value="7">07</option>
+                  <option value="8">08</option>
+                  <option value="9">09</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="15">15</option>
+                  <option value="16">16</option>
+                  <option value="17">17</option>
+                  <option value="18">18</option>
+                  <option value="19">19</option>
+                  <option value="20">20</option>
+                  <option value="21">21</option>
+                  <option value="22">22</option>
+                  <option value="23">23</option>
+                  <option value="24">24</option>
+                  <option value="25">25</option></select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <label for="Auftrag" class="col-sm-2 col-form-label">Auftrag</label>
+              <div class="col-sm-10">
+                <select id="Auftrag" name="Auftrag" class="form-select">
+                  <option value="181039" selected="selected">1500 - Redispatch 2.0 (emsys)</option>
+                  <option value="181045">1504 - WIVA und Entwicklung (Uelzener)</option>
+                  <option value="181058">1519 - IT-Infra.-Analyse (AmpTec)</option>
+                  <option value="181020">HBT-Zeit - HBT gestalten (HBT)</option>
+                  <option value="5191">KRANK - Krankheit (HBT)</option>
+                  <option value="181017">MANAGEMENT - Führung, Management (HBT)</option>
+                  <option value="103770">REISEZEIT - Reisezeit (HBT)</option>
+                  <option value="5190">URLAUB - Urlaub (HBT)</option>
+                  <option value="5825">i976 - Fortbildung, Coach. (HBT)</option></select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <label for="Unterauftrag" class="col-sm-2 col-form-label">Unterauftrag</label>
+              <div class="col-sm-10">
+                <select id="Unterauftrag" name="Unterauftrag" class="form-select">
+                  <option value="181167" selected="selected">1500.01 - Softwareentwicklung (Senior)</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <label for="Dauer-Stunden" class="col-sm-2 col-form-label">Dauer</label>
+              <div class="col-sm-1">
+                <select id="Dauer-Stunden" name="Dauer-Stunden" class="form-select"><option value="0" selected="selected">00</option>
+                  <option value="1">01</option>
+                  <option value="2">02</option>
+                  <option value="3">03</option>
+                  <option value="4">04</option>
+                  <option value="5">05</option>
+                  <option value="6">06</option>
+                  <option value="7">07</option>
+                  <option value="8">08</option>
+                  <option value="9">09</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="15">15</option>
+                  <option value="16">16</option>
+                  <option value="17">17</option>
+                  <option value="18">18</option>
+                  <option value="19">19</option>
+                  <option value="20">20</option>
+                  <option value="21">21</option>
+                  <option value="22">22</option>
+                  <option value="23">23</option>
+                  <option value="24">24</option></select>
+              </div>
+              <div class="col-sm-1">
+                <select id="Dauer-Minuten" name="Dauer-Minuten" class="form-select">
+                  <option value="0" selected="selected">00</option>
+                  <option value="5">05</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                  <option value="20">20</option>
+                  <option value="25">25</option>
+                  <option value="30">30</option>
+                  <option value="35">35</option>
+                  <option value="40">40</option>
+                  <option value="45">45</option>
+                  <option value="50">50</option>
+                  <option value="55">55</option></select>
+              </div>
+              <input class="form-check-input col-sm-1 my-auto" type="checkbox" id="minutengenau" name="minutengenau">
+              <label class="form-check-label col my-auto" for="minutengenau">
+                minutengenau
+              </label>
+            </div>
+            <div class="row mb-3">
+              <label for="Fortbildung" class="col-sm-2 col-form-label">Fortbildung</label>
+                <input class="form-check-input col-sm-10 my-auto" style="margin-left: 8px" type="checkbox" id="Fortbildung" name="Fortbildung">
+            </div>
+            <div class="row mb-3">
+              <label for="Kommentar" class="col-sm-2 col-form-label">Kommentar</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" id="Kommentar" name="Kommentar" rows="5"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer text-end">
+            <div class="d-flex">
+              <div class="btn-list">
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <button type="submit" class="btn">Speichern & Neu</button>
+              </div>
+              <a href="#" class="btn btn-link ms-auto">Verwerfen</a>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+    <footer class="footer footer-transparent d-print-none">
+      <div class="container-md">
+        <div class="row text-center align-items-center flex-row-reverse">
+          <div class="col-lg-auto ms-lg-auto">
+            <ul class="list-inline list-inline-dots mb-0">
+              <li class="list-inline-item"><a href="https://hbteam.atlassian.net/wiki/spaces/SALAT/overview" target="_blank"
+                                              class="link-secondary"
+                                              rel="noopener">Documentation</a></li>
+              <li class="list-inline-item"><a href="https://github.com/HBTGmbH/salat"
+                                              target="_blank" class="link-secondary" rel="noopener"><i class="ti ti-brand-github-filled"></i> Github</a></li>
+            </ul>
+          </div>
+          <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+            <ul class="list-inline list-inline-dots mb-0">
+              <li class="list-inline-item">
+                Mit <i class="ti ti-heart-filled" style="color: darkred"></i> von
+                <a href="https://hbt.de" target="_blank" class="link-secondary">HBT</a> erstellt.
+              </li>
+              <li class="list-inline-item text-body-tertiary">
+                Version 3.16.0 2024-02-21T19:52:05.469Z
+                main e63d27d
+                Server Datum/Zeit: 25.02.2024 17:24:58
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>
+<!-- Tabler Core -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.0/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function() {
+    $(".form-select").select2({
+      theme: 'bootstrap-5'
+    });
+  });
+</script>
+</body>
+</html>
