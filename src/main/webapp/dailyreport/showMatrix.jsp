@@ -430,45 +430,11 @@
 		<tr class="matrix">
             <td colspan="2" class="matrix"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.startofwork.text" /></td>
             <c:forEach var="dayhourcount" items="${dayhourcounts}">
-                <c:if test="${dayhourcount.satSun==true}">
-                    <c:if test="${dayhourcount.publicHoliday==true}">
-                        <td class="matrix"
-                            style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
+						<td class="matrix${dayhourcount.invalidStartOfWork ? ' invalid' : (dayhourcount.publicHoliday ? ' holiday' : (dayhourcount.satSun ? ' weekend' : ''))}"
+                            style="font-size: 7pt; border-top: 2px black solid;"
                             align="right">
-                            <c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-                                <c:out value="${dayhourcount.startOfWorkString}"></c:out>
-                            </c:if>
-                            <c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-                    </c:if>
-                    <c:if test="${dayhourcount.publicHoliday==false}">
-                        <td class="matrix"
-                            style="font-size: 7pt; border-top: 2px black solid; background-color: lightgrey;"
-                            align="right">
-                            <c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-                                <c:out value="${dayhourcount.startOfWorkString}"></c:out>
-                            </c:if>
-                            <c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-                    </c:if>
-                </c:if>
-                <c:if test="${dayhourcount.satSun==false}">
-                    <c:if test="${dayhourcount.publicHoliday==true}">
-                        <td class="matrix"
-                            style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
-                            align="right">
-                            <c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-                                <c:out value="${dayhourcount.startOfWorkString}"></c:out>
-                            </c:if>
-                            <c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-                    </c:if>
-                    <c:if test="${dayhourcount.publicHoliday==false}">
-                        <td class="matrix"
-                            style="font-size: 7pt; border-top: 2px black solid;" align="right">
-                            <c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-                                <c:out value="${dayhourcount.startOfWorkString}"></c:out>
-                            </c:if>
-                            <c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-                    </c:if>
-                </c:if>
+							<c:out value="${dayhourcount.workingHour eq 'PT0S' ? ' ' : dayhourcount.startOfWorkString}"></c:out>
+						</td>
             </c:forEach>
 			<td class="matrix" style="font-size: 7pt; border-top: 2px black solid;" align="right" align="right">&nbsp;</td>
 		</tr>
@@ -476,45 +442,11 @@
 		<tr class="matrix">
 			<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.breakduration.text" /></td>
 			<c:forEach var="dayhourcount" items="${dayhourcounts}">
-				<c:if test="${dayhourcount.satSun==true}">
-					<c:if test="${dayhourcount.publicHoliday==true}">
-						<td class="matrix"
-							style="font-size: 7pt; border-top: 1x black solid; background-color: c1c1c1;"
+						<td class="matrix${dayhourcount.invalidBreakTime ? ' invalid' : (dayhourcount.publicHoliday ? ' holiday' : (dayhourcount.satSun ? ' weekend' : ''))}"
+							style="font-size: 7pt; border-top: 1x black solid;"
 							align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.breakDurationString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-					</c:if>
-					<c:if test="${dayhourcount.publicHoliday==false}">
-						<td class="matrix"
-							style="font-size: 7pt; border-top: 1px black solid; background-color: lightgrey;"
-							align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.breakDurationString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-					</c:if>
-				</c:if>
-				<c:if test="${dayhourcount.satSun==false}">
-					<c:if test="${dayhourcount.publicHoliday==true}">
-						<td class="matrix"
-							style="font-size: 7pt; border-top: 1px black solid; background-color: c1c1c1;"
-							align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.breakDurationString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-					</c:if>
-					<c:if test="${dayhourcount.publicHoliday==false}">
-						<td class="matrix"
-							style="font-size: 7pt; border-top: 1px black solid;" align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.breakDurationString}"></c:out>
-							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
-					</c:if>
-				</c:if>
+							<c:out value="${dayhourcount.workingHour eq 'PT0S' ? ' ' : dayhourcount.breakDurationString}"></c:out>
+						</td>
 			</c:forEach>
 			<td class="matrix" align="right">&nbsp;</td>
 		</tr>

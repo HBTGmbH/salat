@@ -138,6 +138,18 @@ tr.matrix, td.matrix {
 	border: 1px black solid;
 }
 
+td.matrix.weekend {
+	background-color: lightgrey;
+}
+
+td.matrix.holiday {
+	background-color: #C1C1C1;
+}
+
+td.matrix.invalid {
+	background-color: #E05B50;
+}
+
 th.matrix #borderdouble {
 	border-style: double;
 	border-color: black;

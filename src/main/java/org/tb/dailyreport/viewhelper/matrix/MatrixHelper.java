@@ -319,7 +319,13 @@ public class MatrixHelper {
                                 otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.isSatSun());
                                 otherDayAndWorkingHourCount.setWeekDay(dayAndWorkingHourCount.getWeekDay());
                                 otherDayAndWorkingHourCount.setStartOfWorkMinute(dayAndWorkingHourCount.getStartOfWorkMinute());
+                                // TODO start and break time validation should be moved to another class
+                                // TODO A start time could be invalid by itself. It depends on the start time and total work amount of the previous day.
+                                otherDayAndWorkingHourCount.setInvalidStartOfWork(dayAndWorkingHourCount.getStartOfWorkMinute() == null && workingHour.isPositive());
                                 otherDayAndWorkingHourCount.setBreakMinutes(dayAndWorkingHourCount.getBreakMinutes());
+                                // TODO start and break time validation should be moved to another class
+                                // TODO Having no break time is not invalid by itself. It depends on the total work amount.
+                                otherDayAndWorkingHourCount.setInvalidBreakTime((dayAndWorkingHourCount.getBreakMinutes() == null || dayAndWorkingHourCount.getBreakMinutes() == 0L) && workingHour.isPositive());
                                 dayHoursCount.set(i, otherDayAndWorkingHourCount);
                                 for (Publicholiday publicHoliday : publicHolidayList) {
                                     if (publicHoliday.getRefdate().equals(dateLoop)) {
