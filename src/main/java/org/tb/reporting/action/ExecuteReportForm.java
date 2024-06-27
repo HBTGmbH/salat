@@ -1,8 +1,6 @@
 package org.tb.reporting.action;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -20,6 +18,8 @@ public class ExecuteReportForm extends ActionForm {
     @Builder
     @Getter
     @Setter
+    @ToString
+    @EqualsAndHashCode
     public static class ReportParameter {
 
         private String name;
