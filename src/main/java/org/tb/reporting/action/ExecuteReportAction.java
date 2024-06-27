@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +31,10 @@ import org.tb.reporting.domain.ReportResultColumnValue;
 import org.tb.reporting.service.ReportingService;
 
 import static java.lang.String.join;
-import static org.apache.commons.lang3.StringUtils.countMatches;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
 
 @Slf4j
 @Component
@@ -55,11 +60,11 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
             exportToExcel(reportDefinition, reportResult, response);
             return null;
         } else {
-            var parametersInReport = countMatches(reportDefinition.getSql(), ':');
             var parametersFromRequest = nonEmpty(getParametersFromRequest(request, reportDefinition.getSql()));
+            var missingParameters = getMissingParameters(parametersFromRequest, reportDefinition.getSql());
 
-            if (parametersInReport > 0 && parametersInReport > parametersFromRequest.size()) {
-                // show parameters dialog
+            if (!missingParameters.isEmpty()) {
+                // show parameters dialog if query parameters are missing
                 request.getSession().setAttribute("report", reportDefinition);
                 return mapping.findForward("showReportParameters");
             } else {
@@ -162,9 +167,8 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
         var result = new HashMap<String, Object>();
         for (ReportParameter parameter : nonEmpty(parameters)) {
             switch (parameter.getType()) {
-                case "string" -> result.put(parameter.getName(), parameter.getValue());
+                case "string", "number" -> result.put(parameter.getName(), parameter.getValue());
                 case "date" -> result.put(parameter.getName(), DateUtils.parse(parameter.getValue()));
-                case "number" -> result.put(parameter.getName(), parameter.getValue());
             }
         }
         return result;
@@ -178,11 +182,30 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
         return ReportParameter.builder().name(key).type("string").value(value.trim()).build();
     }
 
-    private static List<ReportParameter> getParametersFromRequest(HttpServletRequest request, String sql) {
+    static Set<String> getMissingParameters(List<ReportParameter> parameters, String query) {
+        if (query == null){
+            return emptySet();
+        }
+
+        var parameterNames = parameters.stream().map(ReportParameter::getName).toList();
+        return Pattern.compile(":\\w+")
+                .matcher(query)
+                .results()
+                .map(MatchResult::group)
+                .map(queryParameter->queryParameter.substring(1))
+                .filter(not(parameterNames::contains))
+                .collect(toSet());
+    }
+
+    static List<ReportParameter> getParametersFromRequest(HttpServletRequest request, String query) {
+        if (query == null){
+            return emptyList();
+        }
+
         return request.getParameterMap()
                 .entrySet()
                 .stream()
-                .filter(parameter -> sql.contains(":" + parameter.getKey()))
+                .filter(parameter -> query.contains(":" + parameter.getKey()))
                 .map(parameter -> toReportParameter(parameter.getKey(), join(",", parameter.getValue())))
                 .toList();
     }
