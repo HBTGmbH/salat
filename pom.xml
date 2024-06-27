@@ -30,7 +30,7 @@
     <struts-weblegacy.version>1.5.0-RC2</struts-weblegacy.version>
     <jstl-api.version>3.0.0</jstl-api.version>
     <jstl.version>3.0.1</jstl.version>
-    <jsp-api.version>3.1.1</jsp-api.version>
+    <jsp-api.version>4.0.0</jsp-api.version>
     <webjars-bootstrap.version>5.3.3</webjars-bootstrap.version>
     <webjars-jquery.version>3.7.1</webjars-jquery.version>
     <webjars-bootstrap-icons.version>1.11.3</webjars-bootstrap-icons.version>
