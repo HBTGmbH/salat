@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -121,7 +122,7 @@ public class DailyReportRestEndpoint {
             );
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
-        } catch (InvalidDataException e) {
+        } catch (InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could not create timereport. " + e.getErrorCode());
         }
     }
