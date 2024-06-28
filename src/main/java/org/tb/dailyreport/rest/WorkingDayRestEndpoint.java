@@ -21,7 +21,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(path = { "/api/workingday" })
+@RequestMapping(path = { "/api/workingday", "/rest/workingday" })
 @Tag(name = "working days")
 public class WorkingDayRestEndpoint {
 
