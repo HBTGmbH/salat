@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.exception.AuthorizationException;
-import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -43,20 +41,14 @@ public class WorkingDayRestEndpoint {
             throw new ResponseStatusException(NOT_FOUND);
         }
 
-        try {
-            var wd = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeecontract.getId())).orElseGet(Workingday::new);
-            wd.setEmployeecontract(employeecontract);
-            wd.setRefday(date);
-            wd.setStarttimehour(data.getStarthour());
-            wd.setStarttimeminute(data.getStartminute());
-            wd.setBreakhours(data.getBreakhours());
-            wd.setBreakminutes(data.getBreakminutes());
-            workingdayDAO.save(wd);
-        } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create workingday. " + e.getErrorCode());
-        } catch (InvalidDataException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create workingday. " + e.getErrorCode());
-        }
+        var wd = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeecontract.getId())).orElseGet(Workingday::new);
+        wd.setEmployeecontract(employeecontract);
+        wd.setRefday(date);
+        wd.setStarttimehour(data.getStarthour());
+        wd.setStarttimeminute(data.getStartminute());
+        wd.setBreakhours(data.getBreakhours());
+        wd.setBreakminutes(data.getBreakminutes());
+        workingdayDAO.save(wd);
     }
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
