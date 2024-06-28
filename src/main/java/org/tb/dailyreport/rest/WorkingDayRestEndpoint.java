@@ -94,16 +94,26 @@ public class WorkingDayRestEndpoint {
                 .build();
     }
 
-    @DeleteMapping(consumes = APPLICATION_JSON_VALUE)
+    @DeleteMapping("/{date}")
     @ResponseStatus(OK)
     @Operation
-    public void delete(@RequestBody WorkingDayData data) {
+    public void delete(@PathVariable String date) {
         if (!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
 
-        if (data.getId() != -1) {
-            workingdayDAO.deleteWorkingdayById(data.getId());
+        var deleteDate = DateUtils.parse(date);
+
+        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), deleteDate);
+        if(employeecontract == null) {
+            throw new ResponseStatusException(NOT_FOUND);
         }
+
+        var workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(deleteDate, employeecontract.getId());
+        if(workingDay == null) {
+            throw new ResponseStatusException(NOT_FOUND);
+        }
+
+        workingdayDAO.deleteWorkingdayById(workingDay.getId());
     }
 }
