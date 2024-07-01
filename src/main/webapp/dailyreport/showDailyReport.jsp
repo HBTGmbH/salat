@@ -533,16 +533,18 @@
 		<html:form action="/ShowDailyReport">
 			<div class="favorites">
 				<c:forEach var="favorite" items="${favorites}" varStatus="statusID">
-					<div class="button favorite"
-							onclick="addFavoriteAsReport(findForm(this),'<bean:write name="showDailyReportForm" property="enddate"/>', ${favorite.id}); return false"
-							title="Erstellen"
-							>
-						${favorite.comment} ${favorite.hours}:${favorite.minutes}
-					</div>
-					<div class="button favoriteDelete"
-						 onclick="deleteFavorite(findForm(this), ${favorite.id}); return false" title="Löschen" class="delete"
-						 title="delete">
-						<i class="bi bi-trash"></i>
+					<div class="favorite-container">
+						<div class="button favorite"
+								onclick="addFavoriteAsReport(findForm(this),'<bean:write name="showDailyReportForm" property="enddate"/>', ${favorite.id}); return false"
+								title="Erstellen"
+								>
+							${favorite.comment} ${favorite.hours}:${favorite.minutes}
+						</div>
+						<div class="button favoriteDelete"
+							 onclick="deleteFavorite(findForm(this), ${favorite.id}); return false" title="Löschen" class="delete"
+							 title="delete">
+							<i class="bi bi-trash"></i>
+						</div>
 					</div>
 				</c:forEach>
 			</div>
@@ -550,10 +552,10 @@
 
 		<table class="center backgroundcolor nobBorderStyle" width="100%">
 			<tr class="noBborderStyle">
-				<td colspan="6" class="noBborderStyle">
+				<td colspan="5" class="noBborderStyle">
 					&nbsp;
 				</td>
-				<td class="noBborderStyle" align="right">
+				<td colspan="2" class="noBborderStyle" align="right">
 					<b><bean:message key="main.timereport.total.text" />:</b>
 				</td>
 				<c:choose>
@@ -574,7 +576,7 @@
 				<th class="noBborderStyle" align="left">
 					<b>Info</b>
 				</th>
-				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.employee.text' />">
+				<th class="noBborderStyle employee-col" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.employee.text' />">
 					<html:link href="/do/ShowDailyReport?task=sort&column=employee">
 						<b><bean:message key="main.timereport.monthly.employee.sign.text" /></b>
 					</html:link>
@@ -604,7 +606,7 @@
 				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.taskdescription.text' />" width="25%">
 					<b><bean:message key="main.timereport.monthly.taskdescription.text" /></b>
 				</th>
-				<th class="noBborderStyle" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.training.text' />">
+				<th class="noBborderStyle training-col" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.training.text' />">
 					<b><bean:message key="main.timereport.monthly.training.text" /></b>
 				</th>
 				<th class="noBborderStyle" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.hours.text' />">
@@ -628,94 +630,95 @@
 
 					<!-- Info -->
 					<td class="noBborderStyle" align="center">
-						<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
-							<table>
-								<tr>
-									<td class="info">id:</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.id}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.employee" />:</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.employeeName}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
-									<td class="info" colspan="3">
-										<c:out	value="${timereport.customerorderSign}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info">&nbsp;</td>
-									<td class="info" colspan="3">
-										<c:out	value="${timereport.customerorderDescription}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.suborder" />:</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.suborderSign}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info">&nbsp;</td>
-									<td class="info" colspan="3">
-										<c:out value="${timereport.suborderDescription}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info"><bean:message key="main.timereport.tooltip.status" />:</td>
-									<td class="info">
-										<c:out value="${timereport.status}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.created" />:</td>
-									<td class="info">
-										<java8:formatLocalDateTime value="${timereport.created}" />
-									</td>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.createdby}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.edited" />:</td>
-									<td class="info">
-										<java8:formatLocalDateTime value="${timereport.lastupdate}" />
-									</td>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.lastupdatedby}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.released" />:</td>
-									<td class="info">
-										<c:out value="${timereport.released}" />
-									</td>
-									<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.releasedby}" />
-									</td>
-								</tr>
-								<tr>
-									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.accepted" />:</td>
-									<td class="info">
-										<c:out value="${timereport.accepted}" />
-									</td>
-									<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.by" /></td>
-									<td class="info" valign="top">
-										<c:out value="${timereport.acceptedby}" />
-									</td>
-								</tr>
-							</table>
+						<div class="tooltip-parent">
+							<div class="tooltip" id="info<c:out value='${timereport.id}'/>">
+								<table>
+									<tr>
+										<td class="info">id:</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.id}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.employee" />:</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.employeeName}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
+										<td class="info" colspan="3">
+											<c:out	value="${timereport.customerorderSign}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info">&nbsp;</td>
+										<td class="info" colspan="3">
+											<c:out	value="${timereport.customerorderDescription}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.suborder" />:</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.suborderSign}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info">&nbsp;</td>
+										<td class="info" colspan="3">
+											<c:out value="${timereport.suborderDescription}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info"><bean:message key="main.timereport.tooltip.status" />:</td>
+										<td class="info">
+											<c:out value="${timereport.status}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.created" />:</td>
+										<td class="info">
+											<java8:formatLocalDateTime value="${timereport.created}" />
+										</td>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.createdby}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.edited" />:</td>
+										<td class="info">
+											<java8:formatLocalDateTime value="${timereport.lastupdate}" />
+										</td>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.lastupdatedby}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.released" />:</td>
+										<td class="info">
+											<c:out value="${timereport.released}" />
+										</td>
+										<td class="info" valign="top"><bean:message key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.releasedby}" />
+										</td>
+									</tr>
+									<tr>
+										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.accepted" />:</td>
+										<td class="info">
+											<c:out value="${timereport.accepted}" />
+										</td>
+										<td class="info" valign="top"><bean:message	key="main.timereport.tooltip.by" /></td>
+										<td class="info" valign="top">
+											<c:out value="${timereport.acceptedby}" />
+										</td>
+									</tr>
+								</table>
+							</div>
+							<i class="bi bi-info-circle"></i>
 						</div>
-						<a href="#" onMouseOver="showWMTT(this,'info<c:out value="${timereport.id}" />')"
-						   onMouseOut="hideWMTT()"><i class="bi bi-info-circle"></i></a>
 						<c:if test="${!timereport.fitsToContract}">
 							<img width="20px" height="20px" src="<c:url value="/images/Pin%20rot.gif"/>" title="<bean:message key='main.timereport.warning.datedoesnotfit' />" />
 						</c:if>
@@ -768,7 +771,7 @@
 							</td>
 
 							<!-- Dauer -->
-							<td class="noBborderStyle" align="center" nowrap="nowrap">
+							<td class="noBborderStyle report-time" align="center" nowrap="nowrap">
 								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
@@ -781,14 +784,13 @@
 							</td>
 
 							<!-- Bearbeiten -->
-							<td class="noBborderStyle" align="center">
+							<td class="noBborderStyle report-options" align="center">
 								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
-								&nbsp;
+
 								<button type="button"  onclick="createFavorite(findForm(this), ${timereport.id}); return false"
 										title="Favorite" style="border: 0; background-color: transparent"><i class="bi bi-star"></i></button>
-								&nbsp;
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
-								&nbsp;
+
 								<button onclick="confirmDelete(findForm(this), ${timereport.id}); return false" title="Löschen" style="border: 0; background-color: transparent"><i class="bi bi bi-trash"></i></button>
 								<span id="span-massedit-${timereport.id}">
 									<input type="checkbox" class="massedit" title='<bean:message key="main.timereport.tooltip.mass.edit" />' alt='<bean:message key="main.timereport.tooltip.mass.edit" />' id="massedit_${timereport.id}" onchange="HBT.MassEdit.onChangeHandler(this)" />
@@ -825,10 +827,10 @@
 				</html:form>
 			</c:forEach>
 			<tr class="borderTopLine">
-				<td colspan="6" class="noBborderStyle">
+				<td colspan="5" class="noBborderStyle">
 					&nbsp;
 				</td>
-				<td class="noBborderStyle" align="right">
+				<td class="noBborderStyle" colspan="2" align="right">
 					<b><bean:message key="main.timereport.total.text" />:</b>
 				</td>
 				<c:choose>

@@ -64,7 +64,7 @@ form {
 
 .tooltip {
 	position: absolute;
-	left: 12em;
+	left: 22em;
 	background-color: #f1f7ff;
 	border: 1px solid #191E55;
 	width: 350px;
@@ -72,6 +72,14 @@ form {
 	z-index: 4;
 	display: none;
 }
+
+.tooltip-parent{
+	display:inline;
+}
+.tooltip-parent:hover .tooltip {
+	display: block;
+}
+
 
 .version {
 	position: absolute;
@@ -423,28 +431,52 @@ i.bi:hover {
 	background: white;
 	border: 1px solid black;
 }
+.report-time {
+	width: 1pt;
+	white-space: nowrap;
+}
+.report-options {
+	width: 1pt;
+	white-space: nowrap;
+}
+
+.training-col {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 25pt;
+}
+
+.employee-col {
+	max-width: 10pt;
+}
+
+.timereport-tooltip{}
 
 .favorites {
 	margin: 10px 0;
 
-	.favorite {
-		padding: 0 3px;
-		margin: 3px;
+	.favorite-container {
+		white-space:nowrap;
 		display: inline-block;
+		.favorite {
+			padding: 0 3px;
+			margin: 3px;
+			display: inline-block;
 
-	}
+		}
 
-	.favoriteDelete {
-		padding: 0 3px;
-		margin: 3px 3px 3px -8px;
-		display: inline-block;
-		border: 0;
-		background-color: transparent;
+		.favoriteDelete {
+			padding: 0 3px;
+			margin: 3px 3px 3px -8px;
+			display: inline-block;
+			border: 0;
+			background-color: transparent;
 
-		i.bi {
-			font-size: unset;
-			position: relative;
-			bottom: 3px;
+			i.bi {
+				font-size: unset;
+				position: relative;
+				bottom: 3px;
+			}
 		}
 	}
 }
