@@ -294,7 +294,7 @@
 			<td align="left" class="noBborderStyle">
 				<html:select property="orderType">
 					<c:forEach var="orderT" items="${orderTypes}">
-						<html:option value="${orderT}"/>
+						<html:option value="${orderT}"><bean:message key="${orderT}" /></html:option>
 					</c:forEach>
 				</html:select>
 			</td>
