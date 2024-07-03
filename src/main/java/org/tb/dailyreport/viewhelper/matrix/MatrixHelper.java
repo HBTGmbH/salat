@@ -55,6 +55,7 @@ import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.matrix.MergedReport.OrderSummaryData;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -116,6 +117,7 @@ public class MatrixHelper {
     private final OvertimeService overtimeService;
     private final AfterLogin afterLogin;
     private final WorkingdayDAO workingdayDAO;
+    private final TimereportService timereportService;
 
     public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable, boolean startAndBreakTime) {
         Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
@@ -175,7 +177,7 @@ public class MatrixHelper {
         int workdayCount = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList, workingDays);
 
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
-        handlePublicHolidays(dateFirst, dateLast, mergedReportList, dayHoursCount, publicHolidayList);
+        handlePublicHolidays(employeeContractId, dateFirst, dateLast, mergedReportList, dayHoursCount, publicHolidayList);
 
         //sort mergedreportlist by custom- and subordersign
         Collections.sort(mergedReportList);
@@ -285,7 +287,8 @@ public class MatrixHelper {
         return workdayCount;
     }
 
-    private void handlePublicHolidays(LocalDate dateFirst,
+    private void handlePublicHolidays(long employeeContractId,
+                                      LocalDate dateFirst,
                                       LocalDate dateLast,
                                       List<MergedReport> mergedReportList,
                                       List<DayAndWorkingHourCount> dayHoursCount,
@@ -319,13 +322,9 @@ public class MatrixHelper {
                                 otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.isSatSun());
                                 otherDayAndWorkingHourCount.setWeekDay(dayAndWorkingHourCount.getWeekDay());
                                 otherDayAndWorkingHourCount.setStartOfWorkMinute(dayAndWorkingHourCount.getStartOfWorkMinute());
-                                // TODO start and break time validation should be moved to another class
-                                // TODO A start time could be invalid by itself. It depends on the start time and total work amount of the previous day.
-                                otherDayAndWorkingHourCount.setInvalidStartOfWork(dayAndWorkingHourCount.getStartOfWorkMinute() == null && workingHour.isPositive());
+                                otherDayAndWorkingHourCount.setInvalidStartOfWork(timereportService.validateBeginOfWorkingDay(bookingDay.getDate(), employeeContractId) != null);
                                 otherDayAndWorkingHourCount.setBreakMinutes(dayAndWorkingHourCount.getBreakMinutes());
-                                // TODO start and break time validation should be moved to another class
-                                // TODO Having no break time is not invalid by itself. It depends on the total work amount.
-                                otherDayAndWorkingHourCount.setInvalidBreakTime((dayAndWorkingHourCount.getBreakMinutes() == null || dayAndWorkingHourCount.getBreakMinutes() == 0L) && workingHour.isPositive());
+                                otherDayAndWorkingHourCount.setInvalidBreakTime(timereportService.validateBreakTime(bookingDay.getDate(), employeeContractId) != null);
                                 dayHoursCount.set(i, otherDayAndWorkingHourCount);
                                 for (Publicholiday publicHoliday : publicHolidayList) {
                                     if (publicHoliday.getRefdate().equals(dateLoop)) {
