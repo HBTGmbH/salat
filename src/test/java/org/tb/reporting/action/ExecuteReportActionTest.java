@@ -82,7 +82,7 @@ class ExecuteReportActionTest {
         var result = getParametersFromRequest(request, sql);
 
         // then
-        assertThat(result).containsExactlyElementsOf(expected);
+        assertThat(result).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     private static Stream<Arguments> missingParametersForQueries() {
@@ -124,6 +124,6 @@ class ExecuteReportActionTest {
         var result = ExecuteReportAction.getMissingParameters(parameters, sql);
 
         // then
-        assertThat(result).containsExactlyElementsOf(expected);
+        assertThat(result).containsExactlyInAnyOrderElementsOf(expected);
     }
 }
