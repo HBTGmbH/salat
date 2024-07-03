@@ -445,7 +445,7 @@
 						<td class="matrix${dayhourcount.invalidBreakTime ? ' invalid' : (dayhourcount.publicHoliday ? ' holiday' : (dayhourcount.satSun ? ' weekend' : ''))}"
 							style="font-size: 7pt; border-top: 1x black solid;"
 							align="right">
-							<c:out value="${dayhourcount.workingHour eq 'PT0S' ? ' ' : dayhourcount.breakDurationString}"></c:out>
+							<c:out value="${dayhourcount.breakDurationString}"></c:out>
 						</td>
 			</c:forEach>
 			<td class="matrix" align="right">&nbsp;</td>

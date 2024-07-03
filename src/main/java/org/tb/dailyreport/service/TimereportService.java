@@ -216,7 +216,7 @@ public class TimereportService {
               if (error != null) {
                 errors.add(error);
               }
-              error = validateBreakTimes(date, employeeContractId, timeReports);
+              error = validateBreakTime(date, employeeContractId, timeReports);
               if (error != null) {
                 errors.add(error);
               }
@@ -496,14 +496,23 @@ public class TimereportService {
     });
   }
 
-  private WorkingDayValidationError validateBreakTimes(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
+  public WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId) {
+    var timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
+    return validateBreakTime(date, employeeContractId, timeReports);
+  }
+
+  private WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
-    Duration workDurationPerDay = timeReports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+    Duration workDurationSum = timeReports.stream()
+        .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
+        .map(TimereportDTO::getDuration)
+        .reduce(Duration.ZERO, Duration::plus);
+    if(!workDurationSum.isPositive()) return null; // not worked = no validation
     boolean notEnoughBreaksAfter9Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_NINE_HOURS;
     boolean notEnoughBreaksAfter6Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_SIX_HOURS;
-    if (workDurationPerDay.toMinutes() >= NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
+    if (workDurationSum.toMinutes() >= NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
       return new WorkingDayValidationError(date, "form.release.error.breaktime.nine.length");
-    } else if (workDurationPerDay.toMinutes() >= SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
+    } else if (workDurationSum.toMinutes() >= SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
       return new WorkingDayValidationError(date, "form.release.error.breaktime.six.length");
     }
     return null;
@@ -519,6 +528,7 @@ public class TimereportService {
             .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
             .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus);
+    if(!workDurationSum.isPositive()) return null; // not worked = no validation
     LocalDateTime endOfWorkingDay = theDayBefore.getStartOfWorkingDay().plus(theDayBefore.getBreakLength()).plus(workDurationSum);
     LocalDateTime startOfWorkingDay = workingDay.getStartOfWorkingDay();
     Duration restTime = Duration.between(endOfWorkingDay, startOfWorkingDay);
@@ -528,7 +538,12 @@ public class TimereportService {
     return null;
   }
 
-  private WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date, long employeeContractId) {
+  public WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date, long employeeContractId) {
+    Duration workDurationSum = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date).stream()
+        .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
+        .map(TimereportDTO::getDuration)
+        .reduce(Duration.ZERO, Duration::plus);
+    if(!workDurationSum.isPositive()) return null; // not worked = no validation
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
     if (workingDay == null || workingDay.getStartOfWorkingDay() == null) {
       return new WorkingDayValidationError(date, "form.release.error.beginofworkingday.required");
