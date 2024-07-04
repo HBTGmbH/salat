@@ -525,9 +525,9 @@ public class TimereportService {
     if(!workDurationSum.isPositive()) return null; // not worked = no validation
     boolean notEnoughBreaksAfter9Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_NINE_HOURS;
     boolean notEnoughBreaksAfter6Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_SIX_HOURS;
-    if (workDurationSum.toMinutes() >= NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
+    if (workDurationSum.toMinutes() > NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
       return new WorkingDayValidationError(date, "form.release.error.breaktime.nine.length");
-    } else if (workDurationSum.toMinutes() >= SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
+    } else if (workDurationSum.toMinutes() > SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
       return new WorkingDayValidationError(date, "form.release.error.breaktime.six.length");
     }
     return null;
