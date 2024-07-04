@@ -314,7 +314,8 @@ public class TimereportService {
     DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
 
-    if (isRelevantForWorkingTimeValidation(employeeorder.getSuborder().getCustomerorder().getOrderType())) {
+    // TODO maybe move to validation like business rules validations
+    if (needsWorkingHoursLawValidation(employeeContractId) && isRelevantForWorkingTimeValidation(employeeorder.getSuborder().getCustomerorder().getOrderType())) {
       Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContractId);
       DataValidation.notNull(workingDay, TR_WORKING_DAY_START_NULL);
       DataValidation.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
@@ -328,6 +329,11 @@ public class TimereportService {
     timereport.setTraining(trainingFlag);
     timereport.setDurationhours((int) durationHours);
     timereport.setDurationminutes((int) durationMinutes);
+  }
+
+  private boolean needsWorkingHoursLawValidation(long employeeContractId) {
+    Employeecontract contract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+    return contract != null && !contract.getEmployee().isRestricted();
   }
 
   private void setSequencenumber(Timereport timereport) {
@@ -498,11 +504,19 @@ public class TimereportService {
   }
 
   public WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId) {
+    if(!needsWorkingHoursLawValidation(employeeContractId)) {
+      return null; // restricted/external users are not in scope of regulations by law
+    }
+
     var timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
     return validateBreakTime(date, employeeContractId, timeReports);
   }
 
   private WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
+    if(!needsWorkingHoursLawValidation(employeeContractId)) {
+      return null; // restricted/external users are not in scope of regulations by law
+    }
+
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
     Duration workDurationSum = timeReports.stream()
         .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
@@ -520,6 +534,10 @@ public class TimereportService {
   }
 
   private WorkingDayValidationError validateRestTime(LocalDate date, long employeeContractId) {
+    if(!needsWorkingHoursLawValidation(employeeContractId)) {
+      return null; // restricted/external users are not in scope of regulations by law
+    }
+
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
     Workingday theDayBefore = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date.minusDays(1), employeeContractId);
     if (theDayBefore == null) {
@@ -540,6 +558,10 @@ public class TimereportService {
   }
 
   public WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date, long employeeContractId) {
+    if(!needsWorkingHoursLawValidation(employeeContractId)) {
+      return null; // restricted/external users are not in scope of regulations by law
+    }
+
     Duration workDurationSum = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date).stream()
         .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
         .map(TimereportDTO::getDuration)
