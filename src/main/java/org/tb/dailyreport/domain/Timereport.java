@@ -28,8 +28,8 @@ import org.tb.order.domain.Suborder;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-@SQLDelete(sql = "UPDATE timereport SET deleted = 1 WHERE id=? and updatecounter=?")
-@SQLRestriction("deleted = 0")
+@SQLDelete(sql = "UPDATE timereport SET deleted = true WHERE id=? and updatecounter=?")
+@SQLRestriction("deleted = false")
 public class Timereport extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -72,6 +72,8 @@ public class Timereport extends AuditedEntity implements Serializable {
      */
     private String acceptedby;
     private LocalDateTime accepted;
+
+    private boolean deleted;
 
     public Timereport getTwin() {
         Timereport timereport = new Timereport();
