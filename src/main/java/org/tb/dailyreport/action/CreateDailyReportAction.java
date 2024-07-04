@@ -182,7 +182,14 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // init the rest of the form
         form.setTraining(false);
-        form.setComment("");
+
+        if ( request.getParameter("comment") != null) {
+            String comment = request.getParameter("comment");
+            form.setComment(comment);
+        }
+        else {
+            form.setComment("");
+        }
 
         // store last selected order
         String lastOrder;
