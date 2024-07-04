@@ -172,7 +172,4 @@ public class Customerorder extends AuditedEntity implements Serializable {
         debitMinutes = value; // its a Duration - hours or minutes make no difference
     }
 
-    public boolean isRelevantForWorkingTimeValidation() {
-        return orderType.isRelevantForWorkingTimeValidation();
-    }
 }

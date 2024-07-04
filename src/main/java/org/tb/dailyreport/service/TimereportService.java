@@ -27,6 +27,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.OvertimeService;
 import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.EmployeeorderDAO;
 
@@ -209,7 +210,7 @@ public class TimereportService {
   public List<WorkingDayValidationError> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     final List<WorkingDayValidationError> errors = new ArrayList<>();
     timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
-            .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
+            .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
             .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
             .forEach((date, timeReports) -> {
               WorkingDayValidationError error = validateBeginOfWorkingDay(date, employeeContractId);
@@ -313,7 +314,7 @@ public class TimereportService {
     DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
 
-    if (employeeorder.getSuborder().getCustomerorder().isRelevantForWorkingTimeValidation()) {
+    if (isRelevantForWorkingTimeValidation(employeeorder.getSuborder().getCustomerorder().getOrderType())) {
       Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContractId);
       DataValidation.notNull(workingDay, TR_WORKING_DAY_START_NULL);
       DataValidation.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
@@ -504,7 +505,7 @@ public class TimereportService {
   private WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
     Duration workDurationSum = timeReports.stream()
-        .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
+        .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
     if(!workDurationSum.isPositive()) return null; // not worked = no validation
@@ -525,7 +526,7 @@ public class TimereportService {
       return null;
     }
     Duration workDurationSum = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, theDayBefore.getRefday()).stream()
-            .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
+            .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
             .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus);
     if(!workDurationSum.isPositive()) return null; // not worked = no validation
@@ -540,7 +541,7 @@ public class TimereportService {
 
   public WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date, long employeeContractId) {
     Duration workDurationSum = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date).stream()
-        .filter(timeReport -> timeReport.getOrderType().isRelevantForWorkingTimeValidation())
+        .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
     if(!workDurationSum.isPositive()) return null; // not worked = no validation
@@ -550,4 +551,9 @@ public class TimereportService {
     }
     return null;
   }
+
+  private static boolean isRelevantForWorkingTimeValidation(OrderType orderType) {
+    return orderType != null && orderType == OrderType.STANDARD;
+  }
+
 }

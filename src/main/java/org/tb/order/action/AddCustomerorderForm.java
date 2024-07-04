@@ -41,7 +41,7 @@ public class AddCustomerorderForm extends ActionForm {
     private long employeeId;
     private long respContrEmployeeId;
 
-    private String orderType;
+    private String orderTypeString;
 
     private String action;
 
@@ -72,7 +72,15 @@ public class AddCustomerorderForm extends ActionForm {
         debithoursunit = null;
         statusreport = 0;
         hide = false;
-        orderType = OrderType.KUNDE.getLabel();
+        setOrderType(OrderType.STANDARD);
+    }
+
+    public OrderType getOrderType() {
+        return OrderType.valueOf(orderTypeString);
+    }
+
+    public void setOrderType(OrderType orderType) {
+        this.orderTypeString = orderType.name();
     }
 
 }

@@ -292,9 +292,9 @@
 			<td align="left" class="noBborderStyle">
 				<b><bean:message key="main.customerorder.orderType.text" /></b></td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="orderType">
-					<c:forEach var="orderT" items="${orderTypes}">
-						<html:option value="${orderT}"><bean:message key="${orderT}" /></html:option>
+				<html:select property="orderTypeString">
+					<c:forEach var="orderType" items="${orderTypes}">
+						<html:option value="${orderType.name()}"><bean:message key="${orderType.label}" /></html:option>
 					</c:forEach>
 				</html:select>
 			</td>
