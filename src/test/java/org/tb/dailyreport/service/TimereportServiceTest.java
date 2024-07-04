@@ -7,11 +7,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.OrderType;
 
 import java.time.Duration;
@@ -31,7 +35,8 @@ class TimereportServiceTest {
     private TimereportDAO timereportDAO;
     @Mock
     private WorkingdayDAO workingdayDAO;
-
+    @Mock
+    private EmployeecontractDAO employeecontractDAO;
 
     @Nested
     class ValidateForRelease {
@@ -49,6 +54,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(null);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -92,6 +104,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -117,6 +136,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -142,6 +168,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -169,6 +202,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -197,6 +237,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -228,6 +275,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -258,6 +312,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -290,6 +351,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -323,6 +391,13 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -337,23 +412,37 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate releaseDate = LocalDate.of(2024, 1, 31);
             final LocalDate yesterdayDate = LocalDate.of(2024, 1, 30);
-            final TimereportDTO timeReport = TimereportDTO.builder()
+            final TimereportDTO releaseTimeReport = TimereportDTO.builder()
                     .orderType(OrderType.STANDARD)
                     .referenceday(releaseDate)
                     .duration(Duration.ofHours(6))
                     .build();
-            final List<TimereportDTO> result = List.of(timeReport);
+            final List<TimereportDTO> releaseDateResult = List.of(releaseTimeReport);
+            final TimereportDTO yesterdayTimeReport = TimereportDTO.builder()
+                .orderType(OrderType.STANDARD)
+                .referenceday(yesterdayDate)
+                .duration(Duration.ofHours(1))
+                .build();
+            final List<TimereportDTO> yesterdayDateResult = List.of(yesterdayTimeReport);
             final Workingday releaseDay = new Workingday();
             releaseDay.setStarttimehour(6);
             releaseDay.setRefday(releaseDate);
             final Workingday yesterday = new Workingday();
-            yesterday.setStarttimehour(19);
+            yesterday.setStarttimehour(18);
             yesterday.setStarttimeminute(1);
             yesterday.setRefday(yesterdayDate);
 
-            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(result);
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(releaseDateResult);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate, employeeContractId)).thenReturn(releaseDay);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(yesterdayDate, employeeContractId)).thenReturn(yesterday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, releaseDate)).thenReturn(releaseDateResult);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, yesterdayDate)).thenReturn(yesterdayDateResult);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
@@ -386,6 +475,13 @@ class TimereportServiceTest {
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(result);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate, employeeContractId)).thenReturn(releaseDay);
             when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(yesterdayDate, employeeContractId)).thenReturn(yesterday);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, releaseDate)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
