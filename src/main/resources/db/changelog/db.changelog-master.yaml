@@ -884,6 +884,24 @@ databaseChangeLog:
                   name: orderType
                   value: KRANK_URLAUB_ABWESEND
             where: sign IN ('URLAUB','S-URLAUB','KRANK','ELTERNZEIT','MUTTERSCHUTZ','REISEZEIT')
+  - changeSet:
+      id: 24
+      author: kr
+      comment: Add delete column to timereport to introduce soft delete
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: timereport
+                columnName: deleted
+      changes:
+        - addColumn:
+            tableName: timereport
+            columns:
+              - column:
+                  name: deleted
+                  type: bit(1)
+                  defaultValue: 0
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
