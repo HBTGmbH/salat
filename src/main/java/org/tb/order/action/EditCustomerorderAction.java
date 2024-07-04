@@ -67,11 +67,10 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
         }
         request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
 
-        List<String> orderTypeLabels = Arrays.stream(OrderType.values()).map(OrderType::getLabel).toList();
-        request.getSession().setAttribute("orderTypes", orderTypeLabels);
+        request.getSession().setAttribute("orderTypes", OrderType.values());
 
         // fill the form with properties of customerorder to be edited
-        setFormEntries(request, coForm, co);
+        setFormEntries(coForm, co);
 
         // forward to customer order add/edit form
         return mapping.findForward("success");
@@ -80,8 +79,7 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
     /**
      * fills customer order form with properties of given customer
      */
-    private void setFormEntries(HttpServletRequest request, AddCustomerorderForm coForm, Customerorder co) {
-
+    private void setFormEntries(AddCustomerorderForm coForm, Customerorder co) {
         coForm.setCustomerId(co.getCustomer().getId());
         coForm.setOrderCustomer(co.getOrder_customer());
 
@@ -119,9 +117,9 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
             coForm.setStatusreport(co.getStatusreport());
         }
         if (co.getOrderType() == null) {
-            coForm.setOrderType(OrderType.KUNDE.getLabel());
+            coForm.setOrderType(OrderType.STANDARD);
         } else {
-            coForm.setOrderType(co.getOrderType().getLabel());
+            coForm.setOrderType(co.getOrderType());
         }
 
         coForm.setHide(co.getHide());

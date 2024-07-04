@@ -861,7 +861,7 @@ databaseChangeLog:
             cascadeConstraints: true
   - changeSet:
       id: 23
-      author: cpe
+      author: cpe+kr
       comment: Add an OrderType to mark orders as a specific type
       preConditions:
         - onFail: MARK_RAN
@@ -876,22 +876,14 @@ databaseChangeLog:
               - column:
                   name: orderType
                   type: varchar(255)
-                  defaultValue: 'KUNDE'
+                  defaultValue: 'STANDARD'
         - update:
             tableName: customerorder
             columns:
               - column:
                   name: orderType
-                  value: URLAUB
-            where: sign = 'URLAUB'
-        - update:
-            tableName: customerorder
-            columns:
-              - column:
-                  name: orderType
-                  value: KRANK
-            where: sign = 'KRANK'
-
+                  value: KRANK_URLAUB_ABWESEND
+            where: sign IN ('URLAUB','S-URLAUB','KRANK','ELTERNZEIT','MUTTERSCHUTZ','REISEZEIT')
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

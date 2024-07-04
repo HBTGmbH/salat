@@ -91,21 +91,20 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             // 'main' task - prepare everything to store the customer.
             // I.e., copy properties from the form into the customerorder before saving.
             Long coId = null;
-            Customerorder co = null;
             if (request.getSession().getAttribute("coId") != null) {
                 // edited customerorder
                 coId = Long.parseLong(request.getSession().getAttribute("coId").toString());
             }
 
             LocalDate untilDate;
-            if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
+            if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().isEmpty()) {
                 untilDate = DateUtils.parseOrNull(coForm.getValidUntil());
             } else {
                 untilDate = null;
             }
             LocalDate fromDate = DateUtils.parseOrNull(coForm.getValidFrom());
 
-            OrderType orderType = OrderType.fromLabel(coForm.getOrderType());
+            OrderType orderType = coForm.getOrderType();
             customerorderService.createOrUpdateOrder(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
                 coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(), coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
                 coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
@@ -212,7 +211,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             errors.add("validFrom", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
 
-        if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().equals("")) {
+        if (coForm.getValidUntil() != null && !coForm.getValidUntil().trim().isEmpty()) {
             String dateUntilString = coForm.getValidUntil().trim();
             dateError = !DateUtils.validateDate(dateUntilString);
             if (dateError) {
@@ -238,13 +237,13 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
         if (coForm.getSign().length() > GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH) {
             errors.add("sign", new ActionMessage("form.customerorder.error.sign.toolong"));
         }
-        if (coForm.getSign().length() <= 0) {
+        if (coForm.getSign().isEmpty()) {
             errors.add("sign", new ActionMessage("form.customerorder.error.sign.required"));
         }
         if (coForm.getDescription().length() > GlobalConstants.CUSTOMERORDER_DESCRIPTION_MAX_LENGTH) {
             errors.add("description", new ActionMessage("form.customerorder.error.description.toolong"));
         }
-        if ("".equals(coForm.getDescription().trim())) {
+        if (coForm.getDescription().trim().isEmpty()) {
             errors.add("description", new ActionMessage("form.error.description.necessary"));
         }
         if (coForm.getShortdescription().length() > GlobalConstants.CUSTOMERORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
@@ -253,19 +252,19 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
         if (coForm.getOrderCustomer().length() > GlobalConstants.CUSTOMERORDER_ORDER_CUSTOMER_MAX_LENGTH) {
             errors.add("orderCustomer", new ActionMessage("form.customerorder.error.ordercustomer.toolong"));
         }
-        if (coForm.getOrderCustomer().length() <= 0) {
+        if (coForm.getOrderCustomer().isEmpty()) {
             coForm.setOrderCustomer("-");
         }
         if (coForm.getResponsibleCustomerContractually().length() > GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH) {
             errors.add("responsibleCustomerContractually", new ActionMessage("form.customerorder.error.responsiblecustomer.toolong"));
         }
-        if (coForm.getResponsibleCustomerContractually().length() <= 0) {
+        if (coForm.getResponsibleCustomerContractually().isEmpty()) {
             errors.add("responsibleCustomerContractually", new ActionMessage("form.customerorder.error.responsiblecustomer.required"));
         }
         if (coForm.getResponsibleCustomerTechnical().length() > GlobalConstants.CUSTOMERORDER_RESP_CUSTOMER_MAX_LENGTH) {
             errors.add("responsibleCustomerTechnical", new ActionMessage("form.customerorder.error.responsiblecustomer.toolong"));
         }
-        if (coForm.getResponsibleCustomerTechnical().length() <= 0) {
+        if (coForm.getResponsibleCustomerTechnical().isEmpty()) {
             errors.add("responsibleCustomerTechnical", new ActionMessage("form.customerorder.error.responsiblecustomer.required"));
         }
 

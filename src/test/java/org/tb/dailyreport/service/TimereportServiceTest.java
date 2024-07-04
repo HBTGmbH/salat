@@ -41,7 +41,7 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6).minusMinutes(1))
                     .build();
@@ -81,7 +81,7 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6).minusMinutes(1))
                     .build();
@@ -106,7 +106,7 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6))
                     .build();
@@ -131,7 +131,7 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6).plusMinutes(1))
                     .build();
@@ -158,7 +158,7 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6).plusMinutes(1))
                     .build();
@@ -185,7 +185,7 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6).plusMinutes(1))
                     .build();
@@ -211,12 +211,12 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport1 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6))
                     .build();
             final TimereportDTO timeReport2 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(3))
                     .build();
@@ -242,12 +242,12 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport1 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6))
                     .build();
             final TimereportDTO timeReport2 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(3).plusMinutes(1))
                     .build();
@@ -274,12 +274,12 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport1 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6))
                     .build();
             final TimereportDTO timeReport2 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(3).plusMinutes(1))
                     .build();
@@ -306,12 +306,12 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport1 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(6))
                     .build();
             final TimereportDTO timeReport2 = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(date)
                     .duration(Duration.ofHours(3).plusMinutes(1))
                     .build();
@@ -338,7 +338,7 @@ class TimereportServiceTest {
             final LocalDate releaseDate = LocalDate.of(2024, 1, 31);
             final LocalDate yesterdayDate = LocalDate.of(2024, 1, 30);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(releaseDate)
                     .duration(Duration.ofHours(6))
                     .build();
@@ -371,7 +371,7 @@ class TimereportServiceTest {
             final LocalDate releaseDate = LocalDate.of(2024, 1, 31);
             final LocalDate yesterdayDate = LocalDate.of(2024, 1, 30);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.KUNDE)
+                    .orderType(OrderType.STANDARD)
                     .referenceday(releaseDate)
                     .duration(Duration.ofHours(6).minusMinutes(1))
                     .build();
@@ -400,7 +400,7 @@ class TimereportServiceTest {
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.URLAUB)
+                    .orderType(OrderType.KRANK_URLAUB_ABWESEND)
                     .referenceday(date)
                     .duration(Duration.ofHours(8))
                     .build();
