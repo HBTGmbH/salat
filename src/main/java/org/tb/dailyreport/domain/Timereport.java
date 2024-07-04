@@ -14,8 +14,12 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Where;
 import org.tb.common.AuditedEntity;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
@@ -24,6 +28,8 @@ import org.tb.order.domain.Suborder;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@SQLDelete(sql = "UPDATE timereport SET deleted = 1 WHERE id=? and updatecounter=?")
+@SQLRestriction("deleted = 0")
 public class Timereport extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
