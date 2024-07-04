@@ -169,8 +169,6 @@ public class DailyReportRestEndpoint {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
 
-        if (report.getId() != -1) {
-            timereportDAO.deleteTimereportById(report.getId());
-        }
+        timereportService.deleteTimereport(report.getId(), authorizedUser);
     }
 }
