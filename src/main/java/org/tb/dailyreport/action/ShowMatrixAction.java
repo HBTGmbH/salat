@@ -48,6 +48,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         // call on MatrixView with parameter refreshMergedreports to update request
         if ("refreshMergedreports".equals(task)) {
             Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm, request);
+            reportForm.saveToSession(request.getSession());
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 
@@ -65,6 +66,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             String fromYear = String.valueOf(date.getYear());
             reportForm.setFromMonth(fromMonth);
             reportForm.setFromYear(fromYear);
+            reportForm.saveToSession(request.getSession());
             Map<String, Object> results = matrixHelper.refreshMergedReports(reportForm, request);
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
@@ -77,6 +79,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             reportForm.setInvoice(true);
             reportForm.setNonInvoice(true);
             reportForm.setStartAndBreakTime(true);
+            reportForm.restoreFromSession(request.getSession());
             // call on MatrixView without a parameter
 
             // no special task - prepare everything to show reports
