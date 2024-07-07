@@ -177,7 +177,7 @@ public class MatrixHelper {
         int workdayCount = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList, workingDays);
 
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
-        handlePublicHolidays(employeeContractId, dateFirst, dateLast, mergedReportList, dayHoursCount, publicHolidayList);
+        handlePublicHolidays(employeeContractId, dateFirst, dateLast, mergedReportList, dayHoursCount, publicHolidayList, startAndBreakTime);
 
         //sort mergedreportlist by custom- and subordersign
         Collections.sort(mergedReportList);
@@ -292,7 +292,8 @@ public class MatrixHelper {
                                       LocalDate dateLast,
                                       List<MergedReport> mergedReportList,
                                       List<DayAndWorkingHourCount> dayHoursCount,
-                                      List<Publicholiday> publicHolidayList) {
+                                      List<Publicholiday> publicHolidayList,
+                                      boolean startAndBreakTime) {
         LocalDate dateLoop = dateFirst;
         int day = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
@@ -322,9 +323,7 @@ public class MatrixHelper {
                                 otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.isSatSun());
                                 otherDayAndWorkingHourCount.setWeekDay(dayAndWorkingHourCount.getWeekDay());
                                 otherDayAndWorkingHourCount.setStartOfWorkMinute(dayAndWorkingHourCount.getStartOfWorkMinute());
-                                otherDayAndWorkingHourCount.setInvalidStartOfWork(timereportService.validateBeginOfWorkingDay(bookingDay.getDate(), employeeContractId) != null);
                                 otherDayAndWorkingHourCount.setBreakMinutes(dayAndWorkingHourCount.getBreakMinutes());
-                                otherDayAndWorkingHourCount.setInvalidBreakTime(timereportService.validateBreakTime(bookingDay.getDate(), employeeContractId) != null);
                                 dayHoursCount.set(i, otherDayAndWorkingHourCount);
                                 for (Publicholiday publicHoliday : publicHolidayList) {
                                     if (publicHoliday.getRefdate().equals(dateLoop)) {
@@ -335,9 +334,15 @@ public class MatrixHelper {
                         }
                     }
                 }
-
             }
             dateLoop = DateUtils.addDays(dateLoop, 1);
+        }
+
+        if (startAndBreakTime) {
+            dayHoursCount.forEach(dayToValidate -> {
+                dayToValidate.setInvalidStartOfWork(timereportService.validateBeginOfWorkingDay(dayToValidate.getDate(), employeeContractId) != null);
+                dayToValidate.setInvalidBreakTime(timereportService.validateBreakTime(dayToValidate.getDate(), employeeContractId) != null);
+            });
         }
     }
 
