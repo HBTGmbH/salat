@@ -530,25 +530,27 @@
 			</table>
 		</c:if>
 
-		<html:form action="/ShowDailyReport">
-			<div class="favorites">
-				<c:forEach var="favorite" items="${favorites}" varStatus="statusID">
-					<div class="favorite-container">
-						<div class="button favorite"
-								onclick="addFavoriteAsReport(findForm(this),'<bean:write name="showDailyReportForm" property="enddate"/>', ${favorite.id}); return false"
-								title="Erstellen"
-								>
-							${favorite.comment} ${favorite.hours}:${favorite.minutes}
-						</div>
-						<div class="button favoriteDelete"
-							 onclick="deleteFavorite(findForm(this), ${favorite.id}); return false" title="Löschen" class="delete"
-							 title="delete">
-							<i class="bi bi-trash"></i>
-						</div>
-					</div>
-				</c:forEach>
-			</div>
-		</html:form>
+        <c:if test="${(view eq 'day') && visibleworkingday && currentEmployee != 'ALL EMPLOYEES'}">
+            <html:form action="/ShowDailyReport">
+                <div class="favorites">
+                    <c:forEach var="favorite" items="${favorites}" varStatus="statusID">
+                        <div class="favorite-container">
+                            <div class="button favorite"
+                                onclick="addFavoriteAsReport(findForm(this),'<bean:write name="showDailyReportForm" property="startdate"/>', ${favorite.id}); return false"
+                                    title="Erstellen"
+                                    >
+                                ${favorite.comment} ${favorite.hours}:${favorite.minutes}
+                            </div>
+                            <div class="button favoriteDelete"
+                                 onclick="deleteFavorite(findForm(this), ${favorite.id}); return false" title="Löschen" class="delete"
+                                 title="delete">
+                                <i class="bi bi-trash"></i>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+            </html:form>
+        </c:if>
 
 		<table class="center backgroundcolor nobBorderStyle" width="100%">
 			<tr class="noBborderStyle">
