@@ -99,14 +99,7 @@
 				form.submit();
 			}
 
-			function confirmSave(form, id, time) {
-
-				if(time != null) {
-					var newValue=getExtendTime([form.selectedDurationHour.value, form.selectedDurationMinute.value], time)
-
-					form.selectedDurationHour.value =newValue[0];
-					form.selectedDurationMinute.value = newValue[1];
-				}
+			function confirmSave(form, id) {
 
 				if (form.elements['status'] != null && form.elements['status'].value == 'closed') {
 					var agree=confirm("<bean:message key="main.timereport.confirmclose.text" />");
@@ -118,46 +111,12 @@
 				}
 			}
 
-			function saveBegin(form, time) {
-				if(time != null) {
-					form.selectedWorkHourBegin.value = time.getHours();
-					form.selectedWorkMinuteBegin.value = roundMinutes(time.getMinutes());
-				}
+			function saveBegin(form) {
 				form.action = "/do/ShowDailyReport?task=saveBegin";
 				form.submit();
 			}
 
-			function roundMinutes(minutes) {
-				return Math.round(minutes/5)*5;
-			}
-
-			function getExtendTime(currentValue, time) {
-				var quittingTime= '<c:out value="${quittingtime}"></c:out>';
-				var quittingTimeArray=quittingTime.split(":");
-				var diff=[ time.getHours() - Number(quittingTimeArray[0]),
-					       time.getMinutes()-Number(quittingTimeArray[1])];
-				var res= [ Number(currentValue[0])+diff[0],
-						roundMinutes(Number(currentValue[1])+diff[1])];
-
-				if (res[1]<0) res= [res[0]-1, 60-res[1]];
-				if (res[1]>=60) res= [res[0]+1, res[1]-60];
-				if (res[0]<0){
-					confirm("<bean:message key="main.timereport.extendTime.error.text" />");
-					return currentValue;
-				}
-				return res;
-			}
-
-			function saveBreak(form, time) {
-				if(time != null) {
-					var newValue=getExtendTime([form.selectedBreakHour.value, form.selectedBreakMinute.value], time)
-					if(newValue[0]>5){
-						newValue=[5,55];
-						confirm("<bean:message key="main.timereport.extendTime.error.text" />");
-					}
-					form.selectedBreakHour.value =newValue[0];
-					form.selectedBreakMinute.value = newValue[1];
-				}
+			function saveBreak(form) {
 				form.action = "/do/ShowDailyReport?task=saveBreak";
 				form.submit();
 			}
@@ -497,7 +456,6 @@
 									</html:select>
 
 									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
-									<a href="#" onclick="saveBegin(findForm(this),new Date())" title="save start of work"><i class="bi bi-watch"></i></a>
 								</nobr>
 							</td>
 						</tr>
@@ -518,7 +476,6 @@
 									</html:select>
 
 									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy"></i></a>
-									<a href="#" onclick="saveBreak(findForm(this),new Date())" title="save break"><i class="bi bi-skip-end"></i></a>
 								</td>
 							</tr>
 							<tr>
@@ -828,8 +785,6 @@
 
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle report-options" align="center">
-
-								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}, new Date()); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-skip-end"></i></button>
 								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
 
 								<button type="button"  onclick="createFavorite(findForm(this), ${timereport.id}); return false"
