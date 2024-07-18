@@ -222,10 +222,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-cache</artifactId>
-    </dependency>
     <!-- https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-jcache -->
     <dependency>
       <groupId>org.hibernate.orm</groupId>
@@ -235,7 +231,6 @@
     <dependency>
       <groupId>org.ehcache</groupId>
       <artifactId>ehcache</artifactId>
-      <scope>runtime</scope>
       <classifier>jakarta</classifier>
     </dependency>
   </dependencies>

@@ -13,10 +13,10 @@
 
     <cache-template name="defaultTemplate">
         <expiry>
-            <tti unit="minutes">10</tti>
+            <tti unit="minutes">${EHCACHE_EXPIRY_TTI}</tti>
         </expiry>
         <resources>
-            <heap unit="entries">${MAX_CACHE_ENTRIES}</heap>
+            <heap unit="entries">${EHCACHE_RESOURCES_HEAP_ENTRIES}</heap>
         </resources>
     </cache-template>
 </config>
