@@ -34,20 +34,21 @@ spring:
         format_sql: true
         show_sql: false
         use_sql_comments: true
-        #optional - generate statistics to check if L2/query cache is actually being used.
         generate_statistics: false
         cache:
           use_second_level_cache: true
           use_query_cache: true
           region:
             factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
-
     hibernate:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
       ddl-auto: validate
     open-in-view: true
+  cache:
+    jcache:
+      config: classpath:ehcache.xml
   web:
     resources:
       chain:

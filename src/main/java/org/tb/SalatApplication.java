@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @EnableJpaRepositories
@@ -20,6 +19,8 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 public class SalatApplication {
 
   public static void main(String[] args) {
+    // To use environment variables in the ehcache.xml as replacements
+    System.getenv().forEach(System::setProperty);
     SpringApplication.run(SalatApplication.class, args);
   }
 
