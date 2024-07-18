@@ -76,6 +76,9 @@ salat:
   mail-host: localhost
   auth-service:
     cache-expiry: 1s
+  cache:
+    max-entries: 1000
+    expiry-tti: 10
 springdoc:
   swagger-ui:
     path: /api/doc/
