@@ -236,6 +236,7 @@
       <groupId>org.ehcache</groupId>
       <artifactId>ehcache</artifactId>
       <scope>runtime</scope>
+      <classifier>jakarta</classifier>
     </dependency>
   </dependencies>
 
