@@ -6,8 +6,12 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.persistence.QueryHint;
+import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.tb.dailyreport.domain.Timereport;
@@ -15,16 +19,27 @@ import org.tb.dailyreport.domain.Timereport;
 @Repository
 public interface TimereportRepository extends CrudRepository<Timereport, Long>, JpaSpecificationExecutor<Timereport> {
 
+  @QueryHints(value = {
+          @QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"),
+          @QueryHint(name = HibernateHints.HINT_CACHE_REGION, value = "TimereportRepository.findAllByEmployeecontractIdAndReferencedayRefdate")
+    }
+  )
   List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdate(long employeecontractId, LocalDate refDate);
 
   List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdateIsGreaterThanEqual(long employeecontractId, LocalDate refDate);
 
   List<Timereport> findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(long employeecontractId, String status, LocalDate date);
 
+  @QueryHints(value = {
+          @QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"),
+          @QueryHint(name = HibernateHints.HINT_CACHE_REGION, value = "TimereportRepository.findAllByEmployeecontractIdAndReferencedayBetween")
+    }
+  )
   @Query("""
       select t from Timereport t
-      where t.employeecontract.id = :employeecontractId and
-      t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end
+      where t.employeecontract.id = :employeecontractId
+        and t.referenceday.refdate >= :begin
+        and t.referenceday.refdate <= :end
       order by t.employeecontract.employee.sign asc,
       t.referenceday.refdate asc,
       t.employeeorder.suborder.customerorder.sign asc,
