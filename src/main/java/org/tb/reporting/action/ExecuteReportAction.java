@@ -167,8 +167,14 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
         var result = new HashMap<String, Object>();
         for (ReportParameter parameter : nonEmpty(parameters)) {
             switch (parameter.getType()) {
-                case "string", "number" -> result.put(parameter.getName(), parameter.getValue());
-                case "date" -> result.put(parameter.getName(), DateUtils.parse(parameter.getValue()));
+                case "date" -> {
+                    if(parameter.getValue().equals("TODAY") || parameter.getValue().equals("HEUTE")) {
+                        result.put(parameter.getName(), DateUtils.today());
+                    } else {
+                        result.put(parameter.getName(), DateUtils.parse(parameter.getValue()));
+                    }
+                }
+                default -> result.put(parameter.getName(), parameter.getValue());
             }
         }
         return result;
