@@ -127,7 +127,7 @@ public class DateTimeViewHelper {
    * builds up a list of string with hour to display (6-21)
    */
   public static List<OptionItem> getHoursToDisplay() {
-    return getOptionItemListOfInts(6, 21);
+    return getOptionItemListOfInts(0, 23);
   }
 
   /*
