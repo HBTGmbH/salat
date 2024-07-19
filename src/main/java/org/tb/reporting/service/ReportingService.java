@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.tb.auth.AuthService;
+import org.tb.auth.AuthorizedUser;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportDefinition_;
 import org.tb.reporting.domain.ReportResult;
@@ -34,6 +35,7 @@ public class ReportingService {
   private final ReportDefinitionRepository reportDefinitionRepository;
   private final DataSource dataSource;
   private final AuthService authService;
+  private final AuthorizedUser authorizedUser;
 
   public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
@@ -82,7 +84,9 @@ public class ReportingService {
       throw new IllegalArgumentException("No report definition found for " + reportDefinitionId);
     }
 
-    final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(reportDefinition.get().getSql(), parameters);
+    String sql = reportDefinition.get().getSql();
+    sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getSign()); // ensure the sign is filled in as requested
+    final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(sql, parameters);
     var result = new ReportResult();
 
     // get and create headers
