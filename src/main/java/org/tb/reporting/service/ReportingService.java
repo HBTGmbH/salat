@@ -85,7 +85,9 @@ public class ReportingService {
     }
 
     String sql = reportDefinition.get().getSql();
-    sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getSign()); // ensure the sign is filled in as requested
+    if(sql != null && authorizedUser != null && authorizedUser.getSign() != null) {
+      sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getSign()); // ensure the sign is filled in as requested
+    }
     final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(sql, parameters);
     var result = new ReportResult();
 
