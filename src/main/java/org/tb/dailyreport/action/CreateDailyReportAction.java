@@ -6,6 +6,7 @@ import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
 import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
 import static org.tb.common.DateTimeViewHelper.getSerialDayList;
+import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.util.DateUtils.now;
 
 import java.time.LocalDate;
@@ -113,7 +114,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         form.setSelectedMinuteBegin(beginTime[1]);
         //		TimereportHelper.refreshHours(reportForm);
 
-        form.setSelectedHourBeginDay(workingday != null ? workingday.getStarttimehour() : 6);
+        form.setSelectedHourBeginDay(workingday != null ? workingday.getStarttimehour() : DEFAULT_WORK_DAY_START);
         form.setSelectedMinuteBeginDay(workingday != null ? workingday.getStarttimeminute() : 0);
 
         if (workingDayIsAvailable) {

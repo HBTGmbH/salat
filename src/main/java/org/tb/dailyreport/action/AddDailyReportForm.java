@@ -1,5 +1,6 @@
 package org.tb.dailyreport.action;
 
+import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.today;
 
@@ -94,7 +95,7 @@ public class AddDailyReportForm extends ActionForm {
         selectedMinuteBegin = 0;
         selectedHourEnd = 0;
         selectedMinuteEnd = 0;
-        selectedHourBeginDay = 6;
+        selectedHourBeginDay = DEFAULT_WORK_DAY_START;
         selectedMinuteBeginDay = 0;
         referenceday = DateUtils.format(DateUtils.today());
         training = false;

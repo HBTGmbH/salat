@@ -1,5 +1,6 @@
 package org.tb.dailyreport.action;
 
+import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 
 import java.time.LocalDate;
@@ -259,7 +260,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             //don�t show break time, quitting time and working day ends on the showdailyreport.jsp
             request.getSession().setAttribute("visibleworkingday", false);
 
-            reportForm.setSelectedWorkHourBegin(0);
+            reportForm.setSelectedWorkHourBegin(DEFAULT_WORK_DAY_START);
             reportForm.setSelectedWorkMinuteBegin(0);
             reportForm.setSelectedBreakHour(0);
             reportForm.setSelectedBreakMinute(0);
