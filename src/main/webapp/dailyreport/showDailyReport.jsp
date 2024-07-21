@@ -111,7 +111,11 @@
 				}
 			}
 
-			function saveBegin(form) {
+			function saveBegin(form, time) {
+				if (time != null) {
+					form.selectedWorkHourBegin.value = time.getHours();
+					form.selectedWorkMinuteBegin.value = roundMinutes(time.getMinutes());
+				}
 				form.action = "/do/ShowDailyReport?task=saveBegin";
 				form.submit();
 			}
@@ -131,7 +135,7 @@
 				if (res[1]<0) res= [res[0]-1, 60-res[1]];
 				if (res[1]>=60) res= [res[0]+1, res[1]-60];
 				if (res[0]<0){
-					confirm("<bean:message key="main.timereport.extendTime.error.text" />");
+					confirm("<bean:message key="main.timereport.extendtime.error.text" />");
 					return currentValue;
 				}
 				return res;
@@ -142,7 +146,7 @@
 					var newValue=getExtendTime([form.selectedBreakHour.value, form.selectedBreakMinute.value], time)
 					if(newValue[0]>5){
 						newValue=[5,55];
-						confirm("<bean:message key="main.timereport.extendTime.error.text" />");
+						confirm("<bean:message key="main.timereport.extendtime.error.text" />");
 					}
 					form.selectedBreakHour.value =newValue[0];
 					form.selectedBreakMinute.value = newValue[1];
