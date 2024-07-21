@@ -117,9 +117,18 @@ public class DateTimeViewHelper {
       return getOptionItemListOfInts(MIN_TIME_REPORT_MINUTE, MAX_TIME_REPORT_MINUTE);
     }
     List<OptionItem> result = new ArrayList<>();
-    for (int i = 0; i < 60; i+=5) {
-      result.add(intToOptionitem(i));
-    }
+    result.add(intToOptionitem(0));
+    result.add(intToOptionitem(15));
+    result.add(intToOptionitem(30));
+    result.add(intToOptionitem(45));
+    result.add(intToOptionitem(5));
+    result.add(intToOptionitem(10));
+    result.add(intToOptionitem(20));
+    result.add(intToOptionitem(25));
+    result.add(intToOptionitem(35));
+    result.add(intToOptionitem(40));
+    result.add(intToOptionitem(50));
+    result.add(intToOptionitem(55));
     return result;
   }
 
