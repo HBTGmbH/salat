@@ -1,7 +1,5 @@
 package org.tb.dailyreport.domain;
 
-import static java.lang.Math.max;
-
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -31,14 +29,10 @@ public class Workingday extends AuditedEntity implements Serializable {
     private Employeecontract employeecontract;
 
     private LocalDate refday;
-    private int Starttimehour;
-    private int Starttimeminute;
+    private int starttimehour;
+    private int starttimeminute;
     private int breakhours;
     private int breakminutes;
-
-    public int getStarttimehour() {
-        return max(Starttimehour, 6);
-    }
 
     @Override
     public boolean equals(Object obj) {
@@ -56,7 +50,7 @@ public class Workingday extends AuditedEntity implements Serializable {
     }
 
     public LocalDateTime getStartOfWorkingDay() {
-        LocalTime localTime = LocalTime.of(Starttimehour, Starttimeminute);
+        LocalTime localTime = LocalTime.of(starttimehour, starttimeminute);
         return LocalDateTime.of(refday, localTime);
     }
 
