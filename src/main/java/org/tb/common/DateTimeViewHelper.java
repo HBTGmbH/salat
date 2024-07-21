@@ -133,7 +133,7 @@ public class DateTimeViewHelper {
   }
 
   /*
-   * builds up a list of string with hour to display (6-21)
+   * builds up a list of string with hour to display (0-23)
    */
   public static List<OptionItem> getHoursToDisplay() {
     return getOptionItemListOfInts(0, 23);
