@@ -180,7 +180,7 @@
 							<b><bean:message key="main.release.release.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<input type="date" name="releaseDate" value="<bean:write name="showReleaseForm" property="releaseDate" />"/>
+							<input type="month" name="releaseDateString" value="<bean:write name="showReleaseForm" property="releaseDateString" />"/>
 						</td>
 
 						<td class="noBborderStyle">
@@ -205,10 +205,8 @@
 							<b><bean:message key="main.release.accept.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<input type="date" name="acceptanceDate" value="<bean:write name="showReleaseForm" property="acceptanceDate" />"  />
-							<span style="color: red"><html:errors
-									property="acceptancedate" />
-							</span>
+							<input type="month" name="acceptanceDateString" value="<bean:write name="showReleaseForm" property="acceptanceDateString" />"  />
+							<span style="color: red"><html:errors property="acceptancedate" /></span>
 						</td>
 
 						<td class="noBborderStyle">
@@ -233,10 +231,8 @@
 							<b><bean:message key="main.release.reopen.until.text" />:</b>
 						</td>
 						<td align="left" class="noBborderStyle">
-							<input type="date" name="reopenDate" value="<bean:write name="showReleaseForm" property="reopenDate" />"  />
-							<span style="color: red"><html:errors
-									property="reopendate" />
-							</span>
+							<input type="month" name="reopenDateString" value="<bean:write name="showReleaseForm" property="reopenDateString" />"  />
+							<span style="color: red"><html:errors property="reopendate" /></span>
 						</td>
 
 						<td class="noBborderStyle">
