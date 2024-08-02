@@ -902,6 +902,69 @@ databaseChangeLog:
                   name: deleted
                   type: bit(1)
                   defaultValue: 0
-
+  - changeSet:
+      id: 25
+      author: kr
+      comment: Add table for user roles
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: user_role
+      changes:
+        - createTable:
+            tableName: user_role
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+              - column:
+                  name: role
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: object_type
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: object_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: true
+              - column:
+                  name: valid_until
+                  type: date
+                  constraints:
+                    nullable: true
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

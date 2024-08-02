@@ -8,6 +8,7 @@ import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BO;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 
 import java.io.Serializable;
+import java.util.Set;
 import lombok.Data;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
@@ -29,12 +30,13 @@ public class AuthorizedUser implements Serializable {
   private boolean backoffice;
   private boolean admin;
   private boolean manager;
+  private Set<UserRole> userRoles;
 
   public void login(String loginSign) {
     this.setLoginSign(loginSign);
   }
 
-  public void init(Employee loginEmployee) {
+  public void init(Employee loginEmployee, Set<UserRole> userRoles) {
     this.setAuthenticated(true);
     this.setEmployeeId(loginEmployee.getId());
     this.setSign(loginEmployee.getSign());
@@ -45,6 +47,7 @@ public class AuthorizedUser implements Serializable {
     this.setManager(isAdmin || isManager);
     boolean isBackoffice = loginEmployee.getStatus().equals(EMPLOYEE_STATUS_BO);
     this.setBackoffice(isBackoffice || isManager || isAdmin);
+    this.setUserRoles(userRoles);
   }
 
 }
