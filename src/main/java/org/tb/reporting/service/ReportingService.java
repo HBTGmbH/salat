@@ -106,7 +106,7 @@ public class ReportingService {
       var values = result.getColumnHeaders().stream()
           .collect(Collectors.toMap(ReportResultColumnHeader::getName, header -> {
             var value = rowset.getObject(header.getName());
-            if(value.getClass() == java.sql.Date.class) {
+            if(!rowset.wasNull() && value.getClass() == java.sql.Date.class) {
               value = ((java.sql.Date) value).toLocalDate();
             }
             return new ReportResultColumnValue(value);
