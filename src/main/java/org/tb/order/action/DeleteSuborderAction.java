@@ -75,7 +75,7 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
         if (showActualHours) {
             /* show actual hours */
             List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
-            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<SuborderViewDecorator>();
+            List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
                 SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
                 suborderViewDecorators.add(decorator);

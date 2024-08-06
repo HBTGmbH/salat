@@ -549,7 +549,7 @@
 											</c:when>
 										</c:choose></td>
 									<td align="right">
-										<java8:formatDuration value="${suborder.duration}" />
+										<java8:formatDuration value="${suborder.durationNotInvoiceable}" />
 									</td>
 								</c:if>
 							</c:when>
