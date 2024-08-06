@@ -69,7 +69,7 @@ public class SuborderViewDecorator extends Suborder {
             generateListOfDescendants(suborder, false, descendants);
 
             long durationMinutes = timereportDAO.getTotalDurationMinutesForSuborders(descendants);
-            duration = Duration.ofMinutes(durationMinutes);
+            durationNotInvoiceable = Duration.ofMinutes(durationMinutes);
         }
         return durationNotInvoiceable;
     }
