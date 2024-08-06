@@ -1,6 +1,7 @@
 package org.tb.reporting.action;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -133,10 +134,11 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
                 cell.setCellValue((LocalDateTime) columnValue.getValue());
                 cell.setCellStyle(cellStyles.get(CELL_STYLE_DATETIME_KEY));
             }
-            case "Double" -> cell.setCellValue((Double) columnValue.getValue());
-            case "Float" -> cell.setCellValue((Float) columnValue.getValue());
-            case "Long" -> cell.setCellValue((Long) columnValue.getValue());
-            case "Integer" -> cell.setCellValue((Integer) columnValue.getValue());
+            case "Double" -> cell.setCellValue((double) columnValue.getValue());
+            case "Float" -> cell.setCellValue((float) columnValue.getValue());
+            case "Long" -> cell.setCellValue((long) columnValue.getValue());
+            case "Integer" -> cell.setCellValue((int) columnValue.getValue());
+            case "BigDecimal" -> cell.setCellValue(((BigDecimal) columnValue.getValue()).doubleValue());
             default -> cell.setCellValue(columnValue.getValueAsString());
         }
     }
