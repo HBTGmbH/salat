@@ -119,6 +119,16 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             acceptanceDateFromContract = employeecontract.getValidFrom();
         }
 
+        // ensure form values are not exceeding the contract
+        if(employeecontract.getValidUntil() != null) {
+            if(releaseForm.getReleaseDate() != null && releaseForm.getReleaseDate().isAfter(employeecontract.getValidUntil())) {
+                releaseForm.setReleaseDate(employeecontract.getValidUntil());
+            }
+            if(releaseForm.getAcceptanceDate() != null && releaseForm.getAcceptanceDate().isAfter(employeecontract.getValidUntil())) {
+                releaseForm.setAcceptanceDate(employeecontract.getValidUntil());
+            }
+        }
+
         // Release Action
         if (request.getParameter("task") != null && request.getParameter("task").equals("release")) {
 
