@@ -8,17 +8,18 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.employee.domain.Employeecontract;
 
 @Getter
-@Setter
 public class ShowReleaseForm extends ActionForm {
     private static final long serialVersionUID = 1L; // 1069049121593017810L;
+    private static final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM");
 
+    @Setter
     private Long employeeContractId;
+    @Setter
     private Long supervisorId;
 
     private LocalDate releaseDate;
@@ -30,16 +31,10 @@ public class ShowReleaseForm extends ActionForm {
     private String reopenDateString;
 
     @Override
-    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-        syncDateFields();
-        return super.validate(mapping, request);
-    }
-
-    @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-        releaseDate = today();
-        acceptanceDate = today();
+        var releaseDate = today();
+        var acceptanceDate = today();
         if (employeecontract != null) {
             if (employeecontract.getReportReleaseDate() == null) {
                 releaseDate = employeecontract.getValidFrom();
@@ -52,41 +47,33 @@ public class ShowReleaseForm extends ActionForm {
                 acceptanceDate = employeecontract.getReportAcceptanceDate();
             }
         }
-        reopenDate = releaseDate;
-        syncStringFields();
+        var reopenDate = releaseDate;
+
+        setReleaseDate(releaseDate);
+        setAcceptanceDate(acceptanceDate);
+        setReopenDate(reopenDate);
     }
 
-    private void syncDateFields() {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM");
-        if(releaseDateString != null && !releaseDateString.isEmpty()) {
-            releaseDate = YearMonth.parse(releaseDateString, fmt).atEndOfMonth();
-        } else {
-            releaseDate = null;
-        }
-        if(acceptanceDateString != null && !acceptanceDateString.isEmpty()) {
-            acceptanceDate = YearMonth.parse(acceptanceDateString, fmt).atEndOfMonth();
-        } else {
-            acceptanceDate = null;
-        }
-        if(reopenDateString != null && !reopenDateString.isEmpty()) {
-            reopenDate = YearMonth.parse(releaseDateString, fmt).atEndOfMonth();
-        } else {
-            reopenDate = null;
-        }
-    }
-
-    private void syncStringFields() {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM");
+    public void setReleaseDate(LocalDate releaseDate) {
+        this.releaseDate = releaseDate;
         if(releaseDate != null) {
             releaseDateString = fmt.format(releaseDate);
         } else {
             releaseDateString = "";
         }
+    }
+
+    public void setAcceptanceDate(LocalDate acceptanceDate) {
+        this.acceptanceDate = acceptanceDate;
         if(acceptanceDate != null) {
             acceptanceDateString = fmt.format(acceptanceDate);
         } else {
             acceptanceDateString = "";
         }
+    }
+
+    public void setReopenDate(LocalDate reopenDate) {
+        this.reopenDate = reopenDate;
         if(reopenDate != null) {
             reopenDateString = fmt.format(reopenDate);
         } else {
@@ -94,4 +81,30 @@ public class ShowReleaseForm extends ActionForm {
         }
     }
 
+    public void setReleaseDateString(String releaseDateString) {
+        this.releaseDateString = releaseDateString;
+        if(releaseDateString != null && !releaseDateString.isEmpty()) {
+            releaseDate = YearMonth.parse(releaseDateString, fmt).atEndOfMonth();
+        } else {
+            releaseDate = null;
+        }
+    }
+
+    public void setAcceptanceDateString(String acceptanceDateString) {
+        this.acceptanceDateString = acceptanceDateString;
+        if(acceptanceDateString != null && !acceptanceDateString.isEmpty()) {
+            acceptanceDate = YearMonth.parse(acceptanceDateString, fmt).atEndOfMonth();
+        } else {
+            acceptanceDate = null;
+        }
+    }
+
+    public void setReopenDateString(String reopenDateString) {
+        this.reopenDateString = reopenDateString;
+        if(reopenDateString != null && !reopenDateString.isEmpty()) {
+            reopenDate = YearMonth.parse(releaseDateString, fmt).atEndOfMonth();
+        } else {
+            reopenDate = null;
+        }
+    }
 }
