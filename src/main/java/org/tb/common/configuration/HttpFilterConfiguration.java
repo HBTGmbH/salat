@@ -8,6 +8,7 @@ import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
+import org.tb.auth.UserRoleRepository;
 import org.tb.common.filter.AuthenticationFilter;
 import org.tb.common.filter.LoggingFilter;
 import org.tb.common.filter.PerformanceLoggingFilter;
@@ -23,6 +24,7 @@ public class HttpFilterConfiguration {
     private final AuthorizedUser authorizedUser;
     private final EmployeeRepository employeeRepository;
     private final ResourceUrlProvider resourceUrlProvider;
+    private final UserRoleRepository userRoleRepository;
 
     @Bean
     public FilterRegistrationBean<ResourceUrlEncodingFilter> ResourceUrlEncodingFilter(){
@@ -64,7 +66,7 @@ public class HttpFilterConfiguration {
     public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
         var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
         registrationBean.setOrder(101);
-        registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, employeeRepository));
+        registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, employeeRepository, userRoleRepository));
         registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
         return registrationBean;
     }

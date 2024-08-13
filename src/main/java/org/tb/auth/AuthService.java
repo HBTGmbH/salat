@@ -44,6 +44,7 @@ public class AuthService {
   private final AuthorizationRuleRepository authorizationRuleRepository;
   private final SalatProperties salatProperties;
   private final EmployeeRepository employeeRepository;
+  private final UserRoleRepository userRoleRepository;
 
   private long cacheExpiryMillis;
   private Map<Category, Set<Rule>> cacheEntries = new HashMap<>();
@@ -64,7 +65,8 @@ public class AuthService {
   public void switchLogin(long loginEmployeeId) {
     employeeRepository.findById(loginEmployeeId).ifPresent(loginEmployee -> {
       if(isAuthorized(loginEmployee, LOGIN)) {
-        authorizedUser.init(loginEmployee);
+        var loginEmployeeRoles = userRoleRepository.findAllByUserId(loginEmployee.getSign());
+        authorizedUser.init(loginEmployee, loginEmployeeRoles);
       }
     });
   }

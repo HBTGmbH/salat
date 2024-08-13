@@ -45,6 +45,7 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
   private final HttpServletRequest request;
   private final HttpServletResponse response;
   private final EmployeeorderService employeeorderService;
+  private final UserRoleRepository userRoleRepository;
 
   @SneakyThrows
   @Override
@@ -77,12 +78,14 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
       response.sendError(HttpStatus.FORBIDDEN.value(), "No valid contract found for " + loginEmployee.getSign());
     }
 
-    authorizedUser.init(loginEmployee);
+    var loginEmployeeRoles = userRoleRepository.findAllByUserId(loginEmployee.getSign());
+    authorizedUser.init(loginEmployee, loginEmployeeRoles);
 
     // no further stuff for REST API calls - all is just for struts and old web UI
     if(request.getRequestURL().toString().contains("/api/") || request.getRequestURL().toString().contains("/rest/")) return;
 
     request.getSession().setAttribute("loginEmployee", loginEmployee);
+    request.getSession().setAttribute("loginEmployeeRoles", loginEmployeeRoles);
     String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
     request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
     request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());

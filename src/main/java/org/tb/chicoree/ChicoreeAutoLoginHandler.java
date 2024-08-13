@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.context.ApplicationListener;
@@ -14,6 +15,8 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
+import org.tb.auth.UserRole;
+import org.tb.auth.UserRoleRepository;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -26,6 +29,7 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<Authenticat
   private final AuthorizedUser authorizedUser;
   private final ChicoreeSessionStore chicoreeSessionStore;
   private final EmployeecontractService employeecontractService;
+  private final UserRoleRepository userRoleRepository;
   private final EmployeeDAO employeeDAO;
   private final HttpServletRequest request;
   private final HttpServletResponse response;
@@ -42,7 +46,8 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<Authenticat
       Employee employee = employeeDAO.getLoginEmployee(authentication.getName());
       Optional<Employeecontract> employeecontract = employeecontractService.getCurrentContract(employee.getId());
       if(employeecontract.isPresent()) {
-        authorizedUser.init(employee);
+        var roles = userRoleRepository.findAllByUserId(employee.getSign());
+        authorizedUser.init(employee, roles);
         chicoreeSessionStore.setGreeting(getRandomGreeting());
         chicoreeSessionStore.setLoginEmployee(employee);
         chicoreeSessionStore.setLoginEmployeecontractId(employeecontract.get().getId());
