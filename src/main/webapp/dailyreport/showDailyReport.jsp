@@ -99,7 +99,18 @@
 				form.submit();
 			}
 
-			function confirmSave(form, id) {
+			function confirmSave(form, id, time) {
+				if (time != null) {
+					const newValue = getExtendTime([form.selectedDurationHour.value, form.selectedDurationMinute.value],
+							time);
+
+                    if ((newValue[0] * 60 + newValue[1]) < 1) {
+                        confirm("<bean:message key="main.timereport.extendtime.error.greaterzero.text" />");
+                        return currentValue;
+                    }
+					form.selectedDurationHour.value =newValue[0];
+					form.selectedDurationMinute.value = roundMinutes(newValue[1], 15);
+				}
 
 				if (form.elements['status'] != null && form.elements['status'].value == 'closed') {
 					var agree=confirm("<bean:message key="main.timereport.confirmclose.text" />");
@@ -120,36 +131,35 @@
 				form.submit();
 			}
 
-			function roundMinutes(minutes) {
-				return Math.round(minutes/15)*15;
+			function roundMinutes(minutes, operand = 5) {
+				return Math.round(minutes / operand) * operand;
 			}
 
 			function getExtendTime(currentValue, time) {
-				var quittingTime= '<c:out value="${quittingtime}"></c:out>';
-				var quittingTimeArray=quittingTime.split(":");
-				var diff=[ time.getHours() - Number(quittingTimeArray[0]),
-					       time.getMinutes()-Number(quittingTimeArray[1])];
-				var res= [ Number(currentValue[0])+diff[0],
-						roundMinutes(Number(currentValue[1])+diff[1])];
+				const quittingTime = '<c:out value="${quittingtime}"></c:out>';
+				const quittingTimeArray = quittingTime.split(":");
+				const diff = [time.getHours() - Number(quittingTimeArray[0]),
+					time.getMinutes() - Number(quittingTimeArray[1])];
+				let res = [Number(currentValue[0]) + diff[0], Number(currentValue[1]) + diff[1]];
 
-				if (res[1]<0) res= [res[0]-1, 60-res[1]];
-				if (res[1]>=60) res= [res[0]+1, res[1]-60];
-				if (res[0]<0){
-					confirm("<bean:message key="main.timereport.extendtime.error.text" />");
-					return currentValue;
-				}
+				if (res[1] < 0) res = [res[0] - 1, 60 + res[1]];
+				if (res[1] >= 60) res = [res[0] + 1, res[1] - 60];
+				if (res[1] === -0) res = [res[0], 0];
 				return res;
 			}
 
 			function saveBreak(form, time) {
-				if(time != null) {
-					var newValue=getExtendTime([form.selectedBreakHour.value, form.selectedBreakMinute.value], time)
-					if(newValue[0]>5){
-						newValue=[5,55];
-						confirm("<bean:message key="main.timereport.extendtime.error.text" />");
+				if (time != null) {
+					let newValue = getExtendTime([form.selectedBreakHour.value, form.selectedBreakMinute.value], time)
+					if ((newValue[0] * 60 + newValue[1]) < 1) {
+						confirm("<bean:message key="main.timereport.extendtime.error.greaterzero.text" />");
+						return currentValue;
 					}
-					form.selectedBreakHour.value =newValue[0];
-					form.selectedBreakMinute.value = newValue[1];
+					if (newValue[0] > 5) {
+						newValue = [5, 55];
+					}
+					form.selectedBreakHour.value = newValue[0];
+					form.selectedBreakMinute.value = roundMinutes(newValue[1]);
 				}
 				form.action = "/do/ShowDailyReport?task=saveBreak";
 				form.submit();
@@ -490,7 +500,7 @@
 									</html:select>
 
 									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
-									<a href="#" onclick="saveBegin(findForm(this),new Date())" title="set start of work to now"><i class="bi bi-watch"></i></a>
+									<a href="#" onclick="saveBegin(findForm(this),new Date())" title="set start of work to now"><i class="bi bi-stopwatch"></i></a>
 								</nobr>
 							</td>
 						</tr>
@@ -824,8 +834,8 @@
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle report-options" align="center">
 
-								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}, new Date()); return false" title="Verlängern" style="border: 0; background-color: transparent"><i class="bi bi-skip-end"></i></button>
 								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
+								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}, new Date()); return false" title="Verlängern" style="border: 0; background-color: transparent"><i class="bi bi-skip-end"></i></button>
 
 								<button type="button"  onclick="createFavorite(findForm(this), ${timereport.id}); return false"
 										title="Favorite" style="border: 0; background-color: transparent"><i class="bi bi-star"></i></button>
