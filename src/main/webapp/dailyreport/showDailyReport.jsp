@@ -104,16 +104,16 @@
 					const newValue = getExtendTime([form.selectedDurationHour.value, form.selectedDurationMinute.value],
 							time);
 
-                    if ((newValue[0] * 60 + newValue[1]) < 1) {
-                        confirm("<bean:message key="main.timereport.extendtime.error.greaterzero.text" />");
-                        return currentValue;
-                    }
-					form.selectedDurationHour.value =newValue[0];
+					if ((newValue[0] * 60 + newValue[1]) < 1) {
+						confirm("<bean:message key="main.timereport.extendtime.error.greaterzero.text" />");
+						return currentValue;
+					}
+					form.selectedDurationHour.value = newValue[0];
 					form.selectedDurationMinute.value = roundMinutes(newValue[1], 15);
 				}
 
 				if (form.elements['status'] != null && form.elements['status'].value == 'closed') {
-					var agree=confirm("<bean:message key="main.timereport.confirmclose.text" />");
+					var agree = confirm("<bean:message key="main.timereport.confirmclose.text" />");
 					if (agree) {
 						submitUpdateDailyReport(form, id);
 					}
@@ -151,8 +151,8 @@
 			function saveBreak(form, time) {
 				if (time != null) {
 					let newValue = getExtendTime([form.selectedBreakHour.value, form.selectedBreakMinute.value], time)
-					if ((newValue[0] * 60 + newValue[1]) < 1) {
-						confirm("<bean:message key="main.timereport.extendtime.error.greaterzero.text" />");
+					if ((newValue[0] * 60 + newValue[1]) < 0) {
+						confirm("<bean:message key="main.timereport.extendtime.error.notbelowzero.text" />");
 						return currentValue;
 					}
 					if (newValue[0] > 5) {
