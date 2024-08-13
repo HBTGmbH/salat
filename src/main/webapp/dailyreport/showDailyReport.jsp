@@ -105,7 +105,7 @@
 							time);
 
 					if ((newValue[0] * 60 + newValue[1]) < 1) {
-						confirm("<bean:message key="main.timereport.extendtime.error.greaterzero.text" />");
+						confirm("<bean:message key="main.timereport.extendtime.error.notbelowone.text" />");
 						return currentValue;
 					}
 					form.selectedDurationHour.value = newValue[0];
