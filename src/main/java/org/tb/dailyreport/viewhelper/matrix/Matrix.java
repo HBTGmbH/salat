@@ -10,35 +10,35 @@ import lombok.Getter;
 public class Matrix {
 
     private final List<MatrixLine> matrixLines;
-    private final List<DayAndWorkingHourCount> dayAndWorkingHourCountList;
-    private final Duration dayHoursSum;
-    private final Duration dayHoursTarget;
-    private final Duration overtimeCompensation;
-    private final Duration dayHoursDiff;
+    private final List<MatrixDayTotal> matrixDayTotalList;
+    private final Duration totalWorkingTime;
+    private final Duration totalWorkingTimeTarget;
+    private final Duration totalOvertimeCompensation;
+    private final Duration totalWorkingTimeDiff;
 
-    public Matrix(List<MatrixLine> matrixLines, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, Duration dayHoursSum, Duration dayHoursTarget, Duration dayHoursDiff, Duration overtimeCompensation) {
+    public Matrix(List<MatrixLine> matrixLines, List<MatrixDayTotal> matrixDayTotalList, Duration totalWorkingTime, Duration totalWorkingTimeTarget, Duration totalWorkingTimeDiff, Duration totalOvertimeCompensation) {
         this.matrixLines = matrixLines;
-        this.dayAndWorkingHourCountList = dayAndWorkingHourCountList;
-        this.dayHoursSum = dayHoursSum;
-        this.dayHoursTarget = dayHoursTarget;
-        this.dayHoursDiff = dayHoursDiff;
-        this.overtimeCompensation = overtimeCompensation;
+        this.matrixDayTotalList = matrixDayTotalList;
+        this.totalWorkingTime = totalWorkingTime;
+        this.totalWorkingTimeTarget = totalWorkingTimeTarget;
+        this.totalWorkingTimeDiff = totalWorkingTimeDiff;
+        this.totalOvertimeCompensation = totalOvertimeCompensation;
     }
 
-    public String getDayHoursSumString() {
-        return format(dayHoursSum);
+    public String getTotalWorkingTimeString() {
+        return format(totalWorkingTime);
     }
 
-    public String getDayHoursTargetString() {
-        return format(dayHoursTarget);
+    public String getTotalWorkingTimeTargetString() {
+        return format(totalWorkingTimeTarget);
     }
 
-    public String getOvertimeCompensationString() {
-        return format(overtimeCompensation);
+    public String getTotalOvertimeCompensationString() {
+        return format(totalOvertimeCompensation);
     }
 
-    public String getDayHoursDiffString() {
-        return format(dayHoursDiff);
+    public String getTotalWorkingTimeDiffString() {
+        return format(totalWorkingTimeDiff);
     }
 
 }

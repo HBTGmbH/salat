@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import static java.lang.Boolean.TRUE;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.summingLong;
 import static java.util.stream.Collectors.toMap;
 import static org.tb.common.ErrorCode.*;
 import static org.tb.common.GlobalConstants.*;
@@ -411,19 +411,12 @@ public class TimereportService {
     if(employeeorder.getDebithoursunit() == null) {
       return; // no budget defined!
     }
-    long debitMinutesTemp = employeeorder.getDebithours().toMinutes();
-    // increase debit minutes if timereport exists (update case) by the time of that timereport
-    // because this time is read from the database query, too. This is a trick to circumvent this special case.
-    if(timereports.size() == 1 && !timereports.getFirst().isNew()) {
-      Timereport timereport = timereports.getFirst();
-      debitMinutesTemp += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
-    }
-    final long debitMinutes = debitMinutesTemp;
+    final long debitMinutes = getDebitMinutes(timereports, employeeorder);
     switch(employeeorder.getDebithoursunit()) {
       case DEBITHOURS_UNIT_MONTH:
-        Map<YearMonth, Integer> minutesPerYearMonth = timereports.stream()
+        Map<YearMonth, Long> minutesPerYearMonth = timereports.stream()
             .collect(groupingBy(t -> getYearMonth(t.getReferenceday().getRefdate()),
-                summingInt(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())));
+                summingLong(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())));
         minutesPerYearMonth.forEach((yearMonth, minutesSum) -> {
           long alreadyReportedMinutes = timereportDAO.getTotalDurationMinutesForEmployeeOrder(
               employeeorder.getId(),
@@ -435,9 +428,9 @@ public class TimereportService {
         });
         break;
       case DEBITHOURS_UNIT_YEAR:
-        Map<Year, Integer> minutesPerYear = timereports.stream()
+        Map<Year, Long> minutesPerYear = timereports.stream()
             .collect(groupingBy(t -> getYear(t.getReferenceday().getRefdate()),
-                summingInt(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())));
+                summingLong(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())));
         minutesPerYear.forEach((year, minutesSum) -> {
           long alreadyReportedMinutes = timereportDAO.getTotalDurationMinutesForEmployeeOrder(
               employeeorder.getId(),
@@ -449,9 +442,8 @@ public class TimereportService {
         });
         break;
       case DEBITHOURS_UNIT_TOTALTIME:
-        int minutesSum = timereports.stream()
-            .map(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())
-            .mapToInt(Integer::intValue)
+        long minutesSum = timereports.stream()
+            .mapToLong(t -> t.getDurationhours() * MINUTES_PER_HOUR + t.getDurationminutes())
             .sum();
         long alreadyReportedMinutes = timereportDAO
             .getTotalDurationMinutesForEmployeeOrder(employeeorder.getId());
@@ -464,6 +456,18 @@ public class TimereportService {
             + employeeorder.getDebithoursunit()
         );
     }
+  }
+
+  private static long getDebitMinutes(List<Timereport> timereports, Employeeorder employeeorder) {
+    long debitMinutesTemp = employeeorder.getDebithours().toMinutes();
+    // increase debit minutes if timereport exists (update case) by the time of that timereport
+    // because this time is read from the database query, too. This is a trick to circumvent this special case.
+    if(timereports.size() == 1 && !timereports.getFirst().isNew()) {
+      Timereport timereport = timereports.getFirst();
+      debitMinutesTemp += timereport.getDurationhours() * MINUTES_PER_HOUR + timereport.getDurationminutes();
+    }
+    final long debitMinutes = debitMinutesTemp;
+    return debitMinutes;
   }
 
   private void validateOrderBusinessRules(List<Timereport> timereports) throws BusinessRuleException {

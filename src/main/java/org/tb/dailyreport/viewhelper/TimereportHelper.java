@@ -246,7 +246,7 @@ public class TimereportHelper {
             }
 
             long quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursLong;
-            int quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
+            long quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
             quittingtimeHours += quittingtimeMinutes / MINUTES_PER_HOUR;
             quittingtimeMinutes = quittingtimeMinutes % MINUTES_PER_HOUR;
 
