@@ -9,15 +9,15 @@ import lombok.Getter;
 @Getter
 public class ReportWrapper {
 
-    private final List<MergedReport> mergedReportList;
+    private final List<MatrixLine> matrixLines;
     private final List<DayAndWorkingHourCount> dayAndWorkingHourCountList;
     private final Duration dayHoursSum;
     private final Duration dayHoursTarget;
     private final Duration overtimeCompensation;
     private final Duration dayHoursDiff;
 
-    public ReportWrapper(List<MergedReport> mergedReportList, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, Duration dayHoursSum, Duration dayHoursTarget, Duration dayHoursDiff, Duration overtimeCompensation) {
-        this.mergedReportList = mergedReportList;
+    public ReportWrapper(List<MatrixLine> matrixLines, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, Duration dayHoursSum, Duration dayHoursTarget, Duration dayHoursDiff, Duration overtimeCompensation) {
+        this.matrixLines = matrixLines;
         this.dayAndWorkingHourCountList = dayAndWorkingHourCountList;
         this.dayHoursSum = dayHoursSum;
         this.dayHoursTarget = dayHoursTarget;

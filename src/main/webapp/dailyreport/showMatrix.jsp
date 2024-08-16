@@ -18,8 +18,8 @@
 			form.submit();
 		}
 
-		function setUpdateMergedreportsAction(form) {
-			form.action = "/do/ShowMatrix?task=refreshMergedreports";
+		function setRefreshMatrixAction(form) {
+			form.action = "/do/ShowMatrix?task=refreshMatrix";
 			form.submit();
 		}
 
@@ -84,7 +84,7 @@
 				<td align="left" class="noBborderStyle"><html:select
 						property="order"
 						value="<%=(String) request.getSession().getAttribute(\"currentOrder\")%>"
-						onchange="setUpdateMergedreportsAction(this.form)"
+						onchange="setRefreshMatrixAction(this.form)"
 						styleClass="make-select2">
 
 						<html:option value="ALL ORDERS">
@@ -113,12 +113,12 @@
 				<td align="left" class="noBborderStyle"><c:if
 						test="${!(matrixview eq 'month')}">
 						<html:select property="fromDay" value="${currentDay}"
-							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
+							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:options collection="days" property="value"
 								labelProperty="label" />
 						</html:select>
 					</c:if> <html:select property="fromMonth" value="${currentMonth}"
-						onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
+						onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 						<html:option value="Jan">
 							<bean:message key="main.timereport.select.month.jan.text" />
 						</html:option>
@@ -156,7 +156,7 @@
 							<bean:message key="main.timereport.select.month.dec.text" />
 						</html:option>
 					</html:select> <html:select property="fromYear" value="${currentYear}"
-						onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
+						onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 						<html:options collection="years" property="value"
 							labelProperty="label" />
 					</html:select>
@@ -180,11 +180,11 @@
 								key="main.monthlyreport.daymonthyear.text" />:</b></td>
 					<td align="left" class="noBborderStyle"><html:select
 							property="untilDay" value="${lastDay}"
-							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
+							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:options collection="days" property="value"
 								labelProperty="label" />
 						</html:select> <html:select property="untilMonth" value="${lastMonth}"
-							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
+							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:option value="Jan">
 								<bean:message key="main.timereport.select.month.jan.text" />
 							</html:option>
@@ -222,7 +222,7 @@
 								<bean:message key="main.timereport.select.month.dec.text" />
 							</html:option>
 						</html:select> <html:select property="untilYear" value="${lastYear}"
-							onchange="setUpdateMergedreportsAction(this.form)" styleClass="make-select2">
+							onchange="setRefreshMatrixAction(this.form)" styleClass="make-select2">
 							<html:options collection="years" property="value"
 								labelProperty="label" />
 						</html:select></td>
@@ -231,23 +231,23 @@
 			<!-- select invoice -->
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.invoice.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><html:checkbox property="invoice" onclick="setUpdateMergedreportsAction(this.form)" /></td>
+				<td align="left" class="noBborderStyle"><html:checkbox property="invoice" onclick="setRefreshMatrixAction(this.form)" /></td>
 			</tr>
 			<!-- select invoice -->
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.non.invoice.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><html:checkbox property="nonInvoice" onclick="setUpdateMergedreportsAction(this.form)" /></td>
+				<td align="left" class="noBborderStyle"><html:checkbox property="nonInvoice" onclick="setRefreshMatrixAction(this.form)" /></td>
 			</tr>
 			<!-- select start and break times -->
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.startandbreaktime.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><html:checkbox property="startAndBreakTime" onclick="setUpdateMergedreportsAction(this.form)" /></td>
+				<td align="left" class="noBborderStyle"><html:checkbox property="startAndBreakTime" onclick="setRefreshMatrixAction(this.form)" /></td>
 			</tr>
 		</table>
 	</html:form>
 
-	<bean:size id="mergedreportsSize" name="mergedreports" />
-	<c:if test="${mergedreportsSize>10}">
+	<bean:size id="matrixlinesSize" name="matrixlines" />
+	<c:if test="${matrixlinesSize>10}">
 		<table>
 			<tr>
 				<c:if
@@ -336,11 +336,11 @@
 			<td class="matrix bold"><bean:message key="main.matrixoverview.table.sum.text" /></td>
 		</tr>
 
-		<c:forEach var="mergedreport" items="${mergedreports}">
+		<c:forEach var="matrixline" items="${matrixlines}">
 			<tr class="matrix">
-				<td class="matrix"><c:out value="${mergedreport.customOrder.sign}"></c:out><br><c:out value="${mergedreport.subOrder.sign}" /></td>
-				<td class="matrix"><c:out value="${mergedreport.customOrder.shortdescription}"></c:out><br><c:out value="${mergedreport.subOrder.shortdescription}" /></td>
-				<c:forEach var="bookingday" items="${mergedreport.bookingDays}">
+				<td class="matrix"><c:out value="${matrixline.customOrder.sign}"></c:out><br><c:out value="${matrixline.subOrder.sign}" /></td>
+				<td class="matrix"><c:out value="${matrixline.customOrder.shortdescription}"></c:out><br><c:out value="${matrixline.subOrder.shortdescription}" /></td>
+				<c:forEach var="bookingday" items="${matrixline.bookingDays}">
 					<c:if test="${bookingday.satSun==true}">
 						<c:if test="${bookingday.publicHoliday==true}">
 							<td title="${fn:escapeXml(bookingday.taskdescription)}"
@@ -374,7 +374,7 @@
 							</c:if>
 					</td>
 				</c:forEach>
-				<td class="matrix" align="right"><c:out	value="${mergedreport.sumString}"></c:out></td>
+				<td class="matrix" align="right"><c:out	value="${matrixline.sumString}"></c:out></td>
 			</tr>
 		</c:forEach>
 
@@ -436,7 +436,7 @@
 							<c:out value="${dayhourcount.workingHour eq 'PT0S' ? ' ' : dayhourcount.startOfWorkString}"></c:out>
 						</td>
             </c:forEach>
-			<td class="matrix" style="font-size: 7pt; border-top: 2px black solid;" align="right" align="right">&nbsp;</td>
+			<td class="matrix" style="font-size: 7pt; border-top: 2px black solid;" align="right">&nbsp;</td>
 		</tr>
 
 		<tr class="matrix">

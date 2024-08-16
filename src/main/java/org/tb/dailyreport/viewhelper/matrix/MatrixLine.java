@@ -9,17 +9,16 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import org.tb.common.util.DateUtils;
-import org.tb.order.domain.Customerorder;
-import org.tb.order.domain.Suborder;
+import org.tb.dailyreport.domain.TimereportDTO;
 
-public class MergedReport implements Comparable<MergedReport> {
+public class MatrixLine implements Comparable<MatrixLine> {
     private OrderSummaryData customOrder;
     private OrderSummaryData subOrder;
     private double sumHours;
     private long sumMinutes;
     private final List<BookingDay> bookingDays = new ArrayList<>();
 
-    public MergedReport(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
+    public MatrixLine(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
         super();
         this.subOrder = subOrder;
         this.customOrder = customOrder;
@@ -38,11 +37,8 @@ public class MergedReport implements Comparable<MergedReport> {
         bookingDays.add(new BookingDay(date));
     }
 
-    public void setSum() {
-        var sum = Duration.ZERO;
-        for (BookingDay bookingDay : bookingDays) {
-            sum = sum.plus(bookingDay.getDuration());
-        }
+    public void calcTotals() {
+        var sum = bookingDays.stream().map(BookingDay::getDuration).reduce(Duration.ZERO, Duration::plus);
         sumMinutes = sum.toMinutes();
         sumHours = (double)sumMinutes / MINUTES_PER_HOUR;
     }
@@ -88,7 +84,7 @@ public class MergedReport implements Comparable<MergedReport> {
         return sb.toString();
     }
 
-    public int compareTo(MergedReport o) {
+    public int compareTo(MatrixLine o) {
         return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo(o.customOrder.getSign() + o.subOrder.getSign());
     }
 
@@ -96,12 +92,19 @@ public class MergedReport implements Comparable<MergedReport> {
         return timeFormatMinutes(sumMinutes);
     }
 
-    public OrderSummaryData getCustomOrder() {
-        return customOrder;
+    public boolean matchesOrder(String customerorderSign, String suborderSign) {
+        return customerorderSign.equals(this.customOrder.getSign()) && suborderSign.equals(this.subOrder.getSign());
     }
 
-    public OrderSummaryData getSubOrder() {
-        return subOrder;
+    public void addTimereport(TimereportDTO timeReport, String taskdescription) {
+        for (BookingDay bookingDay : bookingDays) {
+            if (bookingDay.getDate().equals(timeReport.getReferenceday())) {
+                bookingDay.addBooking(timeReport.getDurationhours(), timeReport.getDurationminutes(), taskdescription);
+                return;
+            }
+        }
+        //if bookingday is not available, add new bookingday
+        addBookingDay(timeReport.getReferenceday(), timeReport.getDurationhours(), timeReport.getDurationminutes(), taskdescription);
     }
 
 
