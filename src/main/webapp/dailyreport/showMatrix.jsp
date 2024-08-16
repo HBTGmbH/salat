@@ -296,41 +296,41 @@
 
 			<!-- <td>AuftragsBezeichnung</td> -->
 
-			<c:forEach var="dayhourcount" items="${dayhourcounts}">
+			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
 
 				<!-- 			<td align="center" class="matrix bold"> -->
-				<c:if test="${dayhourcount.satSun==true}">
-					<c:if test="${dayhourcount.publicHoliday==true}">
+				<c:if test="${matrixdaytotal.satSun==true}">
+					<c:if test="${matrixdaytotal.publicHoliday==true}">
 						<td
-							title="${dayhourcount.publicHolidayName} / <bean:message key="${dayhourcount.weekDay}" />"
+							title="${matrixdaytotal.publicHolidayName} / <bean:message key="${matrixdaytotal.weekDay}" />"
 							class="matrix bold" align="right"
 							style="background-color: c1c1c1;" id="matrixTableLink">
 					</c:if>
-					<c:if test="${dayhourcount.publicHoliday==false}">
-						<td title="<bean:message key="${dayhourcount.weekDay}" />"
+					<c:if test="${matrixdaytotal.publicHoliday==false}">
+						<td title="<bean:message key="${matrixdaytotal.weekDay}" />"
 							class="matrix bold" align="right"
 							style="background-color: lightgrey;" id="matrixTableLink">
 					</c:if>
 				</c:if>
-				<c:if test="${dayhourcount.satSun==false}">
-					<c:if test="${dayhourcount.publicHoliday==true}">
+				<c:if test="${matrixdaytotal.satSun==false}">
+					<c:if test="${matrixdaytotal.publicHoliday==true}">
 						<td
-							title="${dayhourcount.publicHolidayName} / <bean:message key="${dayhourcount.weekDay}" />"
+							title="${matrixdaytotal.publicHolidayName} / <bean:message key="${matrixdaytotal.weekDay}" />"
 							class="matrix bold" align="right"
 							style="background-color: c1c1c1;" id="matrixTableLink">
 					</c:if>
-					<c:if test="${dayhourcount.publicHoliday==false}">
+					<c:if test="${matrixdaytotal.publicHoliday==false}">
 						<td
-							title="<c:if test="${dayhourcount.weekDay!=null}"><bean:message key="${dayhourcount.weekDay}" /></c:if>"
+							title="<c:if test="${matrixdaytotal.weekDay!=null}"><bean:message key="${matrixdaytotal.weekDay}" /></c:if>"
 							class="matrix bold" align="right" id="matrixTableLink">
 					</c:if>
 
 				</c:if>
 				<html:link
-					href="/do/ShowDailyReport?day=${dayhourcount.dayString}&month=${currentMonth}&year=${currentYear}">
-									&nbsp;<c:out value="${dayhourcount.dayString}" />&nbsp; 
+					href="/do/ShowDailyReport?day=${matrixdaytotal.dayString}&month=${currentMonth}&year=${currentYear}">
+									&nbsp;<c:out value="${matrixdaytotal.dayString}" />&nbsp;
 				</html:link>
-				<%-- ?task=refreshTimereports&day=${dayhourcount.dayString}&month=${currentMonth}&year=${currentYear} --%>
+				<%-- ?task=refreshTimereports&day=${matrixdaytotal.dayString}&month=${currentMonth}&year=${currentYear} --%>
 				</td>
 			</c:forEach>
 			<td class="matrix bold"><bean:message key="main.matrixoverview.table.sum.text" /></td>
@@ -380,44 +380,44 @@
 
 		<tr class="matrix">
 			<td colspan="2" class="matrix bold"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.overall.text" /></td>
-			<c:forEach var="dayhourcount" items="${dayhourcounts}">
-				<c:if test="${dayhourcount.satSun==true}">
-					<c:if test="${dayhourcount.publicHoliday==true}">
+			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
+				<c:if test="${matrixdaytotal.satSun==true}">
+					<c:if test="${matrixdaytotal.publicHoliday==true}">
 						<td class="matrix bold"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
 							align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
+							<c:if test="${!(matrixdaytotal.workingHour eq 'PT0S')}">
+								<c:out value="${matrixdaytotal.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
+							<c:if test="${(matrixdaytotal.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
-					<c:if test="${dayhourcount.publicHoliday==false}">
+					<c:if test="${matrixdaytotal.publicHoliday==false}">
 						<td class="matrix bold"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: lightgrey;"
 							align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
+							<c:if test="${!(matrixdaytotal.workingHour eq 'PT0S')}">
+								<c:out value="${matrixdaytotal.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
+							<c:if test="${(matrixdaytotal.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 				</c:if>
-				<c:if test="${dayhourcount.satSun==false}">
-					<c:if test="${dayhourcount.publicHoliday==true}">
+				<c:if test="${matrixdaytotal.satSun==false}">
+					<c:if test="${matrixdaytotal.publicHoliday==true}">
 						<td class="matrix bold"
 							style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;"
 							align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
+							<c:if test="${!(matrixdaytotal.workingHour eq 'PT0S')}">
+								<c:out value="${matrixdaytotal.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
+							<c:if test="${(matrixdaytotal.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
-					<c:if test="${dayhourcount.publicHoliday==false}">
+					<c:if test="${matrixdaytotal.publicHoliday==false}">
 						<td class="matrix bold"
 							style="font-size: 7pt; border-top: 2px black solid;" align="right">
-							<c:if test="${!(dayhourcount.workingHour eq 'PT0S')}">
-								<c:out value="${dayhourcount.workingHourString}"></c:out>
+							<c:if test="${!(matrixdaytotal.workingHour eq 'PT0S')}">
+								<c:out value="${matrixdaytotal.workingHourString}"></c:out>
 							</c:if>
-							<c:if test="${(dayhourcount.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
+							<c:if test="${(matrixdaytotal.workingHour eq 'PT0S')}">&nbsp;</c:if></td>
 					</c:if>
 				</c:if>
 
@@ -429,11 +429,11 @@
 
 		<tr class="matrix">
             <td colspan="2" class="matrix"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.startofwork.text" /></td>
-            <c:forEach var="dayhourcount" items="${dayhourcounts}">
-						<td class="matrix${dayhourcount.invalidStartOfWork ? ' invalid' : (dayhourcount.publicHoliday ? ' holiday' : (dayhourcount.satSun ? ' weekend' : ''))}"
+            <c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
+						<td class="matrix${matrixdaytotal.invalidStartOfWork ? ' invalid' : (matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : ''))}"
                             style="font-size: 7pt; border-top: 2px black solid;"
                             align="right">
-							<c:out value="${dayhourcount.workingHour eq 'PT0S' ? ' ' : dayhourcount.startOfWorkString}"></c:out>
+							<c:out value="${matrixdaytotal.workingHour eq 'PT0S' ? ' ' : matrixdaytotal.startOfWorkString}"></c:out>
 						</td>
             </c:forEach>
 			<td class="matrix" style="font-size: 7pt; border-top: 2px black solid;" align="right">&nbsp;</td>
@@ -441,11 +441,11 @@
 
 		<tr class="matrix">
 			<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.breakduration.text" /></td>
-			<c:forEach var="dayhourcount" items="${dayhourcounts}">
-						<td class="matrix${dayhourcount.invalidBreakTime ? ' invalid' : (dayhourcount.publicHoliday ? ' holiday' : (dayhourcount.satSun ? ' weekend' : ''))}"
+			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
+						<td class="matrix${matrixdaytotal.invalidBreakTime ? ' invalid' : (matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : ''))}"
 							style="font-size: 7pt; border-top: 1x black solid;"
 							align="right">
-							<c:out value="${dayhourcount.breakDurationString}"></c:out>
+							<c:out value="${matrixdaytotal.breakDurationString}"></c:out>
 						</td>
 			</c:forEach>
 			<td class="matrix" align="right">&nbsp;</td>
