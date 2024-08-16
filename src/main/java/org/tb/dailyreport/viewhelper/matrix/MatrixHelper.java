@@ -439,7 +439,7 @@ public class MatrixHelper {
         // refresh all relevant attributes
         String sOrder = reportForm.getOrder();
         results.put("matrixlines", matrix.getMatrixLines());
-        results.put("dayhourcounts", matrix.getMatrixDayTotalList());
+        results.put("matrixdaytotals", matrix.getMatrixDayTotals());
         results.put("dayhourssumstring", matrix.getTotalWorkingTimeString());
         results.put("dayhourstarget", matrix.getTotalWorkingTimeTarget());
         results.put("dayhourstargetstring", matrix.getTotalWorkingTimeTargetString());
@@ -579,7 +579,7 @@ public class MatrixHelper {
             matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
         }
         results.put("matrixlines", matrix.getMatrixLines());
-        results.put("dayhourcounts", matrix.getMatrixDayTotalList());
+        results.put("matrixdaytotals", matrix.getMatrixDayTotals());
         results.put("dayhourssumstring", matrix.getTotalWorkingTimeString());
         results.put("dayhourstarget", matrix.getTotalWorkingTimeTarget());
         results.put("dayhourstargetstring", matrix.getTotalWorkingTimeTargetString());

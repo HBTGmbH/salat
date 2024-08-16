@@ -10,15 +10,15 @@ import lombok.Getter;
 public class Matrix {
 
     private final List<MatrixLine> matrixLines;
-    private final List<MatrixDayTotal> matrixDayTotalList;
+    private final List<MatrixDayTotal> matrixDayTotals;
     private final Duration totalWorkingTime;
     private final Duration totalWorkingTimeTarget;
     private final Duration totalOvertimeCompensation;
     private final Duration totalWorkingTimeDiff;
 
-    public Matrix(List<MatrixLine> matrixLines, List<MatrixDayTotal> matrixDayTotalList, Duration totalWorkingTime, Duration totalWorkingTimeTarget, Duration totalWorkingTimeDiff, Duration totalOvertimeCompensation) {
+    public Matrix(List<MatrixLine> matrixLines, List<MatrixDayTotal> matrixDayTotals, Duration totalWorkingTime, Duration totalWorkingTimeTarget, Duration totalWorkingTimeDiff, Duration totalOvertimeCompensation) {
         this.matrixLines = matrixLines;
-        this.matrixDayTotalList = matrixDayTotalList;
+        this.matrixDayTotals = matrixDayTotals;
         this.totalWorkingTime = totalWorkingTime;
         this.totalWorkingTimeTarget = totalWorkingTimeTarget;
         this.totalWorkingTimeDiff = totalWorkingTimeDiff;
