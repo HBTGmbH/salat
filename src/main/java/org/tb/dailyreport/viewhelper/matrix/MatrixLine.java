@@ -1,6 +1,5 @@
 package org.tb.dailyreport.viewhelper.matrix;
 
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.time.Duration;
@@ -8,14 +7,18 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
+import lombok.Getter;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 
 public class MatrixLine implements Comparable<MatrixLine> {
+
+    @Getter
     private OrderSummaryData customOrder;
+    @Getter
     private OrderSummaryData subOrder;
-    private double sumHours;
     private long sumMinutes;
+    @Getter
     private final List<BookingDay> bookingDays = new ArrayList<>();
 
     public MatrixLine(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
@@ -38,13 +41,7 @@ public class MatrixLine implements Comparable<MatrixLine> {
     }
 
     public void calcTotals() {
-        var sum = bookingDays.stream().map(BookingDay::getDuration).reduce(Duration.ZERO, Duration::plus);
-        sumMinutes = sum.toMinutes();
-        sumHours = (double)sumMinutes / MINUTES_PER_HOUR;
-    }
-
-    public double getSumHours() {
-        return sumHours;
+        sumMinutes = bookingDays.stream().map(BookingDay::getDuration).mapToLong(Duration::toMinutes).sum();
     }
 
     public void fillBookingDaysWithNull(LocalDate dateFirst, LocalDate dateLast) {
@@ -62,10 +59,6 @@ public class MatrixLine implements Comparable<MatrixLine> {
             }
             loopDate = DateUtils.addDays(loopDate, 1);
         }
-    }
-
-    public List<BookingDay> getBookingDays() {
-        return bookingDays;
     }
 
     @Override
