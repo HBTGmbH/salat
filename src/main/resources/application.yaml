@@ -36,8 +36,8 @@ spring:
         use_sql_comments: true
         generate_statistics: false
         cache:
-          use_second_level_cache: true
-          use_query_cache: true
+          use_second_level_cache: false
+          use_query_cache: false
           region:
             factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
     hibernate:
