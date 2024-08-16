@@ -138,9 +138,6 @@ public class MatrixHelper {
         //filling a list with new or merged MatrixLines
         for (TimereportDTO timeReport : timeReportList) {
             String taskdescription = extendedTaskDescription(timeReport, employeecontract == null);
-            LocalDate date = timeReport.getReferenceday();
-            long durationHours = timeReport.getDuration().toHours();
-            long durationMinutes = timeReport.getDuration().toMinutesPart();
 
             // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Überstundenausgleich" into it
             // -> needed because overtime compensation should be shown in matrix overview! (taskdescription as if-clause in jsp!)
@@ -151,13 +148,12 @@ public class MatrixHelper {
             }
 
             //insert into list if its not empty
-            insertIntoMatrixLine(matrixLines, timeReport, taskdescription, date, durationHours, durationMinutes);
+            insertIntoMatrixLine(matrixLines, timeReport, taskdescription);
         }
 
         //set all empty bookingdays to 0, calculate total for each MatrixLine and sort them
         for (MatrixLine matrixLine : matrixLines) {
-            matrixLine.fillBookingDaysWithNull(dateFirst, dateLast);
-            matrixLine.calcTotals();
+            matrixLine.fillGapsWithEmptyBookingDays(dateFirst, dateLast);
             Collections.sort(matrixLine.getBookingDays());
         }
 
@@ -217,16 +213,15 @@ public class MatrixHelper {
                                   LocalDate dateLast,
                                   Map<LocalDate, Publicholiday> publicHolidayMap,
                                   boolean fillStartAndBreakTime) {
-        //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
+
+        // initialize MatrixDayTotals for each dates between dateFirst and dateLast
 
         List<MatrixDayTotal> dayTotals = new ArrayList<>();
 
-        LocalDate dateLoop = dateFirst;
-        int day = 0;
-        while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
-                || dateLoop.equals(dateLast)) {
-            day++;
-            var dayTotal = new MatrixDayTotal(dateLoop, day, Duration.ZERO);
+        var dates = dateFirst.datesUntil(dateLast.plusDays(1)).toList(); // to include the last date too
+        int day = 1;
+        for(var date: dates) {
+            var dayTotal = new MatrixDayTotal(date, day, Duration.ZERO);
 
             // mark weekends
             var dayOfWeek = dayTotal.getDate().getDayOfWeek();
@@ -236,13 +231,13 @@ public class MatrixHelper {
             dayTotal.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
 
             // mark public holidays
-            if (publicHolidayMap.containsKey(dayTotal.getDate())) {
+            if (publicHolidayMap.containsKey(date)) {
                 dayTotal.setPublicHoliday(true);
-                dayTotal.setPublicHolidayName(publicHolidayMap.get(dayTotal.getDate()).getName());
+                dayTotal.setPublicHolidayName(publicHolidayMap.get(date).getName());
             }
 
             dayTotals.add(dayTotal);
-            dateLoop = DateUtils.addDays(dateLoop, 1);
+            day++;
         }
 
         if (fillStartAndBreakTime) {
@@ -250,13 +245,14 @@ public class MatrixHelper {
             var invalidStartOfWorkDays = timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast);
             Map<LocalDate, Workingday> workingDays = queryWorkingDays(dateFirst, dateLast, employeeContractId);
             for(var dayTotal : dayTotals) {
-                var workingDay = workingDays.get(dayTotal.getDate());
+                var date = dayTotal.getDate();
+                var workingDay = workingDays.get(date);
                 if (workingDay != null) {
                     dayTotal.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * MINUTES_PER_HOUR);
                     dayTotal.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * 60L);
                 }
-                boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(dateLoop) && invalidStartOfWorkDays.get(dateLoop) != NONE;
-                boolean invalidBreakTime = invalidBreakTimes.containsKey(dateLoop) && invalidBreakTimes.get(dateLoop) != NONE;
+                boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(date) && invalidStartOfWorkDays.get(date) != NONE;
+                boolean invalidBreakTime = invalidBreakTimes.containsKey(date) && invalidBreakTimes.get(date) != NONE;
                 dayTotal.setInvalidStartOfWork(invalidStartOfWork);
                 dayTotal.setInvalidBreakTime(invalidBreakTime);
             }
@@ -278,13 +274,12 @@ public class MatrixHelper {
         for (MatrixLine matrixLine : matrixLines) {
             for (BookingDay bookingDay : matrixLine.getBookingDays()) {
                 MatrixDayTotal matrixDayTotal = dayHourCountMap.get(bookingDay.getDate());
-                matrixDayTotal.addWorkingHour(bookingDay.getDuration());
+                matrixDayTotal.addWorkingTime(bookingDay.getDuration());
             }
         }
     }
 
-    private void insertIntoMatrixLine(List<MatrixLine> matrixLines, TimereportDTO timeReport, String taskdescription,
-                                 LocalDate date, long durationHours, long durationMinutes) {
+    private void insertIntoMatrixLine(List<MatrixLine> matrixLines, TimereportDTO timeReport, String taskdescription) {
         // Update existing MatrixLine
         for (MatrixLine matrixLine : matrixLines) {
             if(matrixLine.matchesOrder(timeReport.getCustomerorderSign(), timeReport.getSuborderSign())) {
@@ -295,7 +290,7 @@ public class MatrixHelper {
         // add a new MatrixLine
         var customerorderData = new OrderSummaryData(timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
         var suborderData = new OrderSummaryData(timeReport.getSuborderSign(), timeReport.getSuborderDescription());
-        matrixLines.add(new MatrixLine(customerorderData, suborderData, taskdescription, date, durationHours, durationMinutes));
+        matrixLines.add(new MatrixLine(customerorderData, suborderData, taskdescription, timeReport.getReferenceday(), timeReport.getDuration()));
     }
 
     private void filterInvoiceable(List<TimereportDTO> timeReportList, boolean invoiceable, boolean nonInvoiceable) {

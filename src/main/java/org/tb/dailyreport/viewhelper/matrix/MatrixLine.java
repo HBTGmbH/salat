@@ -1,14 +1,12 @@
 package org.tb.dailyreport.viewhelper.matrix;
 
-import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import lombok.Getter;
-import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 
 public class MatrixLine implements Comparable<MatrixLine> {
@@ -17,47 +15,34 @@ public class MatrixLine implements Comparable<MatrixLine> {
     private OrderSummaryData customOrder;
     @Getter
     private OrderSummaryData subOrder;
-    private long sumMinutes;
+    private Duration total;
     @Getter
     private final List<BookingDay> bookingDays = new ArrayList<>();
 
-    public MatrixLine(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, long durationHours, long durationMinutes) {
+    public MatrixLine(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, Duration duration) {
         super();
         this.subOrder = subOrder;
         this.customOrder = customOrder;
-        addBookingDay(date, durationHours, durationMinutes, taskdescription);
+        total = Duration.ZERO;
+        addBookingDay(date, duration, taskdescription);
     }
 
-    public int getCountOfDays() {
-        return bookingDays.size();
-    }
-
-    public void addBookingDay(LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
-        bookingDays.add(new BookingDay(date, durationHours, durationMinutes, taskdescription));
+    public void addBookingDay(LocalDate date, Duration duration, String taskdescription) {
+        bookingDays.add(new BookingDay(date, duration, taskdescription));
+        total = total.plus(duration);
     }
 
     public void addEmptyBookingDay(LocalDate date) {
         bookingDays.add(new BookingDay(date));
     }
 
-    public void calcTotals() {
-        sumMinutes = bookingDays.stream().map(BookingDay::getDuration).mapToLong(Duration::toMinutes).sum();
-    }
-
-    public void fillBookingDaysWithNull(LocalDate dateFirst, LocalDate dateLast) {
-        LocalDate loopDate = dateFirst;
-        while ((loopDate.isAfter(dateFirst) && loopDate.isBefore(dateLast)) || loopDate.equals(dateFirst) || loopDate.equals(dateLast)) {
-            boolean dateAvailable = false;
-            for (BookingDay bookingDay : bookingDays) {
-                if (bookingDay.getDate().equals(loopDate)) {
-                    dateAvailable = true;
-                    break;
-                }
+    public void fillGapsWithEmptyBookingDays(LocalDate dateFirst, LocalDate dateLast) {
+        var dates = dateFirst.datesUntil(dateLast.plusDays(1)).toList(); // to include the last date too
+        for(var date: dates) {
+            var bookingFound = bookingDays.stream().map(BookingDay::getDate).anyMatch(d -> d.equals(date));
+            if (!bookingFound) {
+                addEmptyBookingDay(date);
             }
-            if (!dateAvailable) {
-                addEmptyBookingDay(loopDate);
-            }
-            loopDate = DateUtils.addDays(loopDate, 1);
         }
     }
 
@@ -81,8 +66,8 @@ public class MatrixLine implements Comparable<MatrixLine> {
         return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo(o.customOrder.getSign() + o.subOrder.getSign());
     }
 
-    public String getSumString() {
-        return timeFormatMinutes(sumMinutes);
+    public String getTotalString() {
+        return DurationUtils.format(total);
     }
 
     public boolean matchesOrder(String customerorderSign, String suborderSign) {
@@ -92,12 +77,13 @@ public class MatrixLine implements Comparable<MatrixLine> {
     public void addTimereport(TimereportDTO timeReport, String taskdescription) {
         for (BookingDay bookingDay : bookingDays) {
             if (bookingDay.getDate().equals(timeReport.getReferenceday())) {
-                bookingDay.addBooking(timeReport.getDurationhours(), timeReport.getDurationminutes(), taskdescription);
+                bookingDay.addBooking(timeReport.getDuration(), taskdescription);
+                total = total.plus(timeReport.getDuration());
                 return;
             }
         }
         //if bookingday is not available, add new bookingday
-        addBookingDay(timeReport.getReferenceday(), timeReport.getDurationhours(), timeReport.getDurationminutes(), taskdescription);
+        addBookingDay(timeReport.getReferenceday(), timeReport.getDuration(), taskdescription);
     }
 
 

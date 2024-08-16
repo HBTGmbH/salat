@@ -10,6 +10,7 @@ import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 @Data
 public class MatrixDayTotal {
+
     private int day;
     private Duration workingTime;
     private LocalDate date;
@@ -28,7 +29,7 @@ public class MatrixDayTotal {
         this.workingTime = workingTime;
     }
 
-    public String getWorkingHourString() {
+    public String getWorkingTimeString() {
         return DurationUtils.format(workingTime);
     }
 
@@ -44,7 +45,11 @@ public class MatrixDayTotal {
         return breakMinutes != null ? timeFormatMinutes(breakMinutes) : null;
     }
 
-    public void addWorkingHour(Duration duration) {
-        workingTime = workingTime.plus(duration);
+    public void addWorkingTime(Duration workingTime) {
+        this.workingTime = this.workingTime.plus(workingTime);
+    }
+
+    public boolean isZeroWorkingTime() {
+        return workingTime == null || workingTime.isZero();
     }
 }

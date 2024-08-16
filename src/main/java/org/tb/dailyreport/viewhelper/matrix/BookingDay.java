@@ -26,10 +26,9 @@ public class BookingDay implements Comparable<BookingDay> {
         bookingCount = 0;
     }
 
-    public BookingDay(LocalDate date, long durationHours, long durationMinutes, String taskdescription) {
+    public BookingDay(LocalDate date, Duration duration, String taskdescription) {
         this.date = date;
-        duration = Duration.ofHours(durationHours);
-        duration = duration.plusMinutes(durationMinutes);
+        this.duration = duration;
         satSun = false;
         publicHoliday = false;
         this.taskdescription = taskdescription;
@@ -44,9 +43,8 @@ public class BookingDay implements Comparable<BookingDay> {
         return DurationUtils.format(duration);
     }
 
-    public void addBooking(long durationHours, long durationMinutes, String taskdescription) {
-        duration = duration.plusHours(durationHours);
-        duration = duration.plusMinutes(durationMinutes);
+    public void addBooking(Duration duration, String taskdescription) {
+        this.duration = duration.plus(duration);
         this.taskdescription += "\n" + taskdescription;
         bookingCount++;
     }

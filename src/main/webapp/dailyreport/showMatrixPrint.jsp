@@ -117,7 +117,7 @@
 				</td>
 			</c:forEach>
 			<td class="matrix" align="right"><c:out
-				value="${matrixline.sumString}"></c:out></td>
+				value="${matrixline.totalString}"></c:out></td>
 		</tr>
 	</c:forEach>
 	<tr class="matrix">
@@ -128,37 +128,27 @@
 
 			<c:if test="${matrixdaytotal.satSun==true}">
 				<c:if test="${matrixdaytotal.publicHoliday==true}">
-					<td class="matrix"
-						style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;"
-						align="right"><c:if
-						test="${!(matrixdaytotal.workingHour eq '0.0')}">
-						<c:out value="${matrixdaytotal.workingHourString}"></c:out>
-					</c:if><c:if test="${(matrixdaytotal.workingHour eq '0.0')}">&nbsp;</c:if></td>
+					<td class="matrix" style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;" align="right">
+						<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
+					</td>
 				</c:if>
 				<c:if test="${matrixdaytotal.publicHoliday==false}">
-					<td class="matrix"
-						style="font-size: 6pt;border-top:2px black solid;background-color:lightgrey;"
-						align="right"><c:if
-						test="${!(matrixdaytotal.workingHour eq '0.0')}">
-						<c:out value="${matrixdaytotal.workingHourString}"></c:out>
-					</c:if><c:if test="${(matrixdaytotal.workingHour eq '0.0')}">&nbsp;</c:if></td>
+					<td class="matrix" style="font-size: 6pt;border-top:2px black solid;background-color:lightgrey;" align="right">
+						<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
+					</td>
 				</c:if>
 			</c:if>
 			<c:if test="${matrixdaytotal.satSun==false}">
 				<c:if test="${matrixdaytotal.publicHoliday==true}">
-					<td class="matrix"
-						style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;"
-						align="right"><c:if
-						test="${!(matrixdaytotal.workingHour eq '0.0')}">
-						<c:out value="${matrixdaytotal.workingHourString}"></c:out>
-					</c:if><c:if test="${(matrixdaytotal.workingHour eq '0.0')}">&nbsp;</c:if></td>
+					<td class="matrix" style="font-size: 6pt;border-top:2px black solid;background-color:c1c1c1;" align="right">
+						<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
+					</td>
 				</c:if>
 				<c:if test="${matrixdaytotal.publicHoliday==false}">
 					<td class="matrix"
-						style="font-size: 6pt;border-top:2px black solid;" align="right"><c:if
-						test="${!(matrixdaytotal.workingHour eq '0.0')}">
-						<c:out value="${matrixdaytotal.workingHourString}"></c:out>
-					</c:if><c:if test="${(matrixdaytotal.workingHour eq '0.0')}">&nbsp;</c:if></td>
+						style="font-size: 6pt;border-top:2px black solid;" align="right">
+						<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
+					</td>
 				</c:if>
 			</c:if>
 
