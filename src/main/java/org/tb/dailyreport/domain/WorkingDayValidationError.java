@@ -9,6 +9,8 @@ import java.time.LocalDate;
 @Getter
 public class WorkingDayValidationError {
 
+    public static final WorkingDayValidationError NONE = new WorkingDayValidationError(null, null);
+
     private LocalDate date;
     private String message;
 }
