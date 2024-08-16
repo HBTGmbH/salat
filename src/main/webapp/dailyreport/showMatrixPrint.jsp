@@ -154,7 +154,7 @@
 
 		</c:forEach>
 		<td class="matrix bold" style="border-top:2px black solid;"
-			align="right"><c:out value="${dayhourssumstring}"></c:out></td>
+			align="right"><c:out value="${totalworkingtimestring}"></c:out></td>
 	</tr>
 </table>
 <br>
