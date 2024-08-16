@@ -212,23 +212,35 @@ public class TimereportService {
 
   public List<WorkingDayValidationError> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     final List<WorkingDayValidationError> errors = new ArrayList<>();
-    timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
-            .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
-            .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
-            .forEach((date, timeReports) -> {
-              WorkingDayValidationError error = validateBeginOfWorkingDay(date, employeeContractId, timeReports);
-              if (error != NONE) {
-                errors.add(error);
-              }
-              error = validateBreakTime(date, employeeContractId, timeReports);
-              if (error != NONE) {
-                errors.add(error);
-              }
-              error = validateRestTime(date, employeeContractId);
-              if (error != NONE) {
-                errors.add(error);
-              }
-            });
+
+    // restricted/external users are not in scope of regulations by law
+    if(needsWorkingHoursLawValidation(employeeContractId)) {
+      var timeReportsByDate = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
+          .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
+          .collect(groupingBy(TimereportDTO::getReferenceday));
+
+      if(!timeReportsByDate.isEmpty()) {
+        var begin = timeReportsByDate.keySet().stream().min(LocalDate::compareTo).orElseThrow();
+        var end = timeReportsByDate.keySet().stream().max(LocalDate::compareTo).orElseThrow();
+        var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, begin, end).stream().collect(toMap(Workingday::getRefday, identity()));
+        var dates = timeReportsByDate.keySet().stream().sorted().toList();
+        for(var date : dates) {
+          WorkingDayValidationError error = validateBeginOfWorkingDay(date, timeReportsByDate, workingDays);
+          if (error != NONE) {
+            errors.add(error);
+          }
+          error = validateBreakTime(date, timeReportsByDate, workingDays);
+          if (error != NONE) {
+            errors.add(error);
+          }
+          error = validateRestTime(date, timeReportsByDate, workingDays);
+          if (error != NONE) {
+            errors.add(error);
+          }
+        }
+      }
+    }
+
     return errors;
   }
 
@@ -510,25 +522,26 @@ public class TimereportService {
     });
   }
 
-  public Map<LocalDate, WorkingDayValidationError> validateBreakTimes(long employeeContractId, LocalDate minDate, LocalDate maxDate) {
+  public Map<LocalDate, WorkingDayValidationError> validateBreakTimes(long employeeContractId, LocalDate begin, LocalDate end) {
     if(!needsWorkingHoursLawValidation(employeeContractId)) {
       return Map.of(); // restricted/external users are not in scope of regulations by law
     }
 
-    var timeReports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, minDate, maxDate);
+    var timeReports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, begin, end);
     var timeReportsByDate = timeReports.stream().collect(groupingBy(TimereportDTO::getReferenceday));
+    var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, begin, end).stream().collect(toMap(Workingday::getRefday, identity()));
+
     Set<LocalDate> dates = timeReportsByDate.keySet();
-    var errors = dates.stream().collect(toMap(identity(), date -> validateBreakTime(date, employeeContractId, timeReportsByDate.get(date))));
+    var errors = dates.stream().collect(toMap(identity(), date -> validateBreakTime(date, timeReportsByDate, workingDays)));
     return errors;
   }
 
-  private WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
-    if(!needsWorkingHoursLawValidation(employeeContractId)) {
-      return NONE; // restricted/external users are not in scope of regulations by law
-    }
-
-    Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
-    Duration workDurationSum = timeReports.stream()
+  private WorkingDayValidationError validateBreakTime(LocalDate date,
+      Map<LocalDate, List<TimereportDTO>> timeReports,
+      Map<LocalDate, Workingday> workingDays) {
+    if(!timeReports.containsKey(date)) return NONE;
+    Workingday workingDay = workingDays.get(date);
+    Duration workDurationSum = timeReports.get(date).stream()
         .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
@@ -543,17 +556,16 @@ public class TimereportService {
     return NONE;
   }
 
-  private WorkingDayValidationError validateRestTime(LocalDate date, long employeeContractId) {
-    if(!needsWorkingHoursLawValidation(employeeContractId)) {
-      return null; // restricted/external users are not in scope of regulations by law
-    }
-
-    Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
-    Workingday theDayBefore = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date.minusDays(1), employeeContractId);
-    if (theDayBefore == null) {
+  private WorkingDayValidationError validateRestTime(LocalDate date,
+      Map<LocalDate, List<TimereportDTO>> timeReports,
+      Map<LocalDate, Workingday> workingDays) {
+    if(!timeReports.containsKey(date)) return NONE;
+    Workingday workingDay = workingDays.get(date);
+    Workingday theDayBefore = workingDays.get(date.minusDays(1));
+    if (workingDay == null || theDayBefore == null) {
       return NONE;
     }
-    Duration workDurationSum = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, theDayBefore.getRefday()).stream()
+    Duration workDurationSum = timeReports.get(date).stream()
             .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
             .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus);
@@ -567,32 +579,32 @@ public class TimereportService {
     return NONE;
   }
 
-  public Map<LocalDate, WorkingDayValidationError> validateBeginOfWorkingDays(long employeeContractId, LocalDate minDate, LocalDate maxDate) {
+  public Map<LocalDate, WorkingDayValidationError> validateBeginOfWorkingDays(long employeeContractId, LocalDate begin, LocalDate end) {
     if(!needsWorkingHoursLawValidation(employeeContractId)) {
       return Map.of(); // restricted/external users are not in scope of regulations by law
     }
 
-    var timeReports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, minDate, maxDate);
+    var timeReports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, begin, end);
     var timeReportsByDate = timeReports.stream().collect(groupingBy(TimereportDTO::getReferenceday));
+    var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, begin, end).stream().collect(toMap(Workingday::getRefday, identity()));
 
     Set<LocalDate> dates = timeReportsByDate.keySet();
-    var errors = dates.stream().collect(toMap(identity(), date -> validateBeginOfWorkingDay(date, employeeContractId, timeReportsByDate.get(date))));
+    var errors = dates.stream().collect(toMap(identity(), date -> validateBeginOfWorkingDay(date, timeReportsByDate, workingDays)));
     return errors;
   }
 
-  private WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
-    if(!needsWorkingHoursLawValidation(employeeContractId)) {
-      return NONE; // restricted/external users are not in scope of regulations by law
-    }
-
-    Duration workDurationSum = timeReports.stream()
+  private WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date,
+      Map<LocalDate, List<TimereportDTO>> timereports,
+      Map<LocalDate, Workingday> workingDays) {
+    if(!timereports.containsKey(date)) return NONE;
+    Duration workDurationSum = timereports.get(date).stream()
         .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
     if(!workDurationSum.isPositive()) {
       return NONE; // not worked = no validation
     }
-    Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
+    Workingday workingDay = workingDays.get(date);
     if (workingDay == null || workingDay.getStartOfWorkingDay() == null) {
       return new WorkingDayValidationError(date, "form.release.error.beginofworkingday.required");
     }
