@@ -20,7 +20,6 @@ import org.tb.order.domain.OrderType;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -53,8 +52,7 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(null);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of());
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -76,9 +74,14 @@ class TimereportServiceTest {
             // given no timeReports in the specified timeframe
             final long employeeContractId = 1L;
             final LocalDate date = LocalDate.of(2024, 1, 1);
-            final List<TimereportDTO> result = new ArrayList<>();
 
-            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(List.of());
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -103,8 +106,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -135,8 +137,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -167,8 +168,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -201,8 +201,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -236,8 +235,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -274,8 +272,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -311,8 +308,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -350,8 +346,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -390,8 +385,7 @@ class TimereportServiceTest {
             workingday.setRefday(date);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId)).thenReturn(workingday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)).thenReturn(result);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -433,10 +427,8 @@ class TimereportServiceTest {
             yesterday.setRefday(yesterdayDate);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(releaseDateResult);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate, employeeContractId)).thenReturn(releaseDay);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(yesterdayDate, employeeContractId)).thenReturn(yesterday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, releaseDate)).thenReturn(releaseDateResult);
             when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, yesterdayDate)).thenReturn(yesterdayDateResult);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, yesterdayDate, releaseDate)).thenReturn(List.of(yesterday, releaseDay));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -460,10 +452,10 @@ class TimereportServiceTest {
             final LocalDate releaseDate = LocalDate.of(2024, 1, 31);
             final LocalDate yesterdayDate = LocalDate.of(2024, 1, 30);
             final TimereportDTO timeReport = TimereportDTO.builder()
-                    .orderType(OrderType.STANDARD)
-                    .referenceday(releaseDate)
-                    .duration(Duration.ofHours(6).minusMinutes(1))
-                    .build();
+                .orderType(OrderType.STANDARD)
+                .referenceday(releaseDate)
+                .duration(Duration.ofHours(6).minusMinutes(1))
+                .build();
             final List<TimereportDTO> result = List.of(timeReport);
             final Workingday releaseDay = new Workingday();
             releaseDay.setStarttimehour(6);
@@ -473,9 +465,8 @@ class TimereportServiceTest {
             yesterday.setRefday(yesterdayDate);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(result);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(releaseDate, employeeContractId)).thenReturn(releaseDay);
-            when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(yesterdayDate, employeeContractId)).thenReturn(yesterday);
-            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, releaseDate)).thenReturn(result);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, yesterdayDate)).thenReturn(List.of());
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, yesterdayDate, releaseDate)).thenReturn(List.of(yesterday, releaseDay));
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -503,6 +494,12 @@ class TimereportServiceTest {
             final List<TimereportDTO> result = List.of(timeReport);
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);

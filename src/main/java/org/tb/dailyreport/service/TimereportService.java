@@ -1,5 +1,6 @@
 package org.tb.dailyreport.service;
 
+import java.util.HashMap;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -220,28 +221,29 @@ public class TimereportService {
           .collect(groupingBy(TimereportDTO::getReferenceday));
 
       if(!timeReportsByDate.isEmpty()) {
+
+        var dates = timeReportsByDate.keySet().stream().sorted().toList();
+
+        // load timereports from the day before (which is not open anymore thus not already loaded)
         var begin = timeReportsByDate.keySet().stream().min(LocalDate::compareTo).orElseThrow();
+        var extendedTimeReportsByDate = new HashMap<>(timeReportsByDate);
+        LocalDate theDayBefore = begin.minusDays(1);
+        extendedTimeReportsByDate.put(theDayBefore, timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, theDayBefore));
+        timeReportsByDate = extendedTimeReportsByDate;
+
+        begin = timeReportsByDate.keySet().stream().min(LocalDate::compareTo).orElseThrow();
         var end = timeReportsByDate.keySet().stream().max(LocalDate::compareTo).orElseThrow();
         var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, begin, end).stream().collect(toMap(Workingday::getRefday, identity()));
-        var dates = timeReportsByDate.keySet().stream().sorted().toList();
+
         for(var date : dates) {
-          WorkingDayValidationError error = validateBeginOfWorkingDay(date, timeReportsByDate, workingDays);
-          if (error != NONE) {
-            errors.add(error);
-          }
-          error = validateBreakTime(date, timeReportsByDate, workingDays);
-          if (error != NONE) {
-            errors.add(error);
-          }
-          error = validateRestTime(date, timeReportsByDate, workingDays);
-          if (error != NONE) {
-            errors.add(error);
-          }
+          errors.add(validateBeginOfWorkingDay(date, timeReportsByDate, workingDays));
+          errors.add(validateBreakTime(date, timeReportsByDate, workingDays));
+          errors.add(validateRestTime(date, timeReportsByDate, workingDays));
         }
       }
     }
 
-    return errors;
+    return errors.stream().filter(e -> e != NONE).toList(); // no not return NONE error objects -> internal knowledge
   }
 
   private void releaseTimereport(long timereportId, String releasedBy) {
@@ -565,14 +567,14 @@ public class TimereportService {
     if (workingDay == null || theDayBefore == null) {
       return NONE;
     }
-    Duration workDurationSum = timeReports.get(date).stream()
+    Duration theDayBeforeWorkDurationSum = timeReports.get(theDayBefore.getRefday()).stream()
             .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
             .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus);
-    if(!workDurationSum.isPositive()) return NONE; // not worked = no validation
-    LocalDateTime endOfWorkingDay = theDayBefore.getStartOfWorkingDay().plus(theDayBefore.getBreakLength()).plus(workDurationSum);
+    if(!theDayBeforeWorkDurationSum.isPositive()) return NONE; // not worked = no validation
+    LocalDateTime theDayBeforeEndOfWorkingDay = theDayBefore.getStartOfWorkingDay().plus(theDayBefore.getBreakLength()).plus(theDayBeforeWorkDurationSum);
     LocalDateTime startOfWorkingDay = workingDay.getStartOfWorkingDay();
-    Duration restTime = Duration.between(endOfWorkingDay, startOfWorkingDay);
+    Duration restTime = Duration.between(theDayBeforeEndOfWorkingDay, startOfWorkingDay);
     if (restTime.toMinutes() < REST_PERIOD_IN_MINUTES) {
       return new WorkingDayValidationError(workingDay.getRefday(), "form.release.error.resttime.length");
     }
