@@ -197,7 +197,7 @@ public class GlobalConstants {
     public static final int STATUSREPORT_SORT_EXTRA = 2;
     public static final int STATUSREPORT_SORT_FINAL = 3;
 
-    public static final int MINUTES_PER_HOUR = 60;
+    public static final long MINUTES_PER_HOUR = 60;
 
     public static final char GENDER_MALE = 'm';
     public static final char GENDER_FEMALE = 'f';
@@ -223,7 +223,7 @@ public class GlobalConstants {
     public static final int NINE_HOURS_IN_MINUTES = 540;
     public static final int BREAK_MINUTES_AFTER_SIX_HOURS = 30;
     public static final int BREAK_MINUTES_AFTER_NINE_HOURS = 45;
-    public static final int REST_PERIOD_IN_MINUTES = 11 * MINUTES_PER_HOUR;
+    public static final long REST_PERIOD_IN_MINUTES = 11 * MINUTES_PER_HOUR;
 
     public static final int DEFAULT_WORK_DAY_START = 9;
 }

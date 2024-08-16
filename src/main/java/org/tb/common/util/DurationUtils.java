@@ -35,7 +35,7 @@ public class DurationUtils {
     if(negative) {
       value = value.substring(1);
     }
-    int minutes = 0;
+    long minutes = 0;
     if(value.contains(":")) {
       String[] split = value.split(":");
       if(!split[0].isEmpty()) {

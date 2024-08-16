@@ -25,6 +25,7 @@ import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMP
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES;
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES;
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES;
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
@@ -162,40 +163,39 @@ public class MatrixHelper {
 
         Map<LocalDate, Publicholiday> publicHolidayMap = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast).stream().collect(toMap(Publicholiday::getRefdate, identity()));
 
-        var dayHoursCountList = initializeDayHoursCount(employeeContractId, dateFirst, dateLast, publicHolidayMap, startAndBreakTime);
-        var dayHoursCountMap = dayHoursCountList.stream().collect(toMap(DayAndWorkingHourCount::getDate, identity()));
+        var dayTotals = initializeDayTotals(employeeContractId, dateFirst, dateLast, publicHolidayMap, startAndBreakTime);
+        var dayTotalsMap = dayTotals.stream().collect(toMap(MatrixDayTotal::getDate, identity()));
 
 
         //setting publicholidays(status and name) and weekend for bookingday in MatrixLine
-        markBookingDays(matrixLines, dayHoursCountMap);
-        sumUpDayTotals(matrixLines, dayHoursCountMap);
+        markBookingDays(matrixLines, dayTotalsMap);
+        sumUpDayTotals(matrixLines, dayTotalsMap);
 
         //sort MatrixLines by custom- and subordersign
         Collections.sort(matrixLines);
 
         //calculate dayhourssum
-        Duration dayHoursSum = Duration.ZERO;
-        for (DayAndWorkingHourCount dayAndWorkingHourCount : dayHoursCountList) {
-            dayHoursSum = dayHoursSum.plus(dayAndWorkingHourCount.getWorkingHour());
-        }
+        Duration totalWorkingTime = dayTotals.stream()
+            .map(MatrixDayTotal::getWorkingTime)
+            .reduce(Duration.ZERO, Duration::plus);
 
-        Duration dayHoursTarget = null;
-        Duration dayHoursDiff = null;
-        Duration overtimeCompensation = null;
+        Duration totalWorkingTimeTarget = null;
+        Duration totalWorkingTimeDiff = null;
+        Duration totalOvertimeCompensation = null;
 
         if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES && employeecontract != null) {
             //calculate dayhourstarget
-            var workdayCount = dayHoursCountList.stream().filter(d -> !d.isPublicHoliday() && !d.isSatSun()).count();
-            dayHoursTarget = employeecontract.getDailyWorkingTime().multipliedBy(workdayCount);
+            var workdayCount = dayTotals.stream().filter(d -> !d.isPublicHoliday() && !d.isSatSun()).count();
+            totalWorkingTimeTarget = employeecontract.getDailyWorkingTime().multipliedBy(workdayCount);
 
             // calculate overtime compensation
-            overtimeCompensation = overtimeService.calculateOvertimeCompensation(employeecontract.getId(), dateFirst, dateLast);
+            totalOvertimeCompensation = overtimeService.calculateOvertimeCompensation(employeecontract.getId(), dateFirst, dateLast);
 
             //calculate dayhoursdiff
-            dayHoursDiff = dayHoursSum.minus(dayHoursTarget).plus(overtimeCompensation);
+            totalWorkingTimeDiff = totalWorkingTime.minus(totalWorkingTimeTarget).plus(totalOvertimeCompensation);
         }
 
-        return new Matrix(matrixLines, dayHoursCountList, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
+        return new Matrix(matrixLines, dayTotals, totalWorkingTime, totalWorkingTimeTarget, totalWorkingTimeDiff, totalOvertimeCompensation);
     }
 
     private String extendedTaskDescription(TimereportDTO tr, boolean withSign) {
@@ -212,36 +212,36 @@ public class MatrixHelper {
         return sb.toString();
     }
 
-    private List<DayAndWorkingHourCount> initializeDayHoursCount(long employeeContractId,
+    private List<MatrixDayTotal> initializeDayTotals(long employeeContractId,
                                   LocalDate dateFirst,
                                   LocalDate dateLast,
                                   Map<LocalDate, Publicholiday> publicHolidayMap,
                                   boolean fillStartAndBreakTime) {
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
 
-        List<DayAndWorkingHourCount> dayHourCountList = new ArrayList<>();
+        List<MatrixDayTotal> dayTotals = new ArrayList<>();
 
         LocalDate dateLoop = dateFirst;
         int day = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
-            var workingHourCount = new DayAndWorkingHourCount(day, Duration.ZERO, dateLoop);
+            var dayTotal = new MatrixDayTotal(dateLoop, day, Duration.ZERO);
 
             // mark weekends
-            var dayOfWeek = workingHourCount.getDate().getDayOfWeek();
+            var dayOfWeek = dayTotal.getDate().getDayOfWeek();
             if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
-                workingHourCount.setSatSun(true);
+                dayTotal.setSatSun(true);
             }
-            workingHourCount.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
+            dayTotal.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
 
             // mark public holidays
-            if (publicHolidayMap.containsKey(workingHourCount.getDate())) {
-                workingHourCount.setPublicHoliday(true);
-                workingHourCount.setPublicHolidayName(publicHolidayMap.get(workingHourCount.getDate()).getName());
+            if (publicHolidayMap.containsKey(dayTotal.getDate())) {
+                dayTotal.setPublicHoliday(true);
+                dayTotal.setPublicHolidayName(publicHolidayMap.get(dayTotal.getDate()).getName());
             }
 
-            dayHourCountList.add(workingHourCount);
+            dayTotals.add(dayTotal);
             dateLoop = DateUtils.addDays(dateLoop, 1);
         }
 
@@ -249,22 +249,22 @@ public class MatrixHelper {
             var invalidBreakTimes = timereportService.validateBreakTimes(employeeContractId, dateFirst, dateLast);
             var invalidStartOfWorkDays = timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast);
             Map<LocalDate, Workingday> workingDays = queryWorkingDays(dateFirst, dateLast, employeeContractId);
-            for(var dayHourCount : dayHourCountList) {
-                var workingDay = workingDays.get(dayHourCount.getDate());
+            for(var dayTotal : dayTotals) {
+                var workingDay = workingDays.get(dayTotal.getDate());
                 if (workingDay != null) {
-                    dayHourCount.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * 60L);
-                    dayHourCount.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * 60L);
+                    dayTotal.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * MINUTES_PER_HOUR);
+                    dayTotal.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * 60L);
                 }
                 boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(dateLoop) && invalidStartOfWorkDays.get(dateLoop) != NONE;
                 boolean invalidBreakTime = invalidBreakTimes.containsKey(dateLoop) && invalidBreakTimes.get(dateLoop) != NONE;
-                dayHourCount.setInvalidStartOfWork(invalidStartOfWork);
-                dayHourCount.setInvalidBreakTime(invalidBreakTime);
+                dayTotal.setInvalidStartOfWork(invalidStartOfWork);
+                dayTotal.setInvalidBreakTime(invalidBreakTime);
             }
         }
-        return dayHourCountList;
+        return dayTotals;
     }
 
-    private void markBookingDays(List<MatrixLine> matrixLines, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
+    private void markBookingDays(List<MatrixLine> matrixLines, Map<LocalDate, MatrixDayTotal> dayHourCountMap) {
         for (MatrixLine matrixLine : matrixLines) {
             for (BookingDay bookingDay : matrixLine.getBookingDays()) {
                 var dayHourCount = dayHourCountMap.get(bookingDay.getDate());
@@ -274,11 +274,11 @@ public class MatrixHelper {
         }
     }
 
-    private void sumUpDayTotals(List<MatrixLine> matrixLines, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
+    private void sumUpDayTotals(List<MatrixLine> matrixLines, Map<LocalDate, MatrixDayTotal> dayHourCountMap) {
         for (MatrixLine matrixLine : matrixLines) {
             for (BookingDay bookingDay : matrixLine.getBookingDays()) {
-                DayAndWorkingHourCount dayAndWorkingHourCount = dayHourCountMap.get(bookingDay.getDate());
-                dayAndWorkingHourCount.addWorkingHour(bookingDay.getDuration());
+                MatrixDayTotal matrixDayTotal = dayHourCountMap.get(bookingDay.getDate());
+                matrixDayTotal.addWorkingHour(bookingDay.getDuration());
             }
         }
     }
@@ -439,14 +439,14 @@ public class MatrixHelper {
         // refresh all relevant attributes
         String sOrder = reportForm.getOrder();
         results.put("matrixlines", matrix.getMatrixLines());
-        results.put("dayhourcounts", matrix.getDayAndWorkingHourCountList());
-        results.put("dayhourssumstring", matrix.getDayHoursSumString());
-        results.put("dayhourstarget", matrix.getDayHoursTarget());
-        results.put("dayhourstargetstring", matrix.getDayHoursTargetString());
-        results.put("overtimecompensation", matrix.getOvertimeCompensation());
-        results.put("overtimecompensationstring", matrix.getOvertimeCompensationString());
-        results.put("dayhoursdiff", matrix.getDayHoursDiff());
-        results.put("dayhoursdiffstring", matrix.getDayHoursDiffString());
+        results.put("dayhourcounts", matrix.getMatrixDayTotalList());
+        results.put("dayhourssumstring", matrix.getTotalWorkingTimeString());
+        results.put("dayhourstarget", matrix.getTotalWorkingTimeTarget());
+        results.put("dayhourstargetstring", matrix.getTotalWorkingTimeTargetString());
+        results.put("overtimecompensation", matrix.getTotalOvertimeCompensation());
+        results.put("overtimecompensationstring", matrix.getTotalOvertimeCompensationString());
+        results.put("dayhoursdiff", matrix.getTotalWorkingTimeDiff());
+        results.put("dayhoursdiffstring", matrix.getTotalWorkingTimeDiffString());
         results.put("currentOrder", sOrder == null ? "ALL ORDERS" : sOrder);
         results.put("currentDay", reportForm.getFromDay());
         results.put("currentMonth", reportForm.getFromMonth());
@@ -579,14 +579,14 @@ public class MatrixHelper {
             matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
         }
         results.put("matrixlines", matrix.getMatrixLines());
-        results.put("dayhourcounts", matrix.getDayAndWorkingHourCountList());
-        results.put("dayhourssumstring", matrix.getDayHoursSumString());
-        results.put("dayhourstarget", matrix.getDayHoursTarget());
-        results.put("dayhourstargetstring", matrix.getDayHoursTargetString());
-        results.put("overtimecompensation", matrix.getOvertimeCompensation());
-        results.put("overtimecompensationstring", matrix.getOvertimeCompensationString());
-        results.put("dayhoursdiff", matrix.getDayHoursDiff());
-        results.put("dayhoursdiffstring", matrix.getDayHoursDiffString());
+        results.put("dayhourcounts", matrix.getMatrixDayTotalList());
+        results.put("dayhourssumstring", matrix.getTotalWorkingTimeString());
+        results.put("dayhourstarget", matrix.getTotalWorkingTimeTarget());
+        results.put("dayhourstargetstring", matrix.getTotalWorkingTimeTargetString());
+        results.put("overtimecompensation", matrix.getTotalOvertimeCompensation());
+        results.put("overtimecompensationstring", matrix.getTotalOvertimeCompensationString());
+        results.put("dayhoursdiff", matrix.getTotalWorkingTimeDiff());
+        results.put("dayhoursdiffstring", matrix.getTotalWorkingTimeDiffString());
         results.put("daysofmonth", maxDays);
         results.put("showStartAndBreakTime", reportForm.getStartAndBreakTime());
 

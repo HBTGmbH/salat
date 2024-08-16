@@ -9,9 +9,9 @@ import org.tb.common.util.DurationUtils;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 @Data
-public class DayAndWorkingHourCount {
+public class MatrixDayTotal {
     private int day;
-    private Duration workingHour;
+    private Duration workingTime;
     private LocalDate date;
     private boolean publicHoliday;
     private boolean satSun;
@@ -22,14 +22,14 @@ public class DayAndWorkingHourCount {
     private Long breakMinutes;
     private boolean invalidBreakTime;
 
-    public DayAndWorkingHourCount(int day, Duration workingHour, LocalDate date) {
-        this.day = day;
+    public MatrixDayTotal(LocalDate date, int day, Duration workingTime) {
         this.date = date;
-        this.workingHour = workingHour;
+        this.day = day;
+        this.workingTime = workingTime;
     }
 
     public String getWorkingHourString() {
-        return DurationUtils.format(workingHour);
+        return DurationUtils.format(workingTime);
     }
 
     public String getDayString() {
@@ -45,6 +45,6 @@ public class DayAndWorkingHourCount {
     }
 
     public void addWorkingHour(Duration duration) {
-        workingHour = workingHour.plus(duration);
+        workingTime = workingTime.plus(duration);
     }
 }
