@@ -120,7 +120,7 @@ public class MatrixHelper {
     private final WorkingdayDAO workingdayDAO;
     private final TimereportService timereportService;
 
-    public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable, boolean startAndBreakTime) {
+    public Matrix createMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable, boolean startAndBreakTime) {
         Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
 
         List<TimereportDTO> timeReportList;
@@ -195,7 +195,7 @@ public class MatrixHelper {
             dayHoursDiff = dayHoursSum.minus(dayHoursTarget).plus(overtimeCompensation);
         }
 
-        return new ReportWrapper(matrixLines, dayHoursCountList, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
+        return new Matrix(matrixLines, dayHoursCountList, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
     }
 
     private String extendedTaskDescription(TimereportDTO tr, boolean withSign) {
@@ -369,7 +369,7 @@ public class MatrixHelper {
         results.put("matrixview", selectedView);
 
         Customerorder order = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
-        ReportWrapper reportWrapper;
+        Matrix matrix;
         Long ecId = reportForm.getEmployeeContractId();
         boolean isInvoiceable = reportForm.getInvoice();
         boolean isNonInvoiceable = reportForm.getNonInvoice();
@@ -382,11 +382,11 @@ public class MatrixHelper {
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
                 // get the timereports for specific date, all employees, all
                 // orders
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
+                matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
             } else {
                 // get the timereports for specific date, all employees,
                 // specific order
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
+                matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
             }
 
             results.put("currentEmployee", "ALL EMPLOYEES");
@@ -411,15 +411,15 @@ public class MatrixHelper {
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
                 // get the timereports for specific date, specific employee,
                 // all orders
-                reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
+                matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
             } else {
                 // get the timereports for specific date, specific employee,
                 // specific order
                 List<Customerorder> customerOrder = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
                 if (customerOrder.contains(order)) {
-                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
+                    matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
                 } else {
-                    reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
+                    matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
                 }
             }
 
@@ -438,15 +438,15 @@ public class MatrixHelper {
 
         // refresh all relevant attributes
         String sOrder = reportForm.getOrder();
-        results.put("matrixlines", reportWrapper.getMatrixLines());
-        results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
-        results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
-        results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
-        results.put("dayhourstargetstring", reportWrapper.getDayHoursTargetString());
-        results.put("overtimecompensation", reportWrapper.getOvertimeCompensation());
-        results.put("overtimecompensationstring", reportWrapper.getOvertimeCompensationString());
-        results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
-        results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
+        results.put("matrixlines", matrix.getMatrixLines());
+        results.put("dayhourcounts", matrix.getDayAndWorkingHourCountList());
+        results.put("dayhourssumstring", matrix.getDayHoursSumString());
+        results.put("dayhourstarget", matrix.getDayHoursTarget());
+        results.put("dayhourstargetstring", matrix.getDayHoursTargetString());
+        results.put("overtimecompensation", matrix.getOvertimeCompensation());
+        results.put("overtimecompensationstring", matrix.getOvertimeCompensationString());
+        results.put("dayhoursdiff", matrix.getDayHoursDiff());
+        results.put("dayhoursdiffstring", matrix.getDayHoursDiffString());
         results.put("currentOrder", sOrder == null ? "ALL ORDERS" : sOrder);
         results.put("currentDay", reportForm.getFromDay());
         results.put("currentMonth", reportForm.getFromMonth());
@@ -487,7 +487,7 @@ public class MatrixHelper {
         boolean isNonInvoiceable = reportForm.getNonInvoice();
         boolean isStartAndBreakTime = reportForm.getStartAndBreakTime();
 
-        ReportWrapper reportWrapper;
+        Matrix matrix;
         int maxDays;
         if (reportForm.getFromMonth() != null) {
             // call from list select change
@@ -507,7 +507,7 @@ public class MatrixHelper {
                 ecId = currentEc.getId();
             }
 
-            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
+            matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, reportForm.getOrderId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
         } else {
 
             // call from main menu: set current month, year,
@@ -576,17 +576,17 @@ public class MatrixHelper {
                 results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
             }
 
-            reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
+            matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
         }
-        results.put("matrixlines", reportWrapper.getMatrixLines());
-        results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
-        results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
-        results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
-        results.put("dayhourstargetstring", reportWrapper.getDayHoursTargetString());
-        results.put("overtimecompensation", reportWrapper.getOvertimeCompensation());
-        results.put("overtimecompensationstring", reportWrapper.getOvertimeCompensationString());
-        results.put("dayhoursdiff", reportWrapper.getDayHoursDiff());
-        results.put("dayhoursdiffstring", reportWrapper.getDayHoursDiffString());
+        results.put("matrixlines", matrix.getMatrixLines());
+        results.put("dayhourcounts", matrix.getDayAndWorkingHourCountList());
+        results.put("dayhourssumstring", matrix.getDayHoursSumString());
+        results.put("dayhourstarget", matrix.getDayHoursTarget());
+        results.put("dayhourstargetstring", matrix.getDayHoursTargetString());
+        results.put("overtimecompensation", matrix.getOvertimeCompensation());
+        results.put("overtimecompensationstring", matrix.getOvertimeCompensationString());
+        results.put("dayhoursdiff", matrix.getDayHoursDiff());
+        results.put("dayhoursdiffstring", matrix.getDayHoursDiffString());
         results.put("daysofmonth", maxDays);
         results.put("showStartAndBreakTime", reportForm.getStartAndBreakTime());
 

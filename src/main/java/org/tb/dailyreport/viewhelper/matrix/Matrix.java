@@ -7,7 +7,7 @@ import java.util.List;
 import lombok.Getter;
 
 @Getter
-public class ReportWrapper {
+public class Matrix {
 
     private final List<MatrixLine> matrixLines;
     private final List<DayAndWorkingHourCount> dayAndWorkingHourCountList;
@@ -16,7 +16,7 @@ public class ReportWrapper {
     private final Duration overtimeCompensation;
     private final Duration dayHoursDiff;
 
-    public ReportWrapper(List<MatrixLine> matrixLines, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, Duration dayHoursSum, Duration dayHoursTarget, Duration dayHoursDiff, Duration overtimeCompensation) {
+    public Matrix(List<MatrixLine> matrixLines, List<DayAndWorkingHourCount> dayAndWorkingHourCountList, Duration dayHoursSum, Duration dayHoursTarget, Duration dayHoursDiff, Duration overtimeCompensation) {
         this.matrixLines = matrixLines;
         this.dayAndWorkingHourCountList = dayAndWorkingHourCountList;
         this.dayHoursSum = dayHoursSum;
