@@ -407,7 +407,7 @@
 				</c:if>
 
 			</c:forEach>
-			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${dayhourssumstring}"></c:out></td>
+			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${totalworkingtimestring}"></c:out></td>
 		</tr>
 
 		<c:if test="${showStartAndBreakTime==true}">
@@ -442,22 +442,22 @@
 				<table>
 					<tr class="matrix">
 						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.actualtime.text" /></td>
-						<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${dayhourssumstring}"></c:out></td>
+						<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${totalworkingtimestring}"></c:out></td>
 					</tr>
-					<c:if test="${dayhourstarget != null}">
+					<c:if test="${totalworkingtimetarget != null}">
 						<tr class="matrix">
 							<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
-							<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${dayhourstargetstring}" /></td>
+							<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${totalworkingtimetargetstring}" /></td>
 						</tr>
-						<c:if test="${not overtimecompensation.zero}">
+						<c:if test="${not totalovertimecompensation.zero}">
 							<tr class="matrix">
 								<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.overtimecompensation.text" /></td>
-								<td class="matrix" style="border-style:none;text-align: right"><c:out value="${overtimecompensationstring}" /></td>
+								<td class="matrix" style="border-style:none;text-align: right"><c:out value="${totalovertimecompensationstring}" /></td>
 							</tr>
 						</c:if>
 						<tr class="matrix">
 							<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
-							<td class="matrix" style="border-style:none;text-align: right;<c:if test="${dayhoursdiff.negative}">color:#FF0000;</c:if>"><c:out value="${dayhoursdiffstring}" /></td>
+							<td class="matrix" style="border-style:none;text-align: right;<c:if test="${totalworkingtimediff.negative}">color:#FF0000;</c:if>"><c:out value="${totalworkingtimediffstring}" /></td>
 						</tr>
 					</c:if>
 				</table>

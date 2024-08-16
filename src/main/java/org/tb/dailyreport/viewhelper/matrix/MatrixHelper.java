@@ -435,13 +435,14 @@ public class MatrixHelper {
         String sOrder = reportForm.getOrder();
         results.put("matrixlines", matrix.getMatrixLines());
         results.put("matrixdaytotals", matrix.getMatrixDayTotals());
-        results.put("dayhourssumstring", matrix.getTotalWorkingTimeString());
-        results.put("dayhourstarget", matrix.getTotalWorkingTimeTarget());
-        results.put("dayhourstargetstring", matrix.getTotalWorkingTimeTargetString());
-        results.put("overtimecompensation", matrix.getTotalOvertimeCompensation());
-        results.put("overtimecompensationstring", matrix.getTotalOvertimeCompensationString());
-        results.put("dayhoursdiff", matrix.getTotalWorkingTimeDiff());
-        results.put("dayhoursdiffstring", matrix.getTotalWorkingTimeDiffString());
+        results.put("totalworkingtime", matrix.getTotalWorkingTime());
+        results.put("totalworkingtimestring", matrix.getTotalWorkingTimeString());
+        results.put("totalworkingtimetarget", matrix.getTotalWorkingTimeTarget());
+        results.put("totalworkingtimetargetstring", matrix.getTotalWorkingTimeTargetString());
+        results.put("totalovertimecompensation", matrix.getTotalOvertimeCompensation());
+        results.put("totalovertimecompensationstring", matrix.getTotalOvertimeCompensationString());
+        results.put("totalworkingtimediff", matrix.getTotalWorkingTimeDiff());
+        results.put("totalworkingtimediffstring", matrix.getTotalWorkingTimeDiffString());
         results.put("currentOrder", sOrder == null ? "ALL ORDERS" : sOrder);
         results.put("currentDay", reportForm.getFromDay());
         results.put("currentMonth", reportForm.getFromMonth());
@@ -575,13 +576,14 @@ public class MatrixHelper {
         }
         results.put("matrixlines", matrix.getMatrixLines());
         results.put("matrixdaytotals", matrix.getMatrixDayTotals());
-        results.put("dayhourssumstring", matrix.getTotalWorkingTimeString());
-        results.put("dayhourstarget", matrix.getTotalWorkingTimeTarget());
-        results.put("dayhourstargetstring", matrix.getTotalWorkingTimeTargetString());
-        results.put("overtimecompensation", matrix.getTotalOvertimeCompensation());
-        results.put("overtimecompensationstring", matrix.getTotalOvertimeCompensationString());
-        results.put("dayhoursdiff", matrix.getTotalWorkingTimeDiff());
-        results.put("dayhoursdiffstring", matrix.getTotalWorkingTimeDiffString());
+        results.put("totalworkingtime", matrix.getTotalWorkingTime());
+        results.put("totalworkingtimestring", matrix.getTotalWorkingTimeString());
+        results.put("totalworkingtimetarget", matrix.getTotalWorkingTimeTarget());
+        results.put("totalworkingtimetargetstring", matrix.getTotalWorkingTimeTargetString());
+        results.put("totalovertimecompensation", matrix.getTotalOvertimeCompensation());
+        results.put("totalovertimecompensationstring", matrix.getTotalOvertimeCompensationString());
+        results.put("totalworkingtimediff", matrix.getTotalWorkingTimeDiff());
+        results.put("totalworkingtimediffstring", matrix.getTotalWorkingTimeDiffString());
         results.put("daysofmonth", maxDays);
         results.put("showStartAndBreakTime", reportForm.getStartAndBreakTime());
 
