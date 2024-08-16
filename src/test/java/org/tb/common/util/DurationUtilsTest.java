@@ -129,7 +129,7 @@ public class DurationUtilsTest {
   @Test
   public void should_format_hours() {
     assertThat(format(Duration.ofHours(2))).isEqualTo("2:00");
-    assertThat(format(Duration.ofHours(0))).isEqualTo("0:00");
+    assertThat(format(Duration.ofHours(0), true)).isEqualTo("0:00");
     assertThat(format(Duration.ofHours(-2))).isEqualTo("-2:00");
   }
 
@@ -137,7 +137,7 @@ public class DurationUtilsTest {
   public void should_format_minutes() {
     assertThat(format(Duration.ofMinutes(20))).isEqualTo("0:20");
     assertThat(format(Duration.ofMinutes(2))).isEqualTo("0:02");
-    assertThat(format(Duration.ofMinutes(0))).isEqualTo("0:00");
+    assertThat(format(Duration.ofMinutes(0), true)).isEqualTo("0:00");
     assertThat(format(Duration.ofMinutes(-20))).isEqualTo("-0:20");
     assertThat(format(Duration.ofMinutes(-2))).isEqualTo("-0:02");
   }
