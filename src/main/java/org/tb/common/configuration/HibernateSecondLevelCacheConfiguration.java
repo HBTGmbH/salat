@@ -19,9 +19,11 @@ public class HibernateSecondLevelCacheConfiguration {
 
     @Bean
     public HibernatePropertiesCustomizer hibernateSecondLevelCacheCustomizer(ResourceLoader resourceLoader,
+                                                                             @Value("${spring.jpa.properties.hibernate.cache.use_second_level_cache}") boolean useSecondLevelCache,
                                                                              @Value("${salat.cache.max-entries}") String maxCacheEntries,
                                                                              @Value("${salat.cache.expiry-tti}") String expiryTti) {
         return (properties) -> {
+            if(!useSecondLevelCache) return;
             try {
                 URI uri = resourceLoader.getResource("classpath:ehcache.xml").getURI();
                 CachingProvider cachingProvider = Caching.getCachingProvider();
