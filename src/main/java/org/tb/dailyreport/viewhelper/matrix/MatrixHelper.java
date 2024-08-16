@@ -17,7 +17,7 @@ import static java.time.DayOfWeek.SUNDAY;
 import static java.time.DayOfWeek.THURSDAY;
 import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
-import static java.util.Collections.emptyMap;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
@@ -31,6 +31,7 @@ import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.dailyreport.domain.WorkingDayValidationError.NONE;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -121,18 +122,6 @@ public class MatrixHelper {
 
     public ReportWrapper getEmployeeMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable, boolean startAndBreakTime) {
         Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
-        LocalDate validFrom = dateFirst;
-        LocalDate validUntil = dateLast;
-        if (employeecontract != null) {
-            if (employeecontract.getValidFrom() != null && dateFirst.isBefore(employeecontract.getValidFrom()))
-                validFrom = employeecontract.getValidFrom();
-            if (employeecontract.getValidUntil() != null && dateLast.isAfter(employeecontract.getValidUntil()))
-                validUntil = employeecontract.getValidUntil();
-        }
-
-        Map<LocalDate, Workingday> workingDays = startAndBreakTime
-                ? queryWorkingDays(dateFirst, dateLast, employeeContractId)
-                : emptyMap();
 
         List<TimereportDTO> timeReportList;
         if (invoiceable || nonInvoiceable) {
@@ -171,20 +160,22 @@ public class MatrixHelper {
             Collections.sort(mergedReport.getBookingDays());
         }
 
-        List<Publicholiday> publicHolidayList = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast);
+        Map<LocalDate, Publicholiday> publicHolidayMap = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast).stream().collect(toMap(Publicholiday::getRefdate, identity()));
 
-        List<DayAndWorkingHourCount> dayHoursCount = new ArrayList<>();
-        int workdayCount = fillDayHoursCount(dateFirst, dateLast, validFrom, validUntil, dayHoursCount, publicHolidayList, workingDays);
+        var dayHoursCountList = initializeDayHoursCount(employeeContractId, dateFirst, dateLast, publicHolidayMap, startAndBreakTime);
+        var dayHoursCountMap = dayHoursCountList.stream().collect(toMap(DayAndWorkingHourCount::getDate, identity()));
+
 
         //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
-        handlePublicHolidays(employeeContractId, dateFirst, dateLast, mergedReportList, dayHoursCount, publicHolidayList);
+        markBookingDays(mergedReportList, dayHoursCountMap);
+        sumUpBookingDays(mergedReportList, dayHoursCountMap);
 
         //sort mergedreportlist by custom- and subordersign
         Collections.sort(mergedReportList);
 
         //calculate dayhourssum
         Duration dayHoursSum = Duration.ZERO;
-        for (DayAndWorkingHourCount dayAndWorkingHourCount : dayHoursCount) {
+        for (DayAndWorkingHourCount dayAndWorkingHourCount : dayHoursCountList) {
             dayHoursSum = dayHoursSum.plus(dayAndWorkingHourCount.getWorkingHour());
         }
 
@@ -194,6 +185,7 @@ public class MatrixHelper {
 
         if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES && employeecontract != null) {
             //calculate dayhourstarget
+            var workdayCount = dayHoursCountList.stream().filter(d -> !d.isPublicHoliday() && !d.isSatSun()).count();
             dayHoursTarget = employeecontract.getDailyWorkingTime().multipliedBy(workdayCount);
 
             // calculate overtime compensation
@@ -203,7 +195,7 @@ public class MatrixHelper {
             dayHoursDiff = dayHoursSum.minus(dayHoursTarget).plus(overtimeCompensation);
         }
 
-        return new ReportWrapper(mergedReportList, dayHoursCount, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
+        return new ReportWrapper(mergedReportList, dayHoursCountList, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
     }
 
     private String extendedTaskDescription(TimereportDTO tr, boolean withSign) {
@@ -220,124 +212,74 @@ public class MatrixHelper {
         return sb.toString();
     }
 
-    private int fillDayHoursCount(LocalDate dateFirst,
+    private List<DayAndWorkingHourCount> initializeDayHoursCount(long employeeContractId,
+                                  LocalDate dateFirst,
                                   LocalDate dateLast,
-                                  LocalDate validFrom,
-                                  LocalDate validUntil,
-                                  List<DayAndWorkingHourCount> dayHoursCount,
-                                  List<Publicholiday> publicHolidayList,
-                                  Map<LocalDate, Workingday> workingDays) {
+                                  Map<LocalDate, Publicholiday> publicHolidayMap,
+                                  boolean fillStartAndBreakTime) {
         //fill dayhourscount list with dayandworkinghourcounts for the time between dateFirst and dateLast
+
+        List<DayAndWorkingHourCount> dayHourCountList = new ArrayList<>();
+
         LocalDate dateLoop = dateFirst;
         int day = 0;
         while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
                 || dateLoop.equals(dateLast)) {
             day++;
             var workingHourCount = new DayAndWorkingHourCount(day, Duration.ZERO, dateLoop);
-            var workingDay = workingDays.get(dateLoop);
-            if (workingDay != null) {
-                workingHourCount.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * 60L);
-                workingHourCount.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * 60L);
+
+            // mark weekends
+            var dayOfWeek = workingHourCount.getDate().getDayOfWeek();
+            if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
+                workingHourCount.setSatSun(true);
             }
-            dayHoursCount.add(workingHourCount);
+            workingHourCount.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
+
+            // mark public holidays
+            if (publicHolidayMap.containsKey(workingHourCount.getDate())) {
+                workingHourCount.setPublicHoliday(true);
+                workingHourCount.setPublicHolidayName(publicHolidayMap.get(workingHourCount.getDate()).getName());
+            }
+
+            dayHourCountList.add(workingHourCount);
             dateLoop = DateUtils.addDays(dateLoop, 1);
         }
 
-        day = 0;
-        dateLoop = dateFirst;
-        int workdayCount = 0;
-        while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
-                || dateLoop.equals(dateLast)) {
-            day++;
-            boolean dayIsPublicHoliday = false;
-            //counting weekdays for dayhourstargettime
-            var dayOfWeek = dateLoop.getDayOfWeek();
-            if (dayOfWeek != SATURDAY && dayOfWeek != SUNDAY) {
-                for (Publicholiday publicHoliday : publicHolidayList) {
-                    if (publicHoliday.getRefdate().equals(dateLoop)) {
-                        dayIsPublicHoliday = true;
-                        break;
-                    }
+        if (fillStartAndBreakTime) {
+            var invalidBreakTimes = timereportService.validateBreakTimes(employeeContractId, dateFirst, dateLast);
+            var invalidStartOfWorkDays = timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast);
+            Map<LocalDate, Workingday> workingDays = queryWorkingDays(dateFirst, dateLast, employeeContractId);
+            for(var dayHourCount : dayHourCountList) {
+                var workingDay = workingDays.get(dayHourCount.getDate());
+                if (workingDay != null) {
+                    dayHourCount.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * 60L);
+                    dayHourCount.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * 60L);
                 }
-                if (!dayIsPublicHoliday && (
-                    dateLoop.isAfter(validFrom) &&
-                    dateLoop.isBefore(validUntil) ||
-                    dateLoop.equals(validFrom) ||
-                    dateLoop.equals(validUntil))) {
-                    workdayCount++;
-                }
+                boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(dateLoop) && invalidStartOfWorkDays.get(dateLoop) != NONE;
+                boolean invalidBreakTime = invalidBreakTimes.containsKey(dateLoop) && invalidBreakTimes.get(dateLoop) != NONE;
+                dayHourCount.setInvalidStartOfWork(invalidStartOfWork);
+                dayHourCount.setInvalidBreakTime(invalidBreakTime);
             }
-            //setting publicholidays and weekend for dayhourscount(status and name)
-            for (DayAndWorkingHourCount dayAndWorkingHourCount : dayHoursCount) {
-                if (dayAndWorkingHourCount.getDay() == day) {
-                    for (Publicholiday publicHoliday : publicHolidayList) {
-                        if (publicHoliday.getRefdate().equals(dateLoop)) {
-                            dayAndWorkingHourCount.setPublicHoliday(true);
-                            dayAndWorkingHourCount.setPublicHolidayName(publicHoliday.getName());
-                        }
-                    }
-                    if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
-                        dayAndWorkingHourCount.setSatSun(true);
-                    }
-                    dayAndWorkingHourCount.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
-                }
-            }
-            dateLoop = DateUtils.addDays(dateLoop, 1);
         }
-        return workdayCount;
+        return dayHourCountList;
     }
 
-    private void handlePublicHolidays(long employeeContractId,
-                                      LocalDate dateFirst,
-                                      LocalDate dateLast,
-                                      List<MergedReport> mergedReportList,
-                                      List<DayAndWorkingHourCount> dayHoursCount,
-                                      List<Publicholiday> publicHolidayList) {
-        LocalDate dateLoop = dateFirst;
-        int day = 0;
-        while (dateLoop.isAfter(dateFirst) && dateLoop.isBefore(dateLast) || dateLoop.equals(dateFirst)
-                || dateLoop.equals(dateLast)) {
-            day++;
-            for (MergedReport mergedReport : mergedReportList) {
-                for (BookingDay bookingDay : mergedReport.getBookingDays()) {
-                    if (bookingDay.getDate().equals(dateLoop)) {
-                        var dayOfWeek = dateLoop.getDayOfWeek();
-                        if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
-                            bookingDay.setSatSun(true);
-                        }
-                        for (int i = 0; i < dayHoursCount.size(); i++) {
-                            DayAndWorkingHourCount dayAndWorkingHourCount = dayHoursCount.get(i);
-                            if (dayAndWorkingHourCount.getDay() == day) {
-                                Duration workingHour = Duration.ZERO;
-                                workingHour = workingHour
-                                    .plus(bookingDay.getDuration())
-                                    .plus(dayAndWorkingHourCount.getWorkingHour());
-                                DayAndWorkingHourCount otherDayAndWorkingHourCount = new DayAndWorkingHourCount(
-                                    day,
-                                    workingHour,
-                                    bookingDay.getDate()
-                                );
-                                otherDayAndWorkingHourCount.setPublicHoliday(dayAndWorkingHourCount.isPublicHoliday());
-                                otherDayAndWorkingHourCount.setPublicHolidayName(dayAndWorkingHourCount.getPublicHolidayName());
-                                otherDayAndWorkingHourCount.setSatSun(dayAndWorkingHourCount.isSatSun());
-                                otherDayAndWorkingHourCount.setWeekDay(dayAndWorkingHourCount.getWeekDay());
-                                otherDayAndWorkingHourCount.setStartOfWorkMinute(dayAndWorkingHourCount.getStartOfWorkMinute());
-                                otherDayAndWorkingHourCount.setInvalidStartOfWork(timereportService.validateBeginOfWorkingDay(bookingDay.getDate(), employeeContractId) != null);
-                                otherDayAndWorkingHourCount.setBreakMinutes(dayAndWorkingHourCount.getBreakMinutes());
-                                otherDayAndWorkingHourCount.setInvalidBreakTime(timereportService.validateBreakTime(bookingDay.getDate(), employeeContractId) != null);
-                                dayHoursCount.set(i, otherDayAndWorkingHourCount);
-                                for (Publicholiday publicHoliday : publicHolidayList) {
-                                    if (publicHoliday.getRefdate().equals(dateLoop)) {
-                                        bookingDay.setPublicHoliday(true);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+    private void markBookingDays(List<MergedReport> mergedReportList, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
+        for (MergedReport mergedReport : mergedReportList) {
+            for (BookingDay bookingDay : mergedReport.getBookingDays()) {
+                var dayHourCount = dayHourCountMap.get(bookingDay.getDate());
+                bookingDay.setPublicHoliday(dayHourCount.isPublicHoliday());
+                bookingDay.setSatSun(dayHourCount.isSatSun());
             }
-            dateLoop = DateUtils.addDays(dateLoop, 1);
+        }
+    }
+
+    private void sumUpBookingDays(List<MergedReport> mergedReportList, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
+        for (MergedReport mergedReport : mergedReportList) {
+            for (BookingDay bookingDay : mergedReport.getBookingDays()) {
+                DayAndWorkingHourCount dayAndWorkingHourCount = dayHourCountMap.get(bookingDay.getDate());
+                dayAndWorkingHourCount.addWorkingHour(bookingDay.getDuration());
+            }
         }
     }
 
@@ -545,7 +487,7 @@ public class MatrixHelper {
 
         List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false);
 
-        if (employeeContracts == null || employeeContracts.size() <= 0) {
+        if (employeeContracts == null || employeeContracts.isEmpty()) {
             results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employees with valid contracts found - please call system administrator.");
             return results;
         }

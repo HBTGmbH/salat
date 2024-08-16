@@ -44,4 +44,7 @@ public class DayAndWorkingHourCount {
         return breakMinutes != null ? timeFormatMinutes(breakMinutes) : null;
     }
 
+    public void addWorkingHour(Duration duration) {
+        workingHour = workingHour.plus(duration);
+    }
 }

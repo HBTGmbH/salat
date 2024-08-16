@@ -1,5 +1,6 @@
 package org.tb.dailyreport.service;
 
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,9 +49,11 @@ import static java.lang.Boolean.TRUE;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toMap;
 import static org.tb.common.ErrorCode.*;
 import static org.tb.common.GlobalConstants.*;
 import static org.tb.common.util.DateUtils.*;
+import static org.tb.dailyreport.domain.WorkingDayValidationError.NONE;
 
 @Slf4j
 @Service
@@ -213,16 +216,16 @@ public class TimereportService {
             .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
             .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.mapping(identity(), Collectors.toList())))
             .forEach((date, timeReports) -> {
-              WorkingDayValidationError error = validateBeginOfWorkingDay(date, employeeContractId);
-              if (error != null) {
+              WorkingDayValidationError error = validateBeginOfWorkingDay(date, employeeContractId, timeReports);
+              if (error != NONE) {
                 errors.add(error);
               }
               error = validateBreakTime(date, employeeContractId, timeReports);
-              if (error != null) {
+              if (error != NONE) {
                 errors.add(error);
               }
               error = validateRestTime(date, employeeContractId);
-              if (error != null) {
+              if (error != NONE) {
                 errors.add(error);
               }
             });
@@ -503,18 +506,21 @@ public class TimereportService {
     });
   }
 
-  public WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId) {
+  public Map<LocalDate, WorkingDayValidationError> validateBreakTimes(long employeeContractId, LocalDate minDate, LocalDate maxDate) {
     if(!needsWorkingHoursLawValidation(employeeContractId)) {
-      return null; // restricted/external users are not in scope of regulations by law
+      return Map.of(); // restricted/external users are not in scope of regulations by law
     }
 
-    var timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
-    return validateBreakTime(date, employeeContractId, timeReports);
+    var timeReports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, minDate, maxDate);
+    var timeReportsByDate = timeReports.stream().collect(groupingBy(TimereportDTO::getReferenceday));
+    Set<LocalDate> dates = timeReportsByDate.keySet();
+    var errors = dates.stream().collect(toMap(identity(), date -> validateBreakTime(date, employeeContractId, timeReportsByDate.get(date))));
+    return errors;
   }
 
   private WorkingDayValidationError validateBreakTime(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
     if(!needsWorkingHoursLawValidation(employeeContractId)) {
-      return null; // restricted/external users are not in scope of regulations by law
+      return NONE; // restricted/external users are not in scope of regulations by law
     }
 
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
@@ -522,7 +528,7 @@ public class TimereportService {
         .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
-    if(!workDurationSum.isPositive()) return null; // not worked = no validation
+    if(!workDurationSum.isPositive()) return NONE; // not worked = no validation
     boolean notEnoughBreaksAfter9Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_NINE_HOURS;
     boolean notEnoughBreaksAfter6Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_SIX_HOURS;
     if (workDurationSum.toMinutes() > NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
@@ -530,7 +536,7 @@ public class TimereportService {
     } else if (workDurationSum.toMinutes() > SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
       return new WorkingDayValidationError(date, "form.release.error.breaktime.six.length");
     }
-    return null;
+    return NONE;
   }
 
   private WorkingDayValidationError validateRestTime(LocalDate date, long employeeContractId) {
@@ -541,37 +547,52 @@ public class TimereportService {
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
     Workingday theDayBefore = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date.minusDays(1), employeeContractId);
     if (theDayBefore == null) {
-      return null;
+      return NONE;
     }
     Duration workDurationSum = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, theDayBefore.getRefday()).stream()
             .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
             .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus);
-    if(!workDurationSum.isPositive()) return null; // not worked = no validation
+    if(!workDurationSum.isPositive()) return NONE; // not worked = no validation
     LocalDateTime endOfWorkingDay = theDayBefore.getStartOfWorkingDay().plus(theDayBefore.getBreakLength()).plus(workDurationSum);
     LocalDateTime startOfWorkingDay = workingDay.getStartOfWorkingDay();
     Duration restTime = Duration.between(endOfWorkingDay, startOfWorkingDay);
     if (restTime.toMinutes() < REST_PERIOD_IN_MINUTES) {
       return new WorkingDayValidationError(workingDay.getRefday(), "form.release.error.resttime.length");
     }
-    return null;
+    return NONE;
   }
 
-  public WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date, long employeeContractId) {
+  public Map<LocalDate, WorkingDayValidationError> validateBeginOfWorkingDays(long employeeContractId, LocalDate minDate, LocalDate maxDate) {
     if(!needsWorkingHoursLawValidation(employeeContractId)) {
-      return null; // restricted/external users are not in scope of regulations by law
+      return Map.of(); // restricted/external users are not in scope of regulations by law
     }
 
-    Duration workDurationSum = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date).stream()
+    var timeReports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, minDate, maxDate);
+    var timeReportsByDate = timeReports.stream().collect(groupingBy(TimereportDTO::getReferenceday));
+
+    Set<LocalDate> dates = timeReportsByDate.keySet();
+    var errors = dates.stream().collect(toMap(identity(), date -> validateBeginOfWorkingDay(date, employeeContractId, timeReportsByDate.get(date))));
+    return errors;
+  }
+
+  private WorkingDayValidationError validateBeginOfWorkingDay(LocalDate date, long employeeContractId, List<TimereportDTO> timeReports) {
+    if(!needsWorkingHoursLawValidation(employeeContractId)) {
+      return NONE; // restricted/external users are not in scope of regulations by law
+    }
+
+    Duration workDurationSum = timeReports.stream()
         .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
-    if(!workDurationSum.isPositive()) return null; // not worked = no validation
+    if(!workDurationSum.isPositive()) {
+      return NONE; // not worked = no validation
+    }
     Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeeContractId);
     if (workingDay == null || workingDay.getStartOfWorkingDay() == null) {
       return new WorkingDayValidationError(date, "form.release.error.beginofworkingday.required");
     }
-    return null;
+    return NONE;
   }
 
   private static boolean isRelevantForWorkingTimeValidation(OrderType orderType) {
