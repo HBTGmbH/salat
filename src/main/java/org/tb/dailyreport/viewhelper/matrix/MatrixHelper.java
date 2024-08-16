@@ -57,7 +57,7 @@ import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.dailyreport.viewhelper.matrix.MergedReport.OrderSummaryData;
+import org.tb.dailyreport.viewhelper.matrix.MatrixLine.OrderSummaryData;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -133,8 +133,8 @@ public class MatrixHelper {
             timeReportList = new ArrayList<>();
         }
 
-        List<MergedReport> mergedReportList = new ArrayList<>();
-        //filling a list with new or merged 'mergedreports'
+        List<MatrixLine> matrixLines = new ArrayList<>();
+        //filling a list with new or merged MatrixLines
         for (TimereportDTO timeReport : timeReportList) {
             String taskdescription = extendedTaskDescription(timeReport, employeecontract == null);
             LocalDate date = timeReport.getReferenceday();
@@ -150,14 +150,14 @@ public class MatrixHelper {
             }
 
             //insert into list if its not empty
-            mergeTimereport(mergedReportList, timeReport, taskdescription, date, durationHours, durationMinutes);
+            insertIntoMatrixLine(matrixLines, timeReport, taskdescription, date, durationHours, durationMinutes);
         }
 
-        //set all empty bookingdays to 0, calculate sum of the bookingdays for each MergedReport and sort them
-        for (MergedReport mergedReport : mergedReportList) {
-            mergedReport.fillBookingDaysWithNull(dateFirst, dateLast);
-            mergedReport.setSum();
-            Collections.sort(mergedReport.getBookingDays());
+        //set all empty bookingdays to 0, calculate total for each MatrixLine and sort them
+        for (MatrixLine matrixLine : matrixLines) {
+            matrixLine.fillBookingDaysWithNull(dateFirst, dateLast);
+            matrixLine.calcTotals();
+            Collections.sort(matrixLine.getBookingDays());
         }
 
         Map<LocalDate, Publicholiday> publicHolidayMap = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast).stream().collect(toMap(Publicholiday::getRefdate, identity()));
@@ -166,12 +166,12 @@ public class MatrixHelper {
         var dayHoursCountMap = dayHoursCountList.stream().collect(toMap(DayAndWorkingHourCount::getDate, identity()));
 
 
-        //setting publicholidays(status and name) and weekend for dayandworkinghourcount and bookingday in mergedreportlist
-        markBookingDays(mergedReportList, dayHoursCountMap);
-        sumUpBookingDays(mergedReportList, dayHoursCountMap);
+        //setting publicholidays(status and name) and weekend for bookingday in MatrixLine
+        markBookingDays(matrixLines, dayHoursCountMap);
+        sumUpDayTotals(matrixLines, dayHoursCountMap);
 
-        //sort mergedreportlist by custom- and subordersign
-        Collections.sort(mergedReportList);
+        //sort MatrixLines by custom- and subordersign
+        Collections.sort(matrixLines);
 
         //calculate dayhourssum
         Duration dayHoursSum = Duration.ZERO;
@@ -195,7 +195,7 @@ public class MatrixHelper {
             dayHoursDiff = dayHoursSum.minus(dayHoursTarget).plus(overtimeCompensation);
         }
 
-        return new ReportWrapper(mergedReportList, dayHoursCountList, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
+        return new ReportWrapper(matrixLines, dayHoursCountList, dayHoursSum, dayHoursTarget, dayHoursDiff, overtimeCompensation);
     }
 
     private String extendedTaskDescription(TimereportDTO tr, boolean withSign) {
@@ -264,9 +264,9 @@ public class MatrixHelper {
         return dayHourCountList;
     }
 
-    private void markBookingDays(List<MergedReport> mergedReportList, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
-        for (MergedReport mergedReport : mergedReportList) {
-            for (BookingDay bookingDay : mergedReport.getBookingDays()) {
+    private void markBookingDays(List<MatrixLine> matrixLines, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
+        for (MatrixLine matrixLine : matrixLines) {
+            for (BookingDay bookingDay : matrixLine.getBookingDays()) {
                 var dayHourCount = dayHourCountMap.get(bookingDay.getDate());
                 bookingDay.setPublicHoliday(dayHourCount.isPublicHoliday());
                 bookingDay.setSatSun(dayHourCount.isSatSun());
@@ -274,40 +274,28 @@ public class MatrixHelper {
         }
     }
 
-    private void sumUpBookingDays(List<MergedReport> mergedReportList, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
-        for (MergedReport mergedReport : mergedReportList) {
-            for (BookingDay bookingDay : mergedReport.getBookingDays()) {
+    private void sumUpDayTotals(List<MatrixLine> matrixLines, Map<LocalDate, DayAndWorkingHourCount> dayHourCountMap) {
+        for (MatrixLine matrixLine : matrixLines) {
+            for (BookingDay bookingDay : matrixLine.getBookingDays()) {
                 DayAndWorkingHourCount dayAndWorkingHourCount = dayHourCountMap.get(bookingDay.getDate());
                 dayAndWorkingHourCount.addWorkingHour(bookingDay.getDuration());
             }
         }
     }
 
-    private void mergeTimereport(List<MergedReport> mergedReportList, TimereportDTO timeReport, String taskdescription,
+    private void insertIntoMatrixLine(List<MatrixLine> matrixLines, TimereportDTO timeReport, String taskdescription,
                                  LocalDate date, long durationHours, long durationMinutes) {
-        if (!mergedReportList.isEmpty()) {
-            //search until timereport matching mergedreport; merge bookingdays in case of match
-            for (int mergedReportIndex = 0; mergedReportIndex < mergedReportList.size(); mergedReportIndex++) {
-                MergedReport mergedReport = mergedReportList.get(mergedReportIndex);
-                if ((mergedReport.getCustomOrder().getSign() + mergedReport.getSubOrder().getSign()).equals(timeReport.getCustomerorderSign()
-                        + timeReport.getSuborderSign())) {
-                    for (BookingDay bookingDay : mergedReport.getBookingDays()) {
-                        if (bookingDay.getDate().equals(date)) {
-                            bookingDay.addBooking(durationHours, durationMinutes, taskdescription);
-                            return;
-                        }
-                    }
-                    //if bookingday is not available, add new or merge report by adding a new bookingday and substitute the mergedreportlist entrys
-                    mergedReport.addBookingDay(date, durationHours, durationMinutes, taskdescription);
-                    mergedReportList.set(mergedReportIndex, mergedReport);
-                    return;
-                }
+        // Update existing MatrixLine
+        for (MatrixLine matrixLine : matrixLines) {
+            if(matrixLine.matchesOrder(timeReport.getCustomerorderSign(), timeReport.getSuborderSign())) {
+                matrixLine.addTimereport(timeReport, taskdescription);
+                return;
             }
         }
-        //if bookingday is not available, add new or merge report by adding a new bookingday and substitute the mergedreportlist entrys
-        OrderSummaryData customerorderData = new OrderSummaryData(timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
-        OrderSummaryData suborderData = new OrderSummaryData(timeReport.getSuborderSign(), timeReport.getSuborderDescription());
-        mergedReportList.add(new MergedReport(customerorderData, suborderData, taskdescription, date, durationHours, durationMinutes));
+        // add a new MatrixLine
+        var customerorderData = new OrderSummaryData(timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
+        var suborderData = new OrderSummaryData(timeReport.getSuborderSign(), timeReport.getSuborderDescription());
+        matrixLines.add(new MatrixLine(customerorderData, suborderData, taskdescription, date, durationHours, durationMinutes));
     }
 
     private void filterInvoiceable(List<TimereportDTO> timeReportList, boolean invoiceable, boolean nonInvoiceable) {
@@ -348,7 +336,7 @@ public class MatrixHelper {
         }
     }
 
-    public Map<String, Object> refreshMergedReports(ShowMatrixForm reportForm, HttpServletRequest request) {
+    public Map<String, Object> refreshMatrix(ShowMatrixForm reportForm, HttpServletRequest request) {
         // selected view and selected dates
         Map<String, Object> results = new HashMap<>();
         String selectedView = reportForm.getMatrixview();
@@ -450,7 +438,7 @@ public class MatrixHelper {
 
         // refresh all relevant attributes
         String sOrder = reportForm.getOrder();
-        results.put("mergedreports", reportWrapper.getMergedReportList());
+        results.put("matrixlines", reportWrapper.getMatrixLines());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
         results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
         results.put("dayhourstarget", reportWrapper.getDayHoursTarget());
@@ -590,7 +578,7 @@ public class MatrixHelper {
 
             reportWrapper = getEmployeeMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
         }
-        results.put("mergedreports", reportWrapper.getMergedReportList());
+        results.put("matrixlines", reportWrapper.getMatrixLines());
         results.put("dayhourcounts", reportWrapper.getDayAndWorkingHourCountList());
         results.put("dayhourssumstring", reportWrapper.getDayHoursSumString());
         results.put("dayhourstarget", reportWrapper.getDayHoursTarget());

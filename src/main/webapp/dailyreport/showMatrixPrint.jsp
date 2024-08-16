@@ -10,18 +10,12 @@
 <jsp:include flush="true" page="/head-includes.jsp" />
 <link rel="stylesheet" type="text/css" href="<c:url value="/style/matrixprint.css" />" media="all" />
 <link rel="stylesheet" type="text/css" href="<c:url value="/style/print.css" />" media="print" />
-<script type="text/javascript" language="JavaScript">	
- 	function setUpdateMergedreportsAction(form) {	
- 		form.action = "/do/ShowMatrix?task=refreshMergedreports";
-		form.submit();
+<style>
+	th {
+		background-color: white;
+		color: black;
 	}
-</script>
-	<style>
-		th {
-			background-color: white;
-			color: black;
-		}
-	</style>
+</style>
 </head>
 <body>
 <form onsubmit="javascript:window.print();return false;">
@@ -85,15 +79,15 @@
 			key="main.matrixoverview.table.sum.text" /></td>
 	</tr>
 
-	<c:forEach var="mergedreport" items="${mergedreports}">
+	<c:forEach var="matrixline" items="${matrixlines}">
 		<tr class="matrix">
 			<td class="matrix" style="font-size: 6pt;border:1px black solid;">
-			<c:out value="${mergedreport.customOrder.sign}" /><br>
-			<c:out value="${mergedreport.subOrder.sign}" /></td>
+			<c:out value="${matrixline.customOrder.sign}" /><br>
+			<c:out value="${matrixline.subOrder.sign}" /></td>
 			<td class="matrix" style="font-size: 6pt;border:1px black solid;">
-			<c:out value="${mergedreport.customOrder.shortdescription}"></c:out><br>
-			<c:out value="${mergedreport.subOrder.shortdescription}" /></td>
-			<c:forEach var="bookingday" items="${mergedreport.bookingDays}">
+			<c:out value="${matrixline.customOrder.shortdescription}"></c:out><br>
+			<c:out value="${matrixline.subOrder.shortdescription}" /></td>
+			<c:forEach var="bookingday" items="${matrixline.bookingDays}">
 				<c:if test="${bookingday.satSun==true}">
 					<c:if test="${bookingday.publicHoliday==true}">
 						<td title="${fn:escapeXml(bookingday.taskdescription)}" class="matrix" align="right" style="font-size: 6pt;border:1px black solid;background-color:c1c1c1;">
@@ -123,7 +117,7 @@
 				</td>
 			</c:forEach>
 			<td class="matrix" align="right"><c:out
-				value="${mergedreport.sumString}"></c:out></td>
+				value="${matrixline.sumString}"></c:out></td>
 		</tr>
 	</c:forEach>
 	<tr class="matrix">
