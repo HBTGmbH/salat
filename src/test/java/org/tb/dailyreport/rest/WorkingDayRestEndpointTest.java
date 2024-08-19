@@ -13,6 +13,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 
@@ -22,6 +23,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 @ExtendWith(MockitoExtension.class)
 class WorkingDayRestEndpointTest {
@@ -30,6 +32,9 @@ class WorkingDayRestEndpointTest {
 
     @Mock
     WorkingdayDAO workingdayDAO;
+
+    @Mock
+    WorkingdayService workingdayService;
 
     @Mock
     AuthorizedUser authorizedUser;
@@ -55,6 +60,7 @@ class WorkingDayRestEndpointTest {
                 .breakhours(9)
                 .breakminutes(10)
                 .date("2024-07-06")
+                .type(WORKED)
                 .build();
         when(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(anyLong(), any(LocalDate.class)))
                 .thenReturn(employeeContract);
@@ -63,7 +69,7 @@ class WorkingDayRestEndpointTest {
         workingDayRestEndpoint.upsert(data);
 
         // then
-        verify(workingdayDAO, times(1)).save(workingDayArgumentCaptor.capture());
+        verify(workingdayService, times(1)).upsertWorkingday(workingDayArgumentCaptor.capture());
         assertThat(workingDayArgumentCaptor.getValue())
                 .isNotNull()
                 .hasFieldOrPropertyWithValue("Starttimehour", 7)
@@ -71,6 +77,7 @@ class WorkingDayRestEndpointTest {
                 .hasFieldOrPropertyWithValue("Breakhours", 9)
                 .hasFieldOrPropertyWithValue("Breakminutes", 10)
                 .hasFieldOrPropertyWithValue("refday", DateUtils.parse("2024-07-06"))
+                .hasFieldOrPropertyWithValue("type", WORKED)
                 .hasFieldOrPropertyWithValue("employeecontract", employeeContract);
     }
 

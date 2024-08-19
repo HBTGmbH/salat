@@ -26,7 +26,7 @@ public class WorkingDayRestEndpoint {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final WorkingdayDAO workingdayDAO;
-    private WorkingdayService workingdayService;
+    private final WorkingdayService workingdayService;
     private final AuthorizedUser authorizedUser;
 
     @PutMapping(consumes = APPLICATION_JSON_VALUE)
