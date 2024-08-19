@@ -48,6 +48,9 @@ public class WorkingDayRestEndpoint {
         wd.setStarttimeminute(data.getStartminute());
         wd.setBreakhours(data.getBreakhours());
         wd.setBreakminutes(data.getBreakminutes());
+        if(data.getType() != null) {
+            wd.setType(data.getType());
+        }
         workingdayDAO.save(wd);
     }
 
@@ -91,6 +94,7 @@ public class WorkingDayRestEndpoint {
                 .breakhours(wd.getBreakhours())
                 .breakminutes(wd.getBreakminutes())
                 .date(DateUtils.format(wd.getRefday()))
+                .type(wd.getType())
                 .build();
     }
 

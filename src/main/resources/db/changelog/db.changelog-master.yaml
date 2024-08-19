@@ -902,6 +902,24 @@ databaseChangeLog:
                   name: deleted
                   type: bit(1)
                   defaultValue: 0
+  - changeSet:
+      id: 25
+      author: kr
+      comment: Add type column to workingday
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: workingday
+                columnName: type
+      changes:
+        - addColumn:
+            tableName: workingday
+            columns:
+              - column:
+                  name: type
+                  type: varchar(100)
+                  defaultValue: 'WORKED'
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

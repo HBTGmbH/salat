@@ -15,6 +15,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -116,6 +117,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
                 showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
                 showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+                showDailyReportForm.setWorkingDayType(workingday.getType());
             } else {
 
                 //show break time, quitting time and working day ends on the showdailyreport.jsp
@@ -125,6 +127,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 showDailyReportForm.setSelectedWorkMinuteBegin(0);
                 showDailyReportForm.setSelectedBreakHour(0);
                 showDailyReportForm.setSelectedBreakMinute(0);
+                showDailyReportForm.setWorkingDayType(WorkingDayType.WORKED);
             }
 
             request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
