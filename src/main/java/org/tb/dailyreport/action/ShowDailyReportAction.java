@@ -45,10 +45,7 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
-import org.tb.common.exception.AuthorizationException;
-import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
-import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -125,7 +122,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
             try {
                 timereportService.deleteTimereports(timereportIds, authorizedUser);
-            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
+            } catch (ErrorCodeException e) {
                 addToErrors(request, e.getErrorCode());
                 return mapping.getInputForward();
             }
@@ -730,7 +727,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         }
         try {
             workingdayService.upsertWorkingday(workingday);
-        } catch(BusinessRuleException e) {
+        } catch(ErrorCodeException e) {
             addToErrors(request, e.getErrorCode());
             return mapping.getInputForward();
         }

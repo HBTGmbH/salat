@@ -30,6 +30,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -38,6 +39,7 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -66,6 +68,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
     private final CustomerorderDAO customerorderDAO;
     private final TimereportDAO timereportDAO;
     private final WorkingdayDAO workingdayDAO;
+    private final WorkingdayService workingdayService;
     private final EmployeeorderDAO employeeorderDAO;
     private final SuborderHelper suborderHelper;
     private final CustomerorderHelper customerorderHelper;
@@ -188,11 +191,15 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 workingday.setBreakhours(0);
                 workingday.setBreakminutes(0);
                 workingday.setType(WorkingDayType.WORKED);
-                workingdayDAO.save(workingday);
             } else {
                 workingday.setStarttimehour(form.getSelectedHourBeginDay());
                 workingday.setStarttimeminute(form.getSelectedMinuteBeginDay());
-                workingdayDAO.save(workingday);
+            }
+            try {
+                workingdayService.upsertWorkingday(workingday);
+            } catch(ErrorCodeException e) {
+                addToErrors(request, e.getErrorCode());
+                return mapping.getInputForward();
             }
         }
 
