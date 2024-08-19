@@ -490,7 +490,7 @@
 
 				<!-- select working day begin and  break -->
 				<c:if test="${view eq 'day' || view == null}">
-					<c:if test="${currentEmployeeContract != null && currentEmployeeContract.id == loginEmployeeContract.id}">
+					<c:if test="${dailyReportViewHelper.displayWorkingDay}">
 						<tr>
 							<td align="left" class="noBborderStyle">
 								<b><bean:message key="main.timereport.startofwork.text" /></b> <i>(hh:mm)</i><b>:</b>
@@ -567,6 +567,7 @@
 		<c:if test="${timereportsSize>10}">
 			<table>
 				<tr>
+					<c:if test="${dailyReportViewHelper.createTimereports}">
 					<html:form action="/CreateDailyReport">
 						<td class="noBborderStyle" colspan="6" align="left">
 							<html:submit styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
@@ -574,6 +575,7 @@
 							</html:submit>
 						</td>
 					</html:form>
+					</c:if>
 					<html:form target="_blank" action="/ShowDailyReport?task=print">
 						<td class="noBborderStyle" colspan="6" align="left">
 							<html:submit styleId="button" titleKey="main.general.button.printpreview.alttext.text">
@@ -593,7 +595,7 @@
 			</table>
 		</c:if>
 
-        <c:if test="${(view eq 'day') && visibleworkingday && currentEmployee != 'ALL EMPLOYEES'}">
+        <c:if test="${(view eq 'day') && visibleworkingday && dailyReportViewHelper.useFavorites}">
             <html:form action="/ShowDailyReport">
                 <div class="favorites">
                     <c:forEach var="favorite" items="${favorites}" varStatus="statusID">
@@ -940,6 +942,7 @@
 		</table>
 		<table>
 			<tr>
+				<c:if test="${dailyReportViewHelper.createTimereports}">
 				<html:form action="/CreateDailyReport">
 					<td class="noBborderStyle" colspan="6" align="left">
 						<html:submit styleId="button" titleKey="main.general.button.createnewreport.alttext.text">
@@ -947,6 +950,7 @@
 						</html:submit>
 					</td>
 				</html:form>
+				</c:if>
 				<html:form target="_blank" action="/ShowDailyReport?task=print">
 					<td class="noBborderStyle" colspan="6" align="left">
 						<html:submit styleId="button" titleKey="main.general.button.printpreview.alttext.text">
@@ -970,7 +974,7 @@
 
 		<!-- Überstunden und Urlaubstage -->
 		<c:choose>
-			<c:when test="${currentEmployee != 'ALL EMPLOYEES'}">
+			<c:when test="${dailyReportViewHelper.displayEmployeeInfo}">
 				<br><br><br>
 				<jsp:include flush="true" page="/info2.jsp">
 					<jsp:param name="info" value="Info" />

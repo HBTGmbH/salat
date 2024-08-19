@@ -1,5 +1,6 @@
 package org.tb.dailyreport.action;
 
+import static java.lang.Boolean.TRUE;
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 
@@ -12,8 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.tb.auth.AfterLogin;
 import org.tb.common.GlobalConstants;
@@ -40,16 +39,41 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
     private AfterLogin afterLogin;
 
     @Override
-    public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request,
-        HttpServletResponse response) throws Exception {
-        request.getSession().setAttribute("dailyReportViewHelper", new DailyReportViewHelper());
-        return super.execute(mapping, form, request, response);
+    public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        var actionForward = super.execute(mapping, form, request, response);
+        initDailyReportViewHelper(request);
+        return actionForward;
     }
 
-    protected void addErrorAtTheBottom(HttpServletRequest request, ActionMessages errors, ActionMessage message) {
-        errors.add("status", message);
-        request.getSession().setAttribute("errors", true);
-        saveErrors(request, errors);
+    private void initDailyReportViewHelper(HttpServletRequest request) {
+        boolean createTimereports = false;
+        boolean editTimereports = false;
+        boolean displayWorkingDay = false;
+        boolean displayEmployeeInfo = false;
+        boolean useFavorites = false;
+        var currentContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
+        if(currentContract != null) {
+            var loginContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+            if(currentContract.getId().equals(loginContract.getId())) {
+                createTimereports = true;
+                editTimereports = true;
+                displayWorkingDay = true;
+                displayEmployeeInfo = true;
+                useFavorites = true;
+            } else if(authorizedUser.isManager()) {
+                createTimereports = true;
+                editTimereports = true;
+                displayWorkingDay = true;
+                displayEmployeeInfo = true;
+            }
+            if(TRUE.equals(currentContract.getFreelancer())) {
+                displayWorkingDay = false;
+                displayEmployeeInfo = false;
+            }
+        }
+
+        var helper = new DailyReportViewHelper(createTimereports, editTimereports, displayWorkingDay, displayEmployeeInfo, useFavorites);
+        request.getSession().setAttribute("dailyReportViewHelper", helper);
     }
 
     /**
