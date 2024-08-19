@@ -1,5 +1,7 @@
 package org.tb.dailyreport.domain;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ public class Workingday extends AuditedEntity implements Serializable {
     private int starttimeminute;
     private int breakhours;
     private int breakminutes;
+    @Enumerated(EnumType.STRING)
     private WorkingDayType type = WorkingDayType.WORKED;
 
     @Override

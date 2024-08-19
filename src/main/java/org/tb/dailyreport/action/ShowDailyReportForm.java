@@ -51,7 +51,7 @@ public class ShowDailyReportForm extends ActionForm {
     private int selectedBreakHour;
     private int selectedBreakMinute;
 
-    private WorkingDayType workingDayType;
+    private String workingDayType;
 
     private long orderId;
     private long trOrderId;
@@ -86,6 +86,21 @@ public class ShowDailyReportForm extends ActionForm {
     @Nonnull
     public Boolean getShowOnlyValid() {
         return showOnlyValid != null && showOnlyValid;
+    }
+
+    public WorkingDayType getWorkingDayTypeTyped() {
+        if(workingDayType != null) {
+            return WorkingDayType.valueOf(workingDayType);
+        }
+        return null;
+    }
+
+    public void setWorkingDayTypeTyped(WorkingDayType workingDayTypeTyped) {
+        if(workingDayTypeTyped == null) {
+            workingDayType = null;
+        } else {
+            workingDayType = workingDayTypeTyped.name();
+        }
     }
 
 }

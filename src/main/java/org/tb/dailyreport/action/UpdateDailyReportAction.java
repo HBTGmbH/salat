@@ -117,7 +117,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
                 showDailyReportForm.setSelectedBreakHour(workingday.getBreakhours());
                 showDailyReportForm.setSelectedBreakMinute(workingday.getBreakminutes());
-                showDailyReportForm.setWorkingDayType(workingday.getType());
+                showDailyReportForm.setWorkingDayTypeTyped(workingday.getType());
             } else {
 
                 //show break time, quitting time and working day ends on the showdailyreport.jsp
@@ -127,7 +127,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 showDailyReportForm.setSelectedWorkMinuteBegin(0);
                 showDailyReportForm.setSelectedBreakHour(0);
                 showDailyReportForm.setSelectedBreakMinute(0);
-                showDailyReportForm.setWorkingDayType(WorkingDayType.WORKED);
+                showDailyReportForm.setWorkingDayTypeTyped(WorkingDayType.WORKED);
             }
 
             request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
