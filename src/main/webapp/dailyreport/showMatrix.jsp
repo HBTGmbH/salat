@@ -294,47 +294,17 @@
 		<tr>
 			<td class="matrix bold"><bean:message key="main.matrixoverview.table.order" /></td>
 			<td class="matrix bold"><bean:message key="main.matrixoverview.table.orderdescription" /></td>
-
-			<!-- <td>AuftragsBezeichnung</td> -->
-
 			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
-
-				<!-- 			<td align="center" class="matrix bold"> -->
-				<c:if test="${matrixdaytotal.satSun==true}">
-					<c:if test="${matrixdaytotal.publicHoliday==true}">
-						<td
-							title="${matrixdaytotal.publicHolidayName} / <bean:message key="${matrixdaytotal.weekDay}" />"
-							class="matrix bold" align="right"
-							style="background-color: c1c1c1;" id="matrixTableLink">
-					</c:if>
-					<c:if test="${matrixdaytotal.publicHoliday==false}">
-						<td title="<bean:message key="${matrixdaytotal.weekDay}" />"
-							class="matrix bold" align="right"
-							style="background-color: lightgrey;" id="matrixTableLink">
-					</c:if>
-				</c:if>
-				<c:if test="${matrixdaytotal.satSun==false}">
-					<c:if test="${matrixdaytotal.publicHoliday==true}">
-						<td
-							title="${matrixdaytotal.publicHolidayName} / <bean:message key="${matrixdaytotal.weekDay}" />"
-							class="matrix bold" align="right"
-							style="background-color: c1c1c1;" id="matrixTableLink">
-					</c:if>
-					<c:if test="${matrixdaytotal.publicHoliday==false}">
-						<td
-							title="<c:if test="${matrixdaytotal.weekDay!=null}"><bean:message key="${matrixdaytotal.weekDay}" /></c:if>"
-							class="matrix bold" align="right" id="matrixTableLink">
-					</c:if>
-
-				</c:if>
-				<html:link
-					href="/do/ShowDailyReport?day=${matrixdaytotal.dayString}&month=${currentMonth}&year=${currentYear}">
-									&nbsp;<c:out value="${matrixdaytotal.dayString}" />&nbsp;
-				</html:link>
-				<%-- ?task=refreshTimereports&day=${matrixdaytotal.dayString}&month=${currentMonth}&year=${currentYear} --%>
+				<td title="${matrixdaytotal.publicHolidayName} / <bean:message key="${matrixdaytotal.weekDay}" />"
+					class="matrix bold${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
+					align="center"
+					id="matrixTableLink">
+					<html:link href="/do/ShowDailyReport?day=${matrixdaytotal.dayString}&month=${currentMonth}&year=${currentYear}">
+						&nbsp;<c:out value="${matrixdaytotal.dayString}" />&nbsp;
+					</html:link>
 				</td>
 			</c:forEach>
-			<td class="matrix bold"><bean:message key="main.matrixoverview.table.sum.text" /></td>
+			<td class="matrix bold" align="right"><bean:message key="main.matrixoverview.table.sum.text" /></td>
 		</tr>
 
 		<c:forEach var="matrixline" items="${matrixlines}">
@@ -343,7 +313,7 @@
 				<td class="matrix"><c:out value="${matrixline.customOrder.shortdescription}"></c:out><br><c:out value="${matrixline.subOrder.shortdescription}" /></td>
 				<c:forEach var="bookingday" items="${matrixline.bookingDays}">
 					<td title="${fn:escapeXml(bookingday.taskdescription)}"
-					class="matrix${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
+					class="matrix${bookingday.publicHoliday ? ' holiday' : (bookingday.satSun ? ' weekend' : '')}"
 					align="right"
 					style="font-size: 7pt; border: 1px black solid;">
 						<c:out value="${bookingday.bookingCount gt 0 ? bookingday.durationString : ' '}" />

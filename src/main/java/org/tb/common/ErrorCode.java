@@ -38,7 +38,8 @@ public enum ErrorCode {
   TR_WORKING_DAY_NOT_WORKED("TR-0025","the working day must not be 'not worked'"),
   WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),
   WD_SATSUN_NOT_WORKED("WD-0002","no one can compensate his overtime on saturdays or sundays!"),
-  WD_HOLIDAY_NO_WORKED("WD-0003", "no one can compensate his overtime on a public holiday!")
+  WD_HOLIDAY_NO_WORKED("WD-0003", "no one can compensate his overtime on a public holiday!"),
+  WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER("WD-0004", "you can only save your own working days or you must be a manager!"),
   ;
 
   private final String code;

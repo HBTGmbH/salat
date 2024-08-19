@@ -7,7 +7,10 @@ import lombok.Data;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 
+import static java.time.Duration.ZERO;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.PARTIALLY;
 
 @Data
 public class MatrixDayTotal {
@@ -58,20 +61,23 @@ public class MatrixDayTotal {
     }
 
     public boolean isNotWorked() {
-        return workingDayType == WorkingDayType.NOT_WORKED;
+        return workingDayType == NOT_WORKED;
     }
 
     public boolean isPartiallyNotWorked() {
-        return workingDayType == WorkingDayType.PARTIALLY;
+        return workingDayType == PARTIALLY;
     }
 
     public Duration getEffectiveOvertime() {
-        if(workingDayType == WorkingDayType.PARTIALLY) {
-            return contractWorkingTime.minus(workingTime);
+        var effectiveOvertime = ZERO;
+        if(workingDayType == PARTIALLY) {
+            effectiveOvertime = contractWorkingTime.minus(workingTime);
+        } else if(workingDayType == NOT_WORKED) {
+            effectiveOvertime = contractWorkingTime;
         }
-        if(workingDayType == WorkingDayType.NOT_WORKED) {
-            return contractWorkingTime;
+        if(effectiveOvertime.isNegative()) {
+            effectiveOvertime = ZERO;
         }
-        return Duration.ZERO;
+        return effectiveOvertime;
     }
 }
