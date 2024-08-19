@@ -44,7 +44,7 @@ public class BookingDay implements Comparable<BookingDay> {
     }
 
     public void addBooking(Duration duration, String taskdescription) {
-        this.duration = duration.plus(duration);
+        this.duration = this.duration.plus(duration);
         this.taskdescription += "\n" + taskdescription;
         bookingCount++;
     }

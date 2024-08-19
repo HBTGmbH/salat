@@ -180,8 +180,8 @@ public class MatrixHelper {
         Duration totalOvertimeCompensation = null;
 
         if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES && employeecontract != null) {
-            //calculate dayhourstarget // TODO compare with OvertimeService
-            totalWorkingTimeTarget = dayTotals.stream().map(MatrixDayTotal::getEffectiveTargetTime).reduce(Duration.ZERO, Duration::plus);
+            //calculate target working time
+            totalWorkingTimeTarget = overtimeService.calculateWorkingTimeTarget(employeecontract.getId(), dateFirst, dateLast);
 
             // calculate overtime compensation
             totalOvertimeCompensation = overtimeService.calculateOvertimeCompensation(employeecontract.getId(), dateFirst, dateLast);
