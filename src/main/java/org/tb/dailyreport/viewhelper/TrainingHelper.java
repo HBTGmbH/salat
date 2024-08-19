@@ -50,11 +50,11 @@ public class TrainingHelper {
 
     public static String hoursMinToString(int[] time) {
 
-        int trainingHours = time[0];
-        int trainingMinutes = time[1];
+        long trainingHours = time[0];
+        long trainingMinutes = time[1];
 
-        trainingHours += trainingMinutes / 60;
-        trainingMinutes = trainingMinutes % 60;
+        trainingHours += trainingMinutes / MINUTES_PER_HOUR;
+        trainingMinutes = trainingMinutes % MINUTES_PER_HOUR;
 
         StringBuilder trainingString = new StringBuilder();
 
