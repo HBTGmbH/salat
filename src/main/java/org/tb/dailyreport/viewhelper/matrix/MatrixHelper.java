@@ -215,13 +215,13 @@ public class MatrixHelper {
                                   boolean fillStartAndBreakTime) {
 
         // initialize MatrixDayTotals for each dates between dateFirst and dateLast
-
+        var contract = employeecontractDAO.getEmployeeContractById(employeeContractId);
         List<MatrixDayTotal> dayTotals = new ArrayList<>();
-
+        Map<LocalDate, Workingday> workingDays = queryWorkingDays(dateFirst, dateLast, employeeContractId);
         var dates = dateFirst.datesUntil(dateLast.plusDays(1)).toList(); // to include the last date too
         int day = 1;
         for(var date: dates) {
-            var dayTotal = new MatrixDayTotal(date, day, Duration.ZERO);
+            var dayTotal = new MatrixDayTotal(date, day, Duration.ZERO, contract.getDailyWorkingTime());
 
             // mark weekends
             var dayOfWeek = dayTotal.getDate().getDayOfWeek();
@@ -236,6 +236,11 @@ public class MatrixHelper {
                 dayTotal.setPublicHolidayName(publicHolidayMap.get(date).getName());
             }
 
+            var workingDay = workingDays.get(date);
+            if(workingDay != null) {
+                dayTotal.setWorkingDayType(workingDay.getType());
+            }
+
             dayTotals.add(dayTotal);
             day++;
         }
@@ -243,13 +248,12 @@ public class MatrixHelper {
         if (fillStartAndBreakTime) {
             var invalidBreakTimes = timereportService.validateBreakTimes(employeeContractId, dateFirst, dateLast);
             var invalidStartOfWorkDays = timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast);
-            Map<LocalDate, Workingday> workingDays = queryWorkingDays(dateFirst, dateLast, employeeContractId);
             for(var dayTotal : dayTotals) {
                 var date = dayTotal.getDate();
                 var workingDay = workingDays.get(date);
                 if (workingDay != null) {
                     dayTotal.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * MINUTES_PER_HOUR);
-                    dayTotal.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * 60L);
+                    dayTotal.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * MINUTES_PER_HOUR);
                 }
                 boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(date) && invalidStartOfWorkDays.get(date) != NONE;
                 boolean invalidBreakTime = invalidBreakTimes.containsKey(date) && invalidBreakTimes.get(date) != NONE;

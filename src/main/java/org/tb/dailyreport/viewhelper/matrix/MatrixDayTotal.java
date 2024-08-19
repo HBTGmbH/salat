@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import lombok.Data;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
@@ -22,11 +23,14 @@ public class MatrixDayTotal {
     private boolean invalidStartOfWork;
     private Long breakMinutes;
     private boolean invalidBreakTime;
+    private WorkingDayType workingDayType;
+    private Duration contractWorkingTime;
 
-    public MatrixDayTotal(LocalDate date, int day, Duration workingTime) {
+    public MatrixDayTotal(LocalDate date, int day, Duration workingTime, Duration contractWorkingTime) {
         this.date = date;
         this.day = day;
         this.workingTime = workingTime;
+        this.contractWorkingTime = contractWorkingTime;
     }
 
     public String getWorkingTimeString() {
