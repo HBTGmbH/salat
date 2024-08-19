@@ -250,7 +250,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         if (workingday != null) {
 
             //show break time, quitting time and working day ends on the showdailyreport.jsp
-            request.getSession().setAttribute("visibleworkingday", true);
+            request.getSession().setAttribute("visibleworkingday", workingday.getType() != WorkingDayType.NOT_WORKED);
 
             reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
             reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());

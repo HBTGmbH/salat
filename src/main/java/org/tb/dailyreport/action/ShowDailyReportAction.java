@@ -63,6 +63,7 @@ import org.tb.dailyreport.domain.comparator.TimereportByRefdayDescComparator;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -100,6 +101,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final EmployeeorderDAO employeeorderDAO;
     private final FavoriteService favoriteService;
     private final WorkingdayDAO workingdayDAO;
+    private final WorkingdayService workingdayService;
     private final EmployeeDAO employeeDAO;
     private final SuborderHelper suborderHelper;
     private final CustomerorderHelper customerorderHelper;
@@ -726,9 +728,15 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             // unreachable code
             assert false;
         }
-        workingdayDAO.save(workingday);
+        try {
+            workingdayService.upsertWorkingday(workingday);
+        } catch(BusinessRuleException e) {
+            addToErrors(request, e.getErrorCode());
+            return mapping.getInputForward();
+        }
+
         //show break time, quitting time and working day ends on the showdailyreport.jsp
-        request.getSession().setAttribute("visibleworkingday", true);
+        request.getSession().setAttribute("visibleworkingday", workingday.getType() != WorkingDayType.NOT_WORKED);
         request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
         //calculate Working Day End
         request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
@@ -875,7 +883,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             if (workingday != null) {
                 // show break time, quitting time and working day ends on
                 // the showdailyreport.jsp
-                request.getSession().setAttribute("visibleworkingday", true);
+                request.getSession().setAttribute("visibleworkingday", workingday.getType() != WorkingDayType.NOT_WORKED);
                 reportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
                 reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
                 reportForm.setSelectedBreakHour(workingday.getBreakhours());

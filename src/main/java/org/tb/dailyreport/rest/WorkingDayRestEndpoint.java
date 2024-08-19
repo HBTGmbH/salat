@@ -9,6 +9,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.persistence.EmployeecontractDAO;
 
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ public class WorkingDayRestEndpoint {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final WorkingdayDAO workingdayDAO;
+    private WorkingdayService workingdayService;
     private final AuthorizedUser authorizedUser;
 
     @PutMapping(consumes = APPLICATION_JSON_VALUE)
@@ -51,7 +53,10 @@ public class WorkingDayRestEndpoint {
         if(data.getType() != null) {
             wd.setType(data.getType());
         }
-        workingdayDAO.save(wd);
+        var error = workingdayService.upsertWorkingday(wd);
+        if(error != null) {
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, error.getMessage());
+        }
     }
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)

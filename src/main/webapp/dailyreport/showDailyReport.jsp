@@ -234,6 +234,7 @@
 			<br>
 		</span>
 		<br>
+		<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 		<html:form action="/ShowDailyReport">
 			<table class="center backgroundcolor">
 				<colgroup>
@@ -544,19 +545,19 @@
 									<b><c:out value="${workingDayEnds}"></c:out></b>
 								</td>
 							</tr>
-							<tr>
-								<td align="left" class="noBborderStyle">
-									<b><bean:message key="main.timereport.workingday.type.label" />:</b>
-								</td>
-								<td align="left" class="noBborderStyle">
-									<html:select property="workingDayType" styleClass="make-select2" onchange="saveWorkingDayType(this.form)">
-										<html:option value="WORKED"><bean:message key="main.timereport.workingday.type.value.worked" /></html:option>
-										<html:option value="NOT_WORKED"><bean:message key="main.timereport.workingday.type.value.notworked" /></html:option>
-										<html:option value="PARTIALLY"><bean:message key="main.timereport.workingday.type.value.partially" /></html:option>
-									</html:select>
-								</td>
-							</tr>
 						</c:if>
+						<tr>
+							<td align="left" class="noBborderStyle">
+								<b><bean:message key="main.timereport.workingday.type.label" />:</b>
+							</td>
+							<td align="left" class="noBborderStyle">
+								<html:select property="workingDayType" styleClass="make-select2" onchange="saveWorkingDayType(this.form)">
+									<html:option value="WORKED"><bean:message key="main.timereport.workingday.type.value.worked" /></html:option>
+									<html:option value="NOT_WORKED"><bean:message key="main.timereport.workingday.type.value.notworked" /></html:option>
+									<html:option value="PARTIALLY"><bean:message key="main.timereport.workingday.type.value.partially" /></html:option>
+								</html:select>
+							</td>
+						</tr>
 					</c:if>
 				</c:if>
 			</table>
