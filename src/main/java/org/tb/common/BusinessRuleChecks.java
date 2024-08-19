@@ -8,7 +8,13 @@ import org.tb.common.exception.BusinessRuleException;
 public class BusinessRuleChecks {
 
   public static void isTrue(boolean expression, ErrorCode errorCode) {
-    if (expression == false) {
+    if (!expression) {
+      throw new BusinessRuleException(errorCode);
+    }
+  }
+
+  public static void isFalse(boolean expression, ErrorCode errorCode) {
+    if (expression) {
       throw new BusinessRuleException(errorCode);
     }
   }
