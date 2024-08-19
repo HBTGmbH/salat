@@ -74,4 +74,14 @@ public class MatrixDayTotal {
         }
         return contractWorkingTime;
     }
+
+    public Duration getEffectiveOvertime() {
+        if(workingDayType == WorkingDayType.PARTIALLY) {
+            return contractWorkingTime.minus(workingTime);
+        }
+        if(workingDayType == WorkingDayType.NOT_WORKED) {
+            return contractWorkingTime;
+        }
+        return Duration.ZERO;
+    }
 }
