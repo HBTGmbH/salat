@@ -194,6 +194,38 @@ public class OvertimeService {
     return employeecontract.getReportAcceptanceDate() != null;
   }
 
+  public Duration calculateWorkingTimeTarget(long employeecontractId, LocalDate requestedStart, LocalDate requestedEnd) {
+    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    final LocalDate start, end;
+    // do not consider invalid(outside of the validity of the contract) days
+    if (employeecontract.getValidFrom().isAfter(requestedStart)) {
+      start = employeecontract.getValidFrom();
+    } else {
+      start = requestedStart;
+    }
+    if (employeecontract.getValidUntil() != null && employeecontract.getValidUntil().isBefore(requestedEnd)) {
+      end = employeecontract.getValidUntil();
+    } else {
+      end = requestedEnd;
+    }
+    if (end.isBefore(start)) {
+      return Duration.ZERO;
+    }
+    long numberOfWorkingDayHolidays = publicholidayDAO.getPublicHolidaysBetween(start, end)
+        .stream()
+        .map(Publicholiday::getRefdate)
+        .map(LocalDate::getDayOfWeek)
+        .filter(dayOfWeek -> dayOfWeek != SATURDAY && dayOfWeek != SUNDAY)
+        .count();
+
+    var expectedWorkingDaysCount = DateUtils.getWorkingDayDistance(start, end);
+    // substract holidays
+    expectedWorkingDaysCount -= numberOfWorkingDayHolidays;
+    var dailyWorkingTime = employeecontract.getDailyWorkingTime();
+    var workingTimeTarget = dailyWorkingTime.multipliedBy(expectedWorkingDaysCount);
+    return workingTimeTarget;
+  }
+
   private OvertimeInfo calculateOvertime(LocalDate requestedStart, LocalDate requestedEnd, Employeecontract employeecontract, boolean useOverTimeAdjustment) {
 
     final LocalDate start, end;
@@ -212,28 +244,15 @@ public class OvertimeService {
       return new OvertimeInfo(Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO, Duration.ZERO);
     }
 
-    long numberOfWorkingDayHolidays = publicholidayDAO.getPublicHolidaysBetween(start, end)
-        .stream()
-        .map(Publicholiday::getRefdate)
-        .map(LocalDate::getDayOfWeek)
-        .filter(dayOfWeek -> dayOfWeek != SATURDAY && dayOfWeek != SUNDAY)
-        .count();
-
-    var expectedWorkingDaysCount = DateUtils.getWorkingDayDistance(start, end);
-    // substract holidays
-    expectedWorkingDaysCount -= numberOfWorkingDayHolidays;
-
-    // calculate working time
-    var dailyWorkingTime = employeecontract.getDailyWorkingTime();
-    var expectedWorkingTime = dailyWorkingTime.multipliedBy(expectedWorkingDaysCount);
+    var workingTimeTarget = calculateWorkingTimeTarget(employeecontract.getId(), requestedStart, requestedEnd);
     var actualWorkingTime = timereportDAO
-        .getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), start, end)
+        .getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), requestedStart, requestedEnd)
         .stream()
         .map(TimereportDTO::getDuration)
         .reduce(Duration.ZERO, Duration::plus);
     var overtimeAdjustment = Duration.ZERO;
 
-    Duration overtime = actualWorkingTime.minus(expectedWorkingTime);
+    Duration overtime = actualWorkingTime.minus(workingTimeTarget);
     if (useOverTimeAdjustment) {
       var overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
       overtimeAdjustment = overtimes
@@ -255,7 +274,7 @@ public class OvertimeService {
       overtime = overtime.plus(overtimeAdjustment);
     }
 
-    return new OvertimeInfo(actualWorkingTime, overtimeAdjustment, actualWorkingTime.plus(overtimeAdjustment), expectedWorkingTime, overtime);
+    return new OvertimeInfo(actualWorkingTime, overtimeAdjustment, actualWorkingTime.plus(overtimeAdjustment), workingTimeTarget, overtime);
   }
 
   // TODO introduce effective date in Overtime?

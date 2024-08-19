@@ -342,37 +342,11 @@
 				<td class="matrix"><c:out value="${matrixline.customOrder.sign}"></c:out><br><c:out value="${matrixline.subOrder.sign}" /></td>
 				<td class="matrix"><c:out value="${matrixline.customOrder.shortdescription}"></c:out><br><c:out value="${matrixline.subOrder.shortdescription}" /></td>
 				<c:forEach var="bookingday" items="${matrixline.bookingDays}">
-					<c:if test="${bookingday.satSun==true}">
-						<c:if test="${bookingday.publicHoliday==true}">
-							<td title="${fn:escapeXml(bookingday.taskdescription)}"
-								class="matrix" align="right"
-								style="font-size: 7pt; border: 1px black solid; background-color: c1c1c1;">
-						</c:if>
-						<c:if test="${bookingday.publicHoliday==false}">
-							<td title="${fn:escapeXml(bookingday.taskdescription)}"
-								class="matrix" align="right"
-								style="font-size: 7pt; border: 1px black solid; background-color: lightgrey;">
-						</c:if>
-					</c:if>
-					<c:if test="${bookingday.satSun==false}">
-						<c:if test="${bookingday.publicHoliday==true}">
-							<td title="${fn:escapeXml(bookingday.taskdescription)}"
-								class="matrix" align="right"
-								style="font-size: 7pt; border: 1px black solid; background-color: c1c1c1;">
-						</c:if>
-						<c:if test="${bookingday.publicHoliday==false}">
-							<td title="${fn:escapeXml(bookingday.taskdescription)}"
-								class="matrix" align="right"
-								style="font-size: 7pt; border: 1px black solid;">
-						</c:if>
-					</c:if>
-
-							<c:if test="${bookingday.bookingCount eq 0}">
-								&nbsp;
-							</c:if>
-							<c:if test="${bookingday.bookingCount gt 0}">
-								<c:out value="${bookingday.durationString}" />
-							</c:if>
+					<td title="${fn:escapeXml(bookingday.taskdescription)}"
+					class="matrix${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
+					align="right"
+					style="font-size: 7pt; border: 1px black solid;">
+						<c:out value="${bookingday.bookingCount gt 0 ? bookingday.durationString : ' '}" />
 					</td>
 				</c:forEach>
 				<td class="matrix" align="right"><c:out	value="${matrixline.totalString}"></c:out></td>
