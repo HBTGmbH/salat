@@ -256,7 +256,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
             reportForm.setSelectedBreakHour(workingday.getBreakhours());
             reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
-            reportForm.setWorkingDayType(workingday.getType());
+            reportForm.setWorkingDayTypeTyped(workingday.getType());
         } else {
 
             //don't show break time, quitting time and working day ends on the showdailyreport.jsp
@@ -266,7 +266,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             reportForm.setSelectedWorkMinuteBegin(0);
             reportForm.setSelectedBreakHour(0);
             reportForm.setSelectedBreakMinute(0);
-            reportForm.setWorkingDayType(WorkingDayType.WORKED);
+            reportForm.setWorkingDayTypeTyped(WorkingDayType.WORKED);
         }
         return workingday;
     }

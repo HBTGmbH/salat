@@ -394,7 +394,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     continueForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
                     continueForm.setSelectedBreakHour(workingday.getBreakhours());
                     continueForm.setSelectedBreakMinute(workingday.getBreakminutes());
-                    continueForm.setWorkingDayType(workingday.getType());
+                    continueForm.setWorkingDayTypeTyped(workingday.getType());
                 } else {
                     // don't show break time, quitting time and working day ends on
                     // the showdailyreport.jsp
@@ -403,7 +403,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     continueForm.setSelectedWorkMinuteBegin(0);
                     continueForm.setSelectedBreakHour(0);
                     continueForm.setSelectedBreakMinute(0);
-                    continueForm.setWorkingDayType(WorkingDayType.WORKED);
+                    continueForm.setWorkingDayTypeTyped(WorkingDayType.WORKED);
                 }
 
                 // refresh overtime and vacation

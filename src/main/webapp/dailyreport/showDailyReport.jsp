@@ -131,6 +131,11 @@
 				form.submit();
 			}
 
+			function saveWorkingDayType(form) {
+				form.action = "/do/ShowDailyReport?task=saveWorkingDayType";
+				form.submit();
+			}
+
 			function roundMinutes(minutes, operand = 5) {
 				return Math.round(minutes / operand) * operand;
 			}
@@ -484,7 +489,7 @@
 
 				<!-- select working day begin and  break -->
 				<c:if test="${view eq 'day' || view == null}">
-					<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
+					<c:if test="${currentEmployeeContract != null && currentEmployeeContract.id == loginEmployeeContract.id}">
 						<tr>
 							<td align="left" class="noBborderStyle">
 								<b><bean:message key="main.timereport.startofwork.text" /></b> <i>(hh:mm)</i><b>:</b>
@@ -504,8 +509,7 @@
 								</nobr>
 							</td>
 						</tr>
-
-						<%-- is a visible, when workingday null --%>
+						<%-- is a visible, when workingday begin has been stored --%>
 						<c:if test="${visibleworkingday}">
 							<tr>
 								<td align="left" class="noBborderStyle">
@@ -538,6 +542,18 @@
 								</td>
 								<td align="left" class="noBborderStyle">
 									<b><c:out value="${workingDayEnds}"></c:out></b>
+								</td>
+							</tr>
+							<tr>
+								<td align="left" class="noBborderStyle">
+									<b><bean:message key="main.timereport.workingday.type.label" />:</b>
+								</td>
+								<td align="left" class="noBborderStyle">
+									<html:select property="workingDayType" styleClass="make-select2" onchange="saveWorkingDayType(this.form)">
+										<html:option value="WORKED"><bean:message key="main.timereport.workingday.type.value.worked" /></html:option>
+										<html:option value="NOT_WORKED"><bean:message key="main.timereport.workingday.type.value.notworked" /></html:option>
+										<html:option value="PARTIALLY"><bean:message key="main.timereport.workingday.type.value.partially" /></html:option>
+									</html:select>
 								</td>
 							</tr>
 						</c:if>

@@ -720,8 +720,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         } else if (task.equals("saveBreak")) {
             workingday.setBreakhours(reportForm.getSelectedBreakHour());
             workingday.setBreakminutes(reportForm.getSelectedBreakMinute());
-        } else if (task.equals("saveType")) {
-            workingday.setType(reportForm.getWorkingDayType());
+        } else if (task.equals("saveWorkingDayType")) {
+            workingday.setType(reportForm.getWorkingDayTypeTyped());
         } else {
             // unreachable code
             assert false;
@@ -880,7 +880,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
                 reportForm.setSelectedBreakHour(workingday.getBreakhours());
                 reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
-                reportForm.setWorkingDayType(workingday.getType());
+                reportForm.setWorkingDayTypeTyped(workingday.getType());
             } else {
                 // don't show break time, quitting time and working day ends
                 // on the showdailyreport.jsp
@@ -889,7 +889,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setSelectedWorkMinuteBegin(0);
                 reportForm.setSelectedBreakHour(0);
                 reportForm.setSelectedBreakMinute(0);
-                reportForm.setWorkingDayType(WorkingDayType.WORKED);
+                reportForm.setWorkingDayTypeTyped(WorkingDayType.WORKED);
 
             }
 
