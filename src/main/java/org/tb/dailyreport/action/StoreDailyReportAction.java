@@ -33,6 +33,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.domain.Workingday;
@@ -186,6 +187,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 workingday.setStarttimeminute(form.getSelectedMinuteBeginDay());
                 workingday.setBreakhours(0);
                 workingday.setBreakminutes(0);
+                workingday.setType(WorkingDayType.WORKED);
                 workingdayDAO.save(workingday);
             } else {
                 workingday.setStarttimehour(form.getSelectedHourBeginDay());
@@ -392,6 +394,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     continueForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
                     continueForm.setSelectedBreakHour(workingday.getBreakhours());
                     continueForm.setSelectedBreakMinute(workingday.getBreakminutes());
+                    continueForm.setWorkingDayType(workingday.getType());
                 } else {
                     // don't show break time, quitting time and working day ends on
                     // the showdailyreport.jsp
@@ -400,6 +403,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     continueForm.setSelectedWorkMinuteBegin(0);
                     continueForm.setSelectedBreakHour(0);
                     continueForm.setSelectedBreakMinute(0);
+                    continueForm.setWorkingDayType(WorkingDayType.WORKED);
                 }
 
                 // refresh overtime and vacation

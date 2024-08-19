@@ -53,6 +53,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.domain.comparator.TimereportByEmployeeAscComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByEmployeeDescComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByOrderAscComparator;
@@ -170,8 +171,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         final ActionForward actionResult;
         if ("sort".equals(task)) {
             actionResult = doSort(mapping, request, sortModus, sortColumn);
-        } else if ("saveBegin".equals(task) || "saveBreak".equals(task)) {
-            actionResult = doSaveBeginOrBreak(mapping, request, reportForm, ec, task);
+        } else if ("saveBegin".equals(task) || "saveBreak".equals(task) || "saveWorkingDayType".equals(task)) {
+            actionResult = doSaveWorkingDay(mapping, request, reportForm, ec, task);
         } else if ("refreshTimereports".equals(task)) {
             actionResult = doRefreshTimereports(mapping, request, reportForm, ec);
         } else if ("refreshOrders".equals(task)) {
@@ -700,7 +701,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         request.getSession().setAttribute("favorites", favorites);
     }
 
-    private ActionForward doSaveBeginOrBreak(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm, Employeecontract ec, String task) {
+    private ActionForward doSaveWorkingDay(ActionMapping mapping, HttpServletRequest request, ShowDailyReportForm reportForm, Employeecontract ec, String task) {
         //*** task for saving work starting time and saving work pausing time ***
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
@@ -719,6 +720,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         } else if (task.equals("saveBreak")) {
             workingday.setBreakhours(reportForm.getSelectedBreakHour());
             workingday.setBreakminutes(reportForm.getSelectedBreakMinute());
+        } else if (task.equals("saveType")) {
+            workingday.setType(reportForm.getWorkingDayType());
         } else {
             // unreachable code
             assert false;
@@ -877,6 +880,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
                 reportForm.setSelectedBreakHour(workingday.getBreakhours());
                 reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+                reportForm.setWorkingDayType(workingday.getType());
             } else {
                 // don't show break time, quitting time and working day ends
                 // on the showdailyreport.jsp
@@ -885,6 +889,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setSelectedWorkMinuteBegin(0);
                 reportForm.setSelectedBreakHour(0);
                 reportForm.setSelectedBreakMinute(0);
+                reportForm.setWorkingDayType(WorkingDayType.WORKED);
+
             }
 
             // call from main menu: set current month, year, timereports,

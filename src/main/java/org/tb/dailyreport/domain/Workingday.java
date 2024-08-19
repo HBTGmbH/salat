@@ -21,6 +21,8 @@ import org.tb.employee.domain.Employeecontract;
 @Entity
 public class Workingday extends AuditedEntity implements Serializable {
 
+    public enum WorkingDayType { WORKED, NOT_WORKED, PARTIALLY }
+
     private static final long serialVersionUID = 1L;
 
     @ManyToOne
@@ -33,6 +35,7 @@ public class Workingday extends AuditedEntity implements Serializable {
     private int starttimeminute;
     private int breakhours;
     private int breakminutes;
+    private WorkingDayType type = WorkingDayType.WORKED;
 
     @Override
     public boolean equals(Object obj) {

@@ -2,6 +2,7 @@ package org.tb.dailyreport.rest;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 
 @Getter
 @Builder
@@ -14,5 +15,6 @@ public class WorkingDayData {
     private int breakhours;
     private int breakminutes;
     private String date;
+    private WorkingDayType type;
 
 }

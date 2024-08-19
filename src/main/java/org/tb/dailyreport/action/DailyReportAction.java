@@ -20,6 +20,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -255,15 +256,17 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             reportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
             reportForm.setSelectedBreakHour(workingday.getBreakhours());
             reportForm.setSelectedBreakMinute(workingday.getBreakminutes());
+            reportForm.setWorkingDayType(workingday.getType());
         } else {
 
-            //don�t show break time, quitting time and working day ends on the showdailyreport.jsp
+            //don't show break time, quitting time and working day ends on the showdailyreport.jsp
             request.getSession().setAttribute("visibleworkingday", false);
 
             reportForm.setSelectedWorkHourBegin(DEFAULT_WORK_DAY_START);
             reportForm.setSelectedWorkMinuteBegin(0);
             reportForm.setSelectedBreakHour(0);
             reportForm.setSelectedBreakMinute(0);
+            reportForm.setWorkingDayType(WorkingDayType.WORKED);
         }
         return workingday;
     }

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.employee.domain.Employeecontract;
 
 /**
@@ -40,6 +41,7 @@ public class ShowDailyReportForm extends ActionForm {
     private String status;
     private Boolean training;
     private Boolean showOvertimeUntil;
+
     private int selectedHourBegin;
     private int selectedMinuteBegin;
     private int selectedHourEnd;
@@ -48,6 +50,8 @@ public class ShowDailyReportForm extends ActionForm {
     private int selectedWorkMinuteBegin;
     private int selectedBreakHour;
     private int selectedBreakMinute;
+
+    private WorkingDayType workingDayType;
 
     private long orderId;
     private long trOrderId;
