@@ -56,4 +56,22 @@ public class MatrixDayTotal {
     public boolean isZeroWorkingTime() {
         return workingTime == null || workingTime.isZero();
     }
+
+    public boolean isNotWorked() {
+        return workingDayType == WorkingDayType.NOT_WORKED;
+    }
+
+    public boolean isPartiallyNotWorked() {
+        return workingDayType == WorkingDayType.PARTIALLY;
+    }
+
+    public Duration getEffectiveTargetTime() {
+        if(workingDayType == WorkingDayType.PARTIALLY) {
+            return workingTime;
+        }
+        if(workingDayType == WorkingDayType.NOT_WORKED) {
+            return Duration.ZERO;
+        }
+        return contractWorkingTime;
+    }
 }

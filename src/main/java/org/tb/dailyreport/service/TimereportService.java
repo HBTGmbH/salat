@@ -20,6 +20,7 @@ import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.ReferencedayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -279,6 +280,7 @@ public class TimereportService {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
     checkAuthorization(timereports, authorizedUser);
+    validateWorkingDayBusinessRules(timereports);
     validateTimeReportingBusinessRules(timereports);
     validateContractBusinessRules(timereports);
     validateOrderBusinessRules(timereports);
@@ -505,6 +507,16 @@ public class TimereportService {
     LocalDate refdate = timereport.getReferenceday().getRefdate();
     BusinessRuleChecks.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
         TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE);
+  }
+
+  private void validateWorkingDayBusinessRules(List<Timereport> timereports) {
+    timereports.forEach(timereport -> {
+      var workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
+          timereport.getReferenceday().getRefdate(),
+          timereport.getEmployeecontract().getId()
+      );
+      DataValidation.isTrue(workingDay.getType() != WorkingDayType.NOT_WORKED, TR_WORKING_DAY_NOT_WORKED);
+    });
   }
 
   private void validateTimeReportingBusinessRules(List<Timereport> timereports) {

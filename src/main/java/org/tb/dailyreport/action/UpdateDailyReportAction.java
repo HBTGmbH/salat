@@ -111,7 +111,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             if (workingday != null) {
 
                 //show break time, quitting time and working day ends on the showdailyreport.jsp
-                request.getSession().setAttribute("visibleworkingday", true);
+                request.getSession().setAttribute("visibleworkingday", workingday.getType() != WorkingDayType.NOT_WORKED);
 
                 showDailyReportForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
                 showDailyReportForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());

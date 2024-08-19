@@ -35,6 +35,8 @@ public enum ErrorCode {
   TR_YEAR_OUT_OF_RANGE("TR-0022","Time reports must be modified only in the current, the previous or the next year"),
   TR_DURATION_OVERTIME_COMPENSATION_INVALID("TR-0023","Overtime compensations must always be booked with 0 time"),
   TR_WORKING_DAY_START_NULL("TR-0024","the start of the working day must not be null"),
+  TR_WORKING_DAY_NOT_WORKED("TR-0025","the working day must not be 'not worked'"),
+  WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),
   ;
 
   private final String code;

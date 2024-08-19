@@ -180,9 +180,8 @@ public class MatrixHelper {
         Duration totalOvertimeCompensation = null;
 
         if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES && employeecontract != null) {
-            //calculate dayhourstarget
-            var workdayCount = dayTotals.stream().filter(d -> !d.isPublicHoliday() && !d.isSatSun()).count();
-            totalWorkingTimeTarget = employeecontract.getDailyWorkingTime().multipliedBy(workdayCount);
+            //calculate dayhourstarget // TODO compare with OvertimeService
+            totalWorkingTimeTarget = dayTotals.stream().map(MatrixDayTotal::getEffectiveTargetTime).reduce(Duration.ZERO, Duration::plus);
 
             // calculate overtime compensation
             totalOvertimeCompensation = overtimeService.calculateOvertimeCompensation(employeecontract.getId(), dateFirst, dateLast);
@@ -227,6 +226,7 @@ public class MatrixHelper {
             var dayOfWeek = dayTotal.getDate().getDayOfWeek();
             if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
                 dayTotal.setSatSun(true);
+                dayTotal.setContractWorkingTime(Duration.ZERO);
             }
             dayTotal.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
 
@@ -234,6 +234,7 @@ public class MatrixHelper {
             if (publicHolidayMap.containsKey(date)) {
                 dayTotal.setPublicHoliday(true);
                 dayTotal.setPublicHolidayName(publicHolidayMap.get(date).getName());
+                dayTotal.setContractWorkingTime(Duration.ZERO);
             }
 
             var workingDay = workingDays.get(date);

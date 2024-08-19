@@ -1,5 +1,6 @@
 package org.tb.common;
 
+import java.util.Collection;
 import lombok.experimental.UtilityClass;
 import org.tb.common.exception.BusinessRuleException;
 
@@ -17,4 +18,11 @@ public class BusinessRuleChecks {
       throw new BusinessRuleException(errorCode);
     }
   }
+
+  public static void empty(Collection<?> collection, ErrorCode errorCode) {
+    if (collection != null && !collection.isEmpty()) {
+      throw new BusinessRuleException(errorCode);
+    }
+  }
+
 }

@@ -381,31 +381,16 @@
 		<tr class="matrix">
 			<td colspan="2" class="matrix bold"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.overall.text" /></td>
 			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
-				<c:if test="${matrixdaytotal.satSun==true}">
-					<c:if test="${matrixdaytotal.publicHoliday==true}">
-						<td class="matrix bold" style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;" align="right">
-							<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
-						</td>
-					</c:if>
-					<c:if test="${matrixdaytotal.publicHoliday==false}">
-						<td class="matrix bold" style="font-size: 7pt; border-top: 2px black solid; background-color: lightgrey;" align="right">
-							<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
-						</td>
-					</c:if>
-				</c:if>
-				<c:if test="${matrixdaytotal.satSun==false}">
-					<c:if test="${matrixdaytotal.publicHoliday==true}">
-						<td class="matrix bold" style="font-size: 7pt; border-top: 2px black solid; background-color: c1c1c1;" align="right">
-							<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
-						</td>
-					</c:if>
-					<c:if test="${matrixdaytotal.publicHoliday==false}">
-						<td class="matrix bold" style="font-size: 7pt; border-top: 2px black solid;" align="right">
-							<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
-						</td>
-					</c:if>
-				</c:if>
-
+				<c:choose>
+					<c:when test="${matrixdaytotal.publicHoliday}"><c:set var="tdbgcolor" value="#c1c1c1" /></c:when>
+					<c:when test="${matrixdaytotal.satSun}"><c:set var="tdbgcolor" value="lightgrey" /></c:when>
+					<c:otherwise><c:set var="tdbgcolor" value="" /></c:otherwise>
+				</c:choose>
+				<td class="matrix bold${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
+					style="font-size: 7pt; border-top: 2px black solid;"
+					align="right">
+					<c:out value="${matrixdaytotal.workingTimeString}"></c:out>
+				</td>
 			</c:forEach>
 			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${totalworkingtimestring}"></c:out></td>
 		</tr>
@@ -430,11 +415,22 @@
 						<td class="matrix${matrixdaytotal.invalidBreakTime ? ' invalid' : (matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : ''))}"
 							style="font-size: 7pt; border-top: 1x black solid;"
 							align="right">
-							<c:out value="${matrixdaytotal.breakDurationString}"></c:out>
+							<c:out value="${matrixdaytotal.zeroWorkingTime ? ' ' : matrixdaytotal.breakDurationString}"></c:out>
 						</td>
 			</c:forEach>
 			<td class="matrix" align="right">&nbsp;</td>
 		</tr>
+			<tr class="matrix">
+				<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.notworked.text" /></td>
+				<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
+					<td class="matrix${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
+						style="font-size: 7pt; border-top: 1x black solid;"
+						align="center">
+						<c:out value="${matrixdaytotal.notWorked ? 'x' : matrixdaytotal.partiallyNotWorked ? '(x)' : ' '}"></c:out>
+					</td>
+				</c:forEach>
+				<td class="matrix" align="right">&nbsp;</td>
+			</tr>
 		</c:if>
 
 		<tr class="matrix">
