@@ -56,6 +56,7 @@ import static org.tb.common.ErrorCode.*;
 import static org.tb.common.GlobalConstants.*;
 import static org.tb.common.util.DateUtils.*;
 import static org.tb.dailyreport.domain.WorkingDayValidationError.NONE;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
 @Slf4j
 @Service
@@ -333,13 +334,6 @@ public class TimereportService {
     DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
 
-    // TODO maybe move to validation like business rules validations
-    if (needsWorkingHoursLawValidation(employeeContractId) && isRelevantForWorkingTimeValidation(employeeorder.getSuborder().getCustomerorder().getOrderType())) {
-      Workingday workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContractId);
-      DataValidation.notNull(workingDay, TR_WORKING_DAY_START_NULL);
-      DataValidation.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
-    }
-
     timereport.setEmployeecontract(employeecontract);
     timereport.setEmployeeorder(employeeorder);
     timereport.setSuborder(employeeorder.getSuborder());
@@ -511,11 +505,22 @@ public class TimereportService {
 
   private void validateWorkingDayBusinessRules(List<Timereport> timereports) {
     timereports.forEach(timereport -> {
+      var employeeContractId = timereport.getEmployeecontract().getId();
       var workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
           timereport.getReferenceday().getRefdate(),
-          timereport.getEmployeecontract().getId()
+          employeeContractId
       );
-      DataValidation.isTrue(workingDay.getType() != WorkingDayType.NOT_WORKED, TR_WORKING_DAY_NOT_WORKED);
+
+      // check begin and break rules
+      OrderType orderType = timereport.getSuborder().getCustomerorder().getOrderType();
+      if (needsWorkingHoursLawValidation(employeeContractId) && isRelevantForWorkingTimeValidation(orderType)) {
+        DataValidation.notNull(workingDay, TR_WORKING_DAY_START_NULL);
+        DataValidation.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
+      }
+
+      // if any time is reported the type of the working day must not be NOT_WORKED for that day
+      boolean notWorked = workingDay != null && workingDay.getType() == NOT_WORKED;
+      BusinessRuleChecks.isFalse(notWorked, TR_WORKING_DAY_NOT_WORKED);
     });
   }
 

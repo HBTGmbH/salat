@@ -208,70 +208,72 @@
 			</td>
 		</tr>
 
-		<tr>
-			<td align="left" class="noBborderStyle">
-				<b><bean:message key="main.timereport.startofwork.day.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
-			</td>
-			<td align="left" class="noBborderStyle">
-				<html:select property="selectedHourBeginDay">
-					<html:options collection="hours" property="value" labelProperty="label" />
-				</html:select>
-				<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-				<html:select property="selectedMinuteBeginDay">
-					<html:options collection="minutes" property="value"	labelProperty="label" />
-				</html:select>
-				<a href="#" onclick="saveBeginOfWorkingDay(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
-			</td>
-		</tr>
+		<c:if test="${dailyReportViewHelper.displayWorkingDayStartBreak}">
+			<tr>
+				<td align="left" class="noBborderStyle">
+					<b><bean:message key="main.timereport.startofwork.day.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
+				</td>
+				<td align="left" class="noBborderStyle">
+					<html:select property="selectedHourBeginDay">
+						<html:options collection="hours" property="value" labelProperty="label" />
+					</html:select>
+					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+					<html:select property="selectedMinuteBeginDay">
+						<html:options collection="minutes" property="value"	labelProperty="label" />
+					</html:select>
+					<a href="#" onclick="saveBeginOfWorkingDay(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
+				</td>
+			</tr>
 
-		<c:if test="${workingDayIsAvailable}">
-			<tr>
-				<td align="left" class="noBborderStyle">
-					<b><bean:message key="main.timereport.begin.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
-				</td>
-				<td align="left" class="noBborderStyle">
-					<html:select property="selectedHourBegin" onchange="setUpdateHoursAction(this.form)">
-						<html:options collection="hours" property="value" labelProperty="label" />
-					</html:select>
-					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-					<html:select property="selectedMinuteBegin"	onchange="setUpdateHoursAction(this.form)">
-						<html:options collection="minutes" property="value"	labelProperty="label" />
-						<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteBegin)}">
-							<html:option value="${addDailyReportForm.selectedMinuteBegin}">${addDailyReportForm.selectedMinuteBegin}</html:option>
-						</c:if>
-					</html:select>
-					<i><bean:message key="main.timereport.optional.help.text" /></i>
-					<span style="color:red">
-						<html:errors property="selectedHourBegin" />
-					</span>
-				</td>
-			</tr>
-			<tr>
-				<td align="left" class="noBborderStyle">
-					<b><bean:message key="main.timereport.end.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
-				</td>
-				<td align="left" class="noBborderStyle">
-					<html:select property="selectedHourEnd"	onchange="setUpdateHoursAction(this.form)">
-						<html:options collection="hours" property="value" labelProperty="label" />
-					</html:select>
-					<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-					<html:select property="selectedMinuteEnd" onchange="setUpdateHoursAction(this.form)">
-						<html:options collection="minutes" property="value"	labelProperty="label" />
-						<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteEnd)}">
-							<html:option value="${addDailyReportForm.selectedMinuteEnd}">${addDailyReportForm.selectedMinuteEnd}</html:option>
-						</c:if>
-					</html:select>
-					<i><bean:message key="main.timereport.optional.help.text" /></i>
-					<span style="color:red">
-						<html:errors property="selectedHourEnd" />
-					</span>
-				</td>
-			</tr>
-			<tr>
-				<td align="left" class="noBborderStyle">
-					<i><bean:message key="main.timereport.or.text" /></i>
-				</td>
-			</tr>
+			<c:if test="${workingDayIsAvailable}">
+				<tr>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.timereport.begin.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<html:select property="selectedHourBegin" onchange="setUpdateHoursAction(this.form)">
+							<html:options collection="hours" property="value" labelProperty="label" />
+						</html:select>
+						<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+						<html:select property="selectedMinuteBegin"	onchange="setUpdateHoursAction(this.form)">
+							<html:options collection="minutes" property="value"	labelProperty="label" />
+							<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteBegin)}">
+								<html:option value="${addDailyReportForm.selectedMinuteBegin}">${addDailyReportForm.selectedMinuteBegin}</html:option>
+							</c:if>
+						</html:select>
+						<i><bean:message key="main.timereport.optional.help.text" /></i>
+						<span style="color:red">
+							<html:errors property="selectedHourBegin" />
+						</span>
+					</td>
+				</tr>
+				<tr>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.timereport.end.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<html:select property="selectedHourEnd"	onchange="setUpdateHoursAction(this.form)">
+							<html:options collection="hours" property="value" labelProperty="label" />
+						</html:select>
+						<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+						<html:select property="selectedMinuteEnd" onchange="setUpdateHoursAction(this.form)">
+							<html:options collection="minutes" property="value"	labelProperty="label" />
+							<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteEnd)}">
+								<html:option value="${addDailyReportForm.selectedMinuteEnd}">${addDailyReportForm.selectedMinuteEnd}</html:option>
+							</c:if>
+						</html:select>
+						<i><bean:message key="main.timereport.optional.help.text" /></i>
+						<span style="color:red">
+							<html:errors property="selectedHourEnd" />
+						</span>
+					</td>
+				</tr>
+				<tr>
+					<td align="left" class="noBborderStyle">
+						<i><bean:message key="main.timereport.or.text" /></i>
+					</td>
+				</tr>
+			</c:if>
 		</c:if>
 		<tr>
 			<td align="left" class="noBborderStyle">
@@ -294,17 +296,17 @@
 				 </span>
 			</td>
 		</tr>
-			
-		<%-- Training Flag --%>
-		<tr>
+
+		<c:if test="${dailyReportViewHelper.displayTraining}">
+			<tr>
 				<td align="left" class="noBborderStyle">
 					<b><bean:message key="main.timereport.training.text"/>:</b>
 				</td>
 				<td align="left" class="noBborderStyle">
 					<html:checkbox property="training" />
 				</td>
-
-		</tr>
+			</tr>
+		</c:if>
 				
 		<tr>
 			<td align="left" valign="top" class="noBborderStyle">

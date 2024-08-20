@@ -49,8 +49,12 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         boolean createTimereports = false;
         boolean editTimereports = false;
         boolean displayWorkingDay = false;
+        boolean displayWorkingDayStartBreak = false;
         boolean displayEmployeeInfo = false;
         boolean useFavorites = false;
+        boolean displayTraining = false;
+        boolean displayOvertimeCompensation = false;
+        boolean displayTargetHours = false;
         var currentContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         if(currentContract != null) {
             var loginContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
@@ -58,21 +62,41 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
                 createTimereports = true;
                 editTimereports = true;
                 displayWorkingDay = true;
+                displayWorkingDayStartBreak = true;
                 displayEmployeeInfo = true;
+                displayTraining = true;
                 useFavorites = true;
+                displayOvertimeCompensation = true;
+                displayTargetHours = true;
             } else if(authorizedUser.isManager()) {
                 createTimereports = true;
                 editTimereports = true;
                 displayWorkingDay = true;
+                displayWorkingDayStartBreak = true;
                 displayEmployeeInfo = true;
+                displayTraining = true;
+                displayTargetHours = true;
             }
             if(TRUE.equals(currentContract.getFreelancer())) {
-                displayWorkingDay = false;
+                displayWorkingDayStartBreak = false;
                 displayEmployeeInfo = false;
+                displayTraining = false;
+                displayOvertimeCompensation = false;
+                displayTargetHours = false;
             }
         }
 
-        var helper = new DailyReportViewHelper(createTimereports, editTimereports, displayWorkingDay, displayEmployeeInfo, useFavorites);
+        var helper = new DailyReportViewHelper(
+            createTimereports,
+            editTimereports,
+            displayWorkingDay,
+            displayEmployeeInfo,
+            useFavorites,
+            displayWorkingDayStartBreak,
+            displayTraining,
+            displayOvertimeCompensation,
+            displayTargetHours
+        );
         request.getSession().setAttribute("dailyReportViewHelper", helper);
     }
 

@@ -64,9 +64,11 @@
 </c:if>
 </html:form>
 <br />
-<jsp:include flush="true" page="/info2.jsp">
-	<jsp:param name="info" value="Info" />
-</jsp:include>
+<c:if test="${welcomeViewHelper.displayEmployeeInfo}">
+	<jsp:include flush="true" page="/info2.jsp">
+		<jsp:param name="info" value="Info" />
+	</jsp:include>
+</c:if>
 <br>
 <!-- warnings -->
 <c:if test="${warningsPresent}">

@@ -1,5 +1,7 @@
 package org.tb.welcome.action;
 
+import static java.lang.Boolean.TRUE;
+
 import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +17,7 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.welcome.viewhelper.WelcomeViewHelper;
 
 @Component
 @RequiredArgsConstructor
@@ -81,6 +84,15 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
         welcomeForm.setLoginEmployeeId(authorizedUser.getEmployeeId());
         welcomeForm.setEmployeeContractId(employeecontract.getId());
+
+        boolean displayEmployeeInfo = true;
+
+        if(TRUE.equals(employeecontract.getFreelancer())) {
+            displayEmployeeInfo = false;
+        }
+
+        var welcomeViewHelper = new WelcomeViewHelper(displayEmployeeInfo);
+        request.setAttribute("welcomeViewHelper", welcomeViewHelper);
 
         return mapping.findForward("success");
     }
