@@ -239,11 +239,13 @@
 				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.non.invoice.text" />:</b></td>
 				<td align="left" class="noBborderStyle"><html:checkbox property="nonInvoice" onclick="setRefreshMatrixAction(this.form)" /></td>
 			</tr>
-			<!-- select start and break times -->
-			<tr>
-				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.startandbreaktime.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><html:checkbox property="startAndBreakTime" onclick="setRefreshMatrixAction(this.form)" /></td>
-			</tr>
+			<c:if test="${dailyReportViewHelper.displayWorkingDayStartBreak}">
+				<!-- select start and break times -->
+				<tr>
+					<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.startandbreaktime.text" />:</b></td>
+					<td align="left" class="noBborderStyle"><html:checkbox property="startAndBreakTime" onclick="setRefreshMatrixAction(this.form)" /></td>
+				</tr>
+			</c:if>
 		</table>
 	</html:form>
 
@@ -335,7 +337,7 @@
 			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${totalworkingtimestring}"></c:out></td>
 		</tr>
 
-		<c:if test="${not totalovertimecompensation.zero}">
+		<c:if test="${dailyReportViewHelper.displayOvertimeCompensation and not totalovertimecompensation.zero}">
 		<tr class="matrix">
 			<td colspan="2" class="matrix bold"	align="right"><bean:message key="main.matrixoverview.table.overtimecompensation.text" /></td>
 			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
@@ -349,31 +351,31 @@
 		</tr>
 		</c:if>
 
-		<c:if test="${showStartAndBreakTime}">
+		<c:if test="${dailyReportViewHelper.displayWorkingDayStartBreak and showStartAndBreakTime}">
+			<tr class="matrix">
+				<td colspan="2" class="matrix"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.startofwork.text" /></td>
+				<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
+							<td class="matrix${matrixdaytotal.invalidStartOfWork ? ' invalid' : (matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : ''))}"
+								style="font-size: 7pt; border-top: 2px black solid;"
+								align="right">
+								<c:out value="${matrixdaytotal.zeroWorkingTime ? ' ' : matrixdaytotal.startOfWorkString}"></c:out>
+							</td>
+				</c:forEach>
+				<td class="matrix" style="font-size: 7pt; border-top: 2px black solid;" align="right">&nbsp;</td>
+			</tr>
 
-		<tr class="matrix">
-            <td colspan="2" class="matrix"	style="border-top: 2px black solid;" align="right"><bean:message key="main.matrixoverview.table.startofwork.text" /></td>
-            <c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
-						<td class="matrix${matrixdaytotal.invalidStartOfWork ? ' invalid' : (matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : ''))}"
-                            style="font-size: 7pt; border-top: 2px black solid;"
-                            align="right">
-							<c:out value="${matrixdaytotal.zeroWorkingTime ? ' ' : matrixdaytotal.startOfWorkString}"></c:out>
-						</td>
-            </c:forEach>
-			<td class="matrix" style="font-size: 7pt; border-top: 2px black solid;" align="right">&nbsp;</td>
-		</tr>
-
-		<tr class="matrix">
-			<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.breakduration.text" /></td>
-			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
-						<td class="matrix${matrixdaytotal.invalidBreakTime ? ' invalid' : (matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : ''))}"
-							style="font-size: 7pt; border-top: 1x black solid;"
-							align="right">
-							<c:out value="${matrixdaytotal.zeroWorkingTime ? ' ' : matrixdaytotal.breakDurationString}"></c:out>
-						</td>
-			</c:forEach>
-			<td class="matrix" align="right">&nbsp;</td>
-		</tr>
+			<tr class="matrix">
+				<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.breakduration.text" /></td>
+				<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
+							<td class="matrix${matrixdaytotal.invalidBreakTime ? ' invalid' : (matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : ''))}"
+								style="font-size: 7pt; border-top: 1x black solid;"
+								align="right">
+								<c:out value="${matrixdaytotal.zeroWorkingTime ? ' ' : matrixdaytotal.breakDurationString}"></c:out>
+							</td>
+				</c:forEach>
+				<td class="matrix" align="right">&nbsp;</td>
+			</tr>
+		</c:if>
 		<tr class="matrix">
 			<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.notworked.text" /></td>
 			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
@@ -385,34 +387,35 @@
 			</c:forEach>
 			<td class="matrix" align="right">&nbsp;</td>
 		</tr>
-		</c:if>
 
-		<tr class="matrix">
-			<td class="matrix" colspan="${daysofmonth+3}">
-				<table>
-					<tr class="matrix">
-						<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.actualtime.text" /></td>
-						<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${totalworkingtimestring}"></c:out></td>
-					</tr>
-					<c:if test="${totalworkingtimetarget != null}">
+		<c:if test="${dailyReportViewHelper.displayTargetHours}">
+			<tr class="matrix">
+				<td class="matrix" colspan="${daysofmonth+3}">
+					<table>
 						<tr class="matrix">
-							<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
-							<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${totalworkingtimetargetstring}" /></td>
+							<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.actualtime.text" /></td>
+							<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${totalworkingtimestring}"></c:out></td>
 						</tr>
-						<c:if test="${not totalovertimecompensation.zero}">
+						<c:if test="${totalworkingtimetarget != null}">
 							<tr class="matrix">
-								<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.overtimecompensation.text" /></td>
-								<td class="matrix" style="border-style:none;text-align: right"><c:out value="${totalovertimecompensationstring}" /></td>
+								<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.targettime.text" /></td>
+								<td class="matrix" style="border-style: none; text-align: right"><c:out	value="${totalworkingtimetargetstring}" /></td>
+							</tr>
+							<c:if test="${not totalovertimecompensation.zero}">
+								<tr class="matrix">
+									<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.overtimecompensation.text" /></td>
+									<td class="matrix" style="border-style:none;text-align: right"><c:out value="${totalovertimecompensationstring}" /></td>
+								</tr>
+							</c:if>
+							<tr class="matrix">
+								<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
+								<td class="matrix" style="border-style:none;text-align: right;<c:if test="${totalworkingtimediff.negative}">color:#FF0000;</c:if>"><c:out value="${totalworkingtimediffstring}" /></td>
 							</tr>
 						</c:if>
-						<tr class="matrix">
-							<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
-							<td class="matrix" style="border-style:none;text-align: right;<c:if test="${totalworkingtimediff.negative}">color:#FF0000;</c:if>"><c:out value="${totalworkingtimediffstring}" /></td>
-						</tr>
-					</c:if>
-				</table>
-			</td>
-		</tr>
+					</table>
+				</td>
+			</tr>
+		</c:if>
 
 	</table>
 	<table>
@@ -441,8 +444,8 @@
 			</html:form>
 		</tr>
 	</table>
-	<!-- Überstunden und Urlaubstage -->
-	<c:if test="${currentEmployee != 'ALL EMPLOYEES'}">
+	<c:if test="${dailyReportViewHelper.displayEmployeeInfo}">
+		<!-- Überstunden und Urlaubstage -->
 		<br><br><br>
 		<jsp:include flush="true" page="/info2.jsp">
 			<jsp:param name="info" value="Info" />

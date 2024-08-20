@@ -442,34 +442,38 @@
 					</td>
 				</tr>
 
-				<!-- show only project based training -->
-				<tr>
-					<td align="left" valign="top" class="noBborderStyle">
-						<b><bean:message key="main.general.timereport.showOnlyTraining.text"/>:</b>
-					</td>
-					<td align="left" class="noBborderStyle">
-						<html:checkbox property="showTraining" onclick="setUpdateTimereportsAction(findForm(this))" />
-					</td>
-				</tr>
+				<c:if test="${dailyReportViewHelper.displayTraining}">
+					<!-- show only project based training -->
+					<tr>
+						<td align="left" valign="top" class="noBborderStyle">
+							<b><bean:message key="main.general.timereport.showOnlyTraining.text"/>:</b>
+						</td>
+						<td align="left" class="noBborderStyle">
+							<html:checkbox property="showTraining" onclick="setUpdateTimereportsAction(findForm(this))" />
+						</td>
+					</tr>
+				</c:if>
 
-				<!-- compute overtime until chosen Date -->
-	      		<tr>
-					<td align="left" valign="top" class="noBborderStyle">
-						<b><bean:message key="main.general.timereport.overtimeUntilDate"/>:</b>
-					</td>
-					<c:choose>
-	      				<c:when test="${overtimeDisabled=='true'}">
-							<td align="left" class="noBborderStyle">
-								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(findForm(this))" disabled="true"/>
-							</td>
-						</c:when>
-						<c:otherwise>
-							<td align="left" class="noBborderStyle">
-								<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(findForm(this))" />
-							</td>
-						</c:otherwise>
-					</c:choose>
-				</tr>
+				<c:if test="${dailyReportViewHelper.displayEmployeeInfo}">
+					<!-- compute overtime until chosen Date -->
+					<tr>
+						<td align="left" valign="top" class="noBborderStyle">
+							<b><bean:message key="main.general.timereport.overtimeUntilDate"/>:</b>
+						</td>
+						<c:choose>
+							<c:when test="${overtimeDisabled=='true'}">
+								<td align="left" class="noBborderStyle">
+									<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(findForm(this))" disabled="true"/>
+								</td>
+							</c:when>
+							<c:otherwise>
+								<td align="left" class="noBborderStyle">
+									<html:checkbox property="showOvertimeUntil" onclick="setUpdateTimereportsAction(findForm(this))" />
+								</td>
+							</c:otherwise>
+						</c:choose>
+					</tr>
+				</c:if>
 
 				<!-- toggle full minutes -->
 				<tr>
@@ -491,60 +495,62 @@
 				<!-- select working day begin and  break -->
 				<c:if test="${view eq 'day' || view == null}">
 					<c:if test="${dailyReportViewHelper.displayWorkingDay}">
-						<tr>
-							<td align="left" class="noBborderStyle">
-								<b><bean:message key="main.timereport.startofwork.text" /></b> <i>(hh:mm)</i><b>:</b>
-							</td>
-							<td align="left" class="noBborderStyle">
-								<nobr>
-									<html:select property="selectedWorkHourBegin" styleClass="make-select2">
-										<html:options collection="hours" property="value" labelProperty="label" />
-									</html:select>
-									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-									<html:select property="selectedWorkMinuteBegin" styleClass="make-select2">
-										<html:options collection="minutes" property="value" labelProperty="label" />
-									</html:select>
+						<c:if test="${dailyReportViewHelper.displayWorkingDayStartBreak}">
+							<tr>
+								<td align="left" class="noBborderStyle">
+									<b><bean:message key="main.timereport.startofwork.text" /></b> <i>(hh:mm)</i><b>:</b>
+								</td>
+								<td align="left" class="noBborderStyle">
+									<nobr>
+										<html:select property="selectedWorkHourBegin" styleClass="make-select2">
+											<html:options collection="hours" property="value" labelProperty="label" />
+										</html:select>
+										<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+										<html:select property="selectedWorkMinuteBegin" styleClass="make-select2">
+											<html:options collection="minutes" property="value" labelProperty="label" />
+										</html:select>
 
-									<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
-									<a href="#" onclick="saveBegin(findForm(this),new Date())" title="set start of work to now"><i class="bi bi-stopwatch"></i></a>
-								</nobr>
-							</td>
-						</tr>
-						<%-- is a visible, when workingday begin has been stored --%>
-						<c:if test="${visibleworkingday}">
-							<tr>
-								<td align="left" class="noBborderStyle">
-									<b><bean:message key="main.timereport.breakduration.text" /></b> <i>(hh:mm)</i><b>:</b>
+										<a href="#" onclick="saveBegin(findForm(this))" title="save start of work"><i class="bi bi-floppy"></i></a>
+										<a href="#" onclick="saveBegin(findForm(this),new Date())" title="set start of work to now"><i class="bi bi-stopwatch"></i></a>
+									</nobr>
 								</td>
-								<td align="left" class="noBborderStyle">
-									<html:select property="selectedBreakHour" styleClass="make-select2">
-										<html:options collection="breakhours" property="value" labelProperty="label" />
-									</html:select>
-									<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-									<html:select property="selectedBreakMinute" styleClass="make-select2">
-										<html:options collection="breakminutes" property="value" labelProperty="label" />
-									</html:select>
+							</tr>
+							<%-- is a visible, when workingday begin has been stored --%>
+							<c:if test="${visibleworkingday}">
+								<tr>
+									<td align="left" class="noBborderStyle">
+										<b><bean:message key="main.timereport.breakduration.text" /></b> <i>(hh:mm)</i><b>:</b>
+									</td>
+									<td align="left" class="noBborderStyle">
+										<html:select property="selectedBreakHour" styleClass="make-select2">
+											<html:options collection="breakhours" property="value" labelProperty="label" />
+										</html:select>
+										<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
+										<html:select property="selectedBreakMinute" styleClass="make-select2">
+											<html:options collection="breakminutes" property="value" labelProperty="label" />
+										</html:select>
 
-									<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy"></i></a>
-									<a href="#" onclick="saveBreak(findForm(this),new Date())" title="extend break"><i class="bi bi-skip-end"></i></a>
-								</td>
-							</tr>
-							<tr>
-								<td align="left" class="noBborderStyle">
-									<b><bean:message key="main.timereport.quittingtime.text" />:</b>
-								</td>
-								<td align="left" class="noBborderStyle">
-									<b><c:out value="${quittingtime}"></c:out></b>
-								</td>
-							</tr>
-							<tr>
-								<td align="left" class="noBborderStyle">
-									<b><bean:message key="main.timereport.workingdayends.text" />:</b>
-								</td>
-								<td align="left" class="noBborderStyle">
-									<b><c:out value="${workingDayEnds}"></c:out></b>
-								</td>
-							</tr>
+										<a href="#" onclick="saveBreak(findForm(this))" title="save break"><i class="bi bi-floppy"></i></a>
+										<a href="#" onclick="saveBreak(findForm(this),new Date())" title="extend break"><i class="bi bi-skip-end"></i></a>
+									</td>
+								</tr>
+								<tr>
+									<td align="left" class="noBborderStyle">
+										<b><bean:message key="main.timereport.quittingtime.text" />:</b>
+									</td>
+									<td align="left" class="noBborderStyle">
+										<b><c:out value="${quittingtime}"></c:out></b>
+									</td>
+								</tr>
+								<tr>
+									<td align="left" class="noBborderStyle">
+										<b><bean:message key="main.timereport.workingdayends.text" />:</b>
+									</td>
+									<td align="left" class="noBborderStyle">
+										<b><c:out value="${workingDayEnds}"></c:out></b>
+									</td>
+								</tr>
+							</c:if>
 						</c:if>
 						<tr>
 							<td align="left" class="noBborderStyle">
@@ -587,14 +593,6 @@
 			</table>
 		</c:if>
 
-		<c:if test="${vacationBudgetOverrun}">
-			<table>
-				<td  class="noBborderStyle"  style="font-size: 14pt; ">
-					<b><font color="red"><bean:message key="form.timereport.error.vacationBudgetOverrun" /></font></b>
-				</td>
-			</table>
-		</c:if>
-
         <c:if test="${(view eq 'day') && visibleworkingday && dailyReportViewHelper.useFavorites}">
             <html:form action="/ShowDailyReport">
                 <div class="favorites">
@@ -626,7 +624,7 @@
 					<b><bean:message key="main.timereport.total.text" />:</b>
 				</td>
 				<c:choose>
-					<c:when test="${maxlabortime&& view eq 'day' && !(currentEmployee eq 'ALL EMPLOYEES')}">
+					<c:when test="${maxlabortime and view eq 'day' and !(currentEmployee eq 'ALL EMPLOYEES')}">
 						<th class="noBborderStyle" align="center" color="red" >
 							<b><font color="red"><c:out	value="${labortime}"></c:out></font></b>
 						</th>
@@ -673,9 +671,11 @@
 				<th class="noBborderStyle" align="left" title="<bean:message key='main.headlinedescription.dailyoverview.taskdescription.text' />" width="25%">
 					<b><bean:message key="main.timereport.monthly.taskdescription.text" /></b>
 				</th>
-				<th class="noBborderStyle training-col" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.training.text' />">
-					<b><bean:message key="main.timereport.monthly.training.text" /></b>
-				</th>
+				<c:if test="${dailyReportViewHelper.displayTraining}">
+					<th class="noBborderStyle training-col" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.training.text' />">
+						<b><bean:message key="main.timereport.monthly.training.text" /></b>
+					</th>
+				</c:if>
 				<th class="noBborderStyle" align="center" title="<bean:message key='main.headlinedescription.dailyoverview.hours.text' />">
 					<b><bean:message key="main.timereport.monthly.hours.text" /></b>
 				</th>
@@ -686,14 +686,7 @@
 
 			<c:forEach var="timereport" items="${timereports}" varStatus="statusID">
 				<html:form action="/UpdateDailyReport?trId=${timereport.id}">
-					<c:choose>
-						<c:when test="${statusID.count%2 == 0}">
-							<tr class="noBborderStyle primarycolor">
-						</c:when>
-						<c:otherwise>
-							<tr class="noBborderStyle secondarycolor">
-						</c:otherwise>
-					</c:choose>
+					<tr class="noBborderStyle ${statusID.count%2 == 0 ? 'primarycolor' : 'secondarycolor'}">
 
 					<!-- Info -->
 					<td class="noBborderStyle" align="center">
@@ -832,10 +825,12 @@
 									styleClass="showDailyReport" />
 							</td>
 
-							<!-- Fortbildung -->
-							<td class="noBborderStyle" align="center">
-								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
-							</td>
+							<c:if test="${dailyReportViewHelper.displayTraining}">
+								<!-- Fortbildung -->
+								<td class="noBborderStyle" align="center">
+									<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
+								</td>
+							</c:if>
 
 							<!-- Dauer -->
 							<td class="noBborderStyle report-time" align="center" nowrap="nowrap">
@@ -856,8 +851,13 @@
 								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}); return false" title="Speichern" style="border: 0; background-color: transparent"><i class="bi bi-floppy"></i></button>
 								<button type="button"  onclick="confirmSave(findForm(this), ${timereport.id}, new Date()); return false" title="Verlängern" style="border: 0; background-color: transparent"><i class="bi bi-skip-end"></i></button>
 
-								<button type="button"  onclick="createFavorite(findForm(this), ${timereport.id}); return false"
-										title="Favorite" style="border: 0; background-color: transparent"><i class="bi bi-star"></i></button>
+								<c:if test="${dailyReportViewHelper.useFavorites}">
+									<button type="button"
+											onclick="createFavorite(findForm(this), ${timereport.id}); return false"
+											title="Favorite" style="border: 0; background-color: transparent">
+										<i class="bi bi-star"></i>
+									</button>
+								</c:if>
 								<a href="/do/EditDailyReport?trId=${timereport.id}" title="Ändern"><i class="bi bi bi-pencil"></i></a>
 
 								<button onclick="confirmDelete(findForm(this), ${timereport.id}); return false" title="Löschen" style="border: 0; background-color: transparent"><i class="bi bi bi-trash"></i></button>
@@ -878,17 +878,19 @@
 									</c:otherwise>
 								</c:choose>
 							</td>
-							<!-- Fortbildung -->
-							<td class="noBborderStyle" align="center">
-								<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
-							</td>
+							<c:if test="${dailyReportViewHelper.displayTraining}">
+								<!-- Fortbildung -->
+								<td class="noBborderStyle" align="center">
+									<input type="checkbox" name="training" ${timereport.training ? 'checked' : '' } />
+								</td>
+						    </c:if>
 							<!-- Dauer -->
 							<td class="noBborderStyle" align="center" nowrap>
 								<java8:formatDuration value="${timereport.duration}"/>
 							</td>
 							<!-- Bearbeiten -->
 							<td class="noBborderStyle" align="center">
-								<img width="12px" height="12px" src="<c:url value="/images/verbot.gif"/>" alt="Delete Timereport" />
+								<img width="12px" height="12px" src="<c:url value="/images/verbot.gif"/>" />
 							</td>
 						</c:otherwise>
 					</c:choose>

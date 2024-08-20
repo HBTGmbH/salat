@@ -151,7 +151,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             task = "refreshTimereports";
         }
 
-        request.getSession().setAttribute("vacationBudgetOverrun", false);
         Employeecontract ec = getEmployeeContractFromRequest(request);
 
         updateFavorites(request, ec.getEmployee().getId());
