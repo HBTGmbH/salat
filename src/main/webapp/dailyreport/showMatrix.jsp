@@ -376,17 +376,19 @@
 				<td class="matrix" align="right">&nbsp;</td>
 			</tr>
 		</c:if>
-		<tr class="matrix">
-			<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.notworked.text" /></td>
-			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
-				<td class="matrix${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
-					style="font-size: 7pt; border-top: 1x black solid;"
-					align="center">
-					<c:out value="${matrixdaytotal.notWorked ? 'x' : matrixdaytotal.partiallyNotWorked ? '(x)' : ' '}"></c:out>
-				</td>
-			</c:forEach>
-			<td class="matrix" align="right">&nbsp;</td>
-		</tr>
+		<c:if test="${dailyReportViewHelper.displayWorkingDay}">
+			<tr class="matrix">
+				<td colspan="2" class="matrix"	style="border-top: 1px black solid;" align="right"><bean:message key="main.matrixoverview.table.notworked.text" /></td>
+				<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
+					<td class="matrix${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
+						style="font-size: 7pt; border-top: 1x black solid;"
+						align="center">
+						<c:out value="${matrixdaytotal.notWorked ? 'x' : matrixdaytotal.partiallyNotWorked ? '(x)' : ' '}"></c:out>
+					</td>
+				</c:forEach>
+				<td class="matrix" align="right">&nbsp;</td>
+			</tr>
+		</c:if>
 
 		<c:if test="${dailyReportViewHelper.displayTargetHours}">
 			<tr class="matrix">

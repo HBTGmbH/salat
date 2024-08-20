@@ -17,6 +17,7 @@ import static java.time.DayOfWeek.SUNDAY;
 import static java.time.DayOfWeek.THURSDAY;
 import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
+import static java.time.Duration.ZERO;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
@@ -159,7 +160,7 @@ public class MatrixHelper {
 
         Map<LocalDate, Publicholiday> publicHolidayMap = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast).stream().collect(toMap(Publicholiday::getRefdate, identity()));
 
-        var dayTotals = initializeDayTotals(employeeContractId, dateFirst, dateLast, publicHolidayMap, startAndBreakTime);
+        var dayTotals = initializeDayTotals(employeecontract, dateFirst, dateLast, publicHolidayMap, startAndBreakTime);
         var dayTotalsMap = dayTotals.stream().collect(toMap(MatrixDayTotal::getDate, identity()));
 
 
@@ -173,7 +174,7 @@ public class MatrixHelper {
         //calculate dayhourssum
         Duration totalWorkingTime = dayTotals.stream()
             .map(MatrixDayTotal::getWorkingTime)
-            .reduce(Duration.ZERO, Duration::plus);
+            .reduce(ZERO, Duration::plus);
 
         Duration totalWorkingTimeTarget = null;
         Duration totalWorkingTimeDiff = null;
@@ -207,26 +208,24 @@ public class MatrixHelper {
         return sb.toString();
     }
 
-    private List<MatrixDayTotal> initializeDayTotals(long employeeContractId,
+    private List<MatrixDayTotal> initializeDayTotals(Employeecontract contract,
                                   LocalDate dateFirst,
                                   LocalDate dateLast,
                                   Map<LocalDate, Publicholiday> publicHolidayMap,
                                   boolean fillStartAndBreakTime) {
-
         // initialize MatrixDayTotals for each dates between dateFirst and dateLast
-        var contract = employeecontractDAO.getEmployeeContractById(employeeContractId);
         List<MatrixDayTotal> dayTotals = new ArrayList<>();
-        Map<LocalDate, Workingday> workingDays = queryWorkingDays(dateFirst, dateLast, employeeContractId);
+
         var dates = dateFirst.datesUntil(dateLast.plusDays(1)).toList(); // to include the last date too
         int day = 1;
         for(var date: dates) {
-            var dayTotal = new MatrixDayTotal(date, day, Duration.ZERO, contract.getDailyWorkingTime());
+            var dayTotal = new MatrixDayTotal(date, day, ZERO, contract != null ? contract.getDailyWorkingTime() : ZERO);
 
             // mark weekends
             var dayOfWeek = dayTotal.getDate().getDayOfWeek();
             if (dayOfWeek == SATURDAY || dayOfWeek == SUNDAY) {
                 dayTotal.setSatSun(true);
-                dayTotal.setContractWorkingTime(Duration.ZERO);
+                dayTotal.setContractWorkingTime(ZERO);
             }
             dayTotal.setWeekDay(WEEK_DAYS_MAP.get(dayOfWeek));
 
@@ -234,51 +233,56 @@ public class MatrixHelper {
             if (publicHolidayMap.containsKey(date)) {
                 dayTotal.setPublicHoliday(true);
                 dayTotal.setPublicHolidayName(publicHolidayMap.get(date).getName());
-                dayTotal.setContractWorkingTime(Duration.ZERO);
-            }
-
-            var workingDay = workingDays.get(date);
-            if(workingDay != null) {
-                dayTotal.setWorkingDayType(workingDay.getType());
+                dayTotal.setContractWorkingTime(ZERO);
             }
 
             dayTotals.add(dayTotal);
             day++;
         }
 
-        if (fillStartAndBreakTime) {
-            var invalidBreakTimes = timereportService.validateBreakTimes(employeeContractId, dateFirst, dateLast);
-            var invalidStartOfWorkDays = timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast);
+        if (contract != null) {
+            var employeeContractId = contract.getId();
+            Map<LocalDate, Workingday> workingDays = queryWorkingDays(dateFirst, dateLast, employeeContractId);
+            var invalidBreakTimes = fillStartAndBreakTime ? timereportService.validateBreakTimes(employeeContractId, dateFirst, dateLast) : Map.of();
+            var invalidStartOfWorkDays = fillStartAndBreakTime ? timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast) : Map.of();
             for(var dayTotal : dayTotals) {
                 var date = dayTotal.getDate();
                 var workingDay = workingDays.get(date);
-                if (workingDay != null) {
-                    dayTotal.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * MINUTES_PER_HOUR);
-                    dayTotal.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * MINUTES_PER_HOUR);
+
+                if(workingDay != null) {
+                    dayTotal.setWorkingDayType(workingDay.getType());
                 }
-                boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(date) && invalidStartOfWorkDays.get(date) != NONE;
-                boolean invalidBreakTime = invalidBreakTimes.containsKey(date) && invalidBreakTimes.get(date) != NONE;
-                dayTotal.setInvalidStartOfWork(invalidStartOfWork);
-                dayTotal.setInvalidBreakTime(invalidBreakTime);
+
+                if(fillStartAndBreakTime) {
+                    if (workingDay != null) {
+                        dayTotal.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * MINUTES_PER_HOUR);
+                        dayTotal.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * MINUTES_PER_HOUR);
+                    }
+                    boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(date) && invalidStartOfWorkDays.get(date) != NONE;
+                    boolean invalidBreakTime = invalidBreakTimes.containsKey(date) && invalidBreakTimes.get(date) != NONE;
+                    dayTotal.setInvalidStartOfWork(invalidStartOfWork);
+                    dayTotal.setInvalidBreakTime(invalidBreakTime);
+                }
             }
         }
+
         return dayTotals;
     }
 
-    private void markBookingDays(List<MatrixLine> matrixLines, Map<LocalDate, MatrixDayTotal> dayHourCountMap) {
+    private void markBookingDays(List<MatrixLine> matrixLines, Map<LocalDate, MatrixDayTotal> dayTotalsMap) {
         for (MatrixLine matrixLine : matrixLines) {
             for (BookingDay bookingDay : matrixLine.getBookingDays()) {
-                var dayHourCount = dayHourCountMap.get(bookingDay.getDate());
+                var dayHourCount = dayTotalsMap.get(bookingDay.getDate());
                 bookingDay.setPublicHoliday(dayHourCount.isPublicHoliday());
                 bookingDay.setSatSun(dayHourCount.isSatSun());
             }
         }
     }
 
-    private void sumUpDayTotals(List<MatrixLine> matrixLines, Map<LocalDate, MatrixDayTotal> dayHourCountMap) {
+    private void sumUpDayTotals(List<MatrixLine> matrixLines, Map<LocalDate, MatrixDayTotal> dayTotalsMap) {
         for (MatrixLine matrixLine : matrixLines) {
             for (BookingDay bookingDay : matrixLine.getBookingDays()) {
-                MatrixDayTotal matrixDayTotal = dayHourCountMap.get(bookingDay.getDate());
+                MatrixDayTotal matrixDayTotal = dayTotalsMap.get(bookingDay.getDate());
                 matrixDayTotal.addWorkingTime(bookingDay.getDuration());
             }
         }
