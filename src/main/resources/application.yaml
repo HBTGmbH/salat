@@ -18,9 +18,12 @@ spring:
   profiles:
     default: local
   datasource:
-    url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
-    username: salattest
-    password: salattest
+    # url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
+    url: jdbc:mysql://10.150.0.36:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
+    # username: salattest
+    # password: salattest
+    username: salatro
+    password: KM7kEAu7qcn7mLpN
     hikari:
       connection-timeout: 1000
       minimum-idle: 0
