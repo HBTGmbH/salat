@@ -7,6 +7,7 @@ import static org.tb.common.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static org.tb.common.ErrorCode.WD_SATSUN_NOT_WORKED;
 import static org.tb.common.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.PARTIALLY;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,14 +38,16 @@ public class WorkingdayService {
       var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday());
       BusinessRuleChecks.empty(timereports, WD_NOT_WORKED_TIMEREPORTS_FOUND);
     }
-    BusinessRuleChecks.isFalse(
-        workingday.getRefday().getDayOfWeek() == SATURDAY || workingday.getRefday().getDayOfWeek() == SUNDAY,
-        WD_SATSUN_NOT_WORKED
-    );
-    BusinessRuleChecks.isFalse(
-        publicholidayRepository.findByRefdate(workingday.getRefday()).isPresent(),
-        WD_HOLIDAY_NO_WORKED
-    );
+    if(workingday.getType() == NOT_WORKED || workingday.getType() == PARTIALLY) {
+      BusinessRuleChecks.isFalse(
+          workingday.getRefday().getDayOfWeek() == SATURDAY || workingday.getRefday().getDayOfWeek() == SUNDAY,
+          WD_SATSUN_NOT_WORKED
+      );
+      BusinessRuleChecks.isFalse(
+          publicholidayRepository.findByRefdate(workingday.getRefday()).isPresent(),
+          WD_HOLIDAY_NO_WORKED
+      );
+    }
 
     workingdayRepository.save(workingday);
   }
