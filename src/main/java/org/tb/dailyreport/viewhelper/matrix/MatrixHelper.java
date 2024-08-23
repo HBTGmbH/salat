@@ -1,13 +1,3 @@
-/*
- * File:          $RCSfile$
- * Version:       $Revision$
- *
- * Created:       04.12.2006 by cb
- * Last changed:  $Date$ by $Author$
- *
- * Copyright (C) 2006 by HBT GmbH, www.hbt.de
- *
- */
 package org.tb.dailyreport.viewhelper.matrix;
 
 import static java.time.DayOfWeek.FRIDAY;
@@ -33,7 +23,6 @@ import static org.tb.common.util.DateUtils.formatYear;
 import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.dailyreport.domain.WorkingDayValidationError.NONE;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -268,8 +257,8 @@ public class MatrixHelper {
                         dayTotal.setBreakMinutes(workingDay.getBreakminutes() + workingDay.getBreakhours() * MINUTES_PER_HOUR);
                         dayTotal.setStartOfWorkMinute(workingDay.getStarttimeminute() + workingDay.getStarttimehour() * MINUTES_PER_HOUR);
                     }
-                    boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(date) && invalidStartOfWorkDays.get(date) != NONE;
-                    boolean invalidBreakTime = invalidBreakTimes.containsKey(date) && invalidBreakTimes.get(date) != NONE;
+                    boolean invalidStartOfWork = invalidStartOfWorkDays.containsKey(date);
+                    boolean invalidBreakTime = invalidBreakTimes.containsKey(date);
                     dayTotal.setInvalidStartOfWork(invalidStartOfWork);
                     dayTotal.setInvalidBreakTime(invalidBreakTime);
                 }

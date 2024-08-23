@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
+import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -53,9 +56,12 @@ public class WorkingDayRestEndpoint {
         if(data.getType() != null) {
             wd.setType(data.getType());
         }
-        var error = workingdayService.upsertWorkingday(wd);
-        if(error != null) {
-            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, error.getMessage());
+        try {
+            workingdayService.upsertWorkingday(wd);
+        } catch(AuthorizationException e) {
+            throw new ResponseStatusException(UNAUTHORIZED, e.getErrorCode().getCode());
+        } catch(InvalidDataException | BusinessRuleException e) {
+            throw new ResponseStatusException(BAD_REQUEST, e.getErrorCode().getCode());
         }
     }
 

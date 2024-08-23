@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -20,7 +19,6 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -139,7 +137,13 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
 
             LocalDate releaseDate = releaseForm.getReleaseDate();
-            timereportService.releaseTimereports(employeecontract.getId(), releaseDate);
+            var errors = timereportService.releaseTimereports(employeecontract.getId(), releaseDate);
+            if(!errors.isEmpty()) {
+                for(var error : errors) {
+                    addToErrors(request, error);
+                };
+                return mapping.getInputForward();
+            }
 
             Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(employeecontract.getId());
             releaseDateFromContract = employeeContract.getReportReleaseDate();
@@ -263,15 +267,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
             errors.add("validation", new ActionMessage("form.release.error.date.before.acceptance"));
-        }
-
-        List<WorkingDayValidationError> validationErrors = timereportService.validateForRelease(selectedEmployeecontract.getId(), date).stream()
-                .sorted(Comparator.comparing(WorkingDayValidationError::getDate))
-                .toList();
-        for (WorkingDayValidationError validationError : validationErrors) {
-            String dateFormatted = validationError.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-            ActionMessage message = new ActionMessage(validationError.getMessage(), dateFormatted);
-            errors.add("validation", message);
         }
 
         saveErrors(request, errors);

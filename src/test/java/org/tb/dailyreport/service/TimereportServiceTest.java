@@ -1,15 +1,15 @@
 package org.tb.dailyreport.service;
 
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.ErrorCode;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -61,12 +61,12 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should return error about missing begin of working time
             assertThat(errors).hasSize(1);
-            assertThat(errors.getFirst().getDate()).isEqualTo(date);
-            assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.beginofworkingday.required");
+            assertThat(errors.getFirst().getArguments().getFirst()).isEqualTo(date);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_BEGIN_TIME_MISSING);
         }
 
         @Test
@@ -84,7 +84,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should not return any errors
             assertThat(errors).hasSize(0);
@@ -115,7 +115,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should not return any errors
             assertThat(errors).hasSize(0);
@@ -146,7 +146,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should not return any errors
             assertThat(errors).hasSize(0);
@@ -177,12 +177,12 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
-            assertThat(errors.getFirst().getDate()).isEqualTo(date);
-            assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.six.length");
+            assertThat(errors.getFirst().getArguments().getFirst()).isEqualTo(date);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_BREAK_TOO_SHORT_6);
         }
 
         @Test
@@ -210,12 +210,12 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(date);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.six.length");
+            assertThat(errors.getFirst().getArguments().getFirst()).isEqualTo(date);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_BREAK_TOO_SHORT_6);
         }
 
         @Test
@@ -244,7 +244,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should not return any error
             assertThat(errors).hasSize(0);
@@ -281,7 +281,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should not return any error
             assertThat(errors).hasSize(0);
@@ -317,12 +317,12 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(date);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.nine.length");
+            assertThat(errors.getFirst().getArguments().getFirst()).isEqualTo(date);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_BREAK_TOO_SHORT_9);
         }
 
         @Test
@@ -355,12 +355,12 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(date);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.breaktime.nine.length");
+            assertThat(errors.getFirst().getArguments().getFirst()).isEqualTo(date);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_BREAK_TOO_SHORT_9);
         }
 
         @Test
@@ -394,7 +394,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then expect no error
             assertThat(errors).hasSize(0);
@@ -437,12 +437,12 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
 
             // then expect an error regarding resttime
             assertThat(errors).hasSize(1);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getDate()).isEqualTo(releaseDate);
-            AssertionsForClassTypes.assertThat(errors.getFirst().getMessage()).isEqualTo("form.release.error.resttime.length");
+            assertThat(errors.getFirst().getArguments().getFirst()).isEqualTo(releaseDay);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_REST_TIME_TOO_SHORT);
         }
 
         @Test
@@ -475,7 +475,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
 
             // then expect no error to be returned
             assertThat(errors).hasSize(0);
@@ -502,7 +502,7 @@ class TimereportServiceTest {
             when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<WorkingDayValidationError> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
 
             // then expect no error to be returned
             assertThat(errors).hasSize(0);

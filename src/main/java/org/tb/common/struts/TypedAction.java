@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.common.ErrorCode;
+import org.tb.common.ServiceFeedbackMessage;
 
 /**
  * Extends struts {@link Action}s with a typed form of execute.
@@ -32,6 +33,18 @@ public abstract class TypedAction<F extends ActionForm> extends Action {
         GLOBAL_MESSAGE,
         // TR-0015 -> errorcode.tr.0015
         new ActionMessage("errorcode." + errorCode.getCode().replace('-', '.').toLowerCase())
+    );
+    addErrors(request, messages);
+  }
+
+  public void addToErrors(HttpServletRequest request, ServiceFeedbackMessage message) {
+    ActionMessages messages = new ActionMessages();
+    messages.add(
+        GLOBAL_MESSAGE,
+        // e.g. TR-0015 -> errorcode.tr.0015
+        new ActionMessage(
+            "errorcode." + message.getErrorCode().getCode().replace('-', '.').toLowerCase(),
+            message.getArguments().toArray())
     );
     addErrors(request, messages);
   }

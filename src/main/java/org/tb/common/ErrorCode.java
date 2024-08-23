@@ -40,6 +40,11 @@ public enum ErrorCode {
   WD_SATSUN_NOT_WORKED("WD-0002","no one can compensate his overtime on saturdays or sundays!"),
   WD_HOLIDAY_NO_WORKED("WD-0003", "no one can compensate his overtime on a public holiday!"),
   WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER("WD-0004", "you can only save your own working days or you must be a manager!"),
+  WD_REST_TIME_TOO_SHORT("WD-0005", "the time to rest to the last working day has to be at least 11 hours!"),
+  WD_BREAK_TOO_SHORT_6("WD-0006", "for more than 6 hours of work per day, you must have booked at least 30 minutes of break time!"),
+  WD_BREAK_TOO_SHORT_9("WD-0007", "for more than 9 hours of work per day, you must have booked at least 45 minutes of break time!"),
+  WD_BEGIN_TIME_MISSING("WD-0008", "the beginning of the working day was not entered!"),
+  WD_NO_TIMEREPORT("WD-0009", "no time report found for workday."),
   ;
 
   private final String code;

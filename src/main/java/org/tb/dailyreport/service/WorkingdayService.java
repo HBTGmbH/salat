@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.BusinessRuleChecks;
 import org.tb.common.exception.AuthorizationException;
-import org.tb.dailyreport.domain.WorkingDayValidationError;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -28,7 +27,7 @@ public class WorkingdayService {
   private final TimereportDAO timereportDAO;
   private final AuthorizedUser authorizedUser;
 
-  public WorkingDayValidationError upsertWorkingday(Workingday workingday) {
+  public void upsertWorkingday(Workingday workingday) {
     var employeeId = workingday.getEmployeecontract().getEmployee().getId();
     if(!authorizedUser.isManager() && !employeeId.equals(authorizedUser.getEmployeeId())) {
       throw new AuthorizationException(WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER);
@@ -48,7 +47,6 @@ public class WorkingdayService {
     );
 
     workingdayRepository.save(workingday);
-    return null;
   }
 
 }

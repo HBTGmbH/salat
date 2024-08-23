@@ -12,4 +12,8 @@ public class AuthorizationException extends ErrorCodeException {
     super(errorCode, cause);
   }
 
+  public AuthorizationException(ErrorCode errorCode, Object... arguments) {
+    super(errorCode, arguments);
+  }
+
 }
