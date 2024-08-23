@@ -232,25 +232,29 @@ public class TimereportService {
     final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
 
     var contract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+
     var currentReleaseDate = contract.getReportReleaseDate();
+    var begin = currentReleaseDate != null ? currentReleaseDate.plusDays(1) : contract.getValidFrom();
+    var end = releaseDate;
+
     final var workingDays = workingdayDAO
-        .getWorkingdaysByEmployeeContractId(employeeContractId, currentReleaseDate, releaseDate)
+        .getWorkingdaysByEmployeeContractId(employeeContractId, begin.minusDays(1), end)
         .stream()
         .collect(toMap(Workingday::getRefday, identity()));
-    final var timeReportsByDate = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate).stream()
-        .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
-        .collect(groupingBy(TimereportDTO::getReferenceday));
-
+    var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate);
     // restricted/external users are not in scope of regulations by law
     if(needsWorkingHoursLawValidation(employeeContractId)) {
+      final var timeReportsByDate = timereports
+          .stream()
+          .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
+          .collect(groupingBy(TimereportDTO::getReferenceday));
       if(!timeReportsByDate.isEmpty()) {
-
         var dates = timeReportsByDate.keySet().stream().sorted().toList();
 
         // load timereports from the day before (which is not open anymore thus not already loaded)
-        var begin = timeReportsByDate.keySet().stream().min(LocalDate::compareTo).orElseThrow();
+        var minTimereportDate = timeReportsByDate.keySet().stream().min(LocalDate::compareTo).orElseThrow();
         var extendedTimeReportsByDate = new HashMap<>(timeReportsByDate);
-        LocalDate theDayBefore = begin.minusDays(1);
+        LocalDate theDayBefore = minTimereportDate.minusDays(1);
         extendedTimeReportsByDate.put(theDayBefore, timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, theDayBefore));
 
         for(var date : dates) {
@@ -261,14 +265,18 @@ public class TimereportService {
       }
     }
 
-    var publicHolidays = publicholidayDAO.getPublicHolidaysBetween(currentReleaseDate, releaseDate)
+    var publicHolidays = publicholidayDAO.getPublicHolidaysBetween(begin, end)
         .stream()
         .map(Publicholiday::getRefdate)
         .collect(Collectors.toSet());
 
+    final var timeReportsByDate = timereports
+        .stream()
+        .collect(groupingBy(TimereportDTO::getReferenceday));
+
     // check if all working days have been booked correctly
-    currentReleaseDate.plusDays(1).datesUntil(releaseDate.plusDays(1))
-        .filter(date -> date.getDayOfWeek() != SATURDAY || date.getDayOfWeek() != SUNDAY)
+    begin.datesUntil(end.plusDays(1))
+        .filter(date -> date.getDayOfWeek() != SATURDAY && date.getDayOfWeek() != SUNDAY)
         .filter(date -> !publicHolidays.contains(date))
         .map(date -> {
           Optional<Pair<LocalDate, ServiceFeedbackMessage>> result = empty();

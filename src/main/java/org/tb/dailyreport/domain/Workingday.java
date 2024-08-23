@@ -40,21 +40,6 @@ public class Workingday extends AuditedEntity implements Serializable {
     @Enumerated(EnumType.STRING)
     private WorkingDayType type = WorkingDayType.WORKED;
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Workingday other) {
-            return refday.equals(other.refday) &&
-                   Objects.equals(employeecontract.getId(), other.getEmployeecontract().getId());
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return refday.hashCode() +
-                employeecontract.hashCode();
-    }
-
     public LocalDateTime getStartOfWorkingDay() {
         LocalTime localTime = LocalTime.of(starttimehour, starttimeminute);
         return LocalDateTime.of(refday, localTime);
