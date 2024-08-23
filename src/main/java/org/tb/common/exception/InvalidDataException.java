@@ -12,4 +12,8 @@ public class InvalidDataException extends ErrorCodeException {
     super(errorCode, cause);
   }
 
+  public InvalidDataException(ErrorCode errorCode, Object... arguments) {
+    super(errorCode, arguments);
+  }
+
 }

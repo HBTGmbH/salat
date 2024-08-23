@@ -12,4 +12,8 @@ public class BusinessRuleException extends ErrorCodeException {
     super(errorCode, cause);
   }
 
+  public BusinessRuleException(ErrorCode errorCode, Object... arguments) {
+    super(errorCode, arguments);
+  }
+
 }
