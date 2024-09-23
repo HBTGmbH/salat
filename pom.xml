@@ -34,7 +34,7 @@
     <webjars-bootstrap.version>5.3.3</webjars-bootstrap.version>
     <webjars-jquery.version>3.7.1</webjars-jquery.version>
     <webjars-bootstrap-icons.version>1.11.3</webjars-bootstrap-icons.version>
-    <spotbugs-maven-plugin.version>4.8.6.2</spotbugs-maven-plugin.version>
+    <spotbugs-maven-plugin.version>4.8.6.4</spotbugs-maven-plugin.version>
     <springdoc-openapi-starter-webmvc-ui.version>2.6.0</springdoc-openapi-starter-webmvc-ui.version>
     <webjars-locator.version>0.52</webjars-locator.version>
   </properties>
