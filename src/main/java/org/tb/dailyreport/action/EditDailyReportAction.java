@@ -4,6 +4,7 @@ import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
 import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getSerialDayList;
+import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -147,15 +148,16 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
             reportForm.setSelectedMinuteBegin(displayTime[1]);
             reportForm.setSelectedHourEnd(displayTime[2]);
             reportForm.setSelectedMinuteEnd(displayTime[3]);
-
+            reportForm.setSelectedHourBeginDay(workingday.getStarttimehour());
+            reportForm.setSelectedMinuteBeginDay(workingday.getStarttimeminute());
             timereportHelper.refreshHours(reportForm);
         } else {
             reportForm.setSelectedHourDuration(tr.getDuration().toHours());
             reportForm.setSelectedMinuteDuration(tr.getDuration().toMinutesPart());
+            reportForm.setSelectedHourBeginDay(DEFAULT_WORK_DAY_START);
+            reportForm.setSelectedMinuteBeginDay(0);
         }
 
-        reportForm.setSelectedHourBeginDay(workingday.getStarttimehour());
-        reportForm.setSelectedMinuteBeginDay(workingday.getStarttimeminute());
         reportForm.setSuborder(tr.getSuborderSign());
         reportForm.setSuborderSignId(tr.getSuborderId());
         reportForm.setSuborderDescriptionId(tr.getSuborderId());

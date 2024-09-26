@@ -114,9 +114,6 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         form.setSelectedMinuteBegin(beginTime[1]);
         //		TimereportHelper.refreshHours(reportForm);
 
-        form.setSelectedHourBeginDay(workingday != null ? workingday.getStarttimehour() : DEFAULT_WORK_DAY_START);
-        form.setSelectedMinuteBeginDay(workingday != null ? workingday.getStarttimeminute() : 0);
-
         if (workingDayIsAvailable) {
             // set end time in reportform
             var now = now();
@@ -134,10 +131,16 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
                 form.setSelectedMinuteEnd(beginTime[1]);
                 form.setSelectedHourEnd(beginTime[0]);
             }
+
+            form.setSelectedHourBeginDay(workingday.getStarttimehour());
+            form.setSelectedMinuteBeginDay(workingday.getStarttimeminute());
+
             timereportHelper.refreshHours(form);
         } else {
             form.setSelectedHourDuration(0);
             form.setSelectedMinuteDuration(0);
+            form.setSelectedHourBeginDay(DEFAULT_WORK_DAY_START);
+            form.setSelectedMinuteBeginDay(0);
         }
 
         // init form with selected Date
