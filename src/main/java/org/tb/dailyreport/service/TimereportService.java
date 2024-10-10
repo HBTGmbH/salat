@@ -477,6 +477,10 @@ public class TimereportService {
           !authorizedUser.isAdmin()) {
         throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
       }
+      if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
+          Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
+        throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_NOT_SELF);
+      }
       if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
           !authorizedUser.isAdmin() &&
           !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
