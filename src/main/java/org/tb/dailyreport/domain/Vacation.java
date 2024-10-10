@@ -1,6 +1,8 @@
 package org.tb.dailyreport.domain;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static org.tb.common.util.DateUtils.max;
+import static org.tb.common.util.DateUtils.min;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -58,11 +60,8 @@ public class Vacation extends AuditedEntity implements Serializable {
 
         // else return partial entitlement
         Duration effectiveEntitlement = Duration.ZERO;
-        LocalDate validFrom = employeecontract.getValidFrom();
-        LocalDate validUntil = employeecontract.getValidUntil();
-        if(validUntil == null) {
-            validUntil = end;
-        }
+        LocalDate validFrom = max(employeecontract.getValidFrom(), begin);
+        LocalDate validUntil = min(employeecontract.getValidUntil(), end);
 
         // 1. if first month is partial, calc partial of 1/12th entitlement
         if(!validFrom.equals(validFrom.with(TemporalAdjusters.firstDayOfMonth()))) {
