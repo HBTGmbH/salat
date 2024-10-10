@@ -203,25 +203,47 @@ public class TimereportService {
 
     var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
 
+    if(reopenDate.isBefore(employeecontract.getValidFrom())) {
+      reopenDate = employeecontract.getValidFrom();
+    }
+
     // set status in timereports
     var timereports = timereportDAO.getTimereportsByEmployeeContractIdAfterDate(employeecontractId, reopenDate);
     for (var timereport : timereports) {
       reopenTimereport(timereport.getId());
     }
 
-    if (employeecontract.getReportReleaseDate() != null && !reopenDate.isAfter(employeecontract.getReportReleaseDate())) {
-      employeecontract.setReportReleaseDate(reopenDate.minusDays(1));
+    if(employeecontract.getReportReleaseDate() != null) {
+      var newReportReleaseDate = min(employeecontract.getReportReleaseDate(), reopenDate.minusDays(1));
+
+      if(newReportReleaseDate.isBefore(employeecontract.getValidFrom())) {
+        employeecontract.setReportReleaseDate(null);
+      } else {
+        employeecontract.setReportReleaseDate(newReportReleaseDate);
+      }
     }
-    if (employeecontract.getReportAcceptanceDate() != null && !reopenDate.isAfter(employeecontract.getReportAcceptanceDate())) {
-      employeecontract.setReportAcceptanceDate(reopenDate.minusDays(1));
+
+    if(employeecontract.getReportAcceptanceDate() != null) {
+      var newReportAcceptDate = min(employeecontract.getReportAcceptanceDate(), reopenDate.minusDays(1));
+      if(newReportAcceptDate.isBefore(employeecontract.getValidFrom())) {
+        employeecontract.setReportAcceptanceDate(null);
+      } else {
+        employeecontract.setReportAcceptanceDate(newReportAcceptDate);
+      }
 
       // recompute overtimeStatic and set it in employeecontract
-      var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
-      if(otStatic.isPresent()) {
-        employeecontract.setOvertimeStatic(otStatic.get());
+      if(employeecontract.getReportAcceptanceDate() != null) {
+        var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
+        if(otStatic.isPresent()) {
+          employeecontract.setOvertimeStatic(otStatic.get());
+        } else {
+          employeecontract.setOvertimeStatic(Duration.ZERO);
+        }
       } else {
+        // no overtime can be calculated as no time reports have been accepted, set to zero to be consistent
         employeecontract.setOvertimeStatic(Duration.ZERO);
       }
+
     }
 
     employeecontractDAO.save(employeecontract);

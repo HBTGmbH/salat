@@ -230,10 +230,12 @@ public class DateUtils {
     }
 
     public static String format(LocalDate date) {
+        if(date == null) return "";
         return dateFormatter.format(date);
     }
 
     public static String format(YearMonth date) {
+        if(date == null) return "";
         return yearMonthFormatter.format(date);
     }
 

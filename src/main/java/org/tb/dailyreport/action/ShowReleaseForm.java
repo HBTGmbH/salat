@@ -102,7 +102,7 @@ public class ShowReleaseForm extends ActionForm {
     public void setReopenDateString(String reopenDateString) {
         this.reopenDateString = reopenDateString;
         if(reopenDateString != null && !reopenDateString.isEmpty()) {
-            reopenDate = YearMonth.parse(releaseDateString, fmt).atEndOfMonth();
+            reopenDate = YearMonth.parse(reopenDateString, fmt).atDay(1);
         } else {
             reopenDate = null;
         }
