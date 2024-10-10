@@ -261,6 +261,7 @@ public class TimereportService {
           validateBeginOfWorkingDay(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
           validateBreakTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
           validateRestTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
+          validateWorkingDayLength(date, extendedTimeReportsByDate).ifPresent(error -> errors.add(Pair.of(date, error)));
         }
       }
     }
@@ -647,6 +648,19 @@ public class TimereportService {
     Duration restTime = Duration.between(theDayBeforeEndOfWorkingDay, startOfWorkingDay);
     if (restTime.toMinutes() < REST_PERIOD_IN_MINUTES) {
       return of(ServiceFeedbackMessage.error(ErrorCode.WD_REST_TIME_TOO_SHORT, date));
+    }
+    return empty();
+  }
+
+  private Optional<ServiceFeedbackMessage> validateWorkingDayLength(LocalDate date,
+      HashMap<LocalDate, List<TimereportDTO>> timeReports) {
+    if(noTimeReportsFound(timeReports, date)) return empty();
+    Duration workDurationSum = timeReports.get(date).stream()
+        .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
+        .map(TimereportDTO::getDuration)
+        .reduce(Duration.ZERO, Duration::plus);
+    if(workDurationSum.toMinutes() > WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES) {
+      return of(ServiceFeedbackMessage.error(WD_LENGTH_TOO_LONG, date));
     }
     return empty();
   }

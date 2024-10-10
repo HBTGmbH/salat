@@ -45,6 +45,7 @@ public enum ErrorCode {
   WD_BREAK_TOO_SHORT_9("WD-0007", "for more than 9 hours of work per day, you must have booked at least 45 minutes of break time!"),
   WD_BEGIN_TIME_MISSING("WD-0008", "the beginning of the working day was not entered!"),
   WD_NO_TIMEREPORT("WD-0009", "no time report found for workday."),
+  WD_LENGTH_TOO_LONG("WD-0010", "the worked time for the working day exceeds 10 hours!"),
   ;
 
   private final String code;
