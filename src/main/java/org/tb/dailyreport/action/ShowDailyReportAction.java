@@ -9,14 +9,7 @@ import static org.tb.common.DateTimeViewHelper.getShortstringFromMonthMM;
 import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
-import static org.tb.common.util.DateUtils.format;
-import static org.tb.common.util.DateUtils.formatDayOfMonth;
-import static org.tb.common.util.DateUtils.formatMonth;
-import static org.tb.common.util.DateUtils.formatYear;
-import static org.tb.common.util.DateUtils.getDateAsStringArray;
-import static org.tb.common.util.DateUtils.getDateFormStrings;
-import static org.tb.common.util.DateUtils.getYearString;
-import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.DateUtils.*;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -446,6 +439,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 }
                 reportForm.setMonth(getShortstringFromMonthMM(beginDate.getMonthValue()));
                 reportForm.setYear(getYearString(beginDate));
+                reportForm.setDay(getDayString(beginDate));
             }
 
             // monthly view -> create date and synchronize with end-/lastdate-fields
