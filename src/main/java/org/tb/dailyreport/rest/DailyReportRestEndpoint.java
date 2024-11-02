@@ -10,6 +10,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REPORT;
 import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REPORT_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import java.util.stream.IntStream;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
@@ -50,9 +52,10 @@ public class DailyReportRestEndpoint {
     @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
     @ResponseStatus(OK)
     @Operation
-    public List<DailyReportData> getBookings(
+    public ResponseEntity<List<DailyReportData>> getBookings(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate,
-            @RequestParam(defaultValue = "1") int days
+            @RequestParam(defaultValue = "1") int days,
+            @RequestParam(defaultValue = "false") boolean csv
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
@@ -60,16 +63,21 @@ public class DailyReportRestEndpoint {
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
-        return getDailyReports(employeecontract.getId(), refDate, days);
+        var response = ResponseEntity.ok();
+        if (csv) {
+            response = response.contentType(TEXT_CSV_DAILY_REPORT);
+        }
+        return response.body(getDailyReports(employeecontract.getId(), refDate, days));
     }
 
     @GetMapping(path = "/{employeeContractId}/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
     @ResponseStatus(OK)
     @Operation
-    public List<DailyReportData> getBookingsForEmployee(
+    public ResponseEntity<List<DailyReportData>> getBookingsForEmployee(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate,
             @RequestParam(defaultValue = "1") int days,
-            @PathVariable Long employeeContractId
+            @PathVariable Long employeeContractId,
+            @RequestParam(defaultValue = "false") boolean csv
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
@@ -80,7 +88,11 @@ public class DailyReportRestEndpoint {
         if (!userIsAllowedToReadContract(employeecontract)) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
-        return getDailyReports(employeecontract.getId(), refDate, days);
+        var response = ResponseEntity.ok();
+        if (csv) {
+            response = response.contentType(TEXT_CSV_DAILY_REPORT);
+        }
+        return response.body(getDailyReports(employeecontract.getId(), refDate, days));
     }
 
     @PostMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})

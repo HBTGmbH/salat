@@ -436,17 +436,27 @@
 						</html:submit></td>
 				</html:form>
 			</c:if>
+			<c:if test="${csvDownloadUrl != null}">
+				<td class="noBborderStyle" align="left"><a href="${csvDownloadUrl}" download="${csvDownloadName}" target="_blank"><html:submit
+						styleId="button"
+						titleKey="main.general.button.csvdownload.alttext.text">
+					<bean:message key="main.general.button.csvdownload.text" />
+					</html:submit></a>
+				</td>
+			</c:if>
 			<html:form target="_blank" action="/ShowMatrix?task=print">
 				<td class="noBborderStyle" align="left"><html:submit
 						styleId="button"
 						titleKey="main.general.button.printpreview.alttext.text">
 						<bean:message key="main.general.button.printpreview.text" />
-					</html:submit></td>
-				<td
-					style="border: 1px black solid; border-style: none none none none; text-align: right; color: red"
-					class="bold matrix" colspan="2"><c:if test="${invalid}">
+					</html:submit>
+				</td>
+				<td style="border: 1px black solid; border-style: none none none none; text-align: right; color: red"
+					class="bold matrix" colspan="2">
+					<c:if test="${invalid}">
 						<bean:message key="main.matrixoverview.table.invalid" />.
-		</c:if></td>
+					</c:if>
+				</td>
 			</html:form>
 		</tr>
 	</table>

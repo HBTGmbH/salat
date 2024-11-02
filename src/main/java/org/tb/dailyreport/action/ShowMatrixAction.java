@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
 import org.tb.employee.domain.Employeecontract;
@@ -26,6 +27,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeDAO employeeDAO;
     private final MatrixHelper matrixHelper;
+    private final AuthorizedUser authorizedUser;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowMatrixForm reportForm, HttpServletRequest request, HttpServletResponse response) {
@@ -47,7 +49,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // call on MatrixView with parameter refreshMatrix to update request
         if ("refreshMatrix".equals(task)) {
-            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request);
+            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request, authorizedUser);
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 
@@ -65,7 +67,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             String fromYear = String.valueOf(date.getYear());
             reportForm.setFromMonth(fromMonth);
             reportForm.setFromYear(fromYear);
-            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request);
+            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request, authorizedUser);
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 

@@ -58,7 +58,7 @@ class DailyReportRestEndpointTest {
         when(authorizedUser.isAuthenticated()).thenReturn(false);
 
         // when
-        assertThatThrownBy(() -> dailyReportRestEndpoint.getBookings(day, 1))
+        assertThatThrownBy(() -> dailyReportRestEndpoint.getBookings(day, 1, false))
                 .hasMessage("401 UNAUTHORIZED");
     }
 
@@ -84,10 +84,10 @@ class DailyReportRestEndpointTest {
                 .thenReturn(List.of(timeReport2));
 
         // when
-        var result = dailyReportRestEndpoint.getBookings(day, 2);
+        var result = dailyReportRestEndpoint.getBookings(day, 2, false);
 
         // then
-        assertThat(result)
+        assertThat(result.getBody())
                 .hasSize(2)
                 .contains(mapToDailyReportData(timeReport1))
                 .contains(mapToDailyReportData(timeReport2));
@@ -107,10 +107,10 @@ class DailyReportRestEndpointTest {
                 .thenReturn(List.of());
 
         // when
-        var result = dailyReportRestEndpoint.getBookings(null, 1);
+        var result = dailyReportRestEndpoint.getBookings(null, 1, false);
 
         // then
-        assertThat(result).isEmpty();
+        assertThat(result.getBody()).isEmpty();
         assertThat(dateArgumentCaptor.getAllValues()).hasSize(2).allMatch(today::equals);
     }
 
