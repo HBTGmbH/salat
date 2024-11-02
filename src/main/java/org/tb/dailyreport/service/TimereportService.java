@@ -143,6 +143,12 @@ public class TimereportService {
     return true;
   }
 
+  public void deleteTimeReports(LocalDate date, long employeeOrderId, AuthorizedUser authorizedUser) {
+    var timeReports = timereportRepository.findAllByEmployeeorderIdAndReferencedayRefdate(employeeOrderId, date);
+    checkAuthorization(timeReports, authorizedUser);
+    timeReports.forEach(timeReport -> timereportDAO.deleteTimereportById(timeReport.getId()));
+  }
+
   /**
    * deletes many timereports at once
    *

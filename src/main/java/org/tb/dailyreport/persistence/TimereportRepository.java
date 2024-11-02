@@ -116,6 +116,8 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   List<Timereport> findAllByEmployeecontractId(long employeecontractId);
 
+  List<Timereport> findAllByEmployeeorderIdAndReferencedayRefdate(long employeeorderId, LocalDate refDate);
+
   List<Timereport> findAllBySuborderId(long suborderId);
 
 }
