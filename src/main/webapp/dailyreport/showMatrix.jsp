@@ -451,10 +451,10 @@
                 </td>
             </html:form>
             <td style="border: 1px black solid; border-style: none none none none; text-align: right; color: red" class="bold matrix" colspan="2">
-                <c:if test="${invalid}">
-                    <bean:message key="main.matrixoverview.table.invalid" />.
-                </c:if>
-            </td>
+				<c:if test="${invalid}">
+					<bean:message key="main.matrixoverview.table.invalid" />.
+					</c:if>
+				</td>
 			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
 				<html:form action="/ShowMatrix?task=fillOpenWorkdaysNotWorked">
 					<td class="noBborderStyle" align="left">
