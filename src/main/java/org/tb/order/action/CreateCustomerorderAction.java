@@ -13,6 +13,7 @@ import org.tb.customer.CustomerDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.persistence.CustomerorderDAO;
 
 /**
@@ -54,6 +55,8 @@ public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomeror
         // get list of employees with employee contract
         List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
         request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
+
+        request.getSession().setAttribute("orderTypes", OrderType.values());
 
         // reset/init form entries
         customerOrderForm.reset(mapping, request);
