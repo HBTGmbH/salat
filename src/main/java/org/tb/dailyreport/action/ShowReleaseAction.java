@@ -217,7 +217,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
 
             releaseForm.setEmployeeContractId(employeecontract.getId());
-            releaseForm.setReleaseDate(releaseDateFromContract);
+            releaseForm.setReleaseDate(DateUtils.addMonths(releaseDateFromContract, 1)); // always show next month to help employee release next month
             releaseForm.setAcceptanceDate(acceptanceDateFromContract);
             releaseForm.setReopenDate(releaseForm.getReleaseDate());
         }
