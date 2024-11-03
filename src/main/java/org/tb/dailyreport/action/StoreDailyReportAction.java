@@ -267,6 +267,32 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
             if(form.isNewTimeReport()) {
                 try {
+                    int effectiveNumberOfSerialDays = Math.max(form.getNumberOfSerialDays(), 1);
+
+                    if(effectiveNumberOfSerialDays > 1) {
+                        // serial booking, needs to ensure working days are present - just copy the value of the first day
+                        Workingday firstWorkingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referencedayRefDate, employeeContract.getId());
+                        if(firstWorkingday != null) {
+                            var workingday = firstWorkingday;
+                            for(int i = 1; i < effectiveNumberOfSerialDays; i++) {
+                                workingday = workingdayService.getNextWorkingDay(workingday);
+                                if(workingday.isNew()) {
+                                    workingday.setStarttimehour(firstWorkingday.getStarttimehour());
+                                    workingday.setStarttimeminute(firstWorkingday.getStarttimeminute());
+                                    workingday.setBreakhours(firstWorkingday.getBreakhours());
+                                    workingday.setBreakminutes(firstWorkingday.getBreakminutes());
+                                    workingday.setType(firstWorkingday.getType());
+                                    try {
+                                        workingdayService.upsertWorkingday(workingday);
+                                    } catch(ErrorCodeException e) {
+                                        addToErrors(request, e.getErrorCode());
+                                        return mapping.getInputForward();
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     timereportService.createTimereports(
                         authorizedUser,
                         form.getEmployeeContractId(),
@@ -276,7 +302,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         Boolean.TRUE.equals(form.getTraining()),
                         form.getSelectedHourDuration(),
                         form.getSelectedMinuteDuration(),
-                        Math.max(form.getNumberOfSerialDays(), 1) // ensure at least one
+                        effectiveNumberOfSerialDays // ensure at least one
                     );
                 } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                     addToErrors(request, e.getErrorCode());

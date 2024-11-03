@@ -9,11 +9,16 @@ import static org.tb.common.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.PARTIALLY;
 
+import java.time.LocalDate;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.BusinessRuleChecks;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -50,6 +55,31 @@ public class WorkingdayService {
     }
 
     workingdayRepository.save(workingday);
+  }
+
+  public Workingday getNextWorkingDay(Workingday workingday) {
+    Workingday nextWorkingDay = null;
+    LocalDate day = workingday.getRefday();
+    var employeecontractId = workingday.getEmployeecontract().getId();
+    do {
+      LocalDate nextDay = DateUtils.addDays(day, 1);
+      if(DateUtils.isWeekday(nextDay)) {
+        Optional<Publicholiday> publicHoliday = publicholidayRepository.findByRefdate(nextDay);
+        if(publicHoliday.isEmpty()) {
+          // we have found a weekday that is not a public holiday, hooray!
+          var match = workingdayRepository.findByRefdayAndEmployeecontractId(nextDay, employeecontractId);
+          if(match.isPresent()) {
+            nextWorkingDay = match.get();
+          } else {
+            nextWorkingDay = new Workingday();
+            nextWorkingDay.setRefday(nextDay);
+            nextWorkingDay.setEmployeecontract(workingday.getEmployeecontract());
+          }
+        }
+      }
+      day = nextDay; // prepare next iteration
+    } while(nextWorkingDay == null);
+    return nextWorkingDay;
   }
 
 }
