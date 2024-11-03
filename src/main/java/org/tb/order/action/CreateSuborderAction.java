@@ -12,6 +12,7 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.SuborderDAO;
@@ -113,6 +114,8 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
         // make sure, no soId still exists in session
         request.getSession().removeAttribute("soId");
+
+        request.getSession().setAttribute("orderTypes", OrderType.values());
 
         // forward to form jsp
         return mapping.findForward("success");

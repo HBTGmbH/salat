@@ -104,6 +104,11 @@ public class Suborder extends AuditedEntity implements Serializable {
      */
     private Boolean fixedPrice;
 
+    /**
+     * Overrides order type in customer order if set.
+     */
+    private OrderType orderType;
+
     public void addSuborder(Suborder child) {
         if (suborders == null) {
             suborders = new LinkedList<>();
@@ -360,6 +365,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         copy.setSuborder_customer(suborder_customer);
         copy.setFixedPrice(fixedPrice);
         copy.setTrainingFlag(trainingFlag);
+        copy.setOrderType(orderType);
 
         if (copyroot) {
             copy.setSign("copy_of_" + sign);

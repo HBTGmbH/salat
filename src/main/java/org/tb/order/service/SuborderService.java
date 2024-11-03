@@ -57,6 +57,7 @@ public class SuborderService {
     so.setCommentnecessary(addSuborderForm.getCommentnecessary());
     so.setFixedPrice(addSuborderForm.getFixedPrice());
     so.setTrainingFlag(addSuborderForm.getTrainingFlag());
+    so.setOrderType(addSuborderForm.getOrderType());
 
     if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().equals("")) {
       LocalDate fromDate = DateUtils.parseOrNull(addSuborderForm.getValidFrom());
