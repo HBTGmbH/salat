@@ -425,4 +425,11 @@ public class Suborder extends AuditedEntity implements Serializable {
         return result.toString();
     }
 
+    public OrderType getEffectiveOrderType() {
+        if(orderType != null) {
+            return orderType;
+        }
+        return customerorder.getOrderType();
+    }
+
 }

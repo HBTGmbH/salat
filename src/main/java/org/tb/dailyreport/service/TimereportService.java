@@ -586,7 +586,7 @@ public class TimereportService {
       );
 
       // check begin and break rules
-      OrderType orderType = timereport.getSuborder().getCustomerorder().getOrderType();
+      OrderType orderType = timereport.getSuborder().getEffectiveOrderType();
       if (needsWorkingHoursLawValidation(employeeContractId) && isRelevantForWorkingTimeValidation(orderType)) {
         DataValidation.notNull(workingDay, TR_WORKING_DAY_START_NULL);
         DataValidation.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
