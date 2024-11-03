@@ -25,6 +25,7 @@ public class TimereportDTO implements Serializable {
   private final String employeeSign;
   private final long employeecontractId;
   private final OrderType orderType;
+  private final String customerShortname;
   private final long suborderId;
   private final String suborderSign;
   private final String suborderDescription;

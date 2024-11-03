@@ -298,7 +298,16 @@ public class MatrixHelper {
         // add a new MatrixLine
         var customerorderData = new OrderSummaryData(timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
         var suborderData = new OrderSummaryData(timeReport.getSuborderSign(), timeReport.getSuborderDescription());
-        matrixLines.add(new MatrixLine(customerorderData, suborderData, taskdescription, timeReport.getReferenceday(), timeReport.getDuration()));
+        matrixLines.add(
+            new MatrixLine(
+                timeReport.getCustomerShortname(),
+                customerorderData,
+                suborderData,
+                taskdescription,
+                timeReport.getReferenceday(),
+                timeReport.getDuration()
+            )
+        );
     }
 
     private void filterInvoiceable(List<TimereportDTO> timeReportList, boolean invoiceable, boolean nonInvoiceable) {

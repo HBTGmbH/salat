@@ -540,6 +540,7 @@ public class TimereportDAO {
             .employeeId(timereport.getEmployeecontract().getEmployee().getId())
             .employeeName(timereport.getEmployeecontract().getEmployee().getName())
             .employeeSign(timereport.getEmployeecontract().getEmployee().getSign())
+            .customerShortname(timereport.getSuborder().getCustomerorder().getCustomer().getShortname())
             .customerorderId(timereport.getSuborder().getCustomerorder().getId())
             .customerorderSign(timereport.getSuborder().getCustomerorder().getSign())
             .customerorderDescription(timereport.getSuborder().getCustomerorder().getShortdescription())

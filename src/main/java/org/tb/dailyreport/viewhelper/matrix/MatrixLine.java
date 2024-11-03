@@ -12,6 +12,8 @@ import org.tb.dailyreport.domain.TimereportDTO;
 public class MatrixLine implements Comparable<MatrixLine> {
 
     @Getter
+    private String customerShortname;
+    @Getter
     private OrderSummaryData customOrder;
     @Getter
     private OrderSummaryData subOrder;
@@ -19,8 +21,9 @@ public class MatrixLine implements Comparable<MatrixLine> {
     @Getter
     private final List<BookingDay> bookingDays = new ArrayList<>();
 
-    public MatrixLine(OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, Duration duration) {
+    public MatrixLine(String customerShortname, OrderSummaryData customOrder, OrderSummaryData subOrder, String taskdescription, LocalDate date, Duration duration) {
         super();
+        this.customerShortname = customerShortname;
         this.subOrder = subOrder;
         this.customOrder = customOrder;
         total = Duration.ZERO;

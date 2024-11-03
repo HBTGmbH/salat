@@ -311,7 +311,7 @@
 
 		<c:forEach var="matrixline" items="${matrixlines}">
 			<tr class="matrix">
-				<td class="matrix"><c:out value="${matrixline.customOrder.sign}"></c:out><br><c:out value="${matrixline.subOrder.sign}" /></td>
+				<td class="matrix"><c:out value="${matrixline.customOrder.sign}"></c:out> (<c:out value="${matrixline.customerShortname}"></c:out>)<br><c:out value="${matrixline.subOrder.sign}" /></td>
 				<td class="matrix"><c:out value="${matrixline.customOrder.shortdescription}"></c:out><br><c:out value="${matrixline.subOrder.shortdescription}" /></td>
 				<c:forEach var="bookingday" items="${matrixline.bookingDays}">
 					<td title="${fn:escapeXml(bookingday.taskdescription)}"
