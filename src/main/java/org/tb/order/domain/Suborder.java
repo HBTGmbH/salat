@@ -1,5 +1,7 @@
 package org.tb.order.domain;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -107,6 +109,8 @@ public class Suborder extends AuditedEntity implements Serializable {
     /**
      * Overrides order type in customer order if set.
      */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "orderType", columnDefinition = "varchar(255)")
     private OrderType orderType;
 
     public void addSuborder(Suborder child) {
