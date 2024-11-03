@@ -14,6 +14,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.SuborderDAO;
@@ -53,6 +54,8 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             customerorders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         }
         request.getSession().setAttribute("customerorders", customerorders);
+
+        request.getSession().setAttribute("orderTypes", OrderType.values());
 
         // forward to suborder add/edit form
         return mapping.findForward("success");
@@ -103,6 +106,7 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             soForm.setDebithoursunit(null);
         }
         soForm.setHide(so.isHide());
+        soForm.setOrderType(so.getOrderType());
 
         //request.getSession().setAttribute("currentSuborderID", new Long(so.getId()));
         request.getSession().setAttribute("currentOrderId", so.getCustomerorder().getId());

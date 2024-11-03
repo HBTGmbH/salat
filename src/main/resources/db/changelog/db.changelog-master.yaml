@@ -920,6 +920,23 @@ databaseChangeLog:
                   name: type
                   type: varchar(100)
                   defaultValue: 'WORKED'
+  - changeSet:
+      id: 26
+      author: kr
+      comment: Add an OrderType to mark suborders as a specific type, overriding ordertype in customerorder
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: suborder
+                columnName: orderType
+      changes:
+        - addColumn:
+            tableName: suborder
+            columns:
+              - column:
+                  name: orderType
+                  type: varchar(255)
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

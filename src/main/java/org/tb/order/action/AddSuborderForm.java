@@ -7,6 +7,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
+import org.tb.order.domain.OrderType;
 
 /**
  * Form for adding a suborder
@@ -37,6 +38,7 @@ public class AddSuborderForm extends ActionForm {
     private Boolean hide;
     private Long parentId;
     private String parentDescriptionAndSign;
+    private String orderTypeString;
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -56,6 +58,22 @@ public class AddSuborderForm extends ActionForm {
         debithoursunit = null;
         hide = false;
 
+        setOrderType(null);
+    }
+
+    public OrderType getOrderType() {
+        if(orderTypeString == null && orderTypeString.isBlank()) {
+            return null;
+        }
+        return OrderType.valueOf(orderTypeString);
+    }
+
+    public void setOrderType(OrderType orderType) {
+        if(orderType == null) {
+            this.orderTypeString = null;
+        } else {
+            this.orderTypeString = orderType.name();
+        }
     }
 
 }
