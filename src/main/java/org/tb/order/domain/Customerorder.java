@@ -104,6 +104,9 @@ public class Customerorder extends AuditedEntity implements Serializable {
      */
     private Boolean hide;
 
+    /**
+     * May be overridden by suborder ordertype!
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "orderType", columnDefinition = "varchar(255)")
     private OrderType orderType;

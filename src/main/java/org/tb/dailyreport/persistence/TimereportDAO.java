@@ -544,7 +544,7 @@ public class TimereportDAO {
             .customerorderId(timereport.getSuborder().getCustomerorder().getId())
             .customerorderSign(timereport.getSuborder().getCustomerorder().getSign())
             .customerorderDescription(timereport.getSuborder().getCustomerorder().getShortdescription())
-            .orderType(timereport.getSuborder().getCustomerorder().getOrderType())
+            .orderType(timereport.getSuborder().getEffectiveOrderType())
             .suborderId(timereport.getSuborder().getId())
             .suborderSign(timereport.getSuborder().getSign())
             .suborderDescription(timereport.getSuborder().getShortdescription())
