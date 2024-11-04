@@ -103,7 +103,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // call on MatrixView with parameter refreshMatrix to update request
         if ("refreshMatrix".equals(task)) {
-            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request);
+            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request, authorizedUser);
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 
