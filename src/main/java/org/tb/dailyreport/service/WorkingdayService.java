@@ -18,7 +18,6 @@ import org.tb.common.BusinessRuleChecks;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
-import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -57,29 +56,36 @@ public class WorkingdayService {
     workingdayRepository.save(workingday);
   }
 
-  public Workingday getNextWorkingDay(Workingday workingday) {
+  public Workingday getNextRegularWorkingday(Workingday workingday) {
     Workingday nextWorkingDay = null;
     LocalDate day = workingday.getRefday();
     var employeecontractId = workingday.getEmployeecontract().getId();
     do {
       LocalDate nextDay = DateUtils.addDays(day, 1);
-      if(DateUtils.isWeekday(nextDay)) {
-        Optional<Publicholiday> publicHoliday = publicholidayRepository.findByRefdate(nextDay);
-        if(publicHoliday.isEmpty()) {
-          // we have found a weekday that is not a public holiday, hooray!
-          var match = workingdayRepository.findByRefdayAndEmployeecontractId(nextDay, employeecontractId);
-          if(match.isPresent()) {
-            nextWorkingDay = match.get();
-          } else {
-            nextWorkingDay = new Workingday();
-            nextWorkingDay.setRefday(nextDay);
-            nextWorkingDay.setEmployeecontract(workingday.getEmployeecontract());
-          }
+      if(isRegularWorkingday(nextDay)) {
+        // we have found a weekday that is not a public holiday, hooray!
+        var match = workingdayRepository.findByRefdayAndEmployeecontractId(nextDay, employeecontractId);
+        if(match.isPresent()) {
+          nextWorkingDay = match.get();
+        } else {
+          nextWorkingDay = new Workingday();
+          nextWorkingDay.setRefday(nextDay);
+          nextWorkingDay.setEmployeecontract(workingday.getEmployeecontract());
         }
       }
       day = nextDay; // prepare next iteration
     } while(nextWorkingDay == null);
     return nextWorkingDay;
+  }
+
+  public boolean isRegularWorkingday(LocalDate date) {
+    if(DateUtils.isWeekday(date)) {
+      Optional<Publicholiday> publicHoliday = publicholidayRepository.findByRefdate(date);
+      if(publicHoliday.isEmpty()) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }

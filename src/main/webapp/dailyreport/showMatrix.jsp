@@ -426,8 +426,7 @@
 	</table>
 	<table>
 		<tr>
-			<c:if
-				test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
+			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
 				<html:form action="/CreateDailyReport?task=matrix">
 					<td class="noBborderStyle" align="left"><html:submit
 							styleId="button"
@@ -445,19 +444,26 @@
 				</td>
 			</c:if>
 			<html:form target="_blank" action="/ShowMatrix?task=print">
-				<td class="noBborderStyle" align="left"><html:submit
-						styleId="button"
-						titleKey="main.general.button.printpreview.alttext.text">
+				<td class="noBborderStyle" align="left">
+					<html:submit styleId="button" titleKey="main.general.button.printpreview.alttext.text">
 						<bean:message key="main.general.button.printpreview.text" />
 					</html:submit>
-				</td>
-				<td style="border: 1px black solid; border-style: none none none none; text-align: right; color: red"
-					class="bold matrix" colspan="2">
-					<c:if test="${invalid}">
-						<bean:message key="main.matrixoverview.table.invalid" />.
-					</c:if>
-				</td>
-			</html:form>
+                </td>
+            </html:form>
+            <td style="border: 1px black solid; border-style: none none none none; text-align: right; color: red" class="bold matrix" colspan="2">
+                <c:if test="${invalid}">
+                    <bean:message key="main.matrixoverview.table.invalid" />.
+                </c:if>
+            </td>
+			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
+				<html:form action="/ShowMatrix?task=fillOpenWorkdaysNotWorked">
+					<td class="noBborderStyle" align="left">
+						<html:submit styleClass="button-special" titleKey="main.general.button.fillopenworkdaysnotworked.alttext.text">
+							<bean:message key="main.general.button.fillopenworkdaysnotworked.text" />
+						</html:submit>
+					</td>
+				</html:form>
+			</c:if>
 		</tr>
 	</table>
 	<c:if test="${dailyReportViewHelper.displayEmployeeInfo}">

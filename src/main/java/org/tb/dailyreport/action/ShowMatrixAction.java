@@ -1,5 +1,6 @@
 package org.tb.dailyreport.action;
 
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 import static org.tb.common.DateTimeViewHelper.getShortstringFromMonthMM;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
@@ -14,6 +15,11 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
+import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
+import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.persistence.WorkingdayRepository;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -27,6 +33,9 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeDAO employeeDAO;
     private final MatrixHelper matrixHelper;
+    private final WorkingdayService workingdayService;
+    private final TimereportDAO timereportDAO;
+    private final WorkingdayRepository workingdayRepository;
     private final AuthorizedUser authorizedUser;
 
     @Override
@@ -47,12 +56,6 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             doRefreshEmployeeSummaryData = true;
         }
 
-        // call on MatrixView with parameter refreshMatrix to update request
-        if ("refreshMatrix".equals(task)) {
-            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request, authorizedUser);
-            return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
-        }
-
         if ("setMonth".equals(task)) {
             var mode = request.getParameter("mode");
             var date = getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
@@ -68,6 +71,39 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             reportForm.setFromMonth(fromMonth);
             reportForm.setFromYear(fromYear);
             Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request, authorizedUser);
+            return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
+        }
+
+        if("fillOpenWorkdaysNotWorked".equals(task)) {
+            var employeecontract = getEmployeeContractFromRequest(request);
+            if(employeecontract != null) {
+                Long employeecontractId = employeecontract.getId();
+                var first = getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
+                var last = first.with(lastDayOfMonth());
+                first.datesUntil(last.plusDays(1)).forEach(day -> {
+                    var isRegularWorkingday = workingdayService.isRegularWorkingday(day);
+                    if(isRegularWorkingday) {
+                        var hasBookings = !timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, day).isEmpty();
+                        if(!hasBookings) {
+                            var present = workingdayRepository.findByRefdayAndEmployeecontractId(day, employeecontractId).isPresent();
+                            if(!present) {
+                                var workingday = new Workingday();
+                                workingday.setEmployeecontract(employeecontract);
+                                workingday.setRefday(day);
+                                workingday.setType(WorkingDayType.NOT_WORKED);
+                                workingdayService.upsertWorkingday(workingday);
+                            }
+                        }
+                    }
+                });
+                task = "refreshMatrix";
+                doRefreshEmployeeSummaryData = true;
+            }
+        }
+
+        // call on MatrixView with parameter refreshMatrix to update request
+        if ("refreshMatrix".equals(task)) {
+            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request);
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 

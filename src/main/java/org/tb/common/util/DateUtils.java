@@ -141,8 +141,8 @@ public class DateUtils {
      * gets the last day of a given month
      * E.g., month given as string '02', last day is either 28 or 29
      */
-    public static int getLastDayOfMonth(LocalDate date) {
-        return date.getMonthValue();
+    public static String getLastDayOfMonth(LocalDate date) {
+        return dayOfMonthFormatter.format(date.with(lastDayOfMonth()));
     }
 
     /**

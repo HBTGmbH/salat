@@ -191,6 +191,20 @@ th.matrix #borderdouble {
 	cursor: pointer;
 }
 
+.button-special {
+	background-color: #8C00B5;
+	color: #ffffff;
+	border-style: solid;
+	border-color: #8C00B5;
+	border-radius: 5px;
+}
+
+.button-special:hover {
+	background-color: #ffffff;
+	color: #8C00B5;
+	cursor: pointer;
+}
+
 #treeViewStyle {
 	font-size: 14px;
 	font-weight: normal;
