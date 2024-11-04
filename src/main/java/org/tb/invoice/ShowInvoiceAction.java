@@ -373,7 +373,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                 showInvoiceForm.setFromDay("01");
                 showInvoiceForm.setFromMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setFromYear(DateUtils.getYearString(today));
-                showInvoiceForm.setUntilDay(Integer.toString(DateUtils.getLastDayOfMonth(today)));
+                showInvoiceForm.setUntilDay(DateUtils.getLastDayOfMonth(today));
                 showInvoiceForm.setUntilMonth(DateUtils.getMonthShortString(today));
                 showInvoiceForm.setUntilYear(DateUtils.getYearString(today));
                 request.getSession().setAttribute("invoiceview", GlobalConstants.VIEW_MONTHLY);

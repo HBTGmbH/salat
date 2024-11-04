@@ -275,7 +275,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         if(firstWorkingday != null) {
                             var workingday = firstWorkingday;
                             for(int i = 1; i < effectiveNumberOfSerialDays; i++) {
-                                workingday = workingdayService.getNextWorkingDay(workingday);
+                                workingday = workingdayService.getNextRegularWorkingday(workingday);
                                 if(workingday.isNew()) {
                                     workingday.setStarttimehour(firstWorkingday.getStarttimehour());
                                     workingday.setStarttimeminute(firstWorkingday.getStarttimeminute());
