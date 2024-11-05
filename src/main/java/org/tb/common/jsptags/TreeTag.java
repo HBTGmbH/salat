@@ -124,7 +124,7 @@ public class TreeTag extends TagSupport {
                 generateTreeRecursivly(mainProject.getId(), 0, out, true, fillFilteredHierarchy(subProjects));
             }
             out.print("</span>");
-        } catch (Exception ioe) {
+        } catch (IOException ioe) {
             log.error("Error in Tree Tag!");
         }
         return (EVAL_BODY_INCLUDE);

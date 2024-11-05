@@ -9,7 +9,6 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.common.AuditedEntity;
 import org.tb.common.GlobalConstants;
-import org.tb.common.util.SecureHashUtils;
 
 @Getter
 @Setter
@@ -23,10 +22,6 @@ public class Employee extends AuditedEntity implements Serializable {
      * registration first and last name of the employee
      */
     private String loginname;
-    /**
-     * registration password of the employee
-     */
-    private String password;
     /**
      * first name of the employee
      */
@@ -47,10 +42,6 @@ public class Employee extends AuditedEntity implements Serializable {
      * status of the employee (e.g., admin, ma, bl
      */
     private String status;
-    /**
-     * Password change required
-     */
-    private Boolean passwordchange;
 
     private transient Boolean restricted = null;
 
@@ -60,16 +51,6 @@ public class Employee extends AuditedEntity implements Serializable {
 
     public String getEmailAddress() {
         return getSign() + "@" + GlobalConstants.MAIL_DOMAIN;
-    }
-
-    public void resetPassword() {
-        password = SecureHashUtils.encodePassword(sign);
-        passwordchange = true;
-    }
-
-    public void changePassword(final String newPassword) {
-        passwordchange = false;
-        password = SecureHashUtils.encodePassword(newPassword);
     }
 
     @Transient

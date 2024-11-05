@@ -62,7 +62,7 @@ public class AddSuborderForm extends ActionForm {
     }
 
     public OrderType getOrderType() {
-        if(orderTypeString == null && orderTypeString.isBlank()) {
+        if(orderTypeString == null || orderTypeString.isBlank()) {
             return null;
         }
         return OrderType.valueOf(orderTypeString);

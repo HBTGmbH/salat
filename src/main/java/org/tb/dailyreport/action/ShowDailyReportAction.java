@@ -802,12 +802,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
-        if (ec == null) {
-            request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
-            return "error";
-        }
         List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false);
-        if (employeecontracts == null || employeecontracts.isEmpty()) {
+        if (employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             return "error";
         }

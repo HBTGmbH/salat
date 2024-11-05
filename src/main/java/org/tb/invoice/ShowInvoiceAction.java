@@ -355,10 +355,6 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             // no special task - prepare everything to show invoice
             EmployeeViewHelper eh = new EmployeeViewHelper();
             Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
-            if (ec == null) {
-                request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
-                return mapping.findForward("error");
-            }
             request.getSession().setAttribute("days", getDaysToDisplay());
             request.getSession().setAttribute("years", getYearsToDisplay());
             request.getSession().setAttribute("weeks", getWeeksToDisplay(showInvoiceForm.getFromYear()));

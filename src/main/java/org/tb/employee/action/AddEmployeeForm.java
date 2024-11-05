@@ -20,7 +20,6 @@ public class AddEmployeeForm extends ActionForm {
     private String firstname;
     private String lastname;
     private String loginname;
-    private String password;
     private String sign;
     private String status;
     private String gender;
@@ -31,7 +30,6 @@ public class AddEmployeeForm extends ActionForm {
         firstname = "";
         lastname = "";
         loginname = "";
-        password = "";
         status = "";
         sign = "";
         gender = "M";

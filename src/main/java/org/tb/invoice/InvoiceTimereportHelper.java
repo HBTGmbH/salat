@@ -1,11 +1,12 @@
 package org.tb.invoice;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 
-public class InvoiceTimereportHelper {
+public class InvoiceTimereportHelper implements Serializable {
 
     private TimereportDTO timereport;
     private boolean visible;

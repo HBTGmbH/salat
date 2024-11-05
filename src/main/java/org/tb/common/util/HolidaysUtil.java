@@ -31,7 +31,7 @@ public class HolidaysUtil {
             return Collections.emptyList();
         }
 
-        Scanner scanner = new Scanner(is);
+        Scanner scanner = new Scanner(is, "UTF-8");
         Collection<LocalDate> result = new ArrayList<>();
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine().trim();

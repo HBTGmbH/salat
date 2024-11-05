@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.Data;
 import lombok.Getter;
 import org.tb.common.util.DurationUtils;
@@ -67,6 +68,24 @@ public class MatrixLine implements Comparable<MatrixLine> {
 
     public int compareTo(MatrixLine o) {
         return (this.customOrder.getSign() + this.subOrder.getSign()).compareTo(o.customOrder.getSign() + o.subOrder.getSign());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        MatrixLine that = (MatrixLine) obj;
+        return (this.customOrder.getSign() + this.subOrder.getSign()).equals(
+            that.customOrder.getSign() + that.subOrder.getSign());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(customOrder.getSign(), subOrder.getSign());
     }
 
     public String getTotalString() {

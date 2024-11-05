@@ -56,14 +56,9 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             employee.setFirstname(emForm.getFirstname());
             employee.setLastname(emForm.getLastname());
             employee.setLoginname(emForm.getLoginname());
-//				em.setPassword(emForm.getPassword());
             employee.setStatus(emForm.getStatus());
             employee.setSign(emForm.getSign());
             employee.setGender(emForm.getGender().charAt(0));
-
-            if (create) {
-                employee.resetPassword();
-            }
 
             employeeDAO.save(employee);
 
@@ -99,7 +94,6 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
                 em = employeeDAO.getEmployeeById(emId);
             }
             if (em != null) {
-                em.resetPassword();
                 employeeDAO.save(em);
             }
 

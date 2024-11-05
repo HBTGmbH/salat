@@ -41,7 +41,6 @@ public class EditEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
         employeeForm.setFirstname(em.getFirstname());
         employeeForm.setLastname(em.getLastname());
         employeeForm.setLoginname(em.getLoginname());
-        employeeForm.setPassword(em.getPassword());
         employeeForm.setSign(em.getSign());
         employeeForm.setStatus(em.getStatus());
         employeeForm.setGender(Character.toString(em.getGender()));

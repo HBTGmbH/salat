@@ -23,6 +23,7 @@ import org.tb.employee.service.EmployeecontractService;
 @RequiredArgsConstructor
 public class ChicoreeAutoLoginHandler implements ApplicationListener<AuthenticationSuccessEvent> {
 
+  public static final Random RANDOM = new Random();
   private final AuthorizedUser authorizedUser;
   private final ChicoreeSessionStore chicoreeSessionStore;
   private final EmployeecontractService employeecontractService;
@@ -56,7 +57,7 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<Authenticat
   }
 
   public static String getRandomGreeting() {
-    int rnd = new Random().nextInt(greetings.length);
+    int rnd = RANDOM.nextInt(greetings.length);
     return greetings[rnd];
   }
 

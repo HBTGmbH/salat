@@ -21,7 +21,7 @@ public class ChangeDayAction extends LoginRequiredAction<ActionForm> {
       HttpServletResponse response) throws Exception {
     String value = request.getParameter("value");
     if(value != null && !value.isBlank()) {
-      var newDate = chicoreeSessionStore.getDashboardDate().orElseThrow().plusDays(Long.valueOf(value));
+      var newDate = chicoreeSessionStore.getDashboardDate().orElseThrow().plusDays(Long.parseLong(value));
       chicoreeSessionStore.setDashboardDate(newDate);
     }
     return mapping.findForward("success");

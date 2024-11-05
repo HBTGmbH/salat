@@ -31,8 +31,6 @@ public class EmployeeTestUtils {
 		employee.setSign(sign);
 		employee.setGender(GlobalConstants.GENDER_MALE);
 		
-		employee.resetPassword();
-		
 		return employee;
 	}
 }

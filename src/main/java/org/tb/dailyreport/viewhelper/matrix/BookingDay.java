@@ -39,6 +39,23 @@ public class BookingDay implements Comparable<BookingDay> {
         return this.date.compareTo(o.date);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        BookingDay that = (BookingDay) obj;
+        return date.equals(that.date);
+    }
+
+    @Override
+    public int hashCode() {
+        return date.hashCode();
+    }
+
     public String getDurationString() {
         return DurationUtils.format(duration, true);
     }

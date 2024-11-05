@@ -31,7 +31,7 @@ public class TimereportForm extends ActionForm {
   }
 
   public long getIdTyped() {
-    return Long.valueOf(id);
+    return Long.parseLong(id);
   }
 
   public LocalDate getDateTyped() {
@@ -39,21 +39,21 @@ public class TimereportForm extends ActionForm {
   }
 
   public long getOrderIdTyped() {
-    return Long.valueOf(orderId);
+    return Long.parseLong(orderId);
   }
 
   public long getSuborderIdTyped() {
-    return Long.valueOf(suborderId);
+    return Long.parseLong(suborderId);
   }
 
   public int getHoursTyped() {
     if(hours == null || hours.isBlank()) return 0;
-    return Integer.valueOf(hours);
+    return Integer.parseInt(hours);
   }
 
   public int getMinutesTyped() {
     if(minutes == null || minutes.isBlank()) return 0;
-    return Integer.valueOf(minutes);
+    return Integer.parseInt(minutes);
   }
 
   @Override

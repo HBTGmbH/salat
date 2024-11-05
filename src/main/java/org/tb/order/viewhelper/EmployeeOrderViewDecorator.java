@@ -1,23 +1,27 @@
 package org.tb.order.viewhelper;
 
 import java.time.Duration;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.domain.Employeeorder;
 
-@RequiredArgsConstructor
 public class EmployeeOrderViewDecorator extends Employeeorder {
     private static final long serialVersionUID = 1L; // 789L;
 
-    private final TimereportDAO timereportDAO;
     @Delegate
     private final Employeeorder employeeOrder;
 
-    public Duration getDuration() {
+    private final Duration duration;
+
+    public EmployeeOrderViewDecorator(TimereportDAO timereportDAO, Employeeorder employeeOrder) {
+        this.employeeOrder = employeeOrder;
         long durationMinutes = timereportDAO.getTotalDurationMinutesForEmployeeOrder(employeeOrder.getId());
-        return Duration.ofMinutes(durationMinutes);
+        this.duration = Duration.ofMinutes(durationMinutes);
+    }
+
+    public Duration getDuration() {
+        return this.duration;
     }
 
     public Duration getDifference() {

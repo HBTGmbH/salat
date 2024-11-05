@@ -25,7 +25,7 @@ public class DeleteTimereportAction extends LoginRequiredAction<ActionForm> {
     try {
       String id = request.getParameter("id");
       if(id != null && !id.isBlank()) {
-        timereportService.deleteTimereport(Long.valueOf(id), authorizedUser);
+        timereportService.deleteTimereport(Long.parseLong(id), authorizedUser);
       }
       return mapping.findForward("success");
     } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {

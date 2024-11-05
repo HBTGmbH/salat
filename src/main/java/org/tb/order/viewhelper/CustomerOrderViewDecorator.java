@@ -8,13 +8,18 @@ import lombok.experimental.Delegate;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.domain.Customerorder;
 
-@RequiredArgsConstructor
 public class CustomerOrderViewDecorator extends Customerorder {
     private static final long serialVersionUID = 1L; // 456L;
 
-    private final TimereportDAO timereportDAO;
     @Delegate
     private final Customerorder customerOrder;
+    private final Duration duration;
+
+    public CustomerOrderViewDecorator(TimereportDAO timereportDAO, Customerorder customerOrder) {
+        long durationMinutes = timereportDAO.getTotalDurationMinutesForCustomerOrder(customerOrder.getId());
+        this.duration = Duration.ofMinutes(durationMinutes);
+        this.customerOrder = customerOrder;
+    }
 
     public Duration getDifference() {
         if (this.customerOrder.getDebithours() != null
@@ -27,14 +32,21 @@ public class CustomerOrderViewDecorator extends Customerorder {
     }
 
     public Duration getDuration() {
-        long durationMinutes = timereportDAO.getTotalDurationMinutesForCustomerOrder(customerOrder.getId());
-        return Duration.ofMinutes(durationMinutes);
+        return duration;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return customerOrder.equals(obj);
+    public boolean equals (Object obj){
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        CustomerOrderViewDecorator that = (CustomerOrderViewDecorator) obj;
+        return customerOrder.equals(that.customerOrder);
     }
+
     @Override
     public int hashCode() {
         return customerOrder.hashCode();

@@ -109,7 +109,6 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
             mapping.findForward("error");
         }
 
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         List<Employeecontract> employeecontracts = employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 

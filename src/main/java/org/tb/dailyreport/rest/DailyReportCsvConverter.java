@@ -50,7 +50,7 @@ public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyR
         if (inputMessage == null) {
             return List.of();
         }
-        try (InputStreamReader reader = new InputStreamReader(inputMessage.getBody())) {
+        try (InputStreamReader reader = new InputStreamReader(inputMessage.getBody(), "UTF-8")) {
             return new CsvToBeanBuilder<DailyReportData>(reader)
                     .withSeparator(COLUMN_SEPARATOR)
                     .withMappingStrategy(new PositionAwareColumnMappingStrategy<>(DailyReportData.class, () -> DailyReportData.builder().build()))
@@ -62,7 +62,7 @@ public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyR
 
     @Override
     public void write(@Nullable List<DailyReportData> dailyReportData, @Nullable MediaType contentType, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
-        try (OutputStreamWriter writer = new OutputStreamWriter(outputMessage.getBody())) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(outputMessage.getBody(), "UTF-8")) {
             new StatefulBeanToCsvBuilder<DailyReportData>(writer)
                     .withSeparator(COLUMN_SEPARATOR)
                     .withMappingStrategy(new PositionAwareColumnMappingStrategy<>(DailyReportData.class, () -> DailyReportData.builder().build()))

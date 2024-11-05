@@ -25,7 +25,7 @@ public class HttpFilterConfiguration {
     private final ResourceUrlProvider resourceUrlProvider;
 
     @Bean
-    public FilterRegistrationBean<ResourceUrlEncodingFilter> ResourceUrlEncodingFilter(){
+    public FilterRegistrationBean<ResourceUrlEncodingFilter> resourceUrlEncodingFilter(){
         var registrationBean = new FilterRegistrationBean<ResourceUrlEncodingFilter>();
         registrationBean.setOrder(97);
         registrationBean.setFilter(new ResourceUrlEncodingFilter());
@@ -34,7 +34,7 @@ public class HttpFilterConfiguration {
     }
 
     @Bean
-    public FilterRegistrationBean<ResourceUrlProviderExposingFilter> ResourceUrlProviderExposingFilter(){
+    public FilterRegistrationBean<ResourceUrlProviderExposingFilter> resourceUrlProviderExposingFilter(){
         var registrationBean = new FilterRegistrationBean<ResourceUrlProviderExposingFilter>();
         registrationBean.setOrder(98);
         registrationBean.setFilter(new ResourceUrlProviderExposingFilter(resourceUrlProvider));

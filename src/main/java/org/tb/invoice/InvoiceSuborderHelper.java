@@ -12,7 +12,6 @@ import org.tb.order.domain.Suborder;
 public class InvoiceSuborderHelper extends Suborder {
 
     private static final long serialVersionUID = 1L;
-    private final TimereportDAO timereportDAO;
     private final LocalDate fromDate;
     private final LocalDate untilDate;
     private final boolean invoicebox;
@@ -20,18 +19,18 @@ public class InvoiceSuborderHelper extends Suborder {
     private List<InvoiceTimereportHelper> invoiceTimereportViewHelperList;
     private boolean visible;
     private int layer;
-    private InvoiceSuborderActualHoursVisitor visitor = null;
+    private final long durationInMinutes;
 
     public InvoiceSuborderHelper(Suborder suborder, TimereportDAO timereportDAO, LocalDate fromDate, LocalDate untilDate, boolean invoicebox) {
-        if (suborder == null) {
-            throw new IllegalArgumentException("suborder must not be null!");
-        }
-        this.timereportDAO = timereportDAO;
         this.suborder = suborder;
         this.visible = true;
         this.fromDate = fromDate;
         this.untilDate = untilDate;
         this.invoicebox = invoicebox;
+
+        var visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
+        acceptVisitor(visitor);
+        this.durationInMinutes = visitor.getTotalMinutes();
     }
 
     public int getLayer() {
@@ -64,11 +63,7 @@ public class InvoiceSuborderHelper extends Suborder {
     }
 
     public long getDurationInMinutes() {
-        if (this.visitor == null) {
-            visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
-            acceptVisitor(visitor);
-        }
-        return visitor.getTotalMinutes();
+        return durationInMinutes;
     }
 
     public String getActualHours() {

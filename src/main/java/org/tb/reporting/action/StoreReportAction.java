@@ -20,6 +20,7 @@ public class StoreReportAction extends LoginRequiredAction<CreateEditDeleteRepor
         switch(form.getMode()) {
             case "create" -> reportingService.create(form.getName(), form.getSql());
             case "edit" -> reportingService.update(form.getReportId(), form.getName(), form.getSql());
+            default -> {} // do nothing
         }
         request.getSession().setAttribute("reportDescriptions", reportingService.getReportDefinitions());
         return mapping.findForward("success");

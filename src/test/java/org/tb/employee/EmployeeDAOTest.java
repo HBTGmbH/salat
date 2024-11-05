@@ -95,7 +95,6 @@ public class EmployeeDAOTest {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		
 		employeeDAO.save(employee);
-		employee.getId();
 
 		employee = employeeDAO.getEmployeeBySign(TESTY_SIGN);
 		assertThat(employee).isNotNull();

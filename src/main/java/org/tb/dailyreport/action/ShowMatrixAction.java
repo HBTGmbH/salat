@@ -64,7 +64,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
                     date = today();
                     break;
                 default:
-                    date = date.plusMonths(Long.valueOf(mode));
+                    date = date.plusMonths(Long.parseLong(mode));
             }
             String fromMonth = getShortstringFromMonthMM(date.getMonthValue());
             String fromYear = String.valueOf(date.getYear());

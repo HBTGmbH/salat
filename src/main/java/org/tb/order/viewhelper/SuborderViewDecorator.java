@@ -7,20 +7,34 @@ import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.domain.Suborder;
 
-@RequiredArgsConstructor
 public class SuborderViewDecorator extends Suborder {
     private static final long serialVersionUID = 1L; // 123L;
 
-    private final TimereportDAO timereportDAO;
     @Delegate
     private final Suborder suborder;
     private Duration duration;
     private Duration durationNotInvoiceable;
+
+    public SuborderViewDecorator(TimereportDAO timereportDAO, Suborder suborder) {
+        this.suborder = suborder;
+        if (suborder.getInvoice() == SUBORDER_INVOICE_NO) {
+            this.duration = Duration.ZERO;
+            this.durationNotInvoiceable = Duration.ZERO;
+        } else {
+            List<Long> descendants = new ArrayList<>();
+            generateListOfDescendants(suborder, true, descendants);
+            long durationMinutes = timereportDAO.getTotalDurationMinutesForSuborders(descendants);
+            this.duration = Duration.ofMinutes(durationMinutes);
+            descendants.clear();
+            generateListOfDescendants(suborder, false, descendants);
+            durationMinutes = timereportDAO.getTotalDurationMinutesForSuborders(descendants);
+            this.durationNotInvoiceable = Duration.ofMinutes(durationMinutes);
+        }
+    }
 
     private static void generateListOfDescendants(Suborder so, boolean isInvoiceable, List<Long> listOfDescendents) {
         if (isInvoiceable != (so.getInvoice() == SUBORDER_INVOICE_YES)) {
@@ -45,38 +59,23 @@ public class SuborderViewDecorator extends Suborder {
     }
 
     public Duration getDuration() {
-        if (duration == null) {
-            if (suborder.getInvoice() == SUBORDER_INVOICE_NO) {
-                return Duration.ZERO;
-            }
-
-            List<Long> descendants = new ArrayList<>();
-            generateListOfDescendants(suborder, true, descendants);
-
-            long durationMinutes = timereportDAO.getTotalDurationMinutesForSuborders(descendants);
-            duration = Duration.ofMinutes(durationMinutes);
-        }
         return duration;
     }
 
     public Duration getDurationNotInvoiceable() {
-        if (durationNotInvoiceable == null) {
-            if (suborder.getInvoice() == SUBORDER_INVOICE_YES) {
-                return Duration.ZERO;
-            }
-
-            List<Long> descendants = new ArrayList<>();
-            generateListOfDescendants(suborder, false, descendants);
-
-            long durationMinutes = timereportDAO.getTotalDurationMinutesForSuborders(descendants);
-            durationNotInvoiceable = Duration.ofMinutes(durationMinutes);
-        }
         return durationNotInvoiceable;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return suborder.equals(obj);
+    public boolean equals (Object obj){
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        SuborderViewDecorator that = (SuborderViewDecorator) obj;
+        return suborder.equals(that.suborder);
     }
 
     @Override

@@ -117,8 +117,6 @@ class DailyReportRestEndpointTest {
     @Test
     void shouldCreateBookingUnauthorized() {
         // given
-        var day = DateUtils.parse("2024-07-06");
-
         when(authorizedUser.isAuthenticated()).thenReturn(false);
 
         // when
@@ -153,8 +151,6 @@ class DailyReportRestEndpointTest {
     @Test
     void shouldCreateBookingsUnauthorized() {
         // given
-        var day = DateUtils.parse("2024-07-06");
-
         when(authorizedUser.isAuthenticated()).thenReturn(false);
 
         // when
@@ -189,9 +185,7 @@ class DailyReportRestEndpointTest {
     @Test
     void shouldUpdateBookingsUnauthorized() {
         // given
-        var day = DateUtils.parse("2024-07-06");
-
-        when(authorizedUser.isAuthenticated()).thenReturn(false);
+         when(authorizedUser.isAuthenticated()).thenReturn(false);
 
         // when
         assertThatThrownBy(() -> dailyReportRestEndpoint.updateBookings(List.of()))

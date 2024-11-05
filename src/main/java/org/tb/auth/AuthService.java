@@ -112,8 +112,8 @@ public class AuthService {
     }
 
     return anyRuleMatches(TIMEREPORT,
-        rule -> rule.getGrantorId().equals(timereport.getEmployeecontract().getEmployee().getId())
-                && rule.getGranteeId().equals(authorizedUser.getEmployeeId())
+        rule -> rule.getGrantorId().equals(timereport.getEmployeecontract().getEmployee().getSign())
+                && rule.getGranteeId().equals(authorizedUser.getSign())
                 && rule.getAccessLevel().satisfies(accessLevel)
                 && rule.isValid(timereport.getReferenceday().getRefdate())
                 && (rule.getObjectId().equals(ALL_OBJECTS) ||

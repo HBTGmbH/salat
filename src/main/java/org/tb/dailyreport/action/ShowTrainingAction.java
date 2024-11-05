@@ -153,12 +153,6 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
                                         || c.getEmployeeorders() == null
                                         || !authorizedUser.isManager() && !c.getEmployee().getId().equals(authorizedUser.getEmployeeId()));
 
-        if (ec == null) {
-            request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
-            forward = "error";
-            return forward;
-        }
-
         // set all relevant attributes
         request.getSession().setAttribute("employeecontracts", employeecontracts);
         request.getSession().setAttribute("year", year);
