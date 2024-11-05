@@ -28,7 +28,7 @@ import org.tb.common.SalatProperties;
 @Profile({ "production", "staging" })
 public class AzureEasyAuthSecurityConfiguration {
 
-  public static final String[] UNAUTHENTICATED_URL_PATTERNS = {
+  private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
       "/images/**",
       "/style/**",

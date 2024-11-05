@@ -3,8 +3,7 @@ package org.tb.common;
 import static java.time.DayOfWeek.SUNDAY;
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
 import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
-import static org.tb.common.GlobalConstants.DEFAULT_LOCALE;
-import static org.tb.common.GlobalConstants.STARTING_YEAR;
+import static org.tb.common.GlobalConstants.*;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.today;
@@ -25,6 +24,20 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class DateTimeViewHelper {
+
+  private static final String[] MONTH_SHORTFORMS = new String[]{
+      MONTH_SHORTFORM_JANUARY, MONTH_SHORTFORM_FEBRUARY, MONTH_SHORTFORM_MARCH,
+      MONTH_SHORTFORM_APRIL, MONTH_SHORTFORM_MAY, MONTH_SHORTFORM_JUNE,
+      MONTH_SHORTFORM_JULY, MONTH_SHORTFORM_AUGUST, MONTH_SHORTFORM_SEPTEMBER,
+      MONTH_SHORTFORM_OCTOBER, MONTH_SHORTFORM_NOVEMBER, MONTH_SHORTFORM_DECEMBER
+  };
+
+  private static final String[] MONTH_LONGFORMS = new String[]{
+      MONTH_LONGFORM_JANUARY, MONTH_LONGFORM_FEBRUARY, MONTH_LONGFORM_MARCH,
+      MONTH_LONGFORM_APRIL, MONTH_LONGFORM_MAY, MONTH_LONGFORM_JUNE,
+      MONTH_LONGFORM_JULY, MONTH_LONGFORM_AUGUST, MONTH_LONGFORM_SEPTEMBER,
+      MONTH_LONGFORM_OCTOBER, MONTH_LONGFORM_NOVEMBER, MONTH_LONGFORM_DECEMBER
+  };
 
   private static final Map<Year, List<OptionItem>> calendarWeeksCache = new HashMap<>();
   public static final int MAX_TIME_REPORT_HOUR = 24;
@@ -145,8 +158,8 @@ public class DateTimeViewHelper {
   public static List<OptionItem> getMonthsToDisplay() {
     List<OptionItem> theList = new ArrayList<>();
     for (int i = 1; i <= 12; i++) {
-      String monthValue = GlobalConstants.MONTH_SHORTFORMS[i - 1];
-      String monthLabel = GlobalConstants.MONTH_LONGFORMS[i - 1];
+      String monthValue = MONTH_SHORTFORMS[i - 1];
+      String monthLabel = MONTH_LONGFORMS[i - 1];
       theList.add(new OptionItem(monthValue, monthLabel));
     }
 
@@ -155,7 +168,7 @@ public class DateTimeViewHelper {
 
   // month 1 - 12
   public static String getShortstringFromMonthMM(int month) {
-    return GlobalConstants.MONTH_SHORTFORMS[month - 1];
+    return MONTH_SHORTFORMS[month - 1];
   }
 
   public static String getMonthMMStringFromShortstring(String st) {
@@ -173,8 +186,8 @@ public class DateTimeViewHelper {
 
   private static int getMonthMMFromShortstring(String st) {
     // returns MM as int from short string (e.g., '01' from 'Jan')
-    for (int i = 0; i < GlobalConstants.MONTH_SHORTFORMS.length; i++) {
-      if (st.equals(GlobalConstants.MONTH_SHORTFORMS[i])) {
+    for (int i = 0; i < MONTH_SHORTFORMS.length; i++) {
+      if (st.equals(MONTH_SHORTFORMS[i])) {
         return i + 1;
       }
     }

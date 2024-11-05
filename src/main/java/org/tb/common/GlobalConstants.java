@@ -78,12 +78,6 @@ public class GlobalConstants {
     public static final String MONTH_SHORTFORM_OCTOBER = "Oct";
     public static final String MONTH_SHORTFORM_NOVEMBER = "Nov";
     public static final String MONTH_SHORTFORM_DECEMBER = "Dec";
-    public static final String[] MONTH_SHORTFORMS = new String[]{
-            MONTH_SHORTFORM_JANUARY, MONTH_SHORTFORM_FEBRUARY, MONTH_SHORTFORM_MARCH,
-            MONTH_SHORTFORM_APRIL, MONTH_SHORTFORM_MAY, MONTH_SHORTFORM_JUNE,
-            MONTH_SHORTFORM_JULY, MONTH_SHORTFORM_AUGUST, MONTH_SHORTFORM_SEPTEMBER,
-            MONTH_SHORTFORM_OCTOBER, MONTH_SHORTFORM_NOVEMBER, MONTH_SHORTFORM_DECEMBER
-    };
 
     // FIXME use SimpleDateFormat for this
     public static final String MONTH_LONGFORM_JANUARY = "January";
@@ -98,12 +92,6 @@ public class GlobalConstants {
     public static final String MONTH_LONGFORM_OCTOBER = "October";
     public static final String MONTH_LONGFORM_NOVEMBER = "November";
     public static final String MONTH_LONGFORM_DECEMBER = "December";
-    public static final String[] MONTH_LONGFORMS = new String[]{
-            MONTH_LONGFORM_JANUARY, MONTH_LONGFORM_FEBRUARY, MONTH_LONGFORM_MARCH,
-            MONTH_LONGFORM_APRIL, MONTH_LONGFORM_MAY, MONTH_LONGFORM_JUNE,
-            MONTH_LONGFORM_JULY, MONTH_LONGFORM_AUGUST, MONTH_LONGFORM_SEPTEMBER,
-            MONTH_LONGFORM_OCTOBER, MONTH_LONGFORM_NOVEMBER, MONTH_LONGFORM_DECEMBER
-    };
 
     // FIXME use Calendar for this
     public static final int MONTH_INTVALUE_JANUARY = 1;

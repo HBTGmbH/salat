@@ -36,7 +36,7 @@ import org.tb.employee.domain.Employee;
 @Profile("local")
 public class LocalDevSecurityConfiguration {
 
-  public static final String[] UNAUTHENTICATED_URL_PATTERNS = {
+  private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
       "/images/**",
       "/style/**",
