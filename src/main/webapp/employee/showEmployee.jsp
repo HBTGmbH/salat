@@ -93,9 +93,6 @@
 			title="<bean:message
 			key="main.headlinedescription.employees.loginname.text" />"><b><bean:message
 			key="main.employee.loginname.text" /></b></th>
-		<!--  
-		<td align="left"> <b><bean:message key="main.employee.password.text"/></b> </th>
-		-->
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.employees.status.text" />"><b><bean:message
@@ -165,9 +162,6 @@
 		<td><c:out value="${employee.firstname}" /></td>
 		<td><c:out value="${employee.sign}" /></td>
 		<td><c:out value="${employee.loginname}" /></td>
-		<!--
-	<td><bean:write name="employee" property="password"/></td>
-	-->
 		<td><c:out value="${employee.status}" /></td>
 		<td align="center"><c:out value="${employee.gender}" /></td>
 		<c:if test="${authorizedUser.manager}">

@@ -51,8 +51,6 @@ public class GlobalConstants {
     public static final int EMPLOYEE_FIRSTNAME_MAX_LENGTH = 255;
     public static final int EMPLOYEE_LASTNAME_MAX_LENGTH = 255;
     public static final int EMPLOYEE_LOGINNAME_MAX_LENGTH = 5;
-    public static final int EMPLOYEE_PASSWORD_MAX_LENGTH = 255;
-    public static final int EMPLOYEE_PASSWORD_MIN_LENGTH = 6;
     public static final int EMPLOYEE_SIGN_MAX_LENGTH = 5;
     public static final int EMPLOYEE_STATUS_MAX_LENGTH = 16;
 

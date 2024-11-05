@@ -938,5 +938,26 @@ databaseChangeLog:
                   name: orderType
                   type: varchar(255)
 
+  - changeSet:
+      id: 27
+      author: kr
+      comment: Remove password and passwordchange columns from employee table
+      preConditions:
+        - onFail: MARK_RAN
+        - or:
+            - columnExists:
+                tableName: employee
+                columnName: password
+            - columnExists:
+                tableName: employee
+                columnName: passwordchange
+      changes:
+        - dropColumn:
+            columnName: password
+            tableName: employee
+        - dropColumn:
+            columnName: passwordchange
+            tableName: employee
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

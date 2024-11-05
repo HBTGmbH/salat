@@ -85,22 +85,6 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
         }
 
         if ((request.getParameter("task") != null) &&
-                (request.getParameter("task").equals("resetPassword"))) {
-            long emId;
-            Employee em = null;
-            if (request.getSession().getAttribute("emId") != null) {
-                // edited employee
-                emId = Long.parseLong(request.getSession().getAttribute("emId").toString());
-                em = employeeDAO.getEmployeeById(emId);
-            }
-            if (em != null) {
-                employeeDAO.save(em);
-            }
-
-            return mapping.findForward("reset");
-        }
-
-        if ((request.getParameter("task") != null) &&
                 (request.getParameter("task").equals("back"))) {
             // go back
             request.getSession().removeAttribute("emId");

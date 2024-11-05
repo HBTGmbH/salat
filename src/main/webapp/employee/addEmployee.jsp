@@ -131,10 +131,6 @@
 				onclick="setStoreAction(this.form, 'reset', 'false')" styleId="button" titleKey="main.general.button.reset.alttext.text">
 				<bean:message key="main.general.button.reset.text" />
 			</html:submit></td>
-			<td class="noBborderStyle"><html:submit
-				onclick="setStoreAction(this.form, 'resetPassword', 'false')" styleId="button">
-				<bean:message key="main.general.button.resetpassword.text" />
-			</html:submit></td>
 		</tr>
 	</table>
 	<html:hidden property="id" />
