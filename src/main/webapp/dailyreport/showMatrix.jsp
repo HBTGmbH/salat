@@ -383,7 +383,7 @@
 					<td class="matrix${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
 						style="font-size: 7pt; border-top: 1x black solid;"
 						align="center">
-						<c:out value="${matrixdaytotal.notWorked ? 'x' : matrixdaytotal.partiallyNotWorked ? '(x)' : ' '}"></c:out>
+						<c:out value="${matrixdaytotal.notWorked ? 'x' : matrixdaytotal.overtimeCompensated ? '(x)' : ' '}"></c:out>
 					</td>
 				</c:forEach>
 				<td class="matrix" align="right">&nbsp;</td>

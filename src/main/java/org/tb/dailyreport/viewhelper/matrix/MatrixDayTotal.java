@@ -10,7 +10,7 @@ import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import static java.time.Duration.ZERO;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.PARTIALLY;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
 
 @Data
 public class MatrixDayTotal {
@@ -64,16 +64,14 @@ public class MatrixDayTotal {
         return workingDayType == NOT_WORKED;
     }
 
-    public boolean isPartiallyNotWorked() {
-        return workingDayType == PARTIALLY;
+    public boolean isOvertimeCompensated() {
+        return workingDayType == OVERTIME_COMPENSATED;
     }
 
     public Duration getEffectiveOvertime() {
         var effectiveOvertime = ZERO;
-        if(workingDayType == PARTIALLY) {
+        if(workingDayType == OVERTIME_COMPENSATED) {
             effectiveOvertime = contractWorkingTime.minus(workingTime);
-        } else if(workingDayType == NOT_WORKED) {
-            effectiveOvertime = contractWorkingTime;
         }
         if(effectiveOvertime.isNegative()) {
             effectiveOvertime = ZERO;

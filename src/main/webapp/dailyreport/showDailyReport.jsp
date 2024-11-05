@@ -560,7 +560,7 @@
 								<html:select property="workingDayType" styleClass="make-select2" onchange="saveWorkingDayType(this.form)">
 									<html:option value="WORKED"><bean:message key="main.timereport.workingday.type.value.worked" /></html:option>
 									<html:option value="NOT_WORKED"><bean:message key="main.timereport.workingday.type.value.notworked" /></html:option>
-									<html:option value="PARTIALLY"><bean:message key="main.timereport.workingday.type.value.partially" /></html:option>
+									<html:option value="OVERTIME_COMPENSATED"><bean:message key="main.timereport.workingday.type.value.overtimecompensated" /></html:option>
 								</html:select>
 							</td>
 						</tr>

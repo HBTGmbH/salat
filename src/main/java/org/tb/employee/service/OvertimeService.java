@@ -128,7 +128,7 @@ public class OvertimeService {
     var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontractId, begin, end);
     var dates = workingDays
         .stream()
-        .filter(workingday -> workingday.getType() != WorkingDayType.WORKED)
+        .filter(workingday -> workingday.getType() == WorkingDayType.OVERTIME_COMPENSATED)
         .map(Workingday::getRefday)
         .distinct()
         .collect(Collectors.toSet());
