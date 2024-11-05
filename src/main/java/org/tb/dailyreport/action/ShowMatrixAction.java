@@ -145,8 +145,6 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             request.setAttribute("errorMessage", errorValue);
             return mapping.findForward("error");
         }
-        request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-        request.getSession().setAttribute("oTCText", GlobalConstants.OVERTIME_COMPENSATION_TEXT);
 
         // check if vacation and overtime should be recalculated - see https://github.com/HBTGmbH/salat/issues/292
         if(doRefreshEmployeeSummaryData) {

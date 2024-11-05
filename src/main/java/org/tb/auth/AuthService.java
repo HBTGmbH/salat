@@ -9,7 +9,7 @@ import static org.tb.auth.AccessLevel.WRITE;
 import static org.tb.auth.AuthorizationRule.Category.EMPLOYEE;
 import static org.tb.auth.AuthorizationRule.Category.REPORT_DEFINITION;
 import static org.tb.auth.AuthorizationRule.Category.TIMEREPORT;
-import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
+import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.annotation.PostConstruct;
@@ -27,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizationRule.Category;
 import org.tb.common.SalatProperties;
-import org.tb.common.util.DateUtils;
 import org.tb.common.util.ValidationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
@@ -106,7 +105,7 @@ public class AuthService {
       }
 
       // backoffice authorizedUsers may see time reports that must be invoiced
-      if(authorizedUser.isBackoffice() && timereport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES) {
+      if(authorizedUser.isBackoffice() && timereport.getSuborder().getInvoice() == YESNO_YES) {
         return true;
       }
     }

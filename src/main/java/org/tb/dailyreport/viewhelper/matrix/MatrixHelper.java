@@ -129,15 +129,6 @@ public class MatrixHelper {
         //filling a list with new or merged MatrixLines
         for (TimereportDTO timeReport : timeReportList) {
             String taskdescription = extendedTaskDescription(timeReport, employeecontract == null);
-
-            // if timereport-suborder is overtime compensation, check if taskdescription is empty. If so, write "Überstundenausgleich" into it
-            // -> needed because overtime compensation should be shown in matrix overview! (taskdescription as if-clause in jsp!)
-            if (timeReport.getSuborderSign().equals(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                if (taskdescription.isEmpty()) {
-                    taskdescription = GlobalConstants.OVERTIME_COMPENSATION_TEXT;
-                }
-            }
-
             //insert into list if its not empty
             insertIntoMatrixLine(matrixLines, timeReport, taskdescription);
         }

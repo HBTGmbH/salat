@@ -210,11 +210,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 request.getSession().setAttribute("currentYear", reportForm.getYear());
                 request.getSession().setAttribute("startdate", reportForm.getStartdate());
             }
-            //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
-            if (request.getSession().getAttribute("overtimeCompensation") == null
-                    || !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-            }
             request.getSession().setAttribute("reportForm", reportForm);
             request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());
             actionResult = mapping.findForward("success");

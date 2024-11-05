@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -535,19 +534,6 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
     }
 
     private void setSubOrder(@Nonnull Suborder suborder, HttpServletRequest request, AddDailyReportForm reportForm) {
-
-        // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
-        // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
-        if (suborder.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-            reportForm.setSelectedHourDuration(0);
-            reportForm.setSelectedMinuteDuration(0);
-            if (request.getSession().getAttribute("overtimeCompensation") == null ||
-                !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-            }
-
-        }
-
         // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
         if (TRUE.equals(suborder.getTrainingFlag())) {
             reportForm.setTraining(true);

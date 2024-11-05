@@ -2,8 +2,6 @@ package org.tb.employee.service;
 
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
-import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
-import static org.tb.common.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.getBeginOfMonth;
 import static org.tb.common.util.DateUtils.today;
@@ -15,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -127,27 +124,14 @@ public class OvertimeService {
 
     var timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, begin, end);
 
-    // get dates with overtime compensations
-    var dates = timereports
-        .stream()
-        .filter(
-            timereport -> timereport.getCustomerorderSign().equals(CUSTOMERORDER_SIGN_VACATION) &&
-                          timereport.getSuborderSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION)
-        )
-        .map(TimereportDTO::getReferenceday)
-        .distinct()
-        .collect(Collectors.toCollection(HashSet::new));
-
     // add dates with not worked or partially worked days
     var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontractId, begin, end);
-    dates.addAll(
-        workingDays
+    var dates = workingDays
         .stream()
         .filter(workingday -> workingday.getType() != WorkingDayType.WORKED)
         .map(Workingday::getRefday)
         .distinct()
-        .collect(Collectors.toSet())
-    );
+        .collect(Collectors.toSet());
 
     // sum reported time for every date with an overtime compensation
     var reportedMinutesPerDate = timereports

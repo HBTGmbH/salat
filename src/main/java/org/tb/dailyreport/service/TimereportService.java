@@ -613,11 +613,7 @@ public class TimereportService {
 
       Integer durationHours = timereport.getDurationhours();
       Integer durationMinutes = timereport.getDurationminutes();
-      if(timereport.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-        DataValidation.isTrue(durationHours == 0 && durationMinutes == 0, TR_DURATION_OVERTIME_COMPENSATION_INVALID);
-      } else {
-        DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
-      }
+      DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
     });
   }
 

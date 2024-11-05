@@ -41,9 +41,9 @@ public class GlobalConstants {
     public static final int SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH = 40;
     public static final int SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH = 30;
 
-    public static final char SUBORDER_INVOICE_YES = 'Y';
-    public static final char SUBORDER_INVOICE_NO = 'N';
-    public static final char SUBORDER_INVOICE_UNDEFINED = 'U';
+    public static final char YESNO_YES = 'Y';
+    public static final char YESNO_NO = 'N';
+    public static final char YESNO_UNDEFINED = 'U';
 
     public static final int EMPLOYEECONTRACT_TASKDESCRIPTION_MAX_LENGTH = 255;
     public static final int EMPLOYEECONTRACT_OVERTIME_COMMENT_MAX_LENGTH = 255;
@@ -118,15 +118,6 @@ public class GlobalConstants {
     public static final String VIEW_WEEKLY = "week";
     public static final String VIEW_CUSTOM = "custom";
 
-    // customer order signs
-    public static final String CUSTOMERORDER_SIGN_ILL = "KRANK";
-    public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
-    public static final String CUSTOMERORDER_SIGN_EXTRA_VACATION = "S-URLAUB";
-    public static final String CUSTOMERORDER_SIGN_REMAINING_VACATION = "RESTURLAUB";
-
-    // suborder signs
-    public static final String SUBORDER_SIGN_OVERTIME_COMPENSATION = "uesa00";
-
     // matrix constants;
     public static final int MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES = 1;
     public static final int MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES = 2;
@@ -138,8 +129,6 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_MONTH = 12;
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
-
-    public static final String OVERTIME_COMPENSATION_TEXT = "Überstundenausgleich";
 
     // pathstrings and iconstrings
     public static final String ICONPATH = "/images/";
@@ -180,4 +169,5 @@ public class GlobalConstants {
     public static final long REST_PERIOD_IN_MINUTES = 11 * MINUTES_PER_HOUR;
 
     public static final int DEFAULT_WORK_DAY_START = 9;
+    public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
 }

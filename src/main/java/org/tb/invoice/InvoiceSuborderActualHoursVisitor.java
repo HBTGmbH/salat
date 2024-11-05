@@ -1,5 +1,6 @@
 package org.tb.invoice;
 
+import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import java.time.LocalDate;
@@ -18,12 +19,13 @@ public class InvoiceSuborderActualHoursVisitor implements SuborderVisitor {
     private final boolean invoicebox;
     private Long durationMinutes = 0L;
 
+    // FIXME what is this?!?
     public void visitSuborder(Suborder suborder) {
-        if (invoicebox && GlobalConstants.SUBORDER_INVOICE_YES == suborder.getInvoice()) {
+        if (invoicebox && YESNO_YES == suborder.getInvoice()) {
             durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
-        } else if (invoicebox && GlobalConstants.SUBORDER_INVOICE_YES == suborder.getInvoice()) {
+        } else if (invoicebox && YESNO_YES == suborder.getInvoice()) {
             durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
-        } else if (!invoicebox && GlobalConstants.SUBORDER_INVOICE_YES == suborder.getInvoice()) {
+        } else if (!invoicebox && YESNO_YES == suborder.getInvoice()) {
             durationMinutes += timereportDAO.getTotalDurationMinutesForSuborder(suborder.getId(), fromDate, untilDate);
         }
     }

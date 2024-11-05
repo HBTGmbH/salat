@@ -4,13 +4,11 @@ import static org.tb.common.util.DateUtils.parse;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.action.ShowDailyReportForm;
 import org.tb.employee.domain.Employeecontract;
@@ -63,13 +61,13 @@ public class SuborderHelper {
         }
 
         if (so != null) {
-            assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), so, reportForm);
+            assignCurrentSuborderIdAndTrainingFlag(request.getSession(), so, reportForm);
         } else if (!theSuborders.isEmpty()) {
             Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
             if (suborder == null || !theSuborders.contains(suborder)) {
                 suborder = theSuborders.getFirst();
             }
-            assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(request.getSession(), suborder, reportForm);
+            assignCurrentSuborderIdAndTrainingFlag(request.getSession(), suborder, reportForm);
         }
 
         request.getSession().setAttribute("suborders", theSuborders);
@@ -97,29 +95,11 @@ public class SuborderHelper {
 
     public void adjustSuborderSignChanged(HttpSession session, AddDailyReportForm reportForm) {
         Suborder so = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
-        assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(session, so, reportForm);
+        assignCurrentSuborderIdAndTrainingFlag(session, so, reportForm);
     }
 
-    public void adjustSuborderDescriptionChanged(HttpSession session, AddDailyReportForm reportForm) {
-        Suborder so = suborderDAO.getSuborderById(reportForm.getSuborderDescriptionId());
-        assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(session, so, reportForm);
-    }
-
-    private void assignCurrentSuborderIdWithOvertimeCompensationAndTrainingFlag(HttpSession session, Suborder so, AddDailyReportForm reportForm) {
+    private void assignCurrentSuborderIdAndTrainingFlag(HttpSession session, Suborder so, AddDailyReportForm reportForm) {
         session.setAttribute("currentSuborderId", so.getId());
-
-        // if selected Suborder is Overtime Compensation, delete the previously automatically set daily working time
-        // also make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled
-        if (so.getSign().equalsIgnoreCase(GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-            reportForm.setSelectedHourDuration(0);
-            reportForm.setSelectedMinuteDuration(0);
-            if (session.getAttribute("overtimeCompensation") == null ||
-                    !Objects.equals(session.getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-                session.setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-            }
-        } else {
-            session.removeAttribute("overtimeCompensation");
-        }
 
         // if selected Suborder has a default-flag for project based training, set training in the form to true, so that the training-box in the jsp is checked
         if (so.getTrainingFlag()) {
