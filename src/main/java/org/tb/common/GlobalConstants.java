@@ -150,46 +150,12 @@ public class GlobalConstants {
     public static final String NOTALLOWED = "verbot.gif";
     public static final String PARENTICON = "Smily_Krone.gif";
 
-    // qm processes
-    public static final String QM_PROCESS_OTHER = "main.qm.process.other";
-    public static final String QM_PROCESS_PA01A_AUFTRAGSGENERIERUNG_WERKVERTRAG = "main.qm.process.pa01a";
-    public static final String QM_PROCESS_PA01B_AUFTRAGSGENERIERUNG_DIENSTLEISTUNGSVERTRAG = "main.qm.process.pa01b";
-    public static final String QM_PROCESS_PA09A_AUFTRAGSDURCHFUEHRUNG_WERKVERTRAG = "main.qm.process.pa09a";
-    public static final String QM_PROCESS_PA09B_AUFTRAGSDURCHFUEHRUNG_DIENSTLEISTUNGSVERTRAG = "main.qm.process.pa09b";
-    public static final String QM_PROCESS_PA09C_AUFTRAGSDURCHFUEHRUNG_1_MANN_GEWERK = "main.qm.process.pa09c";
-
-    public static final int QM_PROCESS_ID_OTHER = 1;
-    public static final int QM_PROCESS_ID_PA01A_AUFTRAGSGENERIERUNG_WERKVERTRAG = 2;
-    public static final int QM_PROCESS_ID_PA01B_AUFTRAGSGENERIERUNG_DIENSTLEISTUNGSVERTRAG = 3;
-    public static final int QM_PROCESS_ID_PA09A_AUFTRAGSDURCHFUEHRUNG_WERKVERTRAG = 4;
-    public static final int QM_PROCESS_ID_PA09B_AUFTRAGSDURCHFUEHRUNG_DIENSTLEISTUNGSVERTRAG = 5;
-    public static final int QM_PROCESS_ID_PA09C_AUFTRAGSDURCHFUEHRUNG_1_MANN_GEWERK = 6;
-
-    public static final int FORM_MAX_CHAR_BIG_TEXTAREA = 2048;
-    public static final int FORM_MAX_CHAR_TEXTAREA = 255;
-    public static final int FORM_MAX_CHAR_NAME_TEXTFIELD = 64;
-    public static final int FORM_MAX_CHAR_TEXTFIELD = 64;
-
-    public static final int PHASE_ID_ORGANISATION = 1;
-    public static final int PHASE_ID_SPECIFICATIO = 2;
-    public static final int PHASE_ID_ANALYSIS = 3;
-    public static final int PHASE_ID_REALIZATION = 4;
-    public static final int PHASE_ID_ACCEPTANCE = 5;
-    public static final int PHASE_ID_DELIVERY = 6;
-    public static final int PHASE_ID_ROLLOUT = 7;
-    public static final int PHASE_ID_FINISH = 8;
-
-    public static final int STATUSREPORT_SORT_PERIODICAL = 1;
-    public static final int STATUSREPORT_SORT_EXTRA = 2;
-    public static final int STATUSREPORT_SORT_FINAL = 3;
-
     public static final long MINUTES_PER_HOUR = 60;
 
     public static final char GENDER_MALE = 'm';
     public static final char GENDER_FEMALE = 'f';
 
     public static final char INVOICE_YES = 'Y';
-    public static final char INVOICE_NO = 'N';
     public static final String INVOICE_EXCEL_EXPORT_FILENAME = "SALAT_Rechnung.xls";
     public static final String INVOICE_EXCEL_NEW_EXPORT_FILENAME = "SALAT_Rechnung.xlsx";
     public static final String INVOICE_EXCEL_SHEET_NAME = "SALAT Rechnung";
