@@ -12,7 +12,6 @@ import static org.tb.common.util.DateUtils.now;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -215,12 +214,6 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("lastSuborderId", request.getSession().getAttribute("suborderFilerId"));
         request.getSession().setAttribute("lastView", request.getSession().getAttribute("view"));
         request.getSession().setAttribute("lastEmployeeContractId", form.getEmployeeContractId());
-
-        //  make sure that overtimeCompensation is set in the session so that the duration-dropdown-menu will be disabled for timereports with suborder uesa00
-        if (request.getSession().getAttribute("overtimeCompensation") == null
-            || !Objects.equals(request.getSession().getAttribute("overtimeCompensation"), GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION)) {
-            request.getSession().setAttribute("overtimeCompensation", GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION);
-        }
 
         return mapping.findForward("success");
     }

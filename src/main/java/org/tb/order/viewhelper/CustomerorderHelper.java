@@ -9,13 +9,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.action.ShowDailyReportForm;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
@@ -37,7 +37,7 @@ public class CustomerorderHelper {
     /**
      * refreshes customer order list after change of employee in the 'add timereport' view
      */
-    public boolean refreshOrders(HttpServletRequest request, AddDailyReportForm reportForm) {
+    public void refreshOrders(HttpServletRequest request, AddDailyReportForm reportForm) {
 
         String dateString = reportForm.getReferenceday();
         LocalDate date;
@@ -45,7 +45,7 @@ public class CustomerorderHelper {
             date = DateUtils.parse(dateString);
         } else {
             resetFormValues(reportForm, request);
-            return false;
+            return;
         }
 
         Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
@@ -57,7 +57,7 @@ public class CustomerorderHelper {
         } else {
             // TODO request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO: MessageResources
             resetFormValues(reportForm, request);
-            return false;
+            return;
         }
 
         // get orders related to employee
@@ -65,7 +65,7 @@ public class CustomerorderHelper {
         if (orders.isEmpty()) {
             // TODO check error messages - request.setAttribute("errorMessage", "No orders found for employee - please call system administrator."); //TODO: MessageResources
             resetFormValues(reportForm, request);
-            return false;
+            return;
         }
 
         Customerorder customerorder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
@@ -99,8 +99,6 @@ public class CustomerorderHelper {
         request.getSession().setAttribute("currentEmployee", ec.getEmployee().getName());
         request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", ec);
-
-        return true;
     }
 
     private void resetFormValues(AddDailyReportForm reportForm, HttpServletRequest request) {
@@ -145,11 +143,7 @@ public class CustomerorderHelper {
     }
 
     public boolean isOrderStandard(Customerorder order) {
-        return order != null &&
-                (order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_VACATION) ||
-                        order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION) ||
-                        order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_ILL) ||
-                        order.getSign().equalsIgnoreCase(GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION));
+        return order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND;
     }
 
 }

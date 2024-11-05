@@ -834,10 +834,10 @@
 
 							<!-- Dauer -->
 							<td class="noBborderStyle report-time" align="center" nowrap="nowrap">
-								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
+								<html:select name="timereport" property="selectedDurationHour" value="${timereport.durationhours}" styleClass="make-select2">
 									<html:options collection="hoursDuration" property="value" labelProperty="label" />
 								</html:select>
-								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" disabled="${timereport.suborderSign eq overtimeCompensation}" styleClass="make-select2">
+								<html:select property="selectedDurationMinute" value="${timereport.durationminutes}" styleClass="make-select2">
 									<html:options collection="minutes" property="value"	labelProperty="label" />
 									<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, timereport.durationminutes)}">
 										<html:option value="${timereport.durationminutes}">${timereport.durationminutes}</html:option>

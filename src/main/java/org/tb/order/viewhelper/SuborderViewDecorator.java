@@ -1,8 +1,8 @@
 package org.tb.order.viewhelper;
 
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
-import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_NO;
-import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
+import static org.tb.common.GlobalConstants.YESNO_NO;
+import static org.tb.common.GlobalConstants.YESNO_YES;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public class SuborderViewDecorator extends Suborder {
 
     public SuborderViewDecorator(TimereportDAO timereportDAO, Suborder suborder) {
         this.suborder = suborder;
-        if (suborder.getInvoice() == SUBORDER_INVOICE_NO) {
+        if (suborder.getInvoice() == YESNO_NO) {
             this.duration = Duration.ZERO;
             this.durationNotInvoiceable = Duration.ZERO;
         } else {
@@ -37,7 +37,7 @@ public class SuborderViewDecorator extends Suborder {
     }
 
     private static void generateListOfDescendants(Suborder so, boolean isInvoiceable, List<Long> listOfDescendents) {
-        if (isInvoiceable != (so.getInvoice() == SUBORDER_INVOICE_YES)) {
+        if (isInvoiceable != (so.getInvoice() == YESNO_YES)) {
             return;
         }
         listOfDescendents.add(so.getId());

@@ -4,6 +4,7 @@ import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getWeeksToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
@@ -146,7 +147,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     suborderListTemp.addAll(suborderList);
                 } else if (showInvoiceForm.isFixedpricebox()) {
                     for (Suborder suborder : suborderList) {
-                        if (suborder.getInvoice() == GlobalConstants.SUBORDER_INVOICE_YES || suborder.getFixedPrice()) {
+                        if (suborder.getInvoice() == YESNO_YES || suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }
@@ -158,7 +159,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     }
                 } else {
                     for (Suborder suborder : suborderList) {
-                        if (suborder.getInvoice() == GlobalConstants.SUBORDER_INVOICE_YES && !suborder.getFixedPrice()) {
+                        if (suborder.getInvoice() == YESNO_YES && !suborder.getFixedPrice()) {
                             suborderListTemp.add(suborder);
                         }
                     }

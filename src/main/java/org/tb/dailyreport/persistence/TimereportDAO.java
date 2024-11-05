@@ -2,10 +2,9 @@ package org.tb.dailyreport.persistence;
 
 import static java.util.Comparator.comparing;
 import static org.springframework.data.jpa.domain.Specification.where;
-import static org.tb.common.GlobalConstants.SUBORDER_INVOICE_YES;
-import static org.tb.common.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.common.GlobalConstants.YESNO_YES;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -128,9 +127,7 @@ public class TimereportDAO {
             ecId,
             releaseDate
         );
-        return toDaoList(timereports.stream()
-            .filter(t -> !t.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
-            .collect(Collectors.toList()));
+        return toDaoList(timereports.stream().collect(Collectors.toList()));
     }
 
     /**
@@ -505,9 +502,8 @@ public class TimereportDAO {
     /**
      * Deletes the given timereport.
      */
-    public boolean deleteTimereportById(long trId) {
+    public void deleteTimereportById(long trId) {
         timereportRepository.deleteById(trId);
-        return true;
     }
 
     public List<TimereportDTO> getTimereportsByEmployeecontractId(long employeecontractId) {
@@ -534,7 +530,7 @@ public class TimereportDAO {
             .sequencenumber(timereport.getSequencenumber())
             .training(Optional.ofNullable(timereport.getTraining()).orElse(false))
             .status(timereport.getStatus())
-            .billable(timereport.getSuborder().getInvoice() == SUBORDER_INVOICE_YES)
+            .billable(timereport.getSuborder().getInvoice() == YESNO_YES)
             .employeeorderId(timereport.getEmployeeorder().getId())
             .employeecontractId(timereport.getEmployeecontract().getId())
             .employeeId(timereport.getEmployeecontract().getEmployee().getId())

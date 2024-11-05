@@ -1,5 +1,8 @@
 package org.tb.order.action;
 
+import static org.tb.common.GlobalConstants.YESNO_NO;
+import static org.tb.common.GlobalConstants.YESNO_UNDEFINED;
+import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
@@ -390,9 +393,9 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             errors.add("suborder_customer", new ActionMessage("form.suborder.error.suborder_customer.toolong"));
         }
         // check invoice character
-        if (addSuborderForm.getInvoice() != GlobalConstants.SUBORDER_INVOICE_YES
-                && addSuborderForm.getInvoice() != GlobalConstants.SUBORDER_INVOICE_NO
-                && addSuborderForm.getInvoice() != GlobalConstants.SUBORDER_INVOICE_UNDEFINED) {
+        if (addSuborderForm.getInvoice() != YESNO_YES
+                && addSuborderForm.getInvoice() != YESNO_NO
+                && addSuborderForm.getInvoice() != YESNO_UNDEFINED) {
 
             errors.add("invoice", new ActionMessage("form.suborder.error.invoice.invalid"));
         }

@@ -2,10 +2,7 @@ package org.tb.order.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
-import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_EXTRA_VACATION;
-import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_REMAINING_VACATION;
 import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
-import static org.tb.common.GlobalConstants.SUBORDER_SIGN_OVERTIME_COMPENSATION;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -28,6 +25,7 @@ import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Employeeorder_;
+import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder_;
 
 @Component
@@ -47,23 +45,12 @@ public class EmployeeorderDAO {
     }
 
     public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final LocalDate date) {
-        LOG.debug("starting read vacation list");
-        var customerOrderSigns = new ArrayList<String>();
-        customerOrderSigns.add(CUSTOMERORDER_SIGN_REMAINING_VACATION);
-        customerOrderSigns.add(CUSTOMERORDER_SIGN_EXTRA_VACATION);
-        customerOrderSigns.add(CUSTOMERORDER_SIGN_VACATION);
-        var employeeorders= employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
+        var customerOrderSigns = List.of(CUSTOMERORDER_SIGN_VACATION);
+        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
             employeecontractId,
             customerOrderSigns
         );
-
-        employeeorders = employeeorders.stream()
-            .filter(eo -> eo.isValidAt(date))
-            .filter(eo -> !eo.getSuborder().getSign().equals(SUBORDER_SIGN_OVERTIME_COMPENSATION))
-            .collect(Collectors.toList());
-
-        LOG.debug("read vacations.");
-        return employeeorders;
+        return employeeorders.stream().filter(eo -> eo.isValidAt(date)).collect(Collectors.toList());
     }
 
     /**

@@ -280,11 +280,11 @@
 				<b><bean:message key="main.timereport.duration.text" /></b>&nbsp;<i>(hh:mm)</i><b>:</b>
 			</td>
 			<td align="left" class="noBborderStyle">
-				<html:select property="selectedHourDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
+				<html:select property="selectedHourDuration" onchange="setUpdatePeriodAction(this.form)">
 					<html:options collection="hoursDuration" property="value" labelProperty="label" />
 				</html:select>
 				<b>&nbsp;&nbsp;:&nbsp;&nbsp;</b>
-				<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)" disabled="${(not empty currentSuborderSign) and (currentSuborderSign eq overtimeCompensation)}">
+				<html:select property="selectedMinuteDuration" onchange="setUpdatePeriodAction(this.form)">
 					<html:options collection="minutes" property="value" labelProperty="label" />
 					<c:if test="${!dailyReportViewHelper.containsMinuteOption(minutes, addDailyReportForm.selectedMinuteDuration)}">
 						<html:option value="${addDailyReportForm.selectedMinuteDuration}">${addDailyReportForm.selectedMinuteDuration}</html:option>

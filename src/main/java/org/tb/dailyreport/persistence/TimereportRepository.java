@@ -69,6 +69,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       select t from Timereport t where t.employeecontract.id = :employeecontractId
       and t.referenceday.refdate >= :releaseDate
       and t.durationminutes = 0 and t.durationhours = 0
+      and t.deleted = false
       order by t.referenceday.refdate asc, t.suborder.customerorder.sign asc, t.suborder.sign asc
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, LocalDate releaseDate);
