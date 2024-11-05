@@ -959,5 +959,18 @@ databaseChangeLog:
             columnName: passwordchange
             tableName: employee
 
+  - changeSet:
+      id: 28
+      author: kr
+      comment: Change all values from PARTIALLY to OVERTIME_COMPENSATED in column type of table workingday
+      changes:
+        - update:
+            tableName: workingday
+            columns:
+              - column:
+                  name: type
+                  value: OVERTIME_COMPENSATED
+            where: type = 'PARTIALLY'
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

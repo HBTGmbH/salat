@@ -7,7 +7,7 @@ import static org.tb.common.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static org.tb.common.ErrorCode.WD_SATSUN_NOT_WORKED;
 import static org.tb.common.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.PARTIALLY;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -42,7 +42,7 @@ public class WorkingdayService {
       var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday());
       BusinessRuleChecks.empty(timereports, WD_NOT_WORKED_TIMEREPORTS_FOUND);
     }
-    if(workingday.getType() == NOT_WORKED || workingday.getType() == PARTIALLY) {
+    if(workingday.getType() == OVERTIME_COMPENSATED) {
       BusinessRuleChecks.isFalse(
           workingday.getRefday().getDayOfWeek() == SATURDAY || workingday.getRefday().getDayOfWeek() == SUNDAY,
           WD_SATSUN_NOT_WORKED

@@ -22,7 +22,7 @@ import org.tb.employee.domain.Employeecontract;
 @Entity
 public class Workingday extends AuditedEntity implements Serializable {
 
-    public enum WorkingDayType { WORKED, NOT_WORKED, PARTIALLY }
+    public enum WorkingDayType { WORKED, NOT_WORKED, OVERTIME_COMPENSATED}
 
     private static final long serialVersionUID = 1L;
 
