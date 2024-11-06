@@ -183,24 +183,8 @@ public class DailyReportRestEndpoint {
                 .mapToObj(day -> DateUtils.addDays(startDay, day))
                 .map(day -> timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, day))
                 .flatMap(List::stream)
-                .map(DailyReportRestEndpoint::mapToDailyReportData)
+                .map(DailyReportData::mapToDailyReportData)
                 .collect(toList());
-    }
-
-    static DailyReportData mapToDailyReportData(TimereportDTO timeReport) {
-        return DailyReportData.builder()
-                .id(timeReport.getId())
-                .employeeorderId(timeReport.getEmployeeorderId())
-                .date(DateUtils.format(timeReport.getReferenceday()))
-                .orderLabel(timeReport.getCustomerorderDescription())
-                .suborderLabel(timeReport.getSuborderDescription())
-                .comment(timeReport.getTaskdescription())
-                .training(timeReport.isTraining())
-                .hours(timeReport.getDuration().toHours())
-                .minutes(timeReport.getDuration().toMinutesPart())
-                .suborderSign(timeReport.getSuborderSign())
-                .orderSign(timeReport.getCustomerorderSign())
-                .build();
     }
 
     @DeleteMapping(path = "/", consumes = APPLICATION_JSON_VALUE)
