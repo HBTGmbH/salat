@@ -34,7 +34,7 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.tb.common.ErrorCode.*;
 import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REPORT;
-import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REPORT_VALUE;
+import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DAILY_WORKING_REPORT_VALUE;
 
 @RestController
 @RequiredArgsConstructor
@@ -50,7 +50,7 @@ public class DailyWorkingReportRestEndpoint {
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
 
-    @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
+    @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(OK)
     @Operation
     public ResponseEntity<List<DailyWorkingReportData>> getReports(
@@ -106,7 +106,7 @@ public class DailyWorkingReportRestEndpoint {
                 .build();
     }
 
-    @PostMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
+    @PostMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
     @Operation
     public void createReport(
@@ -122,7 +122,7 @@ public class DailyWorkingReportRestEndpoint {
         }
     }
 
-    @PutMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
+    @PutMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
     @Operation
     public void replaceReport(
@@ -138,7 +138,7 @@ public class DailyWorkingReportRestEndpoint {
         }
     }
 
-    @PostMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
+    @PostMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
     @Operation
     public void createReports(
@@ -154,7 +154,7 @@ public class DailyWorkingReportRestEndpoint {
         }
     }
 
-    @PutMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
+    @PutMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
     @Operation
     public void replaceReports(
@@ -210,15 +210,15 @@ public class DailyWorkingReportRestEndpoint {
         if (upsert) {
             timereportService.deleteTimeReports(day, employeeOrderId, authorizedUser);
         }
-        bookings.forEach(booking -> doCreateDailyReport(booking, employeeorder));
+        bookings.forEach(booking -> doCreateDailyReport(day, booking, employeeorder));
     }
 
-    private void doCreateDailyReport(DailyReportData booking, Employeeorder employeeorder) {
+    private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder) {
         timereportService.createTimereports(
                 authorizedUser,
                 employeeorder.getEmployeecontract().getId(),
                 employeeorder.getId(),
-                DateUtils.parse(booking.getDate()),
+                day,
                 booking.getComment(),
                 booking.isTraining(),
                 booking.getHours(),

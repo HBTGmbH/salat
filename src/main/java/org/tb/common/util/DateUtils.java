@@ -11,18 +11,12 @@ import static java.util.Locale.ENGLISH;
 import static org.tb.common.GlobalConstants.DEFAULT_DATE_FORMAT;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters.LocalDateConverter;
 import org.tb.common.GlobalConstants;
 
 @Slf4j
@@ -436,4 +430,8 @@ public class DateUtils {
             .with(DayOfWeek.MONDAY);
     }
 
+    public static LocalTime getTimeFromMinutes(int minutes) {
+        var hours = minutes == 0 ? 0 : minutes / 60;
+        return LocalTime.of(hours, minutes - hours * 60);
+    }
 }
