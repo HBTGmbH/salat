@@ -1,16 +1,27 @@
 package org.tb.dailyreport.rest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.groupingBy;
+
 import com.google.common.collect.Streams;
 import com.opencsv.bean.CsvBindByPosition;
 import com.opencsv.bean.CsvDate;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import org.junit.platform.commons.function.Try;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
@@ -23,20 +34,6 @@ import org.springframework.stereotype.Component;
 import org.tb.common.csv.PositionAwareColumnMappingStrategy;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.groupingBy;
 
 @Component
 public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List<DailyWorkingReportData>> {
@@ -84,9 +81,10 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return rows.stream().collect(groupingBy(CsvRow::getDate)).entrySet().stream()
                 .map(entry -> Map.entry(getUniqueWorkingDayRow(entry.getKey(), entry.getValue()), entry.getValue()))
                 .map(entry ->  DailyWorkingReportData.builder()
-                    .date(LocalDateTime.of(entry.getKey().getDate(), entry.getKey().getStartTime()))
+                    .date(entry.getKey().getDate())
+                    .startTime(entry.getKey().getStartTime())
                     .type(entry.getKey().getType())
-                    .breakMinutes(entry.getKey().getBreakTime().getMinute() + entry.getKey().getBreakTime().getHour() * 60)
+                    .breakDuration(entry.getKey().getBreakTime())
                     .dailyReports(timeReportsFromRows(entry.getValue()))
                     .build()
         ).toList();
@@ -104,8 +102,12 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return workingDayRows.getFirst();
     }
 
-    private static boolean isEmptyWorkingDayRow(CsvRow row){
-        return row.getDate() == null || row.getStartTime() == null;
+    private static boolean isEmptyWorkingDayRow(CsvRow row) {
+        if(row.getDate() == null) return true; // date is empty
+        if(row.getType() == WorkingDayType.NOT_WORKED) return false; // only date required for NOT_WORKED
+
+        // if start time or break time is missing, it is considered empty for other work types
+        return row.getStartTime() == null || row.getBreakTime() == null;
     }
 
     private static List<DailyReportData> timeReportsFromRows(List<CsvRow> rows){
@@ -131,13 +133,14 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
 
     @Override
     public void write(@Nullable List<DailyWorkingReportData> dailyReportData, @Nullable MediaType contentType, @Nullable HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
-        if(dailyReportData == null || dailyReportData.isEmpty() || outputMessage == null){
+        if(dailyReportData == null || dailyReportData.isEmpty() || outputMessage == null) {
             return;
         }
         try (OutputStreamWriter writer = new OutputStreamWriter(outputMessage.getBody(), UTF_8)) {
             var rows = dailyReportData.stream().map(DailyWorkingReportCsvConverter::toRows).flatMap(List::stream).toList();
             new StatefulBeanToCsvBuilder<CsvRow>(writer)
                     .withSeparator(COLUMN_SEPARATOR)
+                    .withApplyQuotesToAll(false)
                     .withMappingStrategy(new PositionAwareColumnMappingStrategy<>(CsvRow.class, () -> CsvRow.builder().build()))
                     .build()
                     .write(rows);
@@ -148,7 +151,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
 
     private static List<CsvRow> toRows(DailyWorkingReportData dailyWorkingReportData) {
         var rows = dailyWorkingReportData.getDailyReports().stream()
-                .map(reportData -> toBooking(dailyWorkingReportData.getDate().toLocalDate(), reportData))
+                .map(reportData -> toBooking(dailyWorkingReportData.getDate(), reportData))
                 .toList();
 
         if (rows.isEmpty()){
@@ -160,12 +163,10 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
 
     private static CsvRow toWorkingDay(CsvRow row, DailyWorkingReportData dailyWorkingReportData) {
         return row.toBuilder()
-                .date(dailyWorkingReportData.getDate().toLocalDate())
-                .startTime(dailyWorkingReportData.getDate().toLocalTime())
+                .date(dailyWorkingReportData.getDate())
+                .startTime(dailyWorkingReportData.getStartTime())
                 .type(dailyWorkingReportData.getType())
-                .breakTime(dailyWorkingReportData.getBreakMinutes() == null
-                        ? null
-                        : DateUtils.getTimeFromMinutes(dailyWorkingReportData.getBreakMinutes()))
+                .breakTime(dailyWorkingReportData.getBreakDuration())
                 .build();
     }
 
@@ -190,12 +191,11 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         @CsvDate("yyyy-MM-dd")
         @CsvBindByPosition(position = 0)
         private LocalDate date;
-        @CsvDate("HH:mm")
         @CsvBindByPosition(position = 1)
-        private LocalTime startTime;
-        @CsvBindByPosition(position = 2)
         private WorkingDayType type;
-
+        @CsvDate("HH:mm")
+        @CsvBindByPosition(position = 2)
+        private LocalTime startTime;
         @CsvDate("HH:mm")
         @CsvBindByPosition(position = 3)
         private LocalTime breakTime;

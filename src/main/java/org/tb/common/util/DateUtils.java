@@ -11,7 +11,13 @@ import static java.util.Locale.ENGLISH;
 import static org.tb.common.GlobalConstants.DEFAULT_DATE_FORMAT;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
 
-import java.time.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -431,7 +437,7 @@ public class DateUtils {
     }
 
     public static LocalTime getTimeFromMinutes(int minutes) {
-        var hours = minutes == 0 ? 0 : minutes / 60;
-        return LocalTime.of(hours, minutes - hours * 60);
+        return LocalTime.ofSecondOfDay(minutes * 60);
     }
+
 }

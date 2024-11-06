@@ -1,11 +1,37 @@
 package org.tb.dailyreport.rest;
 
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.groupingBy;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.tb.common.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
+import static org.tb.common.ErrorCode.TR_UPSERT_WORKING_DAY;
+import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REPORT;
+import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DAILY_WORKING_REPORT;
+import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DAILY_WORKING_REPORT_VALUE;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
@@ -13,6 +39,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.TimereportService;
@@ -20,21 +47,6 @@ import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.IntStream;
-
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static org.springframework.http.HttpStatus.*;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.tb.common.ErrorCode.*;
-import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REPORT;
-import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DAILY_WORKING_REPORT_VALUE;
 
 @RestController
 @RequiredArgsConstructor
@@ -66,7 +78,7 @@ public class DailyWorkingReportRestEndpoint {
         }
         var response = ResponseEntity.ok();
         if (csv) {
-            response = response.contentType(TEXT_CSV_DAILY_REPORT);
+            response = response.contentType(TEXT_CSV_DAILY_WORKING_REPORT);
         }
         return response.body(getReports(employeecontract.getId(), refDate, days));
     }
@@ -84,26 +96,25 @@ public class DailyWorkingReportRestEndpoint {
 
         var timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, day)
                 .stream()
-                .map(DailyReportData::mapToDailyReportData)
+                .map(DailyReportData::valueOf)
                 .toList();
 
         if(workingDay == null && timeReports.isEmpty()){
             return null;
         }
 
-        var startTime = workingDay == null
-                ? LocalDateTime.of(day, LocalTime.of(0,0))
-                : LocalDateTime.of(day, LocalTime.of(workingDay.getStarttimehour(), workingDay.getStarttimeminute()));
-        var breakMinutes = workingDay == null
-                ? null
-                : workingDay.getBreakhours() * 60 + workingDay.getBreakminutes();
+        var builder = DailyWorkingReportData.builder().date(day).dailyReports(timeReports);
 
-        return DailyWorkingReportData.builder()
-                .date(startTime)
-                .breakMinutes(breakMinutes)
-                .type(workingDay == null ? null : workingDay.getType())
-                .dailyReports(timeReports)
-                .build();
+        if(workingDay != null) {
+            builder.type(workingDay.getType());
+            if(workingDay.getType() != WorkingDayType.NOT_WORKED) {
+                var bd = workingDay.getBreakLength();
+                builder.startTime(workingDay.getStartOfWorkingDay().toLocalTime());
+                builder.breakDuration(LocalTime.of(bd.toHoursPart(), bd.toMinutesPart()));
+            }
+        }
+
+        return builder.build();
     }
 
     @PostMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
@@ -173,32 +184,39 @@ public class DailyWorkingReportRestEndpoint {
     private void createReport(DailyWorkingReportData report, boolean upsert)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), report.getDate().toLocalDate());
+        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), report.getDate());
         if(employeecontract == null) {
             throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 
         var existingWorkingDay = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
-                report.getDate().toLocalDate(), employeecontract.getId()));
+                report.getDate(), employeecontract.getId()));
         if (existingWorkingDay.isPresent() && !upsert) {
             throw new BusinessRuleException(TR_UPSERT_WORKING_DAY);
         }
 
-        var breakHours = ofNullable(report.getBreakMinutes()).orElse(0) == 0 ? 0 : report.getBreakMinutes() / 60;
-        var breakMinutes = ofNullable(report.getBreakMinutes()).map(minutes -> minutes - breakHours * 60).orElse(0);
-
         var workingDay = existingWorkingDay.orElseGet(Workingday::new);
         workingDay.setEmployeecontract(employeecontract);
-        workingDay.setRefday(report.getDate().toLocalDate());
-        workingDay.setStarttimehour(report.getDate().getHour());
-        workingDay.setStarttimeminute(report.getDate().getMinute());
-        workingDay.setBreakhours(breakHours);
-        workingDay.setBreakminutes(breakMinutes);
+        workingDay.setRefday(report.getDate());
+        ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
+            workingDay.setBreakhours(bd.getHour());
+            workingDay.setBreakminutes(bd.getMinute());
+        }, () -> {
+            workingDay.setBreakhours(0);
+            workingDay.setBreakminutes(0);
+        });
+        ofNullable(report.getStartTime()).ifPresentOrElse(st -> {
+            workingDay.setStarttimehour(st.getHour());
+            workingDay.setStarttimeminute(st.getMinute());
+        }, () -> {
+            workingDay.setStarttimehour(0);
+            workingDay.setStarttimeminute(0);
+        });
         workingDay.setType(report.getType());
         workingdayService.upsertWorkingday(workingDay);
         report.getDailyReports().stream().collect(groupingBy(DailyReportData::getEmployeeorderId))
                         .forEach((employeeOrderId, bookingsOfOrder) -> {
-                            createDailyReports(report.getDate().toLocalDate(), employeeOrderId, bookingsOfOrder, upsert);
+                            createDailyReports(report.getDate(), employeeOrderId, bookingsOfOrder, upsert);
                         });
     }
 

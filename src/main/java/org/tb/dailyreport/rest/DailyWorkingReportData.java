@@ -1,12 +1,15 @@
 package org.tb.dailyreport.rest;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.jackson.Jacksonized;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Builder
@@ -15,9 +18,12 @@ import java.util.List;
 public class DailyWorkingReportData {
 
     @NonNull
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
-    private LocalDateTime date;
-    private Integer breakMinutes;
+    @JsonFormat(pattern="yyyy-MM-dd")
+    private LocalDate date;
+    @JsonFormat(pattern="HH:mm")
+    private LocalTime startTime;
+    @JsonFormat(pattern="HH:mm")
+    private LocalTime breakDuration;
     private WorkingDayType type;
 
     private List<DailyReportData> dailyReports;
