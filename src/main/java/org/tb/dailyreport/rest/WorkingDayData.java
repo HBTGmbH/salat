@@ -19,7 +19,7 @@ public class WorkingDayData {
     private String date;
     private WorkingDayType type;
 
-    static WorkingDayData mapToWorkingDayData(Workingday wd) {
+    static WorkingDayData valueOf(Workingday wd) {
         return WorkingDayData.builder()
                 .id(wd.getId())
                 .starthour(wd.getStarttimehour())

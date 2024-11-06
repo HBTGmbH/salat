@@ -1,5 +1,16 @@
 package org.tb.dailyreport.rest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.tb.dailyreport.rest.DailyReportData.valueOf;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -17,15 +28,6 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
-
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
-import static org.tb.dailyreport.rest.DailyReportData.mapToDailyReportData;
 
 @ExtendWith(MockitoExtension.class)
 class DailyReportRestEndpointTest {
@@ -89,8 +91,8 @@ class DailyReportRestEndpointTest {
         // then
         assertThat(result.getBody())
                 .hasSize(2)
-                .contains(mapToDailyReportData(timeReport1))
-                .contains(mapToDailyReportData(timeReport2));
+                .contains(valueOf(timeReport1))
+                .contains(valueOf(timeReport2));
     }
 
     @Test
@@ -140,7 +142,7 @@ class DailyReportRestEndpointTest {
                 .thenReturn(employeeOrder);
 
         // when
-        dailyReportRestEndpoint.createBooking(mapToDailyReportData(timeReport1));
+        dailyReportRestEndpoint.createBooking(valueOf(timeReport1));
 
         // then
         verify(timereportService, times(1)).createTimereports(authorizedUser,
@@ -174,7 +176,7 @@ class DailyReportRestEndpointTest {
                 .thenReturn(employeeOrder);
 
         // when
-        dailyReportRestEndpoint.createBookings(List.of(mapToDailyReportData(timeReport1)));
+        dailyReportRestEndpoint.createBookings(List.of(valueOf(timeReport1)));
 
         // then
         verify(timereportService, times(1)).createTimereports(authorizedUser,
@@ -220,9 +222,9 @@ class DailyReportRestEndpointTest {
 
         // when
         dailyReportRestEndpoint.updateBookings(List.of(
-                mapToDailyReportData(timeReport1),
-                mapToDailyReportData(timeReport2),
-                mapToDailyReportData(timeReport3)
+                valueOf(timeReport1),
+                valueOf(timeReport2),
+                valueOf(timeReport3)
         ));
 
         // then

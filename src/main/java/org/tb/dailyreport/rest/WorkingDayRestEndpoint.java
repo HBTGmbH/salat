@@ -1,9 +1,25 @@
 package org.tb.dailyreport.rest;
 
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
@@ -14,13 +30,6 @@ import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.persistence.EmployeecontractDAO;
-
-import java.time.LocalDate;
-
-import static java.util.Optional.ofNullable;
-import static org.springframework.http.HttpStatus.*;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.tb.dailyreport.rest.WorkingDayData.mapToWorkingDayData;
 
 @RestController
 @RequiredArgsConstructor
@@ -95,7 +104,7 @@ public class WorkingDayRestEndpoint {
             throw new ResponseStatusException(NOT_FOUND);
         }
 
-        return mapToWorkingDayData(workingDay);
+        return WorkingDayData.valueOf(workingDay);
     }
 
     @DeleteMapping("/{date}")

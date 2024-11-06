@@ -1,15 +1,11 @@
 package org.tb.dailyreport.rest;
 
-import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvBindByPosition;
-import com.opencsv.bean.CsvNumber;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-
-import java.util.Locale;
 
 @Getter
 @Builder
@@ -45,7 +41,7 @@ public class DailyReportData {
 
     private boolean training;
 
-    static DailyReportData mapToDailyReportData(TimereportDTO timeReport) {
+    static DailyReportData valueOf(TimereportDTO timeReport) {
         return DailyReportData.builder()
                 .id(timeReport.getId())
                 .employeeorderId(timeReport.getEmployeeorderId())

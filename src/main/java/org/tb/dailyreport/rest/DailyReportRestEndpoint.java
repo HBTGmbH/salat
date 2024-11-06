@@ -1,7 +1,5 @@
 package org.tb.dailyreport.rest;
 
-import static java.util.Map.Entry.comparingByKey;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -16,20 +14,28 @@ import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REP
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
@@ -183,7 +189,7 @@ public class DailyReportRestEndpoint {
                 .mapToObj(day -> DateUtils.addDays(startDay, day))
                 .map(day -> timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, day))
                 .flatMap(List::stream)
-                .map(DailyReportData::mapToDailyReportData)
+                .map(DailyReportData::valueOf)
                 .collect(toList());
     }
 
