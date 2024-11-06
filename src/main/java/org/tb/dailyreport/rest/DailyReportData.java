@@ -6,6 +6,8 @@ import com.opencsv.bean.CsvNumber;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.domain.TimereportDTO;
 
 import java.util.Locale;
 
@@ -43,4 +45,19 @@ public class DailyReportData {
 
     private boolean training;
 
+    static DailyReportData mapToDailyReportData(TimereportDTO timeReport) {
+        return DailyReportData.builder()
+                .id(timeReport.getId())
+                .employeeorderId(timeReport.getEmployeeorderId())
+                .date(DateUtils.format(timeReport.getReferenceday()))
+                .orderLabel(timeReport.getCustomerorderDescription())
+                .suborderLabel(timeReport.getSuborderDescription())
+                .comment(timeReport.getTaskdescription())
+                .training(timeReport.isTraining())
+                .hours(timeReport.getDuration().toHours())
+                .minutes(timeReport.getDuration().toMinutesPart())
+                .suborderSign(timeReport.getSuborderSign())
+                .orderSign(timeReport.getCustomerorderSign())
+                .build();
+    }
 }

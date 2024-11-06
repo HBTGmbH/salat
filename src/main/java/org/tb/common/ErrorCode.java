@@ -37,6 +37,7 @@ public enum ErrorCode {
   TR_WORKING_DAY_START_NULL("TR-0024","the start of the working day must not be null"),
   TR_WORKING_DAY_NOT_WORKED("TR-0025","the working day must not be 'not worked'"),
   TR_COMMITTED_TIME_REPORT_NOT_SELF("TR-0026","own time reports cannot be created or changed before the accepted date"),
+  TR_UPSERT_WORKING_DAY("TR-0027","working day already exists"),
   WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),
   WD_SATSUN_NOT_WORKED("WD-0002","no one can compensate his overtime on saturdays or sundays!"),
   WD_HOLIDAY_NO_WORKED("WD-0003", "no one can compensate his overtime on a public holiday!"),

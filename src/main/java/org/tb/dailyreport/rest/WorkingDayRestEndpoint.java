@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.tb.dailyreport.rest.WorkingDayData.mapToWorkingDayData;
 
 @RestController
 @RequiredArgsConstructor
@@ -95,18 +96,6 @@ public class WorkingDayRestEndpoint {
         }
 
         return mapToWorkingDayData(workingDay);
-    }
-
-    private WorkingDayData mapToWorkingDayData(Workingday wd) {
-        return WorkingDayData.builder()
-                .id(wd.getId())
-                .starthour(wd.getStarttimehour())
-                .startminute(wd.getStarttimeminute())
-                .breakhours(wd.getBreakhours())
-                .breakminutes(wd.getBreakminutes())
-                .date(DateUtils.format(wd.getRefday()))
-                .type(wd.getType())
-                .build();
     }
 
     @DeleteMapping("/{date}")
