@@ -521,6 +521,11 @@
 								<bean:message key="main.general.button.excelexport.new.text" />
 							</html:submit>
 
+							<select name="invoice-settings">
+								<option value="HBT">HBT</option>
+								<option value="NestorIT">NestorIT</option>
+							</select>
+
 						</td>
 						<td class="noBborderStyle"></td>
 					</tr>

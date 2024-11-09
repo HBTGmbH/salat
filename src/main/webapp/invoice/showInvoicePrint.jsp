@@ -26,6 +26,9 @@
 		</title>
 		<link rel="stylesheet" type="text/css" href="<c:url value="/style/print.css" />" media="print" />
 		<link rel="stylesheet" type="text/css" href="<c:url value="/style/invoiceprint.css" />" media="all" />
+		<style>
+			${customCss}
+		</style>
 	</head>
 	<body>
 		<div style="width: 95%; margin: 0 auto">
@@ -38,8 +41,8 @@
 				</div>
 			</form>
 			<div>
-				<img src="<c:url value="/images/HBT_Logo_RGB_positiv.svg"/>" class="hbt_logo" />
-				<img src="<c:url value="/images/HBT_Claim_RGB_positiv.svg"/>" class="hbt_claim" />
+				<img src="<c:url value="${logoUrl}"/>" class="hbt_logo" />
+				<img src="<c:url value="${claimUrl}"/>" class="hbt_claim" />
 			</div>
 			<table style="clear: both; float: left">
 				<tr>

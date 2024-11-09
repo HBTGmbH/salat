@@ -1,5 +1,6 @@
 package org.tb.invoice;
 
+import static java.util.Optional.ofNullable;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getWeeksToDisplay;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
@@ -38,6 +39,9 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.invoice.domain.InvoiceSettings;
+import org.tb.invoice.domain.InvoiceSettings.ImageUrl;
+import org.tb.invoice.service.InvoiceSettingsService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.domain.comparator.SubOrderComparator;
@@ -53,6 +57,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
     private final EmployeecontractDAO employeecontractDAO;
     private final SuborderDAO suborderDAO;
     private final EmployeeDAO employeeDAO;
+    private final InvoiceSettingsService invoiceSettingsService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, HttpServletResponse response) {
@@ -328,6 +333,20 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             request.getSession().setAttribute("customeraddress", customeraddress);
             String task = request.getParameter("task");
             if (task.equals("print")) {
+
+                String invoiceSettingsName = ofNullable(request.getParameter("invoice-settings")).orElse("HBT");
+
+                InvoiceSettings invoiceSettings = invoiceSettingsService.getAllSettings()
+                    .stream()
+                    .filter(is -> is.getName().equals(invoiceSettingsName))
+                    .findFirst()
+                    .orElseThrow();
+
+                request.setAttribute("invoiceSettings", invoiceSettings);
+                request.setAttribute("logoUrl", invoiceSettings.getImageUrl(ImageUrl.LOGO));
+                request.setAttribute("claimUrl", invoiceSettings.getImageUrl(ImageUrl.CLAIM));
+                request.setAttribute("customCss", invoiceSettings.getCustomCss());
+
                 return mapping.findForward("print");
             } else if (task.equals("export")) {
                 MessageResources messageResources = getResources(request);
