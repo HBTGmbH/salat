@@ -37,7 +37,6 @@
     <spotbugs-maven-plugin.version>4.8.6.5</spotbugs-maven-plugin.version>
     <springdoc-openapi-starter-webmvc-ui.version>2.6.0</springdoc-openapi-starter-webmvc-ui.version>
     <webjars-locator.version>0.52</webjars-locator.version>
-    <hypersistence-utils.version>3.8.3</hypersistence-utils.version>
   </properties>
 
   <dependencies>
@@ -126,11 +125,6 @@
       <version>${struts-weblegacy.version}</version>
     </dependency>
     <!-- other stuff -->
-    <dependency>
-      <groupId>io.hypersistence</groupId>
-      <artifactId>hypersistence-utils-hibernate-63</artifactId>
-      <version>${hypersistence-utils.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
