@@ -709,6 +709,7 @@
 										<td class="info"><bean:message key="main.timereport.tooltip.order" />:</td>
 										<td class="info" colspan="3">
 											<c:out	value="${timereport.customerorderSign}" />
+											(<c:out	value="${timereport.customerShortname}" />)
 										</td>
 									</tr>
 									<tr>
@@ -803,6 +804,7 @@
 					<!-- Auftrag -->
 					<td class="noBborderStyle">
 						<c:out value="${timereport.customerorderSign}" />
+						(<c:out	value="${timereport.customerShortname}" />)
 						<br>
 						<c:out value="${timereport.suborderSign}" />
 					</td>
