@@ -1,3 +1,7 @@
+html {
+	-webkit-print-color-adjust: exact;
+}
+
 .hiddencontent {
 	display: none;
 }

@@ -18,9 +18,6 @@ public class InvoiceSettingsService {
     repository.add(InvoiceSettings.builder()
       .name("NestorIT")
       .customCss("""
-          html { 
-              -webkit-print-color-adjust: exact; 
-          }
           .hbt_claim {
               display: none;
           }
@@ -28,8 +25,7 @@ public class InvoiceSettingsService {
               height: 2.5cm;
           }
           .invoice_suborder_row {
-              background-color: #dbfb58;
-              border-bottom: 3px solid #fd9109;
+              border-bottom: 3px solid #fd9#dbfb58;
           }
           """)
       .imageUrls(of(
