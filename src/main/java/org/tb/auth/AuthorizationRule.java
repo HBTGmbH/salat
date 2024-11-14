@@ -25,10 +25,10 @@ public class AuthorizationRule extends AuditedEntity {
     private String grantorId;
 
     @Column(name = "grantee_id")
-    private String granteeId;
+    private Set<String> granteeId;
 
     @Column(name = "object_id")
-    private String objectId;
+    private Set<String> objectId;
 
     @Column(name = "access_level", columnDefinition = "varchar")
     private Set<AccessLevel> accessLevels;

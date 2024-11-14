@@ -1,6 +1,9 @@
 package org.tb.auth;
 
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toSet;
 import static org.tb.auth.AccessLevel.DELETE;
 import static org.tb.auth.AccessLevel.EXECUTE;
 import static org.tb.auth.AccessLevel.LOGIN;
@@ -16,11 +19,11 @@ import jakarta.annotation.PostConstruct;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -156,7 +159,7 @@ public class AuthService {
   private Set<AccessLevel> collectAccessLevels(Category category, Predicate<Rule> rulePredicate) {
     ensureUpToDateCache();
     return cacheEntries.get(category).stream().filter(rulePredicate).map(Rule::getAccessLevel)
-        .collect(Collectors.toSet());
+        .collect(toSet());
   }
 
   private boolean anyRuleMatches(Category category, Predicate<Rule> rulePredicate) {
@@ -166,18 +169,27 @@ public class AuthService {
 
   private void ensureUpToDateCache() {
     if (isCacheOutdated()) {
-      this.cacheEntries = StreamSupport.stream(authorizationRuleRepository.findAll().spliterator(), false)
-          .flatMap(rule -> rule.getAccessLevels().stream().map(accessLevel -> new Rule(
-              rule.getCategory(),
-              rule.getGrantorId(),
-              rule.getGranteeId(),
-              rule.getValidFrom(),
-              rule.getValidUntil(),
-              rule.getObjectId() != null ? rule.getObjectId() : ALL_OBJECTS,
-              accessLevel
-          )))
-          .collect(
-              Collectors.groupingBy(Rule::getCategory, Collectors.mapping(identity(), Collectors.toSet())));
+      final var rules = new HashSet<Rule>();
+      authorizationRuleRepository.findAll().forEach(rule -> {
+        rule.getAccessLevels().forEach(accessLevel -> {
+          rule.getGranteeId().forEach(granteeId -> {
+            rule.getObjectId().forEach(objectId -> {
+              rules.add(
+                  new Rule(
+                      rule.getCategory(),
+                      rule.getGrantorId(),
+                      granteeId,
+                      rule.getValidFrom(),
+                      rule.getValidUntil(),
+                      objectId,
+                      accessLevel
+                  )
+              );
+            });
+          });
+        });
+      });
+      cacheEntries = rules.stream().collect(groupingBy(Rule::getCategory, mapping(identity(), toSet())));
       lastCacheUpdate = Clock.systemUTC().millis();
     }
   }
