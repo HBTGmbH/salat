@@ -426,6 +426,25 @@
 	</table>
 	<table>
 		<tr>
+			<c:if test="${csvDownloadUrl != null}">
+				<html:form action="/ShowMatrix" enctype="multipart/form-data" method="POST">
+					<td class="noBborderStyle" align="left">
+						<html:file property="importFile" name="upload" value="upload" styleId="button"></html:file>
+					</td>
+					<td class="noBborderStyle" align="left">
+						<html:submit styleClass="button-special"
+									 titleKey="main.general.button.csvupload.alttext.text">
+						<bean:message key="main.general.button.csvupload.text" />
+						</html:submit>
+					</td>
+				</html:form>
+				<td class="noBborderStyle" align="left"><a href="${csvDownloadUrl}" download="${csvDownloadName}" target="_blank"><html:submit
+						styleId="button"
+						titleKey="main.general.button.csvdownload.alttext.text">
+					<bean:message key="main.general.button.csvdownload.text" />
+				</html:submit></a>
+				</td>
+			</c:if>
 			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
 				<html:form action="/CreateDailyReport?task=matrix">
 					<td class="noBborderStyle" align="left"><html:submit
@@ -434,14 +453,6 @@
 							<bean:message key="main.general.button.createnewreport.text" />
 						</html:submit></td>
 				</html:form>
-			</c:if>
-			<c:if test="${csvDownloadUrl != null}">
-				<td class="noBborderStyle" align="left"><a href="${csvDownloadUrl}" download="${csvDownloadName}" target="_blank"><html:submit
-						styleId="button"
-						titleKey="main.general.button.csvdownload.alttext.text">
-					<bean:message key="main.general.button.csvdownload.text" />
-					</html:submit></a>
-				</td>
 			</c:if>
 			<html:form target="_blank" action="/ShowMatrix?task=print">
 				<td class="noBborderStyle" align="left">

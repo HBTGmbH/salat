@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,8 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
+import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
 import org.tb.employee.domain.Employeecontract;
@@ -34,8 +37,11 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
     private final WorkingdayService workingdayService;
     private final TimereportDAO timereportDAO;
     private final AuthorizedUser authorizedUser;
+    private final DailyWorkingReportCsvConverter dailyWorkingReportCsvConverter;
+    private final DailyWorkingReportService dailyWorkingReportService;
 
     @Override
+    @SneakyThrows
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowMatrixForm reportForm, HttpServletRequest request, HttpServletResponse response) {
 
         // check if special tasks initiated from the daily display need to be
@@ -96,6 +102,12 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
                 task = "refreshMatrix";
                 doRefreshEmployeeSummaryData = true;
             }
+        }
+
+        if(task == null && reportForm.getImportFile() != null) {
+            dailyWorkingReportCsvConverter
+                    .read(reportForm.getImportFile().getInputStream())
+                    .forEach(dailyWorkingReportService::updateReport);
         }
 
         // call on MatrixView with parameter refreshMatrix to update request

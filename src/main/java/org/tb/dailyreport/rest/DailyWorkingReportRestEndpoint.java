@@ -1,16 +1,11 @@
 package org.tb.dailyreport.rest;
 
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.tb.common.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
-import static org.tb.common.ErrorCode.TR_UPSERT_WORKING_DAY;
-import static org.tb.dailyreport.rest.DailyReportCsvConverter.TEXT_CSV_DAILY_REPORT;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DAILY_WORKING_REPORT;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DAILY_WORKING_REPORT_VALUE;
 
@@ -38,15 +33,11 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
-import org.tb.dailyreport.service.TimereportService;
-import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 
 @RestController
 @RequiredArgsConstructor
@@ -56,10 +47,8 @@ public class DailyWorkingReportRestEndpoint {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final TimereportDAO timereportDAO;
-    private final EmployeeorderDAO employeeorderDAO;
     private final WorkingdayDAO workingdayDAO;
-    private final WorkingdayService workingdayService;
-    private final TimereportService timereportService;
+    private final DailyWorkingReportService dailyWorkingReportService;
     private final AuthorizedUser authorizedUser;
 
     @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
@@ -125,7 +114,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            createReport(report, false);
+            dailyWorkingReportService.createReport(report);
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -141,7 +130,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            createReport(report, true);
+            dailyWorkingReportService.updateReport(report);
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -157,7 +146,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            reports.forEach(report -> createReport(report, false));
+            reports.forEach(dailyWorkingReportService::createReport);
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -173,76 +162,12 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            reports.forEach(report -> createReport(report, true));
+            reports.forEach(dailyWorkingReportService::updateReport);
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
         }
-    }
-
-    private void createReport(DailyWorkingReportData report, boolean upsert)
-            throws AuthorizationException, InvalidDataException, BusinessRuleException
-    {
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), report.getDate());
-        if(employeecontract == null) {
-            throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
-        }
-
-        var existingWorkingDay = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
-                report.getDate(), employeecontract.getId()));
-        if (existingWorkingDay.isPresent() && !upsert) {
-            throw new BusinessRuleException(TR_UPSERT_WORKING_DAY);
-        }
-
-        var workingDay = existingWorkingDay.orElseGet(Workingday::new);
-        workingDay.setEmployeecontract(employeecontract);
-        workingDay.setRefday(report.getDate());
-        ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
-            workingDay.setBreakhours(bd.getHour());
-            workingDay.setBreakminutes(bd.getMinute());
-        }, () -> {
-            workingDay.setBreakhours(0);
-            workingDay.setBreakminutes(0);
-        });
-        ofNullable(report.getStartTime()).ifPresentOrElse(st -> {
-            workingDay.setStarttimehour(st.getHour());
-            workingDay.setStarttimeminute(st.getMinute());
-        }, () -> {
-            workingDay.setStarttimehour(0);
-            workingDay.setStarttimeminute(0);
-        });
-        workingDay.setType(report.getType());
-        workingdayService.upsertWorkingday(workingDay);
-        report.getDailyReports().stream().collect(groupingBy(DailyReportData::getEmployeeorderId))
-                        .forEach((employeeOrderId, bookingsOfOrder) -> {
-                            createDailyReports(report.getDate(), employeeOrderId, bookingsOfOrder, upsert);
-                        });
-    }
-
-    private void createDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert) {
-        var employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
-        if (employeeorder == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + employeeOrderId);
-        }
-        if (upsert) {
-            timereportService.deleteTimeReports(day, employeeOrderId, authorizedUser);
-        }
-        bookings.forEach(booking -> doCreateDailyReport(day, booking, employeeorder));
-    }
-
-    private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder) {
-        timereportService.createTimereports(
-                authorizedUser,
-                employeeorder.getEmployeecontract().getId(),
-                employeeorder.getId(),
-                day,
-                booking.getComment(),
-                booking.isTraining(),
-                booking.getHours(),
-                booking.getMinutes(),
-                1
-        );
     }
 
     private void checkAuthenticated() {
