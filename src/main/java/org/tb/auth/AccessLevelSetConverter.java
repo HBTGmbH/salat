@@ -12,14 +12,13 @@ public class AccessLevelSetConverter implements AttributeConverter<Set<AccessLev
 
   @Override
   public String convertToDatabaseColumn(Set<AccessLevel> accessLevels) {
-    if(accessLevels == null) return null;
+    if(accessLevels == null || accessLevels.isEmpty()) return null;
     return accessLevels.stream().map(AccessLevel::name).collect(Collectors.joining(","));
   }
 
   @Override
   public Set<AccessLevel> convertToEntityAttribute(String flatString) {
-    if(flatString == null) return null;
-    if(flatString.isBlank()) {
+    if(flatString == null || flatString.isBlank()) {
       return new HashSet<>(); // must be a modifiable Set
     }
     String[] parts = flatString.split(",");

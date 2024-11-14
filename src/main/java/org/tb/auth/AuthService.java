@@ -90,20 +90,20 @@ public class AuthService {
 
     if(authorizedUser.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
-    if(employee.getId().equals(authorizedUser.getEmployeeId())) return true;
+    if(employee.getSign().equals(authorizedUser.getSign())) return true;
     return false;
   }
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
     if(authorizedUser.isManager()) return true;
-    if(timereport.getEmployeecontract().getEmployee().getId().equals(authorizedUser.getEmployeeId())) return true;
+    if(timereport.getEmployeecontract().getEmployee().getSign().equals(authorizedUser.getSign())) return true;
 
     if(accessLevel == READ) {
       // every project manager may see the time reports of her project
-      if(authorizedUser.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getId())) {
+      if(authorizedUser.getSign().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getSign())) {
         return true;
       }
-      if(authorizedUser.getEmployeeId().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getId())) {
+      if(authorizedUser.getSign().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getSign())) {
         return true;
       }
 
@@ -119,7 +119,8 @@ public class AuthService {
                 && rule.getAccessLevel().satisfies(accessLevel)
                 && rule.isValid(timereport.getReferenceday().getRefdate())
                 && (rule.getObjectId().equals(ALL_OBJECTS) ||
-                    rule.getObjectId().equals(String.valueOf(timereport.getSuborder().getCustomerorder().getId()))));
+                    rule.getObjectId().equals(timereport.getSuborder().getCustomerorder().getSign()) ||
+                    rule.getObjectId().equals(timereport.getSuborder().getCompleteOrderSign())));
   }
 
   public boolean isAuthorized(ReportDefinition report, AccessLevel accessLevel) {
@@ -173,7 +174,7 @@ public class AuthService {
       authorizationRuleRepository.findAll().forEach(rule -> {
         rule.getAccessLevels().forEach(accessLevel -> {
           rule.getGranteeId().forEach(granteeId -> {
-            rule.getObjectId().forEach(objectId -> {
+            if(rule.getObjectId().isEmpty()) {
               rules.add(
                   new Rule(
                       rule.getCategory(),
@@ -181,11 +182,25 @@ public class AuthService {
                       granteeId,
                       rule.getValidFrom(),
                       rule.getValidUntil(),
-                      objectId,
+                      ALL_OBJECTS,
                       accessLevel
                   )
               );
-            });
+            } else {
+              rule.getObjectId().forEach(objectId -> {
+                rules.add(
+                    new Rule(
+                        rule.getCategory(),
+                        rule.getGrantorId(),
+                        granteeId,
+                        rule.getValidFrom(),
+                        rule.getValidUntil(),
+                        objectId,
+                        accessLevel
+                    )
+                );
+              });
+            }
           });
         });
       });

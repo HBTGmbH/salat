@@ -12,14 +12,13 @@ public class StringSetConverter implements AttributeConverter<Set<String>, Strin
 
   @Override
   public String convertToDatabaseColumn(Set<String> values) {
-    if(values == null) return null;
+    if(values == null || values.isEmpty()) return null;
     return values.stream().collect(Collectors.joining(","));
   }
 
   @Override
   public Set<String> convertToEntityAttribute(String flatString) {
-    if(flatString == null) return null;
-    if(flatString.isBlank()) {
+    if(flatString == null || flatString.isBlank()) {
       return new HashSet<>(); // must be a modifiable Set
     }
     String[] parts = flatString.split(",");
