@@ -618,7 +618,7 @@ public class MatrixHelper {
     private String getCsvDownloadUrl(ShowMatrixForm reportForm, String employee) {
         var dateFirst = initStartEndDate("01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
         var days = DateUtils.getMonthDays(dateFirst);
-        return String.format("/rest/daily-reports/list?refDate=%s&days=%d&csv=true&employee-sign=%s", DateUtils.format(dateFirst), days, employee);
+        return String.format("/rest/daily-working-reports/list?refDate=%s&days=%d&csv=true&employee-sign=%s", DateUtils.format(dateFirst), days, employee);
     }
 
     private String getCsvDownloadName(ShowMatrixForm reportForm) {

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
 
 @Getter
 @Setter
@@ -17,6 +18,7 @@ public class ShowMatrixForm extends ActionForm {
     private String untilMonth;
     private String fromYear;
     private String untilYear;
+    private FormFile importFile;
     private Long employeeContractId;
     private String order;
     private String suborder;
@@ -31,6 +33,7 @@ public class ShowMatrixForm extends ActionForm {
         invoice = false;
         nonInvoice = false;
         startAndBreakTime = false;
+        importFile = null;
     }
 
 }

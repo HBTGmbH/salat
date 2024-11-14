@@ -11,6 +11,7 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.time.LocalDate;
@@ -60,13 +61,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return List.of(TEXT_CSV_DAILY_WORKING_REPORT);
     }
 
-    @Override
-    @NonNull
-    public List<DailyWorkingReportData> read(@Nullable Class<? extends List<DailyWorkingReportData>> clazz, @Nullable HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
-        if (inputMessage == null) {
-            return List.of();
-        }
-        try (InputStreamReader reader = new InputStreamReader(inputMessage.getBody(), UTF_8)) {
+    public List<DailyWorkingReportData> read(InputStream inputStream) throws IOException {
+        try (InputStreamReader reader = new InputStreamReader(inputStream, UTF_8)) {
             var rows = new CsvToBeanBuilder<CsvRow>(reader)
                     .withSeparator(COLUMN_SEPARATOR)
                     .withMappingStrategy(new PositionAwareColumnMappingStrategy<>(CsvRow.class, () -> CsvRow.builder().build()))
@@ -76,9 +72,25 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             return fromRows(rows);
         }
     }
+
+    @Override
+    @NonNull
+    public List<DailyWorkingReportData> read(@Nullable Class<? extends List<DailyWorkingReportData>> clazz, @Nullable HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
+        if (inputMessage == null) {
+            return List.of();
+        }
+        try {
+            return read(inputMessage.getBody());
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
     @SneakyThrows
     private static List<DailyWorkingReportData> fromRows(List<CsvRow> rows) {
-        return rows.stream().collect(groupingBy(CsvRow::getDate)).entrySet().stream()
+        return rows.stream()
+                .filter(not(CsvRow.EMPTY::equals))
+                .collect(groupingBy(CsvRow::getDate)).entrySet().stream()
                 .map(entry -> Map.entry(getUniqueWorkingDayRow(entry.getKey(), entry.getValue()), entry.getValue()))
                 .map(entry ->  DailyWorkingReportData.builder()
                     .date(entry.getKey().getDate())
@@ -187,6 +199,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
     @Builder(toBuilder = true)
     @EqualsAndHashCode
     public static class CsvRow {
+
+        private final static CsvRow EMPTY = CsvRow.builder().build();
 
         @CsvDate("yyyy-MM-dd")
         @CsvBindByPosition(position = 0)
