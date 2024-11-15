@@ -803,13 +803,23 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
      * logged-in user.
      */
     private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
+                Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
         List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false,
             today());
         if (employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             return "error";
+        }
+
+        if (reportForm.getOrder() != null) {
+            var order = this.customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
+            if (order != null) {
+                var suborders = reportForm.getEmployeeContractId() == -1L
+                        ? suborderDAO.getSubordersByCustomerorderId(order.getId(), true)
+                        : suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), order.getId(), true);
+                request.getSession().setAttribute("suborders", suborders);
+            }
         }
 
         reportForm.setView(GlobalConstants.VIEW_DAILY);
@@ -837,16 +847,11 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 currentEmployeeId = loginEmployee.getId();
                 request.getSession().setAttribute("currentEmployeeId", currentEmployeeId);
             }
-            List<TimereportDTO> timereports;
-            if (currentEmployeeId == -1) {
-                // all employees
-                timereports = timereportDAO.getTimereportsByDate(date);
-            } else {
-                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
-            }
-            String laborTimeString = timereportHelper.calculateLaborTime(timereports);
+            List<TimereportDTO> timeReports = initTimeReports(reportForm, date, ec);
+            String laborTimeString = timereportHelper.calculateLaborTime(timeReports);
+
             request.getSession().setAttribute("labortime", laborTimeString);
-            request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+            request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timeReports, GlobalConstants.MAX_HOURS_PER_DAY));
             // refresh workingday
             Workingday workingday;
             try {
@@ -864,9 +869,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             if (request.getSession().getAttribute("timereportComparator") != null) {
                 @SuppressWarnings("unchecked")
                 Comparator<TimereportDTO> comparator = (Comparator<TimereportDTO>) request.getSession().getAttribute("timereportComparator");
-                Collections.sort(timereports, comparator);
+                Collections.sort(timeReports, comparator);
             }
-            request.getSession().setAttribute("timereports", timereports);
+            request.getSession().setAttribute("timereports", timeReports);
         } else {
             LocalDate refDate = DateUtils.today();
             Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
@@ -888,7 +893,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 reportForm.setSelectedBreakHour(0);
                 reportForm.setSelectedBreakMinute(0);
                 reportForm.setWorkingDayTypeTyped(WorkingDayType.WORKED);
-
             }
 
             // call from main menu: set current month, year, timereports,
@@ -920,21 +924,16 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             LocalDate date = DateUtils.parseOrNull(dateString);
 
             Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
-            List<TimereportDTO> timereports;
-            if (employeeId != null && employeeId == -1) {
-                timereports = timereportDAO.getTimereportsByDate(date);
-            } else {
-                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
-            }
-            String laborTimeString = timereportHelper.calculateLaborTime(timereports);
+            List<TimereportDTO> timeReports = initTimeReports(reportForm, date, ec);
+            String laborTimeString = timereportHelper.calculateLaborTime(timeReports);
             request.getSession().setAttribute("labortime", laborTimeString);
-            request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
+            request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timeReports, GlobalConstants.MAX_HOURS_PER_DAY));
             if (request.getSession().getAttribute("timereportComparator") != null) {
                 @SuppressWarnings("unchecked")
                 Comparator<TimereportDTO> comparator = (Comparator<TimereportDTO>) request.getSession().getAttribute("timereportComparator");
-                timereports.sort(comparator);
+                timeReports.sort(comparator);
             }
-            request.getSession().setAttribute("timereports", timereports);
+            request.getSession().setAttribute("timereports", timeReports);
             request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
             // calculate Working Day End
             request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
@@ -954,10 +953,30 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         refreshEmployeeSummaryData(request, ec);
 
         // set current order = all orders
-        request.getSession().setAttribute("currentOrder", "ALL ORDERS");
-        request.getSession().setAttribute("currentOrderId", -1L);
+        if (reportForm.getOrder() == null) {
+            request.getSession().setAttribute("currentOrder", "ALL ORDERS");
+            request.getSession().setAttribute("currentOrderId", -1L);
+        } else {
+            request.getSession().setAttribute("currentOrder", reportForm.getOrder());
+            request.getSession().setAttribute("suborderFilerId", reportForm.getSuborderId());
+        }
 
         return null; // nothing to forward to
+    }
+
+    private List<TimereportDTO> initTimeReports(ShowDailyReportForm reportForm, LocalDate date, Employeecontract ec) {
+        List<TimereportDTO> timeReports;
+        if (reportForm.getEmployeeContractId() == -1L) {
+            // all employees
+            timeReports = reportForm.getOrder() != null && reportForm.getSuborderId() != 0
+                    ? timereportDAO.getTimereportsByDatesAndSuborderId(date, date, reportForm.getSuborderId())
+                    : timereportDAO.getTimereportsByDate(date);
+        } else {
+            timeReports = reportForm.getOrder() != null && reportForm.getSuborderId() != 0
+                    ? timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), date, date, reportForm.getSuborderId())
+                    : timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
+        }
+        return timeReports;
     }
 
     @Override

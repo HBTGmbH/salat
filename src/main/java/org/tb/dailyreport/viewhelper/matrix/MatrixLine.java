@@ -28,11 +28,11 @@ public class MatrixLine implements Comparable<MatrixLine> {
         this.subOrder = subOrder;
         this.customOrder = customOrder;
         total = Duration.ZERO;
-        addBookingDay(date, duration, taskdescription);
+        addBookingDay(date, duration, taskdescription, customOrder.getSign(), subOrder.getId());
     }
 
-    public void addBookingDay(LocalDate date, Duration duration, String taskdescription) {
-        bookingDays.add(new BookingDay(date, duration, taskdescription));
+    public void addBookingDay(LocalDate date, Duration duration, String taskdescription, String orderSign, long suborderId) {
+        bookingDays.add(new BookingDay(date, duration, taskdescription, orderSign, suborderId));
         total = total.plus(duration);
     }
 
@@ -105,13 +105,14 @@ public class MatrixLine implements Comparable<MatrixLine> {
             }
         }
         //if bookingday is not available, add new bookingday
-        addBookingDay(timeReport.getReferenceday(), timeReport.getDuration(), taskdescription);
+        addBookingDay(timeReport.getReferenceday(), timeReport.getDuration(), taskdescription, timeReport.getCustomerorderSign(), timeReport.getSuborderId());
     }
 
 
     @Data
     public static class OrderSummaryData {
 
+        private final long id;
         private final String sign;
         private final String shortdescription;
 
