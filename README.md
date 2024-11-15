@@ -1,4 +1,63 @@
-### Environment variables
+## Run locally
+
+Requirements:
+
+- Java 21
+- Docker (running)
+- docker-compose
+
+Steps to start Salat locally:
+
+1. Build the image: `./mvnw spring-boot:build-image`
+2. Run docker-compose: `docker-compose up`
+3. That's it. Salat should now be running. To check, open in browser: <http://localhost:8080?employee-sign=tt>
+
+Shutdown:
+1. Stop docker-compose: CTRL+C
+2. Remove built containers: `docker-compose down`
+
+### Login
+Open the URL <http://localhost:8080?employee-sign=<sign>>
+
+You can change the `employee-sign` parameter to login as a different user.
+
+Valid employee-signs in the test-dataset are:
+  1. **admin**: Administrator
+  2. **bm**: "Bossy Bossmann", Administrator
+  3. **tt**: "Testy Testmann", Employee
+
+### Logout
+Open the URL <http://localhost:8080?logout>
+
+### Debugging
+To start only the local database, without the Salat application:
+`docker-compose -f docker-compose-infra.yml up`
+
+⚠️ Be sure to remove existing docker containers before by running `docker-compose down` if you had the application running before.
+
+
+### Troubleshooting
+
+#### Missing BuildProperties
+Should you encounter the error
+
+    Consider defining a bean of type 'org.springframework.boot.info.BuildProperties' in your configuration.
+
+This can be fixed by running
+
+    ./mvnw package
+
+Explanation: Maven creates a file named `build-info.properties`.
+This file might be missing when an IDE does not create it. (Happened to Klaus with IntelliJ IDEA, despite Maven Integration).
+
+(by Klaus)
+
+#### DB-Changes
+Changes to the data base are collected via Liquibase in the following file:
+
+    src/main/resources/db/changelog/db.changelog-master.yaml
+
+## Environment variables
 
 The following environment variables must be set in each environment/stage:
 
@@ -16,54 +75,7 @@ SPRING_DATASOURCE_PASSWORD=salattest
 SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
 ```
 
-## Run locally
-
-Steps to start Salat locally:
-
-1. Build the .war-file: `./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=docker.io/hbt/salat:latest`
-2. Run docker-compose: `docker-compose up`
-3. Open in browser: `http://localhost:8080?employee-sign=<sign>`
-4. Valid signs in the test-dataset are: admin, bm, tt
-
-Shutdown:
-1. Stop docker-compose: CTRL+C
-2. Remove built containers: `docker-compose down`
-
-### Login / Logout
-Einfach den SALAT mit der URL `http://localhost:8080?employee-sign=<sign>` aufrufen.
-
-Einfach den SALAT mit der URL `http://localhost:8080?logout` aufrufen.
-
-### Debugging
-Start local database only, without Salat:
-`docker-compose -f docker-compose-infra.yml up`
-
-! Be sure to remove existing docker containers before by running `docker-compose down` if you had the application running before.
-
-
-### Troubleshooting
-
-#### BuildProperties
-Falls die Meldung
-
-    Consider defining a bean of type 'org.springframework.boot.info.BuildProperties' in your configuration.
-
-kommt. Einfach einmal
-
-    mvn package
-
-ausführen. Hintergrund: Maven erzeugt eine Datei build-info.properties. Diese fehlt ggf. weil die 
-IDE (auch mit Maven Integration) diese Datei nicht erzeugt. Bei IntelliJ IDEA bei Klaus wird diese
-Datei nicht erzeugt.
-
-(by Klaus)
-
-#### Samlung DB-Änderungen
-Datenbankänderungen werden via Liquibase in nachfolgender Datei gepflegt.
-
-    src/main/resources/db/changelog/db.changelog-master.yaml
-
-### Business-Logiken, die refactored werden sollten, z.B. move to service
+## Business-logic that should be refactored (i.e. move to service)
 
 - AfterLogin#createWarnings - erzeugt Warnungen, die dem User angezeigt werden sollen. Diese weisen 
   auf Fehler bzw. offenen TODOs hin. Könnte man in einen Service packen und dann via

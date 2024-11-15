@@ -1,7 +1,6 @@
-version: "3.9"  # optional since v1.27.0
 services:
   salat:
-    image: docker.io/hbt/salat:latest
+    image: ghcr.io/hbtgmbh/salat:latest
     ports:
       - "8080:8080"
       - "8000:8000"
