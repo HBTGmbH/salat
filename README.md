@@ -85,11 +85,9 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
 - AfterLogin#handleOvertime - berechnet Überstunden zur Anzeige beim User. Sollte in den OvertimeService
   überführt werden. Dieser existiert bereits und ist auch in der Lage, Überstunden zu
   berechnen. Könnte man entsprechend zusammenführen.
-- SimpleMailService - brachen wir einen Email-Versand noch?
 - StoreCustomerAction#executeAuthenticated - bei task=save wird ein Customer angelegt. Sollte im 
   CustomerService sein.
 - DeleteCustomerAction#executeAuthenticated - auch dies sollte weitestgehend im CustomerService sein.
-- DeleteTimereportFromDailyDisplayAction#executeAuthenticated - sollte TimereportService nutzen
 - TimereportHelper#determineBeginTimeToDisplay - move to WorkingdayService
 - TimereportHelper#determineTimesToDisplay - move to WorkingdayService and introduce a better value class
   to carry the result
@@ -98,7 +96,6 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
 - TimereportHelper#checkLaborTimeMaximum - move to WorkingdayService? Or maybe a business rule in
   TimereportService that creates a warning? Or when it's a warning, maybe add to the WarningService.
 - TimereportHelper#calculateQuittingTime - nach WorkingdayService
-- TimereportHelper#calculateOvertime - nach OvertimeService, ggf. mit vorhander Funktion mergen
 - TrainingHelper#fromDBtimeToString - nach DurationUtils als neue Methode
   formatWithWorkingsdays(Duration duration, Duration dailyWorkingTime
 - TrainingHelper#hoursMinToString - better use Duration and then DurationUtils#format
