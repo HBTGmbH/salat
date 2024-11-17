@@ -97,7 +97,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                     .startTime(entry.getKey().getStartTime())
                     .type(entry.getKey().getType())
                     .breakDuration(entry.getKey().getBreakTime())
-                    .dailyReports(timeReportsFromRows(entry.getValue()))
+                    .dailyReports(timeReportsFromRows(entry.getKey().getDate(), entry.getValue()))
                     .build()
         ).toList();
     }
@@ -122,11 +122,12 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return row.getStartTime() == null || row.getBreakTime() == null;
     }
 
-    private static List<DailyReportData> timeReportsFromRows(List<CsvRow> rows){
+    private static List<DailyReportData> timeReportsFromRows(LocalDate date, List<CsvRow> rows){
         return rows.stream()
                 .filter(not(DailyWorkingReportCsvConverter::isEmptyTimeReport))
                 .map(row -> DailyReportData
                         .builder()
+                        .date(DateUtils.format(date))
                         .employeeorderId(row.getEmployeeorderId())
                         .orderSign(row.getOrderSign())
                         .orderLabel(row.getOrderLabel())

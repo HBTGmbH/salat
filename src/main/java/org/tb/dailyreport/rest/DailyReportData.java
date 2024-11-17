@@ -8,7 +8,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @EqualsAndHashCode
 public class DailyReportData {
 
@@ -41,7 +41,7 @@ public class DailyReportData {
 
     private boolean training;
 
-    static DailyReportData valueOf(TimereportDTO timeReport) {
+    public static DailyReportData valueOf(TimereportDTO timeReport) {
         return DailyReportData.builder()
                 .id(timeReport.getId())
                 .employeeorderId(timeReport.getEmployeeorderId())
@@ -55,5 +55,9 @@ public class DailyReportData {
                 .suborderSign(timeReport.getSuborderSign())
                 .orderSign(timeReport.getCustomerorderSign())
                 .build();
+    }
+
+    public DailyReportData withoutId(){
+        return toBuilder().id(0).build();
     }
 }

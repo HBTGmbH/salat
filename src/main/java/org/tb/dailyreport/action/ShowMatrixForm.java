@@ -19,6 +19,7 @@ public class ShowMatrixForm extends ActionForm {
     private String fromYear;
     private String untilYear;
     private FormFile importFile;
+    private String importMode;
     private Long employeeContractId;
     private String order;
     private String suborder;
@@ -34,6 +35,7 @@ public class ShowMatrixForm extends ActionForm {
         nonInvoice = false;
         startAndBreakTime = false;
         importFile = null;
+        importMode = null;
     }
 
 }
