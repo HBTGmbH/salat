@@ -29,7 +29,9 @@ Valid employee-signs in the test-dataset are:
   3. **tt**: "Testy Testmann", Employee
 
 ### Logout
-Open the URL <http://localhost:8080?logout>
+There is no need to logout. But you can just click the button to logout.
+
+**With the above login url, you can change the login user at any time without logging out!**
 
 ### Debugging
 To start only the local database, without the Salat application:
