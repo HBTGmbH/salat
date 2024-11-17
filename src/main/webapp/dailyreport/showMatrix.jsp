@@ -13,7 +13,6 @@
 	</title>
 	<jsp:include flush="true" page="/head-includes.jsp" />
 	<script type="text/javascript" language="JavaScript">
-
 		function setSwitchEmployee(form) {
 			form.action = "/do/ShowMatrix?task=switchEmployee";
 			form.submit();
@@ -29,6 +28,16 @@
 			document.forms[0].submit();
 		}
 
+		function showImportDialog() {
+			const dialog = document.getElementById("importDialog");
+			dialog.showModal();
+		}
+
+		function hideImportDialog() {
+			const dialog = document.getElementById("importDialog");
+			dialog.close();
+		}
+
 		$(document).ready(function() {
 			$(".make-select2").select2({
 				dropdownAutoWidth: true,
@@ -36,9 +45,40 @@
 			});	
 		});		
 	</script>
+	<style>
+		::backdrop {
+			background-image: linear-gradient(45deg, #191E55, blue);
+			opacity: 0.20;
+		}
+	</style>
 	<link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
 </head>
 <body>
+	<dialog id="importDialog">
+		<form action="ShowMatrix" enctype="multipart/form-data" method="POST">
+			<span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.csvimport.dialog.title.text" /><br></span>
+			<div style="margin-top: 10px;">
+				<input type="file" name="importFile" accept="text/csv" />
+			</div>
+			<div style="margin-top: 10px;">
+				<fieldset>
+					<legend><bean:message key="main.csvimport.dialog.mode.legend" /></legend>
+					<div>
+						<input type="radio" id="add" name="importMode" value="add" checked />
+						<label for="add"><bean:message key="main.csvimport.dialog.mode.add.label" /></label>
+					</div>
+					<div>
+						<input type="radio" id="replace" name="importMode" value="replace" />
+						<label for="replace"><bean:message key="main.csvimport.dialog.mode.replace.label" /></label>
+					</div>
+				</fieldset>
+			</div>
+			<div style="margin-top: 10px;">
+				<button id="cancel" type="reset" class="button" onclick="hideImportDialog()"><bean:message key="main.csvimport.dialog.cancel.text" /></button>
+				<button class="button-special" type="submit"><bean:message key="main.csvimport.dialog.confirm.text" /></button>
+			</div>
+		</form>
+	</dialog>
 	<jsp:include flush="true" page="/menu.jsp">
 		<jsp:param name="title" value="Menu" />
 	</jsp:include>
@@ -427,22 +467,22 @@
 	<table>
 		<tr>
 			<c:if test="${csvDownloadUrl != null}">
-				<html:form action="/ShowMatrix" enctype="multipart/form-data" method="POST">
-					<td class="noBborderStyle" align="left">
-						<html:file property="importFile" name="upload" value="upload" styleId="button"></html:file>
-					</td>
-					<td class="noBborderStyle" align="left">
-						<html:submit styleClass="button-special"
+				<td class="noBborderStyle" align="left">
+					<a href="javascript:showImportDialog();">
+						<html:submit styleId="button"
 									 titleKey="main.general.button.csvupload.alttext.text">
-						<bean:message key="main.general.button.csvupload.text" />
+							<bean:message key="main.general.button.csvupload.text" />
 						</html:submit>
-					</td>
-				</html:form>
-				<td class="noBborderStyle" align="left"><a href="${csvDownloadUrl}" download="${csvDownloadName}" target="_blank"><html:submit
-						styleId="button"
-						titleKey="main.general.button.csvdownload.alttext.text">
-					<bean:message key="main.general.button.csvdownload.text" />
-				</html:submit></a>
+					</a>
+				</td>
+				<td class="noBborderStyle" align="left">
+					<a href="${csvDownloadUrl}" download="${csvDownloadName}" target="_blank">
+						<html:submit
+							styleId="button"
+							titleKey="main.general.button.csvdownload.alttext.text">
+							<bean:message key="main.general.button.csvdownload.text" />
+						</html:submit>
+					</a>
 				</td>
 			</c:if>
 			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">

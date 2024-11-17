@@ -316,6 +316,16 @@ public class TimereportDAO {
     }
 
     /**
+     * Gets a list of Timereports by employee order id and date.
+     */
+    public List<TimereportDTO> getTimereportsByDateAndEmployeeOrderId(LocalDate date, long employeeOrderId) {
+        return toDaoList(timereportRepository.findAll(
+            where(matchesEmployeeorderId(employeeOrderId).and(reportedAt(date)))
+                .and(orderedByCustomerorder())
+        ));
+    }
+
+    /**
      * Gets a list of Timereports by employee order id.
      */
     public List<TimereportDTO> getTimereportsByEmployeeOrderId(long employeeOrderId) {

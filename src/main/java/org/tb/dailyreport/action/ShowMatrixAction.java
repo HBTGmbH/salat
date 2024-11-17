@@ -105,9 +105,12 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         }
 
         if(task == null && reportForm.getImportFile() != null) {
-            dailyWorkingReportCsvConverter
-                    .read(reportForm.getImportFile().getInputStream())
-                    .forEach(dailyWorkingReportService::updateReport);
+            var reports = dailyWorkingReportCsvConverter.read(reportForm.getImportFile().getInputStream());
+            if("replace".equals(reportForm.getImportMode())){
+                dailyWorkingReportService.updateReports(reports);
+            } else if("add".equals(reportForm.getImportMode())){
+                dailyWorkingReportService.createReports(reports);
+            }
         }
 
         // call on MatrixView with parameter refreshMatrix to update request

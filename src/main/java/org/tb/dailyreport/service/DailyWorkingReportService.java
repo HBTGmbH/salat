@@ -9,9 +9,11 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.rest.DailyReportData;
 import org.tb.dailyreport.rest.DailyWorkingReportData;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
@@ -19,11 +21,12 @@ import org.tb.order.persistence.EmployeeorderDAO;
 import java.time.LocalDate;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.tb.common.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
-import static org.tb.common.ErrorCode.TR_UPSERT_WORKING_DAY;
+import static org.tb.common.ErrorCode.*;
 
 @Service
 @AllArgsConstructor
@@ -35,17 +38,18 @@ public class DailyWorkingReportService {
     private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
+    private final TimereportDAO timereportDAO;
 
-    public void createReport(DailyWorkingReportData report)
+    public void createReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        doCreateReport(report, false);
+        reports.forEach(report -> doCreateReport(report, false));
     }
 
-    public void updateReport(DailyWorkingReportData report)
+    public void updateReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        doCreateReport(report, true);
+        reports.forEach(report -> doCreateReport(report, true));
     }
 
     private void doCreateReport(DailyWorkingReportData report, boolean upsert)
@@ -56,11 +60,17 @@ public class DailyWorkingReportService {
             throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 
+        doCreateWorkingDay(report, employeecontract);
+
+        report.getDailyReports().stream().collect(groupingBy(DailyReportData::getEmployeeorderId))
+                .forEach((employeeOrderId, bookingsOfOrder) -> {
+                    doCreateDailyReports(report.getDate(), employeeOrderId, bookingsOfOrder, upsert);
+                });
+    }
+
+    private void doCreateWorkingDay(DailyWorkingReportData report, Employeecontract employeecontract) {
         var existingWorkingDay = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
-                report.getDate(), employeecontract.getId()));
-        if (existingWorkingDay.isPresent() && !upsert) {
-            throw new BusinessRuleException(TR_UPSERT_WORKING_DAY);
-        }
+                report.getDate(), requireNonNull(employeecontract.getId(), "ID of contract is required")));
 
         var workingDay = existingWorkingDay.orElseGet(Workingday::new);
         workingDay.setEmployeecontract(employeecontract);
@@ -81,28 +91,39 @@ public class DailyWorkingReportService {
         });
         workingDay.setType(report.getType());
         workingdayService.upsertWorkingday(workingDay);
-        report.getDailyReports().stream().collect(groupingBy(DailyReportData::getEmployeeorderId))
-                .forEach((employeeOrderId, bookingsOfOrder) -> {
-                    doCreateDailyReports(report.getDate(), employeeOrderId, bookingsOfOrder, upsert);
-                });
     }
 
     private void doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert) {
-        var employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
-        if (employeeorder == null) {
+        var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
+        if (employeeOrder == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + employeeOrderId);
         }
-        if (upsert) {
-            timereportService.deleteTimeReports(day, employeeOrderId, authorizedUser);
+
+        var employeeContract = employeeOrder.getEmployeecontract();
+        if (employeeContract == null) {
+            throw new ResponseStatusException(NOT_FOUND, "Could not find employeecontract for order with id " + employeeOrderId);
         }
-        bookings.forEach(booking -> doCreateDailyReport(day, booking, employeeorder));
+
+        var existingBookings = timereportDAO.getTimereportsByDateAndEmployeeOrderId(day, employeeOrderId)
+                .stream().map(DailyReportData::valueOf).toList();
+        var existingBookingsWithoutId = existingBookings
+                .stream().map(DailyReportData::withoutId).toList();
+
+        var newBookings = bookings.stream().filter(not(existingBookingsWithoutId::contains)).toList();
+        var oldBookings = existingBookings.stream().filter(booking -> !bookings.contains(booking.withoutId())).toList();
+
+        if (!oldBookings.isEmpty() && upsert){
+            oldBookings.stream().map(DailyReportData::getId).forEach(timereportDAO::deleteTimereportById);
+        }
+
+        newBookings.forEach(booking -> doCreateDailyReport(day, booking, employeeOrder, employeeContract));
     }
 
-    private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder) {
+    private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder, Employeecontract employeeContract) {
         timereportService.createTimereports(
                 authorizedUser,
-                employeeorder.getEmployeecontract().getId(),
-                employeeorder.getId(),
+                requireNonNull(employeeContract.getId(), "ID of contract is required"),
+                requireNonNull(employeeorder.getId(), "ID of order is required"),
                 day,
                 booking.getComment(),
                 booking.isTraining(),

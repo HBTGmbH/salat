@@ -114,7 +114,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.createReport(report);
+            dailyWorkingReportService.createReports(List.of(report));
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -130,7 +130,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.updateReport(report);
+            dailyWorkingReportService.updateReports(List.of(report));
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -146,7 +146,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            reports.forEach(dailyWorkingReportService::createReport);
+            dailyWorkingReportService.createReports(reports);
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -162,7 +162,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            reports.forEach(dailyWorkingReportService::updateReport);
+            dailyWorkingReportService.updateReports(reports);
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
         } catch (InvalidDataException | BusinessRuleException e) {
