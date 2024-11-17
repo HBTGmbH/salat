@@ -9,17 +9,19 @@ Requirements:
 Steps to start Salat locally:
 
 1. Build the image: `./mvnw spring-boot:build-image`
-2. Run docker-compose: `docker-compose up`
+2. Run docker-compose: `docker-compose up -d` (in newer docker versions use `docker compose up -d`)
 3. That's it. Salat should now be running. To check, open in browser: <http://localhost:8080?employee-sign=tt>
 
 Shutdown:
 1. Stop docker-compose: CTRL+C
-2. Remove built containers: `docker-compose down`
+2. Stop built containers: `docker-compose stop` (in newer docker versions use `docker compose stop`)
+3. If you want to remove the containers: `docker-compose down` (in newer docker versions use `docker compose down`)
 
 ### Login
 Open the URL <http://localhost:8080?employee-sign=<sign>>
 
 You can change the `employee-sign` parameter to login as a different user.
+It is even possible to append `?employee-sign=<sign>` to any URL, to log in the user.
 
 Valid employee-signs in the test-dataset are:
   1. **admin**: Administrator
