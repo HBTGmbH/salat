@@ -1,20 +1,21 @@
 package org.tb.order.action;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Employeeorder;
+import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
@@ -89,7 +90,8 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
         }
 
         // get valid employeecontracts
-        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            DateUtils.today());
         request.getSession().setAttribute("employeecontracts", employeeContracts);
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");

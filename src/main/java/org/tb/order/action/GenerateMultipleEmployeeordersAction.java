@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -153,7 +154,8 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                 customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
             }
             request.getSession().setAttribute("visibleCustomerOrders", customerOrders);
-            List<Employeecontract> employeecontracts = employeecontractDAO.getValidEmployeeContractsOrderedByFirstname();
+            List<Employeecontract> employeecontracts = employeecontractDAO.getAllVisibleEmployeeContractsValidAtOrderedByFirstname(
+                DateUtils.today());
             request.getSession().setAttribute("employeecontracts", employeecontracts);
             long selectedCustomerOrder = (Long) request.getSession().getAttribute("currentOrderId");
             long selectedSuborder = (Long) request.getSession().getAttribute("currentSub");

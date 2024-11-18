@@ -1,6 +1,7 @@
 package org.tb.employee.viewhelper;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -30,7 +31,7 @@ public class EmployeeViewHelper {
 
         var employeeOptionList = employeeDAO.getEmployees();
         var employeeWithContractList = employeeDAO.getEmployeesWithContracts();
-        var employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        var employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(DateUtils.today());
 
         request.getSession().setAttribute("employeeswithcontract", employeeWithContractList);
         request.getSession().setAttribute("employees", employeeOptionList);

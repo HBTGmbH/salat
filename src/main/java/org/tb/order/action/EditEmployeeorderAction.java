@@ -1,9 +1,9 @@
 package org.tb.order.action;
 
-import java.util.ArrayList;
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -15,10 +15,10 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 
 /**
  * action class for editing an employee order
@@ -67,7 +67,8 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
         request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
         request.getSession().setAttribute("currentEmployeeContract", ec);
 
-        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            DateUtils.today());
 
         if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
             request.setAttribute("errorMessage",

@@ -1,24 +1,25 @@
 package org.tb.order.action;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
+import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 
 /**
  * action class for creating a new employee order
@@ -42,7 +43,8 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         // get lists of existing employee contracts and suborders
-        final List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        final List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            DateUtils.today());
 
         if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");

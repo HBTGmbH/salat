@@ -25,8 +25,8 @@ import org.tb.common.Warning;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.service.EmployeeorderService;
 
 /**
@@ -37,9 +37,9 @@ import org.tb.order.service.EmployeeorderService;
 @RequiredArgsConstructor
 public class AutoLoginHandler implements ApplicationListener<AuthenticationSuccessEvent> {
 
-  private final EmployeeDAO employeeDAO;
+  private final EmployeeService employeeService;
   private final PublicholidayService publicholidayService;
-  private final EmployeecontractDAO employeecontractDAO;
+  private final EmployeecontractService employeecontractService;
   private final AfterLogin afterLogin;
   private final AuthorizedUser authorizedUser;
   private final HttpServletRequest request;
@@ -63,14 +63,14 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
 
     authorizedUser.setLoginSign(authentication.getName());
 
-    Employee loginEmployee = employeeDAO.getLoginEmployee(authentication.getName());
+    Employee loginEmployee = employeeService.getLoginEmployee();
     // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
     if (loginEmployee == null) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authentication.getName());
     }
 
     LocalDate today = today();
-    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), today);
+    Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), today);
 
     // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
     if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
@@ -99,7 +99,7 @@ public class AutoLoginHandler implements ApplicationListener<AuthenticationSucce
     }
 
     // create collection of employeecontracts
-    List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+    List<Employeecontract> employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
     request.getSession().setAttribute("employeecontracts", employeecontracts);
   }
 

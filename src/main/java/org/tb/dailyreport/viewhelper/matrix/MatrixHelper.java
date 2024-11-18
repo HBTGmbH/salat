@@ -24,6 +24,7 @@ import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -32,7 +33,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -489,7 +489,8 @@ public class MatrixHelper {
             return results;
         }
 
-        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false);
+        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false,
+            today());
 
         if (employeeContracts == null || employeeContracts.isEmpty()) {
             results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employees with valid contracts found - please call system administrator.");

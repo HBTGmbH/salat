@@ -3,6 +3,7 @@ package org.tb.employee.persistence;
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
 
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashSet;
@@ -10,7 +11,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.Specification;
@@ -151,9 +151,10 @@ public class EmployeecontractDAO {
      * Get a list of all Employeecontracts where the hide flag is unset or that is currently valid ordered by employee sign.
      *
      * @return List<Employeecontract>
+     * @param validAt
      */
-    private List<Employeecontract> getVisibleEmployeeContractsOrderedByEmployeeSign() {
-        return employeecontractRepository.findAllValidAtAndNotHidden(DateUtils.today()).stream()
+    private List<Employeecontract> getAllVisibleEmployeeContractsOrderedByEmployeeSign(LocalDate validAt) {
+        return employeecontractRepository.findAllValidAtAndNotHidden(validAt).stream()
             .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
             .sorted(
                 comparing((Employeecontract a) -> a.getEmployee().getSign().toLowerCase())
@@ -165,34 +166,35 @@ public class EmployeecontractDAO {
     public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
         if (!authorizedUser.isManager()) {
             // may only see his own contracts
-            return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
+            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today()).stream()
                 .filter(e -> e.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
                 .collect(Collectors.toList());
         } else {
-            return getVisibleEmployeeContractsOrderedByEmployeeSign();
+            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today());
         }
     }
 
-    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser() {
-        return getViewableEmployeeContractsForAuthorizedUser(true);
+    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(LocalDate validAt) {
+        return getViewableEmployeeContractsForAuthorizedUser(true, validAt);
     }
 
-    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess) {
+    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess, LocalDate validAt) {
         if (limitAccess) {
             // may only see his own contracts
-            return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
+            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
                 .filter(e -> authService.isAuthorized(e.getEmployee(), AccessLevel.READ))
                 .collect(Collectors.toList());
         } else {
-            return getVisibleEmployeeContractsOrderedByEmployeeSign();
+            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt);
         }
     }
 
     /**
      * Get a list of all Employeecontracts that are currently valid, ordered by Firstname
+     * @param validAt
      */
-    public List<Employeecontract> getValidEmployeeContractsOrderedByFirstname() {
-        return getVisibleEmployeeContractsOrderedByEmployeeSign().stream()
+    public List<Employeecontract> getAllVisibleEmployeeContractsValidAtOrderedByFirstname(LocalDate validAt) {
+        return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getFirstname())
                 .thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());

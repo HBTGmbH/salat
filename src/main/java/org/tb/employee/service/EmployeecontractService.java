@@ -39,6 +39,14 @@ public class EmployeecontractService {
   private final OvertimeDAO overtimeDAO;
   private final VacationDAO vacationDAO;
 
+  public Employeecontract getEmployeeContractValidAt(long employeeId, LocalDate date) {
+    return employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
+  }
+
+  public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate date) {
+    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(date);
+  }
+
   public Employeecontract createEmployeecontract(
       long employeeId,
       LocalDate validFrom,

@@ -2,9 +2,9 @@ package org.tb.welcome.action;
 
 import static java.lang.Boolean.TRUE;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AfterLogin;
 import org.tb.auth.AuthService;
 import org.tb.common.Warning;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.DailyReportAction;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -47,7 +47,8 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
         request.getSession().setAttribute("loginEmployees", loginEmployees);
 
         // create collection of employeecontracts
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            DateUtils.today());
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         Employeecontract employeecontract;

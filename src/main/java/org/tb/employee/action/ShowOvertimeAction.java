@@ -1,13 +1,14 @@
 package org.tb.employee.action;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.OvertimeService;
@@ -45,7 +46,8 @@ public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
     }
 
     // get valid employeecontracts
-    List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+    List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+        DateUtils.today());
     request.setAttribute("employeecontracts", employeeContracts);
 
     var report = overtimeService.createDetailedReportForEmployee(form.getEmployeecontractId());

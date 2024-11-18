@@ -4,6 +4,8 @@ import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.getYear;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -11,24 +13,22 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
+import org.tb.common.OptionItem;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.common.OptionItem;
 import org.tb.dailyreport.domain.TrainingInformation;
-import org.tb.dailyreport.persistence.TrainingDAO;
 import org.tb.dailyreport.domain.TrainingOverview;
+import org.tb.dailyreport.persistence.TrainingDAO;
 import org.tb.dailyreport.viewhelper.TrainingHelper;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.persistence.CustomerorderDAO;
 
@@ -90,7 +90,8 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverviews;
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            DateUtils.today());
         employeecontracts.removeIf(c -> c.getFreelancer()
                                         || c.getDailyWorkingTime().toMinutes() <= 0
                                         || c.getEmployeeorders() == null
@@ -141,7 +142,8 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
         request.getSession().setAttribute("showTrainingForm", trainingForm);
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            DateUtils.today());
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts that have training entitlement found - please call system administrator.");
             forward = "error";

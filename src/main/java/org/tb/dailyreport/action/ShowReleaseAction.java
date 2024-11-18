@@ -1,7 +1,13 @@
 package org.tb.dailyreport.action;
 
+import static org.tb.common.util.DateUtils.today;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
@@ -17,13 +23,6 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
-
-import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-
-import static org.tb.common.util.DateUtils.today;
 
 @Slf4j
 @Component
@@ -43,7 +42,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         boolean updateEmployee = false;
         long superId;
 
-        List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
+            today());
 
         //get a list of all supervisors 
         List<Employee> supervisors = new LinkedList<>();

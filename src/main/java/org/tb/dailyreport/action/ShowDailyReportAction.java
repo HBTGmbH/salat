@@ -9,7 +9,15 @@ import static org.tb.common.DateTimeViewHelper.getShortstringFromMonthMM;
 import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
 import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
 import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
-import static org.tb.common.util.DateUtils.*;
+import static org.tb.common.util.DateUtils.format;
+import static org.tb.common.util.DateUtils.formatDayOfMonth;
+import static org.tb.common.util.DateUtils.formatMonth;
+import static org.tb.common.util.DateUtils.formatYear;
+import static org.tb.common.util.DateUtils.getDateAsStringArray;
+import static org.tb.common.util.DateUtils.getDateFormStrings;
+import static org.tb.common.util.DateUtils.getDayString;
+import static org.tb.common.util.DateUtils.getYearString;
+import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -797,7 +805,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false);
+        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false,
+            today());
         if (employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             return "error";
