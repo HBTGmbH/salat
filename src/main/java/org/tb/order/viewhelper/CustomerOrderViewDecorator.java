@@ -3,9 +3,8 @@ package org.tb.order.viewhelper;
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
 
 import java.time.Duration;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 
 public class CustomerOrderViewDecorator extends Customerorder {
@@ -15,8 +14,8 @@ public class CustomerOrderViewDecorator extends Customerorder {
     private final Customerorder customerOrder;
     private final Duration duration;
 
-    public CustomerOrderViewDecorator(TimereportDAO timereportDAO, Customerorder customerOrder) {
-        long durationMinutes = timereportDAO.getTotalDurationMinutesForCustomerOrder(customerOrder.getId());
+    public CustomerOrderViewDecorator(TimereportService timereportService, Customerorder customerOrder) {
+        long durationMinutes = timereportService.getTotalDurationMinutesForCustomerOrder(customerOrder.getId());
         this.duration = Duration.ofMinutes(durationMinutes);
         this.customerOrder = customerOrder;
     }

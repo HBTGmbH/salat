@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.customer.Customer;
 import org.tb.customer.CustomerDAO;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -27,7 +27,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerord
 
     private final CustomerorderDAO customerorderDAO;
     private final CustomerDAO customerDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -74,7 +74,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerord
             List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
             List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
             for (Customerorder customerorder : customerOrders) {
-                CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
+                CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
                 decorators.add(decorator);
             }
             request.getSession().setAttribute("customerorders", decorators);

@@ -21,7 +21,7 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -38,7 +38,7 @@ import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
     private final CustomerorderService customerorderService;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
     private final CustomerorderDAO customerorderDAO;
 
     @Override
@@ -134,7 +134,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                     List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
                     List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
                     for (Customerorder customerorder : customerOrders) {
-                        CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
+                        CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
                         decorators.add(decorator);
                     }
                     request.getSession().setAttribute("customerorders", decorators);
@@ -292,8 +292,8 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             });
         }
 
-        List<TimereportDTO> timereportsInvalidForDates = timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(fromDate, untilDate, coId);
-        if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
+        List<TimereportDTO> timereportsInvalidForDates = timereportService.getTimereportsNotMatchingNewCustomerOrderValidity(coId, fromDate, untilDate);
+        if (!timereportsInvalidForDates.isEmpty()) {
             request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
             errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
         }

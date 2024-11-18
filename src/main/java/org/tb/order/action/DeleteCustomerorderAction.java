@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -27,7 +28,7 @@ import org.tb.order.persistence.CustomerorderDAO;
 public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomerorderForm> {
 
     private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowCustomerorderForm orderForm, HttpServletRequest request, HttpServletResponse response) {
@@ -81,7 +82,7 @@ public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomero
             List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
             List<CustomerOrderViewDecorator> decorators = new LinkedList<CustomerOrderViewDecorator>();
             for (Customerorder customerorder : customerOrders) {
-                CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportDAO, customerorder);
+                CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
                 decorators.add(decorator);
             }
             request.getSession().setAttribute("customerorders", decorators);

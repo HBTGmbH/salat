@@ -255,6 +255,50 @@ public class TimereportService {
     employeecontractDAO.save(employeecontract);
   }
 
+  public List<TimereportDTO> getTimereportsNotMatchingNewCustomerOrderValidity(long customerOrderId, LocalDate newBegin, LocalDate newEnd) {
+    return timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(newBegin, newEnd, customerOrderId);
+  }
+
+  public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {
+    return timereportRepository.getReportedMinutesForSuborderAndEmployeeContract(soId, ecId).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForSuborders(List<Long> ids) {
+    if (ids == null || ids.isEmpty()) return 0;
+    return timereportRepository.getReportedMinutesForSuborders(ids).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes within a range of time WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForSuborder(long soId, LocalDate fromDate, LocalDate untilDate) {
+    return timereportRepository.getReportedMinutesForSuborderAndBetween(soId, fromDate, untilDate).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH consideration of the hours.
+   */
+  public long getTotalDurationMinutesForCustomerOrder(long coId) {
+    return timereportRepository.getReportedMinutesForCustomerorder(coId).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForEmployeeOrder(long employeeorderId, LocalDate fromDate, LocalDate untilDate) {
+    return timereportRepository.getReportedMinutesForEmployeeorderAndBetween(employeeorderId, fromDate, untilDate).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
+    return timereportRepository.getReportedMinutesForEmployeeorder(eoId).orElse(0L);
+  }
+
   @VisibleForTesting
   protected List<ServiceFeedbackMessage> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
