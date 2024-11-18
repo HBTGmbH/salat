@@ -57,9 +57,8 @@ public class AuthService {
     cacheExpiryMillis = salatProperties.getAuthService().getCacheExpiry().toMillis();
   }
 
-  public AuthorizedUser initAuthorizedUser(Principal principal, AuthorizedUser authorizedUser) {
+  public void initAuthorizedUser(Principal principal, AuthorizedUser authorizedUser) {
     employeeRepository.findBySign(principal.getName()).ifPresent(authorizedUser::init);
-    return authorizedUser;
   }
 
   public List<Employee> getLoginEmployees() {
