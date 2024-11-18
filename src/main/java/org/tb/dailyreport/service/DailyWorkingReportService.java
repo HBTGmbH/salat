@@ -96,12 +96,12 @@ public class DailyWorkingReportService {
     private void doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert) {
         var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
         if (employeeOrder == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + employeeOrderId);
+            throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
         }
 
         var employeeContract = employeeOrder.getEmployeecontract();
         if (employeeContract == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find employeecontract for order with id " + employeeOrderId);
+            throw new InvalidDataException(TR_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 
         var existingBookings = timereportDAO.getTimereportsByDateAndEmployeeOrderId(day, employeeOrderId)
