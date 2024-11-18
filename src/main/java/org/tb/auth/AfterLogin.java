@@ -2,11 +2,11 @@ package org.tb.auth;
 
 import static org.tb.common.util.UrlUtils.absoluteUrl;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
@@ -16,7 +16,7 @@ import org.tb.common.Warning;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.VacationViewer;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.OvertimeService;
@@ -28,9 +28,10 @@ import org.tb.order.persistence.EmployeeorderDAO;
 public class AfterLogin {
 
     private final EmployeeorderDAO employeeorderDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
     private final OvertimeService overtimeService;
     private final ServletContext servletContext;
+    private final AuthorizedUser authorizedUser;
 
     public List<Warning> createWarnings(Employeecontract employeecontract, Employeecontract loginEmployeeContract,
         MessageResources resources, Locale locale) {
@@ -38,7 +39,7 @@ public class AfterLogin {
         List<Warning> warnings = new ArrayList<>();
 
         // timereport warning
-        List<TimereportDTO> timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontract);
+        List<TimereportDTO> timereports = timereportService.getTimereportsOutOfRangeForEmployeeContract(employeecontract.getId());
         for (TimereportDTO timereport : timereports) {
             Warning warning = new Warning();
             warning.setSort(resources.getMessage(locale, "main.info.warning.timereportnotinrange"));
@@ -47,7 +48,7 @@ public class AfterLogin {
         }
 
         // timereport warning 2
-        timereports = timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontract);
+        timereports = timereportService.getTimereportsOutOfRangeForEmployeeOrder(employeecontract.getId());
         for (TimereportDTO timereport : timereports) {
             Warning warning = new Warning();
             warning.setSort(resources.getMessage(locale, "main.info.warning.timereportnotinrangeforeo"));
@@ -56,7 +57,7 @@ public class AfterLogin {
         }
 
         // timereport warning 3: no duration
-        timereports = timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
+        timereports = timereportService.getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
         for (TimereportDTO timereport : timereports) {
             Warning warning = new Warning();
             warning.setSort(resources.getMessage(locale, "main.info.warning.timereport.noduration"));
@@ -108,6 +109,6 @@ public class AfterLogin {
 
         //vacation v2 extracted to VacationViewer:
         VacationViewer vw = new VacationViewer(employeecontract);
-        vw.computeVacations(session, employeecontract, employeeorderDAO, timereportDAO);
+        vw.computeVacations(session, employeecontract, employeeorderDAO, timereportService);
     }
 }

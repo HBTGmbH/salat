@@ -6,24 +6,23 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.GlobalConstants.YESNO_YES;
 
+import jakarta.persistence.criteria.Order;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import jakarta.persistence.criteria.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AccessLevel;
 import org.tb.auth.AuthService;
 import org.tb.dailyreport.domain.Referenceday_;
+import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Timereport_;
-import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
-import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Customerorder_;
@@ -101,8 +100,8 @@ public class TimereportDAO {
      *
      * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
      */
-    public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeContract(Employeecontract employeecontract) {
-        return toDaoList(timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingEmployeecontractValidity(employeecontract.getId()));
+    public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeContract(long employeecontractId) {
+        return toDaoList(timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingEmployeecontractValidity(employeecontractId));
     }
 
     /**
@@ -112,19 +111,19 @@ public class TimereportDAO {
      *
      * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
      */
-    public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeOrder(Employeecontract employeecontract) {
-        return toDaoList(timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingEmployeeorderValidity(employeecontract.getId()));
+    public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeOrder(long employeecontractId) {
+        return toDaoList(timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingEmployeeorderValidity(employeecontractId));
     }
 
     /**
      * Gets a list of all {@link TimereportDTO}s, that have no duration and are associated to the given ecId.
      */
-    public List<TimereportDTO> getTimereportsWithoutDurationForEmployeeContractId(long ecId, LocalDate releaseDate) {
+    public List<TimereportDTO> getTimereportsWithoutDurationForEmployeeContractId(long employeecontractId, LocalDate releaseDate) {
         if(releaseDate == null) {
             releaseDate = LocalDate.of(2000, 1, 1); // HACK to mimic "take everything"
         }
         var timereports = timereportRepository.findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(
-            ecId,
+            employeecontractId,
             releaseDate
         );
         return toDaoList(timereports.stream().collect(Collectors.toList()));

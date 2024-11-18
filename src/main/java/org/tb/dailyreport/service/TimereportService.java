@@ -349,6 +349,35 @@ public class TimereportService {
     return timereportRepository.getReportedMinutesForEmployeeorder(eoId).orElse(0L);
   }
 
+  /**
+   * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
+   * 1) associated to the given employee contract
+   * 2) refdate out of range of the employee contract
+   *
+   * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
+   */
+  public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeContract(long employeecontractId) {
+    return timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontractId);
+  }
+
+  /**
+   * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
+   * 1) associated to the given employee contract
+   * 2) refdate out of range of the associated employee order
+   *
+   * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
+   */
+  public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeOrder(long employeecontractId) {
+    return timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontractId);
+  }
+
+  /**
+   * Gets a list of all {@link TimereportDTO}s, that have no duration and are associated to the given ecId.
+   */
+  public List<TimereportDTO> getTimereportsWithoutDurationForEmployeeContractId(long employeecontractId, LocalDate releaseDate) {
+    return timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontractId, releaseDate);
+  }
+
   @VisibleForTesting
   protected List<ServiceFeedbackMessage> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();

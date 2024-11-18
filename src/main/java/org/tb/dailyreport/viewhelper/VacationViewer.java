@@ -5,6 +5,7 @@ import static java.util.Locale.GERMAN;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
+import jakarta.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -12,9 +13,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.servlet.http.HttpSession;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
@@ -112,7 +112,7 @@ public class VacationViewer implements Serializable {
      * that is valid at the date of request with a sum of all durations booked for this suborder for this employee.
      * Saves the Vacations-List as an attribute in the Request.
      */
-    public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportDAO timereportDAO) {
+    public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportService timereportService) {
 
         LocalDate today = today();
 
@@ -127,7 +127,7 @@ public class VacationViewer implements Serializable {
                 vacationView.setBudget(employeeorder.getDebithours());
             }
 
-            int vacationMinutes = (int) timereportDAO.getTotalDurationMinutesForSuborderAndEmployeeContract(employeeorder.getSuborder().getId(), employeecontract.getId());
+            int vacationMinutes = (int) timereportService.getTotalDurationMinutesForSuborderAndEmployeeContract(employeeorder.getSuborder().getId(), employeecontract.getId());
 
             vacationView.addVacationMinutes(vacationMinutes);
             vacations.add(vacationView);
