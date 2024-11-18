@@ -14,11 +14,9 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayRepository;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
 import org.tb.employee.domain.Employeecontract;
@@ -35,7 +33,6 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
     private final MatrixHelper matrixHelper;
     private final WorkingdayService workingdayService;
     private final TimereportDAO timereportDAO;
-    private final WorkingdayRepository workingdayRepository;
     private final AuthorizedUser authorizedUser;
 
     @Override
@@ -85,9 +82,9 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
                     if(isRegularWorkingday) {
                         var hasBookings = !timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, day).isEmpty();
                         if(!hasBookings) {
-                            var present = workingdayRepository.findByRefdayAndEmployeecontractId(day, employeecontractId).isPresent();
-                            if(!present) {
-                                var workingday = new Workingday();
+                            var workingday = workingdayService.getWorkingday(employeecontractId, day);
+                            if(workingday == null) {
+                                workingday = new Workingday();
                                 workingday.setEmployeecontract(employeecontract);
                                 workingday.setRefday(day);
                                 workingday.setType(WorkingDayType.NOT_WORKED);

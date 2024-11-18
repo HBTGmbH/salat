@@ -32,6 +32,10 @@ public class WorkingdayService {
   private final TimereportDAO timereportDAO;
   private final AuthorizedUser authorizedUser;
 
+  public Workingday getWorkingday(long employeecontractId, LocalDate date) {
+    return workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId).orElse(null);
+  }
+
   public void upsertWorkingday(Workingday workingday) {
     var employeeId = workingday.getEmployeecontract().getEmployee().getId();
     if(!authorizedUser.isManager() && !employeeId.equals(authorizedUser.getEmployeeId())) {
