@@ -17,7 +17,7 @@ import org.tb.common.struts.LoginRequiredAction;
 @RequiredArgsConstructor
 public class ShowCustomerAction extends LoginRequiredAction<ShowCustomerForm> {
 
-    private final CustomerDAO customerDAO;
+    private final CustomerService customerService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -39,7 +39,7 @@ public class ShowCustomerAction extends LoginRequiredAction<ShowCustomerForm> {
             }
         }
 
-        request.getSession().setAttribute("customers", customerDAO.getCustomersByFilter(filter));
+        request.getSession().setAttribute("customers", customerService.list(filter));
 
 
         if (request.getParameter("task") != null) {

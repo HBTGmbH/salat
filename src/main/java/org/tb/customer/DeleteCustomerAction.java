@@ -7,9 +7,9 @@ import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.struts.LoginRequiredAction;
 
 /**
@@ -21,7 +21,7 @@ import org.tb.common.struts.LoginRequiredAction;
 @RequiredArgsConstructor
 public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
 
-    private final CustomerDAO customerDAO;
+    private final CustomerService customerService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -32,15 +32,16 @@ public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
 
         ActionMessages errors = new ActionMessages();
         long cuId = Long.parseLong(request.getParameter("cuId"));
-        Customer cu = customerDAO.getCustomerById(cuId);
+        CustomerDTO cu = customerService.get(cuId);
         if (cu == null)
             return mapping.getInputForward();
 
 
-        boolean deleted = customerDAO.deleteCustomerById(cuId);
-
-        if (!deleted) {
-            errors.add(null, new ActionMessage("form.customer.error.hascustomerorders"));
+        try {
+            customerService.delete(cuId);
+        } catch(ErrorCodeException e) {
+            addToMessages(request, e.getErrorCode());
+            return mapping.getInputForward();
         }
 
         saveErrors(request, errors);
@@ -51,7 +52,7 @@ public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
             filter = (String) request.getSession().getAttribute("customerFilter");
         }
 
-        request.getSession().setAttribute("customers", customerDAO.getCustomersByFilter(filter));
+        request.getSession().setAttribute("customers", customerService.list(filter));
 
         // back to customer display jsp
         return mapping.getInputForward();

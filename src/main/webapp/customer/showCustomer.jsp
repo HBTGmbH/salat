@@ -119,20 +119,20 @@
 				<tr>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.created" />:</td>
-					<td class="info"><c:out value="${customer.created}" /></td>
+					<td class="info"><c:out value="${customer.createdAt}" /></td>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
 					<td class="info" valign="top"><c:out
-						value="${customer.createdby}" /></td>
+						value="${customer.createdBy}" /></td>
 				</tr>
 				<tr>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.edited" />:</td>
-					<td class="info"><c:out value="${customer.lastupdate}" /></td>
+					<td class="info"><c:out value="${customer.updatedAt}" /></td>
 					<td class="info" valign="top"><bean:message
 						key="main.timereport.tooltip.by" /></td>
 					<td class="info" valign="top"><c:out
-						value="${customer.lastupdatedby}" /></td>
+						value="${customer.updatedBy}" /></td>
 				</tr>
 			</table>
 
@@ -142,7 +142,7 @@
 				onMouseOut="hideWMTT()" width="12px" height="12px"
 				src="<c:url value="/images/info_button.gif"/>" />
 			</td>
-		<td><c:out value="${customer.shortname}" /></td>
+		<td><c:out value="${customer.shortName}" /></td>
 		<td><c:out value="${customer.name}" /></td>
 		<td><c:out value="${customer.address}" /></td>
 

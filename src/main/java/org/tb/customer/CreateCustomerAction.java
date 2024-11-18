@@ -18,13 +18,13 @@ import org.tb.common.struts.LoginRequiredAction;
 @RequiredArgsConstructor
 public class CreateCustomerAction extends LoginRequiredAction<AddCustomerForm> {
 
-    private final CustomerDAO customerDAO;
+    private final CustomerService customerService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerForm customerForm, HttpServletRequest request, HttpServletResponse response) {
 
         // get list of existing customers
-        List<Customer> customers = customerDAO.getCustomers();
+        List<CustomerDTO> customers = customerService.list();
         request.getSession().setAttribute("customers", customers);
 
         // init form entries

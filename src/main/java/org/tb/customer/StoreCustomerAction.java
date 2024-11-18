@@ -21,7 +21,7 @@ import org.tb.common.struts.LoginRequiredAction;
 @RequiredArgsConstructor
 public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
 
-    private final CustomerDAO customerDAO;
+    private final CustomerService customerService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerForm cuForm, HttpServletRequest request, HttpServletResponse response) {
@@ -29,31 +29,26 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
                 (request.getParameter("task").equals("save")) ||
                 (request.getParameter("cuId") != null)) {
 
-            // 'main' task - prepare everything to store the customer.
-            // I.e., copy properties from the form into the customer before saving.
-            long cuId;
-            Customer cu;
-            if (request.getSession().getAttribute("cuId") != null) {
-                // edited customer
-                cuId = Long.parseLong(request.getSession().getAttribute("cuId").toString());
-                cu = customerDAO.getCustomerById(cuId);
-            } else {
-                // new customer
-                cu = new Customer();
-            }
-
             ActionMessages errorMessages = validateFormData(request, cuForm);
-            if (errorMessages.size() > 0) {
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
-            cu.setName(cuForm.getName());
-            cu.setShortname(cuForm.getShortname());
-            cu.setAddress(cuForm.getAddress());
+            // 'main' task - prepare everything to store the customer.
+            // I.e., copy properties from the form into the customer before saving.
+            CustomerDTO.CustomerDTOBuilder builder = CustomerDTO.builder();
+            if (request.getSession().getAttribute("cuId") != null) {
+                // edited customer
+                long cuId = Long.parseLong(request.getSession().getAttribute("cuId").toString());
+                builder.id(cuId);
+            }
 
-            customerDAO.save(cu);
+            builder.name(cuForm.getName())
+                .shortName(cuForm.getShortname())
+                .address(cuForm.getAddress());
 
-//				request.getSession().setAttribute("customers", customerDAO.getCustomers());
+            customerService.save(builder.build());
+
             request.getSession().removeAttribute("cuId");
 
             boolean addMoreCustomers = Boolean.parseBoolean(request.getParameter("continue"));
@@ -64,7 +59,7 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
                     filter = (String) request.getSession().getAttribute("customerFilter");
                 }
 
-                request.getSession().setAttribute("customers", customerDAO.getCustomersByFilter(filter));
+                request.getSession().setAttribute("customers", customerService.list(filter));
 
                 return mapping.findForward("success");
             } else {
@@ -107,9 +102,10 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
         if (errors == null) errors = new ActionMessages();
 
         // for a new customer, check if name already exists
+        // TODO move to service!!!
         if (request.getSession().getAttribute("cuId") == null) {
-            List<Customer> allCustomers = customerDAO.getCustomers();
-            for (Customer cu : allCustomers) {
+            List<CustomerDTO> allCustomers = customerService.list();
+            for (CustomerDTO cu : allCustomers) {
                 if (cu.getName().equalsIgnoreCase(cuForm.getName())) {
                     errors.add("name", new ActionMessage("form.customer.error.name.alreadyexists"));
                     break;

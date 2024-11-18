@@ -48,6 +48,9 @@ public enum ErrorCode {
   WD_BEGIN_TIME_MISSING("WD-0008", "the beginning of the working day was not entered!"),
   WD_NO_TIMEREPORT("WD-0009", "no time report found for workday."),
   WD_LENGTH_TOO_LONG("WD-0010", "the worked time for the working day exceeds 10 hours!"),
+  CU_NOT_FOUND("CU-0001", "the customer was not found!"),
+  CU_CUSTOMER_ORDERS_EXIST("CU-0002", "there are customer orders for this customer. Deletion is not possible!"),
+  AA_NEEDS_MANAGER("AA-0001", "not authorized. Manager level required!")
   ;
 
   private final String code;
