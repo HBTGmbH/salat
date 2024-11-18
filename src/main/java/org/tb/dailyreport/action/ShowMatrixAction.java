@@ -104,7 +104,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             }
         }
 
-        if(task == null && reportForm.getImportFile() != null) {
+        if("importCsv".equals(task) && reportForm.getImportFile() != null) {
             var reports = dailyWorkingReportCsvConverter.read(reportForm.getImportFile().getInputStream());
             if("replace".equals(reportForm.getImportMode())){
                 dailyWorkingReportService.updateReports(reports);
@@ -120,27 +120,27 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         }
 
         // call on MatrixView with any parameter to forward or go back
-        if (task != null) {
+        if (task != null && !"importCsv".equals(task)) {
             // just go back to main menu
             return mapping.findForward(task.equalsIgnoreCase("back") ? "backtomenu" : "success");
-        } else {
-            reportForm.setInvoice(true);
-            reportForm.setNonInvoice(true);
-            reportForm.setStartAndBreakTime(true);
-            // call on MatrixView without a parameter
-
-            // no special task - prepare everything to show reports
-            EmployeeViewHelper eh = new EmployeeViewHelper();
-            Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
-
-            Map<String, Object> results = matrixHelper.handleNoArgs(
-                    reportForm,
-                    ec,
-                    (Employeecontract) request.getSession().getAttribute("currentEmployeeContract"),
-                    (Long) request.getSession().getAttribute("currentEmployeeId"),
-                    (String) request.getSession().getAttribute("currentMonth"));
-            return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
+
+        reportForm.setInvoice(true);
+        reportForm.setNonInvoice(true);
+        reportForm.setStartAndBreakTime(true);
+        // call on MatrixView without a parameter
+
+        // no special task - prepare everything to show reports
+        EmployeeViewHelper eh = new EmployeeViewHelper();
+        Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
+
+        Map<String, Object> results = matrixHelper.handleNoArgs(
+                reportForm,
+                ec,
+                (Employeecontract) request.getSession().getAttribute("currentEmployeeContract"),
+                (Long) request.getSession().getAttribute("currentEmployeeId"),
+                (String) request.getSession().getAttribute("currentMonth"));
+        return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
     }
 
     private ActionForward finishHandling(Map<String, Object> results, HttpServletRequest request, MatrixHelper mh, ActionMapping mapping,

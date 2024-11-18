@@ -59,6 +59,7 @@
 			<span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.csvimport.dialog.title.text" /><br></span>
 			<div style="margin-top: 10px;">
 				<input type="file" name="importFile" accept="text/csv" />
+				<input type="hidden" name="task" value="importCsv" />
 			</div>
 			<div style="margin-top: 10px;">
 				<fieldset>
