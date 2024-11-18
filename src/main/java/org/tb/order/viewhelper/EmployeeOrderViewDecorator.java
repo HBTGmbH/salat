@@ -3,7 +3,7 @@ package org.tb.order.viewhelper;
 import java.time.Duration;
 import lombok.experimental.Delegate;
 import org.tb.common.GlobalConstants;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Employeeorder;
 
 public class EmployeeOrderViewDecorator extends Employeeorder {
@@ -14,9 +14,9 @@ public class EmployeeOrderViewDecorator extends Employeeorder {
 
     private final Duration duration;
 
-    public EmployeeOrderViewDecorator(TimereportDAO timereportDAO, Employeeorder employeeOrder) {
+    public EmployeeOrderViewDecorator(TimereportService timereportService, Employeeorder employeeOrder) {
         this.employeeOrder = employeeOrder;
-        long durationMinutes = timereportDAO.getTotalDurationMinutesForEmployeeOrder(employeeOrder.getId());
+        long durationMinutes = timereportService.getTotalDurationMinutesForEmployeeOrder(employeeOrder.getId());
         this.duration = Duration.ofMinutes(durationMinutes);
     }
 

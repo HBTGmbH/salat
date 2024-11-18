@@ -1,20 +1,90 @@
 package org.tb.dailyreport.service;
 
+import static java.lang.Boolean.TRUE;
+import static java.time.DayOfWeek.SATURDAY;
+import static java.time.DayOfWeek.SUNDAY;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingLong;
+import static java.util.stream.Collectors.toMap;
+import static org.tb.common.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
+import static org.tb.common.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
+import static org.tb.common.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
+import static org.tb.common.ErrorCode.TR_DURATION_HOURS_INVALID;
+import static org.tb.common.ErrorCode.TR_DURATION_INVALID;
+import static org.tb.common.ErrorCode.TR_DURATION_MINUTES_INVALID;
+import static org.tb.common.ErrorCode.TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE;
+import static org.tb.common.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
+import static org.tb.common.ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE;
+import static org.tb.common.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
+import static org.tb.common.ErrorCode.TR_MONTH_BUDGET_EXCEEDED;
+import static org.tb.common.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
+import static org.tb.common.ErrorCode.TR_REFERENCE_DAY_NULL;
+import static org.tb.common.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
+import static org.tb.common.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
+import static org.tb.common.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
+import static org.tb.common.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
+import static org.tb.common.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
+import static org.tb.common.ErrorCode.TR_WORKING_DAY_NOT_WORKED;
+import static org.tb.common.ErrorCode.TR_WORKING_DAY_START_NULL;
+import static org.tb.common.ErrorCode.TR_YEAR_BUDGET_EXCEEDED;
+import static org.tb.common.ErrorCode.TR_YEAR_OUT_OF_RANGE;
+import static org.tb.common.ErrorCode.WD_BEGIN_TIME_MISSING;
+import static org.tb.common.ErrorCode.WD_BREAK_TOO_SHORT_6;
+import static org.tb.common.ErrorCode.WD_BREAK_TOO_SHORT_9;
+import static org.tb.common.ErrorCode.WD_LENGTH_TOO_LONG;
+import static org.tb.common.ErrorCode.WD_NO_TIMEREPORT;
+import static org.tb.common.GlobalConstants.BREAK_MINUTES_AFTER_NINE_HOURS;
+import static org.tb.common.GlobalConstants.BREAK_MINUTES_AFTER_SIX_HOURS;
+import static org.tb.common.GlobalConstants.COMMENT_MAX_LENGTH;
+import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_MONTH;
+import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
+import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_YEAR;
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
+import static org.tb.common.GlobalConstants.REST_PERIOD_IN_MINUTES;
+import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.common.GlobalConstants.WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
+import static org.tb.common.util.DateUtils.getFirstDay;
+import static org.tb.common.util.DateUtils.getLastDay;
+import static org.tb.common.util.DateUtils.getYear;
+import static org.tb.common.util.DateUtils.getYearMonth;
+import static org.tb.common.util.DateUtils.min;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
+
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.BusinessRuleChecks;
 import org.tb.common.DataValidation;
 import org.tb.common.ErrorCode;
 import org.tb.common.GlobalConstants;
+import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
@@ -36,34 +106,6 @@ import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.EmployeeorderDAO;
-
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Year;
-import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static java.lang.Boolean.TRUE;
-import static java.time.DayOfWeek.SATURDAY;
-import static java.time.DayOfWeek.SUNDAY;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingLong;
-import static java.util.stream.Collectors.toMap;
-import static org.tb.common.ErrorCode.*;
-import static org.tb.common.GlobalConstants.*;
-import static org.tb.common.util.DateUtils.*;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 @Slf4j
 @Service
@@ -257,6 +299,10 @@ public class TimereportService {
 
   public List<TimereportDTO> getTimereportsNotMatchingNewCustomerOrderValidity(long customerOrderId, LocalDate newBegin, LocalDate newEnd) {
     return timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(newBegin, newEnd, customerOrderId);
+  }
+
+  public List<TimereportDTO> getTimereportsNotMatchingNewEmployeeOrderValidity(long employeeContractId, LocalDate newBegin, LocalDate newEnd) {
+    return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(newBegin, newEnd, employeeContractId);
   }
 
   public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {

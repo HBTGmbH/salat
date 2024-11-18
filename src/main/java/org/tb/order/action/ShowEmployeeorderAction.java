@@ -8,7 +8,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -31,7 +31,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
     private final SuborderDAO suborderDAO;
     private final EmployeecontractDAO employeecontractDAO;
     private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -74,8 +74,12 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                     // 3) begin after end now?
                     if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
                         // 4) timereports out of range?
-                        List<TimereportDTO> timereportsInvalidForDates = timereportDAO.
-                                getTimereportsByEmployeeorderIdInvalidForDates(employeeorder.getFromDate(), employeeorder.getUntilDate(), employeeorder.getId());
+                        List<TimereportDTO> timereportsInvalidForDates =
+                            timereportService.getTimereportsNotMatchingNewEmployeeOrderValidity(
+                                employeeorder.getId(),
+                                employeeorder.getFromDate(),
+                                employeeorder.getUntilDate()
+                            );
                         if (timereportsInvalidForDates == null || timereportsInvalidForDates.isEmpty()) {
                             employeeorderDAO.save(employeeorder);
                         }
@@ -102,12 +106,12 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
 
         boolean employeeIsResponsible = false;
 
-        if (orders != null && orders.size() > 0) {
+        if (orders != null && !orders.isEmpty()) {
             employeeIsResponsible = true;
         }
         request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
 
-        refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportDAO, suborderDAO, customerorderDAO, !orderForm.getShow());
+        refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportService, suborderDAO, customerorderDAO, !orderForm.getShow());
 
         return mapping.findForward("success");
 

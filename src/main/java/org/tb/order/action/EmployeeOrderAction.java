@@ -2,21 +2,21 @@ package org.tb.order.action;
 
 import static org.tb.common.util.DateUtils.format;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
-import jakarta.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionForm;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 
 public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
@@ -41,7 +41,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
 
     protected void refreshEmployeeOrders(HttpServletRequest request,
                                          ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO,
-                                         EmployeecontractDAO employeecontractDAO, TimereportDAO timereportDAO) {
+                                         EmployeecontractDAO employeecontractDAO, TimereportService timereportService) {
 
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
@@ -112,7 +112,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
                 List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
 
                 for (Employeeorder employeeorder : employeeOrders) {
-                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportService, employeeorder);
                     decorators.add(decorator);
                 }
                 request.getSession().setAttribute("employeeorders", decorators);
@@ -134,7 +134,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
 
     protected void refreshEmployeeOrdersAndSuborders(HttpServletRequest request,
                                                      ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO,
-                                                     EmployeecontractDAO employeecontractDAO, TimereportDAO timereportDAO, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO,
+                                                     EmployeecontractDAO employeecontractDAO, TimereportService timereportService, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO,
                                                      boolean onlyValid) {
 
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
@@ -233,7 +233,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
                 List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
 
                 for (Employeeorder employeeorder : employeeOrders) {
-                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportService, employeeorder);
                     decorators.add(decorator);
                 }
                 request.getSession().setAttribute("employeeorders", decorators);

@@ -8,6 +8,8 @@ import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Iterator;
@@ -15,28 +17,25 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 
 /**
  * action class for storing an employee order permanently
@@ -51,7 +50,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
     private final EmployeeorderDAO employeeorderDAO;
     private final CustomerorderDAO customerorderDAO;
     private final SuborderDAO suborderDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -262,7 +261,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 List<EmployeeOrderViewDecorator> decorators = new LinkedList<>();
 
                 for (Employeeorder employeeorder : employeeOrders) {
-                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, employeeorder);
+                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportService, employeeorder);
                     decorators.add(decorator);
                 }
                 request.getSession().setAttribute("employeeorders", decorators);
@@ -430,7 +429,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             }
         }
         // check if dates fit to employee contract and suborder
-        // TODO
         if (validFromDate != null) {
             Employeecontract ec = employeecontractDAO.getEmployeeContractById(eoForm.getEmployeeContractId());
             Suborder suborder = suborderDAO.getSuborderById(eoForm.getSuborderId());
@@ -452,8 +450,8 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
         if (!employeeorder.isNew() && validFromDate != null) {
             // check, if dates fit to existing timereports
-            List<TimereportDTO> timereportsInvalidForDates = timereportDAO
-                    .getTimereportsByEmployeeorderIdInvalidForDates(validFromDate, validUntilDate, employeeorder.getId());
+            List<TimereportDTO> timereportsInvalidForDates = timereportService
+                    .getTimereportsNotMatchingNewEmployeeOrderValidity(employeeorder.getId(), validFromDate, validUntilDate);
             if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
                 request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
                 errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));

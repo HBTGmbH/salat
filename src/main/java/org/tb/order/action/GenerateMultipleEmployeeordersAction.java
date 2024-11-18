@@ -1,8 +1,8 @@
 package org.tb.order.action;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -11,17 +11,17 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 
 /**
  * Class for generating multiple Employeeorders for one suborder at once
@@ -36,7 +36,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
     private final CustomerorderDAO customerorderDAO;
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeorderDAO employeeorderDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -119,7 +119,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                         if (currentEmployeeId.equals(ec.getEmployee().getId())) {
                             @SuppressWarnings("unchecked")
                             List<EmployeeOrderViewDecorator> decorators = (List<EmployeeOrderViewDecorator>) request.getSession().getAttribute("employeeorders");
-                            EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportDAO, eo);
+                            EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportService, eo);
                             decorators.add(decorator);
                             request.getSession().setAttribute("employeeorders", decorators);
                         }
