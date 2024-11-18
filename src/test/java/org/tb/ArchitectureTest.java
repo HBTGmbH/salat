@@ -1,7 +1,9 @@
 package org.tb;
 
+import static com.tngtech.archunit.lang.Priority.HIGH;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.priority;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -10,6 +12,7 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.Priority;
 import jakarta.persistence.Entity;
 import java.util.List;
 import java.util.Set;
@@ -34,7 +37,7 @@ public class ArchitectureTest {
 
   @Test
   public void accessDataAccessObjectsOnlyInServices() {
-    ArchRule rule = noClasses()
+    ArchRule rule = priority(HIGH).noClasses()
         .that().areNotAnnotatedWith(Service.class).and().haveNameNotMatching(".*DAO")
         .should().accessClassesThat().haveNameMatching(".*DAO");
     rule.check(importedClasses);
@@ -42,7 +45,7 @@ public class ArchitectureTest {
 
   @Test
   public void accessRepositoriesOnlyInServicesOrDAOs() {
-    ArchRule rule = noClasses()
+    ArchRule rule = priority(HIGH).noClasses()
         .that().areNotAnnotatedWith(Service.class).and().haveNameNotMatching(".*DAO")
         .should().accessClassesThat().areAnnotatedWith(Repository.class);
     rule.check(importedClasses);
@@ -50,8 +53,11 @@ public class ArchitectureTest {
 
   @Test
   public void accessEntitiesOnlyInServicesOrDAOs() {
-    ArchRule rule = noClasses()
-        .that().areNotAnnotatedWith(Entity.class).and().areNotAnnotatedWith(Service.class).and().haveNameNotMatching(".*DAO")
+    ArchRule rule = priority(HIGH).noClasses()
+        .that().areNotAnnotatedWith(Entity.class)
+        .and().areNotAnnotatedWith(Repository.class)
+        .and().areNotAnnotatedWith(Service.class)
+        .and().haveNameNotMatching(".*DAO")
         .should().accessClassesThat().areAnnotatedWith(Entity.class);
     rule.check(importedClasses);
   }
@@ -79,7 +85,7 @@ public class ArchitectureTest {
             .isPresent();
       }
     };
-    ArchRule rule = methods()
+    ArchRule rule = priority(HIGH).methods()
         .that().areDeclaredInClassesThat().areAnnotatedWith(Service.class).and().areNotPrivate()
         .should().notHaveRawParameterTypes(entityTypeParam).andShould().notHaveRawReturnType(entityReturnType);
     rule.check(importedClasses);
