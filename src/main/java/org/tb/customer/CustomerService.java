@@ -45,20 +45,20 @@ public class CustomerService {
     }
   }
 
-  public Customer save(CustomerDTO customerDTO) {
+  public CustomerDTO save(CustomerDTO customerDTO) {
     if(!authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);
     }
     if(customerDTO.isNew()) {
       Customer customer = new Customer();
       customerDTO.copyTo(customer);
-      return customerRepository.save(customer);
+      return CustomerDTO.from(customerRepository.save(customer));
     }
     Customer customer = customerRepository
         .findById(customerDTO.getId())
         .orElseThrow(() -> new InvalidDataException(CU_NOT_FOUND));
     customerDTO.copyTo(customer);
-    return customerRepository.save(customer);
+    return CustomerDTO.from(customerRepository.save(customer));
   }
 
   public void delete(long id) {
