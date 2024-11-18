@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthViewHelper;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.filter.AuthenticationFilter;
@@ -21,7 +22,7 @@ public class HttpFilterConfiguration {
 
     private final AuthViewHelper authViewHelper;
     private final AuthorizedUser authorizedUser;
-    private final EmployeeRepository employeeRepository;
+    private final AuthService authService;
     private final ResourceUrlProvider resourceUrlProvider;
 
     @Bean
@@ -64,7 +65,7 @@ public class HttpFilterConfiguration {
     public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
         var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
         registrationBean.setOrder(101);
-        registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, employeeRepository));
+        registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, authService));
         registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
         return registrationBean;
     }

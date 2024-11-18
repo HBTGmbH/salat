@@ -16,6 +16,7 @@ import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.annotation.PostConstruct;
+import java.security.Principal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -54,6 +55,11 @@ public class AuthService {
   @PostConstruct
   public void init() {
     cacheExpiryMillis = salatProperties.getAuthService().getCacheExpiry().toMillis();
+  }
+
+  public AuthorizedUser initAuthorizedUser(Principal principal, AuthorizedUser authorizedUser) {
+    employeeRepository.findBySign(principal.getName()).ifPresent(authorizedUser::init);
+    return authorizedUser;
   }
 
   public List<Employee> getLoginEmployees() {
