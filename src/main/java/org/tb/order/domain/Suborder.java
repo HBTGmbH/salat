@@ -1,21 +1,23 @@
 package org.tb.order.domain;
 
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,11 +30,7 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.persistence.SuborderDAO;
-
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 @Getter
 @Setter
@@ -273,32 +271,6 @@ public class Suborder extends AuditedEntity implements Serializable {
 
         /* return result */
         return allChildren;
-    }
-
-    /**
-     * Gets all {@link Timereport}s associated to the {@link Suborder} or his children, that are invalid for the given dates.
-     */
-    public List<TimereportDTO> getAllTimeReportsInvalidForDates(LocalDate begin, LocalDate end, TimereportDAO timereportDAO) {
-        /* build up result list */
-        final List<TimereportDTO> allInvalidTimeReports = new LinkedList<>();
-        final LocalDate visitorBeginDate = begin;
-        final LocalDate visitorEndDate = end;
-        final TimereportDAO visitorTimereportDAO = timereportDAO;
-
-        /* create visitor to collect suborders */
-        SuborderVisitor allInvalidTimeReportsCollector = suborder -> allInvalidTimeReports.addAll(
-            visitorTimereportDAO.getTimereportsBySuborderIdInvalidForDates(
-                visitorBeginDate,
-                visitorEndDate,
-                suborder.getId()
-            )
-        );
-
-        /* start visiting */
-        acceptVisitor(allInvalidTimeReportsCollector);
-
-        /* return result */
-        return allInvalidTimeReports;
     }
 
     /**

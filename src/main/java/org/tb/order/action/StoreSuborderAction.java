@@ -8,14 +8,13 @@ import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.text.DecimalFormat;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -24,20 +23,16 @@ import org.apache.struts.action.ActionMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.tb.common.BusinessRuleChecks;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.SuborderViewDecorator;
@@ -54,7 +49,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
     private final CustomerorderDAO customerorderDAO;
     private final SuborderDAO suborderDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
     private final SuborderService suborderService;
 
     @Override
@@ -475,16 +470,15 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         // check, if dates fit to existing timereports
-        List<TimereportDTO> timereportsInvalidForDates;
+        request.getSession().removeAttribute("timereportsOutOfRange");
         if (suborderId != 0l) {
-            Suborder suborder = suborderDAO.getSuborderById(suborderId);
-            timereportsInvalidForDates = suborder.getAllTimeReportsInvalidForDates(suborderFromDate, suborderUntilDate, timereportDAO);
-        } else {
-            timereportsInvalidForDates = timereportDAO.getTimereportsBySuborderIdInvalidForDates(suborderFromDate, suborderUntilDate, suborderId);
-        }
-        if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
-            request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
-            errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
+            var timereportsInvalidForDates = suborderService.getTimereportsNotMatchingNewSuborderOrderValidity(
+                suborderId, suborderFromDate, suborderUntilDate
+            );
+            if (!timereportsInvalidForDates.isEmpty()) {
+                request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
+                errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
+            }
         }
 
         saveErrors(request, errors);
@@ -512,7 +506,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
             List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
-                SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+                SuborderViewDecorator decorator = new SuborderViewDecorator(timereportService, suborder);
                 suborderViewDecorators.add(decorator);
             }
             request.getSession().setAttribute("suborders", suborderViewDecorators);

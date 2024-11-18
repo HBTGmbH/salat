@@ -305,6 +305,10 @@ public class TimereportService {
     return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(newBegin, newEnd, employeeContractId);
   }
 
+  public List<TimereportDTO> getTimereportsNotMatchingNewSuborderOrderValidity(Long suborderId, LocalDate newBegin, LocalDate newEnd) {
+    return timereportDAO.getTimereportsBySuborderIdInvalidForDates(newBegin, newEnd, suborderId);
+  }
+
   public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {
     return timereportRepository.getReportedMinutesForSuborderAndEmployeeContract(soId, ecId).orElse(0L);
   }

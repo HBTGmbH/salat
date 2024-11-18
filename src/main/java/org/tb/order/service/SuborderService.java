@@ -4,6 +4,7 @@ import static org.tb.common.ErrorCode.SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.action.AddSuborderForm;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
+import org.tb.order.domain.SuborderVisitor;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
@@ -29,6 +33,33 @@ public class SuborderService {
   private final TimereportDAO timereportDAO;
   private final EmployeeorderDAO employeeorderDAO;
   private final EmployeeorderService employeeorderService;
+  private final TimereportService timereportService;
+
+  /**
+   * Gets all {@link Timereport}s associated to the {@link Suborder} or his children, that are no longer valid for the given dates.
+   */
+  public List<TimereportDTO> getTimereportsNotMatchingNewSuborderOrderValidity(long suborderId, LocalDate newBegin, LocalDate newEnd) {
+
+    final Suborder suborder = suborderDAO.getSuborderById(suborderId);
+
+    /* build up result list */
+    final List<TimereportDTO> allInvalidTimeReports = new LinkedList<>();
+
+    /* create visitor to collect suborders */
+    SuborderVisitor allInvalidTimeReportsCollector = so -> allInvalidTimeReports.addAll(
+        timereportService.getTimereportsNotMatchingNewSuborderOrderValidity(
+            so.getId(),
+            newBegin,
+            newEnd
+        )
+    );
+
+    /* start visiting */
+    suborder.acceptVisitor(allInvalidTimeReportsCollector);
+
+    /* return result */
+    return allInvalidTimeReports;
+  }
 
   public Suborder createOrUpdate(Long soId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
     Suborder so;

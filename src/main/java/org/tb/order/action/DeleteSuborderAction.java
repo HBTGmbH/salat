@@ -1,9 +1,9 @@
 package org.tb.order.action;
 
-import java.util.LinkedList;
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.SuborderDAO;
 import org.tb.order.viewhelper.SuborderViewDecorator;
@@ -30,7 +30,7 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
     private static final Logger LOG = LoggerFactory.getLogger(DeleteSuborderAction.class);
 
     private final SuborderDAO suborderDAO;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowSuborderForm suborderForm, HttpServletRequest request, HttpServletResponse response) {
@@ -77,7 +77,7 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
             List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
             List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
-                SuborderViewDecorator decorator = new SuborderViewDecorator(timereportDAO, suborder);
+                SuborderViewDecorator decorator = new SuborderViewDecorator(timereportService, suborder);
                 suborderViewDecorators.add(decorator);
             }
             request.getSession().setAttribute("suborders", suborderViewDecorators);
