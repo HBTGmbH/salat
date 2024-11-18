@@ -13,10 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
 @Component
@@ -27,9 +28,10 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<Authenticat
   private final AuthorizedUser authorizedUser;
   private final ChicoreeSessionStore chicoreeSessionStore;
   private final EmployeecontractService employeecontractService;
-  private final EmployeeDAO employeeDAO;
+  private final EmployeeService employeeService;
   private final HttpServletRequest request;
   private final HttpServletResponse response;
+  private final AuthService authService;
 
   @SneakyThrows
   @Override
@@ -40,10 +42,11 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<Authenticat
 
     if(chicoreeSessionStore.getLoginEmployeecontractId().isEmpty()) {
       Authentication authentication = event.getAuthentication();
-      Employee employee = employeeDAO.getLoginEmployee(authentication.getName());
+      authorizedUser.login(authentication.getName());
+      authService.initAuthorizedUser(authentication, authorizedUser);
+      Employee employee = employeeService.getLoginEmployee();
       Optional<Employeecontract> employeecontract = employeecontractService.getCurrentContract(employee.getId());
       if(employeecontract.isPresent()) {
-        authorizedUser.init(employee);
         chicoreeSessionStore.setGreeting(getRandomGreeting());
         chicoreeSessionStore.setLoginEmployee(employee);
         chicoreeSessionStore.setLoginEmployeecontractId(employeecontract.get().getId());
