@@ -12,7 +12,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 @EqualsAndHashCode
 public class DailyReportData {
 
-    private long id;
+    private Long id;
 
     @CsvBindByPosition(position = 0)
     private String date;
@@ -58,6 +58,6 @@ public class DailyReportData {
     }
 
     public DailyReportData withoutId(){
-        return toBuilder().id(0).build();
+        return toBuilder().id(null).build();
     }
 }
