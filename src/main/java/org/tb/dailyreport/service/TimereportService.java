@@ -860,4 +860,11 @@ public class TimereportService {
     return orderType != null && orderType == OrderType.STANDARD;
   }
 
+  public TimereportDTO getTimereportById(long id) {
+    return timereportDAO.getTimereportById(id);
+  }
+
+  public List<TimereportDTO> getTimereportsForEmployeecontractAndDate(long employeecontractId, LocalDate date) {
+    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date);
+  }
 }

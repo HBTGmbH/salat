@@ -12,7 +12,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 @Component
 @RequiredArgsConstructor
@@ -20,13 +20,13 @@ public class StoreTimereportAction extends LoginRequiredAction<TimereportForm> {
 
   private final TimereportService timereportService;
   private final ChicoreeSessionStore chicoreeSessionStore;
-  private final EmployeeorderDAO employeeorderDAO;
+  private final EmployeeorderService employeeorderService;
 
   @Override
   protected ActionForward executeAuthenticated(ActionMapping mapping, TimereportForm form, HttpServletRequest request,
       HttpServletResponse response) throws Exception {
     var employeecontractId = chicoreeSessionStore.getLoginEmployeecontractId().orElseThrow();
-    var employeeorderId = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+    var employeeorderId = employeeorderService.getEmployeeorderForEmployeecontractValidAt(
         employeecontractId,
         form.getSuborderIdTyped(),
         form.getDateTyped()

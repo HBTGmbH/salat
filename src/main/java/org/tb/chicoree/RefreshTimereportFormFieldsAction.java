@@ -2,7 +2,6 @@ package org.tb.chicoree;
 
 import static org.tb.common.util.DateUtils.validateDate;
 
-import java.util.Optional;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -10,14 +9,14 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 @Component
 @RequiredArgsConstructor
 public class RefreshTimereportFormFieldsAction extends LoginRequiredAction<TimereportForm> {
 
   private final ChicoreeSessionStore chicoreeSessionStore;
-  private final EmployeeorderDAO employeeorderDAO;
+  private final EmployeeorderService employeeorderService;
 
   @Override
   protected ActionForward executeAuthenticated(ActionMapping mapping, TimereportForm form, HttpServletRequest request,
@@ -31,7 +30,7 @@ public class RefreshTimereportFormFieldsAction extends LoginRequiredAction<Timer
         }
         var employeecontractId = chicoreeSessionStore.getLoginEmployeecontractId().orElseThrow();
         var date = form.getDateTyped();
-        var employeeorders = employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(
+        var employeeorders = employeeorderService.getEmployeeordersForEmployeecontractAndValidAt(
             employeecontractId,
             date
         );

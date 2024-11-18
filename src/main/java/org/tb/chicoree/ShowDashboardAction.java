@@ -8,7 +8,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.service.OvertimeService;
 
 @Component
@@ -16,7 +16,7 @@ import org.tb.employee.service.OvertimeService;
 public class ShowDashboardAction extends LoginRequiredAction<ActionForm> {
 
   private final ChicoreeSessionStore chicoreeSessionStore;
-  private final TimereportDAO timereportDAO;
+  private final TimereportService timereportService;
   private final OvertimeService overtimeService;
 
   @Override
@@ -24,7 +24,7 @@ public class ShowDashboardAction extends LoginRequiredAction<ActionForm> {
       HttpServletResponse response) {
     var dashboardDate = chicoreeSessionStore.getDashboardDate().orElseThrow();
     var contractId = chicoreeSessionStore.getLoginEmployeecontractId().orElseThrow();
-    var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(contractId, dashboardDate);
+    var timereports = timereportService.getTimereportsForEmployeecontractAndDate(contractId, dashboardDate);
     chicoreeSessionStore.setTimereports(dashboardDate, timereports);
     var overtimeStatus = overtimeService.calculateOvertime(contractId, true);
     chicoreeSessionStore.setOvertimeStatus(overtimeStatus);
