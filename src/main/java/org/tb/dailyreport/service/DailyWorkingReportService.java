@@ -20,6 +20,7 @@ import org.tb.order.persistence.EmployeeorderDAO;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
@@ -72,8 +73,11 @@ public class DailyWorkingReportService {
         var existingWorkingDay = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
                 report.getDate(), requireNonNull(employeecontract.getId(), "ID of contract is required")));
 
-        var workingDay = existingWorkingDay.orElseGet(Workingday::new);
-        workingDay.setEmployeecontract(employeecontract);
+        var workingDay = existingWorkingDay.orElseGet(() -> {
+            var newWorkingDay = new Workingday();
+            newWorkingDay.setEmployeecontract(employeecontract);
+            return newWorkingDay;
+        });
         workingDay.setRefday(report.getDate());
         ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
             workingDay.setBreakhours(bd.getHour());
@@ -113,7 +117,7 @@ public class DailyWorkingReportService {
         var oldBookings = existingBookings.stream().filter(booking -> !bookings.contains(booking.withoutId())).toList();
 
         if (!oldBookings.isEmpty() && upsert){
-            oldBookings.stream().map(DailyReportData::getId).forEach(timereportDAO::deleteTimereportById);
+            oldBookings.stream().map(DailyReportData::getId).filter(Objects::nonNull).forEach(timereportDAO::deleteTimereportById);
         }
 
         newBookings.forEach(booking -> doCreateDailyReport(day, booking, employeeOrder, employeeContract));
