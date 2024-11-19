@@ -1,5 +1,6 @@
 package org.tb.dailyreport.rest;
 
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -67,6 +68,8 @@ public class DailyWorkingReportRestEndpoint {
         }
         var response = ResponseEntity.ok();
         if (csv) {
+            var filename = String.format("%s-%sd.csv", DateUtils.format(refDate), days);
+            response = response.header(CONTENT_DISPOSITION, "attachment; filename=" + filename);
             response = response.contentType(TEXT_CSV_DAILY_WORKING_REPORT);
         }
         return response.body(getReports(employeecontract.getId(), refDate, days));
