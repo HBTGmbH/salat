@@ -76,9 +76,9 @@ public class DailyWorkingReportService {
         var workingDay = existingWorkingDay.orElseGet(() -> {
             var newWorkingDay = new Workingday();
             newWorkingDay.setEmployeecontract(employeecontract);
+            newWorkingDay.setRefday(report.getDate());
             return newWorkingDay;
         });
-        workingDay.setRefday(report.getDate());
         ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
             workingDay.setBreakhours(bd.getHour());
             workingDay.setBreakminutes(bd.getMinute());
