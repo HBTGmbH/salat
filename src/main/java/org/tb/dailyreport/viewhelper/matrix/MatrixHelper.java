@@ -397,7 +397,6 @@ public class MatrixHelper {
             results.put("currentEmployeeContract", null);
             results.put("currentEmployeeId", -1L);
             results.put("csvDownloadUrl", null);
-            results.put("csvDownloadName", null);
         } else {
             // consider timereports for specific employee
             Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(ecId);
@@ -434,10 +433,8 @@ public class MatrixHelper {
             results.put("currentEmployeeId", employeeContract.getEmployee().getId());
             if (authorizedUser.isManager() || authorizedUser.getEmployeeId().equals(employeeContract.getEmployee().getId())) {
                 results.put("csvDownloadUrl", getCsvDownloadUrl(reportForm, employeeContract.getEmployee().getSign()));
-                results.put("csvDownloadName", getCsvDownloadName(reportForm));
             } else {
                 results.put("csvDownloadUrl", null);
-                results.put("csvDownloadName", null);
             }
 
             // testing availability of the shown month
@@ -610,7 +607,6 @@ public class MatrixHelper {
         results.put("daysofmonth", maxDays);
         results.put("showStartAndBreakTime", reportForm.getStartAndBreakTime());
         results.put("csvDownloadUrl", getCsvDownloadUrl(reportForm, ec.getEmployee().getSign()));
-        results.put("csvDownloadName", getCsvDownloadName(reportForm));
 
         return results;
     }
@@ -619,11 +615,6 @@ public class MatrixHelper {
         var dateFirst = initStartEndDate("01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
         var days = DateUtils.getMonthDays(dateFirst);
         return String.format("/rest/daily-working-reports/list?refDate=%s&days=%d&csv=true&employee-sign=%s", DateUtils.format(dateFirst), days, employee);
-    }
-
-    private String getCsvDownloadName(ShowMatrixForm reportForm) {
-        var dateFirst = initStartEndDate("01", reportForm.getFromMonth(), reportForm.getFromYear(), reportForm.getFromMonth(), reportForm.getFromYear());
-        return String.format("%s.csv", DateUtils.format(dateFirst));
     }
 
     private LocalDate initStartEndDate(String startEndStr, String currMonth, String currYear, String monthString, String yearString) {
