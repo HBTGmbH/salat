@@ -55,11 +55,10 @@
 </head>
 <body>
 	<dialog id="importDialog">
-		<form action="ShowMatrix" enctype="multipart/form-data" method="POST">
+		<html:form action="/ShowMatrix?task=importCsv" enctype="multipart/form-data" method="POST">
 			<span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.csvimport.dialog.title.text" /><br></span>
 			<div style="margin-top: 10px;">
 				<input type="file" name="importFile" accept="text/csv" />
-				<input type="hidden" name="task" value="importCsv" />
 			</div>
 			<div style="margin-top: 10px;">
 				<fieldset>
@@ -78,7 +77,7 @@
 				<button id="cancel" type="reset" class="button" onclick="hideImportDialog()"><bean:message key="main.csvimport.dialog.cancel.text" /></button>
 				<button class="button-special" type="submit"><bean:message key="main.csvimport.dialog.confirm.text" /></button>
 			</div>
-		</form>
+		</html:form>
 	</dialog>
 	<jsp:include flush="true" page="/menu.jsp">
 		<jsp:param name="title" value="Menu" />
@@ -135,8 +134,7 @@
 
 						<html:options collection="orders"
 							labelProperty="signAndDescription" property="sign" />
-						<html:hidden property="orderId" />
-					</html:select></td>
+					</html:select><html:hidden property="orderId" /></td>
 			</tr>
 
 			<!-- select first date -->
@@ -465,27 +463,8 @@
 		</c:if>
 
 	</table>
-	<table>
+	<table style="width: 100%">
 		<tr>
-			<c:if test="${csvDownloadUrl != null}">
-				<td class="noBborderStyle" align="left">
-					<a href="javascript:showImportDialog();">
-						<html:submit styleId="button"
-									 titleKey="main.general.button.csvupload.alttext.text">
-							<bean:message key="main.general.button.csvupload.text" />
-						</html:submit>
-					</a>
-				</td>
-				<td class="noBborderStyle" align="left">
-					<a href="${csvDownloadUrl}" download="${csvDownloadName}" target="_blank">
-						<html:submit
-							styleId="button"
-							titleKey="main.general.button.csvdownload.alttext.text">
-							<bean:message key="main.general.button.csvdownload.text" />
-						</html:submit>
-					</a>
-				</td>
-			</c:if>
 			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
 				<html:form action="/CreateDailyReport?task=matrix">
 					<td class="noBborderStyle" align="left"><html:submit
@@ -502,11 +481,30 @@
 					</html:submit>
                 </td>
             </html:form>
-            <td style="border: 1px black solid; border-style: none none none none; text-align: right; color: red" class="bold matrix" colspan="2">
+            <td style="border: 1px black solid; border-style: none none none none; text-align: right; color: red; width: 100%" class="bold matrix" colspan="2">
 				<c:if test="${invalid}">
 					<bean:message key="main.matrixoverview.table.invalid" />.
-					</c:if>
+				</c:if>
+			</td>
+			<c:if test="${csvDownloadUrl != null}">
+				<td class="noBborderStyle" align="left">
+					<a href="javascript:showImportDialog();">
+						<html:submit styleId="button"
+									 titleKey="main.general.button.csvupload.alttext.text">
+							<bean:message key="main.general.button.csvupload.text" />
+						</html:submit>
+					</a>
 				</td>
+				<td class="noBborderStyle" align="left">
+					<a href="${csvDownloadUrl}">
+						<html:submit
+								styleId="button"
+								titleKey="main.general.button.csvdownload.alttext.text">
+							<bean:message key="main.general.button.csvdownload.text" />
+						</html:submit>
+					</a>
+				</td>
+			</c:if>
 			<c:if test="${loginEmployee.name == currentEmployee || loginEmployee.id == currentEmployeeId || authorizedUser.manager}">
 				<html:form action="/ShowMatrix?task=fillOpenWorkdaysNotWorked">
 					<td class="noBborderStyle" align="left">
