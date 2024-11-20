@@ -12,17 +12,15 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * Action class for deletion of a timereport initiated from the daily display
@@ -34,15 +32,13 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<ShowDailyReportForm> {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final SuborderDAO suborderDAO;
-    private final EmployeeorderDAO employeeorderDAO;
-    private final WorkingdayDAO workingdayDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeorderService employeeorderService;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
     private final WorkingdayService workingdayService;
+    private final CustomerorderService customerorderService;
+    private final SuborderService suborderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -52,7 +48,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
         }
 
         long trId = Long.parseLong(request.getParameter("trId"));
-        TimereportDTO tr = timereportDAO.getTimereportById(trId);
+        TimereportDTO tr = timereportService.getTimereportById(trId);
         if (tr == null) {
             return mapping.getInputForward();
         }
@@ -61,8 +57,8 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
             return mapping.findForward("error");
         }
 
-        if (!refreshTimereports(request, form, customerorderDAO, timereportService, employeecontractDAO,
-                suborderDAO, employeeorderDAO)) {
+        if (!refreshTimereports(request, form, customerorderService, timereportService, employeecontractService,
+                suborderService, employeeorderService)) {
             return mapping.findForward("error");
         } else {
 
@@ -77,7 +73,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
             } catch (Exception e) {
                 return mapping.findForward("error");
             }
-            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
+            Employeecontract employeecontract = employeecontractService.getEmployeeContractById(form.getEmployeeContractId());
             request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
             if (employeecontract != null) {
                 request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());

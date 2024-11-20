@@ -18,14 +18,13 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * action class for updating a timereport directly from daily display
@@ -37,12 +36,11 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReportForm> {
 
-    private final SuborderDAO suborderDAO;
-    private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
-    private final WorkingdayDAO workingdayDAO;
-    private final EmployeeorderDAO employeeorderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
+    private final SuborderService suborderService;
+    private final CustomerorderService customerorderService;
+    private final WorkingdayService workingdayService;
+    private final EmployeeorderService employeeorderService;
+    private final EmployeecontractService employeecontractService;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
@@ -51,7 +49,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
     public ActionForward executeAuthenticated(ActionMapping mapping, UpdateDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
         if (request.getParameter("trId") != null) {
             long trId = Long.parseLong(request.getParameter("trId"));
-            TimereportDTO tr = timereportDAO.getTimereportById(trId);
+            TimereportDTO tr = timereportService.getTimereportById(trId);
 
             try {
                 timereportService.updateTimereport(
@@ -93,11 +91,11 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             refreshTimereports(
                     request,
                     showDailyReportForm,
-                    customerorderDAO,
+                customerorderService,
                     timereportService,
-                    employeecontractDAO,
-                    suborderDAO,
-                    employeeorderDAO
+                employeecontractService,
+                suborderService,
+                employeeorderService
             );
             @SuppressWarnings("unchecked")
             List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
@@ -105,7 +103,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
             request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
 
-            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(tr.getReferenceday(), tr.getEmployeecontractId());
+            Workingday workingday = workingdayService.getWorkingday(tr.getEmployeecontractId(), tr.getReferenceday());
 
             // save values from the data base into form-bean, when working day != null
             if (workingday != null) {
@@ -133,7 +131,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
 
             //refresh overtime
-            Employeecontract ec = employeecontractDAO.getEmployeeContractById(tr.getEmployeecontractId());
+            Employeecontract ec = employeecontractService.getEmployeeContractById(tr.getEmployeecontractId());
             refreshEmployeeSummaryData(request, ec);
 
             return mapping.findForward("success");

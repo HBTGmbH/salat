@@ -12,7 +12,6 @@ import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.parse;
 
-import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -42,14 +41,16 @@ import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.CustomerorderHelper;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
 import org.tb.order.viewhelper.SuborderHelper;
 
 /**
@@ -62,8 +63,7 @@ import org.tb.order.viewhelper.SuborderHelper;
 @RequiredArgsConstructor
 public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final SuborderDAO suborderDAO;
+    private final SuborderService suborderService;
     private final CustomerorderDAO customerorderDAO;
     private final TimereportDAO timereportDAO;
     private final WorkingdayDAO workingdayDAO;
@@ -74,6 +74,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
+    private final CustomerorderService customerorderService;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeorderService employeeorderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -173,9 +176,12 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
             // refresh suborder sign/description select menus
             suborderHelper.adjustSuborderSignChanged(request.getSession(), form);
-            Suborder suborder = suborderDAO.getSuborderById(form.getSuborderSignId());
+            Suborder suborder = suborderService.getSuborderById(form.getSuborderSignId());
             request.getSession().setAttribute("currentSuborderSign", suborder.getSign());
-            setSubOrder(suborder, request, form);
+            // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
+            if (TRUE.equals(suborder.getTrainingFlag())) {
+                form.setTraining(true);
+            }
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("saveBeginOfWorkingDay")) {
@@ -389,11 +395,11 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 refreshTimereports(
                         request,
                         continueForm,
-                        customerorderDAO,
+                        customerorderService,
                         timereportService,
-                        employeecontractDAO,
-                        suborderDAO,
-                        employeeorderDAO
+                        employeecontractService,
+                        suborderService,
+                        employeeorderService
                 );
 
                 request.getSession().setAttribute("suborderFilerId", continueForm.getSuborderId());
@@ -439,7 +445,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 }
 
                 // refresh overtime and vacation
-                var employeecontract = employeecontractDAO.getEmployeeContractById(form.getEmployeeContractId());
+                var employeecontract = employeecontractService.getEmployeeContractById(form.getEmployeeContractId());
                 refreshEmployeeSummaryData(request, employeecontract);
 
                 return mapping.findForward("showDaily");
@@ -485,7 +491,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                     if (orderId == 0) {
                         orderId = orders.getFirst().getId();
                     }
-                    theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(form.getEmployeeContractId(), orderId, selectedDate);
+                    theSuborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(form.getEmployeeContractId(), orderId, selectedDate);
                 } else {
                     theSuborders = Collections.emptyList();
                 }
@@ -525,19 +531,12 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         long employeeContractId = employeecontract.getId();
 
         // TODO only store the id in the session, not the whole entity
-        employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+        employeecontract = employeecontractService.getEmployeeContractById(employeeContractId);
 
         request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
         request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", employeecontract);
         return employeecontract;
-    }
-
-    private void setSubOrder(@Nonnull Suborder suborder, HttpServletRequest request, AddDailyReportForm reportForm) {
-        // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
-        if (TRUE.equals(suborder.getTrainingFlag())) {
-            reportForm.setTraining(true);
-        }
     }
 
     /**
@@ -550,7 +549,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractService.getTimeReportableEmployeeContractsForAuthorizedUser();
         String dateString = reportForm.getReferenceday();
         LocalDate date = DateUtils.parseOrDefault(dateString, DateUtils.today());
 
@@ -562,7 +561,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             reportForm.setOrder(orders.getFirst().getSign());
             reportForm.setOrderId(orders.getFirst().getId());
             // prepare second collection of suborders sorted by description
-            suborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(loginEmployeeContract.getId(), orders.getFirst().getId(), date);
+            suborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(loginEmployeeContract.getId(), orders.getFirst().getId(), date);
         } else {
             reportForm.setOrder(null);
             reportForm.setOrderId(-1);

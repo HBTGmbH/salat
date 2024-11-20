@@ -25,13 +25,13 @@ import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.DailyReportViewHelper;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 
 public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
@@ -133,9 +133,9 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
      *
      * @return Returns true, if refreshing was succesful.
      */
-    protected boolean refreshTimereports(HttpServletRequest request, ShowDailyReportForm reportForm, CustomerorderDAO customerorderDAO,
-                                         TimereportService timereportService, EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
-                                         EmployeeorderDAO employeeorderDAO) {
+    protected boolean refreshTimereports(HttpServletRequest request, ShowDailyReportForm reportForm, CustomerorderService customerorderService,
+                                         TimereportService timereportService, EmployeecontractService employeecontractService, SuborderService suborderService,
+                                         EmployeeorderService employeeorderService) {
 
         //selected view and selected dates
         String selectedView = reportForm.getView();
@@ -178,10 +178,10 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         long employeeContractId = reportForm.getEmployeeContractId();
         if (employeeContractId != 0 && employeeContractId != -1) {
             String selectedOrder = reportForm.getOrder();
-            Customerorder order = customerorderDAO.getCustomerorderBySign(selectedOrder);
+            Customerorder order = customerorderService.getCustomerorderBySign(selectedOrder);
             List<Employeeorder> employeeOrders = null;
             if (order != null) {
-                employeeOrders = employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(order.getId(), employeeContractId);
+                employeeOrders = employeeorderService.getEmployeeordersByCustomerorderIdAndEmployeeContractId(order.getId(), employeeContractId);
             }
             if (employeeOrders == null || employeeOrders.isEmpty()) {
                 reportForm.setOrder(GlobalConstants.ALL_ORDERS);
@@ -191,7 +191,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         Employeecontract ec;
         if (reportForm.getEmployeeContractId() != -1) {
             // consider timereports for specific employee
-            ec = employeecontractDAO.getEmployeeContractById(employeeContractId);
+            ec = employeecontractService.getEmployeecontractById(employeeContractId);
             if (ec == null) {
                 request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
                 return false;
@@ -205,7 +205,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
 
 
         List<TimereportDTO> timereports;
-        List<Customerorder> orders = ec == null ? customerorderDAO.getCustomerorders() : customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+        List<Customerorder> orders = ec == null ? customerorderService.getAllCustomerorders() : customerorderService.getCustomerordersByEmployeeContractId(ec.getId());
         request.getSession().setAttribute("orders", orders);
 
         if (reportForm.getOrder() == null || reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS)) {
@@ -215,11 +215,11 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
                     : timereportService.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginDate, endDate); // specific employee
 
         } else {
-            Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
+            Customerorder co = customerorderService.getCustomerorderBySign(reportForm.getOrder());
             long orderId = co.getId();
             List<Suborder> suborders = ec == null
-                    ? suborderDAO.getSubordersByCustomerorderId(orderId, reportForm.getShowOnlyValid())
-                    : suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orderId, reportForm.getShowOnlyValid());
+                    ? suborderService.getSubordersByCustomerorderId(orderId, reportForm.getShowOnlyValid())
+                    : suborderService.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), orderId, reportForm.getShowOnlyValid());
             request.getSession().setAttribute("suborders", suborders);
 
             if (suborders.stream().noneMatch(suborder -> Objects.equals(suborder.getId(), reportForm.getSuborderId()))) {
@@ -253,7 +253,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             request.getSession().setAttribute("currentEmployeeContract", null);
             request.getSession().setAttribute("currentEmployeeId", -1L);
         } else {
-            Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+            Employeecontract employeecontract = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
             request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
             request.getSession().setAttribute("currentEmployeeContract", employeecontract);
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());

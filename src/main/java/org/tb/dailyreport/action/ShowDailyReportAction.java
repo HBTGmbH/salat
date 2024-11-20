@@ -67,6 +67,7 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.OvertimeService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.favorites.domain.Favorite;
@@ -78,6 +79,9 @@ import org.tb.order.domain.Suborder;
 import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.CustomerorderHelper;
 import org.tb.order.viewhelper.SuborderHelper;
 
@@ -107,6 +111,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final AuthorizedUser authorizedUser;
     private final OvertimeService overtimeService;
     private final FavoriteDtoMapper favoriteDtoMapper = Mappers.getMapper(FavoriteDtoMapper.class);
+    private final CustomerorderService customerorderService;
+    private final EmployeecontractService employeecontractService;
+    private final SuborderService suborderService;
+    private final EmployeeorderService employeeorderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
@@ -564,11 +572,11 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             boolean refreshSuccessful = refreshTimereports(
                     request,
                     reportForm,
-                    customerorderDAO,
+                    customerorderService,
                     timereportService,
-                    employeecontractDAO,
-                    suborderDAO,
-                    employeeorderDAO
+                    employeecontractService,
+                    suborderService,
+                    employeeorderService
             );
             if (refreshSuccessful) {
                 @SuppressWarnings("unchecked")

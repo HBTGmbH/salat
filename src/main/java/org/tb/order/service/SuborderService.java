@@ -21,6 +21,7 @@ import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.domain.SuborderVisitor;
+import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
@@ -34,6 +35,7 @@ public class SuborderService {
   private final EmployeeorderDAO employeeorderDAO;
   private final EmployeeorderService employeeorderService;
   private final TimereportService timereportService;
+  private final CustomerorderDAO customerorderDAO;
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
@@ -212,4 +214,16 @@ public class SuborderService {
     }
   }
 
+  public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showOnlyValid) {
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId, showOnlyValid);
+  }
+
+  public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(Long employeeContractId, long customerorderId,
+      boolean showOnlyValid) {
+    return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(employeeContractId, customerorderId, showOnlyValid);
+  }
+
+  public Suborder getSuborderById(long suborderId) {
+    return suborderDAO.getSuborderById(suborderId);
+  }
 }

@@ -231,4 +231,11 @@ public class EmployeecontractService {
     return Optional.ofNullable(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, today()));
   }
 
+  public Employeecontract getEmployeecontractById(long employeeContractId) {
+    return employeecontractDAO.getEmployeeContractById(employeeContractId);
+  }
+
+  public Employeecontract getEmployeeContractById(Long employeeContractId) {
+    return employeecontractDAO.getEmployeeContractById(employeeContractId);
+  }
 }

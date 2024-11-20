@@ -92,4 +92,15 @@ public class CustomerorderService {
     return co;
   }
 
+  public Customerorder getCustomerorderBySign(String selectedOrder) {
+    return customerorderDAO.getCustomerorderBySign(selectedOrder);
+  }
+
+  public List<Customerorder> getCustomerordersByEmployeeContractId(long employeeContractId) {
+    return customerorderDAO.getCustomerordersByEmployeeContractId(employeeContractId);
+  }
+
+  public List<Customerorder> getAllCustomerorders() {
+    return customerorderDAO.getCustomerorders();
+  }
 }

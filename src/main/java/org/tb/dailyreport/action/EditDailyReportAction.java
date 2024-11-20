@@ -9,7 +9,6 @@ import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,20 +16,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.TimereportService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * Action class for editing of a timereport
@@ -42,17 +39,17 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
-    private final TimereportDAO timereportDAO;
-    private final CustomerorderDAO customerorderDAO;
-    private final SuborderDAO suborderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final WorkingdayDAO workingdayDAO;
+    private final TimereportService timereportService;
+    private final CustomerorderService customerorderService;
+    private final SuborderService suborderService;
+    private final EmployeecontractService employeecontractService;
+    private final WorkingdayService workingdayService;
     private final TimereportHelper timereportHelper;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
         long trId = Long.parseLong(request.getParameter("trId"));
-        TimereportDTO tr = timereportDAO.getTimereportById(trId);
+        TimereportDTO tr = timereportService.getTimereportById(trId);
 
         // set collections
         request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
@@ -62,7 +59,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         setFormEntries(mapping, request, reportForm, tr);
 
         request.getSession().setAttribute("timereport", tr);
-        request.getSession().setAttribute("currentEmployeeContract", employeecontractDAO.getEmployeeContractById(tr.getEmployeecontractId()));
+        request.getSession().setAttribute("currentEmployeeContract", employeecontractService.getEmployeeContractById(tr.getEmployeecontractId()));
 
         // save the filter settings
         request.getSession().setAttribute("lastCurrentDay", request.getSession().getAttribute("currentDay"));
@@ -84,15 +81,15 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
     private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
                                 AddDailyReportForm reportForm, TimereportDTO tr) {
 
-        Employeecontract ec = employeecontractDAO.getEmployeeContractById(tr.getEmployeecontractId());
+        Employeecontract ec = employeecontractService.getEmployeeContractById(tr.getEmployeecontractId());
         LocalDate utilDate = tr.getReferenceday();
 
-        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
+        List<Customerorder> orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);
         List<Suborder> theSuborders = new ArrayList<>();
         if (orders != null && !orders.isEmpty()) {
             reportForm.setOrder(orders.getFirst().getSign());
             reportForm.setOrderId(orders.getFirst().getId());
-            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getCustomerorderId(), utilDate);
+            theSuborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), tr.getCustomerorderId(), utilDate);
             if (theSuborders == null || theSuborders.isEmpty()) {
                 request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator.");
                 mapping.findForward("error");
@@ -102,7 +99,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
             mapping.findForward("error");
         }
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractService.getTimeReportableEmployeeContractsForAuthorizedUser();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         /* set hours list in session in case of that the dialog is triggered from the welcome page */
@@ -119,7 +116,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
 
         reportForm.setReferenceday(DateUtils.format(utilDate));
         LocalDate reportDate = tr.getReferenceday();
-        Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(reportDate, ec.getId());
+        Workingday workingday = workingdayService.getWorkingday(ec.getId(), reportDate);
 
         boolean workingDayIsAvailable = false;
         if (workingday != null) {
