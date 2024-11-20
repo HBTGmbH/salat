@@ -98,7 +98,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final SuborderDAO suborderDAO;
     private final EmployeeorderDAO employeeorderDAO;
     private final FavoriteService favoriteService;
-    private final WorkingdayDAO workingdayDAO;
     private final WorkingdayService workingdayService;
     private final EmployeeDAO employeeDAO;
     private final SuborderHelper suborderHelper;
@@ -666,7 +665,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 // refresh workingday
                 Workingday workingday;
                 try {
-                    workingday = refreshWorkingday(reportForm, request, workingdayDAO);
+                    workingday = refreshWorkingday(reportForm, request, workingdayService);
                 } catch (Exception e) {
                     return mapping.findForward("error");
                 }
@@ -704,7 +703,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         }
         Workingday workingday;
         try {
-            workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec, workingdayDAO, true);
+            workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, ec, workingdayService, true);
         } catch (Exception e) {
             request.setAttribute("errorMessage", "More than one working day found");
             return mapping.findForward("error");
@@ -850,7 +849,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             // refresh workingday
             Workingday workingday;
             try {
-                workingday = refreshWorkingday(reportForm, request, workingdayDAO);
+                workingday = refreshWorkingday(reportForm, request, workingdayService);
             } catch (Exception e) {
                 log.error("Could not refreshWorkingday.", e);
                 return "error";
@@ -869,7 +868,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             request.getSession().setAttribute("timereports", timereports);
         } else {
             LocalDate refDate = DateUtils.today();
-            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
+            Workingday workingday = workingdayService.getWorkingday(ec.getId(), refDate);
             if (workingday != null) {
                 // show break time, quitting time and working day ends on
                 // the showdailyreport.jsp

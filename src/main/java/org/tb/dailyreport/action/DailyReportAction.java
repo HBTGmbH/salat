@@ -22,7 +22,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.DailyReportViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -282,7 +282,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
     /**
      * Refreshes the workingday.
      */
-    protected Workingday refreshWorkingday(ShowDailyReportForm reportForm, HttpServletRequest request, WorkingdayDAO workingdayDAO)
+    protected Workingday refreshWorkingday(ShowDailyReportForm reportForm, HttpServletRequest request, WorkingdayService workingdayService)
             throws Exception {
 
         Employeecontract employeecontract = getEmployeeContractFromRequest(request);
@@ -292,7 +292,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             throw new Exception("No employee contract found for employee");
         }
         //new parameter
-        Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract, workingdayDAO, false);
+        Workingday workingday = getWorkingdayForReportformAndEmployeeContract(reportForm, employeecontract, workingdayService, false);
 
         // save values from the data base into form-bean, when working day != null
         if (workingday != null) {
@@ -332,14 +332,14 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
      * {@link Employeecontract}. If this workingday does not exist in the database so far, a new one is created.
      */
     // getWorkingdayForReportformAndEmployeeContract have a new parameter, boolean
-    protected Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec, WorkingdayDAO workingdayDAO, boolean nullPruefung) {
+    protected Workingday getWorkingdayForReportformAndEmployeeContract(ShowDailyReportForm reportForm, Employeecontract ec, WorkingdayService workingdayService, boolean nullPruefung) {
         String dayString = reportForm.getDay();
         String monthString = reportForm.getMonth();
         String yearString = reportForm.getYear();
 
         LocalDate refDate = getDateFormStrings(dayString, monthString, yearString, true);
 
-        Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(refDate, ec.getId());
+        Workingday workingday = workingdayService.getWorkingday(ec.getId(), refDate);
         if (workingday == null && nullPruefung) {
             workingday = new Workingday();
             workingday.setRefday(refDate);

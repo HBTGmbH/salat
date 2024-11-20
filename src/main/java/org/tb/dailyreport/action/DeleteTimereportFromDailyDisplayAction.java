@@ -16,6 +16,7 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -41,6 +42,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
     private final WorkingdayDAO workingdayDAO;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
+    private final WorkingdayService workingdayService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm form, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -71,7 +73,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
             //refresh workingday
             Workingday workingday;
             try {
-                workingday = refreshWorkingday(form, request, workingdayDAO);
+                workingday = refreshWorkingday(form, request, workingdayService);
             } catch (Exception e) {
                 return mapping.findForward("error");
             }
