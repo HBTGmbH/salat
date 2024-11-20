@@ -35,6 +35,10 @@ public class SuborderService {
   private final EmployeeorderService employeeorderService;
   private final TimereportService timereportService;
 
+  public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
+    return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
+  }
+
   /**
    * Gets all {@link Timereport}s associated to the {@link Suborder} or his children, that are no longer valid for the given dates.
    */

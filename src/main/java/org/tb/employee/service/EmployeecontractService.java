@@ -47,6 +47,10 @@ public class EmployeecontractService {
     return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(date);
   }
 
+  public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
+    return employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
+  }
+
   public Employeecontract createEmployeecontract(
       long employeeId,
       LocalDate validFrom,

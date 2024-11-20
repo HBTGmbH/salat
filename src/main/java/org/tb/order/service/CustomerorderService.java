@@ -27,6 +27,10 @@ public class CustomerorderService {
   private final SuborderDAO suborderDAO;
   private final SuborderService suborderService;
 
+  public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final LocalDate date) {
+    return customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeeContractId, date);
+  }
+
   public Customerorder createOrUpdateOrder(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,

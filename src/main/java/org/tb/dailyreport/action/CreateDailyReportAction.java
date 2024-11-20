@@ -22,15 +22,15 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.comparator.SubOrderByDescriptionComparator;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * Action class for creation of a timereport
@@ -42,10 +42,10 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class CreateDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final CustomerorderDAO customerorderDAO;
-    private final SuborderDAO suborderDAO;
-    private final WorkingdayDAO workingdayDAO;
+    private final EmployeecontractService employeecontractService;
+    private final CustomerorderService customerorderService;
+    private final SuborderService suborderService;
+    private final WorkingdayService workingdayService;
     private final TimereportHelper timereportHelper;
 
     @Override
@@ -67,7 +67,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         // get selected date for new report
         LocalDate selectedDate = getSelectedDateFromRequest(request);
 
-        Employeecontract matchingEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), selectedDate);
+        Employeecontract matchingEC = employeecontractService.getEmployeeContractValidAt(ec.getEmployee().getId(), selectedDate);
         if (matchingEC != null) {
             ec = matchingEC;
         }
@@ -76,10 +76,10 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("currentEmployeeId", ec.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", ec);
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
+        List<Employeecontract> employeecontracts = employeecontractService.getTimeReportableEmployeeContractsForAuthorizedUser();
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
-        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
+        List<Customerorder> orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ec.getId(), selectedDate);
 
         // set attributes to be analyzed by target jsp
         request.getSession().setAttribute("orders", orders);
@@ -91,7 +91,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("serialBookings", getSerialDayList());
 
         // search for adequate workingday and set status in session
-        Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, ec.getId());
+        Workingday workingday = workingdayService.getWorkingday(ec.getId(), selectedDate);
 
         boolean workingDayIsAvailable = false;
         if (workingday != null) {
@@ -151,7 +151,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
             form.setOrder(orders.getFirst().getSign());
             form.setOrderId(orders.getFirst().getId());
 
-            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.getFirst().getId(), selectedDate);
+            theSuborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.getFirst().getId(), selectedDate);
 
             if (theSuborders == null || theSuborders.isEmpty()) {
                 request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator."); //TODO
