@@ -21,6 +21,7 @@ import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.persistence.WorkingdayRepository;
 
 @Service
@@ -31,6 +32,7 @@ public class WorkingdayService {
   private final PublicholidayRepository publicholidayRepository;
   private final TimereportDAO timereportDAO;
   private final AuthorizedUser authorizedUser;
+  private final WorkingdayDAO workingdayDAO;
 
   public Workingday getWorkingday(long employeecontractId, LocalDate date) {
     return workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId).orElse(null);
@@ -92,4 +94,7 @@ public class WorkingdayService {
     return false;
   }
 
+  public void deleteWorkingdayById(long workingDayId) {
+    workingdayDAO.deleteWorkingdayById(workingDayId);
+  }
 }

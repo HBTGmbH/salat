@@ -27,9 +27,8 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.WorkingdayService;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,8 +36,7 @@ import org.tb.employee.persistence.EmployeecontractDAO;
 @Tag(name = "working days")
 public class WorkingDayRestEndpoint {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final WorkingdayDAO workingdayDAO;
+    private final EmployeecontractService employeecontractService;
     private final WorkingdayService workingdayService;
     private final AuthorizedUser authorizedUser;
 
@@ -51,12 +49,12 @@ public class WorkingDayRestEndpoint {
         }
 
         var date = ofNullable(data.getDate()).map(DateUtils::parse).orElseGet(DateUtils::today);
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), date);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), date);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
 
-        var wd = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeecontract.getId())).orElseGet(Workingday::new);
+        var wd = ofNullable(workingdayService.getWorkingday(employeecontract.getId(), date)).orElseGet(Workingday::new);
         wd.setEmployeecontract(employeecontract);
         wd.setRefday(date);
         wd.setStarttimehour(data.getStarthour());
@@ -94,12 +92,12 @@ public class WorkingDayRestEndpoint {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
 
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), date);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), date);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
 
-        var workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, employeecontract.getId());
+        var workingDay = workingdayService.getWorkingday(employeecontract.getId(), date);
         if(workingDay == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
@@ -117,16 +115,16 @@ public class WorkingDayRestEndpoint {
 
         var deleteDate = DateUtils.parse(date);
 
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), deleteDate);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), deleteDate);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
 
-        var workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(deleteDate, employeecontract.getId());
+        var workingDay = workingdayService.getWorkingday(employeecontract.getId(), deleteDate);
         if(workingDay == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
 
-        workingdayDAO.deleteWorkingdayById(workingDay.getId());
+        workingdayService.deleteWorkingdayById(workingDay.getId());
     }
 }
