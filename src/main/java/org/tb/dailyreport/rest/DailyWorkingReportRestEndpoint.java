@@ -35,10 +35,10 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.DailyWorkingReportService;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.dailyreport.service.TimereportService;
+import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.employee.service.EmployeecontractService;
 
 @RestController
 @RequiredArgsConstructor
@@ -46,9 +46,9 @@ import org.tb.employee.persistence.EmployeecontractDAO;
 @Tag(name = "daily report")
 public class DailyWorkingReportRestEndpoint {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final TimereportDAO timereportDAO;
-    private final WorkingdayDAO workingdayDAO;
+    private final EmployeecontractService employeecontractService;
+    private final TimereportService timereportService;
+    private final WorkingdayService workingdayService;
     private final DailyWorkingReportService dailyWorkingReportService;
     private final AuthorizedUser authorizedUser;
 
@@ -62,7 +62,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), refDate);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), refDate);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
@@ -83,10 +83,10 @@ public class DailyWorkingReportRestEndpoint {
                 .toList();
     }
 
-    private DailyWorkingReportData getReport(Long employeeContractId, LocalDate day) {
-        var workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(day, employeeContractId);
+    private DailyWorkingReportData getReport(Long employeeContractId, LocalDate date) {
+        var workingDay = workingdayService.getWorkingday(employeeContractId, date);
 
-        var timeReports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, day)
+        var timeReports = timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)
                 .stream()
                 .map(DailyReportData::valueOf)
                 .toList();
@@ -95,7 +95,7 @@ public class DailyWorkingReportRestEndpoint {
             return null;
         }
 
-        var builder = DailyWorkingReportData.builder().date(day).dailyReports(timeReports);
+        var builder = DailyWorkingReportData.builder().date(date).dailyReports(timeReports);
 
         if(workingDay != null) {
             builder.type(workingDay.getType());
