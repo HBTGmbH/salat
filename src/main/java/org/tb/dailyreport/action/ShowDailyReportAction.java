@@ -58,15 +58,12 @@ import org.tb.dailyreport.domain.comparator.TimereportByOrderAscComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByOrderDescComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByRefdayAscComparator;
 import org.tb.dailyreport.domain.comparator.TimereportByRefdayDescComparator;
-import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.OvertimeService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
@@ -76,9 +73,6 @@ import org.tb.favorites.rest.FavoriteDtoMapper;
 import org.tb.favorites.service.FavoriteService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
@@ -96,14 +90,9 @@ import org.tb.order.viewhelper.SuborderHelper;
 @RequiredArgsConstructor
 public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm> {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final SuborderDAO suborderDAO;
-    private final EmployeeorderDAO employeeorderDAO;
     private final FavoriteService favoriteService;
     private final WorkingdayService workingdayService;
-    private final EmployeeDAO employeeDAO;
+    private final EmployeeService employeeService;
     private final SuborderHelper suborderHelper;
     private final CustomerorderHelper customerorderHelper;
     private final TimereportHelper timereportHelper;
@@ -257,7 +246,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         throw new IllegalStateException("Employeecontract is null");
       }
         long timereportId = Long.parseLong(request.getParameter("timereportId"));
-        TimereportDTO timereport = timereportDAO.getTimereportById(timereportId);
+        TimereportDTO timereport = timereportService.getTimereportById(timereportId);
         if (timereport == null) {
           throw new IllegalArgumentException("timereport not found");
         }
@@ -321,7 +310,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private Collection<Long> checkShiftedDays(Collection<Long> ids, int days, Employeecontract loginEmployeeContract) {
         Collection<Long> errors = new ArrayList<>();
         ids.forEach(id -> {
-            TimereportDTO timereport = timereportDAO.getTimereportById(id);
+            TimereportDTO timereport = timereportService.getTimereportById(id);
             LocalDate shiftedDate = DateUtils.addDays(timereport.getReferenceday(), days);
             ActionMessages actionErrors = timereportHelper.validateNewDate(new ActionMessages(), shiftedDate,
                 timereport, loginEmployeeContract);
@@ -530,14 +519,14 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             /* set session attributes */
             List<Customerorder> orders;
             if (employeeContractId == 0 || employeeContractId == -1) {
-                orders = customerorderDAO.getCustomerorders();
+                orders = customerorderService.getAllCustomerorders();
                 request.getSession().setAttribute("currentEmployeeContract", null);
             } else {
-                orders = customerorderDAO.getCustomerordersByEmployeeContractId(employeeContractId);
-                request.getSession().setAttribute("currentEmployeeContract", employeecontractDAO.getEmployeeContractById(employeeContractId));
+                orders = customerorderService.getCustomerordersByEmployeeContractId(employeeContractId);
+                request.getSession().setAttribute("currentEmployeeContract", employeecontractService.getEmployeeContractById(employeeContractId));
             }
             List<Suborder> suborders = new LinkedList<>();
-            Customerorder customerorder = customerorderDAO.getCustomerorderBySign(orderSign);
+            Customerorder customerorder = customerorderService.getCustomerorderBySign(orderSign);
             if (orders.contains(customerorder)) {
                 suborders = customerorder.getSuborders();
             } else if (!orders.isEmpty()) {
@@ -622,7 +611,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 //check if overtime should be computed until enddate (not today)
                 if (reportForm.getShowOvertimeUntil()) {
                     if (!Objects.equals(ec.getId(), reportForm.getEmployeeContractId())) {
-                        ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+                        ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
                     }
                     final LocalDate date;
                     if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
@@ -660,7 +649,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
                     request.getSession().setAttribute("currentEmployeeContract", null);
                 } else {
-                    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+                    Employeecontract employeecontract = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
                     request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
                     request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
                     request.getSession().setAttribute("currentEmployeeContract", employeecontract);
@@ -811,9 +800,8 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
      */
     private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false,
-            today());
+        Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeService, employeecontractService);
+        List<Employeecontract> employeecontracts = employeecontractService.getViewableEmployeeContractsValidAt(today());
         if (employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
             return "error";
@@ -847,9 +835,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             List<TimereportDTO> timereports;
             if (currentEmployeeId == -1) {
                 // all employees
-                timereports = timereportDAO.getTimereportsByDate(date);
+                timereports = timereportService.getTimereportsByDate(date);
             } else {
-                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
+                timereports = timereportService.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
             }
             String laborTimeString = timereportHelper.calculateLaborTime(timereports);
             request.getSession().setAttribute("labortime", laborTimeString);
@@ -929,9 +917,9 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             Long employeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
             List<TimereportDTO> timereports;
             if (employeeId != null && employeeId == -1) {
-                timereports = timereportDAO.getTimereportsByDate(date);
+                timereports = timereportService.getTimereportsByDate(date);
             } else {
-                timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
+                timereports = timereportService.getTimereportsByDateAndEmployeeContractId(ec.getId(), date);
             }
             String laborTimeString = timereportHelper.calculateLaborTime(timereports);
             request.getSession().setAttribute("labortime", laborTimeString);
@@ -948,13 +936,13 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             // orders
             List<Customerorder> orders;
             if (employeeId != null && employeeId == -1) {
-                orders = customerorderDAO.getCustomerorders();
+                orders = customerorderService.getAllCustomerorders();
             } else {
-                orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+                orders = customerorderService.getCustomerordersByEmployeeContractId(ec.getId());
             }
             request.getSession().setAttribute("orders", orders);
             if (!orders.isEmpty()) {
-                request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
+                request.getSession().setAttribute("suborders", suborderService.getSubordersByEmployeeContractId(ec.getId()));
             }
         }
         // vacation and overtime balance

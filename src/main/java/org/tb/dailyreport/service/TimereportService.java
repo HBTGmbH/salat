@@ -896,4 +896,12 @@ public class TimereportService {
       LocalDate endDate, long suborderId) {
     return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(employeecontractId, beginDate, endDate, suborderId);
   }
+
+  public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
+    return timereportDAO.getTimereportsByDate(date);
+  }
+
+  public List<TimereportDTO> getTimereportsByDateAndEmployeeContractId(long employeeContractId, LocalDate date) {
+    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
+  }
 }

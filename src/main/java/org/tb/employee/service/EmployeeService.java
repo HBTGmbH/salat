@@ -1,5 +1,6 @@
 package org.tb.employee.service;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizedUser;
@@ -17,4 +18,11 @@ public class EmployeeService {
     return employeeDAO.getLoginEmployee(authorizedUser.getLoginSign());
   }
 
+  public List<Employee> getAllEmployees() {
+    return employeeDAO.getEmployees();
+  }
+
+  public List<Employee> getEmployeesWithContracts() {
+    return employeeDAO.getEmployeesWithContracts();
+  }
 }

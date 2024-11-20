@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
 
 public class InvoiceSuborderHelper extends Suborder {
@@ -21,14 +22,14 @@ public class InvoiceSuborderHelper extends Suborder {
     private int layer;
     private final long durationInMinutes;
 
-    public InvoiceSuborderHelper(Suborder suborder, TimereportDAO timereportDAO, LocalDate fromDate, LocalDate untilDate, boolean invoicebox) {
+    public InvoiceSuborderHelper(Suborder suborder, TimereportService timereportService, LocalDate fromDate, LocalDate untilDate, boolean invoicebox) {
         this.suborder = suborder;
         this.visible = true;
         this.fromDate = fromDate;
         this.untilDate = untilDate;
         this.invoicebox = invoicebox;
 
-        var visitor = new InvoiceSuborderActualHoursVisitor(timereportDAO, fromDate, untilDate, invoicebox);
+        var visitor = new InvoiceSuborderActualHoursVisitor(timereportService, fromDate, untilDate, invoicebox);
         acceptVisitor(visitor);
         this.durationInMinutes = visitor.getTotalMinutes();
     }

@@ -1,10 +1,11 @@
 package org.tb.employee.viewhelper;
 
+import static org.tb.common.util.DateUtils.today;
+
 import jakarta.servlet.http.HttpServletRequest;
-import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 
 /**
  * Helper class for employee handling which does not directly deal with persistence
@@ -18,8 +19,8 @@ public class EmployeeViewHelper {
      */
     public Employeecontract getAndInitCurrentEmployee(
         HttpServletRequest request,
-        EmployeeDAO employeeDAO,
-        EmployeecontractDAO employeecontractDAO) {
+        EmployeeService employeeService,
+        EmployeecontractService employeecontractService) {
 
         var currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         var loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
@@ -29,9 +30,9 @@ public class EmployeeViewHelper {
         }
 
 
-        var employeeOptionList = employeeDAO.getEmployees();
-        var employeeWithContractList = employeeDAO.getEmployeesWithContracts();
-        var employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(DateUtils.today());
+        var employeeOptionList = employeeService.getAllEmployees();
+        var employeeWithContractList = employeeService.getEmployeesWithContracts();
+        var employeeContracts = employeecontractService.getViewableEmployeeContractsValidAt(today());
 
         request.getSession().setAttribute("employeeswithcontract", employeeWithContractList);
         request.getSession().setAttribute("employees", employeeOptionList);

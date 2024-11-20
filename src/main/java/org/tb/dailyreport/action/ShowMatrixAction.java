@@ -17,25 +17,25 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
 import org.tb.dailyreport.service.DailyWorkingReportService;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
 
 @Component
 @RequiredArgsConstructor
 public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final EmployeeDAO employeeDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeService employeeService;
     private final MatrixHelper matrixHelper;
     private final WorkingdayService workingdayService;
-    private final TimereportDAO timereportDAO;
+    private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
     private final DailyWorkingReportCsvConverter dailyWorkingReportCsvConverter;
     private final DailyWorkingReportService dailyWorkingReportService;
@@ -86,7 +86,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
                 first.datesUntil(last.plusDays(1)).forEach(day -> {
                     var isRegularWorkingday = workingdayService.isRegularWorkingday(day);
                     if(isRegularWorkingday) {
-                        var hasBookings = !timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, day).isEmpty();
+                        var hasBookings = !timereportService.getTimereportsByDateAndEmployeeContractId(employeecontractId, day).isEmpty();
                         if(!hasBookings) {
                             var workingday = workingdayService.getWorkingday(employeecontractId, day);
                             if(workingday == null) {
@@ -132,7 +132,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // no special task - prepare everything to show reports
         EmployeeViewHelper eh = new EmployeeViewHelper();
-        Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
+        Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeService, employeecontractService);
 
         Map<String, Object> results = matrixHelper.handleNoArgs(
                 reportForm,

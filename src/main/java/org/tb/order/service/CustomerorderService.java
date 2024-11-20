@@ -103,4 +103,8 @@ public class CustomerorderService {
   public List<Customerorder> getAllCustomerorders() {
     return customerorderDAO.getCustomerorders();
   }
+
+  public List<Customerorder> getInvoiceableCustomerorders() {
+    return customerorderDAO.getInvoiceableCustomerorders();
+  }
 }

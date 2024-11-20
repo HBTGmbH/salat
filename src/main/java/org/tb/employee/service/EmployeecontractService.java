@@ -43,8 +43,12 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
   }
 
-  public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate date) {
-    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(date);
+  public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate validAt) {
+    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(validAt);
+  }
+
+  public List<Employeecontract> getViewableEmployeeContractsValidAt(LocalDate validAt) {
+    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false, validAt);
   }
 
   public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
@@ -238,4 +242,5 @@ public class EmployeecontractService {
   public Employeecontract getEmployeeContractById(Long employeeContractId) {
     return employeecontractDAO.getEmployeeContractById(employeeContractId);
   }
+
 }

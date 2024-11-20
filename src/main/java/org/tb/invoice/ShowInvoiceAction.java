@@ -1,5 +1,6 @@
 package org.tb.invoice;
 
+import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
 import static org.tb.common.DateTimeViewHelper.getWeeksToDisplay;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,10 +36,10 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.action.DailyReportAction;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.invoice.domain.InvoiceSettings;
 import org.tb.invoice.domain.InvoiceSettings.ImageUrl;
@@ -45,18 +47,18 @@ import org.tb.invoice.service.InvoiceSettingsService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.domain.comparator.SubOrderComparator;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 @Component
 @RequiredArgsConstructor
 public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final SuborderDAO suborderDAO;
-    private final EmployeeDAO employeeDAO;
+    private final CustomerorderService customerorderService;
+    private final TimereportService timereportService;
+    private final EmployeecontractService employeecontractService;
+    private final SuborderService suborderService;
+    private final EmployeeService employeeService;
     private final InvoiceSettingsService invoiceSettingsService;
 
     @Override
@@ -105,11 +107,11 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                         throw new RuntimeException("date cannot be parsed from form");
                     }
 
-                    customerOrder = customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder());
+                    customerOrder = customerorderService.getCustomerorderBySign(showInvoiceForm.getOrder());
                     if (showInvoiceForm.getSuborder().equals("ALL SUBORDERS")) {
-                        suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId(), false);
+                        suborderList = suborderService.getSubordersByCustomerorderId(customerOrder.getId(), false);
                     } else {
-                        suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
+                        suborderList = suborderService.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
                     suborderList.sort(SubOrderComparator.INSTANCE);
                     // remove suborders that are not valid sometime between dateFirst and dateLast
@@ -133,11 +135,11 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
                     } catch (Exception e) {
                         throw new RuntimeException("date cannot be parsed from form");
                     }
-                    customerOrder = customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder());
+                    customerOrder = customerorderService.getCustomerorderBySign(showInvoiceForm.getOrder());
                     if (showInvoiceForm.getSuborder().equals("ALL SUBORDERS")) {
-                        suborderList = suborderDAO.getSubordersByCustomerorderId(customerOrder.getId(), false);
+                        suborderList = suborderService.getSubordersByCustomerorderId(customerOrder.getId(), false);
                     } else {
-                        suborderList = suborderDAO.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
+                        suborderList = suborderService.getSuborderById(Long.parseLong(showInvoiceForm.getSuborder())).getAllChildren();
                     }
                     // remove suborders that are not valid sometime between dateFirst and dateLast
                     suborderList.removeIf(so -> so.getFromDate().isAfter(dateLast) || so.getUntilDate() != null && so.getUntilDate().isBefore(dateFirst));
@@ -207,7 +209,8 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             } else {
                 request.getSession().setAttribute("currentOrder", showInvoiceForm.getOrder());
                 request.getSession().setAttribute("currentSuborder", showInvoiceForm.getSuborder());
-                List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorderDAO.getCustomerorderBySign(showInvoiceForm.getOrder()).getId(), showInvoiceForm.getShowOnlyValid());
+                List<Suborder> suborders = suborderService.getSubordersByCustomerorderId(
+                    customerorderService.getCustomerorderBySign(showInvoiceForm.getOrder()).getId(), showInvoiceForm.getShowOnlyValid());
                 suborders.sort(SubOrderComparator.INSTANCE);
 
                 request.getSession().setAttribute("suborders", suborders);
@@ -374,11 +377,11 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             // call on invoiceView without a parameter
             // no special task - prepare everything to show invoice
             EmployeeViewHelper eh = new EmployeeViewHelper();
-            Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeDAO, employeecontractDAO);
+            Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeService, employeecontractService);
             request.getSession().setAttribute("days", getDaysToDisplay());
             request.getSession().setAttribute("years", getYearsToDisplay());
             request.getSession().setAttribute("weeks", getWeeksToDisplay(showInvoiceForm.getFromYear()));
-            request.getSession().setAttribute("orders", customerorderDAO.getInvoiceableCustomerorders());
+            request.getSession().setAttribute("orders", customerorderService.getInvoiceableCustomerorders());
             request.getSession().setAttribute("suborders", new LinkedList<Suborder>());
             request.getSession().setAttribute("optionmwst", "19");
             request.getSession().setAttribute("layerlimit", "-1");
@@ -424,13 +427,17 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
         List<String> timereportIdList = new ArrayList<>();
         for (Suborder suborder : suborderList) {
             List<InvoiceTimereportHelper> invoiceTimereportViewHelperList = new LinkedList<>();
-            List<TimereportDTO> timereportList = timereportDAO.getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(dateFirst, dateLast, suborder.getId());
+            List<TimereportDTO> timereportList =
+                timereportService.getTimereportsByDatesAndSuborderId(dateFirst, dateLast, suborder.getId())
+                    .stream()
+                    .sorted(comparing(TimereportDTO::getReferenceday).thenComparing(TimereportDTO::getEmployeeSign))
+                    .toList();
             for (TimereportDTO timereport : timereportList) {
                 InvoiceTimereportHelper invoiceTimereportViewHelper = new InvoiceTimereportHelper(timereport);
                 invoiceTimereportViewHelperList.add(invoiceTimereportViewHelper);
                 timereportIdList.add(String.valueOf(invoiceTimereportViewHelper.getId()));
             }
-            InvoiceSuborderHelper newInvoiceSuborderViewHelper = new InvoiceSuborderHelper(suborder, timereportDAO, dateFirst, dateLast, invoiceForm.isInvoicebox());
+            InvoiceSuborderHelper newInvoiceSuborderViewHelper = new InvoiceSuborderHelper(suborder, timereportService, dateFirst, dateLast, invoiceForm.isInvoicebox());
             newInvoiceSuborderViewHelper.setInvoiceTimereportViewHelperList(invoiceTimereportViewHelperList);
             Pattern p = Pattern.compile("\\.");
             Matcher m = p.matcher(suborder.getSign());

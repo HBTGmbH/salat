@@ -226,4 +226,8 @@ public class SuborderService {
   public Suborder getSuborderById(long suborderId) {
     return suborderDAO.getSuborderById(suborderId);
   }
+
+  public List<Suborder> getSubordersByEmployeeContractId(long employeeContractId) {
+    return suborderDAO.getSubordersByEmployeeContractId(employeeContractId);
+  }
 }
