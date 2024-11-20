@@ -390,7 +390,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         request,
                         continueForm,
                         customerorderDAO,
-                        timereportDAO,
+                        timereportService,
                         employeecontractDAO,
                         suborderDAO,
                         employeeorderDAO

@@ -94,7 +94,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                     request,
                     showDailyReportForm,
                     customerorderDAO,
-                    timereportDAO,
+                    timereportService,
                     employeecontractDAO,
                     suborderDAO,
                     employeeorderDAO

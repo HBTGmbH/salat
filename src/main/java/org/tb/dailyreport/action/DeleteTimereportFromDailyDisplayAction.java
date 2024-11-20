@@ -61,7 +61,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
             return mapping.findForward("error");
         }
 
-        if (!refreshTimereports(request, form, customerorderDAO, timereportDAO, employeecontractDAO,
+        if (!refreshTimereports(request, form, customerorderDAO, timereportService, employeecontractDAO,
                 suborderDAO, employeeorderDAO)) {
             return mapping.findForward("error");
         } else {

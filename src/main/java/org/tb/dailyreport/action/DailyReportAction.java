@@ -20,8 +20,8 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.DailyReportViewHelper;
 import org.tb.employee.domain.Employeecontract;
@@ -134,7 +134,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
      * @return Returns true, if refreshing was succesful.
      */
     protected boolean refreshTimereports(HttpServletRequest request, ShowDailyReportForm reportForm, CustomerorderDAO customerorderDAO,
-                                         TimereportDAO timereportDAO, EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
+                                         TimereportService timereportService, EmployeecontractDAO employeecontractDAO, SuborderDAO suborderDAO,
                                          EmployeeorderDAO employeeorderDAO) {
 
         //selected view and selected dates
@@ -211,8 +211,8 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         if (reportForm.getOrder() == null || reportForm.getOrder().equals(GlobalConstants.ALL_ORDERS)) {
             // get the timereports for specific date, all orders
             timereports = ec == null
-                    ? timereportDAO.getTimereportsByDates(beginDate, endDate)  // all employees
-                    : timereportDAO.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginDate, endDate); // specific employee
+                    ? timereportService.getTimereportsByDates(beginDate, endDate)  // all employees
+                    : timereportService.getTimereportsByDatesAndEmployeeContractId(ec.getId(), beginDate, endDate); // specific employee
 
         } else {
             Customerorder co = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
@@ -229,12 +229,12 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             if (reportForm.getSuborderId() == 0 || reportForm.getSuborderId() == -1) {
                 // get the timereports for specific date, specific order
                 timereports = ec == null
-                        ? timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId) //all employees
-                        : timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ec.getId(), beginDate, endDate, orderId); // specific employee
+                        ? timereportService.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId) //all employees
+                        : timereportService.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(ec.getId(), beginDate, endDate, orderId); // specific employee
             } else {
                 timereports = ec == null
-                        ? timereportDAO.getTimereportsByDatesAndSuborderId(beginDate, endDate, reportForm.getSuborderId()) //all employees
-                        : timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), beginDate, endDate, reportForm.getSuborderId()); // specific employee
+                        ? timereportService.getTimereportsByDatesAndSuborderId(beginDate, endDate, reportForm.getSuborderId()) //all employees
+                        : timereportService.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(ec.getId(), beginDate, endDate, reportForm.getSuborderId()); // specific employee
             }
         }
 

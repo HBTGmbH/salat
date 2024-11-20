@@ -565,7 +565,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     request,
                     reportForm,
                     customerorderDAO,
-                    timereportDAO,
+                    timereportService,
                     employeecontractDAO,
                     suborderDAO,
                     employeeorderDAO
