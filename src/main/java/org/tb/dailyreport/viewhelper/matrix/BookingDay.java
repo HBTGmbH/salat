@@ -16,6 +16,8 @@ public class BookingDay implements Comparable<BookingDay> {
     private boolean satSun;
     private boolean publicHoliday;
     private int bookingCount;
+    private String orderSign;
+    private long suborderId;
 
     public BookingDay(LocalDate date) {
         this.date = date;
@@ -26,13 +28,15 @@ public class BookingDay implements Comparable<BookingDay> {
         bookingCount = 0;
     }
 
-    public BookingDay(LocalDate date, Duration duration, String taskdescription) {
+    public BookingDay(LocalDate date, Duration duration, String taskdescription, String orderSign, long suborderId) {
         this.date = date;
         this.duration = duration;
         satSun = false;
         publicHoliday = false;
         this.taskdescription = taskdescription;
         bookingCount = 1;
+        this.orderSign = orderSign;
+        this.suborderId = suborderId;
     }
 
     public int compareTo(BookingDay o) {
@@ -58,6 +62,10 @@ public class BookingDay implements Comparable<BookingDay> {
 
     public String getDurationString() {
         return DurationUtils.format(duration, true);
+    }
+
+    public String getDayString() {
+        return date.getDayOfMonth() < 10 ? "0" + date.getDayOfMonth() : Integer.toString(date.getDayOfMonth());
     }
 
     public void addBooking(Duration duration, String taskdescription) {

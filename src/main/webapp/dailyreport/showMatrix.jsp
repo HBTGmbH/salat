@@ -353,11 +353,13 @@
 				<td class="matrix"><c:out value="${matrixline.customOrder.sign}"></c:out> (<c:out value="${matrixline.customerShortname}"></c:out>)<br><c:out value="${matrixline.subOrder.sign}" /></td>
 				<td class="matrix"><c:out value="${matrixline.customOrder.shortdescription}"></c:out><br><c:out value="${matrixline.subOrder.shortdescription}" /></td>
 				<c:forEach var="bookingday" items="${matrixline.bookingDays}">
-					<td title="${fn:escapeXml(bookingday.taskdescription)}"
+					<td id="matrixTableLink" title="${fn:escapeXml(bookingday.taskdescription)}"
 					class="matrix${bookingday.publicHoliday ? ' holiday' : (bookingday.satSun ? ' weekend' : '')}"
 					align="right"
 					style="font-size: 7pt; border: 1px black solid;">
-						<c:out value="${bookingday.bookingCount gt 0 ? bookingday.durationString : ' '}" />
+						<html:link href="/do/ShowDailyReport?order=${bookingday.orderSign}&suborderId=${bookingday.suborderId}&day=${bookingday.dayString}&month=${currentMonth}&year=${currentYear}">
+							<c:out value="${bookingday.bookingCount gt 0 ? bookingday.durationString : ' '}" />
+						</html:link>
 					</td>
 				</c:forEach>
 				<td class="matrix" align="right"><c:out	value="${matrixline.totalString}"></c:out></td>

@@ -288,8 +288,8 @@ public class MatrixHelper {
             }
         }
         // add a new MatrixLine
-        var customerorderData = new OrderSummaryData(timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
-        var suborderData = new OrderSummaryData(timeReport.getSuborderSign(), timeReport.getSuborderDescription());
+        var customerorderData = new OrderSummaryData(timeReport.getCustomerorderId(), timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
+        var suborderData = new OrderSummaryData(timeReport.getSuborderId(), timeReport.getSuborderSign(), timeReport.getSuborderDescription());
         matrixLines.add(
             new MatrixLine(
                 timeReport.getCustomerShortname(),
