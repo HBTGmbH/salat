@@ -151,4 +151,8 @@ public class EmployeeorderService {
         .filter(eo -> eo.isValidAt(validAt))
         .toList();
   }
+
+  public Employeeorder getEmployeeorderById(Long employeeOrderId) {
+    return employeeorderDAO.getEmployeeorderById(employeeOrderId);
+  }
 }

@@ -36,12 +36,11 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,9 +48,8 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @Tag(name = "daily report")
 public class DailyReportRestEndpoint {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final TimereportDAO timereportDAO;
-    private final EmployeeorderDAO employeeorderDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
 
@@ -65,7 +63,7 @@ public class DailyReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), refDate);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), refDate);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
@@ -87,7 +85,7 @@ public class DailyReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+        var employeecontract = employeecontractService.getEmployeeContractById(employeeContractId);
         if (employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
@@ -154,7 +152,7 @@ public class DailyReportRestEndpoint {
     }
 
     private void replaceDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings) {
-        var employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
+        var employeeorder = employeeorderService.getEmployeeorderById(employeeOrderId);
         if (employeeorder == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + employeeOrderId);
         }
@@ -163,7 +161,7 @@ public class DailyReportRestEndpoint {
     }
 
     private void createDailyReport(DailyReportData booking) throws AuthorizationException, InvalidDataException, BusinessRuleException {
-        var employeeorder = employeeorderDAO.getEmployeeorderById(booking.getEmployeeorderId());
+        var employeeorder = employeeorderService.getEmployeeorderById(booking.getEmployeeorderId());
         if (employeeorder == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + booking.getEmployeeorderId());
         }
@@ -187,7 +185,7 @@ public class DailyReportRestEndpoint {
     private List<DailyReportData> getDailyReports(Long employeeContractId, LocalDate startDay, int days) {
         return IntStream.range(0, days)
                 .mapToObj(day -> DateUtils.addDays(startDay, day))
-                .map(day -> timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, day))
+                .map(day -> timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, day))
                 .flatMap(List::stream)
                 .map(DailyReportData::valueOf)
                 .collect(toList());
