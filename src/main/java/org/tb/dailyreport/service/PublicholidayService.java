@@ -1,12 +1,14 @@
 package org.tb.dailyreport.service;
 
 import java.time.LocalDate;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.HolidaysUtil;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 
 @Service
@@ -15,6 +17,7 @@ import org.tb.dailyreport.persistence.PublicholidayRepository;
 public class PublicholidayService {
 
   private final PublicholidayRepository publicholidayRepository;
+  private final PublicholidayDAO publicholidayDAO;
 
   /**
    * Sets the German public holidays of current year if not yet done.
@@ -37,4 +40,7 @@ public class PublicholidayService {
     }
   }
 
+  public List<Publicholiday> getPublicHolidaysBetween(LocalDate dateFirst, LocalDate dateLast) {
+    return publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast);
+  }
 }

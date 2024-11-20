@@ -29,4 +29,8 @@ public class EmployeeService {
   public Employee getEmployeeBySign(String sign) {
     return employeeDAO.getEmployeeBySign(sign);
   }
+
+  public Employee getEmployeeById(long employeeId) {
+    return employeeDAO.getEmployeeById(employeeId);
+  }
 }

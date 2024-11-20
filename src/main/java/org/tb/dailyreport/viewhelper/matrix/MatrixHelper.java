@@ -45,18 +45,17 @@ import org.tb.dailyreport.action.ShowMatrixForm;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.PublicholidayDAO;
-import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.matrix.MatrixLine.OrderSummaryData;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.OvertimeService;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 @Component
 @Slf4j
@@ -101,19 +100,18 @@ public class MatrixHelper {
         WEEK_DAYS_MAP.put(SUNDAY, "main.matrixoverview.weekdays.sunday.text");
     }
 
-    private final TimereportDAO timereportDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final PublicholidayDAO publicholidayDAO;
-    private final CustomerorderDAO customerorderDAO;
-    private final SuborderDAO suborderDAO;
-    private final EmployeeDAO employeeDAO;
+    private final EmployeecontractService employeecontractService;
+    private final PublicholidayService publicholidayService;
+    private final CustomerorderService customerorderService;
+    private final SuborderService suborderService;
+    private final EmployeeService employeeService;
     private final OvertimeService overtimeService;
     private final AfterLogin afterLogin;
-    private final WorkingdayDAO workingdayDAO;
+    private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
 
     public Matrix createMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable, boolean startAndBreakTime) {
-        Employeecontract employeecontract = employeeContractId != -1 ? employeecontractDAO.getEmployeeContractById(employeeContractId) : null;
+        Employeecontract employeecontract = employeeContractId != -1 ? employeecontractService.getEmployeeContractById(employeeContractId) : null;
 
         List<TimereportDTO> timeReportList;
         if (invoiceable || nonInvoiceable) {
@@ -139,7 +137,10 @@ public class MatrixHelper {
             Collections.sort(matrixLine.getBookingDays());
         }
 
-        Map<LocalDate, Publicholiday> publicHolidayMap = publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast).stream().collect(toMap(Publicholiday::getRefdate, identity()));
+        Map<LocalDate, Publicholiday> publicHolidayMap = publicholidayService
+            .getPublicHolidaysBetween(dateFirst, dateLast)
+            .stream()
+            .collect(toMap(Publicholiday::getRefdate, identity()));
 
         var dayTotals = initializeDayTotals(employeecontract, dateFirst, dateLast, publicHolidayMap, startAndBreakTime);
         var dayTotalsMap = dayTotals.stream().collect(toMap(MatrixDayTotal::getDate, identity()));
@@ -316,7 +317,7 @@ public class MatrixHelper {
     }
 
     private Map<LocalDate, Workingday> queryWorkingDays(LocalDate dateFirst, LocalDate dateLast, long employeeContractId) {
-        return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast)
+        return workingdayService.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast)
                 .stream()
                 .collect(toMap(Workingday::getRefday, workingDay -> workingDay));
     }
@@ -325,15 +326,15 @@ public class MatrixHelper {
         //choice of timereports by date, employeecontractid and/or customerorderid
         if (method == MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES || method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES) {
             if (employeeContractId == -1) {
-                return timereportDAO.getTimereportsByDates(dateFirst, dateLast);
+                return timereportService.getTimereportsByDates(dateFirst, dateLast);
             } else {
-                return timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast);
+                return timereportService.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast);
             }
         } else if (method == MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES || method == MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES) {
             if (employeeContractId == -1) {
-                return timereportDAO.getTimereportsByDatesAndCustomerOrderId(dateFirst, dateLast, customerOrderId);
+                return timereportService.getTimereportsByDatesAndCustomerOrderId(dateFirst, dateLast, customerOrderId);
             } else {
-                return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeeContractId, dateFirst, dateLast, customerOrderId);
+                return timereportService.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeeContractId, dateFirst, dateLast, customerOrderId);
             }
         } else {
             throw new RuntimeException("this should not happen!");
@@ -372,7 +373,7 @@ public class MatrixHelper {
         }
         results.put("matrixview", selectedView);
 
-        Customerorder order = customerorderDAO.getCustomerorderBySign(reportForm.getOrder());
+        Customerorder order = customerorderService.getCustomerorderBySign(reportForm.getOrder());
         Matrix matrix;
         Long ecId = reportForm.getEmployeeContractId();
         boolean isInvoiceable = reportForm.getInvoice();
@@ -380,7 +381,7 @@ public class MatrixHelper {
         boolean isStartAndBreakTime = reportForm.getStartAndBreakTime();
         if (ecId == -1) {
             // consider timereports for all employees
-            List<Customerorder> orders = customerorderDAO.getCustomerorders();
+            List<Customerorder> orders = customerorderService.getAllCustomerorders();
             results.put("orders", orders);
 
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
@@ -399,7 +400,7 @@ public class MatrixHelper {
             results.put("csvDownloadUrl", null);
         } else {
             // consider timereports for specific employee
-            Employeecontract employeeContract = employeecontractDAO.getEmployeeContractById(ecId);
+            Employeecontract employeeContract = employeecontractService.getEmployeeContractById(ecId);
             if (employeeContract == null) {
                 results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employee contract found for employee - please call system administrator.");
                 return results;
@@ -407,10 +408,10 @@ public class MatrixHelper {
 
             // also refresh orders/suborders to be displayed for specific
             // employee
-            List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
+            List<Customerorder> orders = customerorderService.getCustomerordersByEmployeeContractId(ecId);
             results.put("orders", orders);
             if (!orders.isEmpty()) {
-                results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(employeeContract.getId()));
+                results.put("suborders", suborderService.getSubordersByEmployeeContractId(employeeContract.getId()));
             }
 
             if (reportForm.getOrder() == null || reportForm.getOrder().equals("ALL ORDERS")) {
@@ -420,7 +421,7 @@ public class MatrixHelper {
             } else {
                 // get the timereports for specific date, specific employee,
                 // specific order
-                List<Customerorder> customerOrder = customerorderDAO.getCustomerordersByEmployeeContractId(ecId);
+                List<Customerorder> customerOrder = customerorderService.getCustomerordersByEmployeeContractId(ecId);
                 if (customerOrder.contains(order)) {
                     matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES, order.getId(), isInvoiceable, isNonInvoiceable, isStartAndBreakTime);
                 } else {
@@ -486,8 +487,7 @@ public class MatrixHelper {
             return results;
         }
 
-        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false,
-            today());
+        List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsValidAt(today());
 
         if (employeeContracts == null || employeeContracts.isEmpty()) {
             results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employees with valid contracts found - please call system administrator.");
@@ -576,18 +576,18 @@ public class MatrixHelper {
             // orders
             List<Customerorder> orders;
             if (currentEmployeeId != null && currentEmployeeId == -1) {
-                orders = customerorderDAO.getCustomerorders();
+                orders = customerorderService.getAllCustomerorders();
                 results.put("currentEmployee", "ALL EMPLOYEES");
             } else {
-                orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+                orders = customerorderService.getCustomerordersByEmployeeContractId(ec.getId());
                 if (currentEmployeeId != null) {
-                    results.put("currentEmployee", employeeDAO.getEmployeeById(currentEmployeeId).getName());
+                    results.put("currentEmployee", employeeService.getEmployeeById(currentEmployeeId).getName());
                 }
             }
             results.put("orders", orders);
             results.put("currentOrder", "ALL ORDERS");
             if (!orders.isEmpty()) {
-                results.put("suborders", suborderDAO.getSubordersByEmployeeContractId(ec.getId()));
+                results.put("suborders", suborderService.getSubordersByEmployeeContractId(ec.getId()));
             }
 
             matrix = createMatrix(dateFirst, dateLast, ecId, MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES, -1, isInvoiceable, isNonInvoiceable, isStartAndBreakTime);

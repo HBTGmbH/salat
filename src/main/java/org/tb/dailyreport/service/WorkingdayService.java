@@ -10,6 +10,7 @@ import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -96,5 +97,10 @@ public class WorkingdayService {
 
   public void deleteWorkingdayById(long workingDayId) {
     workingdayDAO.deleteWorkingdayById(workingDayId);
+  }
+
+  public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate dateFirst,
+      LocalDate dateLast) {
+    return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast);
   }
 }
