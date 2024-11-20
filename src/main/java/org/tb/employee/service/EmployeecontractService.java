@@ -243,4 +243,7 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContractById(employeeContractId);
   }
 
+  public List<Employeecontract> getTeamContracts(Long teamManagerEmployeeId) {
+    return employeecontractDAO.getEmployeeContractsByEmployeeId(teamManagerEmployeeId);
+  }
 }

@@ -25,4 +25,8 @@ public class EmployeeService {
   public List<Employee> getEmployeesWithContracts() {
     return employeeDAO.getEmployeesWithContracts();
   }
+
+  public Employee getEmployeeBySign(String sign) {
+    return employeeDAO.getEmployeeBySign(sign);
+  }
 }

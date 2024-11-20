@@ -21,16 +21,16 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final EmployeeDAO employeeDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeService employeeService;
     private final SimpleMailService simpleMailService;
     private final TimereportService timereportService;
 
@@ -42,8 +42,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         boolean updateEmployee = false;
         long superId;
 
-        List<Employeecontract> viewableEmployeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
-            today());
+        List<Employeecontract> viewableEmployeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
 
         //get a list of all supervisors 
         List<Employee> supervisors = new LinkedList<>();
@@ -58,13 +57,13 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         /* get team members */
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-        List<Employeecontract> teamMemberContracts = employeecontractDAO.getTeamContracts(loginEmployee.getId());
+        List<Employeecontract> teamMemberContracts = employeecontractService.getTeamContracts(loginEmployee.getId());
         boolean supervisor = !teamMemberContracts.isEmpty();
         request.getSession().setAttribute("isSupervisor", supervisor);
 
         Employeecontract employeecontract = null;
         if (releaseForm.getEmployeeContractId() != null) {
-            employeecontract = employeecontractDAO.getEmployeeContractById(releaseForm.getEmployeeContractId());
+            employeecontract = employeecontractService.getEmployeeContractById(releaseForm.getEmployeeContractId());
         }
         if (supervisor || authorizedUser.isManager()) {
             Employeecontract currentEmployeeContract;
@@ -76,7 +75,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
         }
         if (employeecontract == null) {
-            employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), today());
+            employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), today());
             updateEmployee = true;
         }
 
@@ -87,7 +86,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             if (superId == -1) {
                 employeeContracts = viewableEmployeeContracts;
             } else {
-                teamMemberContracts = employeecontractDAO.getTeamContracts(superId);
+                teamMemberContracts = employeecontractService.getTeamContracts(superId);
                 employeeContracts = teamMemberContracts;
             }
         } else if (supervisor) {
@@ -160,7 +159,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
                         viewableEmployeeContracts);
 
             } else {
-                teamMemberContracts = employeecontractDAO.getTeamContracts(superId);
+                teamMemberContracts = employeecontractService.getTeamContracts(superId);
                 request.getSession().setAttribute("employeecontracts",
                         teamMemberContracts);
             }
@@ -168,7 +167,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("sendreleasemail")) {
             // build recipient for releasemail
-            Employee recipient = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
+            Employee recipient = employeeService.getEmployeeBySign(request.getParameter("sign"));
 
             // * revipient = Empfaenger, loginEmployee = Absender
             simpleMailService.sendSalatBuchungenToReleaseMail(recipient, loginEmployee);
@@ -179,8 +178,8 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         if (request.getParameter("task") != null && request.getParameter("task").equals("sendacceptancemail")) {
             // build recipient for acceptancemail
             // Contract from Employee
-            Employee contEmployee = employeeDAO.getEmployeeBySign(request.getParameter("sign"));
-            Employeecontract currentEmployeeContract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(contEmployee.getId(), today());
+            Employee contEmployee = employeeService.getEmployeeBySign(request.getParameter("sign"));
+            Employeecontract currentEmployeeContract = employeecontractService.getEmployeeContractValidAt(contEmployee.getId(), today());
 
             // BL
             Employee recipient = currentEmployeeContract.getSupervisor();
@@ -195,7 +194,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         if (request.getParameter("task") == null || updateEmployee) {
             // reload potenial updated data to feed the session and form
-            employeecontract = employeecontractDAO.getEmployeeContractById(employeecontract.getId());
+            employeecontract = employeecontractService.getEmployeeContractById(employeecontract.getId());
             var releaseDateFromContract = employeecontract.getReportReleaseDate();
             var acceptanceDateFromContract = employeecontract.getReportAcceptanceDate();
 
