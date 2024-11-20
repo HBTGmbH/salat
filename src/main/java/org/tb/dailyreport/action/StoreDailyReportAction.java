@@ -33,23 +33,19 @@ import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.CustomerorderHelper;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.viewhelper.SuborderHelper;
 
@@ -64,11 +60,7 @@ import org.tb.order.viewhelper.SuborderHelper;
 public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm> {
 
     private final SuborderService suborderService;
-    private final CustomerorderDAO customerorderDAO;
-    private final TimereportDAO timereportDAO;
-    private final WorkingdayDAO workingdayDAO;
     private final WorkingdayService workingdayService;
-    private final EmployeeorderDAO employeeorderDAO;
     private final SuborderHelper suborderHelper;
     private final CustomerorderHelper customerorderHelper;
     private final TimereportHelper timereportHelper;
@@ -124,12 +116,12 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("adjustBeginTime")) {
             Duration dailyWorkingTime = employeeContract.getDailyWorkingTime();
-            Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
+            Customerorder selectedOrder = customerorderService.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             Boolean workingDayAvailable = (Boolean) request.getSession().getAttribute("workingDayIsAvailable");
             if (TRUE == workingDayAvailable) {
                 LocalDate referenceDay = DateUtils.parseOrDefault(form.getReferenceday(), DateUtils.today());
-                Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referenceDay, employeeContract.getId());
+                Workingday workingday = workingdayService.getWorkingday(employeeContract.getId(), referenceDay);
 
                 // set the begin time as the end time of the latest existing timereport of current employee
                 // for current day. If no other reports exist so far, set standard begin time (0800).
@@ -186,7 +178,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("saveBeginOfWorkingDay")) {
             LocalDate dateOfReport = parse(form.getReferenceday());
-            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(dateOfReport, employeeContract.getId());
+            Workingday workingday = workingdayService.getWorkingday(employeeContract.getId(), dateOfReport);
             if (workingday == null) {
                 workingday = new Workingday();
                 workingday.setRefday(dateOfReport);
@@ -228,7 +220,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             suborderHelper.refreshSuborders(request, form, defaultSuborderIndexStr);
 
             // check if we can prefill the form with daily working time - this helps for standard orders like URLAUB
-            Customerorder selectedOrder = customerorderDAO.getCustomerorderById(form.getOrderId());
+            Customerorder selectedOrder = customerorderService.getCustomerorderById(form.getOrderId());
             boolean standardOrder = customerorderHelper.isOrderStandard(selectedOrder);
             if (standardOrder && noWorkingTimeSuppliedByUser(form)) {
                 Duration dailyWorkingTime = employeeContract.getDailyWorkingTime();
@@ -248,7 +240,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         if (refreshWorkdayAvailability) {
             // search for adequate workingday and set status in session
             LocalDate selectedDate = DateUtils.parseOrDefault(form.getReferenceday(), DateUtils.today());
-            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(selectedDate, employeeContract.getId());
+            Workingday workingday = workingdayService.getWorkingday(employeeContract.getId(), selectedDate);
             boolean workingDayIsAvailable = workingday != null && DateUtils.today().equals(selectedDate);
             request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
         }
@@ -259,8 +251,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
             LocalDate referencedayRefDate = parse(form.getReferenceday());
 
-            List<Employeeorder> employeeorders = employeeorderDAO
-                .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(
+            List<Employeeorder> employeeorders = employeeorderService
+                .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndValidAt(
                     form.getEmployeeContractId(),
                     form.getSuborderSignId(),
                     referencedayRefDate
@@ -276,7 +268,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                     if(effectiveNumberOfSerialDays > 1) {
                         // serial booking, needs to ensure working days are present - just copy the value of the first day
-                        Workingday firstWorkingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referencedayRefDate, employeeContract.getId());
+                        Workingday firstWorkingday = workingdayService.getWorkingday(employeeContract.getId(), referencedayRefDate);
                         if(firstWorkingday != null) {
                             var workingday = firstWorkingday;
                             for(int i = 1; i < effectiveNumberOfSerialDays; i++) {
@@ -338,7 +330,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             request.getSession().setAttribute("currentYear", DateUtils.getYearString(referencedayRefDate));
             request.getSession().removeAttribute("trId");
 
-            Workingday workingday = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(referencedayRefDate, form.getEmployeeContractId());
+            Workingday workingday = workingdayService.getWorkingday(form.getEmployeeContractId(), referencedayRefDate);
 
             if (request.getParameter("continue") == null || !Boolean.parseBoolean(request.getParameter("continue"))) {
                 // FIXME geht das nicht leichter?
@@ -484,7 +476,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 }
 
                 // load orders and suborders
-                List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(form.getEmployeeContractId(), selectedDate);
+                List<Customerorder> orders = customerorderService.getCustomerordersWithValidEmployeeOrders(form.getEmployeeContractId(), selectedDate);
                 List<Suborder> theSuborders;
                 if (!orders.isEmpty()) {
                     long orderId = form.getOrderId();
@@ -553,7 +545,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         String dateString = reportForm.getReferenceday();
         LocalDate date = DateUtils.parseOrDefault(dateString, DateUtils.today());
 
-        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(loginEmployeeContract.getId(), date);
+        List<Customerorder> orders = customerorderService.getCustomerordersWithValidEmployeeOrders(loginEmployeeContract.getId(), date);
         List<Suborder> suborders;
 
         //reset first order and corresponding suborders
@@ -571,7 +563,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         if (request.getSession().getAttribute("trId") != null) {
             //get the Timereport object
             long trId = Long.parseLong(request.getSession().getAttribute("trId").toString());
-            TimereportDTO timereport = timereportDAO.getTimereportById(trId);
+            TimereportDTO timereport = timereportService.getTimereportById(trId);
 
             //reset the rest
             reportForm.setReferenceday(DateUtils.format(timereport.getReferenceday()));

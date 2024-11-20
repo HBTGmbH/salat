@@ -17,11 +17,11 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 /**
  * Helper class for timereport handling which does not directly deal with persistence
@@ -33,10 +33,10 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @RequiredArgsConstructor
 public class TimereportHelper {
 
-    private final TimereportDAO timereportDAO;
-    private final EmployeeorderDAO employeeorderDAO;
+    private final TimereportService timereportService;
+    private final EmployeeorderService employeeorderService;
     private final AuthorizedUser authorizedUser;
-    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeecontractService employeecontractService;
 
     /**
      * refreshes hours after change of begin/end times
@@ -65,7 +65,7 @@ public class TimereportHelper {
         }
 
         // check date vs release status
-        Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(timereport.getEmployeecontractId());
+        Employeecontract employeecontract = employeecontractService.getEmployeeContractById(timereport.getEmployeecontractId());
         LocalDate releaseDate = employeecontract.getReportReleaseDate();
         LocalDate acceptanceDate = employeecontract.getReportAcceptanceDate();
 
@@ -85,7 +85,7 @@ public class TimereportHelper {
         }
 
         // check for adequate employee order
-        List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(timereport.getEmployeecontractId(), timereport.getSuborderId(), theNewDate);
+        List<Employeeorder> employeeorders = employeeorderService.getEmployeeOrderByEmployeeContractIdAndSuborderIdAndValidAt(timereport.getEmployeecontractId(), timereport.getSuborderId(), theNewDate);
         if (employeeorders == null || employeeorders.isEmpty()) {
             errors.add("employeeorder", new ActionMessage("form.timereport.error.employeeorder.notfound"));
         } else if (employeeorders.size() > 1) {
@@ -100,7 +100,7 @@ public class TimereportHelper {
      */
     private long[] getWorkingTimeForDateAndEmployeeContract(LocalDate date, long employeeContractId) {
         long[] workingTime = new long[2];
-        List<TimereportDTO> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
+        List<TimereportDTO> timereports = timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         long hours = 0;
         long minutes = 0;
         for (TimereportDTO timereport : timereports) {
@@ -132,7 +132,7 @@ public class TimereportHelper {
     }
 
     public long[] determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, TimereportDTO tr) {
-        List<TimereportDTO> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
+        List<TimereportDTO> timereports = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
         if (workingday != null) {
             long hourBegin = workingday.getStarttimehour();
             long minuteBegin = workingday.getStarttimeminute();

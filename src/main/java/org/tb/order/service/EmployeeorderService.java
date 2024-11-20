@@ -142,4 +142,13 @@ public class EmployeeorderService {
   public List<Employeeorder> getEmployeeordersByCustomerorderIdAndEmployeeContractId(long customerorderId, long employeeContractId) {
     return employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(customerorderId, employeeContractId);
   }
+
+  public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndValidAt(long employeeContractId,
+      long suborderSignId, LocalDate validAt) {
+    return employeeorderDAO
+        .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(employeeContractId, suborderSignId, validAt)
+        .stream()
+        .filter(eo -> eo.isValidAt(validAt))
+        .toList();
+  }
 }
