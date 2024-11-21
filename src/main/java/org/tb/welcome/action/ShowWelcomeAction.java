@@ -1,6 +1,7 @@
 package org.tb.welcome.action;
 
 import static java.lang.Boolean.TRUE;
+import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,21 +13,20 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.AfterLogin;
 import org.tb.auth.AuthService;
 import org.tb.common.Warning;
-import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.DailyReportAction;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.welcome.viewhelper.WelcomeViewHelper;
 
 @Component
 @RequiredArgsConstructor
 public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeecontractService employeecontractService;
     private final AfterLogin afterLogin;
     private final AuthService authService;
-    private final EmployeeDAO employeeDAO;
+    private final EmployeeService employeeService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
@@ -35,7 +35,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
         if("switch-login".equals(request.getParameter("task"))) {
             authService.switchLogin(welcomeForm.getLoginEmployeeId());
-            var loginEmployee = employeeDAO.getEmployeeById(authorizedUser.getEmployeeId());
+            var loginEmployee = employeeService.getEmployeeById(authorizedUser.getEmployeeId());
             request.getSession().setAttribute("loginEmployee", loginEmployee);
             String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
             request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
@@ -47,8 +47,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
         request.getSession().setAttribute("loginEmployees", loginEmployees);
 
         // create collection of employeecontracts
-        List<Employeecontract> employeecontracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
-            DateUtils.today());
+        List<Employeecontract> employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         Employeecontract employeecontract;
@@ -57,7 +56,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
             long employeeContractId = welcomeForm.getEmployeeContractId();
 
-            employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+            employeecontract = employeecontractService.getEmployeeContractById(employeeContractId);
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", employeecontract);
         } else {
