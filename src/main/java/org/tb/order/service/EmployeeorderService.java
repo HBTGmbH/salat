@@ -161,4 +161,39 @@ public class EmployeeorderService {
   public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId) {
     return employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, today());
   }
+
+  public List<Employeeorder> getAllEmployeeOrders() {
+    return employeeorderDAO.getEmployeeorders();
+  }
+
+  public boolean deleteEmployeeorderById(long employeeOrderId) {
+    return employeeorderDAO.deleteEmployeeorderById(employeeOrderId);
+  }
+
+  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, long employeeContractId,
+      Long customerOrderId) {
+    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId);
+  }
+
+  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long suborderId) {
+    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId);
+  }
+
+  public void save(Employeeorder employeeorder) {
+    employeeorderDAO.save(employeeorder);
+  }
+
+  public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId,
+      long suborderId) {
+    return employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
+  }
+
+  public List<Employeeorder> getEmployeeOrdersBySuborderId(Long suborderId) {
+    return employeeorderDAO.getEmployeeOrdersBySuborderId(suborderId);
+  }
+
+  public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(long employeecontractId,
+      long suborderId, LocalDate date) {
+    return employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontractId, suborderId, date);
+  }
 }

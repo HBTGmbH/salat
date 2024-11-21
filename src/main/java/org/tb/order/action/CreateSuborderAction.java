@@ -13,9 +13,9 @@ import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * action class for creating a new suborder
@@ -26,8 +26,8 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final SuborderDAO suborderDAO;
+    private final CustomerorderService customerorderService;
+    private final SuborderService suborderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddSuborderForm suborderForm, HttpServletRequest request, HttpServletResponse response) {
@@ -43,13 +43,13 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
                 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV) ||
                 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-            customerorders = customerorderDAO.getVisibleCustomerorders();
+            customerorders = customerorderService.getVisibleCustomerorders();
         } else {
-            customerorders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+            customerorders = customerorderService.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         }
 
 
-        List<Suborder> suborders = suborderDAO.getSuborders(false);
+        List<Suborder> suborders = suborderService.getAllSuborders();
 
         if ((customerorders == null) || (customerorders.size() <= 0)) {
             request.setAttribute("errorMessage", "No customer orders found - please call system administrator.");
@@ -71,7 +71,7 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         if (request.getSession().getAttribute("lastCoId") != null) {
             long id = (Long) request.getSession().getAttribute("lastCoId");
             request.getSession().setAttribute("currentOrderId", id);
-            Customerorder customerorder = customerorderDAO.getCustomerorderById(id);
+            Customerorder customerorder = customerorderService.getCustomerorderById(id);
             request.getSession().setAttribute("currentOrder", customerorder);
             suborderForm.setCustomerorderId(id);
         }
@@ -79,7 +79,7 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         // reset/init form entries
         suborderForm.reset(mapping, request);
 
-        if (customerorders.size() > 0) {
+        if (!customerorders.isEmpty()) {
             if (request.getSession().getAttribute("lastCoId") == null) {
                 request.getSession().setAttribute("currentOrderId", customerorders.getFirst().getId());
                 request.getSession().setAttribute("currentOrder", customerorders.getFirst());
@@ -87,8 +87,8 @@ public class CreateSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
             Customerorder customerorder;
 
-            if (customerOrderId != null && customerorderDAO.getCustomerorderById(customerOrderId) != null) {
-                customerorder = customerorderDAO.getCustomerorderById(customerOrderId);
+            if (customerOrderId != null && customerorderService.getCustomerorderById(customerOrderId) != null) {
+                customerorder = customerorderService.getCustomerorderById(customerOrderId);
             } else {
                 customerorder = customerorders.getFirst();
             }

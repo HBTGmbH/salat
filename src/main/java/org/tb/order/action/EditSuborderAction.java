@@ -15,9 +15,9 @@ import org.tb.common.util.DurationUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * action class for editing a suborder
@@ -28,8 +28,8 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
-    private final SuborderDAO suborderDAO;
-    private final CustomerorderDAO customerorderDAO;
+    private final SuborderService suborderService;
+    private final CustomerorderService customerorderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddSuborderForm soForm, HttpServletRequest request, HttpServletResponse response) {
@@ -37,7 +37,7 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         long soId = Long.parseLong(request.getParameter("soId"));
-        Suborder so = suborderDAO.getSuborderById(soId);
+        Suborder so = suborderService.getSuborderById(soId);
         request.getSession().setAttribute("soId", so.getId());
 
         // fill the form with properties of suborder to be edited
@@ -49,9 +49,9 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
                 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV) ||
                 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-            customerorders = customerorderDAO.getVisibleCustomerorders();
+            customerorders = customerorderService.getVisibleCustomerorders();
         } else {
-            customerorders = customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+            customerorders = customerorderService.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         }
         request.getSession().setAttribute("customerorders", customerorders);
 
@@ -80,12 +80,12 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         } else {
             soForm.setParentId(so.getCustomerorder().getId());
         }
-        Suborder tempSubOrder = suborderDAO.getSuborderById(soForm.getParentId());
+        Suborder tempSubOrder = suborderService.getSuborderById(soForm.getParentId());
         if (tempSubOrder != null && Objects.equals(tempSubOrder.getCustomerorder().getId(), so.getCustomerorder().getId())) {
             soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
             request.getSession().setAttribute("suborderParent", tempSubOrder);
         } else {
-            Customerorder tempOrder = customerorderDAO.getCustomerorderById(soForm.getParentId());
+            Customerorder tempOrder = customerorderService.getCustomerorderById(soForm.getParentId());
             soForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
             request.getSession().setAttribute("suborderParent", tempOrder);
         }

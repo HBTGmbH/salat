@@ -10,11 +10,11 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.customer.Customer;
-import org.tb.customer.CustomerDAO;
+import org.tb.customer.CustomerService;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.order.service.CustomerorderService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 
 /**
  * action class for showing all customer orders
@@ -25,8 +25,8 @@ import org.tb.order.persistence.CustomerorderDAO;
 @RequiredArgsConstructor
 public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerorderForm> {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final CustomerDAO customerDAO;
+    private final CustomerorderService customerorderService;
+    private final CustomerService customerService;
     private final TimereportService timereportService;
 
     @Override
@@ -34,7 +34,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerord
         ShowCustomerorderForm orderForm, HttpServletRequest request,
         HttpServletResponse response) {
 
-        List<Customer> customers = customerDAO.getCustomersOrderedByShortName();
+        List<Customer> customers = customerService.getCustomersOrderedByShortName();
         request.getSession().setAttribute("customers", customers);
 
         String filter = null;
@@ -71,7 +71,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerord
 
         if (showActualHours) {
             /* show actual hours */
-            List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
+            List<Customerorder> customerOrders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
             List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
             for (Customerorder customerorder : customerOrders) {
                 CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
@@ -79,7 +79,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerord
             }
             request.getSession().setAttribute("customerorders", decorators);
         } else {
-            request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));
+            request.getSession().setAttribute("customerorders", customerorderService.getCustomerordersByFilters(show, filter, customerId));
 
         }
 

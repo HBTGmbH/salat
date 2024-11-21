@@ -14,15 +14,12 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.action.AddSuborderForm;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.domain.SuborderVisitor;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 
 @Service
@@ -31,11 +28,8 @@ import org.tb.order.persistence.SuborderDAO;
 public class SuborderService {
 
   private final SuborderDAO suborderDAO;
-  private final TimereportDAO timereportDAO;
-  private final EmployeeorderDAO employeeorderDAO;
   private final EmployeeorderService employeeorderService;
   private final TimereportService timereportService;
-  private final CustomerorderDAO customerorderDAO;
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
@@ -77,7 +71,7 @@ public class SuborderService {
           && !so.getSuborders().isEmpty()
           && !Objects.equals(so.getCustomerorder().getId(), customerorder.getId())) {
         // set customerorder in all descendants
-        so.setCustomerOrderForAllDescendants(customerorder, suborderDAO, so);
+        so.setCustomerOrderForAllDescendants(customerorder, this, so);
       }
       so = suborderDAO.getSuborderById(soId);
     } else {
@@ -96,13 +90,13 @@ public class SuborderService {
     so.setTrainingFlag(addSuborderForm.getTrainingFlag());
     so.setOrderType(addSuborderForm.getOrderType());
 
-    if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().equals("")) {
+    if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().isEmpty()) {
       LocalDate fromDate = DateUtils.parseOrNull(addSuborderForm.getValidFrom());
       so.setFromDate(fromDate);
     } else {
       so.setFromDate(so.getCustomerorder().getFromDate());
     }
-    if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
+    if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().isEmpty()) {
       LocalDate untilDate = DateUtils.parseOrNull(addSuborderForm.getValidUntil());
       so.setUntilDate(untilDate);
     } else {
@@ -171,7 +165,7 @@ public class SuborderService {
 
   private void adjustEmployeeorderValidity(Suborder so) {
     // adjust employeeorders
-    List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(so.getId());
+    List<Employeeorder> employeeorders = employeeorderService.getEmployeeOrdersBySuborderId(so.getId());
     if (employeeorders != null && !employeeorders.isEmpty()) {
       for (Employeeorder employeeorder : employeeorders) {
         employeeorderService.adjustValidity(employeeorder, so.getFromDate(), so.getUntilDate());
@@ -205,7 +199,7 @@ public class SuborderService {
   }
 
   private void validateBusinessRules(Suborder suborder) throws BusinessRuleException {
-    if(timereportDAO.getTimereportsBySuborderIdInvalidForDates(
+    if(timereportService.getTimereportsBySuborderIdInvalidForDates(
           suborder.getFromDate(),
           suborder.getUntilDate(),
           suborder.getId()
@@ -229,5 +223,34 @@ public class SuborderService {
 
   public List<Suborder> getSubordersByEmployeeContractId(long employeeContractId) {
     return suborderDAO.getSubordersByEmployeeContractId(employeeContractId);
+  }
+
+  public List<Suborder> getAllSuborders() {
+    return suborderDAO.getSuborders(false);
+  }
+
+  public boolean deleteSuborderById(long suborderId) {
+    return suborderDAO.deleteSuborderById(suborderId);
+  }
+
+  public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
+    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId);
+  }
+
+  public List<Suborder> getSubordersByValidity(Boolean showOnlyValid) {
+    return suborderDAO.getSuborders(showOnlyValid);
+  }
+
+  public void save(Suborder suborder) {
+    suborderDAO.save(suborder);
+  }
+
+  public List<Suborder> getSuborderChildren(Long parentSuborderId) {
+    return suborderDAO.getSuborderChildren(parentSuborderId);
+  }
+
+  public List<Suborder> getSubordersByEmployeeContractIdWithValidEmployeeOrders(long employeecontractId,
+      LocalDate validAt) {
+    return suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(employeecontractId, validAt);
   }
 }

@@ -1,5 +1,7 @@
 package org.tb.order.action;
 
+import static org.tb.common.util.DateUtils.today;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -12,12 +14,12 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * action class for showing all employee orders
@@ -28,10 +30,10 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrderForm> {
 
-    private final EmployeeorderDAO employeeorderDAO;
-    private final SuborderDAO suborderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final CustomerorderDAO customerorderDAO;
+    private final EmployeeorderService employeeorderService;
+    private final SuborderService suborderService;
+    private final EmployeecontractService employeecontractService;
+    private final CustomerorderService customerorderService;
     private final TimereportService timereportService;
 
     @Override
@@ -82,7 +84,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                                 employeeorder.getUntilDate()
                             );
                         if (timereportsInvalidForDates == null || timereportsInvalidForDates.isEmpty()) {
-                            employeeorderDAO.save(employeeorder);
+                            employeeorderService.save(employeeorder);
                         }
                     }
                 }
@@ -90,13 +92,12 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
         }
 
         // get valid employeecontracts
-        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
-            DateUtils.today());
+        List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         request.getSession().setAttribute("employeecontracts", employeeContracts);
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
-        List<Customerorder> orders = customerorderDAO.getCustomerorders();
+        List<Customerorder> orders = customerorderService.getAllCustomerorders();
         request.getSession().setAttribute("orders", orders);
 
         if (request.getParameter("task") != null && request.getParameter("task").equalsIgnoreCase("back")) {
@@ -104,7 +105,7 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
             return mapping.findForward("backtomenu");
         }
 
-        orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+        orders = customerorderService.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
 
         boolean employeeIsResponsible = false;
 
@@ -113,7 +114,9 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
         }
         request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
 
-        refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderDAO, employeecontractDAO, timereportService, suborderDAO, customerorderDAO, !orderForm.getShow());
+        refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderService, employeecontractService, timereportService,
+            suborderService,
+            customerorderService, !orderForm.getShow());
 
         return mapping.findForward("success");
 

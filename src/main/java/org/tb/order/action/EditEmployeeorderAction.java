@@ -1,5 +1,7 @@
 package org.tb.order.action;
 
+import static org.tb.common.util.DateUtils.today;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -13,12 +15,12 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
 
 /**
  * action class for editing an employee order
@@ -29,9 +31,9 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @RequiredArgsConstructor
 public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrderForm> {
 
-    private final EmployeeorderDAO employeeorderDAO;
-    private final CustomerorderDAO customerorderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeeorderService employeeorderService;
+    private final CustomerorderService customerorderService;
+    private final EmployeecontractService employeecontractService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeOrderForm eoForm, HttpServletRequest request, HttpServletResponse response) {
@@ -39,7 +41,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         long eoId = Long.parseLong(request.getParameter("eoId"));
-        Employeeorder eo = employeeorderDAO.getEmployeeorderById(eoId);
+        Employeeorder eo = employeeorderService.getEmployeeorderById(eoId);
         request.getSession().setAttribute("eoId", eo.getId());
 
         request.getSession().setAttribute("selectedcustomerorder", eo.getSuborder().getCustomerorder());
@@ -67,8 +69,7 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
         request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
         request.getSession().setAttribute("currentEmployeeContract", ec);
 
-        List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
-            DateUtils.today());
+        List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
 
         if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
             request.setAttribute("errorMessage",
@@ -83,9 +84,9 @@ public class EditEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrde
         if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) ||
                 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV) ||
                 loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-            orders = customerorderDAO.getCustomerorders();
+            orders = customerorderService.getAllCustomerorders();
         } else {
-            orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+            orders = customerorderService.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         }
 
         request.getSession().setAttribute("orders", orders);

@@ -30,7 +30,7 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.SuborderService;
 
 @Getter
 @Setter
@@ -132,7 +132,7 @@ public class Suborder extends AuditedEntity implements Serializable {
     }
 
     public String getShortdescription() {
-        if (shortdescription == null || shortdescription.equals("")) {
+        if (shortdescription == null || shortdescription.isEmpty()) {
             if (description == null) {
                 description = "";
             }
@@ -276,22 +276,20 @@ public class Suborder extends AuditedEntity implements Serializable {
     /**
      * Set the {@link Customerorder} for all descendants
      */
-    public void setCustomerOrderForAllDescendants(Customerorder customerOrder, SuborderDAO suborderDAO, Suborder rootSuborder) {
-
+    public void setCustomerOrderForAllDescendants(Customerorder customerOrder, SuborderService suborderService, Suborder rootSuborder) {
         final Customerorder customerorderToSet = customerOrder;
-        final SuborderDAO visitorSuborderDAO = suborderDAO;
         final Suborder visitorRootSuborder = rootSuborder;
 
         /* create visitor to collect suborders */
         SuborderVisitor customerOrderSetter = suborder -> {
             // do not modify root suborder
             if (!Objects.equals(visitorRootSuborder.getId(), suborder.getId())) {
-                Suborder suborderToModify = visitorSuborderDAO
+                Suborder suborderToModify = suborderService
                         .getSuborderById(suborder.getId());
                 if (suborderToModify != null) {
                     suborderToModify.setCustomerorder(customerorderToSet);
                     // save suborder
-                    visitorSuborderDAO.save(suborderToModify);
+                    suborderService.save(suborderToModify);
                 }
             }
         };

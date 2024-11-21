@@ -24,7 +24,6 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 
@@ -39,7 +38,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
     private final CustomerorderService customerorderService;
     private final TimereportService timereportService;
-    private final CustomerorderDAO customerorderDAO;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -109,7 +107,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                 coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(), coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
                 coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
 
-            request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerorders());
+            request.getSession().setAttribute("customerorders", customerorderService.getAllCustomerorders());
             request.getSession().removeAttribute("coId");
 
             boolean addMoreOrders = Boolean.parseBoolean(request.getParameter("continue"));
@@ -131,7 +129,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                 boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
                 if (showActualHours) {
                     /* show actual hours */
-                    List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
+                    List<Customerorder> customerOrders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
                     List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
                     for (Customerorder customerorder : customerOrders) {
                         CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
@@ -139,7 +137,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                     }
                     request.getSession().setAttribute("customerorders", decorators);
                 } else {
-                    request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));
+                    request.getSession().setAttribute("customerorders", customerorderService.getCustomerordersByFilters(show, filter, customerId));
 
                 }
 
@@ -223,7 +221,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
         // for a new customerorder, check if the sign already exists
         if (coId == null) {
             coId = 0L;
-            List<Customerorder> allCustomerorders = customerorderDAO.getCustomerorders();
+            List<Customerorder> allCustomerorders = customerorderService.getAllCustomerorders();
             for (Object element : allCustomerorders) {
                 Customerorder co = (Customerorder) element;
                 if (co.getSign().equalsIgnoreCase(coForm.getSign())) {

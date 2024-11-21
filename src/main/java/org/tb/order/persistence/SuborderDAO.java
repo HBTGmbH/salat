@@ -3,6 +3,7 @@ package org.tb.order.persistence;
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
 import static org.springframework.data.domain.Sort.Direction.ASC;
+import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -91,7 +92,7 @@ public class SuborderDAO {
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean onlyValid) {
         if (onlyValid) {
-            return getSubordersByCustomerorderId(customerorderId, DateUtils.today());
+            return getSubordersByCustomerorderId(customerorderId, today());
         } else {
             var order = new Order(ASC, Suborder_.SIGN);
             return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.by(order));
@@ -115,7 +116,7 @@ public class SuborderDAO {
      */
     public List<Suborder> getSuborders(boolean onlyValid) {
         if (onlyValid) {
-            return getSuborders(DateUtils.today());
+            return getSuborders(today());
         } else {
             return StreamSupport.stream(suborderRepository.findAll().spliterator(), false)
                 .sorted(comparing(Suborder::getSign))
@@ -134,7 +135,7 @@ public class SuborderDAO {
     }
 
     private Specification<Suborder> showOnlyValid() {
-        LocalDate now = DateUtils.today();
+        LocalDate now = today();
         return (root, query, builder) -> {
             var fromDateLess = builder.lessThanOrEqualTo(root.get(Suborder_.fromDate), now);
             var untilDateNullOrGreater = builder.or(
@@ -199,7 +200,7 @@ public class SuborderDAO {
      * @return Returns all {@link Suborder}s where the standard flag is true and that did not end before today.
      */
     public List<Suborder> getStandardSuborders() {
-        return suborderRepository.findAllStandardSubordersByUntilDateGreaterThanEqual(DateUtils.today());
+        return suborderRepository.findAllStandardSubordersByUntilDateGreaterThanEqual(today());
     }
 
     public void save(Suborder so) {

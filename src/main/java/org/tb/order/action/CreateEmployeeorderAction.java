@@ -1,5 +1,7 @@
 package org.tb.order.action;
 
+import static org.tb.common.util.DateUtils.today;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -10,16 +12,15 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
-import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
 
 /**
  * action class for creating a new employee order
@@ -30,9 +31,9 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @RequiredArgsConstructor
 public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrderForm> {
 
-    private final EmployeeorderDAO employeeorderDAO;
-    private final CustomerorderDAO customerorderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeeorderService employeeorderService;
+    private final CustomerorderService customerorderService;
+    private final EmployeecontractService employeecontractService;
 
     @Override
     public ActionForward executeAuthenticated(final ActionMapping mapping,
@@ -43,8 +44,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         // get lists of existing employee contracts and suborders
-        final List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
-            DateUtils.today());
+        final List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
 
         if ((employeeContracts == null) || (employeeContracts.size() <= 0)) {
             request.setAttribute("errorMessage", "No employees with valid contracts found - please call system administrator.");
@@ -61,9 +61,9 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
         if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL)
                 || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
                 || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-            orders = customerorderDAO.getCustomerorders();
+            orders = customerorderService.getAllCustomerorders();
         } else {
-            orders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+            orders = customerorderService.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         }
 
         List<Customerorder> orderswithsuborders = new ArrayList<>();
@@ -79,7 +79,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
 
         request.getSession().setAttribute("orderswithsuborders", orderswithsuborders);
 
-        final List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeorders();
+        final List<Employeeorder> employeeorders = employeeorderService.getAllEmployeeOrders();
         request.getSession().setAttribute("employeeorders", employeeorders);
 
         final Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
@@ -94,7 +94,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
             Customerorder selectedCustomerorder;
 
             final Long orderId = (Long) request.getSession().getAttribute("currentOrderId");
-            final Customerorder customerOrderFromFilter = customerorderDAO.getCustomerorderById(orderId);
+            final Customerorder customerOrderFromFilter = customerorderService.getCustomerorderById(orderId);
             if (orderswithsuborders.contains(customerOrderFromFilter)) {
                 selectedCustomerorder = customerOrderFromFilter;
             } else {

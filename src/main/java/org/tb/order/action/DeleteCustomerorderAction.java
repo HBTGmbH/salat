@@ -12,11 +12,10 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.order.service.CustomerorderService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.persistence.CustomerorderDAO;
 
 /**
  * action class for deleting a customer order
@@ -27,7 +26,7 @@ import org.tb.order.persistence.CustomerorderDAO;
 @RequiredArgsConstructor
 public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomerorderForm> {
 
-    private final CustomerorderDAO customerorderDAO;
+    private final CustomerorderService customerorderService;
     private final TimereportService timereportService;
 
     @Override
@@ -40,12 +39,12 @@ public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomero
 
         ActionMessages errors = new ActionMessages();
         long coId = Long.parseLong(request.getParameter("coId"));
-        Customerorder co = customerorderDAO.getCustomerorderById(coId);
+        Customerorder co = customerorderService.getCustomerorderById(coId);
         if (co == null) {
             return mapping.getInputForward();
         }
 
-        boolean deleted = customerorderDAO.deleteCustomerorderById(coId);
+        boolean deleted = customerorderService.deleteCustomerorderById(coId);
 
         Long coID = (Long) request.getSession().getAttribute("currentOrderId");
 
@@ -79,7 +78,7 @@ public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomero
         orderForm.setShowActualHours(showActualHours);
         if (showActualHours) {
             /* show actual hours */
-            List<Customerorder> customerOrders = customerorderDAO.getCustomerordersByFilters(show, filter, customerId);
+            List<Customerorder> customerOrders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
             List<CustomerOrderViewDecorator> decorators = new LinkedList<CustomerOrderViewDecorator>();
             for (Customerorder customerorder : customerOrders) {
                 CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
@@ -87,7 +86,7 @@ public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomero
             }
             request.getSession().setAttribute("customerorders", decorators);
         } else {
-            request.getSession().setAttribute("customerorders", customerorderDAO.getCustomerordersByFilters(show, filter, customerId));
+            request.getSession().setAttribute("customerorders", customerorderService.getCustomerordersByFilters(show, filter, customerId));
         }
 
         // back to customer order display jsp

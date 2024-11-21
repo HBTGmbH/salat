@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.SuborderViewDecorator;
 
 /**
@@ -29,7 +29,7 @@ import org.tb.order.viewhelper.SuborderViewDecorator;
 public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
     private static final Logger LOG = LoggerFactory.getLogger(DeleteSuborderAction.class);
 
-    private final SuborderDAO suborderDAO;
+    private final SuborderService suborderService;
     private final TimereportService timereportService;
 
     @Override
@@ -41,11 +41,11 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
 
         ActionMessages errors = new ActionMessages();
         long soId = Long.parseLong(request.getParameter("soId"));
-        Suborder so = suborderDAO.getSuborderById(soId);
+        Suborder so = suborderService.getSuborderById(soId);
         if (so == null)
             return mapping.getInputForward();
 
-        boolean deleted = suborderDAO.deleteSuborderById(soId);
+        boolean deleted = suborderService.deleteSuborderById(soId);
 
         if (!deleted) {
             errors.add(null, new ActionMessage("form.suborder.error.hastimereports.or.employeeorders"));
@@ -74,7 +74,7 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
         suborderForm.setShowActualHours(showActualHours);
         if (showActualHours) {
             /* show actual hours */
-            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+            List<Suborder> suborders = suborderService.getSubordersByFilters(show, filter, customerOrderId);
             List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
                 SuborderViewDecorator decorator = new SuborderViewDecorator(timereportService, suborder);
@@ -82,7 +82,7 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
             }
             request.getSession().setAttribute("suborders", suborderViewDecorators);
         } else {
-            request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+            request.getSession().setAttribute("suborders", suborderService.getSubordersByFilters(show, filter, customerOrderId));
         }
 
         LOG.debug("DeleteSuborderAction.executeAuthenticated - after deletion");

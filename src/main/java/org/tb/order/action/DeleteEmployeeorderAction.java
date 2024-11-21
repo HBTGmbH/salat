@@ -11,9 +11,9 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 /**
  * action class for deleting an employee order
@@ -24,8 +24,8 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @RequiredArgsConstructor
 public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrderForm> {
 
-    private final EmployeeorderDAO employeeorderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeeorderService employeeorderService;
+    private final EmployeecontractService employeecontractService;
     private final TimereportService timereportService;
 
     @Override
@@ -33,10 +33,10 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeO
         if (!GenericValidator.isLong(request.getParameter("eoId"))) return mapping.getInputForward();
 
         long eoId = Long.parseLong(request.getParameter("eoId"));
-        Employeeorder eo = employeeorderDAO.getEmployeeorderById(eoId);
+        Employeeorder eo = employeeorderService.getEmployeeorderById(eoId);
         if (eo == null) return mapping.getInputForward();
 
-        boolean deleted = employeeorderDAO.deleteEmployeeorderById(eoId);
+        boolean deleted = employeeorderService.deleteEmployeeorderById(eoId);
         ActionMessages errors = new ActionMessages();
         if (!deleted) {
             errors.add(null, new ActionMessage("form.employeeorder.error.hasstatusreports"));
@@ -56,7 +56,7 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeO
 
         employeeOrderForm.setShowActualHours(oldEmployeeOrderForm.getShowActualHours());
 
-        refreshEmployeeOrders(request, employeeOrderForm, employeeorderDAO, employeecontractDAO, timereportService);
+        refreshEmployeeOrders(request, employeeOrderForm, employeeorderService, employeecontractService, timereportService);
 
         // back to employee order display jsp
         return mapping.getInputForward();

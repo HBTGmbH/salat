@@ -265,4 +265,8 @@ public class EmployeecontractService {
   public Employeecontract getEmployeeContractWithVacationsById(long employeeContractId) {
     return employeecontractDAO.getEmployeeContractByIdInitializeEager(employeeContractId);
   }
+
+  public List<Employeecontract> getAllVisibleEmployeeContractsValidAtOrderedByFirstname(LocalDate validAt) {
+    return employeecontractDAO.getAllVisibleEmployeeContractsValidAtOrderedByFirstname(validAt);
+  }
 }

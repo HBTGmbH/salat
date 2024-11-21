@@ -21,11 +21,11 @@ import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,9 +33,9 @@ import org.tb.order.persistence.SuborderDAO;
 @Tag(name = "order")
 public class EmployeeOrderRestEndpoint {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final EmployeeorderDAO employeeorderDAO;
-    private final SuborderDAO suborderDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeorderService employeeorderService;
+    private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
 
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
@@ -49,7 +49,7 @@ public class EmployeeOrderRestEndpoint {
         }
 
         if (refDate == null) refDate = DateUtils.today();
-        Employeecontract employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(
+        Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(
             authorizedUser.getEmployeeId(),
             refDate
         );
@@ -59,7 +59,7 @@ public class EmployeeOrderRestEndpoint {
 
         // The method getSubordersByEmployeeContractIdWithValidEmployeeOrders
         // was added to the SuborderDao class!!!
-        List<Suborder> suborders = suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(
+        List<Suborder> suborders = suborderService.getSubordersByEmployeeContractIdWithValidEmployeeOrders(
             employeecontract.getId(),
             refDate
         );
@@ -67,7 +67,7 @@ public class EmployeeOrderRestEndpoint {
         final LocalDate requestedRefDate = refDate; // make final for stream processing
         return suborders.stream()
             .map(s -> {
-                Employeeorder eo = employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+                Employeeorder eo = employeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
                     employeecontract.getId(),
                     s.getId(),
                     requestedRefDate

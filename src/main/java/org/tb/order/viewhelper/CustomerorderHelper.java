@@ -13,12 +13,12 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.action.ShowDailyReportForm;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * Helper class for customer order handling which does not directly deal with persistence
@@ -30,9 +30,9 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class CustomerorderHelper {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final SuborderDAO suborderDAO;
+    private final CustomerorderService customerorderService;
+    private final EmployeecontractService employeecontractService;
+    private final SuborderService suborderService;
 
     /**
      * refreshes customer order list after change of employee in the 'add timereport' view
@@ -48,9 +48,9 @@ public class CustomerorderHelper {
             return;
         }
 
-        Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
         if (ec != null) {
-            Employeecontract matchingTimeEC = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(ec.getEmployee().getId(), date);
+            Employeecontract matchingTimeEC = employeecontractService.getEmployeeContractValidAt(ec.getEmployee().getId(), date);
             if (matchingTimeEC != null) {
                 ec = matchingTimeEC;
             }
@@ -61,19 +61,19 @@ public class CustomerorderHelper {
         }
 
         // get orders related to employee
-        List<Customerorder> orders = customerorderDAO.getCustomerordersWithValidEmployeeOrders(ec.getId(), date);
+        List<Customerorder> orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ec.getId(), date);
         if (orders.isEmpty()) {
             // TODO check error messages - request.setAttribute("errorMessage", "No orders found for employee - please call system administrator."); //TODO: MessageResources
             resetFormValues(reportForm, request);
             return;
         }
 
-        Customerorder customerorder = customerorderDAO.getCustomerorderById(reportForm.getOrderId());
+        Customerorder customerorder = customerorderService.getCustomerorderById(reportForm.getOrderId());
         long suborderId = -1;
         List<Suborder> theSuborders;
         if (customerorder != null && orders.contains(customerorder)) {
-            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
-            Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+            theSuborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
+            Suborder suborder = suborderService.getSuborderById(reportForm.getSuborderSignId());
             if (suborder != null && theSuborders.contains(suborder)) {
                 suborderId = suborder.getId();
             } else if(!theSuborders.isEmpty()) {
@@ -81,7 +81,7 @@ public class CustomerorderHelper {
             }
         } else {
             customerorder = orders.getFirst();
-            theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
+            theSuborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorder.getId(), date);
             if (!theSuborders.isEmpty()) {
                 suborderId = theSuborders.getFirst().getId();
             }
@@ -115,7 +115,7 @@ public class CustomerorderHelper {
      */
     public boolean refreshOrders(HttpServletRequest request, ShowDailyReportForm reportForm) {
 
-        Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
 
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO: MessageResources
@@ -128,7 +128,7 @@ public class CustomerorderHelper {
 
 
         // get orders related to employee
-        List<Customerorder> orders = customerorderDAO.getCustomerordersByEmployeeContractId(ec.getId());
+        List<Customerorder> orders = customerorderService.getCustomerordersByEmployeeContractId(ec.getId());
         request.getSession().setAttribute("orders", orders);
 
         if ((orders == null) || (orders.size() <= 0)) {
@@ -137,7 +137,7 @@ public class CustomerorderHelper {
         }
         // get suborders related to employee AND selected customer order...
         long customerorderId = orders.getFirst().getId();
-        request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, reportForm.getShowOnlyValid()));
+        request.getSession().setAttribute("suborders", suborderService.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, reportForm.getShowOnlyValid()));
 
         return true;
     }

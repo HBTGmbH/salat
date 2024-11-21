@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.action.ShowDailyReportForm;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.SuborderService;
 
 /**
  * Helper class for suborder handling which does not directly deal with persistence
@@ -26,23 +26,24 @@ import org.tb.order.persistence.SuborderDAO;
 @RequiredArgsConstructor
 public class SuborderHelper {
 
-    private final SuborderDAO suborderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
+    private final SuborderService suborderService;
+    private final EmployeecontractService employeecontractService;
 
     /**
      * refreshes suborder list after change of customer order in the 'add timereport' view
      */
-    public boolean refreshSuborders(HttpServletRequest request, AddDailyReportForm reportForm, String defaultSuborderIndexStr) {
+    public void refreshSuborders(HttpServletRequest request, AddDailyReportForm reportForm, String defaultSuborderIndexStr) {
 
         // initial with empty values in case of an error
+        request.getSession().removeAttribute("suborders");
         request.getSession().removeAttribute("overtimeCompensation");
-        request.getSession().setAttribute("currentSuborderId", -1);
+        request.getSession().removeAttribute("currentSuborderId");
 
-        Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
 
         if (ec == null) {
             // request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
-            return false;
+            return;
         }
 
         String dateString = reportForm.getReferenceday();
@@ -50,12 +51,12 @@ public class SuborderHelper {
 
         // get suborders related to employee AND selected customer order
         long customerorderId = reportForm.getOrderId();
-        List<Suborder> theSuborders = suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorderId, date);
+        List<Suborder> theSuborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), customerorderId, date);
         Suborder so = null;
         if (defaultSuborderIndexStr != null) {
             try {
                 long currentSuborderId = Long.parseLong(defaultSuborderIndexStr);
-                so = suborderDAO.getSuborderById(currentSuborderId);
+                so = suborderService.getSuborderById(currentSuborderId);
             } catch (NumberFormatException ignore) {
             }
         }
@@ -63,7 +64,7 @@ public class SuborderHelper {
         if (so != null) {
             assignCurrentSuborderIdAndTrainingFlag(request.getSession(), so, reportForm);
         } else if (!theSuborders.isEmpty()) {
-            Suborder suborder = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+            Suborder suborder = suborderService.getSuborderById(reportForm.getSuborderSignId());
             if (suborder == null || !theSuborders.contains(suborder)) {
                 suborder = theSuborders.getFirst();
             }
@@ -71,7 +72,6 @@ public class SuborderHelper {
         }
 
         request.getSession().setAttribute("suborders", theSuborders);
-        return true;
     }
 
     /**
@@ -79,7 +79,7 @@ public class SuborderHelper {
      */
     public boolean refreshDailyOverviewSuborders(HttpServletRequest request, ShowDailyReportForm reportForm) {
 
-        Employeecontract ec = employeecontractDAO.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
 
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
@@ -88,13 +88,13 @@ public class SuborderHelper {
 
         // get suborders related to employee AND selected customer order...
         long customerorderId = reportForm.getTrOrderId();
-        request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, reportForm.getShowOnlyValid()));
+        request.getSession().setAttribute("suborders", suborderService.getSubordersByEmployeeContractIdAndCustomerorderId(ec.getId(), customerorderId, reportForm.getShowOnlyValid()));
 
         return true;
     }
 
     public void adjustSuborderSignChanged(HttpSession session, AddDailyReportForm reportForm) {
-        Suborder so = suborderDAO.getSuborderById(reportForm.getSuborderSignId());
+        Suborder so = suborderService.getSuborderById(reportForm.getSuborderSignId());
         assignCurrentSuborderIdAndTrainingFlag(session, so, reportForm);
     }
 

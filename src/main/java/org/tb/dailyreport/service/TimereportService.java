@@ -65,6 +65,7 @@ import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -908,5 +909,10 @@ public class TimereportService {
   public List<TimereportDTO> getTimereportsByEmployeeContractIdInvalidForDates(LocalDate validFrom, LocalDate validUntil,
       long existingEmployeecontractId) {
     return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, existingEmployeecontractId);
+  }
+
+  public List<TimereportDTO> getTimereportsBySuborderIdInvalidForDates(LocalDate fromDate, LocalDate untilDate,
+      Long suborderId) {
+    return timereportDAO.getTimereportsBySuborderIdInvalidForDates(fromDate, untilDate, suborderId);
   }
 }

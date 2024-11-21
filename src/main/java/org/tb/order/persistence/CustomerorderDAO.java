@@ -2,6 +2,7 @@ package org.tb.order.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static org.springframework.data.domain.Sort.Direction.ASC;
+import static org.tb.common.util.DateUtils.today;
 
 import com.google.common.collect.Lists;
 import java.time.LocalDate;
@@ -76,11 +77,11 @@ public class CustomerorderDAO {
      * Get a list of all vivible Customerorders ordered by their sign.
      */
     public List<Customerorder> getVisibleCustomerorders() {
-        return customerorderRepository.findAllValidAtAndNotHidden(DateUtils.today());
+        return customerorderRepository.findAllValidAtAndNotHidden(today());
     }
 
     private Specification<Customerorder> showOnlyValid() {
-        LocalDate now = DateUtils.today();
+        LocalDate now = today();
         return (root, query, builder) -> {
             var fromDateLess = builder.lessThanOrEqualTo(root.get(Customerorder_.fromDate), now);
             var untilDateNullOrGreater = builder.or(
@@ -156,7 +157,7 @@ public class CustomerorderDAO {
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
      */
     public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
-        final var now = DateUtils.today();
+        final var now = today();
         return customerorderRepository.findAllByResponsibleHbt(responsibleHbtId).stream()
             .filter(c -> !TRUE.equals(c.getHide()))
             .filter(c -> !c.getFromDate().isAfter(now))

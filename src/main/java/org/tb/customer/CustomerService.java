@@ -24,6 +24,7 @@ public class CustomerService {
 
   private final CustomerRepository customerRepository;
   private final AuthorizedUser authorizedUser;
+  private final CustomerDAO customerDAO;
 
   @Transactional(readOnly = true)
   public List<CustomerDTO> list() {
@@ -83,4 +84,11 @@ public class CustomerService {
         .orElseThrow(() -> new InvalidDataException(CU_NOT_FOUND));
   }
 
+  public List<Customer> getAllCustomers() {
+    return customerDAO.getCustomers();
+  }
+
+  public List<Customer> getCustomersOrderedByShortName() {
+    return customerDAO.getCustomersOrderedByShortName();
+  }
 }

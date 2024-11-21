@@ -10,12 +10,12 @@ import org.apache.struts.action.ActionForm;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 
 public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginRequiredAction<F> {
@@ -24,34 +24,34 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
      * Refreshes the list of employee orders and stores it in the session.
      */
     protected void refreshEmployeeSubOrders(HttpServletRequest request,
-                                            ShowEmployeeOrderForm orderForm, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO, boolean onlyValid) {
+                                            ShowEmployeeOrderForm orderForm, SuborderService suborderService, CustomerorderService customerorderService, boolean onlyValid) {
 
         Long suborderId = orderForm.getSuborderId();
 
         if ((orderForm.getEmployeeContractId() > -1) && ((Long) request.getSession().getAttribute("currentOrderId") != -1L)) {
-            request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(orderForm.getEmployeeContractId(), customerorderDAO
+            request.getSession().setAttribute("suborders", suborderService.getSubordersByEmployeeContractIdAndCustomerorderId(orderForm.getEmployeeContractId(), customerorderService
                     .getCustomerorderById(orderForm.getOrderId())
                     .getId(), onlyValid));
         } else {
-            request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(orderForm.getOrderId(), onlyValid));
+            request.getSession().setAttribute("suborders", suborderService.getSubordersByCustomerorderId(orderForm.getOrderId(), onlyValid));
         }
 
         request.getSession().setAttribute("curretntSuborder", suborderId);
     }
 
     protected void refreshEmployeeOrders(HttpServletRequest request,
-                                         ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO,
-                                         EmployeecontractDAO employeecontractDAO, TimereportService timereportService) {
+                                         ShowEmployeeOrderForm orderForm, EmployeeorderService employeeorderService,
+                                         EmployeecontractService employeecontractService, TimereportService timereportService) {
 
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
         Employeecontract currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
 
         long employeeContractId = 0L;
-        Long orderId = 0L;
+        Long customerOrderId = 0L;
 
         if (orderForm != null) {
             employeeContractId = orderForm.getEmployeeContractId();
-            orderId = orderForm.getOrderId();
+            customerOrderId = orderForm.getOrderId();
         }
 
         if (employeeContractId == 0) {
@@ -62,20 +62,20 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
             }
         }
 
-        if (orderId == 0) {
+        if (customerOrderId == 0) {
             if (request.getSession().getAttribute("currentOrderId") != null) {
-                orderId = (Long) request.getSession().getAttribute("currentOrderId");
+                customerOrderId = (Long) request.getSession().getAttribute("currentOrderId");
             }
         }
-        if (orderId == null || orderId == 0) {
-            orderId = -1L;
+        if (customerOrderId == null || customerOrderId == 0) {
+            customerOrderId = -1L;
         }
 
-        request.getSession().setAttribute("currentOrderId", orderId);
+        request.getSession().setAttribute("currentOrderId", customerOrderId);
 
         if (orderForm != null) {
             orderForm.setEmployeeContractId(employeeContractId);
-            orderForm.setOrderId(orderId);
+            orderForm.setOrderId(customerOrderId);
 
             String filter = null;
             Boolean show = null;
@@ -102,13 +102,13 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
             request.getSession().setAttribute("showActualHours", showActualHours);
 
             orderForm.setFilter(filter);
-            orderForm.setOrderId(orderId);
+            orderForm.setOrderId(customerOrderId);
             orderForm.setShow(show);
             orderForm.setShowActualHours(showActualHours);
 
             if (showActualHours) {
                 /* show actual hours */
-                List<Employeeorder> employeeOrders = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId);
+                List<Employeeorder> employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, customerOrderId);
                 List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
 
                 for (Employeeorder employeeorder : employeeOrders) {
@@ -117,7 +117,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
                 }
                 request.getSession().setAttribute("employeeorders", decorators);
             } else {
-                request.getSession().setAttribute("employeeorders", employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId));
+                request.getSession().setAttribute("employeeorders", employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, customerOrderId));
             }
         }
 
@@ -125,7 +125,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
             request.getSession().setAttribute("currentEmployeeId", loginEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", null);
         } else {
-            currentEmployeeContract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+            currentEmployeeContract = employeecontractService.getEmployeeContractById(employeeContractId);
             request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
         }
@@ -133,8 +133,9 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
 
 
     protected void refreshEmployeeOrdersAndSuborders(HttpServletRequest request,
-                                                     ShowEmployeeOrderForm orderForm, EmployeeorderDAO employeeorderDAO,
-                                                     EmployeecontractDAO employeecontractDAO, TimereportService timereportService, SuborderDAO suborderDAO, CustomerorderDAO customerorderDAO,
+                                                     ShowEmployeeOrderForm orderForm, EmployeeorderService employeeorderService,
+                                                     EmployeecontractService employeecontractService, TimereportService timereportService,
+                                                     SuborderService suborderService, CustomerorderService customerorderService,
                                                      boolean onlyValid) {
 
         Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
@@ -186,10 +187,10 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
 
                 if ((orderForm.getEmployeeContractId() > -1) && ((Long) request.getSession().getAttribute("currentOrderId") != -1L)) {
 
-                    request.getSession().setAttribute("suborders", suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(
-                            orderForm.getEmployeeContractId(), customerorderDAO.getCustomerorderById(orderForm.getOrderId()).getId(), onlyValid));
+                    request.getSession().setAttribute("suborders", suborderService.getSubordersByEmployeeContractIdAndCustomerorderId(
+                            orderForm.getEmployeeContractId(), customerorderService.getCustomerorderById(orderForm.getOrderId()).getId(), onlyValid));
                 } else {
-                    request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(orderForm.getOrderId(), onlyValid));
+                    request.getSession().setAttribute("suborders", suborderService.getSubordersByCustomerorderId(orderForm.getOrderId(), onlyValid));
                 }
                 // actual suborder
                 request.getSession().setAttribute("currentSub", suborderId);
@@ -229,7 +230,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
             if (showActualHours) {
                 /* show actual hours */
                 List<Employeeorder> employeeOrders =
-                        employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
+                        employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
                 List<EmployeeOrderViewDecorator> decorators = new LinkedList<EmployeeOrderViewDecorator>();
 
                 for (Employeeorder employeeorder : employeeOrders) {
@@ -239,7 +240,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
                 request.getSession().setAttribute("employeeorders", decorators);
             } else {
 
-                List<Employeeorder> leo = employeeorderDAO.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
+                List<Employeeorder> leo = employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
 
                 request.getSession().setAttribute("employeeorders", leo);
             }
@@ -249,7 +250,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
             request.getSession().setAttribute("currentEmployeeId", loginEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", null);
         } else {
-            currentEmployeeContract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+            currentEmployeeContract = employeecontractService.getEmployeeContractById(employeeContractId);
             request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
         }

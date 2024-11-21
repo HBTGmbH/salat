@@ -9,12 +9,12 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.customer.Customer;
-import org.tb.customer.CustomerDAO;
+import org.tb.customer.CustomerService;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
-import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.service.CustomerorderService;
 
 /**
  * action class for creating a new customer order
@@ -25,9 +25,9 @@ import org.tb.order.persistence.CustomerorderDAO;
 @RequiredArgsConstructor
 public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
-    private final EmployeeDAO employeeDAO;
-    private final CustomerDAO customerDAO;
-    private final CustomerorderDAO customerorderDAO;
+    private final EmployeeService employeeService;
+    private final CustomerService customerService;
+    private final CustomerorderService customerorderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm addForm, HttpServletRequest request, HttpServletResponse response) {
@@ -41,8 +41,8 @@ public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomeror
         AddCustomerorderForm customerOrderForm = addForm;
 
         // get list of existing customers and customer orders
-        List<Customer> customers = customerDAO.getCustomers();
-        List<Customerorder> customerorders = customerorderDAO.getCustomerorders();
+        List<Customer> customers = customerService.getAllCustomers();
+        List<Customerorder> customerorders = customerorderService.getAllCustomerorders();
 
         if ((customers == null) || (customers.size() <= 0)) {
             request.setAttribute("errorMessage", "No customers found - please call system administrator.");
@@ -53,7 +53,7 @@ public class CreateCustomerorderAction extends LoginRequiredAction<AddCustomeror
         request.getSession().setAttribute("customers", customers);
 
         // get list of employees with employee contract
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+        List<Employee> employeesWithContracts = employeeService.getEmployeesWithValidContracts();
         request.getSession().setAttribute("employeeswithcontract", employeesWithContracts);
 
         request.getSession().setAttribute("orderTypes", OrderType.values());

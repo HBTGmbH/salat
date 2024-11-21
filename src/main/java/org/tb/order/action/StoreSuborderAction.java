@@ -32,8 +32,7 @@ import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.SuborderViewDecorator;
 
@@ -47,8 +46,7 @@ import org.tb.order.viewhelper.SuborderViewDecorator;
 public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
     private static final Logger LOG = LoggerFactory.getLogger(StoreSuborderAction.class);
 
-    private final CustomerorderDAO customerorderDAO;
-    private final SuborderDAO suborderDAO;
+    private final CustomerorderService customerorderService;
     private final TimereportService timereportService;
     private final SuborderService suborderService;
 
@@ -96,13 +94,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         if (request.getParameter("task") != null && request.getParameter("task").equals("copy")) {
 
             long soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
-            Suborder so = suborderDAO.getSuborderById(soId);
+            Suborder so = suborderService.getSuborderById(soId);
 
             if (so != null) {
                 Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
                 Suborder copy = so.copy(true, loginEmployee.getSign());
 
-                suborderDAO.save(copy);
+                suborderService.save(copy);
 
                 request.getSession().removeAttribute("soId");
 
@@ -132,9 +130,9 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("generateSign")) {
             //*** task for generating new suborder's sign
-            Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
-            Customerorder tempOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getParentId());
-            List<Suborder> suborders = suborderDAO.getSuborders(false);
+            Suborder tempSubOrder = suborderService.getSuborderById(addSuborderForm.getParentId());
+            Customerorder tempOrder = customerorderService.getCustomerorderById(addSuborderForm.getParentId());
+            List<Suborder> suborders = suborderService.getAllSuborders();
             LOG.debug("StoreSuborderAction.executeAuthenticated() - three Values: " + tempSubOrder + " / " + tempOrder + " / " + suborders);
             Long soId;
             try {
@@ -175,7 +173,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         if ("changeCustomerorder".equals(request.getParameter("task"))) {
-            Customerorder parentOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
+            Customerorder parentOrder = customerorderService.getCustomerorderById(addSuborderForm.getCustomerorderId());
 
             addSuborderForm.setParentDescriptionAndSign(parentOrder.getSignAndDescription());
             addSuborderForm.setParentId(addSuborderForm.getCustomerorderId());
@@ -190,14 +188,14 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             request.getSession().setAttribute("currentOrderId", parentOrder.getId());
             request.getSession().setAttribute("parentDescriptionAndSign", addSuborderForm.getParentDescriptionAndSign());
             request.getSession().setAttribute("suborderParent", parentOrder);
-            request.getSession().setAttribute("suborders", suborderDAO.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(),true));
+            request.getSession().setAttribute("suborders", suborderService.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(),true));
 
             return mapping.getInputForward();
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshParentProject")) {
 
-            Customerorder parentOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
+            Customerorder parentOrder = customerorderService.getCustomerorderById(addSuborderForm.getCustomerorderId());
 
             addSuborderForm.setParentDescriptionAndSign(parentOrder.getSignAndDescription());
             addSuborderForm.setParentId(addSuborderForm.getCustomerorderId());
@@ -207,7 +205,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
             if (request.getParameter("continue") != null) {
                 addSuborderForm.setParentId(Long.parseLong(request.getParameter("continue")));
-                Suborder tempSubOrder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
+                Suborder tempSubOrder = suborderService.getSuborderById(addSuborderForm.getParentId());
                 if (tempSubOrder != null && tempSubOrder.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {
                     LOG.info("Suborder does not match customerorder. Reset to null");
                     tempSubOrder = null;
@@ -229,7 +227,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
                     request.getSession().setAttribute("suborderParent", tempSubOrder);
                 } else {
-                    Customerorder tempOrder = customerorderDAO.getCustomerorderById(addSuborderForm.getParentId());
+                    Customerorder tempOrder = customerorderService.getCustomerorderById(addSuborderForm.getParentId());
                     addSuborderForm.setParentDescriptionAndSign(tempOrder.getSignAndDescription());
                     request.getSession().setAttribute("suborderParent", tempOrder);
                 }
@@ -250,7 +248,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             // I.e., copy properties from the form into the suborder before
             // saving.
             Long soId = null;
-            Customerorder customerorder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
+            Customerorder customerorder = customerorderService.getCustomerorderById(addSuborderForm.getCustomerorderId());
 
             if(request.getSession().getAttribute("soId") != null) {
                 soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
@@ -268,7 +266,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 refreshForOverview(request);
                 return mapping.findForward("success");
             } else {
-                request.getSession().setAttribute("suborders", suborderDAO.getSuborders(false));
+                request.getSession().setAttribute("suborders", suborderService.getAllSuborders());
                 // reuse form entries and show add-page
                 addSuborderForm.setDescription("");
                 addSuborderForm.setSign("");
@@ -348,7 +346,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             // dann die untergeordneten Suboders der Customerorder.
             List<Suborder> suborders;
             if (addSuborderForm.getParentId() == null) {
-                suborders = suborderDAO.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false);
+                suborders = suborderService.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false);
                 for (Suborder suborder : suborders) {
                     if (suborder.getCurrentlyValid()
                             && suborder.getParentorder() == null // vergleiche nur Suborder direkt unter der Customerorder
@@ -358,7 +356,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                     }
                 }
             } else {
-                suborders = suborderDAO.getSuborderChildren(addSuborderForm.getParentId());
+                suborders = suborderService.getSuborderChildren(addSuborderForm.getParentId());
                 for (Suborder suborder : suborders) {
                     if (suborder.getCurrentlyValid() && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
                         errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
@@ -372,13 +370,13 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         if (addSuborderForm.getSign().length() > GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH) {
             errors.add("sign", new ActionMessage("form.suborder.error.sign.toolong"));
         }
-        if (addSuborderForm.getSign().length() <= 0) {
+        if (addSuborderForm.getSign().isEmpty()) {
             errors.add("sign", new ActionMessage("form.suborder.error.sign.required"));
         }
         if (addSuborderForm.getDescription().length() > GlobalConstants.SUBORDER_DESCRIPTION_MAX_LENGTH) {
             errors.add("description", new ActionMessage("form.suborder.error.description.toolong"));
         }
-        if ("".equals(addSuborderForm.getDescription().trim())) {
+        if (addSuborderForm.getDescription().trim().isEmpty()) {
             errors.add("description", new ActionMessage("form.error.description.necessary"));
         }
         if (addSuborderForm.getShortdescription().length() > GlobalConstants.SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
@@ -403,7 +401,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         LocalDate suborderUntilDate = null;
-        if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().equals("")) {
+        if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().isEmpty()) {
             if(validateDate(addSuborderForm.getValidUntil())) {
                 suborderUntilDate = DateUtils.parse(addSuborderForm.getValidUntil());
             } else {
@@ -433,7 +431,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         // check customer order
-        Customerorder customerorder = customerorderDAO.getCustomerorderById(addSuborderForm.getCustomerorderId());
+        Customerorder customerorder = customerorderService.getCustomerorderById(addSuborderForm.getCustomerorderId());
         if (customerorder == null) {
             errors.add("customerorder", new ActionMessage("form.suborder.error.customerorder.notfound"));
         } else {
@@ -453,7 +451,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         // check time period for hierarchical higher suborders
         Suborder parentSuborder;
         if (addSuborderForm.getParentId() != null && addSuborderForm.getParentId() != 0 && addSuborderForm.getParentId() != -1) {
-            parentSuborder = suborderDAO.getSuborderById(addSuborderForm.getParentId());
+            parentSuborder = suborderService.getSuborderById(addSuborderForm.getParentId());
             if (parentSuborder != null && Objects.equals(parentSuborder.getCustomerorder().getId(), addSuborderForm.getCustomerorderId())) {
                 // check validity period
                 LocalDate parentFromDate = parentSuborder.getFromDate();
@@ -503,7 +501,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         boolean showActualHours = (Boolean) request.getSession().getAttribute("showActualHours");
         if (showActualHours) {
             /* show actual hours */
-            List<Suborder> suborders = suborderDAO.getSubordersByFilters(show, filter, customerOrderId);
+            List<Suborder> suborders = suborderService.getSubordersByFilters(show, filter, customerOrderId);
             List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
                 SuborderViewDecorator decorator = new SuborderViewDecorator(timereportService, suborder);
@@ -511,7 +509,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             }
             request.getSession().setAttribute("suborders", suborderViewDecorators);
         } else {
-            request.getSession().setAttribute("suborders", suborderDAO.getSubordersByFilters(show, filter, customerOrderId));
+            request.getSession().setAttribute("suborders", suborderService.getSubordersByFilters(show, filter, customerOrderId));
         }
     }
 }

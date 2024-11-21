@@ -111,4 +111,25 @@ public class CustomerorderService {
   public Customerorder getCustomerorderById(long customerorderId) {
     return customerorderDAO.getCustomerorderById(customerorderId);
   }
+
+  public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(Long responsibleEmployeeId) {
+    return customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
+  }
+
+  public List<Customerorder> getVisibleCustomerorders() {
+    return customerorderDAO.getVisibleCustomerorders();
+  }
+
+  public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(Long responsibleEmployeeId) {
+    return customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
+  }
+
+  public boolean deleteCustomerorderById(long customerOrderId) {
+    return customerorderDAO.deleteCustomerorderById(customerOrderId);
+  }
+
+  public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
+    return customerorderDAO.getCustomerordersByFilters(showInvalid, filter, customerId);
+  }
+
 }

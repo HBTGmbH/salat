@@ -15,13 +15,13 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.EmployeeorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 
 /**
@@ -33,10 +33,10 @@ import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 @RequiredArgsConstructor
 public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<GenerateMultipleEmployeeordersForm> {
 
-    private final SuborderDAO suborderDAO;
-    private final CustomerorderDAO customerorderDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final EmployeeorderDAO employeeorderDAO;
+    private final SuborderService suborderService;
+    private final CustomerorderService customerorderService;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
 
     @Override
@@ -57,15 +57,15 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
             Long suborderId = generateMultipleEmployeeordersForm.getSuborderId();
             List<Suborder> sos;
             if (customerOrderId != -1) {
-                sos = suborderDAO.getSubordersByCustomerorderId(customerOrderId, generateMultipleEmployeeordersForm.getShowOnlyValid());
+                sos = suborderService.getSubordersByCustomerorderId(customerOrderId, generateMultipleEmployeeordersForm.getShowOnlyValid());
                 request.getSession().setAttribute("showAllSuborders", true);
                 request.getSession().setAttribute("currentSuborder", suborderId);
             } else if (suborderId != -1) {
-                sos = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
+                sos = suborderService.getSubordersByValidity(generateMultipleEmployeeordersForm.getShowOnlyValid());
                 request.getSession().setAttribute("showAllSuborders", false);
                 request.getSession().setAttribute("currentSuborder", suborderId);
             } else {
-                sos = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
+                sos = suborderService.getSubordersByValidity(generateMultipleEmployeeordersForm.getShowOnlyValid());
                 request.getSession().setAttribute("showAllSuborders", true);
                 request.getSession().setAttribute("currentSuborder", -1l);
             }
@@ -81,7 +81,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                 generateMultipleEmployeeordersForm.setSuborderId(suborderId);
             }
             String[] employeecontractIdArray = generateMultipleEmployeeordersForm.getEmployeecontractIdArray();
-            Suborder so = suborderDAO.getSuborderById((Long) request.getSession().getAttribute("currentSuborder"));
+            Suborder so = suborderService.getSuborderById((Long) request.getSession().getAttribute("currentSuborder"));
 
             if (so == null) {
                 errors.add("footer", new ActionMessage("form.multipleEmployeeorders.error.notSelectedSuborder"));
@@ -92,11 +92,11 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
             if (employeecontractIdArray != null) {
                 // for every employeecontract that was chosen via multibox
                 for (String ecID : employeecontractIdArray) {
-                    List<Employeeorder> eos = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(Long.parseLong(ecID), so.getId());
+                    List<Employeeorder> eos = employeeorderService.getEmployeeOrdersByEmployeeContractIdAndSuborderId(Long.parseLong(ecID), so.getId());
                     //create a new employeeorder only if no employeeorders for this employee/suborder already exist
-                    if (eos.size() <= 0) {
+                    if (eos.isEmpty()) {
                         Employeeorder eo = new Employeeorder();
-                        Employeecontract ec = employeecontractDAO.getEmployeeContractById(Long.parseLong(ecID));
+                        Employeecontract ec = employeecontractService.getEmployeeContractById(Long.parseLong(ecID));
                         eo.setEmployeecontract(ec);
                         eo.setSuborder(so);
                         if (so.getFromDate().isBefore(ec.getValidFrom())) {
@@ -113,7 +113,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                         eo.setSign("");
                         eo.setDebithours(so.getDebithours());
                         eo.setDebithoursunit(so.getDebithoursunit());
-                        employeeorderDAO.save(eo);
+                        employeeorderService.save(eo);
 
                         Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
 
@@ -149,12 +149,12 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
             List<Customerorder> customerOrders;
             if (loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_BL) || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_PV)
                     || loginEmployee.getStatus().equals(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
-                customerOrders = customerorderDAO.getCustomerorders();
+                customerOrders = customerorderService.getAllCustomerorders();
             } else {
-                customerOrders = customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
+                customerOrders = customerorderService.getCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
             }
             request.getSession().setAttribute("visibleCustomerOrders", customerOrders);
-            List<Employeecontract> employeecontracts = employeecontractDAO.getAllVisibleEmployeeContractsValidAtOrderedByFirstname(
+            List<Employeecontract> employeecontracts = employeecontractService.getAllVisibleEmployeeContractsValidAtOrderedByFirstname(
                 DateUtils.today());
             request.getSession().setAttribute("employeecontracts", employeecontracts);
             long selectedCustomerOrder = (Long) request.getSession().getAttribute("currentOrderId");
@@ -162,10 +162,10 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
             List<Suborder> suborders;
             if (selectedSuborder != -1 || selectedCustomerOrder != -1) {
                 request.getSession().setAttribute("showAllSuborders", false);
-                suborders = suborderDAO.getSubordersByCustomerorderId(selectedCustomerOrder, generateMultipleEmployeeordersForm.getShowOnlyValid());
+                suborders = suborderService.getSubordersByCustomerorderId(selectedCustomerOrder, generateMultipleEmployeeordersForm.getShowOnlyValid());
             } else {
                 request.getSession().setAttribute("showAllSuborders", true);
-                suborders = suborderDAO.getSuborders(generateMultipleEmployeeordersForm.getShowOnlyValid());
+                suborders = suborderService.getSubordersByValidity(generateMultipleEmployeeordersForm.getShowOnlyValid());
             }
             request.getSession().setAttribute("suborders", suborders);
             request.getSession().setAttribute("currentCustomer", selectedCustomerOrder);

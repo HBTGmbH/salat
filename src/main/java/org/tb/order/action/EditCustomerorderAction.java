@@ -1,7 +1,6 @@
 package org.tb.order.action;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,12 +12,12 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.customer.Customer;
-import org.tb.customer.CustomerDAO;
+import org.tb.customer.CustomerService;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
-import org.tb.order.persistence.CustomerorderDAO;
+import org.tb.order.service.CustomerorderService;
 
 /**
  * action class for editing a customer order
@@ -29,9 +28,9 @@ import org.tb.order.persistence.CustomerorderDAO;
 @RequiredArgsConstructor
 public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
-    private final CustomerorderDAO customerorderDAO;
-    private final CustomerDAO customerDAO;
-    private final EmployeeDAO employeeDAO;
+    private final CustomerorderService customerorderService;
+    private final CustomerService customerService;
+    private final EmployeeService employeeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) {
@@ -40,11 +39,11 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         long coId = Long.parseLong(request.getParameter("coId"));
-        Customerorder co = customerorderDAO.getCustomerorderById(coId);
+        Customerorder co = customerorderService.getCustomerorderById(coId);
         request.getSession().setAttribute("coId", co.getId());
 
-        List<Customer> customers = customerDAO.getCustomers();
-        List<Customerorder> customerorders = customerorderDAO.getCustomerorders();
+        List<Customer> customers = customerService.getAllCustomers();
+        List<Customerorder> customerorders = customerorderService.getAllCustomerorders();
 
         if (customers == null || customers.size() <= 0) {
             request.setAttribute("errorMessage",
@@ -56,7 +55,7 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
         request.getSession().setAttribute("customers", customers);
 
         // get list of employees with employee contract
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+        List<Employee> employeesWithContracts = employeeService.getEmployeesWithValidContracts();
 
         // ensure already used employees are still in the list
         if(!employeesWithContracts.contains(co.getRespEmpHbtContract())) {
