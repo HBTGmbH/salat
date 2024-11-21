@@ -1,5 +1,7 @@
 package org.tb.order.service;
 
+import static org.tb.common.util.DateUtils.today;
+
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
@@ -154,5 +156,9 @@ public class EmployeeorderService {
 
   public Employeeorder getEmployeeorderById(Long employeeOrderId) {
     return employeeorderDAO.getEmployeeorderById(employeeOrderId);
+  }
+
+  public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId) {
+    return employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, today());
   }
 }

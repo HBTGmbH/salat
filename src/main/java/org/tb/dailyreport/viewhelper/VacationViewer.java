@@ -17,7 +17,7 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 public class VacationViewer implements Serializable {
 
@@ -112,13 +112,13 @@ public class VacationViewer implements Serializable {
      * that is valid at the date of request with a sum of all durations booked for this suborder for this employee.
      * Saves the Vacations-List as an attribute in the Request.
      */
-    public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderDAO employeeorderDAO, TimereportService timereportService) {
+    public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderService employeeorderService, TimereportService timereportService) {
 
         LocalDate today = today();
 
         List<VacationViewer> vacations = new ArrayList<VacationViewer>();
 
-        List<Employeeorder> orders = employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontract.getId(), today);
+        List<Employeeorder> orders = employeeorderService.getVacationEmployeeOrders(employeecontract.getId());
 
         for (Employeeorder employeeorder : orders) {
             VacationViewer vacationView = new VacationViewer(employeecontract);

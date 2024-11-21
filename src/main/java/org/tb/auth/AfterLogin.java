@@ -20,18 +20,17 @@ import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.VacationViewer;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.OvertimeService;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class AfterLogin {
 
-    private final EmployeeorderDAO employeeorderDAO;
+    private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final OvertimeService overtimeService;
     private final ServletContext servletContext;
-    private final AuthorizedUser authorizedUser;
 
     public List<Warning> createWarnings(Employeecontract employeecontract, Employeecontract loginEmployeeContract,
         MessageResources resources, Locale locale) {
@@ -109,6 +108,6 @@ public class AfterLogin {
 
         //vacation v2 extracted to VacationViewer:
         VacationViewer vw = new VacationViewer(employeecontract);
-        vw.computeVacations(session, employeecontract, employeeorderDAO, timereportService);
+        vw.computeVacations(session, employeecontract, employeeorderService, timereportService);
     }
 }
