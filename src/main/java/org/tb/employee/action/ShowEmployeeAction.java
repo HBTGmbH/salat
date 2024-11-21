@@ -2,15 +2,14 @@ package org.tb.employee.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
-
-import java.util.Comparator;
+import org.tb.employee.service.EmployeeService;
 
 /**
  * action class for showing all employees
@@ -21,7 +20,7 @@ import java.util.Comparator;
 @RequiredArgsConstructor
 public class ShowEmployeeAction extends LoginRequiredAction<ShowEmployeeForm> {
 
-    private final EmployeeDAO employeeDAO;
+    private final EmployeeService employeeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -41,7 +40,7 @@ public class ShowEmployeeAction extends LoginRequiredAction<ShowEmployeeForm> {
             }
         }
 
-        var employees = employeeDAO.getEmployeesByFilter(filter);
+        var employees = employeeService.getEmployeesByFilter(filter);
         employees.sort(Comparator.comparing(Employee::getLastname).thenComparing(Employee::getFirstname));
         request.getSession().setAttribute("employees", employees);
 

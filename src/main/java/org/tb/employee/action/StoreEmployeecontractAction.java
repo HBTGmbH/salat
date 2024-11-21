@@ -1,14 +1,14 @@
 package org.tb.employee.action;
 
-import static org.tb.common.GlobalConstants.VACATION_PER_YEAR;
+import static org.tb.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -23,14 +23,13 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Vacation;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.persistence.OvertimeDAO;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.employee.service.OvertimeService;
 
 /**
  * action class for storing an employee contractpermanently
@@ -41,10 +40,9 @@ import org.tb.employee.service.EmployeecontractService;
 @RequiredArgsConstructor
 public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployeeContractForm> {
 
-    private final EmployeeDAO employeeDAO;
-    private final EmployeecontractDAO employeecontractDAO;
-    private final OvertimeDAO overtimeDAO;
-    private final TimereportDAO timereportDAO;
+    private final EmployeeService employeeService;
+    private final OvertimeService overtimeService;
+    private final TimereportService timereportService;
     private final EmployeecontractService employeecontractService;
 
     @Override
@@ -91,17 +89,17 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
             // create overtime entity and store it
             Long ecId = (Long) request.getSession().getAttribute("ecId");
-            Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
+            Employeecontract ec = employeecontractService.getEmployeeContractById(ecId);
 
             Overtime overtime = new Overtime();
             overtime.setComment(ecForm.getNewOvertimeComment());
             overtime.setEmployeecontract(ec);
             overtime.setTimeMinutes(ecForm.getNewOvertimeTyped());
 
-            overtimeDAO.save(overtime);
+            overtimeService.save(overtime);
 
             // refresh list of overtime adjustments
-            List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
+            List<Overtime> overtimes = overtimeService.getOvertimesByEmployeeContractId(ecId);
             Duration totalOvertime = Duration.ZERO;
             for (Overtime ot : overtimes) {
                 totalOvertime = totalOvertime.plus(ot.getTimeMinutes());
@@ -160,10 +158,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 addToMessages(request, e.getErrorCode());
                 if(e.getErrorCode() == ErrorCode.EC_TIME_REPORTS_OUTSIDE_VALIDITY) {
                     // in case of a specific error, print out timereports
-                    var timereportsInvalidForDates = timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(
+                    var timereportsInvalidForDates = timereportService.getTimereportsByEmployeeContractIdInvalidForDates(
                         validFrom,
                         validUntil,
-                        existingEmployeecontractId
+                        existingEmployeecontractId // in this exception case the employee contract must exist
                     );
                     if (!timereportsInvalidForDates.isEmpty()) {
                         request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
@@ -175,10 +173,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
 
-            List<Employee> employeeOptionList = employeeDAO.getEmployees();
+            List<Employee> employeeOptionList = employeeService.getAllEmployees();
             request.getSession().setAttribute("employees", employeeOptionList);
 
-            request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContracts());
+            request.getSession().setAttribute("employeecontracts", employeecontractService.getAllEmployeeContracts());
             request.getSession().removeAttribute("ecId");
 
             boolean addMoreContracts = Boolean.parseBoolean(request.getParameter("continue"));
@@ -198,7 +196,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     filterEmployeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
                 }
 
-                request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContractsByFilters(show, filter, filterEmployeeId));
+                request.getSession().setAttribute("employeecontracts", employeecontractService.getEmployeeContractsByFilters(show, filter, filterEmployeeId));
 
                 return mapping.findForward("success");
             } else {
@@ -278,7 +276,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             Vacation va = ec.getVacations().getFirst();
             ecForm.setYearlyvacation(va.getEntitlement().toString());
         } else {
-            ecForm.setYearlyvacation(String.valueOf(VACATION_PER_YEAR));
+            ecForm.setYearlyvacation(String.valueOf(DEFAULT_VACATION_PER_YEAR));
         }
 
         LocalDate fromDate = ec.getValidFrom();
@@ -291,10 +289,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
         request.getSession().setAttribute("currentEmployee", theEmployee.getName());
         request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
 
-        List<Employee> employees = employeeDAO.getEmployees();
+        List<Employee> employees = employeeService.getAllEmployees();
         request.getSession().setAttribute("employees", employees);
 
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+        List<Employee> employeesWithContracts = employeeService.getEmployeesWithValidContracts();
         request.getSession().setAttribute("empWithCont", employeesWithContracts);
     }
 }

@@ -1,8 +1,8 @@
 package org.tb.employee.action;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.service.EmployeeService;
 
 /**
  * action class for storing an employee permanently
@@ -23,7 +23,7 @@ import org.tb.employee.persistence.EmployeeDAO;
 @RequiredArgsConstructor
 public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
-    private final EmployeeDAO employeeDAO;
+    private final EmployeeService employeeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeForm emForm, HttpServletRequest request, HttpServletResponse response) {
@@ -41,7 +41,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             if (request.getSession().getAttribute("emId") != null) {
                 // edited employee
                 employeeId = Long.parseLong(request.getSession().getAttribute("emId").toString());
-                employee = employeeDAO.getEmployeeById(employeeId);
+                employee = employeeService.getEmployeeById(employeeId);
             } else {
                 // new report
                 employee = new Employee();
@@ -49,7 +49,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             }
 
             ActionMessages errorMessages = validateFormData(request, emForm);
-            if (errorMessages.size() > 0) {
+            if (!errorMessages.isEmpty()) {
                 return mapping.getInputForward();
             }
 
@@ -60,9 +60,9 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             employee.setSign(emForm.getSign());
             employee.setGender(emForm.getGender().charAt(0));
 
-            employeeDAO.save(employee);
+            employeeService.save(employee);
 
-            request.getSession().setAttribute("employees", employeeDAO.getEmployees());
+            request.getSession().setAttribute("employees", employeeService.getAllEmployees());
 
             boolean addMoreEmployees = Boolean.parseBoolean(request.getParameter("continue"));
             if (!addMoreEmployees) {
@@ -73,7 +73,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
                     filter = (String) request.getSession().getAttribute("employeeFilter");
                 }
 
-                request.getSession().setAttribute("employees", employeeDAO.getEmployeesByFilter(filter));
+                request.getSession().setAttribute("employees", employeeService.getEmployeesByFilter(filter));
 
                 return mapping.findForward("success");
             } else {
@@ -119,7 +119,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
         // for a new employee, check if name already exists
         if (request.getSession().getAttribute("emId") == null) {
-            List<Employee> allEmployees = employeeDAO.getEmployees();
+            List<Employee> allEmployees = employeeService.getAllEmployees();
             for (Employee em : allEmployees) {
                 if ((em.getFirstname().equalsIgnoreCase(emForm.getFirstname())) &&
                         (em.getLastname().equalsIgnoreCase(emForm.getLastname()))) {

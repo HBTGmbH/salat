@@ -1,17 +1,17 @@
 package org.tb.employee.action;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 
 /**
  * action class for creating a new employee contract
@@ -22,8 +22,8 @@ import org.tb.employee.persistence.EmployeecontractDAO;
 @RequiredArgsConstructor
 public class CreateEmployeecontractAction extends LoginRequiredAction<AddEmployeeContractForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final EmployeeDAO employeeDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeService employeeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeContractForm employeeContractForm, HttpServletRequest request, HttpServletResponse response) {
@@ -31,15 +31,15 @@ public class CreateEmployeecontractAction extends LoginRequiredAction<AddEmploye
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         // get lists of existing employees and employee contracts
-        List<Employee> employees = employeeDAO.getEmployees();
+        List<Employee> employees = employeeService.getAllEmployees();
         request.getSession().setAttribute("employees", employees);
 
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts().stream()
+        List<Employee> employeesWithContracts = employeeService.getEmployeesWithValidContracts().stream()
                 .filter(e -> !e.getLastname().startsWith("z_"))
                 .toList();
         request.getSession().setAttribute("empWithCont", employeesWithContracts);
 
-        List<Employeecontract> employeecontracts = employeecontractDAO.getEmployeeContracts();
+        List<Employeecontract> employeecontracts = employeecontractService.getAllEmployeeContracts();
 
         if ((employees == null) || (employees.size() <= 0)) {
             request.setAttribute("errorMessage",
@@ -56,7 +56,7 @@ public class CreateEmployeecontractAction extends LoginRequiredAction<AddEmploye
             Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
             employeeId = loginEmployee.getId();
         }
-        String currentEmployeeName = employeeDAO.getEmployeeById(employeeId).getName();
+        String currentEmployeeName = employeeService.getEmployeeById(employeeId).getName();
         request.getSession().setAttribute("currentEmployee", currentEmployeeName);
 
         // set context

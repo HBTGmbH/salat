@@ -1,15 +1,15 @@
 package org.tb.employee.action;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.service.EmployeeService;
 
 /**
  * action class for creating a new employee
@@ -20,12 +20,12 @@ import org.tb.employee.persistence.EmployeeDAO;
 @RequiredArgsConstructor
 public class CreateEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
 
-    private final EmployeeDAO employeeDAO;
+    private final EmployeeService employeeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeForm employeeForm, HttpServletRequest request, HttpServletResponse response) {
         // get list of existing employees
-        List<Employee> employees = employeeDAO.getEmployees();
+        List<Employee> employees = employeeService.getAllEmployees();
 
         // reset/init form entries
         employeeForm.reset(mapping, request);

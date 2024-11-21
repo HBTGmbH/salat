@@ -1,28 +1,26 @@
 package org.tb.employee.action;
 
-import static org.tb.common.GlobalConstants.VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.common.GlobalConstants;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Vacation;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.domain.Overtime;
-import org.tb.employee.persistence.OvertimeDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
+import org.tb.employee.service.OvertimeService;
 
 /**
  * action class for editing an employee contract
@@ -33,9 +31,9 @@ import org.tb.employee.persistence.OvertimeDAO;
 @RequiredArgsConstructor
 public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeContractForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final EmployeeDAO employeeDAO;
-    private final OvertimeDAO overtimeDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeService employeeService;
+    private final OvertimeService overtimeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeContractForm ecForm, HttpServletRequest request, HttpServletResponse response) {
@@ -43,7 +41,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().removeAttribute("timereportsOutOfRange");
 
         long ecId = Long.parseLong(request.getParameter("ecId"));
-        Employeecontract ec = employeecontractDAO.getEmployeeContractByIdInitializeEager(ecId);
+        Employeecontract ec = employeecontractService.getEmployeeContractWithVacationsById(ecId);
         request.getSession().setAttribute("ecId", ec.getId());
 
         // fill the form with properties of employee contract to be edited
@@ -53,7 +51,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("employeeContractContext", "edit");
 
         // get overtime-entries
-        List<Overtime> overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
+        List<Overtime> overtimes = overtimeService.getOvertimesByEmployeeContractId(ecId);
         Duration totalOvertime = Duration.ZERO;
         for (Overtime overtime : overtimes) {
             totalOvertime = totalOvertime.plus(overtime.getTimeMinutes());
@@ -94,8 +92,6 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
             // first vacation entry to set the form value
             Vacation va = ec.getVacations().getFirst();
             ecForm.setYearlyvacation(va.getEntitlement().toString());
-        } else {
-            ecForm.setYearlyvacation(String.valueOf(VACATION_PER_YEAR));
         }
 
         LocalDate fromDate = ec.getValidFrom();
@@ -108,12 +104,12 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("currentEmployee", theEmployee.getName());
         request.getSession().setAttribute("currentEmployeeId", theEmployee.getId());
 
-        List<Employee> employees = employeeDAO.getEmployees().stream()
+        List<Employee> employees = employeeService.getAllEmployees().stream()
                 .filter(e -> !e.getLastname().startsWith("z_"))
                 .toList();
         request.getSession().setAttribute("employees", employees);
 
-        List<Employee> employeesWithContracts = employeeDAO.getEmployeesWithValidContracts();
+        List<Employee> employeesWithContracts = employeeService.getEmployeesWithValidContracts();
         request.getSession().setAttribute("empWithCont", employeesWithContracts);
     }
 

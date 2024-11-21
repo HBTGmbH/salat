@@ -33,4 +33,20 @@ public class EmployeeService {
   public Employee getEmployeeById(long employeeId) {
     return employeeDAO.getEmployeeById(employeeId);
   }
+
+  public List<Employee> getEmployeesWithValidContracts() {
+    return employeeDAO.getEmployeesWithValidContracts();
+  }
+
+  public List<Employee> getEmployeesByFilter(String filter) {
+    return employeeDAO.getEmployeesByFilter(filter);
+  }
+
+  public boolean deleteEmployeeById(long employeeId) {
+    return employeeDAO.deleteEmployeeById(employeeId);
+  }
+
+  public void save(Employee employee) {
+    employeeDAO.save(employee);
+  }
 }

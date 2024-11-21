@@ -1,8 +1,8 @@
 package org.tb.employee.action;
 
-import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForm;
@@ -13,7 +13,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.employee.service.EmployeeService;
 
 /**
  * action class for deleting an employee
@@ -24,7 +24,7 @@ import org.tb.employee.persistence.EmployeeDAO;
 @RequiredArgsConstructor
 public class DeleteEmployeeAction extends LoginRequiredAction<ActionForm> {
 
-    private final EmployeeDAO employeeDAO;
+    private final EmployeeService employeeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -35,7 +35,7 @@ public class DeleteEmployeeAction extends LoginRequiredAction<ActionForm> {
 
         ActionMessages errors = new ActionMessages();
         long emId = Long.parseLong(request.getParameter("emId"));
-        Employee em = employeeDAO.getEmployeeById(emId);
+        Employee em = employeeService.getEmployeeById(emId);
         if (em == null) {
             return mapping.getInputForward();
         }
@@ -47,7 +47,7 @@ public class DeleteEmployeeAction extends LoginRequiredAction<ActionForm> {
             return mapping.getInputForward();
         }
 
-        boolean deleted = employeeDAO.deleteEmployeeById(emId);
+        boolean deleted = employeeService.deleteEmployeeById(emId);
 
         if (!deleted) {
             errors.add(null, new ActionMessage("form.employee.error.hasemployeecontract"));
@@ -61,7 +61,7 @@ public class DeleteEmployeeAction extends LoginRequiredAction<ActionForm> {
             filter = (String) request.getSession().getAttribute("employeeFilter");
         }
 
-        request.getSession().setAttribute("employees", employeeDAO.getEmployeesByFilter(filter));
+        request.getSession().setAttribute("employees", employeeService.getEmployeesByFilter(filter));
 
         // set current employee back to loginEmployee to make sure that current employee is not the
         // one just deleted...

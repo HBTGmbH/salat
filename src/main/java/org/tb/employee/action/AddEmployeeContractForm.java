@@ -1,6 +1,6 @@
 package org.tb.employee.action;
 
-import static org.tb.common.GlobalConstants.VACATION_PER_YEAR;
+import static org.tb.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.validateDate;
 import static org.tb.common.util.DurationUtils.parseDuration;
@@ -8,9 +8,9 @@ import static org.tb.common.util.DurationUtils.validateDuration;
 import static org.tb.common.util.ValidationUtils.isInRange;
 import static org.tb.common.util.ValidationUtils.isPositiveInteger;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDate;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionErrors;
@@ -80,7 +80,7 @@ public class AddEmployeeContractForm extends ActionForm {
         hide = Boolean.FALSE;
         dailyworkingtime = "8:00";
         initialOvertime = "0:00";
-        yearlyvacation = String.valueOf(VACATION_PER_YEAR);
+        yearlyvacation = String.valueOf(DEFAULT_VACATION_PER_YEAR);
         newOvertime = "0:00";
         newOvertimeComment = "";
     }

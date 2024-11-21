@@ -3,7 +3,6 @@ package org.tb.employee.persistence;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 
 import com.google.common.collect.Lists;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -77,7 +76,6 @@ public class EmployeeDAO {
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
-
 
     /**
      * Get a list of all Employees ordered by lastname.

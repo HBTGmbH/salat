@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -351,6 +352,14 @@ public class OvertimeService {
       employeecontractDAO.save(employeecontract);
     }
     employeecontractDAO.save(employeecontract);
+  }
+
+  public List<Overtime> getOvertimesByEmployeeContractId(long employeeContractId) {
+    return overtimeDAO.getOvertimesByEmployeeContractId(employeeContractId);
+  }
+
+  public void save(Overtime overtime) {
+    overtimeDAO.save(overtime);
   }
 
   @Getter

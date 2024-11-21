@@ -1,5 +1,7 @@
 package org.tb.employee.action;
 
+import static org.tb.common.util.DateUtils.today;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -8,16 +10,15 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.OvertimeService;
 
 @Component
 @RequiredArgsConstructor
 public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
 
-  private final EmployeecontractDAO employeecontractDAO;
+  private final EmployeecontractService employeecontractService;
   private final OvertimeService overtimeService;
 
   @Override
@@ -25,7 +26,7 @@ public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
       HttpServletResponse response) throws Exception {
 
     if ("refresh".equalsIgnoreCase(request.getParameter("task"))) {
-      var currentEmployeeContract = employeecontractDAO.getEmployeeContractById(form.getEmployeecontractId());
+      var currentEmployeeContract = employeecontractService.getEmployeeContractById(form.getEmployeecontractId());
       if (currentEmployeeContract != null) {
         request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
@@ -46,8 +47,7 @@ public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
     }
 
     // get valid employeecontracts
-    List<Employeecontract> employeeContracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(
-        DateUtils.today());
+    List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
     request.setAttribute("employeecontracts", employeeContracts);
 
     var report = overtimeService.createDetailedReportForEmployee(form.getEmployeecontractId());

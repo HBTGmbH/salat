@@ -2,6 +2,7 @@ package org.tb.employee.service;
 
 import static org.tb.common.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.ErrorCode.EC_SUPERVISOR_INVALID;
+import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
@@ -16,7 +17,6 @@ import org.tb.common.ErrorCode;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
-import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
@@ -148,7 +148,7 @@ public class EmployeecontractService {
   private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {
     if(employeecontract.getVacations().isEmpty()) {
       // if necessary, add new vacation for current year
-      vacationDAO.addNewVacation(employeecontract, DateUtils.getCurrentYear(), vacationEntitlement);
+      vacationDAO.addNewVacation(employeecontract, getCurrentYear(), vacationEntitlement);
     } else {
       employeecontract.getVacations()
           .stream()
@@ -247,5 +247,22 @@ public class EmployeecontractService {
 
   public List<Employeecontract> getTeamContracts(Long teamManagerEmployeeId) {
     return employeecontractDAO.getEmployeeContractsByEmployeeId(teamManagerEmployeeId);
+  }
+
+  public List<Employeecontract> getAllEmployeeContracts() {
+    return employeecontractDAO.getEmployeeContracts();
+  }
+
+  public boolean deleteEmployeeContractById(long employeeContractId) {
+    return employeecontractDAO.deleteEmployeeContractById(employeeContractId);
+  }
+
+  public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter,
+      Long filterEmployeeId) {
+    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId);
+  }
+
+  public Employeecontract getEmployeeContractWithVacationsById(long employeeContractId) {
+    return employeecontractDAO.getEmployeeContractByIdInitializeEager(employeeContractId);
   }
 }

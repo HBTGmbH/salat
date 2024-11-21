@@ -1,8 +1,8 @@
 package org.tb.employee.action;
 
-import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForm;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 
 /**
  * action class for deleting an employee contract
@@ -25,7 +25,7 @@ import org.tb.employee.persistence.EmployeecontractDAO;
 @RequiredArgsConstructor
 public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
+    private final EmployeecontractService employeecontractService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
@@ -36,7 +36,7 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm
 
         ActionMessages errors = new ActionMessages();
         long ecId = Long.parseLong(request.getParameter("ecId"));
-        Employeecontract ec = employeecontractDAO.getEmployeeContractById(ecId);
+        Employeecontract ec = employeecontractService.getEmployeeContractById(ecId);
         if (ec == null)
             return mapping.getInputForward();
 
@@ -47,7 +47,7 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm
             return mapping.getInputForward();
         }
 
-        boolean deleted = employeecontractDAO.deleteEmployeeContractById(ecId);
+        boolean deleted = employeecontractService.deleteEmployeeContractById(ecId);
 
         if (!deleted) {
             errors.add(null, new ActionMessage("form.employeecontract.error.hasrelated"));
@@ -69,7 +69,7 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm
             filterEmployeeId = (Long) request.getSession().getAttribute("employeeContractEmployeeId");
         }
 
-        request.getSession().setAttribute("employeecontracts", employeecontractDAO.getEmployeeContractsByFilters(show, filter, filterEmployeeId));
+        request.getSession().setAttribute("employeecontracts", employeecontractService.getEmployeeContractsByFilters(show, filter, filterEmployeeId));
 
         // set current employee back to loginEmployee to make sure that current employee is not the
         // one whose contract was just deleted...

@@ -1,15 +1,14 @@
 package org.tb.employee.action;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
-import org.tb.employee.persistence.EmployeeDAO;
-import org.tb.employee.persistence.EmployeecontractDAO;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 
 /**
  * action class for showing all employee contracts
@@ -20,15 +19,15 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequiredArgsConstructor
 public class ShowEmployeecontractAction extends LoginRequiredAction<ShowEmployeeContractForm> {
 
-    private final EmployeecontractDAO employeecontractDAO;
-    private final EmployeeDAO employeeDAO;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeService employeeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
         ShowEmployeeContractForm contractForm, HttpServletRequest request,
         HttpServletResponse response) {
 
-        request.getSession().setAttribute("employees", employeeDAO.getEmployees().stream()
+        request.getSession().setAttribute("employees", employeeService.getAllEmployees().stream()
                 .filter(e -> !e.getLastname().startsWith("z_"))
                 .toList());
 
@@ -61,7 +60,7 @@ public class ShowEmployeecontractAction extends LoginRequiredAction<ShowEmployee
             }
         }
 
-        var employeeContracts = employeecontractDAO.getEmployeeContractsByFilters(show, filter, employeeId).stream()
+        var employeeContracts = employeecontractService.getEmployeeContractsByFilters(show, filter, employeeId).stream()
                 .filter(ec -> !ec.getEmployee().getLastname().startsWith("z_"))
                 .toList();
         request.getSession().setAttribute("employeecontracts", employeeContracts);

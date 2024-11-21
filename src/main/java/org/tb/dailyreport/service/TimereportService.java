@@ -904,4 +904,9 @@ public class TimereportService {
   public List<TimereportDTO> getTimereportsByDateAndEmployeeContractId(long employeeContractId, LocalDate date) {
     return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
   }
+
+  public List<TimereportDTO> getTimereportsByEmployeeContractIdInvalidForDates(LocalDate validFrom, LocalDate validUntil,
+      long existingEmployeecontractId) {
+    return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, existingEmployeecontractId);
+  }
 }
