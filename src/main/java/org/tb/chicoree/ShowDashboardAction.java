@@ -8,8 +8,8 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.employee.service.OvertimeService;
 
 @Component
 @RequiredArgsConstructor

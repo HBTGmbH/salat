@@ -1,4 +1,4 @@
-package org.tb.employee.service;
+package org.tb.dailyreport.service;
 
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -22,6 +21,11 @@ import org.springframework.stereotype.Service;
 import org.tb.common.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.domain.OvertimeReport;
+import org.tb.dailyreport.domain.OvertimeReportMonth;
+import org.tb.dailyreport.domain.OvertimeReportTotal;
+import org.tb.dailyreport.domain.OvertimeStatus;
+import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
@@ -31,11 +35,6 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
-import org.tb.employee.domain.OvertimeReport;
-import org.tb.employee.domain.OvertimeReportMonth;
-import org.tb.employee.domain.OvertimeReportTotal;
-import org.tb.employee.domain.OvertimeStatus;
-import org.tb.employee.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.OvertimeDAO;
 
@@ -352,14 +351,6 @@ public class OvertimeService {
       employeecontractDAO.save(employeecontract);
     }
     employeecontractDAO.save(employeecontract);
-  }
-
-  public List<Overtime> getOvertimesByEmployeeContractId(long employeeContractId) {
-    return overtimeDAO.getOvertimesByEmployeeContractId(employeeContractId);
-  }
-
-  public void save(Overtime overtime) {
-    overtimeDAO.save(overtime);
   }
 
   @Getter

@@ -50,6 +50,9 @@
 		<li><html:link styleClass="menu" action="/ShowMatrix">
 			<bean:message key="main.general.mainmenu.matrixmenu.text" />
 		</html:link></li>
+		<li class="first"><html:link styleClass="menu" action="/ShowOvertime">
+			<bean:message key="main.general.mainmenu.overtime.text" />
+		</html:link></li>
 		<c:if test="${not loginEmployee.restricted}"><li><html:link styleClass="menu" action="/ShowTraining">
 			<bean:message key="main.general.mainmenu.training.text" />
 		</html:link></li></c:if>
@@ -71,9 +74,6 @@
 			</html:link></li>
 			<li><html:link styleClass="menu" action="/ShowEmployeeorder">
 				<bean:message key="main.general.mainmenu.employeeorders.text" />
-			</html:link></li>
-			<li class="first"><html:link styleClass="menu" action="/ShowOvertime">
-				<bean:message key="main.general.mainmenu.overtime.text" />
 			</html:link></li>
 		</ul>
 		</li>

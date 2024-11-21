@@ -1,4 +1,4 @@
-package org.tb.employee.action;
+package org.tb.dailyreport.action;
 
 import static org.tb.common.util.DateUtils.today;
 
@@ -10,9 +10,9 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.struts.LoginRequiredAction;
+import org.tb.dailyreport.service.OvertimeService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.employee.service.OvertimeService;
 
 @Component
 @RequiredArgsConstructor

@@ -269,4 +269,12 @@ public class EmployeecontractService {
   public List<Employeecontract> getAllVisibleEmployeeContractsValidAtOrderedByFirstname(LocalDate validAt) {
     return employeecontractDAO.getAllVisibleEmployeeContractsValidAtOrderedByFirstname(validAt);
   }
+
+  public List<Overtime> getOvertimesByEmployeeContractId(long employeeContractId) {
+    return overtimeDAO.getOvertimesByEmployeeContractId(employeeContractId);
+  }
+
+  public void save(Overtime overtime) {
+    overtimeDAO.save(overtime);
+  }
 }

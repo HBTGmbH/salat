@@ -1,4 +1,4 @@
-package org.tb.employee.action;
+package org.tb.dailyreport.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;

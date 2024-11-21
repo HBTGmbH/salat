@@ -1,4 +1,4 @@
-package org.tb.employee.domain;
+package org.tb.dailyreport.domain;
 
 import java.util.List;
 import lombok.Getter;

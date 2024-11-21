@@ -23,13 +23,13 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Vacation;
+import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.employee.service.OvertimeService;
 
 /**
  * action class for storing an employee contractpermanently
@@ -96,10 +96,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             overtime.setEmployeecontract(ec);
             overtime.setTimeMinutes(ecForm.getNewOvertimeTyped());
 
-            overtimeService.save(overtime);
+            employeecontractService.save(overtime);
 
             // refresh list of overtime adjustments
-            List<Overtime> overtimes = overtimeService.getOvertimesByEmployeeContractId(ecId);
+            List<Overtime> overtimes = employeecontractService.getOvertimesByEmployeeContractId(ecId);
             Duration totalOvertime = Duration.ZERO;
             for (Overtime ot : overtimes) {
                 totalOvertime = totalOvertime.plus(ot.getTimeMinutes());

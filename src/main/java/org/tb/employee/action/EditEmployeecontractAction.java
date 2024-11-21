@@ -15,12 +15,12 @@ import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Vacation;
+import org.tb.dailyreport.service.OvertimeService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.employee.service.OvertimeService;
 
 /**
  * action class for editing an employee contract
@@ -51,7 +51,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("employeeContractContext", "edit");
 
         // get overtime-entries
-        List<Overtime> overtimes = overtimeService.getOvertimesByEmployeeContractId(ecId);
+        List<Overtime> overtimes = employeecontractService.getOvertimesByEmployeeContractId(ecId);
         Duration totalOvertime = Duration.ZERO;
         for (Overtime overtime : overtimes) {
             totalOvertime = totalOvertime.plus(overtime.getTimeMinutes());

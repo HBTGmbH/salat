@@ -1,4 +1,4 @@
-package org.tb.employee.domain;
+package org.tb.dailyreport.domain;
 
 import java.time.Duration;
 import java.time.LocalDate;

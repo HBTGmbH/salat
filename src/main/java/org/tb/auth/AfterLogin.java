@@ -16,10 +16,10 @@ import org.tb.common.Warning;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.VacationViewer;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.service.OvertimeService;
 import org.tb.order.service.EmployeeorderService;
 
 @Component
