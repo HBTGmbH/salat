@@ -22,10 +22,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.function.Function;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.tb.common.GlobalConstants;
 
 @Slf4j
+@UtilityClass
 public class DateUtils {
 
     private static final DateTimeFormatter dateFormatter = DateTimeFormatter
