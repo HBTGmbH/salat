@@ -81,11 +81,13 @@ public class EmployeecontractService {
         dailyWorkingTime,
         vacationEntitlement);
 
-    Overtime overtime = new Overtime();
-    overtime.setComment("initial overtime");
-    overtime.setEmployeecontract(employeecontract);
-    overtime.setTime(initialOvertime);
-    overtimeDAO.save(overtime);
+    if(initialOvertime != null && !initialOvertime.isZero() ) {
+      Overtime overtime = new Overtime();
+      overtime.setComment("initial overtime");
+      overtime.setEmployeecontract(employeecontract);
+      overtime.setTime(initialOvertime);
+      overtimeDAO.save(overtime);
+    }
 
     return employeecontract;
   }
