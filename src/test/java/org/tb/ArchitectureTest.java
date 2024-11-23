@@ -36,8 +36,23 @@ public class ArchitectureTest {
   }
 
   @Test
+  public void authShouldAccessCommonOnly() {
+    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("auth must only import common") {
+      @Override
+      public boolean test(JavaClass javaClass) {
+        return javaClass.getFullName().startsWith("org.tb.") &&
+               !(javaClass.getFullName().startsWith("org.tb.common.") || javaClass.getFullName().startsWith("org.tb.auth."));
+      }
+    };
+    ArchRule rule = priority(HIGH).noClasses().that()
+        .resideInAPackage("..auth..")
+        .should().dependOnClassesThat(predicate);
+    rule.check(importedClasses);
+  }
+
+  @Test
   public void commonShouldNotAccessOtherSalatPackages() {
-    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("common must not import other salat packages") {
+    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("common must only import common") {
       @Override
       public boolean test(JavaClass javaClass) {
         return javaClass.getFullName().startsWith("org.tb.") && !javaClass.getFullName().startsWith("org.tb.common.");
