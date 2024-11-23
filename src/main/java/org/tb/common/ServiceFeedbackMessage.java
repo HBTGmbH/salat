@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.tb.common.exception.ErrorCode;
 
 @Data
 @AllArgsConstructor

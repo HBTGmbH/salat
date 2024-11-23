@@ -1,7 +1,7 @@
 package org.tb.employee.service;
 
-import static org.tb.common.ErrorCode.EC_OVERLAPS;
-import static org.tb.common.ErrorCode.EC_SUPERVISOR_INVALID;
+import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
+import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
 import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.today;
 
@@ -13,7 +13,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.common.DataValidation;
-import org.tb.common.ErrorCode;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;

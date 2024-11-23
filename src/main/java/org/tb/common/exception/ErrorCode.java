@@ -1,4 +1,4 @@
-package org.tb.common;
+package org.tb.common.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

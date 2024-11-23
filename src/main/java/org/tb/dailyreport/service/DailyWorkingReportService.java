@@ -3,7 +3,6 @@ package org.tb.dailyreport.service;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -26,8 +25,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.tb.common.ErrorCode.*;
+import static org.tb.common.exception.ErrorCode.*;
 
 @Service
 @AllArgsConstructor

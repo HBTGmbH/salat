@@ -1,12 +1,11 @@
 package org.tb.order.service;
 
-import static org.tb.common.ErrorCode.SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY;
+import static org.tb.common.exception.ErrorCode.SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

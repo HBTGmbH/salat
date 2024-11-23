@@ -1,8 +1,8 @@
 package org.tb.customer;
 
-import static org.tb.common.ErrorCode.AA_NEEDS_MANAGER;
-import static org.tb.common.ErrorCode.CU_CUSTOMER_ORDERS_EXIST;
-import static org.tb.common.ErrorCode.CU_NOT_FOUND;
+import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static org.tb.common.exception.ErrorCode.CU_CUSTOMER_ORDERS_EXIST;
+import static org.tb.common.exception.ErrorCode.CU_NOT_FOUND;
 
 import java.util.List;
 import java.util.stream.StreamSupport;

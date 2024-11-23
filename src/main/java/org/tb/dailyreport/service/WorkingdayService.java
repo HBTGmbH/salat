@@ -2,10 +2,10 @@ package org.tb.dailyreport.service;
 
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
-import static org.tb.common.ErrorCode.WD_HOLIDAY_NO_WORKED;
-import static org.tb.common.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
-import static org.tb.common.ErrorCode.WD_SATSUN_NOT_WORKED;
-import static org.tb.common.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
+import static org.tb.common.exception.ErrorCode.WD_HOLIDAY_NO_WORKED;
+import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
+import static org.tb.common.exception.ErrorCode.WD_SATSUN_NOT_WORKED;
+import static org.tb.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
 

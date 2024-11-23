@@ -7,7 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tb.common.ServiceFeedbackMessage;
-import org.tb.common.ErrorCode;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;

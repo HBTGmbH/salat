@@ -10,7 +10,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.tb.common.ErrorCode;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.ServiceFeedbackMessage;
 
 /**

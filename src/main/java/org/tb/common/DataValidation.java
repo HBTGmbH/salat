@@ -2,6 +2,7 @@ package org.tb.common;
 
 import java.time.LocalDate;
 import lombok.experimental.UtilityClass;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 
 @UtilityClass

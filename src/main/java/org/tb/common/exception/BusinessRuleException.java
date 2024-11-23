@@ -1,7 +1,5 @@
 package org.tb.common.exception;
 
-import org.tb.common.ErrorCode;
-
 public class BusinessRuleException extends ErrorCodeException {
 
   public BusinessRuleException(ErrorCode errorCode) {

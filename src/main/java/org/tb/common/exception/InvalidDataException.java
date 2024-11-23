@@ -1,7 +1,5 @@
 package org.tb.common.exception;
 
-import org.tb.common.ErrorCode;
-
 public class InvalidDataException extends ErrorCodeException {
 
   public InvalidDataException(ErrorCode errorCode) {

@@ -3,6 +3,7 @@ package org.tb.common;
 import java.util.Collection;
 import lombok.experimental.UtilityClass;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCode;
 
 @UtilityClass
 public class BusinessRuleChecks {
