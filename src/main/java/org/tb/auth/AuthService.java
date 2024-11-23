@@ -13,6 +13,7 @@ import static org.tb.auth.AuthorizationRule.Category.EMPLOYEE;
 import static org.tb.auth.AuthorizationRule.Category.REPORT_DEFINITION;
 import static org.tb.auth.AuthorizationRule.Category.TIMEREPORT;
 import static org.tb.common.GlobalConstants.YESNO_YES;
+import static org.tb.common.util.DateUtils.isInRange;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.annotation.PostConstruct;
@@ -31,7 +32,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizationRule.Category;
 import org.tb.common.SalatProperties;
-import org.tb.common.util.ValidationUtils;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
@@ -230,7 +230,7 @@ public class AuthService {
     private final AccessLevel accessLevel;
 
     public boolean isValid(LocalDate date) {
-      return ValidationUtils.isInRange(date, validFrom, validUntil);
+      return isInRange(date, validFrom, validUntil);
     }
 
   }

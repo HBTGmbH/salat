@@ -442,4 +442,11 @@ public class DateUtils {
         return LocalTime.ofSecondOfDay(minutes * 60);
     }
 
+    public static boolean isInRange(LocalDate value, LocalDate min, LocalDate max) {
+        if (value == null) throw new IllegalArgumentException("value must not be null");
+
+        // check if value is between min and max
+        return (min == null || !value.isBefore(min)) && (max == null || !value.isAfter(max));
+    }
+
 }
