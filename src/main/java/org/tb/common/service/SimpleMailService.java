@@ -1,4 +1,4 @@
-package org.tb.common;
+package org.tb.common.service;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.springframework.stereotype.Service;
+import org.tb.common.SalatProperties;
 
 /**
  * Builds the various emails
