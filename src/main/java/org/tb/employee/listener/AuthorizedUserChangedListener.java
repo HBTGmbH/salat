@@ -1,0 +1,91 @@
+package org.tb.employee.listener;
+
+import static java.lang.Boolean.TRUE;
+import static org.tb.common.util.DateUtils.today;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDate;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
+import org.tb.auth.AuthorizedUser;
+import org.tb.auth.event.AuthorizedUserChangedEvent;
+import org.tb.common.GlobalConstants;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.service.EmployeeorderService;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class AuthorizedUserChangedListener {
+
+  private final AuthorizedUser authorizedUser;
+  private final EmployeeService employeeService;
+  private final EmployeecontractService employeecontractService;
+  private final EmployeeorderService employeeorderService;
+  private final HttpServletRequest request;
+
+  @EventListener
+  public void onAuthorizedUserChanged(AuthorizedUserChangedEvent event) {
+
+    Employee loginEmployee = employeeService.getLoginEmployee();
+    // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
+    if (loginEmployee == null) {
+      log.error("No matching employee found for {}.", authorizedUser.getSign());
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authorizedUser.getSign());
+    }
+
+    LocalDate today = today();
+    Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), today);
+
+    // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
+    if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+      log.error("No valid contract found for {}.", loginEmployee.getSign());
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid contract found for " + loginEmployee.getSign());
+    }
+
+    authorizedUser.init(loginEmployee.getId(), TRUE == loginEmployee.getRestricted(), loginEmployee.getStatus());
+
+    // no further stuff for REST API calls - all is just for struts and old web UI
+    if(request.getRequestURL().toString().contains("/api/") || request.getRequestURL().toString().contains("/rest/")) return;
+
+    request.getSession().setAttribute("loginEmployee", loginEmployee);
+    String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
+    request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
+    request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+
+    // check if employee has an employee contract and it has employee orders for all standard suborders
+    if (employeecontract != null) {
+      request.getSession().setAttribute("employeeHasValidContract", true);
+      handleEmployeeWithValidContract(request, loginEmployee, employeecontract);
+    } else {
+      request.getSession().setAttribute("employeeHasValidContract", false);
+    }
+
+    // create collection of employeecontracts
+    List<Employeecontract> employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
+    request.getSession().setAttribute("employeecontracts", employeecontracts);
+  }
+
+  private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee,
+      Employeecontract employeecontract) {
+    // auto generate employee orders
+    if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
+        Boolean.FALSE.equals(employeecontract.getFreelancer())) {
+      employeeorderService.generateMissingStandardOrders(employeecontract.getId());
+    }
+
+    // set used employee contract of login employee
+    request.getSession().setAttribute("loginEmployeeContract", employeecontract);
+    request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
+    request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+  }
+
+}

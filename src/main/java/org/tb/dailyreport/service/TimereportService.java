@@ -9,6 +9,20 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static java.util.stream.Collectors.toMap;
+import static org.tb.common.GlobalConstants.BREAK_MINUTES_AFTER_NINE_HOURS;
+import static org.tb.common.GlobalConstants.BREAK_MINUTES_AFTER_SIX_HOURS;
+import static org.tb.common.GlobalConstants.COMMENT_MAX_LENGTH;
+import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_MONTH;
+import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
+import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_YEAR;
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
+import static org.tb.common.GlobalConstants.REST_PERIOD_IN_MINUTES;
+import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.common.GlobalConstants.WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
 import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
@@ -36,29 +50,17 @@ import static org.tb.common.exception.ErrorCode.WD_BREAK_TOO_SHORT_6;
 import static org.tb.common.exception.ErrorCode.WD_BREAK_TOO_SHORT_9;
 import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
-import static org.tb.common.GlobalConstants.BREAK_MINUTES_AFTER_NINE_HOURS;
-import static org.tb.common.GlobalConstants.BREAK_MINUTES_AFTER_SIX_HOURS;
-import static org.tb.common.GlobalConstants.COMMENT_MAX_LENGTH;
-import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_MONTH;
-import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
-import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_YEAR;
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
-import static org.tb.common.GlobalConstants.REST_PERIOD_IN_MINUTES;
-import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
-import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
-import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
-import static org.tb.common.GlobalConstants.WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
 import static org.tb.common.util.DateUtils.getFirstDay;
 import static org.tb.common.util.DateUtils.getLastDay;
 import static org.tb.common.util.DateUtils.getYear;
 import static org.tb.common.util.DateUtils.getYearMonth;
 import static org.tb.common.util.DateUtils.min;
+import static org.tb.common.util.UrlUtils.absoluteUrl;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import com.google.common.annotations.VisibleForTesting;
+import jakarta.servlet.ServletContext;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -69,6 +71,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,20 +79,22 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.struts.util.MessageResources;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.util.BusinessRuleCheckUtils;
-import org.tb.common.util.DataValidationUtils;
-import org.tb.common.exception.ErrorCode;
 import org.tb.common.GlobalConstants;
 import org.tb.common.ServiceFeedbackMessage;
-import org.tb.common.service.SimpleMailService;
-import org.tb.common.service.SimpleMailService.MailContact;
+import org.tb.common.Warning;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.service.SimpleMailService;
+import org.tb.common.service.SimpleMailService.MailContact;
+import org.tb.common.util.BusinessRuleCheckUtils;
+import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Referenceday;
@@ -102,7 +107,6 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -127,9 +131,9 @@ public class TimereportService {
   private final AuthorizedUser authorizedUser;
   private final WorkingdayDAO workingdayDAO;
   private final SimpleMailService simpleMailService;
-  private final EmployeeRepository employeeRepository;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
+  private final ServletContext servletContext;
 
   public TimereportDTO getTimereportById(long id) {
     return timereportDAO.getTimereportById(id);
@@ -1013,6 +1017,44 @@ public class TimereportService {
         new MailContact(sender.getName(), sender.getEmailAddress()),
         new MailContact(recipient.getName(), recipient.getEmailAddress())
     );
+  }
+
+  public List<Warning> createTimeReportWarnings(long employeecontractId, MessageResources resources, Locale locale) {
+
+    var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
+
+    // warnings
+    List<Warning> warnings = new ArrayList<>();
+
+    // timereport warning
+    List<TimereportDTO> timereports = getTimereportsOutOfRangeForEmployeeContract(employeecontract.getId());
+    for (TimereportDTO timereport : timereports) {
+      Warning warning = new Warning();
+      warning.setSort(resources.getMessage(locale, "main.info.warning.timereportnotinrange"));
+      warning.setText(timereport.getTimeReportAsString());
+      warnings.add(warning);
+    }
+
+    // timereport warning 2
+    timereports = getTimereportsOutOfRangeForEmployeeOrder(employeecontract.getId());
+    for (TimereportDTO timereport : timereports) {
+      Warning warning = new Warning();
+      warning.setSort(resources.getMessage(locale, "main.info.warning.timereportnotinrangeforeo"));
+      warning.setText(timereport.getTimeReportAsString() + " " + timereport.getEmployeeOrderAsString());
+      warnings.add(warning);
+    }
+
+    // timereport warning 3: no duration
+    timereports = getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
+    for (TimereportDTO timereport : timereports) {
+      Warning warning = new Warning();
+      warning.setSort(resources.getMessage(locale, "main.info.warning.timereport.noduration"));
+      warning.setText(timereport.getTimeReportAsString());
+      warning.setLink(absoluteUrl("/do/EditDailyReport?trId=" + timereport.getId(), servletContext));
+      warnings.add(warning);
+    }
+
+    return warnings;
   }
 
 }

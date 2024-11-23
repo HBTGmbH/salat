@@ -1,4 +1,4 @@
-package org.tb.welcome.viewhelper;
+package org.tb.dailyreport.viewhelper;
 
 import java.io.Serializable;
 import lombok.AllArgsConstructor;

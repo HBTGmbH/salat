@@ -2,7 +2,6 @@ package org.tb.dailyreport.viewhelper;
 
 import static java.math.RoundingMode.DOWN;
 import static java.util.Locale.GERMAN;
-import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import jakarta.servlet.http.HttpSession;
@@ -10,52 +9,29 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
 
-public class VacationViewer implements Serializable {
+@Data
+public class VacationViewHelper implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private final Employeecontract employeecontract;
     private String suborderSign;
     private Duration budget;
-    private int usedVacationMinutes;
+    private long usedVacationMinutes;
 
-    public VacationViewer(Employeecontract employeecontract) {
+    private VacationViewHelper(Employeecontract employeecontract) {
         this.employeecontract = employeecontract;
     }
 
-    public Duration getBudget() {
-        return budget;
-    }
-
-    public void setBudget(Duration budget) {
-        this.budget = budget;
-    }
-
-    public String getSuborderSign() {
-        return suborderSign;
-    }
-
-    public void setSuborderSign(String suborderSign) {
-        this.suborderSign = suborderSign;
-    }
-
-    public int getUsedVacationMinutes() {
-        return usedVacationMinutes;
-    }
-
-    public void setUsedVacationMinutes(int usedVacationMinutes) {
-        this.usedVacationMinutes = usedVacationMinutes;
-    }
-
-    public void addVacationMinutes(int minutes) {
+    public void addVacationMinutes(long minutes) {
         this.usedVacationMinutes += minutes;
     }
 
@@ -106,28 +82,21 @@ public class VacationViewer implements Serializable {
     }
 
     /**
-     * vacation v2
-     * <p>
      * computes a list of VacationViews. Every VacationView contains one vacation-based suborder (Urlaub <Jahr>, Sonderurlaub, Resturlaub)
      * that is valid at the date of request with a sum of all durations booked for this suborder for this employee.
      * Saves the Vacations-List as an attribute in the Request.
      */
-    public void computeVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderService employeeorderService, TimereportService timereportService) {
-
-        LocalDate today = today();
-
-        List<VacationViewer> vacations = new ArrayList<VacationViewer>();
-
+    public static void calculateAndSetVacations(HttpSession session, Employeecontract employeecontract, EmployeeorderService employeeorderService, TimereportService timereportService) {
+        List<VacationViewHelper> vacations = new ArrayList<VacationViewHelper>();
         List<Employeeorder> orders = employeeorderService.getVacationEmployeeOrders(employeecontract.getId());
-
         for (Employeeorder employeeorder : orders) {
-            VacationViewer vacationView = new VacationViewer(employeecontract);
+            VacationViewHelper vacationView = new VacationViewHelper(employeecontract);
             vacationView.setSuborderSign(employeeorder.getSuborder().getDescription());
             if (employeeorder.getDebithours() != null) {
                 vacationView.setBudget(employeeorder.getDebithours());
             }
 
-            int vacationMinutes = (int) timereportService.getTotalDurationMinutesForSuborderAndEmployeeContract(employeeorder.getSuborder().getId(), employeecontract.getId());
+            long vacationMinutes = timereportService.getTotalDurationMinutesForSuborderAndEmployeeContract(employeeorder.getSuborder().getId(), employeecontract.getId());
 
             vacationView.addVacationMinutes(vacationMinutes);
             vacations.add(vacationView);

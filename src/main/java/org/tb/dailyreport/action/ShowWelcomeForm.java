@@ -1,4 +1,4 @@
-package org.tb.welcome.action;
+package org.tb.dailyreport.action;
 
 import lombok.Getter;
 import lombok.Setter;

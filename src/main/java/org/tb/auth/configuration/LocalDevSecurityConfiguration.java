@@ -33,10 +33,9 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.tb.auth.AuthFilter;
 import org.tb.auth.AuthViewHelper;
-import org.tb.auth.AuthenticationFilter;
 import org.tb.auth.AuthorizedUser;
-import org.tb.auth.service.AuthService;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
 @Configuration
@@ -46,7 +45,6 @@ public class LocalDevSecurityConfiguration {
 
   private final AuthViewHelper authViewHelper;
   private final AuthorizedUser authorizedUser;
-  private final AuthService authService;
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
@@ -62,10 +60,10 @@ public class LocalDevSecurityConfiguration {
   };
 
   @Bean
-  public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
-    var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
+  public FilterRegistrationBean<AuthFilter> authenticationFilter(){
+    var registrationBean = new FilterRegistrationBean<AuthFilter>();
     registrationBean.setOrder(101);
-    registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, authService));
+    registrationBean.setFilter(new AuthFilter(authViewHelper, authorizedUser));
     registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
     return registrationBean;
   }
@@ -76,7 +74,7 @@ public class LocalDevSecurityConfiguration {
       if(authorizedUser.isAuthenticated()) {
         return Map.of("login-sign", authorizedUser.getLoginSign(), "user-sign", authorizedUser.getSign());
       }
-      return Map.of();
+      return Map.<String, String>of();
     };
   }
 

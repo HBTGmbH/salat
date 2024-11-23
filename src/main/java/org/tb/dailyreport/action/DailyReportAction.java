@@ -3,6 +3,8 @@ package org.tb.dailyreport.action;
 import static java.lang.Boolean.TRUE;
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
+import static org.tb.dailyreport.viewhelper.OvertimeViewHelper.calculateAndSetOvertime;
+import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVacations;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,13 +16,13 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.tb.auth.AfterLogin;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
+import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.DailyReportViewHelper;
@@ -36,7 +38,11 @@ import org.tb.order.service.SuborderService;
 public abstract class DailyReportAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
     @Autowired
-    private AfterLogin afterLogin;
+    private OvertimeService overtimeService;
+    @Autowired
+    private EmployeeorderService employeeorderService;
+    @Autowired
+    private TimereportService timereportService;
 
     @Override
     public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -115,17 +121,26 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
      * Calculates the overtime and vaction and sets the attributes in the session.
      */
     protected void refreshEmployeeSummaryData(HttpServletRequest request, Employeecontract employeecontract) {
-        afterLogin.handleOvertime(employeecontract, request.getSession());
+        var session = request.getSession();
+        calculateAndSetOvertime(session, employeecontract, overtimeService);
+        calculateAndSetVacations(session, employeecontract, employeeorderService, timereportService);
+        var warnings = timereportService.createTimeReportWarnings(employeecontract.getId(), this.getResources(request), getLocale(request));
+        if (!warnings.isEmpty()) {
+            request.getSession().setAttribute("warnings", warnings);
+            request.getSession().setAttribute("warningsPresent", true);
+        } else {
+            request.getSession().setAttribute("warningsPresent", false);
+        }
 
         // release
-        request.getSession().setAttribute("releaseWarning", employeecontract.getReleaseWarning());
-        request.getSession().setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
+        session.setAttribute("releaseWarning", employeecontract.getReleaseWarning());
+        session.setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
 
         String releaseDate = employeecontract.getReportReleaseDateString();
         String acceptanceDate = employeecontract.getReportAcceptanceDateString();
 
-        request.getSession().setAttribute("releasedUntil", releaseDate);
-        request.getSession().setAttribute("acceptedUntil", acceptanceDate);
+        session.setAttribute("releasedUntil", releaseDate);
+        session.setAttribute("acceptedUntil", acceptanceDate);
     }
 
     /**

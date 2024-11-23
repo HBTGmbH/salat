@@ -1,4 +1,4 @@
-package org.tb.welcome.action;
+package org.tb.dailyreport.action;
 
 import static java.lang.Boolean.TRUE;
 import static org.tb.common.util.DateUtils.today;
@@ -10,21 +10,17 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AfterLogin;
 import org.tb.auth.service.AuthService;
-import org.tb.common.Warning;
-import org.tb.dailyreport.action.DailyReportAction;
+import org.tb.dailyreport.viewhelper.WelcomeViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.welcome.viewhelper.WelcomeViewHelper;
 
 @Component
 @RequiredArgsConstructor
 public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
     private final EmployeecontractService employeecontractService;
-    private final AfterLogin afterLogin;
     private final AuthService authService;
     private final EmployeeService employeeService;
 
@@ -34,12 +30,8 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
         HttpServletResponse response) throws Exception {
 
         if("switch-login".equals(request.getParameter("task"))) {
-            authService.switchLogin(welcomeForm.getLoginEmployeeId());
-            var loginEmployee = employeeService.getEmployeeById(authorizedUser.getEmployeeId());
-            request.getSession().setAttribute("loginEmployee", loginEmployee);
-            String loginEmployeeFullName = loginEmployee.getFirstname() + " " + loginEmployee.getLastname();
-            request.getSession().setAttribute("loginEmployeeFullName", loginEmployeeFullName);
-            request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
+            var switchedToEmployee = employeeService.getEmployeeById(welcomeForm.getLoginEmployeeId());
+            authService.switchLogin(switchedToEmployee.getSign());
         }
 
         // collect login contracts
@@ -70,17 +62,6 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
         }
 
         refreshEmployeeSummaryData(request, employeecontract);
-
-        // warnings
-        Employeecontract loginEmployeeContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-        List<Warning> warnings = afterLogin.createWarnings(employeecontract, loginEmployeeContract, getResources(request), getLocale(request));
-
-        if (!warnings.isEmpty()) {
-            request.getSession().setAttribute("warnings", warnings);
-            request.getSession().setAttribute("warningsPresent", true);
-        } else {
-            request.getSession().setAttribute("warningsPresent", false);
-        }
 
         welcomeForm.setLoginEmployeeId(authorizedUser.getEmployeeId());
         welcomeForm.setEmployeeContractId(employeecontract.getId());

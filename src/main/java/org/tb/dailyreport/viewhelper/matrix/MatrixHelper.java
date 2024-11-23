@@ -10,13 +10,13 @@ import static java.time.DayOfWeek.WEDNESDAY;
 import static java.time.Duration.ZERO;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.tb.common.util.DateTimeUtils.getDaysToDisplay;
-import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_ALLEMPLOYEES;
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES;
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_ALLEMPLOYEES;
 import static org.tb.common.GlobalConstants.MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.common.util.DateTimeUtils.getDaysToDisplay;
+import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.formatDayOfMonth;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.formatYear;
@@ -24,7 +24,6 @@ import static org.tb.common.util.DateUtils.getDateAsStringArray;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -36,7 +35,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AfterLogin;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
@@ -106,7 +104,6 @@ public class MatrixHelper {
     private final SuborderService suborderService;
     private final EmployeeService employeeService;
     private final OvertimeService overtimeService;
-    private final AfterLogin afterLogin;
     private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
 
@@ -341,7 +338,7 @@ public class MatrixHelper {
         }
     }
 
-    public Map<String, Object> refreshMatrix(ShowMatrixForm reportForm, HttpServletRequest request, AuthorizedUser authorizedUser) {
+    public Map<String, Object> refreshMatrix(ShowMatrixForm reportForm, AuthorizedUser authorizedUser) {
         // selected view and selected dates
         Map<String, Object> results = new HashMap<>();
         String selectedView = reportForm.getMatrixview();
@@ -442,9 +439,6 @@ public class MatrixHelper {
             boolean isInvalid = ((employeeContract.getValidUntil() != null && dateFirst.isAfter(employeeContract.getValidUntil()))
                     || (employeeContract.getValidFrom() != null) && dateLast.isBefore(employeeContract.getValidFrom()));
             results.put("invalid", isInvalid);
-
-            // calculate overtime and holiday
-            afterLogin.handleOvertime(employeeContract, request.getSession());
         }
 
         // refresh all relevant attributes

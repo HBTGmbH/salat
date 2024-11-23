@@ -5,10 +5,10 @@ import static org.tb.common.util.DateTimeUtils.getShortstringFromMonthMM;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
-import java.util.Map;
-import java.util.Map.Entry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Map;
+import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.struts.action.ActionForward;
@@ -73,7 +73,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             String fromYear = String.valueOf(date.getYear());
             reportForm.setFromMonth(fromMonth);
             reportForm.setFromYear(fromYear);
-            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request, authorizedUser);
+            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, authorizedUser);
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 
@@ -115,7 +115,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // call on MatrixView with parameter refreshMatrix to update request
         if ("refreshMatrix".equals(task)) {
-            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, request, authorizedUser);
+            Map<String, Object> results = matrixHelper.refreshMatrix(reportForm, authorizedUser);
             return finishHandling(results, request, matrixHelper, mapping, doRefreshEmployeeSummaryData);
         }
 

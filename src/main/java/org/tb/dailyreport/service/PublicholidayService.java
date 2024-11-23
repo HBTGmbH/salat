@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.HolidaysUtil;
 import org.tb.dailyreport.domain.Publicholiday;
@@ -24,7 +26,8 @@ public class PublicholidayService {
    * Sets the German public holidays of current year if not yet done.
    * This method will be carried out once at the first login of an employee in a new year.
    */
-  public void checkPublicHolidaysForCurrentYear() {
+  @EventListener
+  public void checkPublicHolidaysForCurrentYear(AuthorizedUserChangedEvent event) {
     Iterable<Publicholiday> holidays = publicholidayRepository.findAll();
 
     int maxYear = 0;

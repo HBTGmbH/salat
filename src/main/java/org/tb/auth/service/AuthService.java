@@ -17,7 +17,6 @@ import static org.tb.common.util.DateUtils.isInRange;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.annotation.PostConstruct;
-import java.security.Principal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -29,11 +28,16 @@ import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.tb.auth.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizationRule.Category;
+import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
-import org.tb.auth.AuthorizedUser;
 import org.tb.common.SalatProperties;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employee;
@@ -50,6 +54,7 @@ public class AuthService {
   private final AuthorizationRuleRepository authorizationRuleRepository;
   private final SalatProperties salatProperties;
   private final EmployeeRepository employeeRepository;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
   private long cacheExpiryMillis;
   private Map<Category, Set<Rule>> cacheEntries = new HashMap<>();
@@ -60,8 +65,15 @@ public class AuthService {
     cacheExpiryMillis = salatProperties.getAuthService().getCacheExpiry().toMillis();
   }
 
-  public void initAuthorizedUser(Principal principal, AuthorizedUser authorizedUser) {
-    employeeRepository.findBySign(principal.getName()).ifPresent(authorizedUser::init);
+  @EventListener
+  public void onApplicationEvent(AuthenticationSuccessEvent event) {
+    Authentication authentication = event.getAuthentication();
+    if(!authorizedUser.isAuthenticated() || !authorizedUser.getLoginSign().equals(authentication.getName())) {
+      authorizedUser.login(authentication.getName());
+      applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(authorizedUser));
+    } else {
+      // already logged in
+    }
   }
 
   public List<Employee> getLoginEmployees() {
@@ -71,12 +83,9 @@ public class AuthService {
         .toList();
   }
 
-  public void switchLogin(long loginEmployeeId) {
-    employeeRepository.findById(loginEmployeeId).ifPresent(loginEmployee -> {
-      if(isAuthorized(loginEmployee, LOGIN)) {
-        authorizedUser.init(loginEmployee);
-      }
-    });
+  public void switchLogin(String sign) {
+    authorizedUser.setSign(sign);
+    applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(authorizedUser));
   }
 
   public boolean isAuthorizedForEmployee(long employeeId, AccessLevel accessLevel) {
