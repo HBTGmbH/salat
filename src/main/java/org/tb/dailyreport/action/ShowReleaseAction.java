@@ -15,7 +15,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.common.SimpleMailService;
 import org.tb.common.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;
@@ -31,7 +30,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
-    private final SimpleMailService simpleMailService;
     private final TimereportService timereportService;
 
     @Override
@@ -119,17 +117,6 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
 
             updateEmployee = true;
-
-            // build recipient for releasemail for BL
-            if (employeecontract.getSupervisor() != null) {
-                Employee recipient = employeecontract.getSupervisor();
-                Employee from = employeecontract.getEmployee();
-                try {
-                    simpleMailService.sendSalatBuchungenReleasedMail(recipient, from);
-                } catch (Exception e) {
-                    log.error("sending release mail failed!!!");
-                }
-            }
         }
         // End Release Action
 
@@ -166,30 +153,16 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("sendreleasemail")) {
-            // build recipient for releasemail
             Employee recipient = employeeService.getEmployeeBySign(request.getParameter("sign"));
-
-            // * revipient = Empfaenger, loginEmployee = Absender
-            simpleMailService.sendSalatBuchungenToReleaseMail(recipient, loginEmployee);
-
-            request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
+            timereportService.sendReleaseReminderMail(recipient.getId());
+            request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("sendacceptancemail")) {
-            // build recipient for acceptancemail
-            // Contract from Employee
             Employee contEmployee = employeeService.getEmployeeBySign(request.getParameter("sign"));
             Employeecontract currentEmployeeContract = employeecontractService.getEmployeeContractValidAt(contEmployee.getId(), today());
-
-            // BL
-            Employee recipient = currentEmployeeContract.getSupervisor();
-            // sender of the mail
-            if (recipient != null) {
-                simpleMailService.sendSalatBuchungenToAcceptanceMail(recipient, contEmployee, loginEmployee);
-                request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"/* "statusreport.actioninfo.released.text" */));
-            } else {
-                // do nothing, Supervisor must not be null
-            }
+            timereportService.sendAcceptanceReminderMail(currentEmployeeContract.getId());
+            request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
         }
 
         if (request.getParameter("task") == null || updateEmployee) {

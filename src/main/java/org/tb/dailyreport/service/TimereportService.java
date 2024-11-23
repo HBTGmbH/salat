@@ -85,6 +85,8 @@ import org.tb.common.DataValidation;
 import org.tb.common.ErrorCode;
 import org.tb.common.GlobalConstants;
 import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.SimpleMailService;
+import org.tb.common.SimpleMailService.MailContact;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
@@ -100,7 +102,10 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
@@ -121,6 +126,65 @@ public class TimereportService {
   private final OvertimeService overtimeService;
   private final AuthorizedUser authorizedUser;
   private final WorkingdayDAO workingdayDAO;
+  private final SimpleMailService simpleMailService;
+  private final EmployeeRepository employeeRepository;
+  private final EmployeeService employeeService;
+  private final EmployeecontractService employeecontractService;
+
+  public TimereportDTO getTimereportById(long id) {
+    return timereportDAO.getTimereportById(id);
+  }
+
+  public List<TimereportDTO> getTimereportsForEmployeecontractAndDate(long employeecontractId, LocalDate date) {
+    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date);
+  }
+
+  public List<TimereportDTO> getTimereportsByDates(LocalDate beginDate, LocalDate endDate) {
+    return timereportDAO.getTimereportsByDates(beginDate, endDate);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractId(long employeecontractId, LocalDate beginDate,
+      LocalDate endDate) {
+    return timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, beginDate, endDate);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndCustomerOrderId(LocalDate beginDate, LocalDate endDate,
+      long orderId) {
+    return timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long employeecontractId, LocalDate beginDate,
+      LocalDate endDate, long orderId) {
+    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeecontractId, beginDate, endDate, orderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndSuborderId(LocalDate beginDate, LocalDate endDate,
+      long suborderId) {
+    return timereportDAO.getTimereportsByDatesAndSuborderId(beginDate, endDate, suborderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long employeecontractId, LocalDate beginDate,
+      LocalDate endDate, long suborderId) {
+    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(employeecontractId, beginDate, endDate, suborderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
+    return timereportDAO.getTimereportsByDate(date);
+  }
+
+  public List<TimereportDTO> getTimereportsByDateAndEmployeeContractId(long employeeContractId, LocalDate date) {
+    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
+  }
+
+  public List<TimereportDTO> getTimereportsByEmployeeContractIdInvalidForDates(LocalDate validFrom, LocalDate validUntil,
+      long existingEmployeecontractId) {
+    return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, existingEmployeecontractId);
+  }
+
+  public List<TimereportDTO> getTimereportsBySuborderIdInvalidForDates(LocalDate fromDate, LocalDate untilDate,
+      Long suborderId) {
+    return timereportDAO.getTimereportsBySuborderIdInvalidForDates(fromDate, untilDate, suborderId);
+  }
 
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
@@ -226,6 +290,8 @@ public class TimereportService {
     var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
     employeecontract.setReportReleaseDate(releaseDate);
     employeecontractDAO.save(employeecontract);
+
+    sendTimeReportsReleasedMail(employeecontract);
 
     return List.of();
   }
@@ -859,58 +925,94 @@ public class TimereportService {
     return orderType != null && orderType == OrderType.STANDARD;
   }
 
-  public TimereportDTO getTimereportById(long id) {
-    return timereportDAO.getTimereportById(id);
+  public void sendReleaseReminderMail(long employeeId) {
+
+    var recipient = employeeService.getEmployeeById(employeeId);
+    var sender = employeeService.getEmployeeById(authorizedUser.getEmployeeId());
+
+    String subject = "SALAT: Erinnerung SALAT freigeben";
+    StringBuilder message = new StringBuilder();
+    if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
+      message.append("Liebe ");
+    } else {
+      message.append("Lieber ");
+    }
+    message.append(recipient.getFirstname());
+    message.append(",\n\n");
+    message.append("bitte gib deine SALAT-Buchungen des abgelaufenen Monats frei.\n\n");
+    message.append(sender.getName());
+
+    simpleMailService.sendEmail(
+        subject,
+        message.toString(),
+        new MailContact(sender.getName(), sender.getEmailAddress()),
+        new MailContact(recipient.getName(), recipient.getEmailAddress())
+    );
   }
 
-  public List<TimereportDTO> getTimereportsForEmployeecontractAndDate(long employeecontractId, LocalDate date) {
-    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date);
+  public void sendAcceptanceReminderMail(long employeecontracttoAcceptId) {
+
+    var employeeContract = employeecontractService.getEmployeecontractById(employeecontracttoAcceptId);
+    var coworker = employeeContract.getEmployee();
+    var recipient = employeeContract.getSupervisor();
+    var sender = employeeService.getEmployeeById(authorizedUser.getEmployeeId());
+
+    String subject = "SALAT: Erinnerung SALAT-Freigabe abnehmen";
+    StringBuilder message = new StringBuilder();
+    if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
+      message.append("Liebe ");
+    } else {
+      message.append("Lieber ");
+    }
+    message.append(recipient.getFirstname());
+    message.append(",\n\n");
+    message.append("bitte nimm die SALAT-Buchungen des abgelaufenen Monats von ");
+    if (GlobalConstants.GENDER_FEMALE == coworker.getGender()) {
+      message.append("Kollegin ");
+    } else {
+      message.append("Kollege ");
+    }
+    message.append(coworker.getName());
+    message.append(" ab.\n\n");
+    message.append(sender.getName());
+
+    simpleMailService.sendEmail(
+        subject,
+        message.toString(),
+        new MailContact(sender.getName(), sender.getEmailAddress()),
+        new MailContact(recipient.getName(), recipient.getEmailAddress())
+    );
   }
 
-  public List<TimereportDTO> getTimereportsByDates(LocalDate beginDate, LocalDate endDate) {
-    return timereportDAO.getTimereportsByDates(beginDate, endDate);
+  private void sendTimeReportsReleasedMail(Employeecontract releasedEmployeeContract) {
+    var sender = releasedEmployeeContract.getEmployee();
+    var recipient = releasedEmployeeContract.getSupervisor();
+
+    String subject = "SALAT: Buchungen durch " + sender.getSign() + " freigegeben";
+    StringBuilder message = new StringBuilder();
+    if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
+      message.append("Liebe Personalverantwortliche ");
+    } else {
+      message.append("Lieber Personalverantwortlicher ");
+    }
+    message.append(recipient.getFirstname());
+    message.append(",\n\n");
+    message.append(sender.getName());
+    message.append(" hat eben ");
+    if (GlobalConstants.GENDER_FEMALE == sender.getGender()) {
+      message.append("ihre ");
+    } else {
+      message.append("seine ");
+    }
+    message.append("SALAT-Buchungen freigegeben.\n");
+    message.append("Bitte nimm diese ab.");
+
+    simpleMailService.sendEmail(
+        subject,
+        message.toString(),
+        new MailContact(sender.getName(), sender.getEmailAddress()),
+        new MailContact(recipient.getName(), recipient.getEmailAddress())
+    );
   }
 
-  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractId(long employeecontractId, LocalDate beginDate,
-      LocalDate endDate) {
-    return timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, beginDate, endDate);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndCustomerOrderId(LocalDate beginDate, LocalDate endDate,
-      long orderId) {
-    return timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long employeecontractId, LocalDate beginDate,
-      LocalDate endDate, long orderId) {
-    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeecontractId, beginDate, endDate, orderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndSuborderId(LocalDate beginDate, LocalDate endDate,
-      long suborderId) {
-    return timereportDAO.getTimereportsByDatesAndSuborderId(beginDate, endDate, suborderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long employeecontractId, LocalDate beginDate,
-      LocalDate endDate, long suborderId) {
-    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(employeecontractId, beginDate, endDate, suborderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
-    return timereportDAO.getTimereportsByDate(date);
-  }
-
-  public List<TimereportDTO> getTimereportsByDateAndEmployeeContractId(long employeeContractId, LocalDate date) {
-    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
-  }
-
-  public List<TimereportDTO> getTimereportsByEmployeeContractIdInvalidForDates(LocalDate validFrom, LocalDate validUntil,
-      long existingEmployeecontractId) {
-    return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, existingEmployeecontractId);
-  }
-
-  public List<TimereportDTO> getTimereportsBySuborderIdInvalidForDates(LocalDate fromDate, LocalDate untilDate,
-      Long suborderId) {
-    return timereportDAO.getTimereportsBySuborderIdInvalidForDates(fromDate, untilDate, suborderId);
-  }
 }

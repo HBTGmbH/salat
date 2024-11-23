@@ -1,11 +1,11 @@
 package org.tb.common;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.mail.Email;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.springframework.stereotype.Service;
-import org.tb.employee.domain.Employee;
 
 /**
  * Builds the various emails
@@ -14,100 +14,40 @@ import org.tb.employee.domain.Employee;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SimpleMailService {
 
-    private final SalatProperties salatProperties;
+  private final SalatProperties salatProperties;
 
-    public void sendSalatBuchungenToReleaseMail(Employee recipient, Employee sender) throws EmailException {
-        createSalatBuchungenToReleaseMail(recipient, sender).send();
+  public void sendEmail(String subject, String message, MailContact from, MailContact to) {
+    try {
+      StringBuilder emailMessage = new StringBuilder(message);
+      emailMessage.append("\n\n");
+      emailMessage.append("__________________________");
+      emailMessage.append("\n\n");
+      emailMessage.append("(Dies ist eine automatisch erzeugte Email.)");
+
+      SimpleEmail mail = new SimpleEmail();
+      mail.setHostName(salatProperties.getMailHost());
+      mail.setCharset(org.apache.commons.mail.EmailConstants.UTF_8);
+      mail.setFrom(from.getEmail(), from.getName());
+      mail.addTo(to.getEmail(), to.getName());
+      mail.setSubject(subject);
+      mail.setMsg(emailMessage.toString());
+
+      mail.send();
+    } catch (EmailException e) {
+      log.error("Could not send Email to {}, message: {}", to.getEmail(), message, e);
     }
+  }
 
-    public void sendSalatBuchungenToAcceptanceMail(Employee recipient, Employee coworker, Employee sender) throws EmailException {
-        createSalatBuchungenToAcceptanceMail(recipient, coworker, sender).send();
-    }
+  @Data
+  @RequiredArgsConstructor
+  public static class MailContact {
 
-    public void sendSalatBuchungenReleasedMail(Employee recipient, Employee sender) throws EmailException {
-        createSalatBuchungenReleasedMail(recipient, sender).send();
-    }
+    private final String name;
+    private final String email;
 
-    private SimpleEmail createBasicEmail(String subject, StringBuilder message, Employee sender, Employee recipient) throws EmailException {
-        SimpleEmail mail = new SimpleEmail();
-        mail.setHostName(salatProperties.getMailHost());
-        mail.setCharset(org.apache.commons.mail.EmailConstants.UTF_8);
-        mail.setFrom(sender.getEmailAddress(), sender.getName());
-        mail.addTo(recipient.getEmailAddress(), recipient.getName());
-
-        message.append("\n\n");
-        message.append("__________________________");
-        message.append("\n\n");
-        message.append("(Dies ist eine automatisch erzeugte Email.)");
-
-        mail.setSubject(subject);
-        mail.setMsg(message.toString());
-        return mail;
-    }
-
-    /* Email for Salatbuchungen to release */
-    private SimpleEmail createSalatBuchungenToReleaseMail(Employee recipient, Employee sender) throws EmailException {
-        String subject = "Freigabe: SALAT freigeben";
-        StringBuilder message = new StringBuilder();
-        if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-            message.append("Liebe ");
-        } else {
-            message.append("Lieber ");
-        }
-        message.append(recipient.getFirstname());
-        message.append(",\n\n");
-        message.append("bitte gib deine SALAT-Buchungen des abgelaufenen Monats frei.\n\n");
-        message.append(sender.getName());
-
-        return createBasicEmail(subject, message, sender, recipient);
-    }
-
-    private Email createSalatBuchungenToAcceptanceMail(Employee recipient, Employee coworker, Employee sender) throws EmailException {
-        String subject = "SALAT: freigegebene Buchungen abnehmen";
-        StringBuilder message = new StringBuilder();
-        if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-            message.append("Liebe ");
-        } else {
-            message.append("Lieber ");
-        }
-        message.append(recipient.getFirstname());
-        message.append(",\n\n");
-        message.append("bitte nimm die SALAT-Buchungen des abgelaufenen Monats von ");
-        if (GlobalConstants.GENDER_FEMALE == coworker.getGender()) {
-            message.append("Kollegin ");
-        } else {
-            message.append("Kollege ");
-        }
-        message.append(coworker.getName());
-        message.append(" ab.\n\n");
-        message.append(sender.getName());
-
-        return createBasicEmail(subject, message, sender, recipient);
-    }
-
-    private Email createSalatBuchungenReleasedMail(Employee recipient, Employee sender) throws EmailException {
-        String subject = "SALAT: Buchungen durch " + sender.getSign() + " freigegeben";
-        StringBuilder message = new StringBuilder();
-        if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-            message.append("Liebe Personalverantwortliche "); // ehemals Bereichsleiterin
-        } else {
-            message.append("Lieber Personalverantwortlicher "); // ehemals Bereichsleiter
-        }
-        message.append(recipient.getFirstname());
-        message.append(",\n\n");
-        message.append(sender.getName());
-        message.append(" hat eben ");
-        if (GlobalConstants.GENDER_FEMALE == sender.getGender()) {
-            message.append("ihre ");
-        } else {
-            message.append("seine ");
-        }
-        message.append("SALAT-Buchungen freigegeben.\n");
-        message.append("Bitte nimm diese ab.");
-
-        return createBasicEmail(subject, message, sender, recipient);
-    }
+  }
 
 }
