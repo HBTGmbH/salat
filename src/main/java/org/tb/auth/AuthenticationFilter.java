@@ -10,6 +10,7 @@ import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.tb.auth.service.AuthService;
 
 
 @Slf4j

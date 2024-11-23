@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AccessLevel;
-import org.tb.auth.AuthService;
+import org.tb.auth.service.AuthService;
 import org.tb.dailyreport.domain.Referenceday_;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;

@@ -11,7 +11,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AfterLogin;
-import org.tb.auth.AuthService;
+import org.tb.auth.service.AuthService;
 import org.tb.common.Warning;
 import org.tb.dailyreport.action.DailyReportAction;
 import org.tb.employee.domain.Employeecontract;

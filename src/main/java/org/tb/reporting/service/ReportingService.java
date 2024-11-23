@@ -16,7 +16,7 @@ import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitializat
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.tb.auth.AuthService;
+import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportDefinition_;

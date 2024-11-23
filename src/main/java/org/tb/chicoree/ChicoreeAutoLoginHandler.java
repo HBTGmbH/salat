@@ -13,7 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthService;
+import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;

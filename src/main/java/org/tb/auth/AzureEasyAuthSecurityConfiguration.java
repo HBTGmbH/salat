@@ -25,6 +25,7 @@ import org.springframework.util.Assert;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.tb.auth.service.AuthService;
 import org.tb.common.SalatProperties;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
