@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizationRule.Category;
-import org.tb.auth.AuthorizationRuleRepository;
+import org.tb.auth.persistence.AuthorizationRuleRepository;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.SalatProperties;
 import org.tb.dailyreport.domain.Timereport;

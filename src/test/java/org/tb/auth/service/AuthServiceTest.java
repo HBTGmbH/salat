@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import java.util.List;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.tb.auth.AuthorizationRuleRepository;
+import org.tb.auth.persistence.AuthorizationRuleRepository;
 import org.tb.auth.AuthorizedUser;
 import org.tb.auth.domain.AuthorizationRule;
 import org.tb.auth.domain.AuthorizationRule.Category;

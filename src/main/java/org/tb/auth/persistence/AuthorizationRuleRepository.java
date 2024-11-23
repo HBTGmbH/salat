@@ -1,4 +1,4 @@
-package org.tb.auth;
+package org.tb.auth.persistence;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
