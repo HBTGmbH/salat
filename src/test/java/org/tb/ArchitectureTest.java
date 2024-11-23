@@ -1,8 +1,6 @@
 package org.tb;
 
 import static com.tngtech.archunit.lang.Priority.HIGH;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.priority;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
@@ -10,17 +8,13 @@ import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaMethod;
-import com.tngtech.archunit.core.domain.JavaParameterizedType;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
-import com.tngtech.archunit.lang.Priority;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import jakarta.persistence.Entity;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -97,28 +91,6 @@ public class ArchitectureTest {
    */
   @Test
   public void noEntityInPublicInterfaceOfService() {
-
-
-
-    DescribedPredicate<? super List<JavaClass>> entityTypeParam = new DescribedPredicate<List<JavaClass>>("Entity") {
-      @Override
-      public boolean test(List<JavaClass> javaClasses) {
-        return javaClasses.stream()
-            .flatMap(cls -> extractAllTypes(cls).stream())
-            .filter(cls -> cls.isAnnotatedWith(Entity.class) || cls.isAssignableFrom(Persistable.class)).findAny()
-            .isPresent();
-      }
-
-    };
-    DescribedPredicate<? super JavaClass> entityReturnType = new DescribedPredicate<JavaClass>("Entity") {
-      @Override
-      public boolean test(JavaClass javaClass) {
-        Set<JavaClass> rawTypes = extractAllTypes(javaClass);
-        return rawTypes.stream()
-            .filter(cls -> cls.isAnnotatedWith(Entity.class) || cls.isAssignableFrom(Persistable.class)).findAny()
-            .isPresent();
-      }
-    };
     ArchCondition<? super JavaMethod> methodPredicate = new ArchCondition<JavaMethod>("test") {
       @Override
       public void check(JavaMethod item, ConditionEvents events) {
