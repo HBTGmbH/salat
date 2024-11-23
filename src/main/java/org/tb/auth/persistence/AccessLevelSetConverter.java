@@ -1,4 +1,4 @@
-package org.tb.auth;
+package org.tb.auth.persistence;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
