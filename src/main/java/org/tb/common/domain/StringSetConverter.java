@@ -1,4 +1,4 @@
-package org.tb.common;
+package org.tb.common.domain;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

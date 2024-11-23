@@ -3,8 +3,7 @@ package org.tb.auth;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Type;
-import org.tb.common.AuditedEntity;
+import org.tb.common.domain.AuditedEntity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;

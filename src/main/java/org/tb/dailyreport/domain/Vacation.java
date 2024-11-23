@@ -20,7 +20,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.common.AuditedEntity;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.employee.domain.Employeecontract;
 
 @Getter

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.tb.common.AuditedEntity;
+import org.tb.common.domain.AuditedEntity;
 
 @Getter
 @Setter

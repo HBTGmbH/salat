@@ -16,7 +16,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
-import org.tb.common.AuditedEntity;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.order.domain.Employeeorder;

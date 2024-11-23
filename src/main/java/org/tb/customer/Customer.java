@@ -10,7 +10,7 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.tb.common.AuditedEntity;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.order.domain.Customerorder;
 
 @Getter

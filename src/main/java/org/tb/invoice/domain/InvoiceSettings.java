@@ -3,7 +3,7 @@ package org.tb.invoice.domain;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.tb.common.AuditedEntity;
+import org.tb.common.domain.AuditedEntity;
 
 @Builder
 @Data

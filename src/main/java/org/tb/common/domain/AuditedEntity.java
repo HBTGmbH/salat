@@ -1,4 +1,4 @@
-package org.tb.common;
+package org.tb.common.domain;
 
 import java.time.LocalDateTime;
 import java.util.Objects;

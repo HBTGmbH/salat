@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.common.AuditedEntity;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.employee.domain.Employeecontract;
 
 @Getter
