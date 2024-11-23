@@ -42,6 +42,20 @@ public class ArchitectureTest {
   }
 
   @Test
+  public void commonShouldNotAccessOtherSalatPackages() {
+    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("common must not import other salat packages") {
+      @Override
+      public boolean test(JavaClass javaClass) {
+        return javaClass.getFullName().startsWith("org.tb.") && !javaClass.getFullName().startsWith("org.tb.common.");
+      }
+    };
+    ArchRule rule = priority(HIGH).noClasses().that()
+        .resideInAPackage("..common..")
+        .should().dependOnClassesThat(predicate);
+    rule.check(importedClasses);
+  }
+
+  @Test
   public void entitiesDoNotAccessServicesDAOsRepositories() {
     ArchRule rule = priority(HIGH).noClasses().that()
         .areAnnotatedWith(Entity.class)
