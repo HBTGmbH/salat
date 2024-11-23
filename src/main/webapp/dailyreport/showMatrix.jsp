@@ -24,8 +24,9 @@
 		}
 
 		function setMonth(mode) {
-			document.forms[0].action = "/do/ShowMatrix?task=setMonth&mode=" + mode;
-			document.forms[0].submit();
+			var mainForm = document.getElementById("mainform");
+			mainForm.action = "/do/ShowMatrix?task=setMonth&mode=" + mode;
+			mainForm.submit();
 		}
 
 		function showImportDialog() {
@@ -85,7 +86,7 @@
 	<br>
 		<span style="font-size: 14pt; font-weight: bold;"><br><bean:message key="main.general.mainmenu.matrix.text" /><br></span>
 	<br>
-	<html:form action="/ShowMatrix">
+	<html:form action="/ShowMatrix" styleId="mainform">
 		<table class="center backgroundcolor">
 			<!-- select employee -->
 			<tr>
