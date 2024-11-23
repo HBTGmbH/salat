@@ -1,4 +1,4 @@
-package org.tb.common;
+package org.tb.common.util;
 
 import java.time.LocalDate;
 import lombok.experimental.UtilityClass;
@@ -6,7 +6,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 
 @UtilityClass
-public class DataValidation {
+public class DataValidationUtils {
 
   public static void validDateRange(LocalDate begin, LocalDate end, ErrorCode errorCode) {
     if (end != null && end.isBefore(begin)) {

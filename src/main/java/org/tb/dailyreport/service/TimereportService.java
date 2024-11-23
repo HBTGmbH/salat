@@ -81,7 +81,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.BusinessRuleChecks;
-import org.tb.common.DataValidation;
+import org.tb.common.util.DataValidationUtils;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.GlobalConstants;
 import org.tb.common.ServiceFeedbackMessage;
@@ -213,7 +213,7 @@ public class TimereportService {
       boolean trainingFlag, long durationHours, long durationMinutes)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
-    DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereport);
     checkAndSaveTimereports(authorizedUser, Collections.singletonList(timereport));
@@ -225,7 +225,7 @@ public class TimereportService {
   public void shiftDays(long timereportId, int amountDays, AuthorizedUser authorizedUser)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
-    DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     Referenceday referenceday = timereport.getReferenceday();
     LocalDate shiftedDate = DateUtils.addDays(referenceday.getRefdate(), amountDays);
     updateTimereport(authorizedUser,
@@ -242,7 +242,7 @@ public class TimereportService {
   public boolean deleteTimereport(long timereportId, AuthorizedUser authorizedUser)
       throws AuthorizationException, InvalidDataException, BusinessRuleException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
-    DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     checkAuthorization(Collections.singletonList(timereport), authorizedUser);
     timereportDAO.deleteTimereportById(timereportId);
     return true;
@@ -514,7 +514,7 @@ public class TimereportService {
 
   private void releaseTimereport(long timereportId, String releasedBy) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
-    DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
     timereport.setReleasedby(releasedBy);
     timereport.setReleased(DateUtils.now());
@@ -523,7 +523,7 @@ public class TimereportService {
 
   private void acceptTimereport(long timereportId, String acceptedBy) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
-    DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
     timereport.setAcceptedby(acceptedBy);
     timereport.setAccepted(DateUtils.now());
@@ -532,7 +532,7 @@ public class TimereportService {
 
   public void reopenTimereport(long timereportId) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
-    DataValidation.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
     timereport.setReleasedby(null);
     timereport.setReleased(null);
@@ -589,14 +589,14 @@ public class TimereportService {
       boolean trainingFlag, long durationHours, long durationMinutes,
       Timereport timereport) {
     Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
-    DataValidation.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+    DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
     Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
-    DataValidation.notNull(employeeorder, TR_EMPLOYEE_ORDER_NOT_FOUND);
-    DataValidation.notNull(referenceDay, TR_REFERENCE_DAY_NULL);
+    DataValidationUtils.notNull(employeeorder, TR_EMPLOYEE_ORDER_NOT_FOUND);
+    DataValidationUtils.notNull(referenceDay, TR_REFERENCE_DAY_NULL);
     Referenceday referenceday = referencedayDAO.getOrAddReferenceday(referenceDay);
-    DataValidation.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
-    DataValidation.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
-    DataValidation.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
+    DataValidationUtils.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
+    DataValidationUtils.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
+    DataValidationUtils.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
 
     timereport.setEmployeecontract(employeecontract);
     timereport.setEmployeeorder(employeeorder);
@@ -782,8 +782,8 @@ public class TimereportService {
       // check begin and break rules
       OrderType orderType = timereport.getSuborder().getEffectiveOrderType();
       if (needsWorkingHoursLawValidation(employeeContractId) && isRelevantForWorkingTimeValidation(orderType)) {
-        DataValidation.notNull(workingDay, TR_WORKING_DAY_START_NULL);
-        DataValidation.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
+        DataValidationUtils.notNull(workingDay, TR_WORKING_DAY_START_NULL);
+        DataValidationUtils.notNull(workingDay.getStartOfWorkingDay(), TR_WORKING_DAY_START_NULL);
       }
 
       // if any time is reported the type of the working day must not be NOT_WORKED for that day
@@ -801,7 +801,7 @@ public class TimereportService {
 
       Integer durationHours = timereport.getDurationhours();
       Integer durationMinutes = timereport.getDurationminutes();
-      DataValidation.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
+      DataValidationUtils.isTrue(durationHours > 0 || durationMinutes > 0, TR_DURATION_INVALID);
     });
   }
 

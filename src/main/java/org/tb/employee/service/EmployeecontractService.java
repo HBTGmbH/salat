@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.tb.common.DataValidation;
+import org.tb.common.util.DataValidationUtils;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -170,7 +170,7 @@ public class EmployeecontractService {
 
   private void validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
       LocalDate validUntil, long supervisorId) {
-    DataValidation.validDateRange(validFrom, validUntil, ErrorCode.EC_INVALID_DATE_RANGE);
+    DataValidationUtils.validDateRange(validFrom, validUntil, ErrorCode.EC_INVALID_DATE_RANGE);
 
     if(employeecontract.getEmployee().getId().equals(supervisorId)) {
       throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
