@@ -18,13 +18,13 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 @ExtendWith(MockitoExtension.class)
 class OrderRestEndpointTest {
 
   @Mock
-  EmployeeorderDAO employeeorderDAO;
+  EmployeeorderService employeeorderService;
 
   @InjectMocks
   OrderRestEndpoint orderRestEndpoint;
@@ -32,7 +32,7 @@ class OrderRestEndpointTest {
   @Test
   void createSuborderDataHierarchical() {
     Employeecontract employeecontract = newEmployeecontract();
-    when(employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+    when(employeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
         anyLong(), anyLong(), any())).thenReturn(newEmployeeorder());
     List<Suborder> testdata = createTestDatList(3, 3, createCustomerOrder());
     insertBacklinks(testdata);

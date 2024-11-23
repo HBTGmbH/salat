@@ -22,23 +22,19 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
+import org.tb.order.service.EmployeeorderService;
 
 @ExtendWith(MockitoExtension.class)
 class DailyReportRestEndpointTest {
     @Mock
-    EmployeeorderDAO employeeorderDAO;
+    EmployeeorderService employeeorderService;
 
     @Mock
-    EmployeecontractDAO employeecontractDAO;
-
-    @Mock
-    TimereportDAO timereportDAO;
+    EmployeecontractService employeecontractService;
 
     @Mock
     TimereportService timereportService;
@@ -78,11 +74,11 @@ class DailyReportRestEndpointTest {
 
         when(authorizedUser.getEmployeeId()).thenReturn(1L);
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), day))
+        when(employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), day))
                 .thenReturn(employeeContract);
-        when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day))
+        when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day))
                 .thenReturn(List.of(timeReport1));
-        when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day.plusDays(1)))
+        when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day.plusDays(1)))
                 .thenReturn(List.of(timeReport2));
 
         // when
@@ -103,9 +99,9 @@ class DailyReportRestEndpointTest {
 
         when(authorizedUser.getEmployeeId()).thenReturn(1L);
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(eq(authorizedUser.getEmployeeId()), dateArgumentCaptor.capture()))
+        when(employeecontractService.getEmployeeContractValidAt(eq(authorizedUser.getEmployeeId()), dateArgumentCaptor.capture()))
                 .thenReturn(employeeContract);
-        when(timereportDAO.getTimereportsByDateAndEmployeeContractId(eq(employeeContract.getId()),  dateArgumentCaptor.capture()))
+        when(timereportService.getTimereportsByDateAndEmployeeContractId(eq(employeeContract.getId()),  dateArgumentCaptor.capture()))
                 .thenReturn(List.of());
 
         // when
@@ -138,7 +134,7 @@ class DailyReportRestEndpointTest {
                 .build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeeorderDAO.getEmployeeorderById(1L))
+        when(employeeorderService.getEmployeeorderById(1L))
                 .thenReturn(employeeOrder);
 
         // when
@@ -172,7 +168,7 @@ class DailyReportRestEndpointTest {
                 .build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeeorderDAO.getEmployeeorderById(1L))
+        when(employeeorderService.getEmployeeorderById(1L))
                 .thenReturn(employeeOrder);
 
         // when
@@ -215,9 +211,9 @@ class DailyReportRestEndpointTest {
                 .build();
 
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeeorderDAO.getEmployeeorderById(1L))
+        when(employeeorderService.getEmployeeorderById(1L))
                 .thenReturn(employeeOrder1);
-        when(employeeorderDAO.getEmployeeorderById(2L))
+        when(employeeorderService.getEmployeeorderById(2L))
                 .thenReturn(employeeOrder2);
 
         // when

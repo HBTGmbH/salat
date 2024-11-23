@@ -1,5 +1,9 @@
 package org.tb.reporting.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
+
+import java.util.HashMap;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -9,21 +13,17 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
+import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
-
-import java.util.HashMap;
+import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.testutils.WebContextTestExecutionListener;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
-
 @DataJpaTest
-@Import({ReportingService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class})
+@Import({ReportingService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class, ReportAuthorization.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
 @WebAppConfiguration

@@ -1,5 +1,14 @@
 package org.tb.dailyreport.rest;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
+
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,26 +21,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.persistence.EmployeecontractDAO;
-
-import java.time.LocalDate;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
+import org.tb.employee.service.EmployeecontractService;
 
 @ExtendWith(MockitoExtension.class)
 class WorkingDayRestEndpointTest {
     @Mock
-    EmployeecontractDAO employeecontractDAO;
-
-    @Mock
-    WorkingdayDAO workingdayDAO;
+    EmployeecontractService employeecontractService;
 
     @Mock
     WorkingdayService workingdayService;
@@ -62,7 +59,7 @@ class WorkingDayRestEndpointTest {
                 .date("2024-07-06")
                 .type(WORKED)
                 .build();
-        when(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(anyLong(), any(LocalDate.class)))
+        when(employeecontractService.getEmployeeContractValidAt(anyLong(), any(LocalDate.class)))
                 .thenReturn(employeeContract);
 
         // when
@@ -88,9 +85,9 @@ class WorkingDayRestEndpointTest {
         var workingDay = new Workingday();
         workingDay.setStarttimehour(7);
         workingDay.setRefday(DateUtils.parse("2024-07-06"));
-        when(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(anyLong(), any(LocalDate.class)))
+        when(employeecontractService.getEmployeeContractValidAt(anyLong(), any(LocalDate.class)))
                 .thenReturn(employeeContract);
-        when(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(any(LocalDate.class), anyLong()))
+        when(workingdayService.getWorkingday(anyLong(), any(LocalDate.class)))
                 .thenReturn(workingDay);
 
         // when

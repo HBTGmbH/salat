@@ -12,12 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
+import org.tb.auth.service.AuthService;
 import org.tb.common.SalatProperties;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -29,7 +31,8 @@ import org.tb.testutils.EmployeecontractTestUtils;
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @Import({ EmployeeDAO.class, EmployeecontractDAO.class, VacationDAO.class, OvertimeDAO.class, TimereportDAO.class,
-		WorkingdayDAO.class, AuthService.class, SalatProperties.class})
+		WorkingdayDAO.class, AuthService.class, SalatProperties.class, EmployeeAuthorization.class, TimereportAuthorization.class,
+		AuthService.class})
 public class EmployeecontractDAOTest {
 
 	@Autowired
