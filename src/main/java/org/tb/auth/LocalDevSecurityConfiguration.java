@@ -1,11 +1,14 @@
-package org.tb.common.configuration;
+package org.tb.auth;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,11 +33,16 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.tb.employee.domain.Employee;
+import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
 @Configuration
 @Profile("local")
+@RequiredArgsConstructor
 public class LocalDevSecurityConfiguration {
+
+  private final AuthViewHelper authViewHelper;
+  private final AuthorizedUser authorizedUser;
+  private final AuthService authService;
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
@@ -48,6 +56,25 @@ public class LocalDevSecurityConfiguration {
       "/http-headers*",
       "/error*"
   };
+
+  @Bean
+  public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
+    var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
+    registrationBean.setOrder(101);
+    registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, authService));
+    registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
+    return registrationBean;
+  }
+
+  @Bean
+  public MdcDataSource authenticationMdcDataSource() {
+    return () -> {
+      if(authorizedUser.isAuthenticated()) {
+        return Map.of("login-sign", authorizedUser.getLoginSign(), "user-sign", authorizedUser.getSign());
+      }
+      return Map.of();
+    };
+  }
 
   @Bean
   @Order(0)

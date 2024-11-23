@@ -1,11 +1,11 @@
-package org.tb.common.struts;
+package org.tb.auth;
 
 import static java.util.Collections.singletonList;
 
-import java.text.MessageFormat;
-import java.util.Locale;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.text.MessageFormat;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -14,8 +14,8 @@ import org.apache.struts.util.MessageResources;
 import org.apache.struts.util.RequestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.tb.auth.AuthorizedUser;
 import org.tb.common.Warning;
+import org.tb.common.struts.TypedAction;
 
 /**
  * Parent action class for the actions of an employee who is correctly logged in.

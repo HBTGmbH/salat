@@ -1,13 +1,13 @@
 package org.tb.order.action;
 
-import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.common.struts.LoginRequiredAction;
+import org.tb.auth.LoginRequiredAction;
 import org.tb.customer.Customer;
 import org.tb.customer.CustomerService;
 import org.tb.employee.domain.Employee;

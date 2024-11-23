@@ -8,7 +8,7 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AccessLevel;
 import org.tb.auth.AuthService;
-import org.tb.common.struts.LoginRequiredAction;
+import org.tb.auth.LoginRequiredAction;
 import org.tb.reporting.service.ReportingService;
 
 @Component

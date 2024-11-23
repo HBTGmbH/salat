@@ -14,7 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.tb.auth.AuthService;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.AuthorizedUserAuditorAware;
+import org.tb.auth.AuthorizedUserAuditorAware;
 import org.tb.common.SalatProperties;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;

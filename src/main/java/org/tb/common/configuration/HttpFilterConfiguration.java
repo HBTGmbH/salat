@@ -1,28 +1,23 @@
 package org.tb.common.configuration;
 
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
-import org.tb.auth.AuthService;
-import org.tb.auth.AuthViewHelper;
-import org.tb.auth.AuthorizedUser;
-import org.tb.common.filter.AuthenticationFilter;
 import org.tb.common.filter.LoggingFilter;
+import org.tb.common.filter.LoggingFilter.MdcDataSource;
 import org.tb.common.filter.PerformanceLoggingFilter;
 import org.tb.common.filter.ResourceUrlEncodingFilter;
 import org.tb.common.filter.ResourceUrlProviderExposingFilter;
-import org.tb.employee.persistence.EmployeeRepository;
 
 @Configuration
 @RequiredArgsConstructor
 public class HttpFilterConfiguration {
 
-    private final AuthViewHelper authViewHelper;
-    private final AuthorizedUser authorizedUser;
-    private final AuthService authService;
+    private final Set<MdcDataSource> mdcDataSources;
     private final ResourceUrlProvider resourceUrlProvider;
 
     @Bean
@@ -62,19 +57,10 @@ public class HttpFilterConfiguration {
     }
 
     @Bean
-    public FilterRegistrationBean<AuthenticationFilter> authenticationFilter(){
-        var registrationBean = new FilterRegistrationBean<AuthenticationFilter>();
-        registrationBean.setOrder(101);
-        registrationBean.setFilter(new AuthenticationFilter(authViewHelper, authorizedUser, authService));
-        registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
-        return registrationBean;
-    }
-
-    @Bean
     public FilterRegistrationBean<LoggingFilter> loggingFilter(){
         var registrationBean = new FilterRegistrationBean<LoggingFilter>();
         registrationBean.setOrder(102);
-        registrationBean.setFilter(new LoggingFilter(authorizedUser));
+        registrationBean.setFilter(new LoggingFilter(mdcDataSources));
         registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
         return registrationBean;
     }
