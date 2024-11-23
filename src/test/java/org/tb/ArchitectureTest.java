@@ -42,6 +42,16 @@ public class ArchitectureTest {
   }
 
   @Test
+  public void entitiesDoNotAccessServicesDAOsRepositories() {
+    ArchRule rule = priority(HIGH).noClasses().that()
+        .areAnnotatedWith(Entity.class)
+        .should().accessClassesThat().areAnnotatedWith(Repository.class)
+        .orShould().accessClassesThat().areAnnotatedWith(Service.class)
+        .orShould().accessClassesThat().haveNameMatching(".*DAO");
+    rule.check(importedClasses);
+  }
+
+  @Test
   public void accessDataAccessObjectsOnlyInServices() {
     ArchRule rule = priority(HIGH).noClasses()
         .that().areNotAnnotatedWith(Service.class).and().haveNameNotMatching(".*DAO")
