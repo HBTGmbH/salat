@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -36,8 +37,8 @@ import org.tb.common.filter.LoggingFilter.MdcDataSource;
 @RequiredArgsConstructor
 public class AzureEasyAuthSecurityConfiguration {
 
-  private final AuthViewHelper authViewHelper;
   private final AuthorizedUser authorizedUser;
+  private final Set<AuthViewHelper> authViewHelpers;
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
@@ -56,7 +57,7 @@ public class AzureEasyAuthSecurityConfiguration {
   public FilterRegistrationBean<AuthFilter> authenticationFilter(){
     var registrationBean = new FilterRegistrationBean<AuthFilter>();
     registrationBean.setOrder(101);
-    registrationBean.setFilter(new AuthFilter(authViewHelper, authorizedUser));
+    registrationBean.setFilter(new AuthFilter(authorizedUser, authViewHelpers));
     registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
     return registrationBean;
   }

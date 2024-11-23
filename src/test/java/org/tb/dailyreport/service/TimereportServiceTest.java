@@ -63,7 +63,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -92,7 +92,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setValidFrom(date);
             contract.setEmployee(employee);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -124,7 +124,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -156,7 +156,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -188,7 +188,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -222,7 +222,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -257,7 +257,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -295,7 +295,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -332,7 +332,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setValidFrom(date);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -372,7 +372,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setReportReleaseDate(LocalDate.of(2023, 12, 31));
             contract.setEmployee(employee);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -412,7 +412,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setValidFrom(date);
             contract.setEmployee(employee);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
@@ -456,7 +456,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setReportReleaseDate(LocalDate.of(2024, 1, 30));
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
@@ -495,7 +495,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
             contract.setReportReleaseDate(LocalDate.of(2024, 1, 30));
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
@@ -523,7 +523,7 @@ class TimereportServiceTest {
             final var contract = new Employeecontract();
             contract.setValidFrom(date);
             contract.setEmployee(employee);
-            when(employeecontractDAO.getEmployeeContractById(employeeContractId)).thenReturn(contract);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
             final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);

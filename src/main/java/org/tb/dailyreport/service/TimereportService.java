@@ -291,7 +291,7 @@ public class TimereportService {
     }
 
     // store new release date in employee contract
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     employeecontract.setReportReleaseDate(releaseDate);
     employeecontractDAO.save(employeecontract);
 
@@ -308,7 +308,7 @@ public class TimereportService {
     }
 
     // set new acceptance date in employee contract
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     employeecontract.setReportAcceptanceDate(acceptanceDate);
     employeecontractDAO.save(employeecontract);
 
@@ -318,7 +318,7 @@ public class TimereportService {
 
   public void reopenTimereports(long employeecontractId, LocalDate reopenDate) {
 
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
 
     if(reopenDate.isBefore(employeecontract.getValidFrom())) {
       reopenDate = employeecontract.getValidFrom();
@@ -451,7 +451,7 @@ public class TimereportService {
   protected List<ServiceFeedbackMessage> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
 
-    var contract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+    var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
 
     var currentReleaseDate = contract.getReportReleaseDate();
     var begin = currentReleaseDate != null ? currentReleaseDate.plusDays(1) : contract.getValidFrom();
@@ -592,7 +592,7 @@ public class TimereportService {
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes,
       Timereport timereport) {
-    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+    Employeecontract employeecontract = employeecontractDAO.getEmployeecontractById(employeeContractId);
     DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
     Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
     DataValidationUtils.notNull(employeeorder, TR_EMPLOYEE_ORDER_NOT_FOUND);
@@ -613,7 +613,7 @@ public class TimereportService {
   }
 
   private boolean needsWorkingHoursLawValidation(long employeeContractId) {
-    Employeecontract contract = employeecontractDAO.getEmployeeContractById(employeeContractId);
+    Employeecontract contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
     return contract != null && !contract.getEmployee().isRestricted();
   }
 

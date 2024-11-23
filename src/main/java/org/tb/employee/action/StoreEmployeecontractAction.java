@@ -89,7 +89,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
             // create overtime entity and store it
             Long ecId = (Long) request.getSession().getAttribute("ecId");
-            Employeecontract ec = employeecontractService.getEmployeeContractById(ecId);
+            Employeecontract ec = employeecontractService.getEmployeecontractById(ecId);
 
             Overtime overtime = new Overtime();
             overtime.setComment(ecForm.getNewOvertimeComment());

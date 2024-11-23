@@ -61,7 +61,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         Employeecontract employeecontract = null;
         if (releaseForm.getEmployeeContractId() != null) {
-            employeecontract = employeecontractService.getEmployeeContractById(releaseForm.getEmployeeContractId());
+            employeecontract = employeecontractService.getEmployeecontractById(releaseForm.getEmployeeContractId());
         }
         if (supervisor || authorizedUser.isManager()) {
             Employeecontract currentEmployeeContract;
@@ -167,7 +167,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         if (request.getParameter("task") == null || updateEmployee) {
             // reload potenial updated data to feed the session and form
-            employeecontract = employeecontractService.getEmployeeContractById(employeecontract.getId());
+            employeecontract = employeecontractService.getEmployeecontractById(employeecontract.getId());
             var releaseDateFromContract = employeecontract.getReportReleaseDate();
             var acceptanceDateFromContract = employeecontract.getReportAcceptanceDate();
 

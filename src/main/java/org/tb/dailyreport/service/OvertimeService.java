@@ -50,7 +50,7 @@ public class OvertimeService {
   private final WorkingdayDAO workingdayDAO;
 
   public Optional<Duration> calculateOvertime(long employeecontractId, LocalDate begin, LocalDate end) {
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(employeecontract.getDailyWorkingTime().isZero()) {
       return Optional.empty();
     }
@@ -59,7 +59,7 @@ public class OvertimeService {
   }
 
   public Optional<OvertimeStatus> calculateOvertime(long employeecontractId, boolean includeToday) {
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(employeecontract.getDailyWorkingTime().isZero()) {
       return Optional.empty();
     }
@@ -117,7 +117,7 @@ public class OvertimeService {
    */
   public Duration calculateOvertimeCompensation(long employeecontractId, LocalDate begin, LocalDate end) {
 
-    Employeecontract contract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    Employeecontract contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(contract == null) {
       throw new InvalidDataException(ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND);
     }
@@ -179,7 +179,7 @@ public class OvertimeService {
   }
 
   public Duration calculateWorkingTimeTarget(long employeecontractId, LocalDate requestedStart, LocalDate requestedEnd) {
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     final LocalDate start, end;
     // do not consider invalid(outside of the validity of the contract) days
     if (employeecontract.getValidFrom().isAfter(requestedStart)) {
@@ -272,7 +272,7 @@ public class OvertimeService {
   }
 
   public OvertimeReport createDetailedReportForEmployee(long employeecontractId) {
-    var contract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
 
     // iterate over the months of the contract until today - calc overtime for every month seperately
     var today = DateUtils.today();
@@ -338,7 +338,7 @@ public class OvertimeService {
   }
 
   public void updateOvertimeStatic(Long employeecontractId) {
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(employeecontract.getReportAcceptanceDate() == null) {
       throw new IllegalArgumentException("employeecontract.reportAcceptanceDate must not be null for " + employeecontractId);
     }

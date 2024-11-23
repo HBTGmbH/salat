@@ -16,8 +16,8 @@ import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitializat
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
+import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportDefinition_;
 import org.tb.reporting.domain.ReportResult;
@@ -34,18 +34,18 @@ public class ReportingService {
 
   private final ReportDefinitionRepository reportDefinitionRepository;
   private final DataSource dataSource;
-  private final AuthService authService;
+  private final ReportAuthorization reportAuthorization;
   private final AuthorizedUser authorizedUser;
 
   public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
         reportDefinitionRepository.findAll(Sort.by(ReportDefinition_.NAME)).iterator()
-    ).stream().filter(r -> authService.isAuthorized(r, EXECUTE)).toList();
+    ).stream().filter(r -> reportAuthorization.isAuthorized(r, EXECUTE)).toList();
   }
 
   public void deleteReportDefinition(long reportDefinitionId) {
     reportDefinitionRepository.findById(reportDefinitionId).ifPresent(report -> {
-      if(authService.isAuthorized(report, DELETE)) {
+      if(reportAuthorization.isAuthorized(report, DELETE)) {
         reportDefinitionRepository.delete(report);
       }
     });
@@ -53,12 +53,12 @@ public class ReportingService {
 
   public ReportDefinition getReportDefinition(long reportDefinitionId) {
     return reportDefinitionRepository.findById(reportDefinitionId)
-        .filter(report -> authService.isAuthorized(report, EXECUTE))
+        .filter(report -> reportAuthorization.isAuthorized(report, EXECUTE))
         .orElseThrow();
   }
 
   public ReportDefinition create(String name, String sql) {
-    if(!authService.isAuthorizedForAnyReportDefinition(WRITE)) {
+    if(!reportAuthorization.isAuthorizedForAnyReportDefinition(WRITE)) {
       return null;
     }
     var reportDefinition = new ReportDefinition();
@@ -70,7 +70,7 @@ public class ReportingService {
 
   public void update(long reportDefinitionId, String name, String sql) {
     var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
-    if(!authService.isAuthorized(reportDefinition, WRITE)) {
+    if(!reportAuthorization.isAuthorized(reportDefinition, WRITE)) {
       return;
     }
     reportDefinition.setName(name);

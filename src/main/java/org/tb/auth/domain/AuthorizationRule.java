@@ -1,12 +1,13 @@
 package org.tb.auth.domain;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.tb.common.domain.AuditedEntity;
-
-import jakarta.persistence.*;
-import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -14,11 +15,8 @@ import java.time.LocalDate;
 @Table(name = "authorization_rule")
 public class AuthorizationRule extends AuditedEntity {
 
-    public enum Category { TIMEREPORT, REPORT_DEFINITION, EMPLOYEE }
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "category", columnDefinition = "varchar")
-    private Category category;
+    @Column(name = "category")
+    private String category;
 
     @Column(name = "grantor_id")
     private String grantorId;

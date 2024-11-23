@@ -96,7 +96,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                     //create a new employeeorder only if no employeeorders for this employee/suborder already exist
                     if (eos.isEmpty()) {
                         Employeeorder eo = new Employeeorder();
-                        Employeecontract ec = employeecontractService.getEmployeeContractById(Long.parseLong(ecID));
+                        Employeecontract ec = employeecontractService.getEmployeecontractById(Long.parseLong(ecID));
                         eo.setEmployeecontract(ec);
                         eo.setSuborder(so);
                         if (so.getFromDate().isBefore(ec.getValidFrom())) {

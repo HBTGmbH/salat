@@ -125,7 +125,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
             request.getSession().setAttribute("currentEmployeeId", loginEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", null);
         } else {
-            currentEmployeeContract = employeecontractService.getEmployeeContractById(employeeContractId);
+            currentEmployeeContract = employeecontractService.getEmployeecontractById(employeeContractId);
             request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
         }
@@ -250,7 +250,7 @@ public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginReq
             request.getSession().setAttribute("currentEmployeeId", loginEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", null);
         } else {
-            currentEmployeeContract = employeecontractService.getEmployeeContractById(employeeContractId);
+            currentEmployeeContract = employeecontractService.getEmployeecontractById(employeeContractId);
             request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);
         }

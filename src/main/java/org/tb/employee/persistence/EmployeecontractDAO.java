@@ -15,15 +15,15 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.auth.domain.AccessLevel;
-import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
+import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
@@ -38,7 +38,7 @@ public class EmployeecontractDAO {
     private final OvertimeDAO overtimeDAO;
     private final EmployeecontractRepository employeecontractRepository;
     private final AuthorizedUser authorizedUser;
-    private final AuthService authService;
+    private final EmployeeAuthorization employeeAuthorization;
     private final TimereportDAO timereportDAO;
     private final WorkingdayDAO workingdayDAO;
 
@@ -52,7 +52,7 @@ public class EmployeecontractDAO {
     /**
      * Gets the EmployeeContract with the given id.
      */
-    public Employeecontract getEmployeeContractById(long id) {
+    public Employeecontract getEmployeecontractById(long id) {
         return employeecontractRepository.findById(id).orElse(null);
     }
 
@@ -142,7 +142,7 @@ public class EmployeecontractDAO {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
-            .filter(c -> authService.isAuthorized(c.getEmployee(), AccessLevel.READ))
+            .filter(c -> employeeAuthorization.isAuthorized(c.getEmployee(), AccessLevel.READ))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
                 .collect(Collectors.toList());
     }
@@ -182,7 +182,7 @@ public class EmployeecontractDAO {
         if (limitAccess) {
             // may only see his own contracts
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
-                .filter(e -> authService.isAuthorized(e.getEmployee(), AccessLevel.READ))
+                .filter(e -> employeeAuthorization.isAuthorized(e.getEmployee(), AccessLevel.READ))
                 .collect(Collectors.toList());
         } else {
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt);
@@ -204,7 +204,7 @@ public class EmployeecontractDAO {
      * Deletes the given employee contract.
      */
     public boolean deleteEmployeeContractById(long ecId) {
-        Employeecontract ec = getEmployeeContractById(ecId);
+        Employeecontract ec = getEmployeecontractById(ecId);
 
         if (ec != null) {
             // check if related employeeorders/timereports exist

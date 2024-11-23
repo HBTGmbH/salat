@@ -59,7 +59,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         setFormEntries(mapping, request, reportForm, tr);
 
         request.getSession().setAttribute("timereport", tr);
-        request.getSession().setAttribute("currentEmployeeContract", employeecontractService.getEmployeeContractById(tr.getEmployeecontractId()));
+        request.getSession().setAttribute("currentEmployeeContract", employeecontractService.getEmployeecontractById(tr.getEmployeecontractId()));
 
         // save the filter settings
         request.getSession().setAttribute("lastCurrentDay", request.getSession().getAttribute("currentDay"));
@@ -81,7 +81,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
     private void setFormEntries(ActionMapping mapping, HttpServletRequest request,
                                 AddDailyReportForm reportForm, TimereportDTO tr) {
 
-        Employeecontract ec = employeecontractService.getEmployeeContractById(tr.getEmployeecontractId());
+        Employeecontract ec = employeecontractService.getEmployeecontractById(tr.getEmployeecontractId());
         LocalDate utilDate = tr.getReferenceday();
 
         List<Customerorder> orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ec.getId(), utilDate);

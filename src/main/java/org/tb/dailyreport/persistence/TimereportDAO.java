@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
-import org.tb.auth.service.AuthService;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.Referenceday_;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -35,39 +35,13 @@ import org.tb.order.domain.Suborder_;
 public class TimereportDAO {
 
     private final TimereportRepository timereportRepository;
-    private final AuthService authService;
+    private final TimereportAuthorization timereportAuthorization;
 
     /**
      * Gets the timereport for the given id.
      */
     public TimereportDTO getTimereportById(long id) {
         return toDao(timereportRepository.findById(id)).orElse(null);
-    }
-
-    public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {
-        return timereportRepository.getReportedMinutesForSuborderAndEmployeeContract(soId, ecId).orElse(0L);
-    }
-
-    /**
-     * Gets the sum of all duration minutes WITH considering the hours.
-     */
-    public long getTotalDurationMinutesForSuborders(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return 0;
-        return timereportRepository.getReportedMinutesForSuborders(ids).orElse(0L);
-    }
-
-    /**
-     * Gets the sum of all duration minutes within a range of time WITH considering the hours.
-     */
-    public long getTotalDurationMinutesForSuborder(long soId, LocalDate fromDate, LocalDate untilDate) {
-        return timereportRepository.getReportedMinutesForSuborderAndBetween(soId, fromDate, untilDate).orElse(0L);
-    }
-
-    /**
-     * Gets the sum of all duration minutes WITH consideration of the hours.
-     */
-    public long getTotalDurationMinutesForCustomerOrder(long coId) {
-        return timereportRepository.getReportedMinutesForCustomerorder(coId).orElse(0L);
     }
 
     /**
@@ -406,47 +380,6 @@ public class TimereportDAO {
         return toDaoList(allTimereports);
     }
 
-    /**
-     * Gets a list of timereports, which lay between two dates and belong to the given {@link Suborder} id.
-     */
-    public List<TimereportDTO> getTimereportsByDatesAndSuborderIdOrderedByDateAndEmployeeSign(LocalDate begin, LocalDate end, long suborderId) {
-        List<Timereport> allTimereports;
-        if (begin.equals(end)) {
-            allTimereports = timereportRepository.findAll(
-                where(reportedAt(begin))
-                    .and(matchesSuborderId(suborderId))
-                    .and(orderedByReferenceday())
-                    .and(orderedBySequencenumber())
-            );
-        } else {
-            allTimereports = timereportRepository.findAll(
-                where(reportedBetween(begin, end))
-                    .and(matchesSuborderId(suborderId))
-                    .and(orderedByReferenceday())
-                    .and(orderedByCustomerorder())
-            );
-        }
-        return toDaoList(allTimereports);
-    }
-
-    public List<TimereportDTO> getTimereportsByEmployeeorderIdInvalidForDates(LocalDate begin, LocalDate end, Long employeeOrderId) {
-        if (end == null) {
-            return toDaoList(timereportRepository.findAll(
-                where(matchesEmployeeorderId(employeeOrderId))
-                    .and(reportedBefore(begin))
-                    .and(orderedByReferenceday())
-                    .and(orderedByCustomerorder())
-            ));
-        } else {
-            return toDaoList(timereportRepository.findAll(
-                where(matchesEmployeeorderId(employeeOrderId))
-                    .and(reportedNotBetween(begin, end))
-                    .and(orderedByReferenceday())
-                    .and(orderedByCustomerorder())
-            ));
-        }
-    }
-
     public List<TimereportDTO> getTimereportsBySuborderIdInvalidForDates(LocalDate begin, LocalDate end, Long suborderId) {
         if (end == null) {
             return toDaoList(timereportRepository.findAll(
@@ -575,7 +508,7 @@ public class TimereportDAO {
     }
 
     private boolean accessible(Timereport timereport) {
-        return authService.isAuthorized(timereport, AccessLevel.READ);
+        return timereportAuthorization.isAuthorized(timereport, AccessLevel.READ);
     }
 
 }

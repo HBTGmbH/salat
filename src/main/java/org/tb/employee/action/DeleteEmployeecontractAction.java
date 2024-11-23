@@ -36,7 +36,7 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm
 
         ActionMessages errors = new ActionMessages();
         long ecId = Long.parseLong(request.getParameter("ecId"));
-        Employeecontract ec = employeecontractService.getEmployeeContractById(ecId);
+        Employeecontract ec = employeecontractService.getEmployeecontractById(ecId);
         if (ec == null)
             return mapping.getInputForward();
 

@@ -85,7 +85,7 @@ public class DailyReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var employeecontract = employeecontractService.getEmployeeContractById(employeeContractId);
+        var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
         if (employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }

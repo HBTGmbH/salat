@@ -108,7 +108,7 @@ public class MatrixHelper {
     private final TimereportService timereportService;
 
     public Matrix createMatrix(LocalDate dateFirst, LocalDate dateLast, long employeeContractId, int method, long customerOrderId, boolean invoiceable, boolean nonInvoiceable, boolean startAndBreakTime) {
-        Employeecontract employeecontract = employeeContractId != -1 ? employeecontractService.getEmployeeContractById(employeeContractId) : null;
+        Employeecontract employeecontract = employeeContractId != -1 ? employeecontractService.getEmployeecontractById(employeeContractId) : null;
 
         List<TimereportDTO> timeReportList;
         if (invoiceable || nonInvoiceable) {
@@ -397,7 +397,7 @@ public class MatrixHelper {
             results.put("csvDownloadUrl", null);
         } else {
             // consider timereports for specific employee
-            Employeecontract employeeContract = employeecontractService.getEmployeeContractById(ecId);
+            Employeecontract employeeContract = employeecontractService.getEmployeecontractById(ecId);
             if (employeeContract == null) {
                 results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employee contract found for employee - please call system administrator.");
                 return results;

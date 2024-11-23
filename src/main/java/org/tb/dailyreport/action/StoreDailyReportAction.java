@@ -437,7 +437,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 }
 
                 // refresh overtime and vacation
-                var employeecontract = employeecontractService.getEmployeeContractById(form.getEmployeeContractId());
+                var employeecontract = employeecontractService.getEmployeecontractById(form.getEmployeeContractId());
                 refreshEmployeeSummaryData(request, employeecontract);
 
                 return mapping.findForward("showDaily");
@@ -523,7 +523,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
         long employeeContractId = employeecontract.getId();
 
         // TODO only store the id in the session, not the whole entity
-        employeecontract = employeecontractService.getEmployeeContractById(employeeContractId);
+        employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
 
         request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
         request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());

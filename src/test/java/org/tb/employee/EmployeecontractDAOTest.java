@@ -67,7 +67,7 @@ public class EmployeecontractDAOTest {
 		employeecontractDAO.save(ec);
 	
 		assertThat(employeecontractDAO.deleteEmployeeContractById(ec.getId())).isTrue();
-		assertThat(employeecontractDAO.getEmployeeContractById(ec.getId())).isNull();
+		assertThat(employeecontractDAO.getEmployeecontractById(ec.getId())).isNull();
 	}
 
 }

@@ -11,10 +11,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.tb.auth.domain.AccessLevel;
-import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
+import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
@@ -26,7 +26,7 @@ public class EmployeeDAO {
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
     private final AuthorizedUser authorizedUser;
-    private final AuthService authService;
+    private final EmployeeAuthorization employeeAuthorization;
 
     /**
      * Retrieves the employee with the given loginname.
@@ -83,7 +83,7 @@ public class EmployeeDAO {
     public List<Employee> getEmployees() {
         var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
         return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
-            .filter(e -> authService.isAuthorized(e, AccessLevel.READ))
+            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
@@ -96,7 +96,7 @@ public class EmployeeDAO {
         if (filter == null || filter.trim().isEmpty()) {
             return Lists.newArrayList(employeeRepository
                 .findAll(Sort.by(order))).stream()
-                .filter(e -> authService.isAuthorized(e, AccessLevel.READ))
+                .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
                 .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
         } else {
@@ -108,14 +108,14 @@ public class EmployeeDAO {
                 builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
                 builder.like(builder.upper(root.get(Employee_.status)), filterValue)
             )).stream()
-                .filter(e -> authService.isAuthorized(e, AccessLevel.READ))
+                .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
                 .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
         }
     }
 
     public void save(Employee employee) {
-        if(!authService.isAuthorized(employee, AccessLevel.WRITE)) {
+        if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
             throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getEmployeeId());
         }
 
@@ -127,7 +127,7 @@ public class EmployeeDAO {
      */
     public boolean deleteEmployeeById(long employeeId) {
         Employee employee = getEmployeeById(employeeId);
-        if(!authService.isAuthorized(employee, AccessLevel.DELETE)) {
+        if(!employeeAuthorization.isAuthorized(employee, AccessLevel.DELETE)) {
             throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getEmployeeId());
         }
 

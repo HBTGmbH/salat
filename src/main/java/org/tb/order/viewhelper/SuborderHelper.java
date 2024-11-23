@@ -39,7 +39,7 @@ public class SuborderHelper {
         request.getSession().removeAttribute("overtimeCompensation");
         request.getSession().removeAttribute("currentSuborderId");
 
-        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
 
         if (ec == null) {
             // request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
@@ -79,7 +79,7 @@ public class SuborderHelper {
      */
     public boolean refreshDailyOverviewSuborders(HttpServletRequest request, ShowDailyReportForm reportForm) {
 
-        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
 
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");

@@ -35,7 +35,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
         }
 
         // collect login contracts
-        var loginEmployees = authService.getLoginEmployees();
+        var loginEmployees = employeeService.getLoginEmployees();
         request.getSession().setAttribute("loginEmployees", loginEmployees);
 
         // create collection of employeecontracts
@@ -48,7 +48,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
             long employeeContractId = welcomeForm.getEmployeeContractId();
 
-            employeecontract = employeecontractService.getEmployeeContractById(employeeContractId);
+            employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
             request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
             request.getSession().setAttribute("currentEmployeeContract", employeecontract);
         } else {

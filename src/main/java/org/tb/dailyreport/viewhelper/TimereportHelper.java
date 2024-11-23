@@ -65,7 +65,7 @@ public class TimereportHelper {
         }
 
         // check date vs release status
-        Employeecontract employeecontract = employeecontractService.getEmployeeContractById(timereport.getEmployeecontractId());
+        Employeecontract employeecontract = employeecontractService.getEmployeecontractById(timereport.getEmployeecontractId());
         LocalDate releaseDate = employeecontract.getReportReleaseDate();
         LocalDate acceptanceDate = employeecontract.getReportAcceptanceDate();
 

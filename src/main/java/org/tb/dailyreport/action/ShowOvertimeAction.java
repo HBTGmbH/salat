@@ -26,7 +26,7 @@ public class ShowOvertimeAction extends LoginRequiredAction<ShowOvertimeForm> {
       HttpServletResponse response) throws Exception {
 
     if ("refresh".equalsIgnoreCase(request.getParameter("task"))) {
-      var currentEmployeeContract = employeecontractService.getEmployeeContractById(form.getEmployeecontractId());
+      var currentEmployeeContract = employeecontractService.getEmployeecontractById(form.getEmployeecontractId());
       if (currentEmployeeContract != null) {
         request.getSession().setAttribute("currentEmployeeId", currentEmployeeContract.getEmployee().getId());
         request.getSession().setAttribute("currentEmployeeContract", currentEmployeeContract);

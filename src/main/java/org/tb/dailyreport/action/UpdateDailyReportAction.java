@@ -131,7 +131,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
 
             //refresh overtime
-            Employeecontract ec = employeecontractService.getEmployeeContractById(tr.getEmployeecontractId());
+            Employeecontract ec = employeecontractService.getEmployeecontractById(tr.getEmployeecontractId());
             refreshEmployeeSummaryData(request, ec);
 
             return mapping.findForward("success");

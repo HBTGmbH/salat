@@ -12,11 +12,11 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.tb.common.util.DataValidationUtils;
-import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.util.DataValidationUtils;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.employee.domain.Employee;
@@ -104,7 +104,7 @@ public class EmployeecontractService {
       int vacationEntitlement
   ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
-    var employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     createOrUpdate(employeecontract, validFrom,
         validUntil,
         supervisorId,
@@ -238,15 +238,11 @@ public class EmployeecontractService {
   }
 
   public Employeecontract getEmployeecontractById(long employeeContractId) {
-    return employeecontractDAO.getEmployeeContractById(employeeContractId);
+    return employeecontractDAO.getEmployeecontractById(employeeContractId);
   }
 
-  public Employeecontract getEmployeeContractById(Long employeeContractId) {
-    return employeecontractDAO.getEmployeeContractById(employeeContractId);
-  }
-
-  public List<Employeecontract> getTeamContracts(Long teamManagerEmployeeId) {
-    return employeecontractDAO.getEmployeeContractsByEmployeeId(teamManagerEmployeeId);
+  public List<Employeecontract> getTeamContracts(long teamManagerEmployeeId) {
+    return employeecontractDAO.getTeamContracts(teamManagerEmployeeId);
   }
 
   public List<Employeecontract> getAllEmployeeContracts() {

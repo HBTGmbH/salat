@@ -69,7 +69,7 @@
                 </html:form>
             </td>
             <td align="center">
-                <c:if test="${authViewHelper.isAuth(report,'READ')}">
+                <c:if test="${reportAuthViewHelper.isAuth(report,'READ')}">
                     <html:form action="/EditReport">
                         <html:image
                                 onclick="edit(this.form, ${report.id})"
@@ -79,7 +79,7 @@
                 </c:if>
             </td>
             <td align="center">
-                <c:if test="${authViewHelper.isAuth(report,'DELETE')}">
+                <c:if test="${reportAuthViewHelper.isAuth(report,'DELETE')}">
                     <html:form action="/DeleteReport">
                         <html:image
                                 onclick="confirmDelete(this.form, ${report.id})"
@@ -91,7 +91,7 @@
             </tr>
         </c:forEach>
     </table>
-    <c:if test="${authViewHelper.mayCreateNewReports()}">
+    <c:if test="${reportAuthViewHelper.mayCreateNewReports()}">
         <html:form action="/CreateReport">
             <html:submit styleId="button">
                 <bean:message key="main.reporting.button.create.text" />

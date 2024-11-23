@@ -62,7 +62,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshEmployee")) {
 
-            Employeecontract employeecontract = employeecontractService.getEmployeeContractById(eoForm.getEmployeeContractId());
+            Employeecontract employeecontract = employeecontractService.getEmployeecontractById(eoForm.getEmployeeContractId());
             if (employeecontract == null) {
                 return mapping.findForward("error");
             } else {
@@ -189,7 +189,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             long eoId;
 
             Employeeorder eo;
-            Employeecontract employeecontract = employeecontractService.getEmployeeContractById(eoForm.getEmployeeContractId());
+            Employeecontract employeecontract = employeecontractService.getEmployeecontractById(eoForm.getEmployeeContractId());
             long employeeContractId;
 
             if (request.getSession().getAttribute("eoId") != null) {
@@ -432,7 +432,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
         }
         // check if dates fit to employee contract and suborder
         if (validFromDate != null) {
-            Employeecontract ec = employeecontractService.getEmployeeContractById(eoForm.getEmployeeContractId());
+            Employeecontract ec = employeecontractService.getEmployeecontractById(eoForm.getEmployeeContractId());
             Suborder suborder = suborderService.getSuborderById(eoForm.getSuborderId());
             if (validFromDate.isBefore(ec.getValidFrom())) {
                 errors.add("validFrom", new ActionMessage("form.employeeorder.error.date.outofrange.employeecontract"));

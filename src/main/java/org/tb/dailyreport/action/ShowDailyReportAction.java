@@ -523,7 +523,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 request.getSession().setAttribute("currentEmployeeContract", null);
             } else {
                 orders = customerorderService.getCustomerordersByEmployeeContractId(employeeContractId);
-                request.getSession().setAttribute("currentEmployeeContract", employeecontractService.getEmployeeContractById(employeeContractId));
+                request.getSession().setAttribute("currentEmployeeContract", employeecontractService.getEmployeecontractById(employeeContractId));
             }
             List<Suborder> suborders = new LinkedList<>();
             Customerorder customerorder = customerorderService.getCustomerorderBySign(orderSign);
@@ -611,7 +611,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 //check if overtime should be computed until enddate (not today)
                 if (reportForm.getShowOvertimeUntil()) {
                     if (!Objects.equals(ec.getId(), reportForm.getEmployeeContractId())) {
-                        ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
+                        ec = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
                     }
                     final LocalDate date;
                     if (GlobalConstants.VIEW_MONTHLY.equals(reportForm.getView())) {
@@ -649,7 +649,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                     request.getSession().setAttribute("currentEmployee", GlobalConstants.ALL_EMPLOYEES);
                     request.getSession().setAttribute("currentEmployeeContract", null);
                 } else {
-                    Employeecontract employeecontract = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
+                    Employeecontract employeecontract = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
                     request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
                     request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
                     request.getSession().setAttribute("currentEmployeeContract", employeecontract);

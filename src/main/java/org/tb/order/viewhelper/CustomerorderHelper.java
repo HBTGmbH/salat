@@ -48,7 +48,7 @@ public class CustomerorderHelper {
             return;
         }
 
-        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
         if (ec != null) {
             Employeecontract matchingTimeEC = employeecontractService.getEmployeeContractValidAt(ec.getEmployee().getId(), date);
             if (matchingTimeEC != null) {
@@ -115,7 +115,7 @@ public class CustomerorderHelper {
      */
     public boolean refreshOrders(HttpServletRequest request, ShowDailyReportForm reportForm) {
 
-        Employeecontract ec = employeecontractService.getEmployeeContractById(reportForm.getEmployeeContractId());
+        Employeecontract ec = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
 
         if (ec == null) {
             request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator."); //TODO: MessageResources

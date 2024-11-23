@@ -59,7 +59,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
                 if (trainingForm.getEmployeeContractId() == -1) {
                     request.getSession().setAttribute("currentEmployeeContract", null);
                 } else {
-                    Employeecontract employeecontract = employeecontractService.getEmployeeContractById(trainingForm.getEmployeeContractId());
+                    Employeecontract employeecontract = employeecontractService.getEmployeecontractById(trainingForm.getEmployeeContractId());
                     request.getSession().setAttribute("currentEmployeeContract", employeecontract);
                 }
                 return mapping.findForward("success");
@@ -86,7 +86,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
         request.getSession().setAttribute("showTrainingForm", trainingForm);
-        Employeecontract employeecontract = employeecontractService.getEmployeeContractById(employeeContractId);
+        Employeecontract employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
         Customerorder trainingOrder = customerorderService.getCustomerorderBySign(TRAINING_ID);
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverviews;

@@ -94,7 +94,7 @@
 					<bean:message key="main.general.mainmenu.invoice.title.text" />
 				</html:link></li>
 			</c:if>
-			<c:if test="${authViewHelper.isReportMenuAvailable()}">
+			<c:if test="${reportAuthViewHelper.isReportMenuAvailable()}">
 				<li><html:link styleClass="menu" action="/ShowReports">
 					<bean:message key="main.general.mainmenu.reporting.text" />
 				</html:link></li>

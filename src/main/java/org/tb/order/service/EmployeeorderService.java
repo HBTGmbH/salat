@@ -31,7 +31,7 @@ public class EmployeeorderService {
   private final VacationDAO vacationDAO;
 
   public void generateMissingStandardOrders(long employeecontractId) {
-    Employeecontract employeecontract = employeecontractDAO.getEmployeeContractById(employeecontractId);
+    Employeecontract employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
 
     List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
     if (standardSuborders != null && !standardSuborders.isEmpty()) {
