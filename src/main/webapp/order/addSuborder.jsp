@@ -6,7 +6,7 @@
 <%@taglib uri="jakarta.tags.core" prefix="c"%>
 <%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <%@taglib uri="jakarta.tags.functions" prefix="fn"%>
-<%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="myjsp" %>
+<%@taglib uri="http://hbt.de/jsp/taglib/order" prefix="order" %>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
 <head>
@@ -108,7 +108,7 @@
 			</td>
 			<td align="left" valign="top" class="noBborderStyle">
 				<% String browser = request.getHeader("User-Agent");  %>
-				<myjsp:tree	mainProject="${currentOrder}" subProjects="${suborders}"
+				<order:tree	mainProject="${currentOrder}" subProjects="${suborders}"
 					browser="<%=browser%>" changeFunctionString="setStoreAction(this.form,'refreshParentProject','default')"
 					defaultString="default"	currentSuborderID="${soId}"	/>
 			</td>

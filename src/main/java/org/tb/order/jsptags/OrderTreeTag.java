@@ -1,4 +1,4 @@
-package org.tb.common.jsptags;
+package org.tb.order.jsptags;
 
 import static org.tb.common.util.UrlUtils.absoluteUrl;
 
@@ -28,7 +28,7 @@ import org.tb.order.domain.Suborder;
  */
 @Slf4j
 @Setter
-public class TreeTag extends TagSupport {
+public class OrderTreeTag extends TagSupport {
 
     private static final long serialVersionUID = 1L; // 8705101629331486419L;
     // Random number needed for imag-label-generating.

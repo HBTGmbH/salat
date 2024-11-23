@@ -4,15 +4,15 @@
   version="2.1">
 
   <tlib-version>1.1</tlib-version>
-  <short-name>davisjsp</short-name>
-  <uri>http://hbt.de/jsp/taglib/tree</uri>
+  <short-name>order</short-name>
+  <uri>http://hbt.de/jsp/taglib/order</uri>
 
   <!-- Tree Tag:
     This file is part of the realisation of a order tree structure for the Salat.
    -->
   <tag>
     <name>tree</name>
-    <tag-class>org.tb.common.jsptags.TreeTag</tag-class>
+    <tag-class>org.tb.order.jsptags.OrderTreeTag</tag-class>
     <body-content>JSP</body-content>
     <description>Outputs nodes in a HTML menu tree</description>
     <attribute>

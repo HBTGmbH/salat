@@ -3,7 +3,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="tree"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/order" prefix="order"%>
 <%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <html:html>
@@ -230,7 +230,7 @@
 						<c:choose>
 							<c:when
 								test="${(authorizedUser.manager || currentOrder.responsible_hbt.id == loginEmployee.id)}">
-								<tree:tree mainProject="${currentOrder}"
+								<order:tree mainProject="${currentOrder}"
 									subProjects="${suborders}" browser="<%=browser%>"
 									changeFunctionString="callEdit(this.form, 'default')"
 									deleteFunctionString="confirmDelete(this.form, 'default')"
@@ -238,7 +238,7 @@
 									currentSuborderID="0" endlessDate="<%=message%>" />
 							</c:when>
 							<c:otherwise>
-								<tree:tree mainProject="${currentOrder}"
+								<order:tree mainProject="${currentOrder}"
 									subProjects="${suborders}" browser="<%=browser%>"
 									onlySuborders="true" defaultString="default"
 									currentSuborderID="0" endlessDate="<%=message%>" />

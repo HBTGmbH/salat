@@ -3,7 +3,7 @@
 <%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="myjsp"%>
+<%@taglib uri="http://hbt.de/jsp/taglib/order" prefix="order"%>
 <%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <html:html>
 <head>
