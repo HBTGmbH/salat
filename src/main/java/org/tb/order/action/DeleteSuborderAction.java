@@ -13,7 +13,7 @@ import org.apache.struts.action.ActionMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.tb.auth.LoginRequiredAction;
+import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.SuborderService;

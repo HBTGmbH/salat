@@ -9,7 +9,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.auth.LoginRequiredAction;
+import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;

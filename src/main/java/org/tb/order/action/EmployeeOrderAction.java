@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.struts.action.ActionForm;
-import org.tb.auth.LoginRequiredAction;
+import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;

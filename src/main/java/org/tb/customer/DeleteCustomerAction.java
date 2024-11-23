@@ -9,7 +9,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.auth.LoginRequiredAction;
+import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.exception.ErrorCodeException;
 
 /**

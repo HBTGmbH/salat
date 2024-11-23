@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.auth.LoginRequiredAction;
+import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.customer.Customer;
 import org.tb.customer.CustomerService;
 import org.tb.employee.domain.Employee;

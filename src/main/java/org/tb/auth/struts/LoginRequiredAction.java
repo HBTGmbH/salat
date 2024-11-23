@@ -1,4 +1,4 @@
-package org.tb.auth;
+package org.tb.auth.struts;
 
 import static java.util.Collections.singletonList;
 
@@ -14,6 +14,7 @@ import org.apache.struts.util.MessageResources;
 import org.apache.struts.util.RequestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.Warning;
 import org.tb.common.struts.TypedAction;
 
