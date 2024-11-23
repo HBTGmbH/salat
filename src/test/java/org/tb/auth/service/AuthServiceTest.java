@@ -1,4 +1,4 @@
-package org.tb.auth;
+package org.tb.auth.service;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -13,10 +13,11 @@ import org.mockito.Mock;
 import java.util.List;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.tb.auth.AuthorizationRuleRepository;
+import org.tb.auth.AuthorizedUser;
 import org.tb.auth.domain.AuthorizationRule;
 import org.tb.auth.domain.AuthorizationRule.Category;
 import org.tb.auth.domain.AccessLevel;
-import org.tb.auth.service.AuthService;
 import org.tb.common.SalatProperties;
 import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Timereport;
