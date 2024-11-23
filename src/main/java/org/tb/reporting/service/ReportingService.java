@@ -1,8 +1,8 @@
 package org.tb.reporting.service;
 
-import static org.tb.auth.AccessLevel.DELETE;
-import static org.tb.auth.AccessLevel.EXECUTE;
-import static org.tb.auth.AccessLevel.WRITE;
+import static org.tb.auth.domain.AccessLevel.DELETE;
+import static org.tb.auth.domain.AccessLevel.EXECUTE;
+import static org.tb.auth.domain.AccessLevel.WRITE;
 
 import java.util.List;
 import java.util.Map;

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.service.AuthService;
 import org.tb.reporting.domain.ReportDefinition;
 

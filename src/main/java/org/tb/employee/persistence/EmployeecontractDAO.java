@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AccessLevel;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.service.AuthService;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
