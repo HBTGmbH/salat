@@ -30,7 +30,6 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.AuditedEntity;
 import org.tb.common.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.order.service.SuborderService;
 
 @Getter
 @Setter
@@ -271,32 +270,6 @@ public class Suborder extends AuditedEntity implements Serializable {
 
         /* return result */
         return allChildren;
-    }
-
-    /**
-     * Set the {@link Customerorder} for all descendants
-     */
-    public void setCustomerOrderForAllDescendants(Customerorder customerOrder, SuborderService suborderService, Suborder rootSuborder) {
-        final Customerorder customerorderToSet = customerOrder;
-        final Suborder visitorRootSuborder = rootSuborder;
-
-        /* create visitor to collect suborders */
-        SuborderVisitor customerOrderSetter = suborder -> {
-            // do not modify root suborder
-            if (!Objects.equals(visitorRootSuborder.getId(), suborder.getId())) {
-                Suborder suborderToModify = suborderService
-                        .getSuborderById(suborder.getId());
-                if (suborderToModify != null) {
-                    suborderToModify.setCustomerorder(customerorderToSet);
-                    // save suborder
-                    suborderService.save(suborderToModify);
-                }
-            }
-        };
-
-        /* start visiting */
-        acceptVisitor(customerOrderSetter);
-
     }
 
     public void acceptVisitor(SuborderVisitor visitor) {

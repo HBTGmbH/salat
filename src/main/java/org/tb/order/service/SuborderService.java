@@ -66,19 +66,11 @@ public class SuborderService {
     if (soId != null) {
       // edited suborder
       so = suborderDAO.getSuborderById(soId);
-
-      if (so.getSuborders() != null
-          && !so.getSuborders().isEmpty()
-          && !Objects.equals(so.getCustomerorder().getId(), customerorder.getId())) {
-        // set customerorder in all descendants
-        so.setCustomerOrderForAllDescendants(customerorder, this, so);
-      }
-      so = suborderDAO.getSuborderById(soId);
     } else {
       // new report
       so = new Suborder();
     }
-    so.setCustomerorder(customerorder);
+    so.acceptVisitor(suborder -> suborder.setCustomerorder(customerorder));
     so.setSign(addSuborderForm.getSign());
     so.setSuborder_customer(addSuborderForm.getSuborder_customer());
     so.setDescription(addSuborderForm.getDescription());
