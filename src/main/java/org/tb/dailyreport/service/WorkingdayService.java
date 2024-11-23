@@ -15,7 +15,7 @@ import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.BusinessRuleChecks;
+import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
@@ -47,14 +47,14 @@ public class WorkingdayService {
 
     if(workingday.getType() == NOT_WORKED) {
       var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday());
-      BusinessRuleChecks.empty(timereports, WD_NOT_WORKED_TIMEREPORTS_FOUND);
+      BusinessRuleCheckUtils.empty(timereports, WD_NOT_WORKED_TIMEREPORTS_FOUND);
     }
     if(workingday.getType() == OVERTIME_COMPENSATED) {
-      BusinessRuleChecks.isFalse(
+      BusinessRuleCheckUtils.isFalse(
           workingday.getRefday().getDayOfWeek() == SATURDAY || workingday.getRefday().getDayOfWeek() == SUNDAY,
           WD_SATSUN_NOT_WORKED
       );
-      BusinessRuleChecks.isFalse(
+      BusinessRuleCheckUtils.isFalse(
           publicholidayRepository.findByRefdate(workingday.getRefday()).isPresent(),
           WD_HOLIDAY_NO_WORKED
       );

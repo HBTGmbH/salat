@@ -80,7 +80,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
-import org.tb.common.BusinessRuleChecks;
+import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.GlobalConstants;
@@ -614,7 +614,7 @@ public class TimereportService {
   }
 
   private void setSequencenumber(Timereport timereport) {
-    BusinessRuleChecks.isTrue(timereport.getSequencenumber() == 0, TR_SEQUENCE_NUMBER_ALREADY_SET);
+    BusinessRuleCheckUtils.isTrue(timereport.getSequencenumber() == 0, TR_SEQUENCE_NUMBER_ALREADY_SET);
     List<TimereportDTO> existingTimereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(
         timereport.getEmployeecontract().getId(),
         timereport.getReferenceday().getRefdate()
@@ -701,7 +701,7 @@ public class TimereportService {
               getFirstDay(yearMonth),
               getLastDay(yearMonth)
           );
-          BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
+          BusinessRuleCheckUtils.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
               TR_MONTH_BUDGET_EXCEEDED);
         });
         break;
@@ -715,7 +715,7 @@ public class TimereportService {
               getFirstDay(year),
               getLastDay(year)
           );
-          BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
+          BusinessRuleCheckUtils.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
               TR_YEAR_BUDGET_EXCEEDED);
         });
         break;
@@ -725,7 +725,7 @@ public class TimereportService {
             .sum();
         long alreadyReportedMinutes = timereportDAO
             .getTotalDurationMinutesForEmployeeOrder(employeeorder.getId());
-        BusinessRuleChecks.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
+        BusinessRuleCheckUtils.isTrue(alreadyReportedMinutes + minutesSum <= debitMinutes,
             TR_TOTAL_BUDGET_EXCEEDED);
         break;
       default:
@@ -755,9 +755,9 @@ public class TimereportService {
     Suborder suborder = timereport.getSuborder();
     Employeeorder employeeorder = timereport.getEmployeeorder();
     if(TRUE.equals(suborder.getCommentnecessary())) {
-      BusinessRuleChecks.notEmpty(timereport.getTaskdescription(), TR_SUBORDER_COMMENT_MANDATORY);
+      BusinessRuleCheckUtils.notEmpty(timereport.getTaskdescription(), TR_SUBORDER_COMMENT_MANDATORY);
     }
-    BusinessRuleChecks.isTrue(
+    BusinessRuleCheckUtils.isTrue(
         employeeorder.isValidAt(refdate),
         TR_EMPLOYEE_ORDER_INVALID_REF_DATE
     );
@@ -767,7 +767,7 @@ public class TimereportService {
     // one timereport exists at least and all share the same data
     Timereport timereport = timereports.getFirst();
     LocalDate refdate = timereport.getReferenceday().getRefdate();
-    BusinessRuleChecks.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
+    BusinessRuleCheckUtils.isTrue(timereport.getEmployeecontract().isValidAt(refdate),
         TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE);
   }
 
@@ -788,7 +788,7 @@ public class TimereportService {
 
       // if any time is reported the type of the working day must not be NOT_WORKED for that day
       boolean notWorked = workingDay != null && workingDay.getType() == NOT_WORKED;
-      BusinessRuleChecks.isFalse(notWorked, TR_WORKING_DAY_NOT_WORKED);
+      BusinessRuleCheckUtils.isFalse(notWorked, TR_WORKING_DAY_NOT_WORKED);
     });
   }
 
@@ -796,7 +796,7 @@ public class TimereportService {
     timereports.forEach(timereport -> {
       Year reportedYear = getYear(timereport.getReferenceday().getRefdate());
       // check date range (must be in current, previous or next year)
-      BusinessRuleChecks.isTrue(Math.abs(DateUtils.getCurrentYear() - reportedYear.getValue()) <= 1,
+      BusinessRuleCheckUtils.isTrue(Math.abs(DateUtils.getCurrentYear() - reportedYear.getValue()) <= 1,
           TR_YEAR_OUT_OF_RANGE);
 
       Integer durationHours = timereport.getDurationhours();
