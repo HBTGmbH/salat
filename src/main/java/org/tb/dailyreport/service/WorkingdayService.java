@@ -4,6 +4,7 @@ import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
 import static org.tb.common.exception.ErrorCode.WD_HOLIDAY_NO_WORKED;
 import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
+import static org.tb.common.exception.ErrorCode.WD_OUTSIDE_CONTRACT;
 import static org.tb.common.exception.ErrorCode.WD_SATSUN_NOT_WORKED;
 import static org.tb.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
@@ -44,6 +45,8 @@ public class WorkingdayService {
     if(!authorizedUser.isManager() && !employeeId.equals(authorizedUser.getEmployeeId())) {
       throw new AuthorizationException(WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER);
     }
+
+    BusinessRuleCheckUtils.isTrue(workingday.getEmployeecontract().isValidAt(workingday.getRefday()), WD_OUTSIDE_CONTRACT);
 
     if(workingday.getType() == NOT_WORKED) {
       var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday());

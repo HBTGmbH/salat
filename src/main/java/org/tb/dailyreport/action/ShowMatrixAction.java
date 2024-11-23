@@ -81,24 +81,33 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
             var employeecontract = getEmployeeContractFromRequest(request);
             if(employeecontract != null) {
                 Long employeecontractId = employeecontract.getId();
+                employeecontractService.getEmployeecontractById(employeecontractId);
                 var first = getDateFormStrings("1", reportForm.getFromMonth(), reportForm.getFromYear(), false);
                 var last = first.with(lastDayOfMonth());
-                first.datesUntil(last.plusDays(1)).forEach(day -> {
-                    var isRegularWorkingday = workingdayService.isRegularWorkingday(day);
-                    if(isRegularWorkingday) {
-                        var hasBookings = !timereportService.getTimereportsByDateAndEmployeeContractId(employeecontractId, day).isEmpty();
-                        if(!hasBookings) {
-                            var workingday = workingdayService.getWorkingday(employeecontractId, day);
-                            if(workingday == null) {
-                                workingday = new Workingday();
-                                workingday.setEmployeecontract(employeecontract);
-                                workingday.setRefday(day);
-                                workingday.setType(WorkingDayType.NOT_WORKED);
-                                workingdayService.upsertWorkingday(workingday);
+                if(first.isBefore(employeecontract.getValidFrom())) {
+                    first = employeecontract.getValidFrom();
+                }
+                if(employeecontract.getValidUntil() != null && last.isAfter(employeecontract.getValidUntil())) {
+                    last = employeecontract.getValidUntil();
+                }
+                if(first.isBefore(last)) {
+                    first.datesUntil(last.plusDays(1)).forEach(day -> {
+                        var isRegularWorkingday = workingdayService.isRegularWorkingday(day);
+                        if(isRegularWorkingday) {
+                            var hasBookings = !timereportService.getTimereportsByDateAndEmployeeContractId(employeecontractId, day).isEmpty();
+                            if(!hasBookings) {
+                                var workingday = workingdayService.getWorkingday(employeecontractId, day);
+                                if(workingday == null) {
+                                    workingday = new Workingday();
+                                    workingday.setEmployeecontract(employeecontract);
+                                    workingday.setRefday(day);
+                                    workingday.setType(WorkingDayType.NOT_WORKED);
+                                    workingdayService.upsertWorkingday(workingday);
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
                 task = "refreshMatrix";
                 doRefreshEmployeeSummaryData = true;
             }
