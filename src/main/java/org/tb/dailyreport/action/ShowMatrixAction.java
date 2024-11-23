@@ -1,7 +1,7 @@
 package org.tb.dailyreport.action;
 
 import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
-import static org.tb.common.DateTimeViewHelper.getShortstringFromMonthMM;
+import static org.tb.common.util.DateTimeUtils.getShortstringFromMonthMM;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 

@@ -1,4 +1,4 @@
-package org.tb.common;
+package org.tb.common.util;
 
 import static java.time.DayOfWeek.SUNDAY;
 import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
@@ -21,9 +21,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.experimental.UtilityClass;
+import org.tb.common.GlobalConstants;
+import org.tb.common.OptionItem;
 
 @UtilityClass
-public class DateTimeViewHelper {
+public class DateTimeUtils {
 
   private static final String[] MONTH_SHORTFORMS = new String[]{
       MONTH_SHORTFORM_JANUARY, MONTH_SHORTFORM_FEBRUARY, MONTH_SHORTFORM_MARCH,
@@ -62,7 +64,7 @@ public class DateTimeViewHelper {
    * builds up a list of string with days to display (01-31)
    */
   public static List<OptionItem> getDaysToDisplay() {
-    return IntStream.rangeClosed(1, 31).mapToObj(DateTimeViewHelper::intToOptionitem).collect(Collectors.toList());
+    return IntStream.rangeClosed(1, 31).mapToObj(DateTimeUtils::intToOptionitem).collect(Collectors.toList());
   }
 
   private static OptionItem intToOptionitem(int i) {

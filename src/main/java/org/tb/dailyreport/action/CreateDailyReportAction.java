@@ -1,11 +1,11 @@
 package org.tb.dailyreport.action;
 
-import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
-import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
-import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
-import static org.tb.common.DateTimeViewHelper.getSerialDayList;
+import static org.tb.common.util.DateTimeUtils.getDaysToDisplay;
+import static org.tb.common.util.DateTimeUtils.getTimeReportHoursOptions;
+import static org.tb.common.util.DateTimeUtils.getHoursToDisplay;
+import static org.tb.common.util.DateTimeUtils.getTimeReportMinutesOptions;
+import static org.tb.common.util.DateTimeUtils.getMonthsToDisplay;
+import static org.tb.common.util.DateTimeUtils.getSerialDayList;
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.util.DateUtils.now;
 

@@ -1,14 +1,14 @@
 package org.tb.dailyreport.action;
 
 import static java.lang.Boolean.TRUE;
-import static org.tb.common.DateTimeViewHelper.getBreakHoursOptions;
-import static org.tb.common.DateTimeViewHelper.getDaysToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportHoursOptions;
-import static org.tb.common.DateTimeViewHelper.getHoursToDisplay;
-import static org.tb.common.DateTimeViewHelper.getTimeReportMinutesOptions;
-import static org.tb.common.DateTimeViewHelper.getMonthMMStringFromShortstring;
-import static org.tb.common.DateTimeViewHelper.getMonthsToDisplay;
-import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
+import static org.tb.common.util.DateTimeUtils.getBreakHoursOptions;
+import static org.tb.common.util.DateTimeUtils.getDaysToDisplay;
+import static org.tb.common.util.DateTimeUtils.getTimeReportHoursOptions;
+import static org.tb.common.util.DateTimeUtils.getHoursToDisplay;
+import static org.tb.common.util.DateTimeUtils.getTimeReportMinutesOptions;
+import static org.tb.common.util.DateTimeUtils.getMonthMMStringFromShortstring;
+import static org.tb.common.util.DateTimeUtils.getMonthsToDisplay;
+import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.parse;
 

@@ -1,6 +1,6 @@
 package org.tb.dailyreport.action;
 
-import static org.tb.common.DateTimeViewHelper.getYearsToDisplay;
+import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.getYear;
 import static org.tb.common.util.DateUtils.today;
