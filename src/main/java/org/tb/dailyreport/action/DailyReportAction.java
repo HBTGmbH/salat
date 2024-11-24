@@ -4,7 +4,7 @@ import static java.lang.Boolean.TRUE;
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.dailyreport.viewhelper.OvertimeViewHelper.calculateAndSetOvertime;
-import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVacations;
+import static org.tb.employee.viewhelper.VacationViewHelper.calculateAndSetVacations;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

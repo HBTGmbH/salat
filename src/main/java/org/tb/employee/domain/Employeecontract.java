@@ -2,17 +2,17 @@ package org.tb.employee.domain;
 
 import static org.tb.common.util.DateUtils.format;
 
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,7 +25,6 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.Vacation;
 import org.tb.order.domain.Employeeorder;
 
 /**

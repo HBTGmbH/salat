@@ -17,7 +17,6 @@ import org.tb.auth.service.AuthService;
 import org.tb.common.SalatProperties;
 import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.VacationDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
@@ -25,6 +24,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.OvertimeDAO;
+import org.tb.employee.persistence.VacationDAO;
 import org.tb.testutils.EmployeeTestUtils;
 import org.tb.testutils.EmployeecontractTestUtils;
 

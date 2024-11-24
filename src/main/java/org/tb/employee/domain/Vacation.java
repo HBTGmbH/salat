@@ -1,17 +1,17 @@
-package org.tb.dailyreport.domain;
+package org.tb.employee.domain;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.tb.common.util.DateUtils.max;
 import static org.tb.common.util.DateUtils.min;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -21,7 +21,6 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.domain.AuditedEntity;
-import org.tb.employee.domain.Employeecontract;
 
 @Getter
 @Setter

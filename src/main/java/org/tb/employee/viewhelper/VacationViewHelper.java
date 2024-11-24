@@ -1,4 +1,4 @@
-package org.tb.dailyreport.viewhelper;
+package org.tb.employee.viewhelper;
 
 import static java.math.RoundingMode.DOWN;
 import static java.util.Locale.GERMAN;

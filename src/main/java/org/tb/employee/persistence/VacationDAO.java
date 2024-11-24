@@ -1,13 +1,12 @@
-package org.tb.dailyreport.persistence;
+package org.tb.employee.persistence;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.tb.dailyreport.domain.Vacation;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.domain.Vacation;
 
 @Component
 @RequiredArgsConstructor

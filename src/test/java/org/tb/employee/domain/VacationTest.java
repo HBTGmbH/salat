@@ -1,4 +1,4 @@
-package org.tb.dailyreport.domain;
+package org.tb.employee.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
-import org.tb.employee.domain.Employeecontract;
 
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class VacationTest {
