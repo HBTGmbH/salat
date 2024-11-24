@@ -1,14 +1,21 @@
 package org.tb.dailyreport.service;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.mockito.Mockito.when;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.tb.common.GlobalConstants;
 import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.exception.ErrorCode;
-import org.tb.common.GlobalConstants;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
@@ -19,19 +26,11 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.OrderType;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.mockito.Mockito.when;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
-
 @ExtendWith(MockitoExtension.class)
-class TimereportServiceTest {
+class ReleaseServiceTest {
 
     @InjectMocks
-    private TimereportService classUnderTest;
+    private ReleaseService classUnderTest;
     @Mock
     private TimereportDAO timereportDAO;
     @Mock
@@ -40,6 +39,8 @@ class TimereportServiceTest {
     private EmployeecontractDAO employeecontractDAO;
     @Mock
     private PublicholidayDAO publicholidayDAO;
+    @Mock
+    private TimereportService timereportService;
 
     @Nested
     class ValidateForRelease {
@@ -57,6 +58,8 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of());
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
+
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -182,6 +185,7 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -216,6 +220,7 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -326,6 +331,7 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -365,6 +371,7 @@ class TimereportServiceTest {
 
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(result);
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of(workingday));
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
             //when(publicholidayDAO.getPublicHolidaysBetween(any(), any())).thenReturn(List.of());
 
             final var employee = new Employee();
@@ -450,6 +457,7 @@ class TimereportServiceTest {
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(releaseDateResult);
             when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, yesterdayDate)).thenReturn(yesterdayDateResult);
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, yesterdayDate, releaseDate)).thenReturn(List.of(yesterday, releaseDay));
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -489,6 +497,7 @@ class TimereportServiceTest {
             when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate)).thenReturn(result);
             when(timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, yesterdayDate)).thenReturn(List.of());
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, yesterdayDate, releaseDate)).thenReturn(List.of(yesterday, releaseDay));
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
 
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);

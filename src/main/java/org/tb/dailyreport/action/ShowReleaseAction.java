@@ -17,7 +17,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.service.TimereportService;
+import org.tb.dailyreport.service.ReleaseService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -30,7 +30,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
-    private final TimereportService timereportService;
+    private final ReleaseService releaseService;
 
     @Override
     protected ActionForward executeAuthenticated(ActionMapping mapping,
@@ -108,7 +108,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
 
             LocalDate releaseDate = releaseForm.getReleaseDate();
-            var errors = timereportService.releaseTimereports(employeecontract.getId(), releaseDate);
+            var errors = releaseService.releaseTimereports(employeecontract.getId(), releaseDate);
             if(!errors.isEmpty()) {
                 for(var error : errors) {
                     addToErrors(request, error);
@@ -128,13 +128,13 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
 
             LocalDate acceptanceDate = releaseForm.getAcceptanceDate();
-            timereportService.acceptTimereports(employeecontract.getId(), acceptanceDate);
+            releaseService.acceptTimereports(employeecontract.getId(), acceptanceDate);
             updateEmployee = true;
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
             LocalDate reopenDate = releaseForm.getReopenDate();
-            timereportService.reopenTimereports(employeecontract.getId(), reopenDate);
+            releaseService.reopenTimereports(employeecontract.getId(), reopenDate);
             updateEmployee = true;
         }
 
@@ -154,14 +154,14 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("sendreleasemail")) {
             Employee recipient = employeeService.getEmployeeBySign(request.getParameter("sign"));
-            timereportService.sendReleaseReminderMail(recipient.getId());
+            releaseService.sendReleaseReminderMail(recipient.getId());
             request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("sendacceptancemail")) {
             Employee contEmployee = employeeService.getEmployeeBySign(request.getParameter("sign"));
             Employeecontract currentEmployeeContract = employeecontractService.getEmployeeContractValidAt(contEmployee.getId(), today());
-            timereportService.sendAcceptanceReminderMail(currentEmployeeContract.getId());
+            releaseService.sendAcceptanceReminderMail(currentEmployeeContract.getId());
             request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
         }
 
