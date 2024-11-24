@@ -45,7 +45,7 @@ public class ArchitectureTest {
       }
     };
     ArchRule rule = priority(HIGH).noClasses().that()
-        .resideInAPackage("..auth..")
+        .resideInAPackage("org.tb.auth..")
         .should().dependOnClassesThat(predicate);
     rule.check(importedClasses);
   }
@@ -59,7 +59,7 @@ public class ArchitectureTest {
       }
     };
     ArchRule rule = priority(HIGH).noClasses().that()
-        .resideInAPackage("..common..")
+        .resideInAPackage("org.tb.common..")
         .should().dependOnClassesThat(predicate);
     rule.check(importedClasses);
   }
