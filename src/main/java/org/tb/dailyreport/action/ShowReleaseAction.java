@@ -183,13 +183,16 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             // ensure meaningful values are set to support the user experience - null values do not help here
             if (releaseDateFromContract == null) {
                 releaseDateFromContract = employeecontract.getValidFrom();
+            } else {
+                // always show next month to help employee release next month
+                releaseDateFromContract = DateUtils.addMonths(releaseDateFromContract, 1);
             }
             if (acceptanceDateFromContract == null) {
                 acceptanceDateFromContract = employeecontract.getValidFrom();
             }
 
             releaseForm.setEmployeeContractId(employeecontract.getId());
-            releaseForm.setReleaseDate(DateUtils.addMonths(releaseDateFromContract, 1)); // always show next month to help employee release next month
+            releaseForm.setReleaseDate(releaseDateFromContract);
             releaseForm.setAcceptanceDate(acceptanceDateFromContract);
             releaseForm.setReopenDate(releaseForm.getReleaseDate());
         }
