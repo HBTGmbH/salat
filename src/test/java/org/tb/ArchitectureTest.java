@@ -36,12 +36,32 @@ public class ArchitectureTest {
   }
 
   @Test
+  public void commonShouldNotAccessOtherSalatPackages() {
+    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("common must import nothing") {
+      @Override
+      public boolean test(JavaClass javaClass) {
+        return javaClass.getFullName().startsWith("org.tb.") &&
+               !(
+                   javaClass.getFullName().startsWith("org.tb.common.")
+               );
+      }
+    };
+    ArchRule rule = priority(HIGH).noClasses().that()
+        .resideInAPackage("org.tb.common..")
+        .should().dependOnClassesThat(predicate);
+    rule.check(importedClasses);
+  }
+
+  @Test
   public void authShouldAccessCommonOnly() {
     DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("auth must only import common") {
       @Override
       public boolean test(JavaClass javaClass) {
         return javaClass.getFullName().startsWith("org.tb.") &&
-               !(javaClass.getFullName().startsWith("org.tb.common.") || javaClass.getFullName().startsWith("org.tb.auth."));
+               !(
+                   javaClass.getFullName().startsWith("org.tb.common.") ||
+                   javaClass.getFullName().startsWith("org.tb.auth.")
+               );
       }
     };
     ArchRule rule = priority(HIGH).noClasses().that()
@@ -51,15 +71,60 @@ public class ArchitectureTest {
   }
 
   @Test
-  public void commonShouldNotAccessOtherSalatPackages() {
-    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("common must only import common") {
+  public void customerShouldAccessCommonAuthOnly() {
+    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("customer must only import , auth") {
       @Override
       public boolean test(JavaClass javaClass) {
-        return javaClass.getFullName().startsWith("org.tb.") && !javaClass.getFullName().startsWith("org.tb.common.");
+        return javaClass.getFullName().startsWith("org.tb.") &&
+               !(
+                   javaClass.getFullName().startsWith("org.tb.common.") ||
+                   javaClass.getFullName().startsWith("org.tb.auth.") ||
+                   javaClass.getFullName().startsWith("org.tb.customer.")
+               );
       }
     };
     ArchRule rule = priority(HIGH).noClasses().that()
-        .resideInAPackage("org.tb.common..")
+        .resideInAPackage("org.tb.customer..")
+        .should().dependOnClassesThat(predicate);
+    rule.check(importedClasses);
+  }
+
+  @Test
+  public void employeeShouldAccessCommonAuthOnly() {
+    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("employee must only import common, auth") {
+      @Override
+      public boolean test(JavaClass javaClass) {
+        return javaClass.getFullName().startsWith("org.tb.") &&
+               !(
+                   javaClass.getFullName().startsWith("org.tb.common.") ||
+                   javaClass.getFullName().startsWith("org.tb.auth.") ||
+                   javaClass.getFullName().startsWith("org.tb.employee.")
+               );
+      }
+    };
+    ArchRule rule = priority(HIGH).noClasses().that()
+        .resideInAPackage("org.tb.employee..")
+        .should().dependOnClassesThat(predicate);
+    rule.check(importedClasses);
+  }
+
+  @Test
+  public void orderShouldAccessCommonAuthCustomerEmployeeOnly() {
+    DescribedPredicate<? super JavaClass> predicate = new DescribedPredicate<>("order must only import common,auth,customer,employee") {
+      @Override
+      public boolean test(JavaClass javaClass) {
+        return javaClass.getFullName().startsWith("org.tb.") &&
+               !(
+                   javaClass.getFullName().startsWith("org.tb.common.") ||
+                   javaClass.getFullName().startsWith("org.tb.auth.") ||
+                   javaClass.getFullName().startsWith("org.tb.customer.") ||
+                   javaClass.getFullName().startsWith("org.tb.employee.") ||
+                   javaClass.getFullName().startsWith("org.tb.order.")
+               );
+      }
+    };
+    ArchRule rule = priority(HIGH).noClasses().that()
+        .resideInAPackage("org.tb.order..")
         .should().dependOnClassesThat(predicate);
     rule.check(importedClasses);
   }
