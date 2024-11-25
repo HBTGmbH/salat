@@ -450,7 +450,7 @@
 
 	<!-- ======================================== Message Resources Definitions -->
 
-	<message-resources parameter="org/tb/web/MessageResources" />
+	<message-resources parameter="org/tb/web/MessageResources" null="false" />
 
 
 	<!-- =============================================== Plug Ins Configuration -->
