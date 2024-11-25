@@ -6,7 +6,6 @@ import static java.util.List.of;
 import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,18 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.common.ServiceFeedbackMessage;
-import org.tb.common.ServiceFeedbackMessage.Severity;
-import org.tb.common.exception.ErrorCode;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Employeeorder_;
-import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder_;
 
 @Component
@@ -38,7 +31,6 @@ public class EmployeeorderDAO {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmployeeorderDAO.class);
 
-    private final TimereportDAO timereportDAO;
     private final EmployeeorderRepository employeeorderRepository;
 
     /**
@@ -256,10 +248,6 @@ public class EmployeeorderDAO {
                 .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
-    }
-
-    public void save(Employeeorder eo) {
-        employeeorderRepository.save(eo);
     }
 
 }

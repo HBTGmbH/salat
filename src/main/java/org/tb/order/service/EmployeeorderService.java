@@ -1,5 +1,6 @@
 package org.tb.order.service;
 
+import static org.tb.common.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.exception.ErrorCode;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.VacationDAO;
@@ -41,6 +43,14 @@ public class EmployeeorderService {
   private final SuborderDAO suborderDAO;
   private final VacationDAO vacationDAO;
   private final EmployeeorderRepository employeeorderRepository;
+
+  public List<ServiceFeedbackMessage> create(Employeeorder employeeorder) {
+    return createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
+  }
+
+  public List<ServiceFeedbackMessage> update(Employeeorder employeeorder) {
+    return createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
+  }
 
   public void generateMissingStandardOrders(long employeecontractId) {
     Employeecontract employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
@@ -109,7 +119,7 @@ public class EmployeeorderService {
             employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
           }
 
-          employeeorderDAO.save(employeeorder);
+          createOrUpdate(employeeorder, effectiveFromDate, effectiveUntilDate);
           log.info(
               "Created standard order for order {} and employee {}.",
               suborder.getCompleteOrderSign(),
@@ -121,7 +131,7 @@ public class EmployeeorderService {
   }
 
   @EventListener
-  public void adjustEmployeeOrders(EmployeecontractUpdateEvent event) {
+  void onEmployeecontractUpdate(EmployeecontractUpdateEvent event) {
     var employeecontract = event.getDomainObject();
     var newValidity = employeecontract.getValidity();
 
@@ -134,18 +144,35 @@ public class EmployeeorderService {
         var feedbackMessages = adjustValidity(employeeorder.getId(), newValidity);
         if(!feedbackMessages.isEmpty()) {
           var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(ServiceFeedbackMessage.error(ErrorCode.EO_UPDATE_GOT_VETO));
+          allMessages.add(error(ErrorCode.EO_UPDATE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
           allMessages.addAll(feedbackMessages);
           event.vetoed(allMessages);
+          break;
         }
       } else {
         var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
         if(!feedbackMessages.isEmpty()) {
           var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(ServiceFeedbackMessage.error(ErrorCode.EO_DELETE_GOT_VETO));
+          allMessages.add(error(ErrorCode.EO_DELETE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
           allMessages.addAll(feedbackMessages);
           event.vetoed(allMessages);
+          break;
         }
+      }
+    }
+  }
+
+  @EventListener
+  void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
+    var employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(event.getId());
+    for (Employeeorder employeeorder : employeeorders) {
+      var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
+      if(!feedbackMessages.isEmpty()) {
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(ErrorCode.EO_DELETE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
+        allMessages.addAll(feedbackMessages);
+        event.vetoed(allMessages);
+        break;
       }
     }
   }
@@ -163,13 +190,15 @@ public class EmployeeorderService {
     employeeorder.setFromDate(from);
     employeeorder.setUntilDate(until);
 
-    EmployeeorderUpdateEvent event = new EmployeeorderUpdateEvent(employeeorder);
-    eventPublisher.publishEvent(event);
-    if(event.isVetoed()) {
-      return event.getMessages();
+    if(!employeeorder.isNew()) {
+      EmployeeorderUpdateEvent event = new EmployeeorderUpdateEvent(employeeorder);
+      eventPublisher.publishEvent(event);
+      if(event.isVetoed()) {
+        return event.getMessages();
+      }
     }
 
-    employeeorderDAO.save(employeeorder);
+    employeeorderRepository.save(employeeorder);
     return List.of();
   }
 
@@ -223,10 +252,6 @@ public class EmployeeorderService {
 
   public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long suborderId) {
     return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId);
-  }
-
-  public void save(Employeeorder employeeorder) {
-    employeeorderDAO.save(employeeorder);
   }
 
   public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId,

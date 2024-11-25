@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -76,15 +74,20 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                     }
                     // 3) begin after end now?
                     if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
-                        // 4) timereports out of range?
-                        List<TimereportDTO> timereportsInvalidForDates =
-                            timereportService.getTimereportsNotMatchingNewEmployeeOrderValidity(
-                                employeeorder.getId(),
-                                employeeorder.getFromDate(),
-                                employeeorder.getUntilDate()
-                            );
-                        if (timereportsInvalidForDates == null || timereportsInvalidForDates.isEmpty()) {
-                            employeeorderService.save(employeeorder);
+                        var errors = employeeorderService.update(employeeorder);
+                        if(!errors.isEmpty()) {
+                            for(var error : errors) {
+                                addToErrors(request, error);
+                            };
+                            return mapping.getInputForward();
+                        }
+                    } else {
+                        var errors = employeeorderService.deleteEmployeeorderById(employeeorder.getId());
+                        if(!errors.isEmpty()) {
+                            for(var error : errors) {
+                                addToErrors(request, error);
+                            };
+                            return mapping.getInputForward();
                         }
                     }
                 }

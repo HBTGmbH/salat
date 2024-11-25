@@ -232,8 +232,13 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));
                 eo.setDebithoursunit(eoForm.getDebithoursunit());
             }
-
-            employeeorderService.save(eo);
+            var serviceErrors = eo.isNew() ? employeeorderService.create(eo) : employeeorderService.update(eo);
+            if(!serviceErrors.isEmpty()) {
+                for(var error : serviceErrors) {
+                    addToErrors(request, error);
+                };
+                return mapping.getInputForward();
+            }
 
             employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
             long orderId = (Long) request.getSession().getAttribute("currentOrderId");

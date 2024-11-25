@@ -20,25 +20,6 @@ import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 
 public abstract class EmployeeOrderAction<F extends ActionForm> extends LoginRequiredAction<F> {
 
-    /**
-     * Refreshes the list of employee orders and stores it in the session.
-     */
-    protected void refreshEmployeeSubOrders(HttpServletRequest request,
-                                            ShowEmployeeOrderForm orderForm, SuborderService suborderService, CustomerorderService customerorderService, boolean onlyValid) {
-
-        Long suborderId = orderForm.getSuborderId();
-
-        if ((orderForm.getEmployeeContractId() > -1) && ((Long) request.getSession().getAttribute("currentOrderId") != -1L)) {
-            request.getSession().setAttribute("suborders", suborderService.getSubordersByEmployeeContractIdAndCustomerorderId(orderForm.getEmployeeContractId(), customerorderService
-                    .getCustomerorderById(orderForm.getOrderId())
-                    .getId(), onlyValid));
-        } else {
-            request.getSession().setAttribute("suborders", suborderService.getSubordersByCustomerorderId(orderForm.getOrderId(), onlyValid));
-        }
-
-        request.getSession().setAttribute("curretntSuborder", suborderId);
-    }
-
     protected void refreshEmployeeOrders(HttpServletRequest request,
                                          ShowEmployeeOrderForm orderForm, EmployeeorderService employeeorderService,
                                          EmployeecontractService employeecontractService, TimereportService timereportService) {

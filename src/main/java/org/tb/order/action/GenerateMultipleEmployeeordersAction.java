@@ -113,7 +113,13 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                         eo.setSign("");
                         eo.setDebithours(so.getDebithours());
                         eo.setDebithoursunit(so.getDebithoursunit());
-                        employeeorderService.save(eo);
+                        var serviceErrors = employeeorderService.create(eo);
+                        if(!serviceErrors.isEmpty()) {
+                            for(var error : serviceErrors) {
+                                addToErrors(request, error);
+                            };
+                            return mapping.getInputForward();
+                        }
 
                         Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
 

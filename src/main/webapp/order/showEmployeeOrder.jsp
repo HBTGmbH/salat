@@ -67,7 +67,8 @@
 	<br>
 </span>
 <br>
-<span style="color: red"><html:errors footer="<br>" /> </span>
+
+<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 <html:form action="/ShowEmployeeorder?task=refresh">
 	<table class="center backgroundcolor">
