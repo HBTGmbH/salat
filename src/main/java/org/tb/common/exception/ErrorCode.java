@@ -7,16 +7,21 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ErrorCode {
 
-  EC_UPDATE_GOT_VETO("EC-0001", "employee contract cennot be changed due to veto"),
+  EC_UPDATE_GOT_VETO("EC-0001", "employee contract cannot be changed due to veto"),
   EC_INVALID_DATE_RANGE("EC-0002", "employee contract has invalid date range"),
   EC_EFFECTIVE_EMPLOYEE_ORDER_OUTSIDE_VALIDITY("EC-0003", "effective employee order exists outside employee contract validity"),
   EC_SUPERVISOR_INVALID("EC-0004", "supervisor for employee contract is invalid"),
   EC_OVERLAPS("EC-0005", "employee contract validity overlaps another employee contract of the same employee"),
   EC_EMPLOYEE_CONTRACT_NOT_FOUND("EC-0006","employeeContractId must match an employee contract"),
-  EC_DELETE_GOT_VETO("EC-0007","employee contract could not deleted due to veto"),
+  EC_DELETE_GOT_VETO("EC-0007","employee contract suborder be deleted due to veto"),
+
   SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY("SO-0001", "suborder validity does not cover all existing time reports"),
-  EO_UPDATE_GOT_VETO("EO-0001", "employee order validity cannot be changed due to veto"),
+  SO_DELETE_GOT_VETO("SO-0002", "suborder cannot be deleted due to veto"),
+  SO_UPDATE_GOT_VETO("SO-0003", "suborder cannot be changed due to veto"),
+
+  EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),
+
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
   TR_EMPLOYEE_ORDER_NOT_FOUND("TR-0003","employeeOrderId must match an employee order"),
@@ -40,7 +45,8 @@ public enum ErrorCode {
   TR_WORKING_DAY_START_NULL("TR-0024","the start of the working day must not be null"),
   TR_WORKING_DAY_NOT_WORKED("TR-0025","the working day must not be 'not worked'"),
   TR_COMMITTED_TIME_REPORT_NOT_SELF("TR-0026","own time reports cannot be created or changed before the accepted date"),
-  TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER("TR-0027","there are time reports that prevent the update or deletion of the employee order"),
+  TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER("TR-0027","there are time reports that prevent the update or deletion of the employee order"),
+
   WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),
   WD_SATSUN_NOT_WORKED("WD-0002","no one can compensate his overtime on saturdays or sundays!"),
   WD_HOLIDAY_NO_WORKED("WD-0003", "no one can compensate his overtime on a public holiday!"),
@@ -52,8 +58,10 @@ public enum ErrorCode {
   WD_NO_TIMEREPORT("WD-0009", "no time report found for workday."),
   WD_LENGTH_TOO_LONG("WD-0010", "the worked time for the working day exceeds 10 hours!"),
   WD_OUTSIDE_CONTRACT("WD-0011", "the date is outside the validity of the employee contract!"),
+
   CU_NOT_FOUND("CU-0001", "the customer was not found!"),
   CU_CUSTOMER_ORDERS_EXIST("CU-0002", "there are customer orders for this customer. Deletion is not possible!"),
+
   AA_NEEDS_MANAGER("AA-0001", "not authorized. Manager level required!")
   ;
 

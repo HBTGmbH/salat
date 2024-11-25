@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tb.dailyreport.domain.TrainingInformation;
 import org.tb.dailyreport.persistence.TrainingDAO;
 import org.tb.employee.domain.Employeecontract;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class TrainingService {
 

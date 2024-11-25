@@ -25,7 +25,6 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
@@ -452,16 +451,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
             if (validUntilDate == null && suborder.getUntilDate() != null || validUntilDate != null
                     && suborder.getUntilDate() != null && validUntilDate.isAfter(suborder.getUntilDate())) {
                 errors.add("validUntil", new ActionMessage("form.employeeorder.error.date.outofrange.suborder"));
-            }
-        }
-
-        if (!employeeorder.isNew() && validFromDate != null) {
-            // check, if dates fit to existing timereports
-            List<TimereportDTO> timereportsInvalidForDates = timereportService
-                    .getTimereportsNotMatchingNewEmployeeOrderValidity(employeeorder.getId(), validFromDate, validUntilDate);
-            if (timereportsInvalidForDates != null && !timereportsInvalidForDates.isEmpty()) {
-                request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
-                errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
             }
         }
         saveErrors(request, errors);

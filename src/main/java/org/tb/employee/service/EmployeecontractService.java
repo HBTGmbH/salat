@@ -1,6 +1,5 @@
 package org.tb.employee.service;
 
-import static org.tb.common.ServiceFeedbackMessage.Severity.ERROR;
 import static org.tb.common.ServiceFeedbackMessage.error;
 import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
@@ -19,8 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.ServiceFeedbackMessage;
-import org.tb.common.ServiceFeedbackMessage.Severity;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -41,6 +40,7 @@ import org.tb.employee.persistence.VacationRepository;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class EmployeecontractService {
 
@@ -162,7 +162,7 @@ public class EmployeecontractService {
         var messages = event.getMessages().stream().map(ServiceFeedbackMessage::toString).collect(Collectors.joining("\n"));
         log.info("Could not update employee contract for {} ({}).\nVeto messages:\n{}", employeecontract.getEmployee().getSign(), employeecontract.getTimeString(), messages);
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        allMessages.add(error(EC_UPDATE_GOT_VETO));
+        allMessages.add(error(EC_UPDATE_GOT_VETO, employeecontract.getEmployee().getSign()));
         allMessages.addAll(event.getMessages());
         return allMessages;
       }

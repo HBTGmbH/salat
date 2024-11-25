@@ -4,34 +4,87 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.util.DurationUtils;
 import org.tb.customer.CustomerDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
-import org.tb.order.domain.Suborder;
+import org.tb.order.event.CustomerorderDeleteEvent;
+import org.tb.order.event.CustomerorderUpdateEvent;
 import org.tb.order.persistence.CustomerorderDAO;
-import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.persistence.CustomerorderRepository;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class CustomerorderService {
 
+  private final ApplicationEventPublisher eventPublisher;
   private final CustomerorderDAO customerorderDAO;
   private final CustomerDAO customerDAO;
   private final EmployeeDAO employeeDAO;
-  private final SuborderDAO suborderDAO;
-  private final SuborderService suborderService;
+  private final CustomerorderRepository customerorderRepository;
 
   public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final LocalDate date) {
     return customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeeContractId, date);
   }
 
-  public Customerorder createOrUpdateOrder(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
+  public List<ServiceFeedbackMessage> create(long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
+      String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
+      String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
+      Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
+    return createOrUpdate(
+        null,
+        customerId,
+        fromDate,
+        untilDate,
+        sign,
+        description,
+        shortdescription,
+        orderCustomer,
+        responsibleCustomerContractually,
+        responsibleCustomerTechnical,
+        responsibleHbtId,
+        respEmpHbtContractId,
+        debithours,
+        debithoursunit,
+        statusreport,
+        hide,
+        orderType
+    );
+  }
+
+  public List<ServiceFeedbackMessage> update(long customerorderId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
+      String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
+      String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
+      Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
+    return createOrUpdate(
+        customerorderId,
+        customerId,
+        fromDate,
+        untilDate,
+        sign,
+        description,
+        shortdescription,
+        orderCustomer,
+        responsibleCustomerContractually,
+        responsibleCustomerTechnical,
+        responsibleHbtId,
+        respEmpHbtContractId,
+        debithours,
+        debithoursunit,
+        statusreport,
+        hide,
+        orderType
+    );
+  }
+
+  private List<ServiceFeedbackMessage> createOrUpdate(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
       Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
@@ -78,18 +131,17 @@ public class CustomerorderService {
 
     co.setOrderType(orderType);
 
-    customerorderDAO.save(co);
-    coId = co.getId();
-
-    /* adjust suborders */
-    List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(coId, false);
-    if (suborders != null && !suborders.isEmpty()) {
-      for (Suborder so : suborders) {
-        suborderService.adjustValidity(so, co.getFromDate(), co.getUntilDate());
+    if(!co.isNew()) {
+      var event = new CustomerorderUpdateEvent(co);
+      eventPublisher.publishEvent(event);
+      if(event.isVetoed()) {
+        return event.getMessages();
       }
     }
 
-    return co;
+    customerorderRepository.save(co);
+
+    return List.of();
   }
 
   public Customerorder getCustomerorderBySign(String selectedOrder) {
@@ -124,8 +176,14 @@ public class CustomerorderService {
     return customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
   }
 
-  public boolean deleteCustomerorderById(long customerOrderId) {
-    return customerorderDAO.deleteCustomerorderById(customerOrderId);
+  public List<ServiceFeedbackMessage> deleteCustomerorderById(long customerOrderId) {
+    var event = new CustomerorderDeleteEvent(customerOrderId);
+    eventPublisher.publishEvent(event);
+    if(event.isVetoed()) {
+      return event.getMessages();
+    }
+    customerorderRepository.deleteById(customerOrderId);
+    return List.of();
   }
 
   public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {

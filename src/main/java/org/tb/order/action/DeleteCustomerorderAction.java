@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
@@ -44,18 +43,20 @@ public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomero
             return mapping.getInputForward();
         }
 
-        boolean deleted = customerorderService.deleteCustomerorderById(coId);
-
-        Long coID = (Long) request.getSession().getAttribute("currentOrderId");
+        var serviceErrors = customerorderService.deleteCustomerorderById(coId);
+        if(!serviceErrors.isEmpty()) {
+            for(var error : serviceErrors) {
+                addToErrors(request, error);
+            };
+            return mapping.getInputForward();
+        }
 
         //fix for accessing deleted Order in EmployeeOrderAction
-        if (deleted && coID != null && coID.equals(coId)) {
-            request.getSession().setAttribute("currentOrderId", -2L);
+        Long coID = (Long) request.getSession().getAttribute("currentOrderId");
+        if (coID != null && coID.equals(coId)) {
+            request.getSession().removeAttribute("currentOrderId");
         }
 
-        if (!deleted) {
-            errors.add(null, new ActionMessage("form.customerorder.error.hassuborders"));
-        }
         saveErrors(request, errors);
         String filter = null;
         Boolean show = null;

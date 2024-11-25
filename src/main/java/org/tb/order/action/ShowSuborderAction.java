@@ -2,7 +2,6 @@ package org.tb.order.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -75,7 +74,6 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                     customerOrderId);
 
             Customerorder co = customerorderService.getCustomerorderById(suborderForm.getCustomerOrderId());
-            LOG.debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
             request.getSession().setAttribute("currentOrder", co);
             if (customerOrderId == -1) {
                 request.getSession().setAttribute("showStructure", false);
@@ -117,6 +115,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
 
         if (request.getParameter("task") != null
                 && request.getParameter("task").equals("setflag")) {
+            /* FIXME clarify with antje
             Long coID = suborderForm.getCustomerOrderId();
 
             if (coID != -1) {
@@ -137,10 +136,13 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                     }
                 }
             }
+             */
         }
 
         if (request.getParameter("task") != null
                 && request.getParameter("task").equals("multiplechange")) {
+            /*
+            TODO clarify with antje
             ActionMessages errorMessages = validateFormData(request, suborderForm);
             if (errorMessages.isEmpty()) {
                 String[] suborderIdArray = suborderForm.getSuborderIdArray();
@@ -165,12 +167,15 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                         }
                     }
                 }
+
             }
             suborderForm.setSuborderOption("");
             saveErrors(request, errorMessages);
             if (!suborderForm.getNoResetChoice()) {
                 suborderForm.setSuborderIdArray(null);
             }
+
+             */
         }
 
         boolean showActualHours = suborderForm.getShowActualHours();

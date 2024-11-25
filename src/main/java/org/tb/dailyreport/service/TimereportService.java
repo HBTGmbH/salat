@@ -36,7 +36,7 @@ import static org.tb.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static org.tb.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
 import static org.tb.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static org.tb.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
-import static org.tb.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER;
+import static org.tb.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
 import static org.tb.common.exception.ErrorCode.TR_WORKING_DAY_NOT_WORKED;
@@ -166,16 +166,6 @@ public class TimereportService {
     return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
   }
 
-  public List<TimereportDTO> getTimereportsByEmployeeContractIdInvalidForDates(LocalDate validFrom, LocalDate validUntil,
-      long existingEmployeecontractId) {
-    return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, existingEmployeecontractId);
-  }
-
-  public List<TimereportDTO> getTimereportsBySuborderIdInvalidForDates(LocalDate fromDate, LocalDate untilDate,
-      Long suborderId) {
-    return timereportDAO.getTimereportsBySuborderIdInvalidForDates(fromDate, untilDate, suborderId);
-  }
-
   public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
   throws AuthorizationException, InvalidDataException, BusinessRuleException {
@@ -259,18 +249,6 @@ public class TimereportService {
     timereports.stream()
         .map(Timereport::getId)
         .forEach(timereportDAO::deleteTimereportById);
-  }
-
-  public List<TimereportDTO> getTimereportsNotMatchingNewCustomerOrderValidity(long customerOrderId, LocalDate newBegin, LocalDate newEnd) {
-    return timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(newBegin, newEnd, customerOrderId);
-  }
-
-  public List<TimereportDTO> getTimereportsNotMatchingNewEmployeeOrderValidity(long employeeContractId, LocalDate newBegin, LocalDate newEnd) {
-    return timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(newBegin, newEnd, employeeContractId);
-  }
-
-  public List<TimereportDTO> getTimereportsNotMatchingNewSuborderOrderValidity(Long suborderId, LocalDate newBegin, LocalDate newEnd) {
-    return timereportDAO.getTimereportsBySuborderIdInvalidForDates(newBegin, newEnd, suborderId);
   }
 
   public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {
@@ -680,13 +658,13 @@ public class TimereportService {
   @EventListener
   void onEmployeeorderUpdate(EmployeeorderUpdateEvent event) {
     var from = event.getDomainObject().getFromDate();
-    var until = event.getDomainObject().getUntilDate();
-    var timereports = timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(from, until, event.getDomainObject().getId());
+    var until = event.getDomainObject().getEffectiveUntilDate();
+    var timereports = timereportDAO.getTimereportsByEmployeeorderIdInvalidForDates(event.getDomainObject().getId(), from, until);
     if(!timereports.isEmpty()) {
       markForRollback();
       var errors = timereports.stream()
           .map(tr -> error(
-              TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER,
+              TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER,
               tr.getReferenceday()
           ))
           .toList();
@@ -702,7 +680,7 @@ public class TimereportService {
       markForRollback();
       var errors = timereports.stream()
           .map(tr -> error(
-              TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER,
+              TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER,
               tr.getReferenceday()
           ))
           .toList();

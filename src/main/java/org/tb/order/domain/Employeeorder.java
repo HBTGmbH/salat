@@ -9,6 +9,9 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -63,8 +66,28 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     }
 
     public LocalDate getEffectiveUntilDate() {
-        if (untilDate == null) {
-            return suborder.getEffectiveUntilDate();
+        var suborderDate = suborder.getEffectiveUntilDate();
+        var employeecontractDate = employeecontract.getValidUntil();
+        if(untilDate == null && employeecontractDate == null && suborderDate == null) {
+            return null;
+        }
+        if(untilDate != null && employeecontractDate != null && suborderDate != null) {
+            return DateUtils.min(untilDate, DateUtils.min(suborderDate, employeecontractDate));
+        }
+        if(untilDate != null && employeecontractDate != null) {
+            return DateUtils.min(untilDate, employeecontractDate);
+        }
+        if(untilDate != null && suborderDate != null) {
+            return DateUtils.min(untilDate, suborderDate);
+        }
+        if(employeecontractDate != null && suborderDate != null) {
+            return DateUtils.min(suborderDate, employeecontractDate);
+        }
+        if(suborderDate != null) {
+            return suborderDate;
+        }
+        if(employeecontractDate != null) {
+            return employeecontractDate;
         }
         return untilDate;
     }

@@ -1,7 +1,6 @@
 package org.tb.order.action;
 
 import static org.tb.common.util.DateUtils.addDays;
-import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,9 +17,9 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
+import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
@@ -41,9 +40,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        /* remove list with timereports out of range */
-        request.getSession().removeAttribute("timereportsOutOfRange");
-
         // Task for setting the date, previous, next and to-day for both, until and from date
         if (request.getParameter("task") != null && request.getParameter("task").equals("setDate")) {
             String which = request.getParameter("which").toLowerCase();
@@ -103,9 +99,25 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
             LocalDate fromDate = DateUtils.parseOrNull(coForm.getValidFrom());
 
             OrderType orderType = coForm.getOrderType();
-            customerorderService.createOrUpdateOrder(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
-                coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(), coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
-                coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
+
+            List<ServiceFeedbackMessage> serviceErrors;
+            if(coId != null) {
+                serviceErrors = customerorderService.update(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
+                    coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
+                    coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
+                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
+            } else {
+                serviceErrors = customerorderService.create(coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
+                    coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
+                    coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
+                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
+            }
+            if(!serviceErrors.isEmpty()) {
+                for(var error : serviceErrors) {
+                    addToErrors(request, error);
+                };
+                return mapping.getInputForward();
+            }
 
             request.getSession().setAttribute("customerorders", customerorderService.getAllCustomerorders());
             request.getSession().removeAttribute("coId");
@@ -277,23 +289,6 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                     coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_YEAR || coForm.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
                 errors.add("debithours", new ActionMessage("form.customerorder.error.debithours.nounit"));
             }
-        }
-
-        // check, if dates fit to existing timereports
-        LocalDate fromDate = parse(coForm.getValidFrom(), e -> {
-            throw new RuntimeException(e);
-        });
-        LocalDate untilDate = null;
-        if(coForm.getValidUntil() != null && !coForm.getValidUntil().trim().isEmpty()) {
-            untilDate = parse(coForm.getValidUntil(), e -> {
-                throw new RuntimeException(e);
-            });
-        }
-
-        List<TimereportDTO> timereportsInvalidForDates = timereportService.getTimereportsNotMatchingNewCustomerOrderValidity(coId, fromDate, untilDate);
-        if (!timereportsInvalidForDates.isEmpty()) {
-            request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
-            errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
         }
 
         saveErrors(request, errors);

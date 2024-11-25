@@ -5,6 +5,7 @@ import static java.util.Comparator.comparing;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +21,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
-import org.tb.order.domain.comparator.SubOrderComparator;
 import org.tb.order.domain.Suborder;
 import org.tb.order.domain.Suborder_;
+import org.tb.order.domain.comparator.SubOrderComparator;
 
 @Component
 @RequiredArgsConstructor
@@ -201,25 +200,6 @@ public class SuborderDAO {
      */
     public List<Suborder> getStandardSuborders() {
         return suborderRepository.findAllStandardSubordersByUntilDateGreaterThanEqual(today());
-    }
-
-    public void save(Suborder so) {
-        suborderRepository.save(so);
-    }
-
-    /**
-     * Deletes the given suborder.
-     */
-    public boolean deleteSuborderById(long soId) {
-        return suborderRepository.findById(soId).map(suborder -> {
-            // check if related timereports, employee orders, suborders exist - if so, no deletion possible
-            if (suborder.getEmployeeorders() != null && !suborder.getEmployeeorders().isEmpty()) return false;
-            if (!timereportDAO.getTimereportsBySuborderId(soId).isEmpty()) return false;
-            if (suborder.getSuborders() != null && !suborder.getSuborders().isEmpty()) return false;
-            suborderRepository.delete(suborder);
-            LOG.debug("SuborderDAO.deleteSuborderById - deleted object {}", suborder);
-            return true;
-        }).orElse(false);
     }
 
 }

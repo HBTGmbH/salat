@@ -27,6 +27,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.tb.common.DateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
@@ -202,6 +203,12 @@ public class Suborder extends AuditedEntity implements Serializable {
         return isValidAt(now);
     }
 
+    public DateRange getValidity() {
+        LocalDate from = getFromDate();
+        LocalDate until = getUntilDate();
+        return new DateRange(from, until);
+    }
+
     public boolean isValidAt(LocalDate date) {
         return !date.isBefore(getFromDate()) && (getUntilDate() == null || !date.isAfter(getUntilDate()));
     }
@@ -293,7 +300,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         return "Suborder_" + getId() + ": (" + sign + " " + description + ")";
     }
 
-    public Suborder copy(boolean copyroot, String creator) {
+    public Suborder copy(boolean copyroot) {
         Suborder copy = new Suborder();
 
         // set attrib values in copy
@@ -319,7 +326,7 @@ public class Suborder extends AuditedEntity implements Serializable {
         }
 
         for (Suborder child : suborders) {
-            Suborder childCopy = child.copy(false, creator);
+            Suborder childCopy = child.copy(false);
             childCopy.setParentorder(copy);
             copy.addSuborder(childCopy);
         }

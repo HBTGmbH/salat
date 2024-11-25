@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
@@ -13,6 +14,7 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeeRepository;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class EmployeeService {
 

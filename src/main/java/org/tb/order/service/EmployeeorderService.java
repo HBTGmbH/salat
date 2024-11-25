@@ -28,6 +28,8 @@ import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.event.EmployeeorderDeleteEvent;
 import org.tb.order.event.EmployeeorderUpdateEvent;
+import org.tb.order.event.SuborderDeleteEvent;
+import org.tb.order.event.SuborderUpdateEvent;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.EmployeeorderRepository;
 import org.tb.order.persistence.SuborderDAO;
@@ -145,7 +147,11 @@ public class EmployeeorderService {
         var feedbackMessages = adjustValidity(employeeorder.getId(), newValidity);
         if(!feedbackMessages.isEmpty()) {
           var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(ErrorCode.EO_UPDATE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
+          allMessages.add(error(
+              ErrorCode.EO_UPDATE_GOT_VETO,
+              employeeorder.getSuborder().getCompleteOrderSign(),
+              employeeorder.getEmployeecontract().getEmployee().getSign()
+          ));
           allMessages.addAll(feedbackMessages);
           markForRollback();
           event.vetoed(allMessages);
@@ -155,7 +161,11 @@ public class EmployeeorderService {
         var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
         if(!feedbackMessages.isEmpty()) {
           var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(ErrorCode.EO_DELETE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
+          allMessages.add(error(
+              ErrorCode.EO_DELETE_GOT_VETO,
+              employeeorder.getSuborder().getCompleteOrderSign(),
+              employeeorder.getEmployeecontract().getEmployee().getSign()
+          ));
           allMessages.addAll(feedbackMessages);
           markForRollback();
           event.vetoed(allMessages);
@@ -172,7 +182,11 @@ public class EmployeeorderService {
       var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
       if(!feedbackMessages.isEmpty()) {
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        allMessages.add(error(ErrorCode.EO_DELETE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
+        allMessages.add(error(
+            ErrorCode.EO_DELETE_GOT_VETO,
+            employeeorder.getSuborder().getCompleteOrderSign(),
+            employeeorder.getEmployeecontract().getEmployee().getSign()
+        ));
         allMessages.addAll(feedbackMessages);
         markForRollback();
         event.vetoed(allMessages);
@@ -181,7 +195,69 @@ public class EmployeeorderService {
     }
   }
 
-  public List<ServiceFeedbackMessage> adjustValidity(long employeeorderId, DateRange newValidity) {
+  @EventListener
+  void onSuborderUpdate(SuborderUpdateEvent event) {
+    var suborder = event.getDomainObject();
+    var newValidity = suborder.getValidity();
+
+    // adjust employeeorders
+    List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(suborder.getId());
+    for (Employeeorder employeeorder : employeeorders) {
+
+      var existingValidity = employeeorder.getValidity();
+      if(existingValidity.overlaps(newValidity)) {
+        var feedbackMessages = adjustValidity(employeeorder.getId(), newValidity);
+        if(!feedbackMessages.isEmpty()) {
+          var allMessages = new ArrayList<ServiceFeedbackMessage>();
+          allMessages.add(error(
+              ErrorCode.EO_UPDATE_GOT_VETO,
+              employeeorder.getSuborder().getCompleteOrderSign(),
+              employeeorder.getEmployeecontract().getEmployee().getSign()
+          ));
+          allMessages.addAll(feedbackMessages);
+          markForRollback();
+          event.vetoed(allMessages);
+          break;
+        }
+      } else {
+        var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
+        if(!feedbackMessages.isEmpty()) {
+          var allMessages = new ArrayList<ServiceFeedbackMessage>();
+          allMessages.add(error(
+              ErrorCode.EO_DELETE_GOT_VETO,
+              employeeorder.getSuborder().getCompleteOrderSign(),
+              employeeorder.getEmployeecontract().getEmployee().getSign()
+          ));
+          allMessages.addAll(feedbackMessages);
+          markForRollback();
+          event.vetoed(allMessages);
+          break;
+        }
+      }
+    }
+  }
+
+  @EventListener
+  void onSuborderDelete(SuborderDeleteEvent event) {
+    var employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(event.getId());
+    for (Employeeorder employeeorder : employeeorders) {
+      var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
+      if(!feedbackMessages.isEmpty()) {
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            ErrorCode.EO_DELETE_GOT_VETO,
+            employeeorder.getSuborder().getCompleteOrderSign(),
+            employeeorder.getEmployeecontract().getEmployee().getSign()
+        ));
+        allMessages.addAll(feedbackMessages);
+        markForRollback();
+        event.vetoed(allMessages);
+        break;
+      }
+    }
+  }
+
+  private List<ServiceFeedbackMessage> adjustValidity(long employeeorderId, DateRange newValidity) {
     var employeeorder = employeeorderDAO.getEmployeeorderById(employeeorderId);
     var existingValidity = employeeorder.getValidity();
     var resultingValidity = existingValidity.intersection(newValidity);

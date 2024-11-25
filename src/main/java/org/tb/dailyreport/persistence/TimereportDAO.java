@@ -380,53 +380,17 @@ public class TimereportDAO {
         return toDaoList(allTimereports);
     }
 
-    public List<TimereportDTO> getTimereportsBySuborderIdInvalidForDates(LocalDate begin, LocalDate end, Long suborderId) {
+    public List<TimereportDTO> getTimereportsByEmployeeorderIdInvalidForDates(long employeeorderId, LocalDate begin, LocalDate end) {
         if (end == null) {
             return toDaoList(timereportRepository.findAll(
-                where(matchesSuborderId(suborderId))
+                where(matchesEmployeeorderId(employeeorderId))
                     .and(reportedBefore(begin))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())
             ));
         } else {
             return toDaoList(timereportRepository.findAll(
-                where(matchesSuborderId(suborderId))
-                    .and(reportedNotBetween(begin, end))
-                    .and(orderedByReferenceday())
-                    .and(orderedByCustomerorder())
-            ));
-        }
-    }
-
-    public List<TimereportDTO> getTimereportsByCustomerOrderIdInvalidForDates(LocalDate begin, LocalDate end, Long customerOrderId) {
-        if (end == null) {
-            return toDaoList(timereportRepository.findAll(
-                where(matchesCustomerorderId(customerOrderId))
-                    .and(reportedBefore(begin))
-                    .and(orderedByReferenceday())
-                    .and(orderedByCustomerorder())
-            ));
-        } else {
-            return toDaoList(timereportRepository.findAll(
-                where(matchesCustomerorderId(customerOrderId))
-                    .and(reportedNotBetween(begin, end))
-                    .and(orderedByReferenceday())
-                    .and(orderedByCustomerorder())
-            ));
-        }
-    }
-
-    public List<TimereportDTO> getTimereportsByEmployeeContractIdInvalidForDates(LocalDate begin, LocalDate end, Long employeeContractId) {
-        if (end == null) {
-            return toDaoList(timereportRepository.findAll(
-                where(matchesEmployeecontractId(employeeContractId))
-                    .and(reportedBefore(begin))
-                    .and(orderedByReferenceday())
-                    .and(orderedByCustomerorder())
-            ));
-        } else {
-            return toDaoList(timereportRepository.findAll(
-                where(matchesEmployeecontractId(employeeContractId))
+                where(matchesEmployeeorderId(employeeorderId))
                     .and(reportedNotBetween(begin, end))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())

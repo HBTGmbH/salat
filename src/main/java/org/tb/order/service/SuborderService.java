@@ -1,67 +1,59 @@
 package org.tb.order.service;
 
-import static org.tb.common.exception.ErrorCode.SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY;
+import static org.tb.common.ServiceFeedbackMessage.error;
+import static org.tb.common.util.TransactionUtils.markForRollback;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.AuthorizedUser;
 import org.tb.common.DateRange;
+import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.action.AddSuborderForm;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
-import org.tb.order.domain.SuborderVisitor;
+import org.tb.order.event.CustomerorderDeleteEvent;
+import org.tb.order.event.CustomerorderUpdateEvent;
+import org.tb.order.event.SuborderDeleteEvent;
+import org.tb.order.event.SuborderUpdateEvent;
+import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.persistence.SuborderRepository;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class SuborderService {
 
+  private final ApplicationEventPublisher eventPublisher;
   private final SuborderDAO suborderDAO;
-  private final EmployeeorderService employeeorderService;
-  private final TimereportService timereportService;
+  private final SuborderRepository suborderRepository;
+  private final AuthorizedUser authorizedUser;
+  private final CustomerorderDAO customerorderDAO;
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
   }
 
-  /**
-   * Gets all {@link Timereport}s associated to the {@link Suborder} or his children, that are no longer valid for the given dates.
-   */
-  public List<TimereportDTO> getTimereportsNotMatchingNewSuborderOrderValidity(long suborderId, LocalDate newBegin, LocalDate newEnd) {
-
-    final Suborder suborder = suborderDAO.getSuborderById(suborderId);
-
-    /* build up result list */
-    final List<TimereportDTO> allInvalidTimeReports = new LinkedList<>();
-
-    /* create visitor to collect suborders */
-    SuborderVisitor allInvalidTimeReportsCollector = so -> allInvalidTimeReports.addAll(
-        timereportService.getTimereportsNotMatchingNewSuborderOrderValidity(
-            so.getId(),
-            newBegin,
-            newEnd
-        )
-    );
-
-    /* start visiting */
-    suborder.acceptVisitor(allInvalidTimeReportsCollector);
-
-    /* return result */
-    return allInvalidTimeReports;
+  public List<ServiceFeedbackMessage> create(AddSuborderForm addSuborderForm, Customerorder customerorder) {
+    return createOrUpdate(null, addSuborderForm, customerorder);
   }
 
-  public Suborder createOrUpdate(Long soId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
+  public List<ServiceFeedbackMessage> update(long suborderId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
+    return createOrUpdate(suborderId, addSuborderForm, customerorder);
+  }
+
+  private List<ServiceFeedbackMessage> createOrUpdate(Long soId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
     Suborder so;
     if (soId != null) {
       // edited suborder
@@ -95,11 +87,6 @@ public class SuborderService {
       so.setUntilDate(null);
     }
 
-    // adjust employeeorders
-    if(!so.isNew()) {
-      adjustEmployeeorderValidity(so);
-    }
-
     if (addSuborderForm.getDebithours() == null
         || addSuborderForm.getDebithours().isEmpty()
         || DurationUtils.parseDuration(addSuborderForm.getDebithours()).isZero()) {
@@ -121,84 +108,127 @@ public class SuborderService {
     }
     so.setParentorder(parentOrderCandidate);
 
-    suborderDAO.save(so);
-
-    return so;
-  }
-
-  public void adjustValidity(Suborder so, LocalDate fromDate, LocalDate untilDate) {
-    boolean suborderchanged = false;
-    if (so.getFromDate().isBefore(fromDate)) {
-      so.setFromDate(fromDate);
-      suborderchanged = true;
-    }
-    if (so.getUntilDate() != null && so.getUntilDate().isBefore(fromDate)) {
-      so.setUntilDate(fromDate);
-      suborderchanged = true;
-    }
-    if (untilDate != null) {
-      if (so.getFromDate().isAfter(untilDate)) {
-        so.setFromDate(untilDate);
-        suborderchanged = true;
-      }
-      if (so.getUntilDate() == null || so.getUntilDate().isAfter(untilDate)) {
-        so.setUntilDate(untilDate);
-        suborderchanged = true;
+    if(!so.isNew()) {
+      var event = new SuborderUpdateEvent(so);
+      eventPublisher.publishEvent(event);
+      if(event.isVetoed()) {
+        return event.getMessages();
       }
     }
 
-    if (suborderchanged) {
+    suborderRepository.save(so);
 
-      suborderDAO.save(so);
-
-      adjustEmployeeorderValidity(so);
-    }
+    return List.of();
   }
 
-  private void adjustEmployeeorderValidity(Suborder so) {
-    // adjust employeeorders
-    List<Employeeorder> employeeorders = employeeorderService.getEmployeeOrdersBySuborderId(so.getId());
-    if (employeeorders != null && !employeeorders.isEmpty()) {
-      // TODO use change event
-      for (Employeeorder employeeorder : employeeorders) {
-        employeeorderService.adjustValidity(employeeorder.getId(), new DateRange(so.getFromDate(), so.getUntilDate()));
+  @EventListener
+  void onCustomerorderUpdate(CustomerorderUpdateEvent event) {
+    var customerorder = event.getDomainObject();
+    var newValidity = customerorder.getValidity();
+
+    // adjust suborders
+    List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorder.getId(), false);
+    for (Suborder suborder : suborders) {
+
+      var existingValidity = suborder.getValidity();
+      if(existingValidity.overlaps(newValidity)) {
+        var feedbackMessages = adjustValidity(suborder.getId(), newValidity);
+        if(!feedbackMessages.isEmpty()) {
+          var allMessages = new ArrayList<ServiceFeedbackMessage>();
+          allMessages.add(error(ErrorCode.SO_UPDATE_GOT_VETO, suborder.getCompleteOrderSign()));
+          allMessages.addAll(feedbackMessages);
+          markForRollback();
+          event.vetoed(allMessages);
+          break;
+        }
+      } else {
+        var feedbackMessages = deleteSuborderById(suborder.getId());
+        if(!feedbackMessages.isEmpty()) {
+          var allMessages = new ArrayList<ServiceFeedbackMessage>();
+          allMessages.add(error(ErrorCode.SO_DELETE_GOT_VETO, suborder.getCompleteOrderSign()));
+          allMessages.addAll(feedbackMessages);
+          markForRollback();
+          event.vetoed(allMessages);
+          break;
+        }
       }
     }
   }
 
-  public void fitValidityOfChildren(long suborderId) throws BusinessRuleException {
+  @EventListener
+  void onCustomerorderDelete(CustomerorderDeleteEvent event) {
+    var suborders = suborderDAO.getSubordersByCustomerorderId(event.getId(), false);
+    for (Suborder suborder : suborders) {
+      var feedbackMessages = deleteSuborderById(suborder.getId());
+      if(!feedbackMessages.isEmpty()) {
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(ErrorCode.SO_DELETE_GOT_VETO, suborder.getCompleteOrderSign()));
+        allMessages.addAll(feedbackMessages);
+        markForRollback();
+        event.vetoed(allMessages);
+        break;
+      }
+    }
+
+
+  }
+
+  private List<ServiceFeedbackMessage> adjustValidity(long suborderId, DateRange newValidity) {
+    var suborder = suborderDAO.getSuborderById(suborderId);
+    var existingValidity = suborder.getValidity();
+    var resultingValidity = existingValidity.intersection(newValidity);
+    var newFrom = existingValidity.isInfiniteFrom() ? null : resultingValidity.getFrom();
+    var newUntil = existingValidity.isInfiniteUntil() ? null : resultingValidity.getUntil();
+    AddSuborderForm soForm = createForm(suborder, newFrom, newUntil);
+    return createOrUpdate(suborderId, soForm, suborder.getCustomerorder());
+  }
+
+  @Deprecated
+  private AddSuborderForm createForm(Suborder so, LocalDate newFrom, LocalDate newUntil) {
+    AddSuborderForm soForm = new AddSuborderForm();
+    soForm.setCustomerorderId(so.getCustomerorder().getId());
+    soForm.setSign(so.getSign());
+    soForm.setDescription(so.getDescription());
+    soForm.setShortdescription(so.getShortdescription());
+    soForm.setInvoice(so.getInvoice());
+    soForm.setStandard(so.getStandard());
+    soForm.setCommentnecessary(so.getCommentnecessary());
+    soForm.setTrainingFlag(so.getTrainingFlag());
+    soForm.setFixedPrice(so.getFixedPrice());
+    soForm.setSuborder_customer(so.getSuborder_customer());
+    if (so.getParentorder() != null) {
+      soForm.setParentId(so.getParentorder().getId());
+    } else {
+      soForm.setParentId(so.getCustomerorder().getId());
+    }
+    soForm.setValidFrom(DateUtils.format(newFrom));
+    if (newUntil != null) {
+      soForm.setValidUntil(DateUtils.format(newUntil));
+    } else {
+      soForm.setValidUntil("");
+    }
+
+    if (so.getDebithours() != null && !so.getDebithours().isZero()) {
+      soForm.setDebithours(DurationUtils.format(so.getDebithours()));
+      soForm.setDebithoursunit(so.getDebithoursunit());
+    } else {
+      soForm.setDebithours(null);
+      soForm.setDebithoursunit(null);
+    }
+    soForm.setHide(so.isHide());
+    soForm.setOrderType(so.getOrderType());
+
+    return soForm;
+  }
+
+  public List<ServiceFeedbackMessage> fitValidityOfChildren(long suborderId) throws BusinessRuleException {
+    var result = new ArrayList<ServiceFeedbackMessage>();
     var parent = suborderDAO.getSuborderById(suborderId);
     for (Suborder child : parent.getAllChildren()) {
-      if(child.getFromDate().isBefore(parent.getFromDate())) {
-        child.setFromDate(parent.getFromDate());
-      }
-      if(!parent.getOpenEnd() && child.getFromDate().isAfter(parent.getUntilDate())) {
-        child.setFromDate(parent.getUntilDate());
-      }
-      if(child.getOpenEnd() && !parent.getOpenEnd()) {
-        child.setUntilDate(parent.getUntilDate());
-      }
-      if(!child.getOpenEnd() && !parent.getOpenEnd() && child.getUntilDate().isAfter(parent.getUntilDate())) {
-        child.setUntilDate(parent.getUntilDate());
-      }
-      if(!child.getOpenEnd() && child.getUntilDate().isBefore(child.getFromDate())) {
-        child.setUntilDate(child.getFromDate());
-      }
-      validateBusinessRules(child);
-      adjustEmployeeorderValidity(child);
-      suborderDAO.save(child);
-
+      var messages = adjustValidity(child.getId(), new DateRange(parent.getFromDate(), parent.getUntilDate()));
+      result.addAll(messages);
     }
-  }
-
-  private void validateBusinessRules(Suborder suborder) throws BusinessRuleException {
-    if(timereportService.getTimereportsBySuborderIdInvalidForDates(
-          suborder.getFromDate(),
-          suborder.getUntilDate(),
-          suborder.getId()
-      ).stream().findAny().isPresent()) {
-      throw new BusinessRuleException(SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY);
-    }
+    return result;
   }
 
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showOnlyValid) {
@@ -222,8 +252,14 @@ public class SuborderService {
     return suborderDAO.getSuborders(false);
   }
 
-  public boolean deleteSuborderById(long suborderId) {
-    return suborderDAO.deleteSuborderById(suborderId);
+  public List<ServiceFeedbackMessage> deleteSuborderById(long suborderId) {
+    var event = new SuborderDeleteEvent(suborderId);
+    eventPublisher.publishEvent(event);
+    if(event.isVetoed()) {
+      return event.getMessages();
+    }
+    suborderRepository.deleteById(suborderId);
+    return List.of();
   }
 
   public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
@@ -234,10 +270,6 @@ public class SuborderService {
     return suborderDAO.getSuborders(showOnlyValid);
   }
 
-  public void save(Suborder suborder) {
-    suborderDAO.save(suborder);
-  }
-
   public List<Suborder> getSuborderChildren(Long parentSuborderId) {
     return suborderDAO.getSuborderChildren(parentSuborderId);
   }
@@ -246,4 +278,10 @@ public class SuborderService {
       LocalDate validAt) {
     return suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(employeecontractId, validAt);
   }
+
+  public void createCopy(Suborder so) {
+    var copy = so.copy(true);
+    suborderRepository.save(copy);
+  }
+
 }

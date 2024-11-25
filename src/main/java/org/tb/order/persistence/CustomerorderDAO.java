@@ -5,6 +5,9 @@ import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.tb.common.util.DateUtils.today;
 
 import com.google.common.collect.Lists;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.ListJoin;
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,15 +15,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.ListJoin;
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.common.util.DateUtils;
 import org.tb.customer.Customer_;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
@@ -190,25 +189,6 @@ public class CustomerorderDAO {
             query.distinct(true);
             return builder.and(employeeContractIdEqual, fromDateLess, untilDateNullOrGreater);
         }, Sort.by(Customerorder_.SIGN, Customerorder_.DESCRIPTION));
-    }
-
-    public void save(Customerorder co) {
-        customerorderRepository.save(co);
-    }
-
-    /**
-     * Deletes the given customer order.
-     */
-    public boolean deleteCustomerorderById(long coId) {
-        var customerorder = getCustomerorderById(coId);
-
-        // check if related suborders exist - if so, no deletion possible
-        if (!customerorder.getSuborders().isEmpty()) {
-            return false;
-        }
-
-        customerorderRepository.delete(customerorder);
-        return true;
     }
 
 }

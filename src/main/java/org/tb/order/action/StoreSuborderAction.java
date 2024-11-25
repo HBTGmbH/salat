@@ -25,11 +25,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
+import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
@@ -97,10 +97,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             Suborder so = suborderService.getSuborderById(soId);
 
             if (so != null) {
-                Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-                Suborder copy = so.copy(true, loginEmployee.getSign());
-
-                suborderService.save(copy);
+                suborderService.createCopy(so);
 
                 request.getSession().removeAttribute("soId");
 
@@ -133,7 +130,6 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             Suborder tempSubOrder = suborderService.getSuborderById(addSuborderForm.getParentId());
             Customerorder tempOrder = customerorderService.getCustomerorderById(addSuborderForm.getParentId());
             List<Suborder> suborders = suborderService.getAllSuborders();
-            LOG.debug("StoreSuborderAction.executeAuthenticated() - three Values: " + tempSubOrder + " / " + tempOrder + " / " + suborders);
             Long soId;
             try {
                 soId = Long.valueOf(request.getSession().getAttribute("soId").toString());
@@ -253,12 +249,23 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             if(request.getSession().getAttribute("soId") != null) {
                 soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
             }
-            Suborder so = suborderService.createOrUpdate(soId, addSuborderForm, customerorder);
+            List<ServiceFeedbackMessage> serviceErrors;
+            if(soId == null) {
+                serviceErrors = suborderService.create(addSuborderForm, customerorder);
+            } else {
+                serviceErrors = suborderService.update(soId, addSuborderForm, customerorder);
+            }
+            if(!serviceErrors.isEmpty()) {
+                for(var error : serviceErrors) {
+                    addToErrors(request, error);
+                };
+                return mapping.getInputForward();
+            }
 
             request.getSession().removeAttribute("soId");
 
             // store used customer order id for the next creation of a suborder
-            request.getSession().setAttribute("lastCoId", so.getCustomerorder().getId());
+            request.getSession().setAttribute("lastCoId", addSuborderForm.getCustomerorderId());
 
             boolean addMoreSuborders = Boolean.parseBoolean(request.getParameter("continue"));
 
@@ -464,18 +471,6 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                         errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
                     }
                 }
-            }
-        }
-
-        // check, if dates fit to existing timereports
-        request.getSession().removeAttribute("timereportsOutOfRange");
-        if (suborderId != 0l) {
-            var timereportsInvalidForDates = suborderService.getTimereportsNotMatchingNewSuborderOrderValidity(
-                suborderId, suborderFromDate, suborderUntilDate
-            );
-            if (!timereportsInvalidForDates.isEmpty()) {
-                request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
-                errors.add("timereportOutOfRange", new ActionMessage("form.general.error.timereportoutofrange"));
             }
         }
 

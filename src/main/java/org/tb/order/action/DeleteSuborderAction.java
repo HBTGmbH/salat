@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,10 +44,12 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
         if (so == null)
             return mapping.getInputForward();
 
-        boolean deleted = suborderService.deleteSuborderById(soId);
-
-        if (!deleted) {
-            errors.add(null, new ActionMessage("form.suborder.error.hastimereports.or.employeeorders"));
+        var serviceErrors = suborderService.deleteSuborderById(soId);
+        if(!serviceErrors.isEmpty()) {
+            for(var error : serviceErrors) {
+                addToErrors(request, error);
+            };
+            return mapping.getInputForward();
         }
 
         saveErrors(request, errors);

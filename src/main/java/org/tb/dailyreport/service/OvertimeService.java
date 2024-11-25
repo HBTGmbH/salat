@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
@@ -39,6 +40,7 @@ import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.OvertimeDAO;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 // FIXME move to dailyreport
 public class OvertimeService {

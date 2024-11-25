@@ -2,11 +2,6 @@ package org.tb.order.domain;
 
 import static org.tb.common.util.DateUtils.format;
 
-import java.io.Serializable;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.List;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -15,6 +10,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +23,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.tb.common.DateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
@@ -175,4 +175,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
         debitMinutes = value; // its a Duration - hours or minutes make no difference
     }
 
+    public DateRange getValidity() {
+        return new DateRange(getFromDate(), getUntilDate());
+    }
 }
