@@ -2,6 +2,7 @@ package org.tb.order.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
+import static java.util.List.of;
 import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
 
 import java.time.LocalDate;
@@ -17,6 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.ServiceFeedbackMessage.Severity;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -45,7 +49,7 @@ public class EmployeeorderDAO {
     }
 
     public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final LocalDate date) {
-        var customerOrderSigns = List.of(CUSTOMERORDER_SIGN_VACATION);
+        var customerOrderSigns = of(CUSTOMERORDER_SIGN_VACATION);
         var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
             employeecontractId,
             customerOrderSigns
@@ -256,23 +260,6 @@ public class EmployeeorderDAO {
 
     public void save(Employeeorder eo) {
         employeeorderRepository.save(eo);
-    }
-
-    /**
-     * Deletes the given employee order.
-     */
-    public boolean deleteEmployeeorderById(long eoId) {
-        boolean deleteOk = true;
-
-        List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeeOrderId(eoId);
-        if (timereports != null && !timereports.isEmpty()) {
-            deleteOk = false;
-        }
-
-        if (deleteOk) {
-            employeeorderRepository.deleteById(eoId);
-        }
-        return deleteOk;
     }
 
 }

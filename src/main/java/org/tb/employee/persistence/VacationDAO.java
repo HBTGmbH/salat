@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Vacation;
 
@@ -51,14 +52,6 @@ public class VacationDAO {
                 });
         }
         employeecontract.getVacations().add(vacation);
-    }
-
-    /**
-     * Deletes the given Vacation.
-     */
-    public boolean deleteVacationById(long vaId) {
-        vacationRepository.deleteById(vaId);
-        return true;
     }
 
 }

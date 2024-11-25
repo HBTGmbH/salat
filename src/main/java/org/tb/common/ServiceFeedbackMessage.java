@@ -19,6 +19,10 @@ public class ServiceFeedbackMessage {
   private final Severity  severity;
   private final List<Object> arguments;
 
+  public static ServiceFeedbackMessage error(ErrorCode errorCode) {
+    return new ServiceFeedbackMessage(errorCode, ERROR, List.of());
+  }
+
   public static ServiceFeedbackMessage error(ErrorCode errorCode, Object... arguments) {
     var args = arguments != null ? Arrays.asList(arguments) : List.of();
     return new ServiceFeedbackMessage(errorCode, ERROR, args);

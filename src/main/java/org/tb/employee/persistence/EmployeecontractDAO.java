@@ -199,54 +199,6 @@ public class EmployeecontractDAO {
             .collect(Collectors.toList());
     }
 
-    /**
-     * Deletes the given employee contract.
-     */
-    public boolean deleteEmployeeContractById(long ecId) {
-        Employeecontract ec = getEmployeecontractById(ecId);
-
-        if (ec != null) {
-            // check if related employeeorders/timereports exist
-            // if so, no deletion possible
-
-            List<Employeeorder> employeeorders = ec.getEmployeeorders();
-            if (employeeorders != null && !employeeorders.isEmpty()) {
-                return false;
-            }
-
-            List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeecontractId(ecId);
-            if (timereports != null && !timereports.isEmpty()) {
-                return false;
-            }
-
-            // if ok for deletion, check for overtime and vacation entries and
-            // delete them successively (cannot yet be done via web application)
-
-            var overtimes = overtimeDAO.getOvertimesByEmployeeContractId(ecId);
-            for (var overtime : overtimes) {
-                overtimeDAO.deleteOvertimeById(overtime.getId());
-            }
-
-            var allVacations = ec.getVacations();
-            if (allVacations != null) {
-                ec.setVacations(Collections.emptyList());
-                for (var va : allVacations) {
-                    vacationDAO.deleteVacationById(va.getId());
-                }
-            }
-
-            var workingdays = workingdayDAO.getWorkingdaysByEmployeeContractId(ecId);
-            for (var workingday : workingdays) {
-                workingdayDAO.deleteWorkingdayById(workingday.getId());
-            }
-
-            // finally, go for deletion of employeecontract
-            employeecontractRepository.delete(ec);
-            return true;
-        }
-        return false;
-    }
-
     public List<Employeecontract> getEmployeeContractsByEmployeeId(Long employeeId) {
         return employeecontractRepository.findAllByEmployeeId(employeeId);
     }

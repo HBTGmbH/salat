@@ -34,7 +34,6 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm
                 (!GenericValidator.isLong(request.getParameter("ecId"))))
             return mapping.getInputForward();
 
-        ActionMessages errors = new ActionMessages();
         long ecId = Long.parseLong(request.getParameter("ecId"));
         Employeecontract ec = employeecontractService.getEmployeecontractById(ecId);
         if (ec == null)
@@ -42,18 +41,19 @@ public class DeleteEmployeecontractAction extends LoginRequiredAction<ActionForm
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         if (Objects.equals(ec.getEmployee().getId(), loginEmployee.getId())) {
+            ActionMessages errors = new ActionMessages();
             errors.add(null, new ActionMessage("form.employeecontract.error.delete.isloginemployee"));
             saveErrors(request, errors);
             return mapping.getInputForward();
         }
 
-        boolean deleted = employeecontractService.deleteEmployeeContractById(ecId);
-
-        if (!deleted) {
-            errors.add(null, new ActionMessage("form.employeecontract.error.hasrelated"));
+        var errors = employeecontractService.deleteEmployeeContractById(ecId);
+        if(!errors.isEmpty()) {
+            for(var error : errors) {
+                addToErrors(request, error);
+            };
+            return mapping.getInputForward();
         }
-
-        saveErrors(request, errors);
 
         String filter = null;
         Boolean show = null;

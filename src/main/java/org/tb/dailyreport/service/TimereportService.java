@@ -19,6 +19,7 @@ import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.common.ServiceFeedbackMessage.error;
 import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
@@ -35,6 +36,8 @@ import static org.tb.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static org.tb.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
 import static org.tb.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static org.tb.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
+import static org.tb.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEECONTRACT;
+import static org.tb.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
 import static org.tb.common.exception.ErrorCode.TR_WORKING_DAY_NOT_WORKED;
@@ -68,12 +71,14 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.Warning;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
@@ -91,11 +96,15 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.event.EmployeecontractDeleteEvent;
+import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
+import org.tb.order.event.EmployeeorderDeleteEvent;
+import org.tb.order.event.EmployeeorderUpdateEvent;
 import org.tb.order.persistence.EmployeeorderDAO;
 
 @Slf4j
@@ -671,6 +680,62 @@ public class TimereportService {
     return warnings;
   }
 
+  @EventListener
+  public void onEmployeeorderUpdate(EmployeeorderUpdateEvent event) {
+    var from = event.getDomainObject().getFromDate();
+    var until = event.getDomainObject().getUntilDate();
+    var timereports = timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(from, until, event.getDomainObject().getId());
+    if(!timereports.isEmpty()) {
+      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER));
+    }
+  }
+
+  @EventListener
+  public void onEmployeeorderDelete(EmployeeorderDeleteEvent event) {
+    var employeeorderId = event.getId();
+    if(!timereportDAO.getTimereportsByEmployeeOrderId(employeeorderId).isEmpty()) {
+      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER));
+    }
+  }
+
+  @EventListener
+  public void onEmployeecontractUpdate(EmployeecontractUpdateEvent event) {
+    var employeecontract = event.getDomainObject();
+    if(employeecontract.isNew()) return; // fresh new contract dont have to mind time report rules
+
+    // no time reports may exist outside the validity of the employee contract
+    var validFrom = employeecontract.getValidFrom();
+    var validUntil = employeecontract.getValidUntil();
+    var timereports = timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, employeecontract.getId());
+    if(!timereports.isEmpty()) {
+      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEECONTRACT));
+      return;
+    }
+
+    // if no veto delete working days
+    var validity = employeecontract.getValidity();
+    var workingdays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontract.getId());
+    workingdays.stream()
+        .filter(w -> !validity.contains(w.getRefday()))
+        .mapToLong(AuditedEntity::getId)
+        .forEach(workingdayDAO::deleteWorkingdayById);
+  }
+
+  @EventListener
+  public void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
+    var employeeContractId = event.getId();
+    if(!timereportDAO.getTimereportsByEmployeecontractId(employeeContractId).isEmpty()) {
+      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEECONTRACT));
+      return;
+    }
+
+    // if no veto delete working days
+    var workingdays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId);
+    workingdays.stream()
+        .mapToLong(AuditedEntity::getId)
+        .forEach(workingdayDAO::deleteWorkingdayById);
+  }
+
   // utility methods
 
   static Optional<ServiceFeedbackMessage> validateBeginOfWorkingDay(LocalDate date,
@@ -686,7 +751,7 @@ public class TimereportService {
     }
     Workingday workingDay = workingDays.get(date);
     if (workingDay == null || workingDay.getStartOfWorkingDay() == null) {
-      return of(ServiceFeedbackMessage.error(WD_BEGIN_TIME_MISSING, date));
+      return of(error(WD_BEGIN_TIME_MISSING, date));
     }
     return empty();
   }
@@ -704,9 +769,9 @@ public class TimereportService {
     boolean notEnoughBreaksAfter9Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_NINE_HOURS;
     boolean notEnoughBreaksAfter6Hours = workingDay == null || workingDay.getBreakLengthInMinutes() < BREAK_MINUTES_AFTER_SIX_HOURS;
     if (workDurationSum.toMinutes() > NINE_HOURS_IN_MINUTES && notEnoughBreaksAfter9Hours) {
-      return of(ServiceFeedbackMessage.error(WD_BREAK_TOO_SHORT_9, date));
+      return of(error(WD_BREAK_TOO_SHORT_9, date));
     } else if (workDurationSum.toMinutes() > SIX_HOURS_IN_MINUTES && notEnoughBreaksAfter6Hours) {
-      return of(ServiceFeedbackMessage.error(WD_BREAK_TOO_SHORT_6, date));
+      return of(error(WD_BREAK_TOO_SHORT_6, date));
     }
     return empty();
   }

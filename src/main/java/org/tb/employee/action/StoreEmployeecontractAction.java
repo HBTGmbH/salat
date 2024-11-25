@@ -22,7 +22,6 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -41,7 +40,6 @@ import org.tb.employee.service.EmployeecontractService;
 public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployeeContractForm> {
 
     private final EmployeeService employeeService;
-    private final OvertimeService overtimeService;
     private final TimereportService timereportService;
     private final EmployeecontractService employeecontractService;
 
@@ -156,7 +154,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                 }
             } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                 addToMessages(request, e.getErrorCode());
-                if(e.getErrorCode() == ErrorCode.EC_TIME_REPORTS_OUTSIDE_VALIDITY) {
+                if(e.getErrorCode() == ErrorCode.EC_UPDATE_GOT_VETO) {
                     // in case of a specific error, print out timereports
                     var timereportsInvalidForDates = timereportService.getTimereportsByEmployeeContractIdInvalidForDates(
                         validFrom,

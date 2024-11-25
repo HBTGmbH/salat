@@ -7,6 +7,7 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,20 +17,26 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DataValidationUtils;
-import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
-import org.tb.employee.event.EmployeecontractUpdatedEvent;
+import org.tb.employee.event.EmployeecontractDeleteEvent;
+import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.persistence.EmployeecontractRepository;
 import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.employee.persistence.VacationDAO;
+import org.tb.employee.persistence.VacationRepository;
+import org.tb.order.domain.Employeeorder;
 
 @Slf4j
 @Service
@@ -38,9 +45,10 @@ public class EmployeecontractService {
 
   private final EmployeecontractDAO employeecontractDAO;
   private final EmployeeDAO employeeDAO;
-  private final TimereportDAO timereportDAO;
   private final OvertimeDAO overtimeDAO;
   private final VacationDAO vacationDAO;
+  private final EmployeecontractRepository employeecontractRepository;
+  private final VacationRepository vacationRepository;
   private final ApplicationEventPublisher eventPublisher;
 
   public Employeecontract getEmployeeContractValidAt(long employeeId, LocalDate date) {
@@ -132,7 +140,6 @@ public class EmployeecontractService {
       int vacationEntitlement) {
 
     validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorId);
-    validateTimereportBusinessRules(employeecontract, validFrom, validUntil);
 
     employeecontract.setValidFrom(validFrom);
     employeecontract.setValidUntil(validUntil);
@@ -144,12 +151,12 @@ public class EmployeecontractService {
     employeecontract.setDailyWorkingTime(dailyWorkingTime);
 
     if(!employeecontract.isNew()) {
-      var event = new EmployeecontractUpdatedEvent(employeecontract);
+      var event = new EmployeecontractUpdateEvent(employeecontract);
       eventPublisher.publishEvent(event);
       if(event.isVetoed()) {
         var messages = event.getMessages().stream().map(ServiceFeedbackMessage::toString).collect(Collectors.joining("\n"));
         log.info("Could not update employee contract:\n{}\nVeto messages:\n{}", employeecontract.toString(), messages);
-        throw new BusinessRuleException(ErrorCode.EC_VETOED, messages);
+        throw new BusinessRuleException(ErrorCode.EC_UPDATE_GOT_VETO, messages);
       }
     }
 
@@ -167,17 +174,6 @@ public class EmployeecontractService {
           .stream()
           .forEach(v -> v.setEntitlement(vacationEntitlement));
     }
-  }
-
-  private void validateTimereportBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
-      LocalDate validUntil) {
-    if(employeecontract.isNew()) return; // fresh new contract dont have to mind time report rules
-
-    // no time reports may exist outside the validity of the employee contract
-    timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, employeecontract.getId())
-        .stream().findAny().ifPresent((timereport) -> {
-          throw new BusinessRuleException(ErrorCode.EC_TIME_REPORTS_OUTSIDE_VALIDITY);
-        });
   }
 
   private void validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
@@ -221,8 +217,34 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContracts();
   }
 
-  public boolean deleteEmployeeContractById(long employeeContractId) {
-    return employeecontractDAO.deleteEmployeeContractById(employeeContractId);
+  public List<ServiceFeedbackMessage> deleteEmployeeContractById(long employeeContractId) {
+    Employeecontract ec = getEmployeecontractById(employeeContractId);
+
+    if (ec != null) {
+
+      var event = new EmployeecontractDeleteEvent(employeeContractId);
+      eventPublisher.publishEvent(event);
+
+      if(event.isVetoed()) {
+        return event.getMessages();
+      }
+
+      // if ok for deletion, check for overtime and vacation entries and
+      // delete them successively (cannot yet be done via web application)
+
+      var overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeeContractId);
+      overtimes.stream()
+          .map(AuditedEntity::getId)
+          .forEach(overtimeDAO::deleteOvertimeById);
+
+      vacationRepository.findByEmployeecontractId(employeeContractId).stream()
+          .map(AuditedEntity::getId)
+          .forEach(vacationRepository::deleteById);
+
+      // finally, go for deletion of employeecontract
+      employeecontractRepository.delete(ec);
+    }
+    return List.of();
   }
 
   public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter,

@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
@@ -36,12 +34,13 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeO
         Employeeorder eo = employeeorderService.getEmployeeorderById(eoId);
         if (eo == null) return mapping.getInputForward();
 
-        boolean deleted = employeeorderService.deleteEmployeeorderById(eoId);
-        ActionMessages errors = new ActionMessages();
-        if (!deleted) {
-            errors.add(null, new ActionMessage("form.employeeorder.error.hasstatusreports"));
+        var errors = employeeorderService.deleteEmployeeorderById(eoId);
+        if(!errors.isEmpty()) {
+            for(var error : errors) {
+                addToErrors(request, error);
+            };
+            return mapping.getInputForward();
         }
-        saveErrors(request, errors);
 
         // create form with necessary values
         ShowEmployeeOrderForm employeeOrderForm = new ShowEmployeeOrderForm();

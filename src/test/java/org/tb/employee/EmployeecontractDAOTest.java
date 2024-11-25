@@ -61,16 +61,4 @@ public class EmployeecontractDAOTest {
 		assertThat(ec.getId()).isNotNull();
 	}
 
-	@Test
-	public void employee_contract_can_be_deleted() {
-		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
-		employeeDAO.save(employee);
-
-		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee);
-		employeecontractDAO.save(ec);
-	
-		assertThat(employeecontractDAO.deleteEmployeeContractById(ec.getId())).isTrue();
-		assertThat(employeecontractDAO.getEmployeecontractById(ec.getId())).isNull();
-	}
-
 }
