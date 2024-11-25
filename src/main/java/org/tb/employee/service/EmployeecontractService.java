@@ -10,8 +10,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
@@ -21,23 +25,23 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
+import org.tb.employee.event.EmployeecontractUpdatedEvent;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.employee.persistence.VacationDAO;
-import org.tb.order.domain.Employeeorder;
-import org.tb.order.persistence.EmployeeorderDAO;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmployeecontractService {
 
   private final EmployeecontractDAO employeecontractDAO;
   private final EmployeeDAO employeeDAO;
-  private final EmployeeorderDAO employeeorderDAO;
   private final TimereportDAO timereportDAO;
   private final OvertimeDAO overtimeDAO;
   private final VacationDAO vacationDAO;
+  private final ApplicationEventPublisher eventPublisher;
 
   public Employeecontract getEmployeeContractValidAt(long employeeId, LocalDate date) {
     return employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
@@ -139,13 +143,22 @@ public class EmployeecontractService {
     employeecontract.setHide(hide);
     employeecontract.setDailyWorkingTime(dailyWorkingTime);
 
-    employeecontractDAO.save(employeecontract);
+    if(!employeecontract.isNew()) {
+      var event = new EmployeecontractUpdatedEvent(employeecontract);
+      eventPublisher.publishEvent(event);
+      if(event.isVetoed()) {
+        var messages = event.getMessages().stream().map(ServiceFeedbackMessage::toString).collect(Collectors.joining("\n"));
+        log.info("Could not update employee contract:\n{}\nVeto messages:\n{}", employeecontract.toString(), messages);
+        throw new BusinessRuleException(ErrorCode.EC_VETOED, messages);
+      }
+    }
 
-    adjustEmployeeOrders(employeecontract);
     adjustVacations(employeecontract, vacationEntitlement);
+    employeecontractDAO.save(employeecontract);
   }
 
   private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {
+    // FIXME calculate vacation entitlement based on existing algorithm
     if(employeecontract.getVacations().isEmpty()) {
       // if necessary, add new vacation for current year
       vacationDAO.addNewVacation(employeecontract, getCurrentYear(), vacationEntitlement);
@@ -153,7 +166,6 @@ public class EmployeecontractService {
       employeecontract.getVacations()
           .stream()
           .forEach(v -> v.setEntitlement(vacationEntitlement));
-      employeecontractDAO.save(employeecontract);
     }
   }
 
@@ -191,46 +203,6 @@ public class EmployeecontractService {
       }
     }
 
-  }
-
-  private void adjustEmployeeOrders(Employeecontract employeecontract) {
-    if(employeecontract.isNew()) return; // no adjustment required - there is nothing to adjust yet
-
-    // adjust employeeorders
-    List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeecontract.getId());
-    for (Employeeorder employeeorder : employeeorders) {
-      boolean remove = false;
-      if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(employeecontract.getValidFrom())) {
-        remove = true;
-      }
-      if (employeecontract.getValidUntil() != null) {
-        if (employeeorder.getFromDate().isAfter(employeecontract.getValidUntil())) {
-          remove = true;
-        }
-      }
-      if(remove) {
-        employeecontract.getEmployeeorders().remove(employeeorder);
-        var deleted = employeeorderDAO.deleteEmployeeorderById(employeeorder.getId());
-        if(!deleted) {
-          throw new BusinessRuleException(ErrorCode.EC_EFFECTIVE_EMPLOYEE_ORDER_OUTSIDE_VALIDITY);
-        }
-      } else {
-        boolean changed = false;
-        if (employeeorder.getFromDate().isBefore(employeecontract.getValidFrom())) {
-          employeeorder.setFromDate(employeecontract.getValidFrom());
-          changed = true;
-        }
-        if (employeecontract.getValidUntil() != null) {
-          if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(employeecontract.getValidUntil())) {
-            employeeorder.setUntilDate(employeecontract.getValidUntil());
-            changed = true;
-          }
-        }
-        if (changed) {
-          employeeorderDAO.save(employeeorder);
-        }
-      }
-    }
   }
 
   public Optional<Employeecontract> getCurrentContract(long employeeId) {

@@ -9,6 +9,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.common.DateRange;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -158,8 +159,9 @@ public class SuborderService {
     // adjust employeeorders
     List<Employeeorder> employeeorders = employeeorderService.getEmployeeOrdersBySuborderId(so.getId());
     if (employeeorders != null && !employeeorders.isEmpty()) {
+      // TODO use change event
       for (Employeeorder employeeorder : employeeorders) {
-        employeeorderService.adjustValidity(employeeorder, so.getFromDate(), so.getUntilDate());
+        employeeorderService.adjustValidity(employeeorder.getId(), new DateRange(so.getFromDate(), so.getUntilDate()));
       }
     }
   }

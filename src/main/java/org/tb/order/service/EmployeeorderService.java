@@ -8,10 +8,15 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.common.DateRange;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.event.EmployeecontractUpdatedEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.VacationDAO;
 import org.tb.order.domain.Employeeorder;
@@ -108,29 +113,41 @@ public class EmployeeorderService {
     }
   }
 
-  public void adjustValidity(Employeeorder employeeorder, LocalDate fromDate, LocalDate untilDate) {
-    boolean changed = false;
-    if (employeeorder.getFromDate().isBefore(fromDate)) {
-      employeeorder.setFromDate(fromDate);
-      changed = true;
-    }
-    if (employeeorder.getUntilDate() != null && employeeorder.getUntilDate().isBefore(fromDate)) {
-      employeeorder.setUntilDate(fromDate);
-      changed = true;
-    }
-    if (untilDate != null) {
-      if (employeeorder.getFromDate().isAfter(untilDate)) {
-        employeeorder.setFromDate(untilDate);
-        changed = true;
+  @EventListener
+  public void adjustEmployeeOrders(EmployeecontractUpdatedEvent event) {
+    var employeecontract = event.getDomainObject();
+    var newValidity = employeecontract.getValidity();
+
+    // adjust employeeorders
+    List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeecontract.getId());
+    for (Employeeorder employeeorder : employeeorders) {
+
+      var existingValidity = employeeorder.getValidity();
+      if(existingValidity.overlaps(newValidity)) {
+        adjustValidity(employeeorder.getId(), newValidity);
+      } else {
+        var deleted = employeeorderDAO.deleteEmployeeorderById(employeeorder.getId());
+        if(!deleted) {
+          throw new BusinessRuleException(ErrorCode.EC_EFFECTIVE_EMPLOYEE_ORDER_OUTSIDE_VALIDITY);
+        }
       }
-      if (employeeorder.getUntilDate() == null || employeeorder.getUntilDate().isAfter(untilDate)) {
-        employeeorder.setUntilDate(untilDate);
-        changed = true;
-      }
     }
-    if (changed) {
-      employeeorderDAO.save(employeeorder);
-    }
+  }
+
+  public void adjustValidity(long employeeorderId, DateRange newValidity) {
+    var employeeorder = employeeorderDAO.getEmployeeorderById(employeeorderId);
+    var existingValidity = employeeorder.getValidity();
+    var resultingValidity = existingValidity.intersection(newValidity);
+    var newFrom = resultingValidity.getFrom();
+    var newUntil = resultingValidity.getUntil();
+    createOrUpdate(employeeorder, newFrom, newUntil);
+  }
+
+  private void createOrUpdate(Employeeorder employeeorder, LocalDate from, LocalDate until) {
+    // TODO validate that no timereport exists outside validity via event
+    employeeorder.setFromDate(from);
+    employeeorder.setUntilDate(until);
+    employeeorderDAO.save(employeeorder);
   }
 
   public Employeeorder getEmployeeorderForEmployeecontractValidAt(long employeecontractId, long suborderId, LocalDate validAt) {

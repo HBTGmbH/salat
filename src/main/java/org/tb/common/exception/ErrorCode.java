@@ -13,6 +13,7 @@ public enum ErrorCode {
   EC_SUPERVISOR_INVALID("EC-0004", "supervisor for employee contract is invalid"),
   EC_OVERLAPS("EC-0005", "employee contract validity overlaps another employee contract of the same employee"),
   EC_EMPLOYEE_CONTRACT_NOT_FOUND("EC-0006","employeeContractId must match an employee contract"),
+  EC_VETOED("EC-0007","employee contract could not be written because a veto has been received"),
   SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY("SO-0001", "suborder validity does not include all existing time reports"),
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
